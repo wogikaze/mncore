@@ -1,0 +1,5 @@
+fvpassa $lm16v $lr0v
+fvadd $lm0v -$mauf $ln0v
+
+fvpassa $lm24v $lr0v
+fvadd $lm8v -$mauf $ln8v

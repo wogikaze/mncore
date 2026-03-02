@@ -1,0 +1,8 @@
+fvpassa $m0v4 $nowrite
+fvadd $m1v4 $mauf $nowrite
+fvadd $m2v4 $mauf $nowrite
+fvadd $m3v4 $mauf $nowrite
+fvpassa $mauf $nowrite;msl $mauf $nowrite
+fvadd $mauf $aluf $nowrite;msl $aluf $nowrite
+fvadd $mauf $aluf $nowrite;msl $aluf $nowrite
+fvadd $mauf $aluf $n0v

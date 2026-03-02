@@ -1,0 +1,3 @@
+fpassa $llm16v $llr0v
+fvadd $lm[0,4,8,12] -$aluf $ln[0,4,8,12]
+fvadd $lm[2,6,10,14] -$lr[2,6,10,14] $ln[2,6,10,14]

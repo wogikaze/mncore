@@ -1,0 +1,3 @@
+fvpassa $lm16v $nowrite
+fvadd $lm0v -$mauf $ln0v
+halt

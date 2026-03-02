@@ -1,0 +1,6 @@
+# $ln[0:32] = $lm[0:32] * 7.0
+imm f"7.0" $t
+fvmul $aluf $lm0v $ln0v
+fvmul $t    $lm8v $ln8v
+fvmul $t    $lm16v $ln16v
+fvmul $t    $lm24v $ln24v

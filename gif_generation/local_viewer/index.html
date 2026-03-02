@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0" />
+  <title>MN-Core 2 Instruction Visualizer (Local)</title>
+  <link rel="stylesheet" href="style.css" />
+  <script>
+    window.MOV_BASE_URL = 'https://mncore-challenge.preferred.jp/memory-animation/mov/';
+  </script>
+</head>
+<body>
+  <div id="wrapper">
+    <div class="seek-bar flex-row">
+      <button class="main" id="sb-play">▶</button>
+      <div class="flex-col flex-grow">
+        <div class="flex-row">
+          <label>slow<input type="range" id="sb-speed" min="0" max="1" step="any" onpointerup="blur()">fast</label>
+          <div style="width: 30px;"></div>
+        </div>
+        <div class="flex-row">
+          <input type="range" id="sb-main" min="0" max="1" step="any" onpointerup="blur()">
+        </div>
+      </div>
+      <details>
+        <summary onfocus="blur()">Keyboard Shortcuts</summary>
+        <div class="flex-col">
+          <div class="flex-row"><div>Space:</div><div>Play/Pause</div></div>
+          <div class="flex-row"><div>←, A:</div><div>Previous Frame</div></div>
+          <div class="flex-row"><div>→, D:</div><div>Next Frame</div></div>
+          <div class="flex-row"><div>Q:</div><div>First Frame</div></div>
+          <div class="flex-row"><div>E:</div><div>Last Frame</div></div>
+        </div>
+      </details>
+    </div>
+    <div id="overlay"></div>
+    <canvas id="canvas"></canvas>
+  </div>
+  <script src="main.js"></script>
+</body>
+</html>

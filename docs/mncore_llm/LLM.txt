@@ -1,0 +1,16 @@
+MN-Core LLM Corpus
+
+Read order:
+1) indexes/chapter_index.md
+2) chapters/ch01 .. ch04
+3) indexes/topic_index.md
+
+Primary lookup:
+- by section number: chapters/chXX/section-<number>__*.md
+- by title: indexes/title_to_path.json
+- by page id: indexes/id_to_path.json
+
+Conventions:
+- each file has YAML frontmatter: title, id, created_unix, updated_unix, views
+- Cosense links are converted to [[Title]]
+- inline URL links stay as Markdown links or <URL>

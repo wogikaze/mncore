@@ -1,0 +1,71 @@
+# ======= In(0): ((4:1), (4_PE:1, 2_W:1))@LM0 / Float =======
+d set $lm0p0 1 000000003F800000 # values=[0.0, 1.0] / Float @[0,0],[0,1]
+d set $lm0p1 1 4000000040400000 # values=[2.0, 3.0] / Float @[0,2],[0,3]
+d set $lm0p2 1 4080000040A00000 # values=[4.0, 5.0] / Float @[0,4],[0,5]
+d set $lm0p3 1 40C0000040E00000 # values=[6.0, 7.0] / Float @[0,6],[0,7]
+d set $lm2p0 1 4100000041100000 # values=[8.0, 9.0] / Float @[1,0],[1,1]
+d set $lm2p1 1 4120000041300000 # values=[10.0, 11.0] / Float @[1,2],[1,3]
+d set $lm2p2 1 4140000041500000 # values=[12.0, 13.0] / Float @[1,4],[1,5]
+d set $lm2p3 1 4160000041700000 # values=[14.0, 15.0] / Float @[1,6],[1,7]
+d set $lm4p0 1 4180000041880000 # values=[16.0, 17.0] / Float @[2,0],[2,1]
+d set $lm4p1 1 4190000041980000 # values=[18.0, 19.0] / Float @[2,2],[2,3]
+d set $lm4p2 1 41A0000041A80000 # values=[20.0, 21.0] / Float @[2,4],[2,5]
+d set $lm4p3 1 41B0000041B80000 # values=[22.0, 23.0] / Float @[2,6],[2,7]
+d set $lm6p0 1 41C0000041C80000 # values=[24.0, 25.0] / Float @[3,0],[3,1]
+d set $lm6p1 1 41D0000041D80000 # values=[26.0, 27.0] / Float @[3,2],[3,3]
+d set $lm6p2 1 41E0000041E80000 # values=[28.0, 29.0] / Float @[3,4],[3,5]
+d set $lm6p3 1 41F0000041F80000 # values=[30.0, 31.0] / Float @[3,6],[3,7]
+# ======= In(1): ((8:1), (4_PE:1, 2_W:1))@LM0 / Float =======
+d set $lm8p0 1 42C8000042CA0000 # values=[100.0, 101.0] / Float @[0,0],[0,1]
+d set $lm8p1 1 42CC000042CE0000 # values=[102.0, 103.0] / Float @[0,2],[0,3]
+d set $lm8p2 1 42D0000042D20000 # values=[104.0, 105.0] / Float @[0,4],[0,5]
+d set $lm8p3 1 42D4000042D60000 # values=[106.0, 107.0] / Float @[0,6],[0,7]
+d set $lm10p0 1 42D8000042DA0000 # values=[108.0, 109.0] / Float @[1,0],[1,1]
+d set $lm10p1 1 42DC000042DE0000 # values=[110.0, 111.0] / Float @[1,2],[1,3]
+d set $lm10p2 1 42E0000042E20000 # values=[112.0, 113.0] / Float @[1,4],[1,5]
+d set $lm10p3 1 42E4000042E60000 # values=[114.0, 115.0] / Float @[1,6],[1,7]
+d set $lm12p0 1 42E8000042EA0000 # values=[116.0, 117.0] / Float @[2,0],[2,1]
+d set $lm12p1 1 42EC000042EE0000 # values=[118.0, 119.0] / Float @[2,2],[2,3]
+d set $lm12p2 1 42F0000042F20000 # values=[120.0, 121.0] / Float @[2,4],[2,5]
+d set $lm12p3 1 42F4000042F60000 # values=[122.0, 123.0] / Float @[2,6],[2,7]
+d set $lm14p0 1 42F8000042FA0000 # values=[124.0, 125.0] / Float @[3,0],[3,1]
+d set $lm14p1 1 42FC000042FE0000 # values=[126.0, 127.0] / Float @[3,2],[3,3]
+d set $lm14p2 1 4300000043010000 # values=[128.0, 129.0] / Float @[3,4],[3,5]
+d set $lm14p3 1 4302000043030000 # values=[130.0, 131.0] / Float @[3,6],[3,7]
+d set $lm16p0 1 4304000043050000 # values=[132.0, 133.0] / Float @[4,0],[4,1]
+d set $lm16p1 1 4306000043070000 # values=[134.0, 135.0] / Float @[4,2],[4,3]
+d set $lm16p2 1 4308000043090000 # values=[136.0, 137.0] / Float @[4,4],[4,5]
+d set $lm16p3 1 430A0000430B0000 # values=[138.0, 139.0] / Float @[4,6],[4,7]
+d set $lm18p0 1 430C0000430D0000 # values=[140.0, 141.0] / Float @[5,0],[5,1]
+d set $lm18p1 1 430E0000430F0000 # values=[142.0, 143.0] / Float @[5,2],[5,3]
+d set $lm18p2 1 4310000043110000 # values=[144.0, 145.0] / Float @[5,4],[5,5]
+d set $lm18p3 1 4312000043130000 # values=[146.0, 147.0] / Float @[5,6],[5,7]
+d set $lm20p0 1 4314000043150000 # values=[148.0, 149.0] / Float @[6,0],[6,1]
+d set $lm20p1 1 4316000043170000 # values=[150.0, 151.0] / Float @[6,2],[6,3]
+d set $lm20p2 1 4318000043190000 # values=[152.0, 153.0] / Float @[6,4],[6,5]
+d set $lm20p3 1 431A0000431B0000 # values=[154.0, 155.0] / Float @[6,6],[6,7]
+d set $lm22p0 1 431C0000431D0000 # values=[156.0, 157.0] / Float @[7,0],[7,1]
+d set $lm22p1 1 431E0000431F0000 # values=[158.0, 159.0] / Float @[7,2],[7,3]
+d set $lm22p2 1 4320000043210000 # values=[160.0, 161.0] / Float @[7,4],[7,5]
+d set $lm22p3 1 4322000043230000 # values=[162.0, 163.0] / Float @[7,6],[7,7]
+
+# ======= YOUR VSM WILL BE INSERTED HERE =======
+
+# ======= Output =======
+# ======= Out(0): ((4:1), (4_PE:1, 2_W:1))@LM1 / Float =======
+d getd $ln0n0c0b0m0p0 1 # expect=[2940.0, 3164.0] / Float @[0,0],[0,1] atol=1e-05
+d getd $ln0n0c0b0m0p1 1 # expect=[3388.0, 3612.0] / Float @[0,2],[0,3] atol=1e-05
+d getd $ln0n0c0b0m0p2 1 # expect=[3836.0, 4060.0] / Float @[0,4],[0,5] atol=1e-05
+d getd $ln0n0c0b0m0p3 1 # expect=[4284.0, 4508.0] / Float @[0,6],[0,7] atol=1e-05
+d getd $ln2n0c0b0m0p0 1 # expect=[9564.0, 10300.0] / Float @[1,0],[1,1] atol=1e-05
+d getd $ln2n0c0b0m0p1 1 # expect=[11036.0, 11772.0] / Float @[1,2],[1,3] atol=1e-05
+d getd $ln2n0c0b0m0p2 1 # expect=[12508.0, 13244.0] / Float @[1,4],[1,5] atol=1e-05
+d getd $ln2n0c0b0m0p3 1 # expect=[13980.0, 14716.0] / Float @[1,6],[1,7] atol=1e-05
+d getd $ln4n0c0b0m0p0 1 # expect=[16188.0, 17436.0] / Float @[2,0],[2,1] atol=1e-05
+d getd $ln4n0c0b0m0p1 1 # expect=[18684.0, 19932.0] / Float @[2,2],[2,3] atol=1e-05
+d getd $ln4n0c0b0m0p2 1 # expect=[21180.0, 22428.0] / Float @[2,4],[2,5] atol=1e-05
+d getd $ln4n0c0b0m0p3 1 # expect=[23676.0, 24924.0] / Float @[2,6],[2,7] atol=1e-05
+d getd $ln6n0c0b0m0p0 1 # expect=[22812.0, 24572.0] / Float @[3,0],[3,1] atol=1e-05
+d getd $ln6n0c0b0m0p1 1 # expect=[26332.0, 28092.0] / Float @[3,2],[3,3] atol=1e-05
+d getd $ln6n0c0b0m0p2 1 # expect=[29852.0, 31612.0] / Float @[3,4],[3,5] atol=1e-05
+d getd $ln6n0c0b0m0p3 1 # expect=[33372.0, 35132.0] / Float @[3,6],[3,7] atol=1e-05

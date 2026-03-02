@@ -1,0 +1,4 @@
+fvpassa $lm[0,2,0,2] $nowrite
+fvadd $lm[4,6,4,6] $mauf $nowrite
+fvadd $lm[8,10,8,10] $mauf $nowrite
+fvadd $lm[12,14,12,14] $mauf $ln[0,2,0,2]

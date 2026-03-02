@@ -1,0 +1,37 @@
+---
+title: 3.5.8.10 L2BM→PDM並列個別転送命令
+id: 66b35ffe9453fb001c212d18
+created_unix: 1723031550
+updated_unix: 1771433386
+views: 10
+---
+
+# 3.5.8.10 L2BM→PDM並列個別転送命令
+
+すべてのグループについて、指定した[[L2B番号]]の[[L2BM]]から同じグループの[[PDM]]にデータをコピーする。
+ 単位動作は 64 長語である。
+スループットはグループあたり 16 長語/サイクルである。
+```文法
+mvp/n<size>[<tag>] $lc<addr_c>@.<l2b_c> $p<addr_p>
+
+```
+```効果
+uint_t n=size / 64
+for i= 0:n
+  uint_t src_addr=addr_c + 64 *i
+  uint_t dst_addr=addr_p + 64 *i
+  forall group
+    LongWord data[64] = MEM[group][l2b_c].l2bm[src_addr:src_addr+64]
+    MEM[group].pdm[dst_addr:dst_addr+64] =data
+
+```
+エラー
+ sizeが単位動作 64 の倍数でないとエラーになる。
+
+```例
+mvp/n64 $lc0@.1 $p0
+```
+すべてのグループについて、 1 番L2BのL2BMからPDMに 64 長語をコピーする。
+
+$ mvp/n64 $lc0@.1 $p0
+ <https://gyazo.com/f5e640779dabc76f679bc294bf262ff0>

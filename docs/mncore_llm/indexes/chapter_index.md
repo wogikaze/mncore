@@ -1,0 +1,209 @@
+# Chapter Index
+
+## ch01
+- [chapter] `chapters/ch01/chapter__66b35ffe.md` :: 第1章 MN-Core2アーキテクチャ概観
+- [1.1] `chapters/ch01/section-1.1__構成__66b35ffe.md` :: 1.1 構成
+- [1.2] `chapters/ch01/section-1.2__機械語命令概観__66b35ffe.md` :: 1.2 機械語命令概観
+- [1.3] `chapters/ch01/section-1.3__語長と演算精度__66b35ffe.md` :: 1.3 語長と演算精度
+- [1.4] `chapters/ch01/section-1.4__浮動小数点数演算性能__66b35ffe.md` :: 1.4 浮動小数点数演算性能
+- [1.5] `chapters/ch01/section-1.5__メモリ性能__66b35ffe.md` :: 1.5 メモリ性能
+
+## ch02
+- [chapter] `chapters/ch02/chapter__66b35ffe.md` :: 第2章 ツールチェーン
+- [2.1] `chapters/ch02/section-2.1__実機__66b35ffe.md` :: 2.1 実機
+- [2.2] `chapters/ch02/section-2.2__アセンブラ__66b35ffe.md` :: 2.2 アセンブラ
+- [2.3] `chapters/ch02/section-2.3__エミュレータ__66b35ffe.md` :: 2.3 エミュレータ
+
+## ch03
+- [chapter] `chapters/ch03/chapter__66b35ffe.md` :: 第3章 MN-Core2アセンブリ言語による開発
+- [3.1] `chapters/ch03/section-3.1__文__66b35ffe.md` :: 3.1 文
+- [3.2] `chapters/ch03/section-3.2__数値__66b35ffe.md` :: 3.2 数値
+- [3.2.1] `chapters/ch03/section-3.2.1__自然数__66b35ffe.md` :: 3.2.1 自然数
+- [3.2.2] `chapters/ch03/section-3.2.2__即値__66b35ffe.md` :: 3.2.2 即値
+- [3.2.3] `chapters/ch03/section-3.2.3__タグ__66b35ffe.md` :: 3.2.3 タグ
+- [3.3] `chapters/ch03/section-3.3__疑似コードによる命令動作の記述__66b35ffe.md` :: 3.3 疑似コードによる命令動作の記述
+- [3.4] `chapters/ch03/section-3.4__制御文__66b35ffe.md` :: 3.4 制御文
+- [3.4.1] `chapters/ch03/section-3.4.1__コメント文__66b35ffe.md` :: 3.4.1 コメント文
+- [3.4.2] `chapters/ch03/section-3.4.2__Quit文__66b35ffe.md` :: 3.4.2 Quit文
+- [3.4.3] `chapters/ch03/section-3.4.3__Debug_get文__66b35ffe.md` :: 3.4.3 Debug get文
+- [3.4.4] `chapters/ch03/section-3.4.4__Debug_set文__66b35ffe.md` :: 3.4.4 Debug set文
+- [3.5] `chapters/ch03/section-3.5__MV命令文__66b35ffe.md` :: 3.5 MV命令文
+- [3.5.1] `chapters/ch03/section-3.5.1__文法の概観__66b35ffe.md` :: 3.5.1 文法の概観
+- [3.5.2] `chapters/ch03/section-3.5.2__オペランド__66b35ffe.md` :: 3.5.2 オペランド
+- [3.5.2.1] `chapters/ch03/section-3.5.2.1__p-PDM__66b35ffe.md` :: 3.5.2.1 p-PDM
+- [3.5.2.2] `chapters/ch03/section-3.5.2.2__d-DRAM__66b35ffe.md` :: 3.5.2.2 d-DRAM
+- [3.5.2.3] `chapters/ch03/section-3.5.2.3__c-MV命令におけるL2BM__66b35ffe.md` :: 3.5.2.3 c-MV命令におけるL2BM
+- [3.5.3] `chapters/ch03/section-3.5.3__転送語数指定と単位動作__66b35ffe.md` :: 3.5.3 転送語数指定と単位動作
+- [3.5.4] `chapters/ch03/section-3.5.4__タグ指定__66b35ffe.md` :: 3.5.4タグ指定
+- [3.5.5] `chapters/ch03/section-3.5.5__縮約演算指定__66b35ffe.md` :: 3.5.5 縮約演算指定
+- [3.5.6] `chapters/ch03/section-3.5.6__DRAM間接参照__66b35ffe.md` :: 3.5.6 DRAM間接参照
+- [3.5.7] `chapters/ch03/section-3.5.7__優先度指定__66b35ffe.md` :: 3.5.7 優先度指定
+- [3.5.8] `chapters/ch03/section-3.5.8__MV命令の基本モード__66b35ffe.md` :: 3.5.8 MV命令の基本モード
+- [3.5.8.1] `chapters/ch03/section-3.5.8.1__mvnop命令__66b35ffe.md` :: 3.5.8.1 mvnop命令
+- [3.5.8.2] `chapters/ch03/section-3.5.8.2__PDMDRAM単独個別転送命令__66b35ffe.md` :: 3.5.8.2 PDM→DRAM単独個別転送命令
+- [3.5.8.3] `chapters/ch03/section-3.5.8.3__DRAMPDM単独個別転送命令__66b35ffe.md` :: 3.5.8.3 DRAM→PDM単独個別転送命令
+- [3.5.8.4] `chapters/ch03/section-3.5.8.4__PDML2BM単独個別転送命令__66b35ffe.md` :: 3.5.8.4 PDM→L2BM単独個別転送命令
+- [3.5.8.5] `chapters/ch03/section-3.5.8.5__L2BMPDM単独個別転送命令__66b35ffe.md` :: 3.5.8.5 L2BM→PDM単独個別転送命令
+- [3.5.8.6] `chapters/ch03/section-3.5.8.6__DRAML2BM単独個別転送命令__66b35ffe.md` :: 3.5.8.6 DRAM→L2BM単独個別転送命令
+- [3.5.8.7] `chapters/ch03/section-3.5.8.7__L2BMDRAM単独個別転送命令__66b35ffe.md` :: 3.5.8.7 L2BM→DRAM単独個別転送命令
+- [3.5.8.8] `chapters/ch03/section-3.5.8.8__PDMPDM単独個別転送命令__66b35ffe.md` :: 3.5.8.8 PDM→PDM単独個別転送命令
+- [3.5.8.9] `chapters/ch03/section-3.5.8.9__PDML2BM並列個別転送命令__66b35ffe.md` :: 3.5.8.9 PDM→L2BM並列個別転送命令
+- [3.5.8.10] `chapters/ch03/section-3.5.8.10__L2BMPDM並列個別転送命令__66b35ffe.md` :: 3.5.8.10 L2BM→PDM並列個別転送命令
+- [3.5.8.11] `chapters/ch03/section-3.5.8.11__DRAML2BM並列個別転送命令__66b35ffe.md` :: 3.5.8.11 DRAM→L2BM並列個別転送命令
+- [3.5.8.12] `chapters/ch03/section-3.5.8.12__L2BMDRAM並列個別転送命令__66b35ffe.md` :: 3.5.8.12 L2BM→DRAM並列個別転送命令
+- [3.5.8.13] `chapters/ch03/section-3.5.8.13__DRAML2BMグループ内放送命令__66b35ffe.md` :: 3.5.8.13 DRAM→L2BMグループ内放送命令
+- [3.5.8.14] `chapters/ch03/section-3.5.8.14__L2BMDRAMグループ内縮約命令__66b35ffe.md` :: 3.5.8.14 L2BM→DRAMグループ内縮約命令
+- [3.5.8.15] `chapters/ch03/section-3.5.8.15__L2BMPDMグループ内縮約命令__66b35ffe.md` :: 3.5.8.15 L2BM→PDMグループ内縮約命令
+- [3.5.8.16] `chapters/ch03/section-3.5.8.16__DRAML2BMグループ間分配放送命令__66b35ffe.md` :: 3.5.8.16 DRAM→L2BMグループ間分配放送命令
+- [3.5.8.17] `chapters/ch03/section-3.5.8.17__L2BMDRAMグループ間結合縮約命令__66b35ffe.md` :: 3.5.8.17 L2BM→DRAMグループ間結合縮約命令
+- [3.5.8.18] `chapters/ch03/section-3.5.8.18__PDML2BMグループ間放送命令__66b35ffe.md` :: 3.5.8.18 PDM→L2BMグループ間放送命令
+- [3.5.8.19] `chapters/ch03/section-3.5.8.19__L2BMPDMグループ間縮約命令__66b35ffe.md` :: 3.5.8.19 L2BM→PDMグループ間縮約命令
+- [3.5.8.20] `chapters/ch03/section-3.5.8.20__DRAML2BMグループ間放送命令__66b35ffe.md` :: 3.5.8.20 DRAM→L2BMグループ間放送命令
+- [3.5.8.21] `chapters/ch03/section-3.5.8.21__L2BMDRAMグループ間縮約命令__66b35ffe.md` :: 3.5.8.21 L2BM→DRAMグループ間縮約命令
+- [3.5.8.22] `chapters/ch03/section-3.5.8.22__PDML2BM分配命令__66b35ffe.md` :: 3.5.8.22 PDM→L2BM分配命令
+- [3.5.8.23] `chapters/ch03/section-3.5.8.23__L2BMPDM結合命令__66b35ffe.md` :: 3.5.8.23 L2BM→PDM結合命令
+- [3.5.8.24] `chapters/ch03/section-3.5.8.24__PDMDRAM分配命令__66b35ffe.md` :: 3.5.8.24 PDM→DRAM分配命令
+- [3.5.8.25] `chapters/ch03/section-3.5.8.25__DRAMPDM結合命令__66b35ffe.md` :: 3.5.8.25 DRAM→PDM結合命令
+- [3.5.9] `chapters/ch03/section-3.5.9__複数MV命令間の制約__66b35ffe.md` :: 3.5.9 複数MV命令間の制約
+- [3.6] `chapters/ch03/section-3.6__PE命令文__66b35ffe.md` :: 3.6 PE命令文
+- [3.6.1] `chapters/ch03/section-3.6.1__オペランド__66b35ffe.md` :: 3.6.1 オペランド
+- [3.6.1.1] `chapters/ch03/section-3.6.1.1__c-PE命令におけるL2BMl2bmdars命令を除く__66b35ffe.md` :: 3.6.1.1 c-PE命令におけるL2BM(l2bmdars命令を除く)
+- [3.6.1.2] `chapters/ch03/section-3.6.1.2__c-l2bmdars命令におけるL2BM__66b35ffe.md` :: 3.6.1.2 c-l2bmdars命令におけるL2BM
+- [3.6.1.3] `chapters/ch03/section-3.6.1.3__dar-DRAMアドレスレジスタ__66b35ffe.md` :: 3.6.1.3 dar-DRAMアドレスレジスタ
+- [3.6.1.4] `chapters/ch03/section-3.6.1.4__b-L2BM命令におけるL1BM__66b35ffe.md` :: 3.6.1.4 b-L2BM命令におけるL1BM
+- [3.6.1.5] `chapters/ch03/section-3.6.1.5__b-L1BM命令におけるL1BM__66b35ffe.md` :: 3.6.1.5 b-L1BM命令におけるL1BM
+- [3.6.1.6] `chapters/ch03/section-3.6.1.6__m-LM0ベースアドレスレジスタ書き込みを除く__66b35ffe.md` :: 3.6.1.6 m-LM0(ベースアドレスレジスタ書き込みを除く)
+- [3.6.1.7] `chapters/ch03/section-3.6.1.7__m-LM0ベースアドレスレジスタ書き込み__66b35ffe.md` :: 3.6.1.7 m-LM0(ベースアドレスレジスタ書き込み)
+- [3.6.1.8] `chapters/ch03/section-3.6.1.8__n-LM1ベースアドレスレジスタ書き込みを除く__66b35ffe.md` :: 3.6.1.8 n-LM1(ベースアドレスレジスタ書き込みを除く)
+- [3.6.1.9] `chapters/ch03/section-3.6.1.9__n-LM1ベースアドレスレジスタ書き込み__66b35ffe.md` :: 3.6.1.9 n-LM1(ベースアドレスレジスタ書き込み)
+- [3.6.1.10] `chapters/ch03/section-3.6.1.10__r-GRF0__66b35ffe.md` :: 3.6.1.10 r-GRF0
+- [3.6.1.11] `chapters/ch03/section-3.6.1.11__s-GRF1__66b35ffe.md` :: 3.6.1.11 s-GRF1
+- [3.6.1.12] `chapters/ch03/section-3.6.1.12__t-Tレジスタ__66b35ffe.md` :: 3.6.1.12 t-Tレジスタ
+- [3.6.1.13] `chapters/ch03/section-3.6.1.13__omr-マスクレジスタへの書き込み__66b35ffe.md` :: 3.6.1.13 omr-マスクレジスタへの書き込み
+- [3.6.1.14] `chapters/ch03/section-3.6.1.14__xy-行列レジスタ__66b35ffe.md` :: 3.6.1.14 x,y-行列レジスタ
+- [3.6.1.15] `chapters/ch03/section-3.6.1.15__mauf-MAU演算結果フォワーディング__66b35ffe.md` :: 3.6.1.15 mauf-MAU演算結果フォワーディング
+- [3.6.1.16] `chapters/ch03/section-3.6.1.16__aluf-ALU演算結果フォワーディング__66b35ffe.md` :: 3.6.1.16 aluf-ALU演算結果フォワーディング
+- [3.6.1.17] `chapters/ch03/section-3.6.1.17__lbf-L1BMPE方向転送フォワーディング__66b35ffe.md` :: 3.6.1.17 lbf-L1BM→PE方向転送フォワーディング
+- [3.6.1.18] `chapters/ch03/section-3.6.1.18__mreadf-行列レジスタ転置読み出しフォワーディング__66b35ffe.md` :: 3.6.1.18 mreadf-行列レジスタ転置読み出しフォワーディング
+- [3.6.1.19] `chapters/ch03/section-3.6.1.19__nowrite-フォワーディング用ダミー出力__66b35ffe.md` :: 3.6.1.19 nowrite-フォワーディング用ダミー出力
+- [3.6.1.20] `chapters/ch03/section-3.6.1.20__固定値入力オペランド__66b35ffe.md` :: 3.6.1.20 固定値入力オペランド
+- [3.6.2] `chapters/ch03/section-3.6.2__マスクレジスタ__66b35ffe.md` :: 3.6.2 マスクレジスタ
+- [3.6.2.1] `chapters/ch03/section-3.6.2.1__書き込みマスク適用__66b35ffe.md` :: 3.6.2.1 書き込みマスク適用
+- [3.6.2.2] `chapters/ch03/section-3.6.2.2__ゼロフラッシュマスク適用__66b35ffe.md` :: 3.6.2.2 ゼロフラッシュマスク適用
+- [3.6.3] `chapters/ch03/section-3.6.3__ハザードの回避__66b35ffe.md` :: 3.6.3 ハザードの回避
+- [3.6.3.2] `chapters/ch03/section-3.6.3.2__L1BML2BM転送L2BML1BM転送__66b35ffe.md` :: 3.6.3.2 L1BM→L2BM転送⇒L2BM→L1BM転送
+- [3.6.3.3] `chapters/ch03/section-3.6.3.3__L2BML1BM転送L1BML2BM転送_内部マルチキャスト__66b35ffe.md` :: 3.6.3.3 L2BM→L1BM転送⇒L1BM→L2BM転送/内部マルチキャスト
+- [3.6.3.4] `chapters/ch03/section-3.6.3.4__内部マルチキャストL1BML2BM転送_内部マルチキャスト__66b35ffe.md` :: 3.6.3.4 内部マルチキャスト⇒L1BM→L2BM転送/内部マルチキャスト
+- [3.6.3.5] `chapters/ch03/section-3.6.3.5__内部マルチキャストL1BMPE転送__66b35ffe.md` :: 3.6.3.5 内部マルチキャスト⇒L1BM→PE転送
+- [3.6.3.6] `chapters/ch03/section-3.6.3.6__L2BML1BM転送L1BMPE転送__66b35ffe.md` :: 3.6.3.6 L2BM→L1BM転送⇒L1BM→PE転送
+- [3.6.3.7] `chapters/ch03/section-3.6.3.7__PEL1BM転送L1BML2BM転送_内部マルチキャスト__66b35ffe.md` :: 3.6.3.7 PE→L1BM転送⇒L1BM→L2BM転送/内部マルチキャスト
+- [3.6.3.8] `chapters/ch03/section-3.6.3.8__PEL1BM転送L1BMPE転送__66b35ffe.md` :: 3.6.3.8 PE→L1BM転送⇒L1BM→PE転送
+- [3.6.3.9] `chapters/ch03/section-3.6.3.9__PEメモリ書き込みPEメモリ読み出し__66b35ffe.md` :: 3.6.3.9 PEメモリ書き込み⇒PEメモリ読み出し
+- [3.6.4] `chapters/ch03/section-3.6.4__並列実行条件__66b35ffe.md` :: 3.6.4 並列実行条件
+- [3.6.5] `chapters/ch03/section-3.6.5__nop-NOP__66b35ffe.md` :: 3.6.5 nop-NOP
+- [3.6.6] `chapters/ch03/section-3.6.6__noforward-フォワーディングと折り返しレジスタの更新をしない__66b35ffe.md` :: 3.6.6 noforward-フォワーディングと折り返しレジスタの更新をしない
+- [3.6.7] `chapters/ch03/section-3.6.7__L2BM命令式__66b35ffe.md` :: 3.6.7 L2BM命令式
+- [3.6.7.1] `chapters/ch03/section-3.6.7.1__L1B部分集合指定__66b35ffe.md` :: 3.6.7.1 L1B部分集合指定
+- [3.6.7.2] `chapters/ch03/section-3.6.7.2__l2bmb-L2BML1BM放送__66b35ffe.md` :: 3.6.7.2 l2bmb-L2BM→L1BM放送
+- [3.6.7.3] `chapters/ch03/section-3.6.7.3__l2bmb2-L2BML1BM分配放送__66b35ffe.md` :: 3.6.7.3 l2bmb2-L2BM→L1BM分配放送
+- [3.6.7.4] `chapters/ch03/section-3.6.7.4__l2bmd-L2BML1BM分配__66b35ffe.md` :: 3.6.7.4 l2bmd-L2BM→L1BM分配
+- [3.6.7.5] `chapters/ch03/section-3.6.7.5__l2bm-L1BML2BM個別転送__66b35ffe.md` :: 3.6.7.5 l2bm@-L1BM→L2BM個別転送
+- [3.6.7.6] `chapters/ch03/section-3.6.7.6__l2bmrrrn_opcode-L1BML2BM縮約__66b35ffe.md` :: 3.6.7.6 l2bmr<rrn_opcode>-L1BM→L2BM縮約
+- [3.6.7.7] `chapters/ch03/section-3.6.7.7__l2bmr2rrn_opcode-L1BML2BM結合縮約__66b35ffe.md` :: 3.6.7.7 l2bmr2<rrn_opcode>-L1BM→L2BM結合縮約
+- [3.6.7.8] `chapters/ch03/section-3.6.7.8__l2bmd-L1BML2BM結合__66b35ffe.md` :: 3.6.7.8 l2bmd-L1BM→L2BM結合
+- [3.6.7.9] `chapters/ch03/section-3.6.7.9__l2bmi-L1BM間内部マルチキャスト__66b35ffe.md` :: 3.6.7.9 l2bmi-L1BM間内部マルチキャスト
+- [3.6.7.10] `chapters/ch03/section-3.6.7.10__l2bmdars_l2bmdarw-DARへの書き込み__66b35ffe.md` :: 3.6.7.10 l2bmdars/l2bmdarw-DARへの書き込み
+- [3.6.8] `chapters/ch03/section-3.6.8__L1BM命令式__66b35ffe.md` :: 3.6.8 L1BM命令式
+- [3.6.8.1] `chapters/ch03/section-3.6.8.1__4x4モードについて__66b35ffe.md` :: 3.6.8.1 4x4モードについて
+- [3.6.8.2] `chapters/ch03/section-3.6.8.2__L1BM命令式種別と折り返し動作__66b35ffe.md` :: 3.6.8.2 L1BM命令式種別と折り返し動作
+- [3.6.8.3] `chapters/ch03/section-3.6.8.3__PE側オペランドの語長__66b35ffe.md` :: 3.6.8.3 PE側オペランドの語長
+- [3.6.8.4] `chapters/ch03/section-3.6.8.4__入力の精度拡張__66b35ffe.md` :: 3.6.8.4 入力の精度拡張
+- [3.6.8.5] `chapters/ch03/section-3.6.8.5__縮約結果の精度縮減__66b35ffe.md` :: 3.6.8.5 縮約結果の精度縮減
+- [3.6.8.6] `chapters/ch03/section-3.6.8.6__l1bmp-1長語PE放送__66b35ffe.md` :: 3.6.8.6 l1bmp-1長語PE放送
+- [3.6.8.7] `chapters/ch03/section-3.6.8.7__l1bmp-2長語PE放送__66b35ffe.md` :: 3.6.8.7 l1bmp-2長語PE放送
+- [3.6.8.8] `chapters/ch03/section-3.6.8.8__l1bmm-1長語16x1MAB放送__66b35ffe.md` :: 3.6.8.8 l1bmm-1長語16x1MAB放送
+- [3.6.8.9] `chapters/ch03/section-3.6.8.9__l1bmm-2長語16x1MAB放送__66b35ffe.md` :: 3.6.8.9 l1bmm-2長語16x1MAB放送
+- [3.6.8.10] `chapters/ch03/section-3.6.8.10__l1bmm-1長語16x1個別転送__66b35ffe.md` :: 3.6.8.10 l1bmm@-1長語16x1個別転送
+- [3.6.8.11] `chapters/ch03/section-3.6.8.11__l1bmm-2長語16x1個別転送__66b35ffe.md` :: 3.6.8.11 l1bmm@-2長語16x1個別転送
+- [3.6.8.12] `chapters/ch03/section-3.6.8.12__l1bmrrrn_opcode-1長語16x1縮約__66b35ffe.md` :: 3.6.8.12 l1bmr<rrn_opcode>-1長語16x1縮約
+- [3.6.8.13] `chapters/ch03/section-3.6.8.13__l1bmrrrn_opcode-2長語16x1縮約__66b35ffe.md` :: 3.6.8.13 l1bmr<rrn_opcode>-2長語16x1縮約
+- [3.6.8.14] `chapters/ch03/section-3.6.8.14__l1bmm4-1長語4x4MAB放送__66b35ffe.md` :: 3.6.8.14 l1bmm4-1長語4x4MAB放送
+- [3.6.8.15] `chapters/ch03/section-3.6.8.15__l1bmm4-2長語4x4MAB放送__66b35ffe.md` :: 3.6.8.15 l1bmm4-2長語4x4MAB放送
+- [3.6.8.16] `chapters/ch03/section-3.6.8.16__l1bmm4-1長語4x4個別転送__66b35ffe.md` :: 3.6.8.16 l1bmm4@-1長語4x4個別転送
+- [3.6.8.17] `chapters/ch03/section-3.6.8.17__l1bmm4-2長語4x4個別転送__66b35ffe.md` :: 3.6.8.17 l1bmm4@-2長語4x4個別転送
+- [3.6.8.18] `chapters/ch03/section-3.6.8.18__l1bmr4rrn_opcode-1長語4x4縮約__66b35ffe.md` :: 3.6.8.18 l1bmr4<rrn_opcode>-1長語4x4縮約
+- [3.6.8.19] `chapters/ch03/section-3.6.8.19__l1bmr4rrn_opcode-2長語4x4縮約__66b35ffe.md` :: 3.6.8.19 l1bmr4<rrn_opcode>-2長語4x4縮約
+- [3.6.8.20] `chapters/ch03/section-3.6.8.20__l1bmd-分配__66b35ffe.md` :: 3.6.8.20 l1bmd-分配
+- [3.6.8.21] `chapters/ch03/section-3.6.8.21__l1bmd-結合__66b35ffe.md` :: 3.6.8.21 l1bmd-結合
+- [3.6.9] `chapters/ch03/section-3.6.9__MAU命令式__66b35ffe.md` :: 3.6.9 MAU命令式
+- [3.6.9.1] `chapters/ch03/section-3.6.9.1__基本動作について__66b35ffe.md` :: 3.6.9.1 基本動作について
+- [3.6.9.2] `chapters/ch03/section-3.6.9.2__dmfma-倍精度行列ベクトル積和演算の基本動作__66b35ffe.md` :: 3.6.9.2 dmfma-倍精度行列ベクトル積和演算の基本動作
+- [3.6.9.3] `chapters/ch03/section-3.6.9.3__dmmul_-倍精度行列ベクトル積演算__69956526.md` :: 3.6.9.3 dmmul -倍精度行列ベクトル積演算
+- [3.6.9.4] `chapters/ch03/section-3.6.9.4__fmfma-単精度行列ベクトル積和演算の基本動作__66b35ffe.md` :: 3.6.9.4 fmfma-単精度行列ベクトル積和演算の基本動作
+- [3.6.9.5] `chapters/ch03/section-3.6.9.5__fmmul_-単精度行列ベクトル積演算__69956528.md` :: 3.6.9.5 fmmul -単精度行列ベクトル積演算
+- [3.6.9.6] `chapters/ch03/section-3.6.9.6__gmfma-疑似単精度行列ベクトル積和演算の基本動作__66b35ffe.md` :: 3.6.9.6 gmfma-疑似単精度行列ベクトル積和演算の基本動作
+- [3.6.9.7] `chapters/ch03/section-3.6.9.7__gmmul_-疑似単精度行列ベクトル積演算__69956529.md` :: 3.6.9.7 gmmul -疑似単精度行列ベクトル積演算
+- [3.6.9.8] `chapters/ch03/section-3.6.9.8__hmfma-半精度行列ベクトル積和演算の基本動作__66b35ffe.md` :: 3.6.9.8 hmfma-半精度行列ベクトル積和演算の基本動作
+- [3.6.9.9] `chapters/ch03/section-3.6.9.9__hmmul_-半精度行列ベクトル積演算__6995652b.md` :: 3.6.9.9 hmmul -半精度行列ベクトル積演算
+- [3.6.9.10] `chapters/ch03/section-3.6.9.10__dvfma-倍精度ベクトル積和演算の基本動作__66b35ffe.md` :: 3.6.9.10 dvfma-倍精度ベクトル積和演算の基本動作
+- [3.6.9.11] `chapters/ch03/section-3.6.9.11__dvmul_-倍精度ベクトル積演算__6995652c.md` :: 3.6.9.11 dvmul -倍精度ベクトル積演算
+- [3.6.9.12] `chapters/ch03/section-3.6.9.12__dvadd-倍精度ベクトル和の基本動作__66b35ffe.md` :: 3.6.9.12 dvadd-倍精度ベクトル和の基本動作
+- [3.6.9.13] `chapters/ch03/section-3.6.9.13__dvpassa_-倍精度ベクトルコピー演算__6995652d.md` :: 3.6.9.13 dvpassa -倍精度ベクトルコピー演算
+- [3.6.9.14] `chapters/ch03/section-3.6.9.14__fvfma-単精度ベクトル積和演算の基本動作__66b35ffe.md` :: 3.6.9.14 fvfma-単精度ベクトル積和演算の基本動作
+- [3.6.9.15] `chapters/ch03/section-3.6.9.15__fvmul-単精度ベクトル積演算__66cd015d.md` :: 3.6.9.15 fvmul-単精度ベクトル積演算
+- [3.6.9.16] `chapters/ch03/section-3.6.9.16__fvadd-単精度ベクトル和演算__69957d3c.md` :: 3.6.9.16 fvadd-単精度ベクトル和演算
+- [3.6.9.18] `chapters/ch03/section-3.6.9.18__hvfma-半精度ベクトル積和演算の基本動作__66b35ffe.md` :: 3.6.9.18 hvfma-半精度ベクトル積和演算の基本動作
+- [3.6.9.19] `chapters/ch03/section-3.6.9.19__hvmul-半精度ベクトル積演算__69956901.md` :: 3.6.9.19 hvmul-半精度ベクトル積演算
+- [3.6.9.20] `chapters/ch03/section-3.6.9.20__hvadd-半精度ベクトル和演算__66cd0153.md` :: 3.6.9.20 hvadd-半精度ベクトル和演算
+- [3.6.9.21] `chapters/ch03/section-3.6.9.21__hvpassa_-半精度ベクトルコピー演算__6995652f.md` :: 3.6.9.21 hvpassa -半精度ベクトルコピー演算
+- [3.6.9.22] `chapters/ch03/section-3.6.9.22__入力符号反転__66b35ffe.md` :: 3.6.9.22 入力符号反転
+- [3.6.9.23] `chapters/ch03/section-3.6.9.23__入力の精度拡張__66b35ffe.md` :: 3.6.9.23 入力の精度拡張
+- [3.6.9.24] `chapters/ch03/section-3.6.9.24__入力の精度縮減__66b35ffe.md` :: 3.6.9.24 入力の精度縮減
+- [3.6.9.25] `chapters/ch03/section-3.6.9.25__出力の精度縮減__66b35ffe.md` :: 3.6.9.25 出力の精度縮減
+- [3.6.9.26] `chapters/ch03/section-3.6.9.26__MAU命令の命令式の生成するマスクフラグ__66b35ffe.md` :: 3.6.9.26 MAU命令の命令式の生成するマスクフラグ
+- [3.6.10] `chapters/ch03/section-3.6.10__行列レジスタ書き込み命令式__66b35fff.md` :: 3.6.10 行列レジスタ書き込み命令式
+- [3.6.10.1] `chapters/ch03/section-3.6.10.1__dmwrite-倍精度行列レジスタ書き込み__66b35fff.md` :: 3.6.10.1 dmwrite-倍精度行列レジスタ書き込み
+- [3.6.10.2] `chapters/ch03/section-3.6.10.2__fmwrite_gmwrite-単精度・疑似単精度行列レジスタ書き込み__66b35fff.md` :: 3.6.10.2 fmwrite/gmwrite-単精度・疑似単精度行列レジスタ書き込み
+- [3.6.10.3] `chapters/ch03/section-3.6.10.3__hmwrite-半精度行列レジスタ書き込み__66b35fff.md` :: 3.6.10.3 hmwrite-半精度行列レジスタ書き込み
+- [3.6.11] `chapters/ch03/section-3.6.11__行列レジスタ読み出し命令式__66b35fff.md` :: 3.6.11 行列レジスタ読み出し命令式
+- [3.6.11.1] `chapters/ch03/section-3.6.11.1__dmread-倍精度行列レジスタ読み出し__66b35fff.md` :: 3.6.11.1 dmread-倍精度行列レジスタ読み出し
+- [3.6.11.2] `chapters/ch03/section-3.6.11.2__fmread_gmread-単精度行列レジスタ読み出し__66b35fff.md` :: 3.6.11.2 fmread/gmread-単精度行列レジスタ読み出し
+- [3.6.11.3] `chapters/ch03/section-3.6.11.3__hmread-半精度行列レジスタ読み出し__66b35fff.md` :: 3.6.11.3 hmread-半精度行列レジスタ読み出し
+- [3.6.12] `chapters/ch03/section-3.6.12__ALU命令式__66b35fff.md` :: 3.6.12 ALU命令式
+- [3.6.12.1] `chapters/ch03/section-3.6.12.1__ALU命令式の生成するマスクフラグ__6994ed97.md` :: 3.6.12.1 ALU命令式の生成するマスクフラグ
+- [3.6.12.2] `chapters/ch03/section-3.6.12.2__zero-ゼロ出力命令__66b35fff.md` :: 3.6.12.2 zero-ゼロ出力命令
+- [3.6.12.3] `chapters/ch03/section-3.6.12.3__imm-即値命令__66b35fff.md` :: 3.6.12.3 imm-即値命令
+- [3.6.12.4] `chapters/ch03/section-3.6.12.4__mslmsr-PE間循環シフト命令__66b35fff.md` :: 3.6.12.4 msl,msr-PE間循環シフト命令
+- [3.6.12.5] `chapters/ch03/section-3.6.12.5__passa-コピー命令__66b35fff.md` :: 3.6.12.5 passa-コピー命令
+- [3.6.12.6] `chapters/ch03/section-3.6.12.6__incdec-インクリメント・デクリメント命令__66b35fff.md` :: 3.6.12.6 inc,dec-インクリメント・デクリメント命令
+- [3.6.12.7] `chapters/ch03/section-3.6.12.7__not-ビット反転命令__66b35fff.md` :: 3.6.12.7 not-ビット反転命令
+- [3.6.12.8] `chapters/ch03/section-3.6.12.8__lnot-論理否定命令__66b35fff.md` :: 3.6.12.8 lnot-論理否定命令
+- [3.6.12.9] `chapters/ch03/section-3.6.12.9__rsqrt-近似逆数平方根命令__66b35fff.md` :: 3.6.12.9 rsqrt-近似逆数平方根命令
+- [3.6.12.10] `chapters/ch03/section-3.6.12.10__floor-floor命令__66b35fff.md` :: 3.6.12.10 floor-floor命令
+- [3.6.12.11] `chapters/ch03/section-3.6.12.11__ftoi-整数への変換__66b35fff.md` :: 3.6.12.11 ftoi-整数への変換
+- [3.6.12.12] `chapters/ch03/section-3.6.12.12__bfebfn-ブロックフロート化命令__66b35fff.md` :: 3.6.12.12 bfe,bfn-ブロックフロート化命令
+- [3.6.12.13] `chapters/ch03/section-3.6.12.13__maxmin-最大値・最小値命令__66b35fff.md` :: 3.6.12.13 max,min-最大値・最小値命令
+- [3.6.12.14] `chapters/ch03/section-3.6.12.14__packbit-符号部パック命令__66b35fff.md` :: 3.6.12.14 packbit-符号部パック命令
+- [3.6.12.15] `chapters/ch03/section-3.6.12.15__andorxor-ビット論理積・論理和・排他的論理和命令__66b35fff.md` :: 3.6.12.15 and,or,xor-ビット論理積・論理和・排他的論理和命令
+- [3.6.12.16] `chapters/ch03/section-3.6.12.16__addsub-加算・減算命令__66b35fff.md` :: 3.6.12.16 add,sub-加算・減算命令
+- [3.6.12.17] `chapters/ch03/section-3.6.12.17__lsllsrbslbsr-シフト命令__66b35fff.md` :: 3.6.12.17 lsl,lsr,bsl,bsr-シフト命令
+- [3.6.12.18] `chapters/ch03/section-3.6.12.18__ReLU系命令__66b35fff.md` :: 3.6.12.18 ReLU系命令
+- [3.6.12.19] `chapters/ch03/section-3.6.12.19__ALUへの入力の単精度から半精度への精度縮減__66b35fff.md` :: 3.6.12.19 ALUへの入力の単精度から半精度への精度縮減
+- [3.6.13] `chapters/ch03/section-3.6.13__wait-PE命令にMV命令を待機させる__66b35fff.md` :: 3.6.13 wait-PE命令にMV命令を待機させる
+- [3.7] `chapters/ch03/section-3.7__MN-Core_2アセンブリ_サンプル集__66c8a852.md` :: 3.7 MN-Core 2アセンブリ サンプル集
+- [3.7] `chapters/ch03/section-3.7__MN-Core_2アセンブリ_サンプル集__66c8adb8.md` :: 3.7MN-Core 2アセンブリ サンプル集
+- [3.7.1] `chapters/ch03/section-3.7.1__整数から浮動小数点数への変換__66c8adb8.md` :: 3.7.1整数から浮動小数点数への変換
+- [3.7.1] `chapters/ch03/section-3.7.1__整数から浮動小数点数への変換__6994e3b0.md` :: 3.7.1 整数から浮動小数点数への変換
+- [3.7.2] `chapters/ch03/section-3.7.2__PEメモリ読み出しオペランドの複数演算器への入力__66c8adb8.md` :: 3.7.2 PEメモリ読み出しオペランドの複数演算器への入力.
+- [3.7.2] `chapters/ch03/section-3.7.2__PEメモリ読み出しオペランドの複数演算器への入力__6994e452.md` :: 3.7.2 PEメモリ読み出しオペランドの複数演算器への入力
+- [3.7.3] `chapters/ch03/section-3.7.3__演算器からの_2_長語出力の複数PEメモリオペランドへの書き込み__66c8adb8.md` :: 3.7.3 演算器からの 2 長語出力の複数PEメモリオペランドへの書き込み
+
+## ch04
+- [chapter] `chapters/ch04/chapter__66c8a890.md` :: 第4章 MN-Core 2浮動小数点数演算詳細
+- [4.1] `chapters/ch04/section-4.1__出力の正規化__66c8adb8.md` :: 4.1 出力の正規化
+- [4.2] `chapters/ch04/section-4.2__RRN__66c8adb8.md` :: 4.2 RRN
+- [4.2.1] `chapters/ch04/section-4.2.1__RRN浮動小数点数加算__66c8adb8.md` :: 4.2.1 RRN浮動小数点数加算
+- [4.2.2] `chapters/ch04/section-4.2.2__RRN浮動小数点数最大値および最小値__66c8adb8.md` :: 4.2.2 RRN浮動小数点数最大値および最小値
+- [4.3] `chapters/ch04/section-4.3__ベクトル積和演算__66c8adb8.md` :: 4.3 ベクトル積和演算
+- [4.4] `chapters/ch04/section-4.4__ブロックフロート化__66c8adb8.md` :: 4.4 ブロックフロート化
+- [4.5] `chapters/ch04/section-4.5__行列ベクトル積和演算__66c8adb8.md` :: 4.5 行列ベクトル積和演算
