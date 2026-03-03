@@ -309,6 +309,10 @@ def add_dram_addresses(model: onnx.ModelProto) -> None:
                     # 通常の新規割り当て
                     dram_info = allocate_dram(output_name, ul_shape)
                     tensor_dram_info[output_name] = dram_info
+                    # ULの入力テンソル(computeノードの出力)もDRAMアドレスを解決できるようにする
+                    # GemmBiasReluのような融合ノードの出力が直接DLから参照される場合に必要
+                    if node.input and node.input[0] not in tensor_dram_info:
+                        tensor_dram_info[node.input[0]] = dram_info
 
                 # DL_planから既存の属性を取得
                 tag = require_attr_str(node, 'tag_in0')
@@ -578,6 +582,106 @@ def add_dram_addresses(model: onnx.ModelProto) -> None:
         print(f"\nTotal DRAM allocated: {current_dram_addr_lw} lw ({current_dram_addr_lw * 8} bytes)")
 
 
+def fuse_gemm_add_relu(model: onnx.ModelProto) -> onnx.ModelProto:
+    """
+    Gemm(transB=1) → Add(bias) → Relu パターンを GemmBiasRelu に融合する。
+    対象: [256,1024] x [16,1024] + [16] → ReLU → [256,16]
+    """
+    from onnx import shape_inference, TensorProto
+    model = shape_inference.infer_shapes(model)
+    graph = model.graph
+
+    # テンソル名 → 形状 のマップを構築
+    shape_map: Dict[str, List[int]] = {}
+    for vi in list(graph.input) + list(graph.value_info) + list(graph.output):
+        if vi.type.HasField("tensor_type"):
+            dims = [d.dim_value for d in vi.type.tensor_type.shape.dim]
+            shape_map[vi.name] = dims
+    for init in graph.initializer:
+        shape_map[init.name] = list(init.dims)
+
+    # テンソル名 → 消費ノードリスト のマップ
+    consumed_by: Dict[str, List[onnx.NodeProto]] = {}
+    for node in graph.node:
+        for inp in node.input:
+            if inp:
+                consumed_by.setdefault(inp, []).append(node)
+
+    # 融合対象ノードを特定: gemm_node_id → fused_node のマップ
+    to_remove: set = set()
+    gemm_id_to_fused: Dict[int, onnx.NodeProto] = {}
+
+    for node in graph.node:
+        # Gemm(transA=0, transB=1, [256,1024]×[16,1024]) を探す
+        if node.op_type != "Gemm":
+            continue
+        transA = next((a.i for a in node.attribute if a.name == "transA"), 0)
+        transB = next((a.i for a in node.attribute if a.name == "transB"), 0)
+        if not (transA == 0 and transB == 1):
+            continue
+        if len(node.input) < 2:
+            continue
+        s0 = shape_map.get(node.input[0], [])
+        s1 = shape_map.get(node.input[1], [])
+        if not (s0 == [256, 1024] and s1 == [16, 1024]):
+            continue
+
+        # Gemm 出力を消費する Add ノードを探す
+        gemm_out = node.output[0]
+        add_candidates = [n for n in consumed_by.get(gemm_out, []) if n.op_type == "Add"]
+        if not add_candidates:
+            continue
+        add_node = add_candidates[0]
+
+        # bias を特定 (Add の2入力のうち Gemm 出力でない方)
+        bias_name = next(
+            (inp for inp in add_node.input if inp != gemm_out), None
+        )
+        if bias_name is None:
+            continue
+        s_bias = shape_map.get(bias_name, [])
+        if s_bias != [16]:
+            continue
+
+        # Add 出力を消費するノードを確認 → Relu のみ消費している場合のみ融合
+        add_out = add_node.output[0]
+        add_consumers = consumed_by.get(add_out, [])
+        relu_candidates = [n for n in add_consumers if n.op_type == "Relu"]
+        if not relu_candidates:
+            continue
+        # Add出力がRelu以外にも消費されている場合は融合不可（例: 学習時のBackward）
+        if len(add_consumers) != 1:
+            continue
+        relu_node = relu_candidates[0]
+
+        # 3ノードを GemmBiasRelu に置き換える
+        relu_out = relu_node.output[0]
+        fused_name = node.name + "_GemmBiasRelu"
+        fused = helper.make_node(
+            "GemmBiasRelu",
+            inputs=[node.input[0], node.input[1], bias_name],
+            outputs=[relu_out],
+            name=fused_name,
+        )
+        # Gemm の位置に融合ノードを挿入するためにマップする
+        gemm_id_to_fused[id(node)] = fused
+        to_remove.update({id(node), id(add_node), id(relu_node)})
+
+    if not gemm_id_to_fused:
+        return model  # 融合対象なし
+
+    # 元の3ノードを削除して、Gemmがあった位置に融合ノードを挿入（トポロジカル順序を保持）
+    merged = []
+    for n in graph.node:
+        if id(n) in gemm_id_to_fused:
+            merged.append(gemm_id_to_fused[id(n)])  # Gemmの位置に融合ノードを挿入
+        elif id(n) not in to_remove:
+            merged.append(n)
+    del graph.node[:]
+    graph.node.extend(merged)
+    return model
+
+
 def transform_to_mncore(input_onnx_path: str, output_onnx_path: str) -> None:
     """
     通常のONNXモデルをMN-Core用に変換
@@ -589,6 +693,7 @@ def transform_to_mncore(input_onnx_path: str, output_onnx_path: str) -> None:
     """
     # ONNXモデルを読み込み
     model = onnx.load(input_onnx_path)
+    model = fuse_gemm_add_relu(model)  # FC-ReLU 融合パス
     graph = model.graph
     
     # 新しいノードリスト

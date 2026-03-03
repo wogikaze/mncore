@@ -603,3 +603,4 @@ from .exp import ExpOperator
 from .div import DivOperator
 from .dl import DLOperator
 from .ul import ULOperator
+from .gemm_bias_relu import GemmBiasReluOperator

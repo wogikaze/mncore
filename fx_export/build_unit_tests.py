@@ -427,7 +427,9 @@ def write_expectations_from_dram(lines: List[str], dram_id: int, base_addr: int,
             expect_str = f"expect=[{values[i]:.6g}, {values[i+1]:.6g}] / Float @[{dram_id},{i}],[{dram_id},{i+1}]"
             i += 2
         else:
-            raise NotImplementedError(f"Expectations for odd number of elements not implemented: {len(values)}")
+            # 奇数要素の場合: 最後の1要素もペアとして書く（2要素目はダミー）
+            expect_str = f"expect=[{values[i]:.6g}, {values[i]:.6g}] / Float @[{dram_id},{i}],[{dram_id},{i}]"
+            i += 1
         # d getd $d<10進アドレス>n<dram_id> 1
         line = f"d getd $d{addr}n{dram_id} 1 # {expect_str} atol=1e-04"
         lines.append(line)
