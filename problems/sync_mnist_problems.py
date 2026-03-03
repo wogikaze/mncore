@@ -4,8 +4,9 @@
 What this script does:
 1. Collect problem slugs/titles from `/mnist/problems/` (or fallback list).
 2. Create `problems/<index>.<name>/` directories.
-3. Fetch each `testcase.vsm` from the challenge site.
-4. If web fetch fails, fallback to `testcases/<slug>.vsm` if available.
+3. Fetch each problem page and write `problem.md`.
+4. Fetch each `testcase.vsm` from the challenge site.
+5. If testcase fetch fails, fallback to `testcases/<slug>.vsm` if available.
 """
 
 from __future__ import annotations
@@ -14,10 +15,19 @@ import argparse
 import re
 import shutil
 import sys
+from datetime import datetime, timezone
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
-from urllib import error, request
+from urllib import error, parse, request
+
+try:
+    from bs4 import BeautifulSoup
+    from bs4.element import NavigableString, Tag
+except ImportError:
+    BeautifulSoup = None  # type: ignore[assignment]
+    NavigableString = None  # type: ignore[assignment]
+    Tag = None  # type: ignore[assignment]
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -160,6 +170,11 @@ def _looks_like_testcase_vsm(body: str) -> bool:
     return any(token in body for token in ("d set", "d get", "imm ", "l2bm", "fv", "hv", "dv"))
 
 
+def _looks_like_html_page(body: str) -> bool:
+    head = body.lstrip()[:500].lower()
+    return head.startswith("<!doctype html") or "<html" in head
+
+
 def _iter_existing_problem_dirs(root: Path) -> Iterable[tuple[int, str, Path]]:
     pat = re.compile(r"^(\d+)\.(.+)$")
     for p in sorted(root.iterdir()):
@@ -186,9 +201,228 @@ def _resolve_target_dir(
     return target
 
 
+def _compact_text(text: str) -> str:
+    text = text.replace("\xa0", " ")
+    text = re.sub(r"[ \t\r\f\v]+", " ", text)
+    text = re.sub(r"[ \t]*\n[ \t]*", "\n", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
+
+
+def _compact_inline_text(text: str) -> str:
+    text = text.replace("\xa0", " ")
+    text = re.sub(r"\s+", " ", text)
+    return text.strip()
+
+
+def _resolve_href(page_url: str, href: str) -> str:
+    # Some pages use bare slugs like "exp_lowprec" instead of absolute paths.
+    if re.fullmatch(r"[a-zA-Z0-9_]+", href):
+        return parse.urljoin(page_url, f"/mnist/problem/{href}/")
+    return parse.urljoin(page_url, href)
+
+
+def _render_inline(node: object, page_url: str) -> str:
+    if NavigableString is not None and isinstance(node, NavigableString):
+        return str(node)
+    if Tag is None or not isinstance(node, Tag):
+        return ""
+
+    if node.name == "code":
+        code = _compact_text(node.get_text(" ", strip=True))
+        return f"`{code}`" if code else ""
+    if node.name == "br":
+        return " "
+    if node.name == "a":
+        text = _compact_text("".join(_render_inline(c, page_url) for c in node.children))
+        href = node.get("href")
+        if href:
+            return f"[{text or href}]({_resolve_href(page_url, href)})"
+        return text
+    if node.name == "img":
+        alt = _compact_text(node.get("alt") or "image")
+        src = node.get("src")
+        if src:
+            return f"![{alt}]({parse.urljoin(page_url, src)})"
+        return f"![{alt}]"
+
+    return "".join(_render_inline(c, page_url) for c in node.children)
+
+
+def _render_inline_text(tag: Tag, page_url: str) -> str:
+    text = "".join(_render_inline(c, page_url) for c in tag.children)
+    text = _compact_inline_text(text)
+    return text
+
+
+def _render_block(tag: Tag, page_url: str) -> list[str]:
+    out: list[str] = []
+    name = tag.name
+
+    if name in {"p", "a"}:
+        if name == "a":
+            text = _compact_inline_text(_render_inline(tag, page_url))
+        else:
+            text = _render_inline_text(tag, page_url)
+        if text:
+            out.append(text)
+        return out
+
+    if name in {"ul", "ol"}:
+        for li in tag.find_all("li", recursive=False):
+            li_text = _render_inline_text(li, page_url)
+            if li_text:
+                out.append(f"* {li_text}")
+        return out
+
+    if name == "pre":
+        body = tag.get_text("\n", strip=False).strip("\n")
+        if body:
+            out.append("```text")
+            out.append(body)
+            out.append("```")
+        return out
+
+    if name == "details":
+        summary = ""
+        summary_tag = tag.find("summary", recursive=False)
+        if summary_tag:
+            summary = _render_inline_text(summary_tag, page_url)
+        if summary:
+            out.append(f"### {summary}")
+        # Some matmul pages embed very large matrices in collapsed details blocks.
+        # Keep markdown compact for LLM consumption.
+        details_text = _compact_inline_text(tag.get_text(" ", strip=True))
+        if len(details_text) > 3000:
+            out.append("_詳細データは省略。必要なら source_url を参照してください。_")
+            return out
+        for child in tag.children:
+            if Tag is None or not isinstance(child, Tag):
+                continue
+            if child.name == "summary":
+                continue
+            out.extend(_render_block(child, page_url))
+        return out
+
+    if name == "div":
+        classes = set(tag.get("class") or [])
+        if "testcases" in classes:
+            links = tag.find_all("a", recursive=False)
+            if links:
+                for a in links:
+                    text = _compact_inline_text(_render_inline(a, page_url))
+                    if text:
+                        out.append(f"* {text}")
+                return out
+
+    text = _render_inline_text(tag, page_url)
+    if text:
+        out.append(text)
+    return out
+
+
+def _squash_blank_lines(lines: list[str]) -> list[str]:
+    out: list[str] = []
+    prev_blank = False
+    for line in lines:
+        blank = line.strip() == ""
+        if blank and prev_blank:
+            continue
+        out.append("" if blank else line.rstrip())
+        prev_blank = blank
+    while out and out[-1] == "":
+        out.pop()
+    return out
+
+
+def _render_problem_markdown_from_html(html: str, page_url: str, slug: str) -> str | None:
+    if BeautifulSoup is None or Tag is None:
+        return None
+
+    soup = BeautifulSoup(html, "html.parser")
+    root = soup.select_one("div.problem.page")
+    if root is None:
+        return None
+
+    for bad in root.select("script,style,.help-button"):
+        bad.decompose()
+
+    h1 = root.find("h1")
+    title = _compact_text(h1.get_text(" ", strip=True)) if h1 else slug
+
+    top_line = ""
+    par_line = ""
+    for p in root.find_all("p", recursive=False):
+        text = _compact_text(p.get_text(" ", strip=True))
+        if text.startswith("Top:"):
+            top_line = text
+        elif text.startswith("Par:"):
+            par_line = text
+
+    sections: list[tuple[str, list[Tag]]] = []
+    current_name = ""
+    current_nodes: list[Tag] = []
+
+    for child in root.children:
+        if not isinstance(child, Tag):
+            continue
+        if child.name == "h2":
+            if current_name:
+                sections.append((current_name, current_nodes))
+            current_name = _compact_text(child.get_text(" ", strip=True))
+            current_nodes = []
+            continue
+        if child.name == "h1":
+            continue
+        if not current_name:
+            continue
+        current_nodes.append(child)
+
+    if current_name:
+        sections.append((current_name, current_nodes))
+
+    if not sections:
+        return None
+
+    fetched_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    lines: list[str] = [
+        "---",
+        f"source_url: {page_url}",
+        f"slug: {slug}",
+        f"fetched_at: {fetched_at}",
+        "---",
+        "",
+        f"# {title}",
+        "",
+    ]
+    if top_line:
+        lines.append(f"- {top_line}")
+    if par_line:
+        lines.append(f"- {par_line}")
+    if top_line or par_line:
+        lines.append("")
+
+    for section_name, nodes in sections:
+        if section_name.lower() == "submission":
+            continue
+        body_lines: list[str] = []
+        for node in nodes:
+            body_lines.extend(_render_block(node, page_url))
+        body_lines = _squash_blank_lines(body_lines)
+        if not body_lines:
+            continue
+        lines.append(f"## {section_name}")
+        lines.append("")
+        lines.extend(body_lines)
+        lines.append("")
+
+    lines = _squash_blank_lines(lines)
+    return "\n".join(lines) + "\n"
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Create problems/* directories and fetch testcase.vsm files."
+        description="Create problems/* directories, fetch problem statements, and sync testcase.vsm."
     )
     parser.add_argument(
         "--problems-url",
@@ -219,10 +453,25 @@ def parse_args() -> argparse.Namespace:
         help="Cookie header value for authenticated fetch (example: 'sessionid=...').",
     )
     parser.add_argument(
+        "--problem-url-format",
+        default="https://mncore-challenge.preferred.jp/mnist/problem/{slug}/",
+        help="Problem page URL format used to fetch problem statements.",
+    )
+    parser.add_argument(
         "--timeout-sec",
         type=int,
         default=20,
         help="Network timeout in seconds.",
+    )
+    parser.add_argument(
+        "--skip-problem-md",
+        action="store_true",
+        help="Skip fetching/writing problems/*/problem.md.",
+    )
+    parser.add_argument(
+        "--overwrite-problem-md",
+        action="store_true",
+        help="Overwrite existing problems/*/problem.md.",
     )
     parser.add_argument(
         "--overwrite-testcase",
@@ -278,6 +527,9 @@ def main() -> int:
 
     created_dirs = 0
     created_main = 0
+    problem_written = 0
+    problem_skipped_existing = 0
+    problem_missing = 0
     fetched = 0
     copied_cache = 0
     skipped_existing = 0
@@ -299,6 +551,44 @@ def main() -> int:
             created_main += 1
             if not args.dry_run:
                 main_vsm.write_text("# write solution here\n", encoding="utf-8")
+
+        if not args.skip_problem_md:
+            problem_md_path = target_dir / "problem.md"
+            if problem_md_path.exists() and not args.overwrite_problem_md:
+                problem_skipped_existing += 1
+                print(f"[skip]  {problem_md_path.relative_to(REPO_ROOT)} (already exists)")
+            else:
+                try:
+                    problem_url = args.problem_url_format.format(slug=e.slug)
+                except KeyError as ex:
+                    print(f"[warn] invalid --problem-url-format (missing key): {ex}")
+                    problem_missing += 1
+                    problem_url = ""
+                if problem_url:
+                    try:
+                        html = _download_text(problem_url, args.cookie, args.timeout_sec)
+                    except error.HTTPError as ex:
+                        print(f"[warn] http error for problem slug={e.slug}: {ex.code}")
+                        html = ""
+                    except Exception as ex:
+                        print(f"[warn] failed to fetch problem page for slug={e.slug}: {ex}")
+                        html = ""
+
+                    if html and not _looks_like_html_page(html):
+                        print(f"[warn] fetched non-html content for problem slug={e.slug}")
+                        html = ""
+
+                    md = _render_problem_markdown_from_html(
+                        html, problem_url, e.slug
+                    ) if html else None
+                    if md:
+                        print(f"[write] {problem_md_path.relative_to(REPO_ROOT)} <= {problem_url}")
+                        problem_written += 1
+                        if not args.dry_run:
+                            problem_md_path.write_text(md, encoding="utf-8")
+                    else:
+                        print(f"[miss]  problem.md not generated for slug={e.slug}")
+                        problem_missing += 1
 
         if testcase_path.exists() and not args.overwrite_testcase:
             skipped_existing += 1
@@ -342,10 +632,13 @@ def main() -> int:
     print(
         "\nSummary: "
         f"dirs_created={created_dirs}, main_created={created_main}, "
+        f"problem_written={problem_written}, "
+        f"problem_skipped_existing={problem_skipped_existing}, "
+        f"problem_missing={problem_missing}, "
         f"fetched={fetched}, copied_from_cache={copied_cache}, "
         f"skipped_existing={skipped_existing}, missing={missing}"
     )
-    if args.strict_missing and missing > 0:
+    if args.strict_missing and (missing > 0 or problem_missing > 0):
         return 2
     return 0
 
