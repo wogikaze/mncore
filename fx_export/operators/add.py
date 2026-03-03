@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 from typing import List, Dict, Any, Optional
+
+from matplotlib import lines
 from . import BaseOperator, register_operator
 
 @register_operator("Add")
@@ -34,8 +36,11 @@ class AddOperator(BaseOperator):
 
             
             # test unit_tests/train_step/Add_*
-            lines.append(f"fvpassa $m16v $s0v")
-            raise NotImplementedError("Please implement the VSM code!!")
+            lines.append("fvpassa $m16v $r0v")
+            lines.append("fvadd $m0v $mauf $n0v")
+            lines.append("fvadd $m4v $r0v $n4v")
+            lines.append("fvadd $m8v $r0v $n8v")
+            lines.append("fvadd $m12v $r0v $n12v")
             
             return lines
         raise NotImplementedError(f"Add: shapes {shape0} + {shape1}")

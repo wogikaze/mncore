@@ -14,8 +14,11 @@ def generate_vsm(operator: BaseOperator) -> List[str]:
     # 問題名：「DL 16」
 
     lines = []
+    lines.append(f"mvp/n64 $d{x}@0 $p0@0")
+    lines.append("mvb/n64 $p0@0 $lc0")
+    lines.append("l2bmb $lc0 $lb0")
+    lines.append("nop")
+    lines.append(f"l1bmm $llb0 $llm{y}v")
 
-    lines.append(f"mvp/n64 $d{x+0}@0 $p0@0")
-    raise NotImplementedError("Please implement the VSM code!!")
 
     return lines

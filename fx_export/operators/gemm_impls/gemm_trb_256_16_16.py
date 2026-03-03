@@ -26,7 +26,29 @@ def generate_vsm(operator: BaseOperator) -> List[str]:
     
     lines = []
 
-    lines.append(f"gbfn    $lm16v4 $nowrite;")
-    raise NotImplementedError("Please implement the VSM code!!")
+    lines.append("gbfn    $lm16v4 $nowrite")
+    lines.append("gmwrite $aluf $ly0")
+    lines.append("gbfn $lm32v4 $nowrite")
+    lines.append("gmwrite $aluf $ly4")
+    lines.append("gbfn $lm0v4 $nowrite")
+    lines.append("gmmul $ly $aluf $ls0v4")
+    lines.append("gbfn $lm18v4 $nowrite")
+    lines.append("gmwrite $aluf $ly0")
+    lines.append("gbfn $lm34v4 $nowrite")
+    lines.append("gmwrite $aluf $ly4")
+    lines.append("gbfn $lm2v4 $nowrite")
+    lines.append("gmfma $ly $aluf $ls0v4 $ln0v4")
+    lines.append("gbfn $lm48v4 $nowrite")
+    lines.append("gmwrite $aluf $ly0")
+    lines.append("gbfn $lm64v4 $nowrite")
+    lines.append("gmwrite $aluf $ly4")
+    lines.append("gbfn $lm0v4 $nowrite")
+    lines.append("gmmul $ly $aluf $ls0v4")
+    lines.append("gbfn $lm50v4 $nowrite")
+    lines.append("gmwrite $aluf $ly0")
+    lines.append("gbfn $lm66v4 $nowrite")
+    lines.append("gmwrite $aluf $ly4")
+    lines.append("gbfn $lm2v4 $nowrite")
+    lines.append("gmfma $ly $aluf $ls0v4 $ln2v4")
 
     return lines

@@ -1,4 +1,6 @@
 from typing import List
+
+from matplotlib import lines
 from .. import BaseOperator
 
 def generate_vsm(operator: BaseOperator) -> List[str]:
@@ -14,7 +16,46 @@ def generate_vsm(operator: BaseOperator) -> List[str]:
     # 問題名：「DL 16_1024」
     
     lines = []
-    lines.append(f"mvp/n2048 $d{x+0}@0 $p0@0")
-    raise NotImplementedError("Please implement the VSM code!!")
+    lines.append(f"mvp/n2048 $d{x}@0 $p0@0")
+    lines.append(f"mvp/n2048 $d{x}@1 $p2048@0")
+    lines.append(f"mvp/n2048 $d{x}@2 $p4096@0")
+    lines.append(f"mvp/n2048 $d{x}@3 $p6144@0")
+    lines.append("mvb/n8192 $p0@0 $lc0")
+    lines.append("l2bmd $lc0 $lb0")
+    lines.append("l2bmd $lc256 $lb32")
+    lines.append("l2bmd $lc512 $lb64")
+    lines.append("l2bmd $lc768 $lb96")
+    lines.append("l2bmd $lc1024 $lb128")
+    lines.append("l2bmd $lc1280 $lb160")
+    lines.append("l2bmd $lc1536 $lb192")
+    lines.append("l2bmd $lc1792 $lb224")
+    lines.append("l2bmd $lc2048 $lb256")
+    lines.append("l2bmd $lc2304 $lb288")
+    lines.append("l2bmd $lc2560 $lb320")
+    lines.append("l2bmd $lc2816 $lb352")
+    lines.append("l2bmd $lc3072 $lb384")
+    lines.append("l2bmd $lc3328 $lb416")
+    lines.append("l2bmd $lc3584 $lb448")
+    lines.append("l2bmd $lc3840 $lb480")
+    lines.append("l2bmd $lc4096 $lb512")
+    lines.append("l2bmd $lc4352 $lb544")
+    lines.append("l2bmd $lc4608 $lb576")
+    lines.append("l2bmd $lc4864 $lb608")
+    lines.append("l2bmd $lc5120 $lb640")
+    lines.append("l2bmd $lc5376 $lb672")
+    lines.append("l2bmd $lc5632 $lb704")
+    lines.append("l2bmd $lc5888 $lb736")
+    lines.append("l2bmd $lc6144 $lb768")
+    lines.append("l2bmd $lc6400 $lb800")
+    lines.append("l2bmd $lc6656 $lb832")
+    lines.append("l2bmd $lc6912 $lb864")
+    lines.append("l2bmd $lc7168 $lb896")
+    lines.append("l2bmd $lc7424 $lb928")
+    lines.append("l2bmd $lc7680 $lb960")
+    lines.append("l2bmd $lc7936 $lb992")
+    lines.append(f"l1bmd $lb0 $lm{y}v")
+    lines.append(f"l1bmd $lb256 $lm{y+8}v")
+    lines.append(f"l1bmd $lb512 $lm{y+16}v")
+    lines.append(f"l1bmd $lb768 $lm{y+24}v")
 
     return lines

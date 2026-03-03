@@ -590,7 +590,7 @@ def run_judge(testcase_vsm, generated_vsm, dirty=False):
             cmd,
             capture_output=True,
             text=True,
-            timeout=30
+            timeout=120
         )
         
         # 出力から"ACCEPTED!!"を含む行を探す

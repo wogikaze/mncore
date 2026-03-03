@@ -30,8 +30,17 @@ class ReduceSumOperator(BaseOperator):
                 # 問題名：「SumCol」
                 
                 x = self.addr_out()        # "$d0" の "0" の部分
-                lines.append(f"fvpassa $m0v $nowrite")
-                raise NotImplementedError("Please implement the VSM code!!")
+
+                lines.append("fvpassa $lm[0,2,0,2] $nowrite")
+                lines.append("fvadd $lm[4,6,4,6] $mauf $nowrite")
+                lines.append("fvadd $lm[8,10,8,10] $mauf $nowrite")
+                lines.append("fvadd $lm[12,14,12,14] $mauf $lr0v")
+                lines.append("")
+                lines.append("nop")
+                lines.append("l1bmm@0 $lr0v $lb0")
+                lines.append("nop/3")
+                lines.append("l2bmrffadd $lb0 $lc0")
+                lines.append(f"mvrffadd/n64 $lc0 $d{x}")
 
                 return lines
             

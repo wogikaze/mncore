@@ -25,9 +25,9 @@ class GreaterOperator(BaseOperator):
 
         lines = []
         lines.append('imm f"1.0" $t')
-        lines.append('nop')
         for i in range(self.memory_len_in_div_ceil(8, 0)):  # PE あたりの長さを、8単語で割って切り上げ
-            raise NotImplementedError("Please implement the VSM code!!")
+            val = "$aluf" if i == 0 else "$t"
+            lines.append(f"frelu $l{in_prefix}{in_offset + i * 8}v {val} $l{out_prefix}{out_offset + i * 8}v")
 
         return lines
     

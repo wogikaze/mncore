@@ -5,8 +5,6 @@ fvadd $lm[12,14,12,14] $mauf $lr0v
 
 nop
 l1bmm@0 $lr0v $lb0
-nop
-nop
-nop
+nop/2
 l2bmrffadd $lb0 $lc0
 mvrffadd/n64 $lc0 $d0
