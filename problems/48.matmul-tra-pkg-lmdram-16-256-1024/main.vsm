@@ -1,116 +1,109 @@
-# Matmul TRA 16_256_1024
-# Compute local (16x8) partial sums in llr0..15,
-# concat across MAB/L1B to L2BM, then reduce across L2B and store to DRAM.
+# Local kernel: same 16x32x8 matmul as problem 47 (writes partial C to ln0..)
+gmwrite $lm128v $lx0
+gmwrite $lm136v $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmwrite $aluf $ly0
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmwrite $aluf $ly4
+gmwrite $lm0v4 $lx0
+gmwrite $lm16v4 $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmmul $ly $aluf $ln0v
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmmul $ly $aluf $ln8v
+gmwrite $lm2v4 $lx0
+gmwrite $lm18v4 $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmmul $ly $aluf $ln16v
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmmul $ly $aluf $ln24v
+gmwrite $lm144v $lx0
+gmwrite $lm152v $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmwrite $aluf $ly0
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmwrite $aluf $ly4
+gmwrite $lm32v4 $lx0
+gmwrite $lm48v4 $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln0v $ln0v
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln8v $ln8v
+gmwrite $lm34v4 $lx0
+gmwrite $lm50v4 $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln16v $ln16v
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln24v $ln24v
+gmwrite $lm160v $lx0
+gmwrite $lm168v $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmwrite $aluf $ly0
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmwrite $aluf $ly4
+gmwrite $lm64v4 $lx0
+gmwrite $lm80v4 $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln0v $ln0v
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln8v $ln8v
+gmwrite $lm66v4 $lx0
+gmwrite $lm82v4 $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln16v $ln16v
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln24v $ln24v
+gmwrite $lm176v $lx0
+gmwrite $lm184v $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmwrite $aluf $ly0
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmwrite $aluf $ly4
+gmwrite $lm96v4 $lx0
+gmwrite $lm112v4 $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln0v $ln0v
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln8v $ln8v
+gmwrite $lm98v4 $lx0
+gmwrite $lm114v4 $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln16v $ln16v
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln24v $ln24v
 
-zero $llr0v
-zero $llr4v
-zero $llr8v
-zero $llr12v
-
-# Block 0: k=0..3
-fmwrite $lm0v $lx0; nop; fmread $lx0 $nowrite; fbfn $mreadf $nowrite; fmwrite $aluf $lx0
-fmwrite $lm0v.1 $lx4; nop; fmread $lx4 $nowrite; fbfn $mreadf $nowrite; fmwrite $aluf $lx4
-fmwrite $lm128v $ly0; nop; fmread $ly0 $ls0v
-fmwrite $lm128v.1 $ly4; nop; fmread $ly4 $ls4v
-fmfma $lx $ls0 $llr0 $llr0; fmfma $lx $ls1 $llr1 $llr1; fmfma $lx $ls2 $llr2 $llr2; fmfma $lx $ls3 $llr3 $llr3
-fmfma $lx $ls4 $llr8 $llr8; fmfma $lx $ls5 $llr9 $llr9; fmfma $lx $ls6 $llr10 $llr10; fmfma $lx $ls7 $llr11 $llr11
-fmwrite $lm2v $lx0; nop; fmread $lx0 $nowrite; fbfn $mreadf $nowrite; fmwrite $aluf $lx0
-fmwrite $lm2v.1 $lx4; nop; fmread $lx4 $nowrite; fbfn $mreadf $nowrite; fmwrite $aluf $lx4
-fmfma $lx $ls0 $llr4 $llr4; fmfma $lx $ls1 $llr5 $llr5; fmfma $lx $ls2 $llr6 $llr6; fmfma $lx $ls3 $llr7 $llr7
-fmfma $lx $ls4 $llr12 $llr12; fmfma $lx $ls5 $llr13 $llr13; fmfma $lx $ls6 $llr14 $llr14; fmfma $lx $ls7 $llr15 $llr15
-
-# Block 1: k=4..7
-fmwrite $lm8v $lx0; nop; fmread $lx0 $nowrite; fbfn $mreadf $nowrite; fmwrite $aluf $lx0
-fmwrite $lm8v.1 $lx4; nop; fmread $lx4 $nowrite; fbfn $mreadf $nowrite; fmwrite $aluf $lx4
-fmwrite $lm132v $ly0; nop; fmread $ly0 $ls0v
-fmwrite $lm132v.1 $ly4; nop; fmread $ly4 $ls4v
-fmfma $lx $ls0 $llr0 $llr0; fmfma $lx $ls1 $llr1 $llr1; fmfma $lx $ls2 $llr2 $llr2; fmfma $lx $ls3 $llr3 $llr3
-fmfma $lx $ls4 $llr8 $llr8; fmfma $lx $ls5 $llr9 $llr9; fmfma $lx $ls6 $llr10 $llr10; fmfma $lx $ls7 $llr11 $llr11
-fmwrite $lm10v $lx0; nop; fmread $lx0 $nowrite; fbfn $mreadf $nowrite; fmwrite $aluf $lx0
-fmwrite $lm10v.1 $lx4; nop; fmread $lx4 $nowrite; fbfn $mreadf $nowrite; fmwrite $aluf $lx4
-fmfma $lx $ls0 $llr4 $llr4; fmfma $lx $ls1 $llr5 $llr5; fmfma $lx $ls2 $llr6 $llr6; fmfma $lx $ls3 $llr7 $llr7
-fmfma $lx $ls4 $llr12 $llr12; fmfma $lx $ls5 $llr13 $llr13; fmfma $lx $ls6 $llr14 $llr14; fmfma $lx $ls7 $llr15 $llr15
-
-# Block 2: k=8..11
-fmwrite $lm16v $lx0; nop; fmread $lx0 $nowrite; fbfn $mreadf $nowrite; fmwrite $aluf $lx0
-fmwrite $lm16v.1 $lx4; nop; fmread $lx4 $nowrite; fbfn $mreadf $nowrite; fmwrite $aluf $lx4
-fmwrite $lm136v $ly0; nop; fmread $ly0 $ls0v
-fmwrite $lm136v.1 $ly4; nop; fmread $ly4 $ls4v
-fmfma $lx $ls0 $llr0 $llr0; fmfma $lx $ls1 $llr1 $llr1; fmfma $lx $ls2 $llr2 $llr2; fmfma $lx $ls3 $llr3 $llr3
-fmfma $lx $ls4 $llr8 $llr8; fmfma $lx $ls5 $llr9 $llr9; fmfma $lx $ls6 $llr10 $llr10; fmfma $lx $ls7 $llr11 $llr11
-fmwrite $lm18v $lx0; nop; fmread $lx0 $nowrite; fbfn $mreadf $nowrite; fmwrite $aluf $lx0
-fmwrite $lm18v.1 $lx4; nop; fmread $lx4 $nowrite; fbfn $mreadf $nowrite; fmwrite $aluf $lx4
-fmfma $lx $ls0 $llr4 $llr4; fmfma $lx $ls1 $llr5 $llr5; fmfma $lx $ls2 $llr6 $llr6; fmfma $lx $ls3 $llr7 $llr7
-fmfma $lx $ls4 $llr12 $llr12; fmfma $lx $ls5 $llr13 $llr13; fmfma $lx $ls6 $llr14 $llr14; fmfma $lx $ls7 $llr15 $llr15
-
-# Block 3: k=12..15
-fmwrite $lm24v $lx0; nop; fmread $lx0 $nowrite; fbfn $mreadf $nowrite; fmwrite $aluf $lx0
-fmwrite $lm24v.1 $lx4; nop; fmread $lx4 $nowrite; fbfn $mreadf $nowrite; fmwrite $aluf $lx4
-fmwrite $lm140v $ly0; nop; fmread $ly0 $ls0v
-fmwrite $lm140v.1 $ly4; nop; fmread $ly4 $ls4v
-fmfma $lx $ls0 $llr0 $llr0; fmfma $lx $ls1 $llr1 $llr1; fmfma $lx $ls2 $llr2 $llr2; fmfma $lx $ls3 $llr3 $llr3
-fmfma $lx $ls4 $llr8 $llr8; fmfma $lx $ls5 $llr9 $llr9; fmfma $lx $ls6 $llr10 $llr10; fmfma $lx $ls7 $llr11 $llr11
-fmwrite $lm26v $lx0; nop; fmread $lx0 $nowrite; fbfn $mreadf $nowrite; fmwrite $aluf $lx0
-fmwrite $lm26v.1 $lx4; nop; fmread $lx4 $nowrite; fbfn $mreadf $nowrite; fmwrite $aluf $lx4
-fmfma $lx $ls0 $llr4 $llr4; fmfma $lx $ls1 $llr5 $llr5; fmfma $lx $ls2 $llr6 $llr6; fmfma $lx $ls3 $llr7 $llr7
-fmfma $lx $ls4 $llr12 $llr12; fmfma $lx $ls5 $llr13 $llr13; fmfma $lx $ls6 $llr14 $llr14; fmfma $lx $ls7 $llr15 $llr15
-
-# Block 4: k=16..19
-fmwrite $lm32v $lx0; nop; fmread $lx0 $nowrite; fbfn $mreadf $nowrite; fmwrite $aluf $lx0
-fmwrite $lm32v.1 $lx4; nop; fmread $lx4 $nowrite; fbfn $mreadf $nowrite; fmwrite $aluf $lx4
-fmwrite $lm144v $ly0; nop; fmread $ly0 $ls0v
-fmwrite $lm144v.1 $ly4; nop; fmread $ly4 $ls4v
-fmfma $lx $ls0 $llr0 $llr0; fmfma $lx $ls1 $llr1 $llr1; fmfma $lx $ls2 $llr2 $llr2; fmfma $lx $ls3 $llr3 $llr3
-fmfma $lx $ls4 $llr8 $llr8; fmfma $lx $ls5 $llr9 $llr9; fmfma $lx $ls6 $llr10 $llr10; fmfma $lx $ls7 $llr11 $llr11
-fmwrite $lm34v $lx0; nop; fmread $lx0 $nowrite; fbfn $mreadf $nowrite; fmwrite $aluf $lx0
-fmwrite $lm34v.1 $lx4; nop; fmread $lx4 $nowrite; fbfn $mreadf $nowrite; fmwrite $aluf $lx4
-fmfma $lx $ls0 $llr4 $llr4; fmfma $lx $ls1 $llr5 $llr5; fmfma $lx $ls2 $llr6 $llr6; fmfma $lx $ls3 $llr7 $llr7
-fmfma $lx $ls4 $llr12 $llr12; fmfma $lx $ls5 $llr13 $llr13; fmfma $lx $ls6 $llr14 $llr14; fmfma $lx $ls7 $llr15 $llr15
-
-# Block 5: k=20..23
-fmwrite $lm40v $lx0; nop; fmread $lx0 $nowrite; fbfn $mreadf $nowrite; fmwrite $aluf $lx0
-fmwrite $lm40v.1 $lx4; nop; fmread $lx4 $nowrite; fbfn $mreadf $nowrite; fmwrite $aluf $lx4
-fmwrite $lm148v $ly0; nop; fmread $ly0 $ls0v
-fmwrite $lm148v.1 $ly4; nop; fmread $ly4 $ls4v
-fmfma $lx $ls0 $llr0 $llr0; fmfma $lx $ls1 $llr1 $llr1; fmfma $lx $ls2 $llr2 $llr2; fmfma $lx $ls3 $llr3 $llr3
-fmfma $lx $ls4 $llr8 $llr8; fmfma $lx $ls5 $llr9 $llr9; fmfma $lx $ls6 $llr10 $llr10; fmfma $lx $ls7 $llr11 $llr11
-fmwrite $lm42v $lx0; nop; fmread $lx0 $nowrite; fbfn $mreadf $nowrite; fmwrite $aluf $lx0
-fmwrite $lm42v.1 $lx4; nop; fmread $lx4 $nowrite; fbfn $mreadf $nowrite; fmwrite $aluf $lx4
-fmfma $lx $ls0 $llr4 $llr4; fmfma $lx $ls1 $llr5 $llr5; fmfma $lx $ls2 $llr6 $llr6; fmfma $lx $ls3 $llr7 $llr7
-fmfma $lx $ls4 $llr12 $llr12; fmfma $lx $ls5 $llr13 $llr13; fmfma $lx $ls6 $llr14 $llr14; fmfma $lx $ls7 $llr15 $llr15
-
-# Block 6: k=24..27
-fmwrite $lm48v $lx0; nop; fmread $lx0 $nowrite; fbfn $mreadf $nowrite; fmwrite $aluf $lx0
-fmwrite $lm48v.1 $lx4; nop; fmread $lx4 $nowrite; fbfn $mreadf $nowrite; fmwrite $aluf $lx4
-fmwrite $lm152v $ly0; nop; fmread $ly0 $ls0v
-fmwrite $lm152v.1 $ly4; nop; fmread $ly4 $ls4v
-fmfma $lx $ls0 $llr0 $llr0; fmfma $lx $ls1 $llr1 $llr1; fmfma $lx $ls2 $llr2 $llr2; fmfma $lx $ls3 $llr3 $llr3
-fmfma $lx $ls4 $llr8 $llr8; fmfma $lx $ls5 $llr9 $llr9; fmfma $lx $ls6 $llr10 $llr10; fmfma $lx $ls7 $llr11 $llr11
-fmwrite $lm50v $lx0; nop; fmread $lx0 $nowrite; fbfn $mreadf $nowrite; fmwrite $aluf $lx0
-fmwrite $lm50v.1 $lx4; nop; fmread $lx4 $nowrite; fbfn $mreadf $nowrite; fmwrite $aluf $lx4
-fmfma $lx $ls0 $llr4 $llr4; fmfma $lx $ls1 $llr5 $llr5; fmfma $lx $ls2 $llr6 $llr6; fmfma $lx $ls3 $llr7 $llr7
-fmfma $lx $ls4 $llr12 $llr12; fmfma $lx $ls5 $llr13 $llr13; fmfma $lx $ls6 $llr14 $llr14; fmfma $lx $ls7 $llr15 $llr15
-
-# Block 7: k=28..31
-fmwrite $lm56v $lx0; nop; fmread $lx0 $nowrite; fbfn $mreadf $nowrite; fmwrite $aluf $lx0
-fmwrite $lm56v.1 $lx4; nop; fmread $lx4 $nowrite; fbfn $mreadf $nowrite; fmwrite $aluf $lx4
-fmwrite $lm156v $ly0; nop; fmread $ly0 $ls0v
-fmwrite $lm156v.1 $ly4; nop; fmread $ly4 $ls4v
-fmfma $lx $ls0 $llr0 $llr0; fmfma $lx $ls1 $llr1 $llr1; fmfma $lx $ls2 $llr2 $llr2; fmfma $lx $ls3 $llr3 $llr3
-fmfma $lx $ls4 $llr8 $llr8; fmfma $lx $ls5 $llr9 $llr9; fmfma $lx $ls6 $llr10 $llr10; fmfma $lx $ls7 $llr11 $llr11
-fmwrite $lm58v $lx0; nop; fmread $lx0 $nowrite; fbfn $mreadf $nowrite; fmwrite $aluf $lx0
-fmwrite $lm58v.1 $lx4; nop; fmread $lx4 $nowrite; fbfn $mreadf $nowrite; fmwrite $aluf $lx4
-fmfma $lx $ls0 $llr4 $llr4; fmfma $lx $ls1 $llr5 $llr5; fmfma $lx $ls2 $llr6 $llr6; fmfma $lx $ls3 $llr7 $llr7
-fmfma $lx $ls4 $llr12 $llr12; fmfma $lx $ls5 $llr13 $llr13; fmfma $lx $ls6 $llr14 $llr14; fmfma $lx $ls7 $llr15 $llr15
-
-# PE -> L1BM concat (4 blocks x 4 rows)
+# PE -> L1BM concat (4 rows per instruction)
 nop/8
-l1bmd $llr0 $lb0
-l1bmd $llr4 $lb256
-l1bmd $llr8 $lb512
-l1bmd $llr12 $lb768
+l1bmd $ln0v $lb0
+l1bmd $ln8v $lb256
+l1bmd $ln16v $lb512
+l1bmd $ln24v $lb768
 
-# L1BM -> L2BM concat (32 chunks = 16 rows x 2 chunks per row)
+# L1BM -> L2BM concat (16 rows x 2 chunks per row)
 nop/4
 l2bmd $lb0 $lc0
 l2bmd $lb32 $lc256
@@ -145,7 +138,10 @@ l2bmd $lb928 $lc7424
 l2bmd $lb960 $lc7680
 l2bmd $lb992 $lc7936
 
-# L2BM -> PDM reduce across 8 L2B, then PDM -> DRAM
+# L2B reduce -> PDM, then write DRAM
 nop/4
 mvrffadd/n8192 $lc0 $p0@0
 mvp/n2048 $p0@0 $d0@0
+mvp/n2048 $p2048@0 $d0@1
+mvp/n2048 $p4096@0 $d0@2
+mvp/n2048 $p6144@0 $d0@3

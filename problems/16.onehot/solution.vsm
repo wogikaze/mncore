@@ -15,7 +15,38 @@ nop
 nop
 iadd $r6 $s12 $r10
 imm f"1.0" $r8
-nop
+zero $ln0v
+zero $ln8v
+zero $ln16v
+zero $ln24v
+zero $ln32v
+zero $ln40v
+zero $ln48v
+zero $ln56v
+zero $ln64v
+zero $ln72v
+zero $ln80v
+zero $ln88v
+zero $ln96v
+zero $ln104v
+zero $ln112v
+zero $ln120v
+zero $ln128v
+zero $ln136v
+zero $ln144v
+zero $ln152v
+zero $ln160v
+zero $ln168v
+zero $ln176v
+zero $ln184v
+zero $ln192v
+zero $ln200v
+zero $ln208v
+zero $ln216v
+zero $ln224v
+zero $ln232v
+zero $ln240v
+zero $ln248v
 nop
 ixor $m0 $r0 $omr1
 maskn 1
