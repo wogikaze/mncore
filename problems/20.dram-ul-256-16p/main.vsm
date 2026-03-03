@@ -1,1 +1,27 @@
-# write solution here
+l1bmm@0 $llm0v $llb0
+l1bmm@0 $llm16v $llb32
+l1bmm@0 $llm32v $llb64
+l1bmm@0 $llm48v $llb96
+l1bmm@0 $llm64v $llb128
+l1bmm@0 $llm80v $llb160
+l1bmm@0 $llm96v $llb192
+l1bmm@0 $llm112v $llb224
+l1bmm@0 $llm128v $llb256
+l1bmm@0 $llm144v $llb288
+l1bmm@0 $llm160v $llb320
+l1bmm@0 $llm176v $llb352
+l1bmm@0 $llm192v $llb384
+l1bmm@0 $llm208v $llb416
+l1bmm@0 $llm224v $llb448
+l1bmm@0 $llm240v $llb480
+nop
+l2bm@0 $lb0 $lc0
+l2bm@0 $lb64 $lc64
+l2bm@0 $lb128 $lc128
+l2bm@0 $lb192 $lc192
+l2bm@0 $lb256 $lc256
+l2bm@0 $lb320 $lc320
+l2bm@0 $lb384 $lc384
+l2bm@0 $lb448 $lc448
+nop
+mvp/n512 $lc0@.0 $d0

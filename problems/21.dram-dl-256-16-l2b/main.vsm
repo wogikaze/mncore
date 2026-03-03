@@ -1,1 +1,14 @@
-# write solution here
+mvp/n256 $d0 $lc0@.0
+mvp/n256 $d256 $lc0@.1
+l2bmb $lc0 $lb0
+l2bmb $lc64 $lb64
+l2bmb $lc128 $lb128
+l2bmb $lc192 $lb192
+l1bmm $llb0 $llm0v
+l1bmm $llb32 $llm16v
+l1bmm $llb64 $llm32v
+l1bmm $llb96 $llm48v
+l1bmm $llb128 $llm64v
+l1bmm $llb160 $llm80v
+l1bmm $llb192 $llm96v
+l1bmm $llb224 $llm112v

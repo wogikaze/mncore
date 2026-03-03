@@ -1,1 +1,14 @@
-# write solution here
+mvp/n64 $d0@0 $p0@0
+mvp/n64 $d0@1 $p64@0
+mvp/n64 $d0@2 $p128@0
+mvp/n64 $d0@3 $p192@0
+mvb/n256 $p0@0 $lc0
+l2bmb $lc0 $lb0
+l2bmb $lc64 $lb32
+l2bmb $lc128 $lb64
+l2bmb $lc192 $lb96
+nop
+l1bmm $llb0 $llm0v
+l1bmm $llb32 $llm16v
+l1bmm $llb64 $llm32v
+l1bmm $llb96 $llm48v

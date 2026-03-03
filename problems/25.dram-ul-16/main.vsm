@@ -1,1 +1,7 @@
-# write solution here
+l1bmm@0 $llm0v $llb0
+nop
+nop
+nop
+l2bm@0 $lb0 $lc0
+nop
+mvp/n64 $lc0@0.0 $d0@0

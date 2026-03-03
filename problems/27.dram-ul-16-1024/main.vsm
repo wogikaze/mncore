@@ -1,1 +1,43 @@
-# write solution here
+l1bmd $lm0v $lb0
+l1bmd $lm8v $lb256
+l1bmd $lm16v $lb512
+l1bmd $lm24v $lb768
+nop
+nop
+l2bmd $lb0 $lc0
+l2bmd $lb32 $lc256
+l2bmd $lb64 $lc512
+l2bmd $lb96 $lc768
+l2bmd $lb128 $lc1024
+l2bmd $lb160 $lc1280
+l2bmd $lb192 $lc1536
+l2bmd $lb224 $lc1792
+l2bmd $lb256 $lc2048
+l2bmd $lb288 $lc2304
+l2bmd $lb320 $lc2560
+l2bmd $lb352 $lc2816
+l2bmd $lb384 $lc3072
+l2bmd $lb416 $lc3328
+l2bmd $lb448 $lc3584
+l2bmd $lb480 $lc3840
+l2bmd $lb512 $lc4096
+l2bmd $lb544 $lc4352
+l2bmd $lb576 $lc4608
+l2bmd $lb608 $lc4864
+l2bmd $lb640 $lc5120
+l2bmd $lb672 $lc5376
+l2bmd $lb704 $lc5632
+l2bmd $lb736 $lc5888
+l2bmd $lb768 $lc6144
+l2bmd $lb800 $lc6400
+l2bmd $lb832 $lc6656
+l2bmd $lb864 $lc6912
+l2bmd $lb896 $lc7168
+l2bmd $lb928 $lc7424
+l2bmd $lb960 $lc7680
+l2bmd $lb992 $lc7936
+nop
+mvp/n2048 $lc0@0.0 $d0@0
+mvp/n2048 $lc2048@0.0 $d0@1
+mvp/n2048 $lc4096@0.0 $d0@2
+mvp/n2048 $lc6144@0.0 $d0@3

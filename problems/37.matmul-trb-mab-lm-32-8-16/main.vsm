@@ -1,1 +1,96 @@
-# write solution here
+gbfn $lm64v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm72v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm0v $lr0v
+gmmul $ly $aluf $ln0v4
+gbfn $lm80v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm88v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm0v $lr0v
+gmmul $ly $aluf $ln2v4
+gbfn $lm64v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm72v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm8v $lr0v
+gmmul $ly $aluf $ln16v4
+gbfn $lm80v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm88v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm8v $lr0v
+gmmul $ly $aluf $ln18v4
+gbfn $lm64v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm72v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm16v $lr0v
+gmmul $ly $aluf $ln32v4
+gbfn $lm80v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm88v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm16v $lr0v
+gmmul $ly $aluf $ln34v4
+gbfn $lm64v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm72v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm24v $lr0v
+gmmul $ly $aluf $ln48v4
+gbfn $lm80v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm88v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm24v $lr0v
+gmmul $ly $aluf $ln50v4
+gbfn $lm64v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm72v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm32v $lr0v
+gmmul $ly $aluf $ln64v4
+gbfn $lm80v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm88v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm32v $lr0v
+gmmul $ly $aluf $ln66v4
+gbfn $lm64v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm72v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm40v $lr0v
+gmmul $ly $aluf $ln80v4
+gbfn $lm80v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm88v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm40v $lr0v
+gmmul $ly $aluf $ln82v4
+gbfn $lm64v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm72v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm48v $lr0v
+gmmul $ly $aluf $ln96v4
+gbfn $lm80v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm88v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm48v $lr0v
+gmmul $ly $aluf $ln98v4
+gbfn $lm64v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm72v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm56v $lr0v
+gmmul $ly $aluf $ln112v4
+gbfn $lm80v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm88v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm56v $lr0v
+gmmul $ly $aluf $ln114v4

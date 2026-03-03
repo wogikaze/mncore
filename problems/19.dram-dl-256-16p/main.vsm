@@ -1,1 +1,26 @@
-# write solution here
+mvb2/n512 $d0 $lc0
+l2bmb $lc0 $lb0
+l2bmb $lc64 $lb64
+l2bmb $lc128 $lb128
+l2bmb $lc192 $lb192
+l2bmb $lc256 $lb256
+l2bmb $lc320 $lb320
+l2bmb $lc384 $lb384
+l2bmb $lc448 $lb448
+nop
+l1bmm $llb0 $llm0v
+l1bmm $llb32 $llm16v
+l1bmm $llb64 $llm32v
+l1bmm $llb96 $llm48v
+l1bmm $llb128 $llm64v
+l1bmm $llb160 $llm80v
+l1bmm $llb192 $llm96v
+l1bmm $llb224 $llm112v
+l1bmm $llb256 $llm128v
+l1bmm $llb288 $llm144v
+l1bmm $llb320 $llm160v
+l1bmm $llb352 $llm176v
+l1bmm $llb384 $llm192v
+l1bmm $llb416 $llm208v
+l1bmm $llb448 $llm224v
+l1bmm $llb480 $llm240v

@@ -1,0 +1,15 @@
+lpassa $subpeid $r0/1000
+nop
+iadd $r0 $r0 $r0/1000
+inc $aluf $r1/1000
+imm i"8" $nowrite
+iadd $r0 $aluf $r2/1000
+inc $aluf $r3/1000
+imm f"1.0" $s15/1000
+zero $ln0v
+zero $ln8v
+nop
+ixor $m0v $lr0 $omr1
+fpassa $s15 $n0v2/$imr1 $n1v2/$imr1
+ixor $m0v $lr2 $omr1
+fpassa $s15 $n8v2/$imr1 $n9v2/$imr1

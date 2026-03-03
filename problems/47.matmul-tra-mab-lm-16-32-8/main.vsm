@@ -1,1 +1,96 @@
-# write solution here
+gmwrite $lm128v $lx0
+gmwrite $lm136v $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmwrite $aluf $ly0
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmwrite $aluf $ly4
+gmwrite $lm0v4 $lx0
+gmwrite $lm16v4 $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmmul $ly $aluf $ln0v
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmmul $ly $aluf $ln8v
+gmwrite $lm2v4 $lx0
+gmwrite $lm18v4 $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmmul $ly $aluf $ln16v
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmmul $ly $aluf $ln24v
+gmwrite $lm144v $lx0
+gmwrite $lm152v $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmwrite $aluf $ly0
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmwrite $aluf $ly4
+gmwrite $lm32v4 $lx0
+gmwrite $lm48v4 $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln0v $ln0v
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln8v $ln8v
+gmwrite $lm34v4 $lx0
+gmwrite $lm50v4 $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln16v $ln16v
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln24v $ln24v
+gmwrite $lm160v $lx0
+gmwrite $lm168v $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmwrite $aluf $ly0
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmwrite $aluf $ly4
+gmwrite $lm64v4 $lx0
+gmwrite $lm80v4 $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln0v $ln0v
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln8v $ln8v
+gmwrite $lm66v4 $lx0
+gmwrite $lm82v4 $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln16v $ln16v
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln24v $ln24v
+gmwrite $lm176v $lx0
+gmwrite $lm184v $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmwrite $aluf $ly0
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmwrite $aluf $ly4
+gmwrite $lm96v4 $lx0
+gmwrite $lm112v4 $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln0v $ln0v
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln8v $ln8v
+gmwrite $lm98v4 $lx0
+gmwrite $lm114v4 $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln16v $ln16v
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln24v $ln24v

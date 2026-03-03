@@ -1,0 +1,3 @@
+fmwrite $lm0v4 $lx0
+fmread $lx0 $nowrite
+fmfma $mreadf $lm128v $llr0 $llr0

@@ -1,1 +1,38 @@
-# write solution here
+dmwrite $lm0v $lx0
+dmread $lx0 $lr0v
+nop
+l1bmm@0 $lr0v $lb0
+dmwrite $lm8v $lx0
+dmread $lx0 $lr0v
+nop
+l1bmm@0 $lr0v $lb4
+dmwrite $lm16v $lx0
+dmread $lx0 $lr0v
+nop
+l1bmm@0 $lr0v $lb8
+dmwrite $lm24v $lx0
+dmread $lx0 $lr0v
+nop
+l1bmm@0 $lr0v $lb12
+dmwrite $lm32v $lx0
+dmread $lx0 $lr0v
+nop
+l1bmm@0 $lr0v $lb16
+dmwrite $lm40v $lx0
+dmread $lx0 $lr0v
+nop
+l1bmm@0 $lr0v $lb20
+dmwrite $lm48v $lx0
+dmread $lx0 $lr0v
+nop
+l1bmm@0 $lr0v $lb24
+dmwrite $lm56v $lx0
+dmread $lx0 $lr0v
+nop
+l1bmm@0 $lr0v $lb28
+nop
+nop
+nop
+l2bm@0 $lb0 $lc0
+nop
+mvp/n64 $lc0@.0 $d0

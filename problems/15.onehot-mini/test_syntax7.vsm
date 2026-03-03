@@ -1,0 +1,22 @@
+lpassa $subpeid $r0/1000
+iadd $mauf $mauf $r0/1000
+imm i"1" $nowrite
+iadd $r0 $aluf $r1/1000
+imm i"8" $nowrite
+iadd $r0 $aluf $r2/1000
+imm i"9" $nowrite
+iadd $r0 $aluf $r3/1000
+
+imm f"1.0" $s15/1000
+zero $ln0v
+zero $ln8v
+nop
+
+ixor $m0 $r0v $omr1
+fpassa $s15 $n0v/$imr1
+ixor $m1 $r0v $omr1
+fpassa $s15 $n4v/$imr1
+ixor $m2 $r0v $omr1
+fpassa $s15 $n8v/$imr1
+ixor $m3 $r0v $omr1
+fpassa $s15 $n12v/$imr1

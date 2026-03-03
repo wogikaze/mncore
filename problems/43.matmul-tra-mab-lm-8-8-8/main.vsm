@@ -1,1 +1,16 @@
-# write solution here
+gmwrite $lm16v $lx0
+gmwrite $lm24v $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmwrite $aluf $ly0
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmwrite $aluf $ly4
+gmwrite $lm0v $lx0
+gmwrite $lm8v $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmmul $ly $aluf $ln0v
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmmul $ly $aluf $ln8v

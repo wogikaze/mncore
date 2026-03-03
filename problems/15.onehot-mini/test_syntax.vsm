@@ -1,0 +1,2 @@
+imm f"1.0" $s4
+ixor $m0 $r0 $omr1; fvpassa $s4 $n0/$imr1

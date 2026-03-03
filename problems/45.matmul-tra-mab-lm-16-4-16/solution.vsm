@@ -1,0 +1,44 @@
+zero $nowrite
+gmwrite $aluf $lx4
+
+gmwrite $lm0v4 $lx0
+gmread $lx0 $lr0v4
+gmread $lx4 $lr16v4
+
+gmwrite $lm2v4 $lx0
+gmread $lx0 $lr2v4
+gmread $lx4 $lr18v4
+
+gmwrite $lm16v4 $lx0
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmwrite $aluf $ly0
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmwrite $aluf $ly4
+
+gbfn $lr0v4 $nowrite
+gmmul $ly $aluf $ln0v4
+gbfn $lr16v4 $nowrite
+gmmul $ly $aluf $ln16v4
+gbfn $lr2v4 $nowrite
+gmmul $ly $aluf $ln32v4
+gbfn $lr18v4 $nowrite
+gmmul $ly $aluf $ln48v4
+
+gmwrite $lm18v4 $lx0
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmwrite $aluf $ly0
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmwrite $aluf $ly4
+
+gbfn $lr0v4 $nowrite
+gmmul $ly $aluf $ln2v4
+gbfn $lr16v4 $nowrite
+gmmul $ly $aluf $ln18v4
+gbfn $lr2v4 $nowrite
+gmmul $ly $aluf $ln34v4
+gbfn $lr18v4 $nowrite
+gmmul $ly $aluf $ln50v4

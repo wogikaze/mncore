@@ -1,1 +1,1043 @@
-# write solution here
+lpassa $subpeid $r2
+nop
+nop
+iadd $subpeid $r2 $r3
+nop
+nop
+iadd $subpeid $r3 $r0
+imm i"1" $s12
+imm i"8" $s14
+nop
+nop
+iadd $r0 $s12 $r4
+iadd $r0 $s14 $r6
+nop
+nop
+iadd $r6 $s12 $r10
+imm f"1.0" $r8
+nop
+nop
+ixor $m0 $r0 $omr1
+maskn 1
+fpassa $r8 $n0
+mask 0
+ixor $m0 $r4 $omr1
+maskn 1
+fpassa $r8 $n1
+mask 0
+ixor $m0 $r6 $omr1
+maskn 1
+fpassa $r8 $n2
+mask 0
+ixor $m0 $r10 $omr1
+maskn 1
+fpassa $r8 $n3
+mask 0
+ixor $m1 $r0 $omr1
+maskn 1
+fpassa $r8 $n4
+mask 0
+ixor $m1 $r4 $omr1
+maskn 1
+fpassa $r8 $n5
+mask 0
+ixor $m1 $r6 $omr1
+maskn 1
+fpassa $r8 $n6
+mask 0
+ixor $m1 $r10 $omr1
+maskn 1
+fpassa $r8 $n7
+mask 0
+ixor $m2 $r0 $omr1
+maskn 1
+fpassa $r8 $n8
+mask 0
+ixor $m2 $r4 $omr1
+maskn 1
+fpassa $r8 $n9
+mask 0
+ixor $m2 $r6 $omr1
+maskn 1
+fpassa $r8 $n10
+mask 0
+ixor $m2 $r10 $omr1
+maskn 1
+fpassa $r8 $n11
+mask 0
+ixor $m3 $r0 $omr1
+maskn 1
+fpassa $r8 $n12
+mask 0
+ixor $m3 $r4 $omr1
+maskn 1
+fpassa $r8 $n13
+mask 0
+ixor $m3 $r6 $omr1
+maskn 1
+fpassa $r8 $n14
+mask 0
+ixor $m3 $r10 $omr1
+maskn 1
+fpassa $r8 $n15
+mask 0
+ixor $m4 $r0 $omr1
+maskn 1
+fpassa $r8 $n16
+mask 0
+ixor $m4 $r4 $omr1
+maskn 1
+fpassa $r8 $n17
+mask 0
+ixor $m4 $r6 $omr1
+maskn 1
+fpassa $r8 $n18
+mask 0
+ixor $m4 $r10 $omr1
+maskn 1
+fpassa $r8 $n19
+mask 0
+ixor $m5 $r0 $omr1
+maskn 1
+fpassa $r8 $n20
+mask 0
+ixor $m5 $r4 $omr1
+maskn 1
+fpassa $r8 $n21
+mask 0
+ixor $m5 $r6 $omr1
+maskn 1
+fpassa $r8 $n22
+mask 0
+ixor $m5 $r10 $omr1
+maskn 1
+fpassa $r8 $n23
+mask 0
+ixor $m6 $r0 $omr1
+maskn 1
+fpassa $r8 $n24
+mask 0
+ixor $m6 $r4 $omr1
+maskn 1
+fpassa $r8 $n25
+mask 0
+ixor $m6 $r6 $omr1
+maskn 1
+fpassa $r8 $n26
+mask 0
+ixor $m6 $r10 $omr1
+maskn 1
+fpassa $r8 $n27
+mask 0
+ixor $m7 $r0 $omr1
+maskn 1
+fpassa $r8 $n28
+mask 0
+ixor $m7 $r4 $omr1
+maskn 1
+fpassa $r8 $n29
+mask 0
+ixor $m7 $r6 $omr1
+maskn 1
+fpassa $r8 $n30
+mask 0
+ixor $m7 $r10 $omr1
+maskn 1
+fpassa $r8 $n31
+mask 0
+ixor $m8 $r0 $omr1
+maskn 1
+fpassa $r8 $n32
+mask 0
+ixor $m8 $r4 $omr1
+maskn 1
+fpassa $r8 $n33
+mask 0
+ixor $m8 $r6 $omr1
+maskn 1
+fpassa $r8 $n34
+mask 0
+ixor $m8 $r10 $omr1
+maskn 1
+fpassa $r8 $n35
+mask 0
+ixor $m9 $r0 $omr1
+maskn 1
+fpassa $r8 $n36
+mask 0
+ixor $m9 $r4 $omr1
+maskn 1
+fpassa $r8 $n37
+mask 0
+ixor $m9 $r6 $omr1
+maskn 1
+fpassa $r8 $n38
+mask 0
+ixor $m9 $r10 $omr1
+maskn 1
+fpassa $r8 $n39
+mask 0
+ixor $m10 $r0 $omr1
+maskn 1
+fpassa $r8 $n40
+mask 0
+ixor $m10 $r4 $omr1
+maskn 1
+fpassa $r8 $n41
+mask 0
+ixor $m10 $r6 $omr1
+maskn 1
+fpassa $r8 $n42
+mask 0
+ixor $m10 $r10 $omr1
+maskn 1
+fpassa $r8 $n43
+mask 0
+ixor $m11 $r0 $omr1
+maskn 1
+fpassa $r8 $n44
+mask 0
+ixor $m11 $r4 $omr1
+maskn 1
+fpassa $r8 $n45
+mask 0
+ixor $m11 $r6 $omr1
+maskn 1
+fpassa $r8 $n46
+mask 0
+ixor $m11 $r10 $omr1
+maskn 1
+fpassa $r8 $n47
+mask 0
+ixor $m12 $r0 $omr1
+maskn 1
+fpassa $r8 $n48
+mask 0
+ixor $m12 $r4 $omr1
+maskn 1
+fpassa $r8 $n49
+mask 0
+ixor $m12 $r6 $omr1
+maskn 1
+fpassa $r8 $n50
+mask 0
+ixor $m12 $r10 $omr1
+maskn 1
+fpassa $r8 $n51
+mask 0
+ixor $m13 $r0 $omr1
+maskn 1
+fpassa $r8 $n52
+mask 0
+ixor $m13 $r4 $omr1
+maskn 1
+fpassa $r8 $n53
+mask 0
+ixor $m13 $r6 $omr1
+maskn 1
+fpassa $r8 $n54
+mask 0
+ixor $m13 $r10 $omr1
+maskn 1
+fpassa $r8 $n55
+mask 0
+ixor $m14 $r0 $omr1
+maskn 1
+fpassa $r8 $n56
+mask 0
+ixor $m14 $r4 $omr1
+maskn 1
+fpassa $r8 $n57
+mask 0
+ixor $m14 $r6 $omr1
+maskn 1
+fpassa $r8 $n58
+mask 0
+ixor $m14 $r10 $omr1
+maskn 1
+fpassa $r8 $n59
+mask 0
+ixor $m15 $r0 $omr1
+maskn 1
+fpassa $r8 $n60
+mask 0
+ixor $m15 $r4 $omr1
+maskn 1
+fpassa $r8 $n61
+mask 0
+ixor $m15 $r6 $omr1
+maskn 1
+fpassa $r8 $n62
+mask 0
+ixor $m15 $r10 $omr1
+maskn 1
+fpassa $r8 $n63
+mask 0
+ixor $m16 $r0 $omr1
+maskn 1
+fpassa $r8 $n64
+mask 0
+ixor $m16 $r4 $omr1
+maskn 1
+fpassa $r8 $n65
+mask 0
+ixor $m16 $r6 $omr1
+maskn 1
+fpassa $r8 $n66
+mask 0
+ixor $m16 $r10 $omr1
+maskn 1
+fpassa $r8 $n67
+mask 0
+ixor $m17 $r0 $omr1
+maskn 1
+fpassa $r8 $n68
+mask 0
+ixor $m17 $r4 $omr1
+maskn 1
+fpassa $r8 $n69
+mask 0
+ixor $m17 $r6 $omr1
+maskn 1
+fpassa $r8 $n70
+mask 0
+ixor $m17 $r10 $omr1
+maskn 1
+fpassa $r8 $n71
+mask 0
+ixor $m18 $r0 $omr1
+maskn 1
+fpassa $r8 $n72
+mask 0
+ixor $m18 $r4 $omr1
+maskn 1
+fpassa $r8 $n73
+mask 0
+ixor $m18 $r6 $omr1
+maskn 1
+fpassa $r8 $n74
+mask 0
+ixor $m18 $r10 $omr1
+maskn 1
+fpassa $r8 $n75
+mask 0
+ixor $m19 $r0 $omr1
+maskn 1
+fpassa $r8 $n76
+mask 0
+ixor $m19 $r4 $omr1
+maskn 1
+fpassa $r8 $n77
+mask 0
+ixor $m19 $r6 $omr1
+maskn 1
+fpassa $r8 $n78
+mask 0
+ixor $m19 $r10 $omr1
+maskn 1
+fpassa $r8 $n79
+mask 0
+ixor $m20 $r0 $omr1
+maskn 1
+fpassa $r8 $n80
+mask 0
+ixor $m20 $r4 $omr1
+maskn 1
+fpassa $r8 $n81
+mask 0
+ixor $m20 $r6 $omr1
+maskn 1
+fpassa $r8 $n82
+mask 0
+ixor $m20 $r10 $omr1
+maskn 1
+fpassa $r8 $n83
+mask 0
+ixor $m21 $r0 $omr1
+maskn 1
+fpassa $r8 $n84
+mask 0
+ixor $m21 $r4 $omr1
+maskn 1
+fpassa $r8 $n85
+mask 0
+ixor $m21 $r6 $omr1
+maskn 1
+fpassa $r8 $n86
+mask 0
+ixor $m21 $r10 $omr1
+maskn 1
+fpassa $r8 $n87
+mask 0
+ixor $m22 $r0 $omr1
+maskn 1
+fpassa $r8 $n88
+mask 0
+ixor $m22 $r4 $omr1
+maskn 1
+fpassa $r8 $n89
+mask 0
+ixor $m22 $r6 $omr1
+maskn 1
+fpassa $r8 $n90
+mask 0
+ixor $m22 $r10 $omr1
+maskn 1
+fpassa $r8 $n91
+mask 0
+ixor $m23 $r0 $omr1
+maskn 1
+fpassa $r8 $n92
+mask 0
+ixor $m23 $r4 $omr1
+maskn 1
+fpassa $r8 $n93
+mask 0
+ixor $m23 $r6 $omr1
+maskn 1
+fpassa $r8 $n94
+mask 0
+ixor $m23 $r10 $omr1
+maskn 1
+fpassa $r8 $n95
+mask 0
+ixor $m24 $r0 $omr1
+maskn 1
+fpassa $r8 $n96
+mask 0
+ixor $m24 $r4 $omr1
+maskn 1
+fpassa $r8 $n97
+mask 0
+ixor $m24 $r6 $omr1
+maskn 1
+fpassa $r8 $n98
+mask 0
+ixor $m24 $r10 $omr1
+maskn 1
+fpassa $r8 $n99
+mask 0
+ixor $m25 $r0 $omr1
+maskn 1
+fpassa $r8 $n100
+mask 0
+ixor $m25 $r4 $omr1
+maskn 1
+fpassa $r8 $n101
+mask 0
+ixor $m25 $r6 $omr1
+maskn 1
+fpassa $r8 $n102
+mask 0
+ixor $m25 $r10 $omr1
+maskn 1
+fpassa $r8 $n103
+mask 0
+ixor $m26 $r0 $omr1
+maskn 1
+fpassa $r8 $n104
+mask 0
+ixor $m26 $r4 $omr1
+maskn 1
+fpassa $r8 $n105
+mask 0
+ixor $m26 $r6 $omr1
+maskn 1
+fpassa $r8 $n106
+mask 0
+ixor $m26 $r10 $omr1
+maskn 1
+fpassa $r8 $n107
+mask 0
+ixor $m27 $r0 $omr1
+maskn 1
+fpassa $r8 $n108
+mask 0
+ixor $m27 $r4 $omr1
+maskn 1
+fpassa $r8 $n109
+mask 0
+ixor $m27 $r6 $omr1
+maskn 1
+fpassa $r8 $n110
+mask 0
+ixor $m27 $r10 $omr1
+maskn 1
+fpassa $r8 $n111
+mask 0
+ixor $m28 $r0 $omr1
+maskn 1
+fpassa $r8 $n112
+mask 0
+ixor $m28 $r4 $omr1
+maskn 1
+fpassa $r8 $n113
+mask 0
+ixor $m28 $r6 $omr1
+maskn 1
+fpassa $r8 $n114
+mask 0
+ixor $m28 $r10 $omr1
+maskn 1
+fpassa $r8 $n115
+mask 0
+ixor $m29 $r0 $omr1
+maskn 1
+fpassa $r8 $n116
+mask 0
+ixor $m29 $r4 $omr1
+maskn 1
+fpassa $r8 $n117
+mask 0
+ixor $m29 $r6 $omr1
+maskn 1
+fpassa $r8 $n118
+mask 0
+ixor $m29 $r10 $omr1
+maskn 1
+fpassa $r8 $n119
+mask 0
+ixor $m30 $r0 $omr1
+maskn 1
+fpassa $r8 $n120
+mask 0
+ixor $m30 $r4 $omr1
+maskn 1
+fpassa $r8 $n121
+mask 0
+ixor $m30 $r6 $omr1
+maskn 1
+fpassa $r8 $n122
+mask 0
+ixor $m30 $r10 $omr1
+maskn 1
+fpassa $r8 $n123
+mask 0
+ixor $m31 $r0 $omr1
+maskn 1
+fpassa $r8 $n124
+mask 0
+ixor $m31 $r4 $omr1
+maskn 1
+fpassa $r8 $n125
+mask 0
+ixor $m31 $r6 $omr1
+maskn 1
+fpassa $r8 $n126
+mask 0
+ixor $m31 $r10 $omr1
+maskn 1
+fpassa $r8 $n127
+mask 0
+ixor $m32 $r0 $omr1
+maskn 1
+fpassa $r8 $n128
+mask 0
+ixor $m32 $r4 $omr1
+maskn 1
+fpassa $r8 $n129
+mask 0
+ixor $m32 $r6 $omr1
+maskn 1
+fpassa $r8 $n130
+mask 0
+ixor $m32 $r10 $omr1
+maskn 1
+fpassa $r8 $n131
+mask 0
+ixor $m33 $r0 $omr1
+maskn 1
+fpassa $r8 $n132
+mask 0
+ixor $m33 $r4 $omr1
+maskn 1
+fpassa $r8 $n133
+mask 0
+ixor $m33 $r6 $omr1
+maskn 1
+fpassa $r8 $n134
+mask 0
+ixor $m33 $r10 $omr1
+maskn 1
+fpassa $r8 $n135
+mask 0
+ixor $m34 $r0 $omr1
+maskn 1
+fpassa $r8 $n136
+mask 0
+ixor $m34 $r4 $omr1
+maskn 1
+fpassa $r8 $n137
+mask 0
+ixor $m34 $r6 $omr1
+maskn 1
+fpassa $r8 $n138
+mask 0
+ixor $m34 $r10 $omr1
+maskn 1
+fpassa $r8 $n139
+mask 0
+ixor $m35 $r0 $omr1
+maskn 1
+fpassa $r8 $n140
+mask 0
+ixor $m35 $r4 $omr1
+maskn 1
+fpassa $r8 $n141
+mask 0
+ixor $m35 $r6 $omr1
+maskn 1
+fpassa $r8 $n142
+mask 0
+ixor $m35 $r10 $omr1
+maskn 1
+fpassa $r8 $n143
+mask 0
+ixor $m36 $r0 $omr1
+maskn 1
+fpassa $r8 $n144
+mask 0
+ixor $m36 $r4 $omr1
+maskn 1
+fpassa $r8 $n145
+mask 0
+ixor $m36 $r6 $omr1
+maskn 1
+fpassa $r8 $n146
+mask 0
+ixor $m36 $r10 $omr1
+maskn 1
+fpassa $r8 $n147
+mask 0
+ixor $m37 $r0 $omr1
+maskn 1
+fpassa $r8 $n148
+mask 0
+ixor $m37 $r4 $omr1
+maskn 1
+fpassa $r8 $n149
+mask 0
+ixor $m37 $r6 $omr1
+maskn 1
+fpassa $r8 $n150
+mask 0
+ixor $m37 $r10 $omr1
+maskn 1
+fpassa $r8 $n151
+mask 0
+ixor $m38 $r0 $omr1
+maskn 1
+fpassa $r8 $n152
+mask 0
+ixor $m38 $r4 $omr1
+maskn 1
+fpassa $r8 $n153
+mask 0
+ixor $m38 $r6 $omr1
+maskn 1
+fpassa $r8 $n154
+mask 0
+ixor $m38 $r10 $omr1
+maskn 1
+fpassa $r8 $n155
+mask 0
+ixor $m39 $r0 $omr1
+maskn 1
+fpassa $r8 $n156
+mask 0
+ixor $m39 $r4 $omr1
+maskn 1
+fpassa $r8 $n157
+mask 0
+ixor $m39 $r6 $omr1
+maskn 1
+fpassa $r8 $n158
+mask 0
+ixor $m39 $r10 $omr1
+maskn 1
+fpassa $r8 $n159
+mask 0
+ixor $m40 $r0 $omr1
+maskn 1
+fpassa $r8 $n160
+mask 0
+ixor $m40 $r4 $omr1
+maskn 1
+fpassa $r8 $n161
+mask 0
+ixor $m40 $r6 $omr1
+maskn 1
+fpassa $r8 $n162
+mask 0
+ixor $m40 $r10 $omr1
+maskn 1
+fpassa $r8 $n163
+mask 0
+ixor $m41 $r0 $omr1
+maskn 1
+fpassa $r8 $n164
+mask 0
+ixor $m41 $r4 $omr1
+maskn 1
+fpassa $r8 $n165
+mask 0
+ixor $m41 $r6 $omr1
+maskn 1
+fpassa $r8 $n166
+mask 0
+ixor $m41 $r10 $omr1
+maskn 1
+fpassa $r8 $n167
+mask 0
+ixor $m42 $r0 $omr1
+maskn 1
+fpassa $r8 $n168
+mask 0
+ixor $m42 $r4 $omr1
+maskn 1
+fpassa $r8 $n169
+mask 0
+ixor $m42 $r6 $omr1
+maskn 1
+fpassa $r8 $n170
+mask 0
+ixor $m42 $r10 $omr1
+maskn 1
+fpassa $r8 $n171
+mask 0
+ixor $m43 $r0 $omr1
+maskn 1
+fpassa $r8 $n172
+mask 0
+ixor $m43 $r4 $omr1
+maskn 1
+fpassa $r8 $n173
+mask 0
+ixor $m43 $r6 $omr1
+maskn 1
+fpassa $r8 $n174
+mask 0
+ixor $m43 $r10 $omr1
+maskn 1
+fpassa $r8 $n175
+mask 0
+ixor $m44 $r0 $omr1
+maskn 1
+fpassa $r8 $n176
+mask 0
+ixor $m44 $r4 $omr1
+maskn 1
+fpassa $r8 $n177
+mask 0
+ixor $m44 $r6 $omr1
+maskn 1
+fpassa $r8 $n178
+mask 0
+ixor $m44 $r10 $omr1
+maskn 1
+fpassa $r8 $n179
+mask 0
+ixor $m45 $r0 $omr1
+maskn 1
+fpassa $r8 $n180
+mask 0
+ixor $m45 $r4 $omr1
+maskn 1
+fpassa $r8 $n181
+mask 0
+ixor $m45 $r6 $omr1
+maskn 1
+fpassa $r8 $n182
+mask 0
+ixor $m45 $r10 $omr1
+maskn 1
+fpassa $r8 $n183
+mask 0
+ixor $m46 $r0 $omr1
+maskn 1
+fpassa $r8 $n184
+mask 0
+ixor $m46 $r4 $omr1
+maskn 1
+fpassa $r8 $n185
+mask 0
+ixor $m46 $r6 $omr1
+maskn 1
+fpassa $r8 $n186
+mask 0
+ixor $m46 $r10 $omr1
+maskn 1
+fpassa $r8 $n187
+mask 0
+ixor $m47 $r0 $omr1
+maskn 1
+fpassa $r8 $n188
+mask 0
+ixor $m47 $r4 $omr1
+maskn 1
+fpassa $r8 $n189
+mask 0
+ixor $m47 $r6 $omr1
+maskn 1
+fpassa $r8 $n190
+mask 0
+ixor $m47 $r10 $omr1
+maskn 1
+fpassa $r8 $n191
+mask 0
+ixor $m48 $r0 $omr1
+maskn 1
+fpassa $r8 $n192
+mask 0
+ixor $m48 $r4 $omr1
+maskn 1
+fpassa $r8 $n193
+mask 0
+ixor $m48 $r6 $omr1
+maskn 1
+fpassa $r8 $n194
+mask 0
+ixor $m48 $r10 $omr1
+maskn 1
+fpassa $r8 $n195
+mask 0
+ixor $m49 $r0 $omr1
+maskn 1
+fpassa $r8 $n196
+mask 0
+ixor $m49 $r4 $omr1
+maskn 1
+fpassa $r8 $n197
+mask 0
+ixor $m49 $r6 $omr1
+maskn 1
+fpassa $r8 $n198
+mask 0
+ixor $m49 $r10 $omr1
+maskn 1
+fpassa $r8 $n199
+mask 0
+ixor $m50 $r0 $omr1
+maskn 1
+fpassa $r8 $n200
+mask 0
+ixor $m50 $r4 $omr1
+maskn 1
+fpassa $r8 $n201
+mask 0
+ixor $m50 $r6 $omr1
+maskn 1
+fpassa $r8 $n202
+mask 0
+ixor $m50 $r10 $omr1
+maskn 1
+fpassa $r8 $n203
+mask 0
+ixor $m51 $r0 $omr1
+maskn 1
+fpassa $r8 $n204
+mask 0
+ixor $m51 $r4 $omr1
+maskn 1
+fpassa $r8 $n205
+mask 0
+ixor $m51 $r6 $omr1
+maskn 1
+fpassa $r8 $n206
+mask 0
+ixor $m51 $r10 $omr1
+maskn 1
+fpassa $r8 $n207
+mask 0
+ixor $m52 $r0 $omr1
+maskn 1
+fpassa $r8 $n208
+mask 0
+ixor $m52 $r4 $omr1
+maskn 1
+fpassa $r8 $n209
+mask 0
+ixor $m52 $r6 $omr1
+maskn 1
+fpassa $r8 $n210
+mask 0
+ixor $m52 $r10 $omr1
+maskn 1
+fpassa $r8 $n211
+mask 0
+ixor $m53 $r0 $omr1
+maskn 1
+fpassa $r8 $n212
+mask 0
+ixor $m53 $r4 $omr1
+maskn 1
+fpassa $r8 $n213
+mask 0
+ixor $m53 $r6 $omr1
+maskn 1
+fpassa $r8 $n214
+mask 0
+ixor $m53 $r10 $omr1
+maskn 1
+fpassa $r8 $n215
+mask 0
+ixor $m54 $r0 $omr1
+maskn 1
+fpassa $r8 $n216
+mask 0
+ixor $m54 $r4 $omr1
+maskn 1
+fpassa $r8 $n217
+mask 0
+ixor $m54 $r6 $omr1
+maskn 1
+fpassa $r8 $n218
+mask 0
+ixor $m54 $r10 $omr1
+maskn 1
+fpassa $r8 $n219
+mask 0
+ixor $m55 $r0 $omr1
+maskn 1
+fpassa $r8 $n220
+mask 0
+ixor $m55 $r4 $omr1
+maskn 1
+fpassa $r8 $n221
+mask 0
+ixor $m55 $r6 $omr1
+maskn 1
+fpassa $r8 $n222
+mask 0
+ixor $m55 $r10 $omr1
+maskn 1
+fpassa $r8 $n223
+mask 0
+ixor $m56 $r0 $omr1
+maskn 1
+fpassa $r8 $n224
+mask 0
+ixor $m56 $r4 $omr1
+maskn 1
+fpassa $r8 $n225
+mask 0
+ixor $m56 $r6 $omr1
+maskn 1
+fpassa $r8 $n226
+mask 0
+ixor $m56 $r10 $omr1
+maskn 1
+fpassa $r8 $n227
+mask 0
+ixor $m57 $r0 $omr1
+maskn 1
+fpassa $r8 $n228
+mask 0
+ixor $m57 $r4 $omr1
+maskn 1
+fpassa $r8 $n229
+mask 0
+ixor $m57 $r6 $omr1
+maskn 1
+fpassa $r8 $n230
+mask 0
+ixor $m57 $r10 $omr1
+maskn 1
+fpassa $r8 $n231
+mask 0
+ixor $m58 $r0 $omr1
+maskn 1
+fpassa $r8 $n232
+mask 0
+ixor $m58 $r4 $omr1
+maskn 1
+fpassa $r8 $n233
+mask 0
+ixor $m58 $r6 $omr1
+maskn 1
+fpassa $r8 $n234
+mask 0
+ixor $m58 $r10 $omr1
+maskn 1
+fpassa $r8 $n235
+mask 0
+ixor $m59 $r0 $omr1
+maskn 1
+fpassa $r8 $n236
+mask 0
+ixor $m59 $r4 $omr1
+maskn 1
+fpassa $r8 $n237
+mask 0
+ixor $m59 $r6 $omr1
+maskn 1
+fpassa $r8 $n238
+mask 0
+ixor $m59 $r10 $omr1
+maskn 1
+fpassa $r8 $n239
+mask 0
+ixor $m60 $r0 $omr1
+maskn 1
+fpassa $r8 $n240
+mask 0
+ixor $m60 $r4 $omr1
+maskn 1
+fpassa $r8 $n241
+mask 0
+ixor $m60 $r6 $omr1
+maskn 1
+fpassa $r8 $n242
+mask 0
+ixor $m60 $r10 $omr1
+maskn 1
+fpassa $r8 $n243
+mask 0
+ixor $m61 $r0 $omr1
+maskn 1
+fpassa $r8 $n244
+mask 0
+ixor $m61 $r4 $omr1
+maskn 1
+fpassa $r8 $n245
+mask 0
+ixor $m61 $r6 $omr1
+maskn 1
+fpassa $r8 $n246
+mask 0
+ixor $m61 $r10 $omr1
+maskn 1
+fpassa $r8 $n247
+mask 0
+ixor $m62 $r0 $omr1
+maskn 1
+fpassa $r8 $n248
+mask 0
+ixor $m62 $r4 $omr1
+maskn 1
+fpassa $r8 $n249
+mask 0
+ixor $m62 $r6 $omr1
+maskn 1
+fpassa $r8 $n250
+mask 0
+ixor $m62 $r10 $omr1
+maskn 1
+fpassa $r8 $n251
+mask 0
+ixor $m63 $r0 $omr1
+maskn 1
+fpassa $r8 $n252
+mask 0
+ixor $m63 $r4 $omr1
+maskn 1
+fpassa $r8 $n253
+mask 0
+ixor $m63 $r6 $omr1
+maskn 1
+fpassa $r8 $n254
+mask 0
+ixor $m63 $r10 $omr1
+maskn 1
+fpassa $r8 $n255
+mask 0

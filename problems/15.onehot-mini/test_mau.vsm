@@ -1,0 +1,4 @@
+zero $r10/1000
+imm f"1.0" $s15/1000
+nop/2
+ixor $m0 $r0 $omr1/1000; fvadd $s15 $r10 $n0/1000/$imr1

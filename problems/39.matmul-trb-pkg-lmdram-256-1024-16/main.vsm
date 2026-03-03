@@ -1,1 +1,123 @@
-# write solution here
+gbfn $lm64v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm72v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm0v $nowrite
+gmmul $ly $aluf $ln0v4
+gbfn $lm80v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm88v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm0v $nowrite
+gmmul $ly $aluf $ln2v4
+gbfn $lm64v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm72v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm8v $nowrite
+gmmul $ly $aluf $ln16v4
+gbfn $lm80v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm88v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm8v $nowrite
+gmmul $ly $aluf $ln18v4
+gbfn $lm64v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm72v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm16v $nowrite
+gmmul $ly $aluf $ln32v4
+gbfn $lm80v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm88v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm16v $nowrite
+gmmul $ly $aluf $ln34v4
+gbfn $lm64v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm72v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm24v $nowrite
+gmmul $ly $aluf $ln48v4
+gbfn $lm80v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm88v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm24v $nowrite
+gmmul $ly $aluf $ln50v4
+gbfn $lm64v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm72v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm32v $nowrite
+gmmul $ly $aluf $ln64v4
+gbfn $lm80v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm88v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm32v $nowrite
+gmmul $ly $aluf $ln66v4
+gbfn $lm64v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm72v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm40v $nowrite
+gmmul $ly $aluf $ln80v4
+gbfn $lm80v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm88v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm40v $nowrite
+gmmul $ly $aluf $ln82v4
+gbfn $lm64v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm72v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm48v $nowrite
+gmmul $ly $aluf $ln96v4
+gbfn $lm80v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm88v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm48v $nowrite
+gmmul $ly $aluf $ln98v4
+gbfn $lm64v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm72v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm56v $nowrite
+gmmul $ly $aluf $ln112v4
+gbfn $lm80v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm88v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm56v $nowrite
+gmmul $ly $aluf $ln114v4
+nop
+nop
+l1bmrffadd $ln0v $lb0
+l1bmrffadd $ln8v $lb16
+l1bmrffadd $ln16v $lb32
+l1bmrffadd $ln24v $lb48
+l1bmrffadd $ln32v $lb64
+l1bmrffadd $ln40v $lb80
+l1bmrffadd $ln48v $lb96
+l1bmrffadd $ln56v $lb112
+l1bmrffadd $ln64v $lb128
+l1bmrffadd $ln72v $lb144
+l1bmrffadd $ln80v $lb160
+l1bmrffadd $ln88v $lb176
+l1bmrffadd $ln96v $lb192
+l1bmrffadd $ln104v $lb208
+l1bmrffadd $ln112v $lb224
+l1bmrffadd $ln120v $lb240
+nop
+nop
+l2bmrffadd $lb0 $lc0
+l2bmrffadd $lb64 $lc64
+l2bmrffadd $lb128 $lc128
+l2bmrffadd $lb192 $lc192
+nop
+mvp/n256 $lc0@.0 $d0
+mvp/n256 $lc0@.1 $d256

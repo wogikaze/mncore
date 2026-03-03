@@ -1,1 +1,12 @@
-# write solution here
+gmwrite $lm8v $ly0
+gmwrite $lm16v $ly4
+gmread $ly0 $lm8v
+gmread $ly4 $lm16v
+nop
+nop
+gbfn $lm8v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm16v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm0v $nowrite
+gmmul $ly $aluf $ln0v

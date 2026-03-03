@@ -1,0 +1,28 @@
+imm i"0" $r5
+imm f"1.0" $s4
+imm i"0" $s0
+imm i"1" $s1
+imm i"8" $s2
+imm i"9" $s3
+iadd $subpeid $r5 $r4
+iadd $r5 $m0v $r0v
+iadd $r5 $r5 $ln0v
+iadd $r5 $r5 $ln8v
+iadd $r4 $r4 $r4
+nop
+nop
+iadd $s0v $r4 $s0v
+nop
+nop
+ixor $s0v $r0 $omr1
+maskn 1
+iadd $s4 $r5 $n0v
+ixor $s0v $r1 $omr1
+maskn 1
+iadd $s4 $r5 $n4v
+ixor $s0v $r2 $omr1
+maskn 1
+iadd $s4 $r5 $n8v
+ixor $s0v $r3 $omr1
+maskn 1
+iadd $s4 $r5 $n12v

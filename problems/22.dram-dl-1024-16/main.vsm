@@ -1,1 +1,10 @@
-# write solution here
+mvp/n1024 $d0 $lc0@.0
+mvp/n1024 $d1024 $lc0@.1
+l2bmd $lc0 $lb0
+l2bmd $lc256 $lb32
+l2bmd $lc512 $lb64
+l2bmd $lc768 $lb96
+l1bmm $llb0 $llm0v
+l1bmm $llb32 $llm16v
+l1bmm $llb64 $llm32v
+l1bmm $llb96 $llm48v

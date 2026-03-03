@@ -1,1 +1,11 @@
-# write solution here
+mvb2/n64 $d0 $lc0
+l2bmb $lc0 $lb0
+nop
+l1bmp $lb0 $lm0v
+l1bmp $lb4 $lm8v
+l1bmp $lb8 $lm16v
+l1bmp $lb12 $lm24v
+l1bmp $lb16 $lm32v
+l1bmp $lb20 $lm40v
+l1bmp $lb24 $lm48v
+l1bmp $lb28 $lm56v
