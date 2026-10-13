@@ -326,7 +326,8 @@ impl Machine {
                         }
                     }
                     let dst = e.dsts.first().ok_or_else(|| ExecError::Unsupported("missing L1BM operand".into()))?;
-                    self.blocks.pe_to_l1(*op, dst, &vals, ext, &mut block_writes)?;
+                    let src_two = matches!(src, Operand::Mem { wl: 4, .. } | Operand::Forward { .. });
+                    self.blocks.pe_to_l1(*op, dst, &vals, ext, src_two, &mut block_writes)?;
                     continue;
                 }
                 Op::L2(op) => {
@@ -990,6 +991,7 @@ fn alu_lanes(name: AluOp, prec: Prec, unsigned: bool, x: &[u64], y: &[u64]) -> R
                 let neg_zero = 1u64 << (bits - 1);
                 (if msb(a, k) == 0 { b } else { neg_zero }, msb(a, k) == 0)
             }
+            AluOp::Rsqrt => (float_rsqrt(fmt_of(prec), a), msb(a, 0) == 0),
             AluOp::Floor => (float_floor(fmt_of(prec), a), false),
             AluOp::Ftoi => (float_ftoi(fmt_of(prec), a, unsigned, bits), false),
             other => return Err(ExecError::Unsupported(format!("ALU {other:?}"))),
@@ -1041,6 +1043,24 @@ fn float_max_pick_x(a: u64, b: u64, bits: u32, max: bool) -> bool {
     } else {
         key(a) <= key(b)
     }
+}
+
+/// Approximate reciprocal square root (SDM 3.6.12.9, "about 5 bits").
+///
+/// Not specified in the SDM; extracted from the emulator for all precisions. The result depends
+/// only on the parity of the exponent and the top 4 mantissa bits; its mantissa has 5 bits.
+/// Zero and infinity are not special, and the sign is ignored.
+fn float_rsqrt(fmt: Fmt, v: u64) -> u64 {
+    const MANT5: [[u64; 16]; 2] = [
+        [13, 11, 10, 9, 8, 7, 6, 5, 4, 4, 3, 2, 2, 1, 1, 0],
+        [31, 30, 28, 26, 25, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13],
+    ];
+    let m = fmt.man_bits;
+    let e = (v >> m) & fmt.exp_max();
+    let top4 = (v >> (m - 4)) & 15;
+    let bias = fmt.bias() as u64;
+    let out_e = bias + (bias + 1) / 2 - 1 - e.div_ceil(2);
+    (out_e << m) | (MANT5[(e & 1) as usize][top4 as usize] << (m - 5))
 }
 
 fn float_floor(fmt: Fmt, v: u64) -> u64 {

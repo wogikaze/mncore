@@ -12,8 +12,8 @@ pub struct Sim {
     pub words: u64,
     /// Values printed by `d get`, keyed like `emu::parse_dump`.
     pub dump: HashMap<DumpKey, u64>,
-    /// DRAM contents written by `r` lines: (group, long word address) -> value.
-    pub dram: HashMap<(u8, u64), u64>,
+    /// PDM and DRAM.
+    pub off: crate::mv::OffChip,
 }
 
 #[derive(Debug)]
@@ -30,7 +30,7 @@ impl Default for Sim {
 
 impl Sim {
     pub fn new() -> Sim {
-        Sim { m: Machine::new(), words: 0, dump: HashMap::new(), dram: HashMap::new() }
+        Sim { m: Machine::new(), words: 0, dump: HashMap::new(), off: Default::default() }
     }
 
     pub fn run(&mut self, lines: &[(usize, Line)]) -> Result<(), RunError> {
@@ -52,10 +52,10 @@ impl Sim {
             Line::DebugGet { loc, count, .. } => self.debug_get(loc, *count)?,
             Line::DramSet { group, addr, payload } => {
                 for (i, v) in payload.iter().enumerate() {
-                    self.dram.insert((*group, addr + i as u64), *v);
+                    self.off.dram[*group as usize].set(addr + i as u64, *v);
                 }
             }
-            Line::Mv(text) => return Err(ExecError::Unsupported(format!("MV instruction `{text}`"))),
+            Line::Mv(mv) => self.off.exec(&mut self.m.blocks, mv)?,
         }
         Ok(())
     }
@@ -141,6 +141,20 @@ impl Sim {
     }
 
     fn debug_get(&mut self, loc: &DebugLoc, count: u32) -> Result<(), ExecError> {
+        if matches!(loc.mem, MemKind::Dram | MemKind::Pdm) {
+            // Named like the emulator. Note that the emulator's `d get $p` actually prints DRAM;
+            // this prints the real PDM, so PIU values should not be compared.
+            let dram = loc.mem == MemKind::Dram;
+            let name = if dram { "DRAM" } else { "PIU" };
+            for g in (0..crate::mv::GROUPS).filter(|&g| loc.group.is_none_or(|x| x as usize == g)) {
+                for i in 0..count as u64 {
+                    let a = loc.addr as u64 + i;
+                    let v = if dram { self.off.dram[g].get(a) } else { self.off.pdm[g].get(a) };
+                    self.dump.insert((name.into(), format!("n{g}"), a as u32), v);
+                }
+            }
+            return Ok(());
+        }
         if matches!(loc.mem, MemKind::L1bm | MemKind::L2bm) {
             if loc.wl != 2 {
                 return Err(ExecError::Unsupported("d get of L1BM/L2BM with two long word access".into()));

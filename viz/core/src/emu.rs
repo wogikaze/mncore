@@ -35,7 +35,10 @@ pub fn run(vsm: &str) -> Result<String, String> {
     }
     std::fs::write(&asm_path, &asm.stdout).map_err(|e| e.to_string())?;
 
+    // The judge runs the emulator with zero-initialized DRAM and PDM.
     let emu = Command::new(emu_dir().join("gpfn3_package_main"))
+        .arg("--offchip-memory-init")
+        .arg("zero")
         .arg("-i")
         .arg(&asm_path)
         .arg("-d")
@@ -135,7 +138,10 @@ pub fn run_asm(asm: &str) -> Result<String, String> {
     let asm_path = dir.join("in.asm");
     let dmp_path = dir.join("out.dmp");
     std::fs::write(&asm_path, asm).map_err(|e| e.to_string())?;
+    // The judge runs the emulator with zero-initialized DRAM and PDM.
     let emu = Command::new(emu_dir().join("gpfn3_package_main"))
+        .arg("--offchip-memory-init")
+        .arg("zero")
         .arg("-i")
         .arg(&asm_path)
         .arg("-d")

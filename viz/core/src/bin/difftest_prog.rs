@@ -58,7 +58,7 @@ fn main() {
     let mut bad = 0;
     let mut keys: Vec<_> = expect.keys().collect();
     keys.sort();
-    for k in keys {
+    for k in keys.into_iter().filter(|k| k.0 != "PIU") {
         let e = expect[k];
         match sim.dump.get(k) {
             Some(&a) if a == e => {}

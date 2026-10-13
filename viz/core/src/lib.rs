@@ -3,6 +3,7 @@ pub mod blocks;
 pub mod emu;
 pub mod float;
 pub mod machine;
+pub mod mv;
 pub mod rrn;
 pub mod run;
 pub mod vsm;

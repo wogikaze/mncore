@@ -24,8 +24,8 @@ pub enum Line {
     Pe(Vec<Expr>),
     /// `nop` or `nop/<n>`, possibly with `wait`.
     Nop { count: u32, wait: Option<u8> },
-    /// An MV instruction statement (kept as text for now).
-    Mv(String),
+    /// An MV instruction statement.
+    Mv(crate::mv::Mv),
     /// `mask[l|ll][r][s][t][m][n][k] <addr>`: write mask applied to all following steps.
     MaskDirective { wl: u8, targets: MaskTargets, entry: u8 },
     /// `d set ...`
@@ -333,7 +333,7 @@ fn parse_line(text: &str) -> Result<Line, String> {
     }
     let first = text.split_whitespace().next().unwrap();
     if first.starts_with("mv") {
-        return Ok(Line::Mv(text.to_string()));
+        return Ok(Line::Mv(crate::mv::parse(text)?));
     }
     if let Some(m) = parse_mask_directive(text) {
         return Ok(m);

@@ -3,6 +3,7 @@
 //! Layouts follow the pseudo code of the SDM. Addresses are in long words.
 
 use crate::blockop::{L1Op, L2Op, Rrn, RrnOp};
+use crate::float::{self, HALF, SINGLE};
 use crate::machine::{Bus, ExecError, PES};
 use crate::rrn;
 use crate::vsm::{Expr, Operand};
@@ -126,7 +127,9 @@ impl Blocks {
     }
 
     /// Computes a PE-to-L1BM transfer from the PE values `src[pe][cycle]`.
-    pub fn pe_to_l1(&self, op: L1Op, dst: &Operand, src: &[[Bus; 4]], ext: bool, w: &mut BlockWrites) -> Result<(), ExecError> {
+    /// `src_two` tells whether the PE operand is two long words, which decides the width of
+    /// reductions whose result is rounded to half precision.
+    pub fn pe_to_l1(&self, op: L1Op, dst: &Operand, src: &[[Bus; 4]], ext: bool, src_two: bool, w: &mut BlockWrites) -> Result<(), ExecError> {
         let (wl, addr) = l1_operand(dst).ok_or_else(|| ExecError::Unsupported(format!("L1BM destination {dst:?}")))?;
         let two = wl == 4;
         let mut lbi = vec![[[0u64; 64]; 4]; L1BS];
@@ -169,6 +172,36 @@ impl Blocks {
                             }
                         }
                     }
+                    L1Op::Reduce { rrn, round } if round || ext || rrn.prec == 'h' && matches!(rrn.op, RrnOp::Fadd | RrnOp::Max | RrnOp::Min) => {
+                        let rounded = round || rrn.prec == 'h';
+                        let mut res: Vec<Bus> = Vec::new();
+                        for pe in 0..4 {
+                            let vals: Vec<Bus> = (0..16).map(|m| src[pe_of(m, pe)][c]).collect();
+                            res.push(reduce_buses(rrn, round, ext, two || (rounded && src_two), &vals, true)?);
+                        }
+                        if rounded {
+                            // Each PE lane gives 4 results (as halves in single lanes).
+                            let mut halves = [0u64; 16];
+                            for pe in 0..4 {
+                                for j in 0..4 {
+                                    let l = long(&res[pe], j / 2);
+                                    halves[4 * pe + j] = (l >> (32 - 32 * (j % 2) as u32)) & 0xffff;
+                                }
+                            }
+                            // PE p's 4 halves stay together in long word p, with or without input
+                            // extension (measured with the emulator). The orders in SDM 3.6.8.4
+                            // and 3.6.8.5 describe the reduction circuit and cancel out.
+                            for pe in 0..4 {
+                                let v = (0..4).fold(0u64, |acc, j| (acc << 16) | halves[4 * pe + j]);
+                                items.push((pe, v));
+                            }
+                        } else {
+                            for pe in 0..4 {
+                                items.push((pe, long(&res[pe], 0)));
+                                items.push((4 + pe, long(&res[pe], 1)));
+                            }
+                        }
+                    }
                     L1Op::Reduce { rrn, round } | L1Op::Reduce4 { rrn, round } => {
                         let four = matches!(op, L1Op::Reduce4 { .. });
                         for group in 0..(if four { 4 } else { 1 }) {
@@ -199,6 +232,8 @@ impl Blocks {
                     let step = match op {
                         L1Op::Gather { .. } => 64,
                         L1Op::M4write { .. } | L1Op::Reduce4 { .. } => if two { 32 } else { 16 },
+                        L1Op::Reduce { rrn, round } if round || rrn.prec == 'h' && matches!(rrn.op, RrnOp::Fadd | RrnOp::Max | RrnOp::Min) => 4,
+                        L1Op::Reduce { .. } if ext => 8,
                         _ => if two { 8 } else { 4 },
                     };
                     for (o, v) in items {
@@ -331,26 +366,37 @@ fn reduce_longs(rrn: Rrn, vals: &[u64]) -> u64 {
 }
 
 /// Reduces the PE buses of one L1BM reduction lane over MABs (16x1: two stages of four).
+///
+/// Half-precision float reductions are single-precision reductions with input extension and
+/// output rounding (SDM 3.6.8.5: `l1bmrhfadd` is an alias of `l1bmrffaddr` with `e` inputs).
+/// With extension, the 4 halves of each PE's MSB long word become 4 singles (two long words).
+/// Returns the reduced two long words; with rounding, each single lane holds a half.
 fn reduce_buses(rrn: Rrn, round: bool, ext: bool, two: bool, vals: &[Bus], sixteen: bool) -> Result<Bus, ExecError> {
-    if ext || round {
-        return Err(ExecError::Unsupported("L1BM reduction with precision extension or reduction".into()));
-    }
+    let half_alias = rrn.prec == 'h' && matches!(rrn.op, RrnOp::Fadd | RrnOp::Max | RrnOp::Min);
+    let ext = ext || half_alias;
+    let round = round || half_alias;
+    let rrn = if half_alias { Rrn { prec: 'f', ..rrn } } else { rrn };
+    let vals: Vec<Bus> = if ext { vals.iter().map(extend_halves).collect() } else { vals.to_vec() };
+    let two = two || ext;
     let bits = rrn.bits();
     let m = if bits == 64 { u64::MAX } else { (1u64 << bits) - 1 };
     let longs = if two { 2 } else { 1 };
-    let out_fmt = rrn::fmt_of(rrn.prec);
+    let in_fmt = rrn::fmt_of(rrn.prec);
+    let out_fmt = if round { HALF } else { in_fmt };
     let mut out = [0u32; 4];
     for k in 0..longs {
         let mut res = 0u64;
         for lane in 0..64 / bits {
             let sh = 64 - bits * (lane + 1);
             let lanes: Vec<u64> = vals.iter().map(|b| (long(b, k) >> sh) & m).collect();
-            let r = if sixteen && rrn.op == RrnOp::Fadd {
+            let r = if sixteen {
                 let arr: [u64; 16] = lanes.try_into().unwrap();
-                rrn::reduce16(rrn, &arr, out_fmt, out_fmt)
+                // The first stage rounds to single precision even when the output is half.
+                rrn::reduce16(rrn, &arr, in_fmt, out_fmt)
             } else {
                 rrn::reduce(rrn, &lanes, out_fmt)
             };
+            // Rounded results are halves; keep them in the lane's low bits for round_layout.
             res |= (r & m) << sh;
         }
         let hl = hi_lo(res);
@@ -358,4 +404,14 @@ fn reduce_buses(rrn: Rrn, round: bool, ext: bool, two: bool, vals: &[Bus], sixte
         out[2 * k + 1] = hl[1];
     }
     Ok(out)
+}
+
+/// Precision extension of an L1BM reduction input: the 4 halves of the MSB long word become
+/// 4 singles in two long words, in the same order.
+fn extend_halves(b: &Bus) -> Bus {
+    let msb = long(b, 0);
+    let s: Vec<u64> = (0..4)
+        .map(|j| float::encode(SINGLE, float::decode(HALF, (msb >> (48 - 16 * j)) & 0xffff)))
+        .collect();
+    bus_of((s[0] << 32) | s[1], (s[2] << 32) | s[3])
 }

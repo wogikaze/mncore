@@ -36,6 +36,8 @@ const L2BS: [&str; 2] = ["n0c0", "n2c1"];
 /// L1BM / L2BM long words initialized and compared.
 const L1_LONGS: usize = 512;
 const L2_LONGS: usize = 1024;
+/// DRAM long words per group initialized and compared (PDM is only reached through MV).
+const DRAM_LONGS: usize = 1024;
 const LONGS: usize = 64; // long words of LM/GRF filled and compared
 
 /// A random long word: floats of each precision, integers, and special patterns.
@@ -157,6 +159,7 @@ fn statement(r: &mut Rng) -> String {
                 ("relu", 2, &["d", "f", "h"]),
                 ("relu1", 2, &["d", "f", "h"]),
                 ("relu3", 2, &["d", "f", "h"]),
+                ("rsqrt", 1, &["d", "f", "h"]),
             ]);
             let p = r.pick(precs);
             let u = if ["inc", "dec", "add", "sub", "lsr", "ftoi"].contains(&name) && r.chance(30) { "u" } else { "" };
@@ -208,6 +211,9 @@ fn statement(r: &mut Rng) -> String {
 /// A group of statements issued in consecutive steps. Matrix products need block-float
 /// inputs, so they come with the bfn and mwrite statements that prepare them.
 fn group(r: &mut Rng) -> Vec<String> {
+    if r.chance(15) {
+        return mv_group(r);
+    }
     if r.chance(30) {
         return block_group(r);
     }
@@ -271,7 +277,12 @@ fn block_group(r: &mut Rng) -> Vec<String> {
         2 => vec![format!("l1bmm@{} {} {b}{}", r.below(16), pe_src(r, two), lb(r, 4 * w))],
         3 => vec![format!("l1bmm4 {b}{} {}", lb(r, 16 * w), pe_dst(r, two))],
         4 => vec![format!("l1bmm4@{} {} {b}{}", r.below(4), pe_src(r, two), lb(r, 16 * w))],
-        5 => vec![format!("l1bmr{} {} {b}{}", rrn(r, two), pe_src(r, two), lb(r, 4 * w))],
+        5 => match r.below(4) {
+            // Explicit output rounding (single to half) and input extension (half to single).
+            0 => vec![format!("l1bmrffaddr {} $lb{}", pe_src(r, true), lb(r, 4))],
+            1 => vec![format!("l1bmrffadd $lr{}ve $llb{}", r.below(16) * 2, lb(r, 8))],
+            _ => vec![format!("l1bmr{} {} {b}{}", rrn(r, two), pe_src(r, two), lb(r, 4 * w))],
+        },
         6 => vec![format!("l1bmr4{} {} {b}{}", rrn(r, two), pe_src(r, two), lb(r, 16 * w))],
         7 => {
             let d = if r.chance(50) { format!("{}{}", r.pick(&["+", "-"]), r.below(16)) } else { String::new() };
@@ -303,6 +314,34 @@ fn block_group(r: &mut Rng) -> Vec<String> {
         },
         _ => vec![format!("l2bmi@{}/{} $lb{} $lb{}", r.below(8), r.below(7), lb(r, 16), lb(r, 16))],
     }
+}
+
+/// MV transfers among DRAM, PDM and L2BM (sizes and addresses within the compared region).
+fn mv_group(r: &mut Rng) -> Vec<String> {
+    let n = *r.pick(&[64u64, 128]);
+    let a = |r: &mut Rng, lim: u64, align: u64| r.below(lim / align) * align;
+    let g = |r: &mut Rng| r.below(4);
+    let op = |r: &mut Rng| r.pick(&["dfadd", "ffadd", "hfadd", "dmax", "fmin", "liadd", "iband", "sbor"]).to_string();
+    let d = |r: &mut Rng| a(r, DRAM_LONGS as u64 / 2, 64);
+    let c = |r: &mut Rng| a(r, L2_LONGS as u64 / 2, 64);
+    let p = |r: &mut Rng| a(r, 4096, 64);
+    let mv = match r.below(14) {
+        0 => format!("mvp/n{n} $d{}@{} $lc{}@{}.{}", d(r), g(r), c(r), g(r), r.below(2)),
+        1 => format!("mvp/n{n} $lc{}@{}.{} $d{}@{}", c(r), g(r), r.below(2), d(r), g(r)),
+        2 => format!("mvp/n{n} $d{} $lc{}@.{}", d(r), c(r), r.below(2)),
+        3 => format!("mvp/n{n} $lc{}@.{} $d{}", c(r), r.below(2), d(r)),
+        4 => format!("mvp/n{n} $lc{}@{}.{} $p{}@{}", c(r), g(r), r.below(2), p(r), g(r)),
+        5 => format!("mvp/n{n} $p{}@{} $d{}@{}", p(r), g(r), d(r), g(r)),
+        6 => format!("mvb2/n{n} $d{} $lc{}", d(r), c(r)),
+        7 => format!("mvb4/n{n} $d{} $lc{}", d(r), c(r)),
+        8 => format!("mvb/n{n} $d{} $lc{}", d(r), c(r)),
+        9 => format!("mvr{}/n{n} $lc{} $d{}", op(r), c(r), d(r)),
+        10 => format!("mvr2{}/n{n} $lc{} $d{}", op(r), c(r), d(r)),
+        11 => format!("mvr4{}/n{n} $lc{} $d{}", op(r), c(r), d(r)),
+        12 => format!("mvd/n{n} $lc{} $p{}@{}", c(r), p(r) * 8, g(r)),
+        _ => format!("mvd/n{n} $p{}@{} $d{}", p(r), g(r), d(r)),
+    };
+    vec![mv]
 }
 
 fn body(groups: &[Vec<String>]) -> (String, Vec<usize>, Vec<usize>) {
@@ -354,10 +393,19 @@ fn main() {
             init += &format!("d set $lb0{l1} {L1_LONGS} {vals}\n");
             probe += &format!("d get $lb0{l1} {L1_LONGS}\n");
         }
-        for l2 in L2BS {
+        for l2 in ["n0c0", "n0c1", "n1c0", "n1c1", "n2c0", "n2c1", "n3c0", "n3c1"] {
             let vals: String = (0..L2_LONGS).map(|_| format!("{:016X}", value(&mut r))).collect();
             init += &format!("d set $lc0{l2} {L2_LONGS} {vals}\n");
-            probe += &format!("d get $lc0{l2} {L2_LONGS}\n");
+            if L2BS.contains(&l2) || l2.ends_with("c1") {
+                probe += &format!("d get $lc0{l2} {L2_LONGS}\n");
+            }
+        }
+        for g in 0..4 {
+            for chunk in 0..DRAM_LONGS / 64 {
+                let vals: String = (0..64).map(|_| format!("{:016X}", value(&mut r))).collect();
+                init += &format!("r {g} {:09X} 040 {vals}\n", chunk * 64);
+            }
+            probe += &format!("d get $d0n{g} {DRAM_LONGS}\n");
         }
         for (l1, m) in L1BS.iter().flat_map(|l| (0..16).map(move |m| (l, m))) {
             for p in 0..4 {
