@@ -37,7 +37,10 @@ impl Default for Blocks {
 /// Pending writes of a step to L1BM, L2BM and the turnaround register.
 #[derive(Default)]
 pub struct BlockWrites {
-    pub l1bm: Vec<(usize, usize, u64)>,
+    /// (L1B, long word address, value, cycle, expression index).
+    pub l1bm: Vec<(usize, usize, u64, u8, u16)>,
+    /// Expression index for the next L1BM writes.
+    pub expr: u16,
     pub l2bm: Vec<(usize, usize, u64)>,
     /// New turnaround contents per L1B, when a PE-to-L1BM transfer happened.
     pub lbi: Option<Vec<[[u64; 64]; 4]>>,
@@ -248,7 +251,7 @@ impl Blocks {
                         _ => if two { 8 } else { 4 },
                     };
                     for (o, v) in items {
-                        w.l1bm.push((l1b, (a as usize + c * step + o) % L1BM_LONGS, v));
+                        w.l1bm.push((l1b, (a as usize + c * step + o) % L1BM_LONGS, v, c as u8, w.expr));
                     }
                 }
             }
@@ -278,7 +281,7 @@ impl Blocks {
                     L2Op::Bcast { set } => {
                         for b in (0..8).filter(|&b| set.contains(b)) {
                             for k in 0..16 {
-                                w.l1bm.push((l1(b), (a1 + c * 16 + k) % L1BM_LONGS, self.l2bm[l2][(a0 + c * 16 + k) % L2BM_LONGS]));
+                                w.l1bm.push((l1(b), (a1 + c * 16 + k) % L1BM_LONGS, self.l2bm[l2][(a0 + c * 16 + k) % L2BM_LONGS], c as u8, w.expr));
                             }
                         }
                     }
@@ -286,7 +289,7 @@ impl Blocks {
                         for b in (0..8).filter(|&b| set.contains(b)) {
                             for k in 0..16 {
                                 let v = self.l2bm[l2][(a0 + c * 64 + 16 * (b / 2) + k) % L2BM_LONGS];
-                                w.l1bm.push((l1(b), (a1 + c * 16 + k) % L1BM_LONGS, v));
+                                w.l1bm.push((l1(b), (a1 + c * 16 + k) % L1BM_LONGS, v, c as u8, w.expr));
                             }
                         }
                     }
@@ -294,7 +297,7 @@ impl Blocks {
                         for b in (0..8).filter(|&b| set.contains(b)) {
                             for k in 0..8 {
                                 let v = self.l2bm[l2][(a0 + c * 64 + 8 * b + k) % L2BM_LONGS];
-                                w.l1bm.push((l1(b), (a1 + c * 8 + k) % L1BM_LONGS, v));
+                                w.l1bm.push((l1(b), (a1 + c * 8 + k) % L1BM_LONGS, v, c as u8, w.expr));
                             }
                         }
                     }
@@ -333,7 +336,7 @@ impl Blocks {
                             for d in (0..8).filter(|&d| d != s && d as u8 & set.immode == s as u8 & set.immode) {
                                 for k in 0..16 {
                                     let v = self.l1bm[l1(s)][(a0 + c * 16 + k) % L1BM_LONGS];
-                                    w.l1bm.push((l1(d), (a1 + c * 16 + k) % L1BM_LONGS, v));
+                                    w.l1bm.push((l1(d), (a1 + c * 16 + k) % L1BM_LONGS, v, c as u8, w.expr));
                                 }
                             }
                         }
@@ -346,7 +349,7 @@ impl Blocks {
     }
 
     pub fn apply(&mut self, w: BlockWrites) {
-        for (b, a, v) in w.l1bm {
+        for (b, a, v, _, _) in w.l1bm {
             self.l1bm[b][a] = v;
         }
         for (b, a, v) in w.l2bm {

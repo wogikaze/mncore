@@ -310,7 +310,13 @@ pub fn parse(src: &str) -> Result<Vec<(usize, Line)>, ParseError> {
         if text.is_empty() {
             continue;
         }
-        let line = parse_line(text).map_err(|msg| ParseError { line: lineno, msg })?;
+        let mut line = parse_line(text).map_err(|msg| ParseError { line: lineno, msg })?;
+        // Keep the comment of `d get` lines: testcases put the expected values there.
+        if let Line::DebugGet { comment, .. } = &mut line {
+            if let Some((_, c)) = raw.split_once('#') {
+                *comment = c.trim().to_string();
+            }
+        }
         out.push((lineno, line));
     }
     Ok(out)

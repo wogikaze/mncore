@@ -1,10 +1,13 @@
+pub mod api;
 pub mod blockop;
 pub mod blocks;
+#[cfg(not(target_arch = "wasm32"))]
 pub mod emu;
 pub mod float;
 pub mod hazard;
 pub mod machine;
 pub mod mv;
 pub mod rrn;
+pub mod trace;
 pub mod run;
 pub mod vsm;

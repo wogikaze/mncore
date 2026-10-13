@@ -2,9 +2,14 @@
 
 use std::collections::HashMap;
 
-use crate::emu::DumpKey;
 use crate::machine::{ExecError, Machine, MaskState, PeId, PES};
 use crate::vsm::{DebugLoc, Line, MemKind};
+
+/// Key of one dumped value: memory name as printed by the emulator (`LM0`, `GREG1`, `TREG`,
+/// `OMR`, ...), PE path (`n0c0b0m0p0`), and address. The address is the word address for
+/// LM/GRF, the long word index for T (2 * cycle + k, as read by `d get $llt`), and
+/// `entry * 4 + cycle` for the mask register.
+pub type DumpKey = (String, String, u32);
 
 pub struct Sim {
     pub m: Machine,
@@ -118,7 +123,20 @@ impl Sim {
                     }
                 }
                 MemKind::Lm0 | MemKind::Lm1 | MemKind::Grf0 | MemKind::Grf1 => {
-                    let m = p.mem_mut(loc.mem);
+                    if let Some(t) = self.m.tracer.borrow_mut().as_mut() {
+                        let name = match loc.mem {
+                            MemKind::Lm0 => "lm0",
+                            MemKind::Lm1 => "lm1",
+                            MemKind::Grf0 => "grf0",
+                            _ => "grf1",
+                        };
+                        let words: Vec<u32> = match loc.wl {
+                            1 => payload.iter().take(count as usize).map(|v| (v >> 32) as u32).collect(),
+                            _ => payload.iter().take(count as usize).flat_map(|v| [(v >> 32) as u32, *v as u32]).collect(),
+                        };
+                        t.pe(pe, 0, name, true, Some(loc.addr), &words);
+                    }
+                    let m = self.m.pes[pe].mem_mut(loc.mem);
                     match loc.wl {
                         1 => {
                             for i in 0..count as usize {

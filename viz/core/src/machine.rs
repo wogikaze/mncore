@@ -174,11 +174,15 @@ pub struct Machine {
     pub mats: Vec<[MatFace; 2]>,
     /// L1BM, L2BM and the L1BM turnaround register.
     pub blocks: crate::blocks::Blocks,
+    /// Records accesses of focus PEs for the visualization, when set.
+    pub tracer: std::cell::RefCell<Option<crate::trace::Tracer>>,
     pub mask_state: MaskState,
 }
 
 /// A pending write to a matrix register: MAB, face, physical row, and the 8 words of the row.
 struct MatWrite {
+    expr: u16,
+    cycle: usize,
     mab: usize,
     side: usize,
     phys_row: usize,
@@ -243,7 +247,7 @@ impl Machine {
     pub fn new() -> Machine {
         let uninit = |k| Some(format!("uninitialized {} forwarding register", unit_name(k)));
         let fwd_error = [uninit(FwdKind::Aluf), uninit(FwdKind::Mauf), uninit(FwdKind::Mreadf), uninit(FwdKind::Lbf)];
-        Machine { pes: vec![Pe::default(); PES], fwd_error, blocks: Default::default(), mats: vec![[[[0; 8]; 16]; 2]; PES / 4], mask_state: MaskState::default() }
+        Machine { pes: vec![Pe::default(); PES], fwd_error, blocks: Default::default(), tracer: Default::default(), mats: vec![[[[0; 8]; 16]; 2]; PES / 4], mask_state: MaskState::default() }
     }
 
     // ---- reads ----------------------------------------------------------------------------
@@ -267,6 +271,21 @@ impl Machine {
     }
 
     fn read_raw(&self, pe: usize, op: &Operand, cycle: usize) -> Result<Bus, ExecError> {
+        let bus = self.read_raw_untraced(pe, op, cycle)?;
+        if let Some(t) = self.tracer.borrow_mut().as_mut() {
+            match op {
+                Operand::Mem { mem, wl, addr, .. } => {
+                    let (a, n) = if *mem == MemKind::T { (cycle as u32, 4) } else { (self.word_addrs(pe, *mem, *wl, addr, cycle) as u32, *wl as usize) };
+                    t.pe(pe, cycle, mem_name(*mem), false, Some(a), &bus[..n]);
+                }
+                Operand::Forward { kind, .. } => t.pe(pe, cycle, fwd_name(*kind), false, None, &bus),
+                _ => {}
+            }
+        }
+        Ok(bus)
+    }
+
+    fn read_raw_untraced(&self, pe: usize, op: &Operand, cycle: usize) -> Result<Bus, ExecError> {
         let p = &self.pes[pe];
         Ok(match op {
             Operand::Mem { mem: MemKind::T, .. } => {
@@ -309,7 +328,10 @@ impl Machine {
         let mut outputs: Vec<(&Expr, Output)> = Vec::new();
         let mut mat_writes: Vec<MatWrite> = Vec::new();
         let mut block_writes = crate::blocks::BlockWrites::default();
-        for e in exprs {
+        for (ei, e) in exprs.iter().enumerate() {
+            if let Some(t) = self.tracer.borrow_mut().as_mut() {
+                t.expr = ei as u16;
+            }
             match &e.op {
                 Op::Noforward | Op::Wait(_) => continue,
                 Op::MatWrite { prec } => {
@@ -317,6 +339,7 @@ impl Machine {
                     continue;
                 }
                 Op::L1(op) if !is_l1_to_pe(e) => {
+                    block_writes.expr = ei as u16;
                     let src = &e.srcs[0];
                     let ext = matches!(src, Operand::Mem { ext: true, .. } | Operand::Forward { ext: true, .. });
                     let mut vals = vec![[[0u32; 4]; 4]; PES];
@@ -331,6 +354,7 @@ impl Machine {
                     continue;
                 }
                 Op::L2(op) => {
+                    block_writes.expr = ei as u16;
                     self.blocks.l2(e, *op, &mut block_writes)?;
                     continue;
                 }
@@ -349,6 +373,12 @@ impl Machine {
             outputs.push((e, out));
         }
         let new_lbi = block_writes.lbi.take();
+        if let Some(t) = self.tracer.borrow_mut().as_mut() {
+            for &(b, a, v, c, ei) in &block_writes.l1bm {
+                t.expr = ei;
+                t.l1bm(b, c as usize, true, a as u32, v);
+            }
+        }
         self.blocks.apply(block_writes);
         if !noforward {
             match new_lbi {
@@ -360,6 +390,11 @@ impl Machine {
             }
         }
         for w in mat_writes {
+            if let Some(t) = self.tracer.borrow_mut().as_mut() {
+                t.expr = w.expr;
+                let words: Vec<u32> = w.words.iter().map(|v| v.unwrap_or(0)).collect();
+                t.mat(w.mab, w.cycle, w.side, w.phys_row, &words);
+            }
             let row = &mut self.mats[w.mab][w.side][w.phys_row];
             for (i, v) in w.words.iter().enumerate() {
                 if let Some(v) = v {
@@ -367,14 +402,18 @@ impl Machine {
                 }
             }
         }
-        for (e, out) in &outputs {
-            let flush = match e.flush {
-                Some(sel) => Some(sel),
-                None => None,
-            };
+        for (ei, (e, out)) in outputs.iter().enumerate() {
+            let flush = e.flush;
+            let expr_index = exprs.iter().position(|x| std::ptr::eq(x, *e)).unwrap_or(ei) as u16;
+            if let Some(t) = self.tracer.borrow_mut().as_mut() {
+                t.expr = expr_index;
+            }
             for pe in 0..PES {
                 for c in 0..4 {
                     let mut bus = out.bus[pe][c];
+                    if let Some(t) = self.tracer.borrow_mut().as_mut() {
+                        t.pe(pe, c, "out", true, None, &bus);
+                    }
                     if let Some(sel) = flush {
                         let f = self.mask_flags(pe, &sel, c);
                         bus = apply_flush(bus, f, sel.ll);
@@ -482,6 +521,12 @@ impl Machine {
                 let mflags = sel.map(|s| (self.mask_flags(pe, &s, cycle), s.ll));
                 let words = if *mem == MemKind::T { 4 } else { *wl as usize };
                 fail((0..words).any(|i| word_enabled(mflags, i)))?;
+                if (0..words).any(|i| word_enabled(mflags, i)) {
+                    if let Some(t) = self.tracer.borrow_mut().as_mut() {
+                        let a = if *mem == MemKind::T { cycle as u32 } else { self.word_addrs(pe, *mem, *wl, addr, cycle) as u32 };
+                        t.pe(pe, cycle, mem_name(*mem), true, Some(a), &bus[..words]);
+                    }
+                }
                 if *mem == MemKind::T {
                     let p = &mut self.pes[pe];
                     for i in 0..4 {
@@ -509,6 +554,9 @@ impl Machine {
                     }
                 }
                 fail(true)?;
+                if let Some(t) = self.tracer.borrow_mut().as_mut() {
+                    t.pe(pe, cycle, if *lm1 { "bar1" } else { "bar0" }, true, None, &[bus[0] & 0xfff]);
+                }
                 let p = &mut self.pes[pe];
                 if *lm1 {
                     p.bar1 = bus[0] & 0xfff;
@@ -526,6 +574,9 @@ impl Machine {
                     None => flags,
                 };
                 fail(true)?;
+                if let Some(t) = self.tracer.borrow_mut().as_mut() {
+                    t.pe(pe, cycle, "omr", true, Some(*entry as u32), &[f as u32]);
+                }
                 let p = &mut self.pes[pe];
                 let e = &mut p.mask[*entry as usize];
                 *e = (*e & !(0xf << (4 * cycle))) | ((f as u16) << (4 * cycle));
@@ -1230,7 +1281,8 @@ impl Machine {
                         elems.clone()
                     };
                     let words = pack_row(&row_elems, f.width());
-                    out.push(MatWrite { mab, side, phys_row: row * step, words: words.map(Some) });
+                    let expr = self.tracer.borrow().as_ref().map(|t| t.expr).unwrap_or(0);
+                    out.push(MatWrite { expr, cycle: c, mab, side, phys_row: row * step, words: words.map(Some) });
                 }
             }
         }
@@ -1407,4 +1459,24 @@ fn pack_row(elems: &[u64], width: u32) -> [u32; 8] {
         }
     }
     out
+}
+
+fn mem_name(m: MemKind) -> &'static str {
+    match m {
+        MemKind::Lm0 => "lm0",
+        MemKind::Lm1 => "lm1",
+        MemKind::Grf0 => "grf0",
+        MemKind::Grf1 => "grf1",
+        MemKind::T => "t",
+        _ => "other",
+    }
+}
+
+fn fwd_name(k: FwdKind) -> &'static str {
+    match k {
+        FwdKind::Aluf => "aluf",
+        FwdKind::Mauf => "mauf",
+        FwdKind::Mreadf => "mreadf",
+        FwdKind::Lbf => "lbf",
+    }
 }

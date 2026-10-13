@@ -65,10 +65,7 @@ fn tempdir() -> PathBuf {
     dir
 }
 
-/// Key of one dumped value: memory name as printed by the emulator (`LM0`, `GREG1`, `TREG`,
-/// `OMR`, ...), PE path (`n0c0b0m0p0`), and address. The address is the word address for
-/// LM/GRF, the long word index for T (2 * cycle + k, as read by `d get $llt`), and `entry * 4 + cycle` for the mask register.
-pub type DumpKey = (String, String, u32);
+pub use crate::run::DumpKey;
 
 /// Parses `d get` / `d get[dfh]` output into a map from location to long word value
 /// (or 4-bit flags for the mask register).
