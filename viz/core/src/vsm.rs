@@ -83,6 +83,8 @@ pub enum MemKind {
     L2bm,
     Pdm,
     Dram,
+    /// Mask register (`$omr<entry>` in debug statements).
+    Omr,
 }
 
 /// One PE instruction expression.
@@ -118,6 +120,10 @@ pub enum Op {
     MatRead { prec: Prec },
     Wait(u8),
     Noforward,
+    /// L1BM expression (SDM 3.6.8).
+    L1(crate::blockop::L1Op),
+    /// L2BM expression (SDM 3.6.7).
+    L2(crate::blockop::L2Op),
     /// L1BM / L2BM expressions and others not simulated yet.
     Other(String),
 }
@@ -257,6 +263,13 @@ pub enum Operand {
     /// Matrix register (`$lx0`, `$ly`, `$llx0`).
     Mat { y: bool, wl: u8, row: Option<u32> },
     Nowrite,
+    /// L1BM in an L1BM or L2BM expression: access length (2 or 4 words) and long word address,
+    /// or `None` for the turnaround register `$lbi`.
+    L1bm { wl: u8, addr: Option<u32> },
+    /// L2BM (`$lc<addr>`, or `$lc<addr>@.<l2b>` in l2bmdars).
+    L2bm { addr: u32, l2b: Option<u8> },
+    /// DRAM address register (`$dar<addr>`).
+    Dar { addr: u32 },
     /// Operands of instructions not simulated yet.
     Raw(String),
 }
@@ -443,11 +456,19 @@ fn parse_dram_set(rest: &str) -> Result<Line, String> {
 
 fn parse_debug_loc(s: &str) -> Result<DebugLoc, String> {
     let s = s.strip_prefix('$').ok_or("debug location must start with $")?;
-    let (wl, s) = access_len(s);
+    let (wl, s, omr) = match s.strip_prefix("omr") {
+        Some(r) => (1, r, true),
+        None => {
+            let (wl, s) = access_len(s);
+            (wl, s, false)
+        }
+    };
+    let s: &str = if omr { s } else { s };
     let mut chars = s.char_indices();
-    let (_, k) = chars.next().ok_or("empty location")?;
-    let mut s = &s[k.len_utf8()..];
+    let (_, k) = if omr { (0, 'o') } else { chars.next().ok_or("empty location")? };
+    let mut s = if omr { s } else { &s[k.len_utf8()..] };
     let mem = match k {
+        'o' => MemKind::Omr,
         'm' => MemKind::Lm0,
         'n' => MemKind::Lm1,
         'r' => MemKind::Grf0,
@@ -554,7 +575,7 @@ fn parse_expr(part: &str) -> Result<Expr, String> {
         None => (opcode, None),
     };
     let (opcode, flush) = match opcode.split_once('/') {
-        Some((o, m)) if !o.starts_with("mv") => (o.to_string(), Some(parse_mask_sel(m)?)),
+        Some((o, m)) if !o.starts_with("mv") && !o.starts_with("l2bm") => (o.to_string(), Some(parse_mask_sel(m)?)),
         _ => (opcode, None),
     };
 
@@ -566,8 +587,15 @@ fn parse_expr(part: &str) -> Result<Expr, String> {
         return Ok(Expr { op: Op::Wait(tag.ok_or("bad wait tag")?), srcs: vec![], dsts: vec![], flush, text });
     }
     if opcode.starts_with("l1bm") || opcode.starts_with("l2bm") {
-        let srcs = toks.iter().map(|t| Operand::Raw(t.clone())).collect();
-        return Ok(Expr { op: Op::Other(opcode), srcs, dsts: vec![], flush, text });
+        let ops: Vec<Operand> = toks.iter().map(|t| parse_operand(t)).collect::<Result<_, _>>()?;
+        let first_block = matches!(ops.first(), Some(Operand::L1bm { .. }));
+        let op = if opcode.starts_with("l1bm") {
+            Op::L1(crate::blockop::parse_l1_opcode(&opcode, first_block)?)
+        } else {
+            Op::L2(crate::blockop::parse_l2_opcode(&opcode, matches!(ops.first(), Some(Operand::L2bm { .. })))?)
+        };
+        let (srcs, dsts) = if ops.is_empty() { (vec![], vec![]) } else { (ops[..1].to_vec(), ops[1..].to_vec()) };
+        return Ok(Expr { op, srcs, dsts, flush, text });
     }
     if opcode == "zero" {
         let dsts = toks.iter().map(|t| parse_operand(t)).collect::<Result<_, _>>()?;
@@ -809,6 +837,10 @@ pub fn parse_operand(tok: &str) -> Result<Operand, String> {
         let entry = n.parse().map_err(|_| format!("bad mask register `{tok}`"))?;
         return Ok(Operand::Omr { entry, mask });
     }
+    if let Some(n) = s.strip_prefix("dar") {
+        let addr = n.parse().map_err(|_| format!("bad DAR operand `{tok}`"))?;
+        return Ok(Operand::Dar { addr });
+    }
     let (wl, s) = access_len(s);
     match s {
         "mb" => return Ok(Operand::Bar { lm1: false, wl, mask }),
@@ -818,6 +850,21 @@ pub fn parse_operand(tok: &str) -> Result<Operand, String> {
     let mut chars = s.chars();
     let k = chars.next().ok_or_else(|| format!("bad operand `{tok}`"))?;
     let rest = &s[1..];
+    if k == 'b' {
+        if rest == "i" {
+            return Ok(Operand::L1bm { wl, addr: None });
+        }
+        let addr = rest.parse().map_err(|_| format!("bad L1BM operand `{tok}`"))?;
+        return Ok(Operand::L1bm { wl, addr: Some(addr) });
+    }
+    if k == 'c' {
+        let (a, l2b) = match rest.split_once("@.") {
+            Some((a, b)) => (a, Some(b.parse().map_err(|_| format!("bad L2B in `{tok}`"))?)),
+            None => (rest, None),
+        };
+        let addr = a.parse().map_err(|_| format!("bad L2BM operand `{tok}`"))?;
+        return Ok(Operand::L2bm { addr, l2b });
+    }
     if k == 'x' || k == 'y' {
         let (row, r) = take_num(rest);
         if !r.is_empty() {
@@ -912,7 +959,7 @@ mod tests {
         assert!(matches!(classify("gmwrite"), Some(Op::MatWrite { prec: Prec::G })));
         assert!(matches!(classify("ixor"), Some(Op::Alu { name: AluOp::Xor, prec: Some(Prec::I), .. })));
         assert!(matches!(classify("lnot"), Some(Op::Alu { name: AluOp::Not, prec: Some(Prec::L), .. })));
-        assert!(matches!(classify("ullsr"), Some(Op::Alu { name: AluOp::Lsr, prec: Some(Prec::L), unsigned: true })));
+        assert!(matches!(classify("ullsr"), Some(Op::Alu { name: AluOp::Lsr, prec: Some(Prec::L), unsigned: true, .. })));
         assert!(matches!(classify("msr"), Some(Op::Alu { name: AluOp::Msr, prec: None, .. })));
         assert!(matches!(classify("gbfn"), Some(Op::Alu { name: AluOp::Bfn, prec: Some(Prec::G), .. })));
         assert!(classify("lsl").is_none());

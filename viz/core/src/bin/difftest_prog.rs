@@ -24,8 +24,12 @@ fn main() {
             let n = if mem == "lr0" || mem == "ls0" { 256 } else { 2048 };
             probe += &format!("d get ${mem}{pe} {n}\n");
         }
-        probe += &format!("d get $lt{pe} 8\n");
+        probe += &format!("d get $llt{pe} 4\n");
     }
+    for l1 in ["n0c0b0", "n2c1b5"] {
+        probe += &format!("d get $lb0{l1} 8192\n");
+    }
+    probe += "d get $lc0n0c0 32768\n";
 
     let main_asm = match emu::assemble(&main_vsm) {
         Ok(a) => a,

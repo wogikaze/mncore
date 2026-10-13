@@ -135,9 +135,23 @@ impl Pe {
     }
 }
 
-/// Error raised for instructions the simulator does not support yet.
 #[derive(Clone, Debug, PartialEq)]
-pub struct Unsupported(pub String);
+pub enum ExecError {
+    /// An instruction or operand the simulator does not support yet.
+    Unsupported(String),
+    /// An error the emulator also raises at run time, such as reading `$aluf` after a step
+    /// without an ALU instruction, or a matrix product with invalid block-float input.
+    Runtime(String),
+}
+
+impl ExecError {
+    pub fn message(&self) -> String {
+        match self {
+            ExecError::Unsupported(m) => format!("unsupported: {m}"),
+            ExecError::Runtime(m) => format!("runtime error: {m}"),
+        }
+    }
+}
 
 /// The multi-line write mask set by `mask...` directives.
 #[derive(Clone, Copy, Debug, Default)]
@@ -152,8 +166,14 @@ pub type MatFace = [[u32; 8]; 16];
 
 pub struct Machine {
     pub pes: Vec<Pe>,
+    /// Why each forwarding register (aluf, mauf, mreadf, lbf) cannot be read, if it cannot.
+    /// Like the emulator, an error is only raised when the register is actually read, e.g.
+    /// when the previous step had no instruction for that unit ("IALU is disabled").
+    pub fwd_error: [Option<String>; 4],
     /// Matrix registers x (index 0) and y (index 1) of each MAB.
     pub mats: Vec<[MatFace; 2]>,
+    /// L1BM, L2BM and the L1BM turnaround register.
+    pub blocks: crate::blocks::Blocks,
     pub mask_state: MaskState,
 }
 
@@ -172,6 +192,45 @@ struct Output {
     flags: Vec<[u8; 4]>,
     /// Which forwarding register this output updates.
     fwd: Option<FwdKind>,
+    /// A run-time error in computing some values. As in the emulator, it is raised only when
+    /// such a value is written to memory, or read later from the forwarding register.
+    poison: Option<Poison>,
+}
+
+struct Poison {
+    msg: String,
+    /// Poisoned (pe, cycle) values; empty means all.
+    at: Vec<[bool; 4]>,
+}
+
+impl Poison {
+    fn hits(&self, pe: usize, c: usize) -> bool {
+        self.at.is_empty() || self.at[pe][c]
+    }
+}
+
+/// The forwarding register an expression updates.
+fn op_fwd_kind(e: &Expr) -> Option<FwdKind> {
+    match &e.op {
+        Op::Alu { .. } | Op::Imm { .. } | Op::Zero => Some(FwdKind::Aluf),
+        Op::Mau { .. } => Some(FwdKind::Mauf),
+        Op::MatRead { .. } => Some(FwdKind::Mreadf),
+        Op::L1(_) if is_l1_to_pe(e) => Some(FwdKind::Lbf),
+        _ => None,
+    }
+}
+
+fn is_l1_to_pe(e: &Expr) -> bool {
+    matches!(e.srcs.first(), Some(Operand::L1bm { .. }))
+}
+
+fn unit_name(k: FwdKind) -> &'static str {
+    match k {
+        FwdKind::Aluf => "IALU",
+        FwdKind::Mauf => "MAU",
+        FwdKind::Mreadf => "matrix read",
+        FwdKind::Lbf => "L1BM-to-PE transfer",
+    }
 }
 
 impl Default for Machine {
@@ -182,7 +241,9 @@ impl Default for Machine {
 
 impl Machine {
     pub fn new() -> Machine {
-        Machine { pes: vec![Pe::default(); PES], mats: vec![[[[0; 8]; 16]; 2]; PES / 4], mask_state: MaskState::default() }
+        let uninit = |k| Some(format!("uninitialized {} forwarding register", unit_name(k)));
+        let fwd_error = [uninit(FwdKind::Aluf), uninit(FwdKind::Mauf), uninit(FwdKind::Mreadf), uninit(FwdKind::Lbf)];
+        Machine { pes: vec![Pe::default(); PES], fwd_error, blocks: Default::default(), mats: vec![[[[0; 8]; 16]; 2]; PES / 4], mask_state: MaskState::default() }
     }
 
     // ---- reads ----------------------------------------------------------------------------
@@ -194,7 +255,9 @@ impl Machine {
             MemKind::Lm1 => p.bar1,
             _ => 0,
         } as usize;
-        let t = if addr.t_indirect { p.t[cycle * 4] as usize } else { 0 };
+        // T indirect adds the MSB long word of T as an integer; only its low bits matter, because
+        // addresses wrap at the memory size.
+        let t = if addr.t_indirect { p.t[cycle * 4 + 1] as usize } else { 0 };
         let maadj = match addr.madpe {
             Some(m) if (pe % 4) as u8 <= m => wl as usize,
             _ => 0,
@@ -203,7 +266,7 @@ impl Machine {
         a / wl as usize * wl as usize
     }
 
-    fn read_raw(&self, pe: usize, op: &Operand, cycle: usize) -> Result<Bus, Unsupported> {
+    fn read_raw(&self, pe: usize, op: &Operand, cycle: usize) -> Result<Bus, ExecError> {
         let p = &self.pes[pe];
         Ok(match op {
             Operand::Mem { mem: MemKind::T, .. } => {
@@ -219,25 +282,33 @@ impl Machine {
                 }
                 bus
             }
+            Operand::Forward { kind, .. } if self.fwd_error[fwd_index(*kind)].is_some() => {
+                return Err(ExecError::Runtime(format!(
+                    "accessing {} forwarding register failed; the error on the previous step is: {}",
+                    unit_name(*kind),
+                    self.fwd_error[fwd_index(*kind)].as_ref().unwrap()
+                )))
+            }
             Operand::Forward { kind, .. } => match kind {
                 FwdKind::Aluf => p.aluf[cycle],
                 FwdKind::Mauf => p.mauf[cycle],
                 FwdKind::Mreadf => p.mreadf[cycle],
                 FwdKind::Lbf => p.lbf[cycle],
             },
-            Operand::Fixed(_) => return Err(Unsupported("fixed operands depend on precision".into())),
-            other => return Err(Unsupported(format!("read of {other:?}"))),
+            Operand::Fixed(_) => return Err(ExecError::Unsupported("fixed operands depend on precision".into())),
+            other => return Err(ExecError::Unsupported(format!("read of {other:?}"))),
         })
     }
 
     // ---- step execution -------------------------------------------------------------------
 
     /// Executes one PE statement.
-    pub fn step(&mut self, exprs: &[Expr]) -> Result<(), Unsupported> {
+    pub fn step(&mut self, exprs: &[Expr]) -> Result<(), ExecError> {
         let noforward = exprs.iter().any(|e| e.op == Op::Noforward);
         let single_line_mask = exprs.iter().any(|e| e.dsts.iter().any(has_mask));
         let mut outputs: Vec<(&Expr, Output)> = Vec::new();
         let mut mat_writes: Vec<MatWrite> = Vec::new();
+        let mut block_writes = crate::blocks::BlockWrites::default();
         for e in exprs {
             match &e.op {
                 Op::Noforward | Op::Wait(_) => continue,
@@ -245,10 +316,47 @@ impl Machine {
                     mat_writes.extend(self.compute_mwrite(e, *prec)?);
                     continue;
                 }
+                Op::L1(op) if !is_l1_to_pe(e) => {
+                    let src = &e.srcs[0];
+                    let ext = matches!(src, Operand::Mem { ext: true, .. } | Operand::Forward { ext: true, .. });
+                    let mut vals = vec![[[0u32; 4]; 4]; PES];
+                    for pe in 0..PES {
+                        for c in 0..4 {
+                            vals[pe][c] = self.read_raw(pe, src, c)?;
+                        }
+                    }
+                    let dst = e.dsts.first().ok_or_else(|| ExecError::Unsupported("missing L1BM operand".into()))?;
+                    self.blocks.pe_to_l1(*op, dst, &vals, ext, &mut block_writes)?;
+                    continue;
+                }
+                Op::L2(op) => {
+                    self.blocks.l2(e, *op, &mut block_writes)?;
+                    continue;
+                }
                 _ => {}
             }
-            let out = self.compute(e)?;
+            let out = match self.compute(e) {
+                Ok(o) => o,
+                Err(ExecError::Runtime(msg)) => Output {
+                    bus: vec![[[0; 4]; 4]; PES],
+                    flags: vec![[0; 4]; PES],
+                    fwd: op_fwd_kind(e),
+                    poison: Some(Poison { msg, at: Vec::new() }),
+                },
+                Err(other) => return Err(other),
+            };
             outputs.push((e, out));
+        }
+        let new_lbi = block_writes.lbi.take();
+        self.blocks.apply(block_writes);
+        if !noforward {
+            match new_lbi {
+                Some(l) => {
+                    self.blocks.lbi = l;
+                    self.blocks.lbi_error = None;
+                }
+                None => self.blocks.lbi_error = Some("the previous step had no PE-to-L1BM transfer".into()),
+            }
         }
         for w in mat_writes {
             let row = &mut self.mats[w.mab][w.side][w.phys_row];
@@ -270,13 +378,22 @@ impl Machine {
                         let f = self.mask_flags(pe, &sel, c);
                         bus = apply_flush(bus, f, sel.ll);
                     }
+                    let poison = out.poison.as_ref().filter(|p| p.hits(pe, c)).map(|p| p.msg.as_str());
                     for d in &e.dsts {
-                        self.write(pe, d, c, bus, out.flags[pe][c], single_line_mask)?;
+                        self.write(pe, d, c, bus, out.flags[pe][c], single_line_mask, poison)?;
                     }
                 }
             }
         }
         if !noforward {
+            for k in [FwdKind::Aluf, FwdKind::Mauf, FwdKind::Mreadf, FwdKind::Lbf] {
+                let mine: Vec<&Output> = outputs.iter().map(|(_, o)| o).filter(|o| o.fwd == Some(k)).collect();
+                self.fwd_error[fwd_index(k)] = if mine.is_empty() {
+                    Some(format!("{} is disabled", unit_name(k)))
+                } else {
+                    mine.iter().find_map(|o| o.poison.as_ref().map(|p| p.msg.clone()))
+                };
+            }
             for (e, out) in &outputs {
                 let Some(kind) = out.fwd else { continue };
                 for pe in 0..PES {
@@ -328,7 +445,13 @@ impl Machine {
         }
     }
 
-    fn write(&mut self, pe: usize, d: &Operand, cycle: usize, bus: Bus, flags: u8, single_line: bool) -> Result<(), Unsupported> {
+    fn write(&mut self, pe: usize, d: &Operand, cycle: usize, bus: Bus, flags: u8, single_line: bool, poison: Option<&str>) -> Result<(), ExecError> {
+        let fail = |enabled: bool| -> Result<(), ExecError> {
+            match poison {
+                Some(msg) if enabled => Err(ExecError::Runtime(msg.to_string())),
+                _ => Ok(()),
+            }
+        };
         // Which mask applies: the single-line mask of this operand, or the multi-line directive
         // unless any single-line mask is used in this step (SDM 3.6.2.1).
         let directive = |mem: Option<MemKind>, omr: bool, st: &MaskState| -> Option<MaskSel> {
@@ -356,6 +479,8 @@ impl Machine {
             Operand::Mem { mem, wl, addr, mask, .. } => {
                 let sel = mask.or_else(|| directive(Some(*mem), false, &st));
                 let mflags = sel.map(|s| (self.mask_flags(pe, &s, cycle), s.ll));
+                let words = if *mem == MemKind::T { 4 } else { *wl as usize };
+                fail((0..words).any(|i| word_enabled(mflags, i)))?;
                 if *mem == MemKind::T {
                     let p = &mut self.pes[pe];
                     for i in 0..4 {
@@ -382,6 +507,7 @@ impl Machine {
                         return Ok(());
                     }
                 }
+                fail(true)?;
                 let p = &mut self.pes[pe];
                 if *lm1 {
                     p.bar1 = bus[0] & 0xfff;
@@ -391,25 +517,26 @@ impl Machine {
             }
             Operand::Omr { entry, mask } => {
                 if *entry == 0 || *entry > 15 {
-                    return Err(Unsupported(format!("mask register entry {entry} is read-only")));
+                    return Err(ExecError::Unsupported(format!("mask register entry {entry} is read-only")));
                 }
                 let sel = mask.or_else(|| directive(None, true, &st));
                 let f = match sel {
                     Some(s) => flags & self.mask_flags(pe, &s, cycle),
                     None => flags,
                 };
+                fail(true)?;
                 let p = &mut self.pes[pe];
                 let e = &mut p.mask[*entry as usize];
                 *e = (*e & !(0xf << (4 * cycle))) | ((f as u16) << (4 * cycle));
             }
-            other => return Err(Unsupported(format!("write to {other:?}"))),
+            other => return Err(ExecError::Unsupported(format!("write to {other:?}"))),
         }
         Ok(())
     }
 
     // ---- compute --------------------------------------------------------------------------
 
-    fn compute(&self, e: &Expr) -> Result<Output, Unsupported> {
+    fn compute(&self, e: &Expr) -> Result<Output, ExecError> {
         match &e.op {
             Op::Zero => Ok(self.alu_like(|_, _| ([[0; 4]; 4], [0; 4]))),
             Op::Imm { value, u } => {
@@ -422,7 +549,11 @@ impl Machine {
             Op::Mau { prec, matrix: false, kind, half, round } => self.compute_vec(e, *prec, *kind, *half, *round),
             Op::Mau { prec, matrix: true, kind, half, round } => self.compute_mat(e, *prec, *kind, *half, *round),
             Op::MatRead { prec } => self.compute_mread(e, *prec),
-            other => Err(Unsupported(format!("{other:?}"))),
+            Op::L1(op) => {
+                let bus = self.blocks.l1_to_pe(*op, &e.srcs[0])?;
+                Ok(Output { bus, flags: vec![[0; 4]; PES], fwd: Some(FwdKind::Lbf), poison: None })
+            }
+            other => Err(ExecError::Unsupported(format!("{other:?}"))),
         }
     }
 
@@ -434,11 +565,11 @@ impl Machine {
             bus.push(b);
             flags.push(fl);
         }
-        Output { bus, flags, fwd: Some(FwdKind::Aluf) }
+        Output { bus, flags, fwd: Some(FwdKind::Aluf), poison: None }
     }
 
     /// Reads an ALU input operand, applying the `r` option (single to half) if present.
-    fn read_alu_input(&self, pe: usize, op: &Operand, prec: Option<Prec>, cycle: usize) -> Result<Bus, Unsupported> {
+    fn read_alu_input(&self, pe: usize, op: &Operand, prec: Option<Prec>, cycle: usize) -> Result<Bus, ExecError> {
         if let Operand::Fixed(k) = op {
             let id = PeId::from_index(pe);
             let v: u64 = match k {
@@ -465,7 +596,7 @@ impl Machine {
         Ok(bus)
     }
 
-    fn compute_alu(&self, e: &Expr, name: AluOp, prec: Option<Prec>, unsigned: bool) -> Result<Output, Unsupported> {
+    fn compute_alu(&self, e: &Expr, name: AluOp, prec: Option<Prec>, unsigned: bool) -> Result<Output, ExecError> {
         let n = name.inputs();
         let mut ins: Vec<Vec<[Bus; 4]>> = vec![vec![[[0; 4]; 4]; PES]; n];
         for (i, op) in e.srcs.iter().enumerate().take(n) {
@@ -487,8 +618,10 @@ impl Machine {
                         // msl: PE k outputs the input of PE k-1 within the MAB.
                         let base = pe / 4 * 4;
                         let src = if name == AluOp::Msl { base + (pe + 3) % 4 } else { base + (pe + 1) % 4 };
+                        // Only one long word moves between PEs: the LSB long word is 0 (emulator),
+                        // not the first input's LSB long word as for other ALU instructions.
                         let v = ins[0][src][c];
-                        ([v[0], v[1], x[2], x[3]], 0)
+                        ([v[0], v[1], 0, 0], 0)
                     }
                     AluOp::Passa => {
                         let fl = lane_flags(&lanes(&x, bits), bits, |v| v == 0);
@@ -504,19 +637,19 @@ impl Machine {
                 flags[pe][c] = fl;
             }
         }
-        Ok(Output { bus, flags, fwd: Some(FwdKind::Aluf) })
+        Ok(Output { bus, flags, fwd: Some(FwdKind::Aluf), poison: None })
     }
 
-    fn compute_vec(&self, e: &Expr, prec: Prec, kind: MauKind, half: Option<char>, round: bool) -> Result<Output, Unsupported> {
+    fn compute_vec(&self, e: &Expr, prec: Prec, kind: MauKind, half: Option<char>, round: bool) -> Result<Output, ExecError> {
         // Formats of the inputs a, b, c and of the output in the basic operation (SDM 3.6.9).
         let (fa, fc, fout): (Fmt, Fmt, Fmt) = match prec {
             Prec::D => (DOUBLE, DOUBLE, if round { SINGLE } else { DOUBLE }),
             Prec::F => (SINGLE, SINGLE, SINGLE),
             Prec::H => (HALF, SINGLE, if round { HALF } else { SINGLE }),
-            _ => return Err(Unsupported(format!("vector op precision {prec:?}"))),
+            _ => return Err(ExecError::Unsupported(format!("vector op precision {prec:?}"))),
         };
         if prec == Prec::F && round {
-            return Err(Unsupported("fv*r".into()));
+            return Err(ExecError::Unsupported("fv*r".into()));
         }
         let lanes_n = match prec {
             Prec::D => 1,
@@ -530,7 +663,7 @@ impl Machine {
             MauKind::Add => (Some(0), None, Some(1)),
             MauKind::Passa => (Some(0), None, None),
         };
-        let read_vals = |m: &Machine, pe: usize, idx: Option<usize>, f: Fmt, c: usize| -> Result<Option<Vec<Val>>, Unsupported> {
+        let read_vals = |m: &Machine, pe: usize, idx: Option<usize>, f: Fmt, c: usize| -> Result<Option<Vec<Val>>, ExecError> {
             let Some(i) = idx else { return Ok(None) };
             let op = &e.srcs[i];
             let bus = m.read_raw(pe, op, c)?;
@@ -539,9 +672,9 @@ impl Machine {
                 _ => (false, false, false),
             };
             let raw_fmt = if ext {
-                lower(f).ok_or_else(|| Unsupported("extension below half".into()))?
+                lower(f).ok_or_else(|| ExecError::Unsupported("extension below half".into()))?
             } else if rnd {
-                higher(f).ok_or_else(|| Unsupported("rounding from above double".into()))?
+                higher(f).ok_or_else(|| ExecError::Unsupported("rounding from above double".into()))?
             } else {
                 f
             };
@@ -589,8 +722,34 @@ impl Machine {
                 flags[pe][c] = mau_flags(&out, fout);
             }
         }
-        Ok(Output { bus, flags, fwd: Some(FwdKind::Mauf) })
+        Ok(Output { bus, flags, fwd: Some(FwdKind::Mauf), poison: None })
     }
+}
+
+fn fwd_index(k: FwdKind) -> usize {
+    match k {
+        FwdKind::Aluf => 0,
+        FwdKind::Mauf => 1,
+        FwdKind::Mreadf => 2,
+        FwdKind::Lbf => 3,
+    }
+}
+
+/// Checks that a block-float block has a common exponent, as the emulator does before a
+/// matrix product ("Invalid block float format").
+fn check_bf(f: Fmt, block: &[u64], what: &str) -> Result<(), ExecError> {
+    let exp = |v: u64| (v >> f.man_bits) & f.exp_max();
+    let common = block.iter().map(|&v| exp(v)).max().unwrap_or(0);
+    for (i, &v) in block.iter().enumerate() {
+        let e = exp(v);
+        // Exponent 0 is allowed only in half precision, as the extended representation.
+        if e != common && !(f == HALF && e == 0) {
+            return Err(ExecError::Runtime(format!(
+                "invalid block float in {what}: the exponent of element {i} is not the common exponent {common} (bfn/bfe missing?)"
+            )));
+        }
+    }
+    Ok(())
 }
 
 fn has_mask(op: &Operand) -> bool {
@@ -602,8 +761,9 @@ fn word_enabled(mflags: Option<(u8, bool)>, i: usize) -> bool {
     match mflags {
         None => true,
         Some((f, true)) => (f >> (3 - i)) & 1 == 1,
-        // Long word mask: the MSB long word as 4 halves; the LSB long word is not affected.
-        Some((f, false)) => i >= 2 || (f >> (3 - 2 * i)) & 3 != 0,
+        // Long word mask: the MSB long word as 4 halves. The LSB long word is written whole if
+        // any of the 4 flags is set, and kept otherwise (measured with the emulator).
+        Some((f, false)) => if i < 2 { (f >> (2 - 2 * i)) & 3 != 0 } else { f != 0 },
     }
 }
 
@@ -725,7 +885,7 @@ fn fmt_of(prec: Prec) -> Fmt {
 }
 
 /// Applies an ALU operation to each lane of the MSB long word. Returns lanes and mask flags.
-fn alu_lanes(name: AluOp, prec: Prec, unsigned: bool, x: &[u64], y: &[u64]) -> Result<(Vec<u64>, u8), Unsupported> {
+fn alu_lanes(name: AluOp, prec: Prec, unsigned: bool, x: &[u64], y: &[u64]) -> Result<(Vec<u64>, u8), ExecError> {
     let bits = prec_bits(Some(prec));
     let mask = if bits == 64 { u64::MAX } else { (1u64 << bits) - 1 };
     let is_float = matches!(prec, Prec::D | Prec::F | Prec::H);
@@ -832,7 +992,7 @@ fn alu_lanes(name: AluOp, prec: Prec, unsigned: bool, x: &[u64], y: &[u64]) -> R
             }
             AluOp::Floor => (float_floor(fmt_of(prec), a), false),
             AluOp::Ftoi => (float_ftoi(fmt_of(prec), a, unsigned, bits), false),
-            other => return Err(Unsupported(format!("ALU {other:?}"))),
+            other => return Err(ExecError::Unsupported(format!("ALU {other:?}"))),
         };
         out[i] = r & mask;
         cond[i] = c;
@@ -992,16 +1152,16 @@ impl Machine {
     /// Reads the raw elements of an operand for mwrite / matrix-vector input, applying the
     /// sign inversion, precision extension and rounding options. Values keep their bit pattern,
     /// because block-float values must not be normalized.
-    fn read_raw_elems(&self, pe: usize, op: &Operand, f: Fmt, n: usize, cycle: usize) -> Result<Vec<u64>, Unsupported> {
+    fn read_raw_elems(&self, pe: usize, op: &Operand, f: Fmt, n: usize, cycle: usize) -> Result<Vec<u64>, ExecError> {
         let bus = self.read_raw(pe, op, cycle)?;
         let (neg, ext, rnd) = match op {
             Operand::Mem { neg, ext, rnd, .. } | Operand::Forward { neg, ext, rnd, .. } => (*neg, *ext, *rnd),
             _ => (false, false, false),
         };
         let raw_fmt = if ext {
-            lower(f).ok_or_else(|| Unsupported("extension below half".into()))?
+            lower(f).ok_or_else(|| ExecError::Unsupported("extension below half".into()))?
         } else if rnd {
-            higher(f).ok_or_else(|| Unsupported("rounding from above double".into()))?
+            higher(f).ok_or_else(|| ExecError::Unsupported("rounding from above double".into()))?
         } else {
             f
         };
@@ -1019,9 +1179,9 @@ impl Machine {
             .collect())
     }
 
-    fn compute_mwrite(&self, e: &Expr, prec: Prec) -> Result<Vec<MatWrite>, Unsupported> {
+    fn compute_mwrite(&self, e: &Expr, prec: Prec) -> Result<Vec<MatWrite>, ExecError> {
         let Some(Operand::Mat { y, wl, row: Some(addr) }) = e.dsts.first() else {
-            return Err(Unsupported(format!("mwrite destination in `{}`", e.text)));
+            return Err(ExecError::Unsupported(format!("mwrite destination in `{}`", e.text)));
         };
         let side = *y as usize;
         let f = prec_fmt(prec);
@@ -1057,9 +1217,9 @@ impl Machine {
         Ok(out)
     }
 
-    fn compute_mread(&self, e: &Expr, prec: Prec) -> Result<Output, Unsupported> {
+    fn compute_mread(&self, e: &Expr, prec: Prec) -> Result<Output, ExecError> {
         let Some(Operand::Mat { y, row: Some(addr), .. }) = e.srcs.first() else {
-            return Err(Unsupported(format!("mread source in `{}`", e.text)));
+            return Err(ExecError::Unsupported(format!("mread source in `{}`", e.text)));
         };
         let side = *y as usize;
         let f = prec_fmt(prec);
@@ -1085,12 +1245,12 @@ impl Machine {
                 }
             }
         }
-        Ok(Output { bus, flags: vec![[0; 4]; PES], fwd: Some(FwdKind::Mreadf) })
+        Ok(Output { bus, flags: vec![[0; 4]; PES], fwd: Some(FwdKind::Mreadf), poison: None })
     }
 
-    fn compute_mat(&self, e: &Expr, prec: Prec, kind: MauKind, half: Option<char>, round: bool) -> Result<Output, Unsupported> {
+    fn compute_mat(&self, e: &Expr, prec: Prec, kind: MauKind, half: Option<char>, round: bool) -> Result<Output, ExecError> {
         let Some(Operand::Mat { y: side_y, row: None, .. }) = e.srcs.first() else {
-            return Err(Unsupported(format!("matrix operand in `{}`", e.text)));
+            return Err(ExecError::Unsupported(format!("matrix operand in `{}`", e.text)));
         };
         let side = *side_y as usize;
         let (bf, fx, fy, fout) = match prec {
@@ -1110,6 +1270,7 @@ impl Machine {
         let (rows, _) = mat_shape(prec);
         let mut bus = vec![[[0u32; 4]; 4]; PES];
         let mut flags = vec![[0u8; 4]; PES];
+        let mut poison: Option<Poison> = None;
         for mab in 0..PES / 4 {
             for c in 0..4 {
                 let mut x: Vec<u64> = Vec::new();
@@ -1128,6 +1289,22 @@ impl Machine {
                     Some('d') => i >= 2,
                     _ => true,
                 };
+                // Invalid block-float input poisons this MAB's results of this cycle.
+                let mut bad = check_bf(fx, &x, "the vector input").err();
+                for i in (0..rows).filter(|&i| active(i)) {
+                    if bad.is_some() {
+                        break;
+                    }
+                    let cols: Vec<u64> = (0..rows).map(|j| self.mat_get(mab, side, prec, i, j)).collect();
+                    let row: Vec<u64> = if prec == Prec::F { cols.iter().step_by(2).copied().collect() } else { cols };
+                    bad = check_bf(fx, &row, "a matrix row").err();
+                }
+                if let Some(ExecError::Runtime(msg)) = bad {
+                    let pz = poison.get_or_insert_with(|| Poison { msg, at: vec![[false; 4]; PES] });
+                    for p in 0..4 {
+                        pz.at[mab * 4 + p][c] = true;
+                    }
+                }
                 let out: Vec<u64> = (0..rows)
                     .map(|i| {
                         let dot = if active(i) {
@@ -1138,7 +1315,7 @@ impl Machine {
                             };
                             float::bf_dot(bf, &arow, &x)
                         } else {
-                            Val::Zero { neg: false }
+                            (Val::Zero { neg: false }, None)
                         };
                         float::mat_fma(fout, dot, yv[i])
                     })
@@ -1151,10 +1328,10 @@ impl Machine {
                 }
             }
         }
-        Ok(Output { bus, flags, fwd: Some(FwdKind::Mauf) })
+        Ok(Output { bus, flags, fwd: Some(FwdKind::Mauf), poison })
     }
 
-    fn compute_bfn(&self, e: &Expr, name: AluOp, prec: Prec, arg: Option<u8>) -> Result<Output, Unsupported> {
+    fn compute_bfn(&self, e: &Expr, name: AluOp, prec: Prec, arg: Option<u8>) -> Result<Output, ExecError> {
         let f = prec_fmt(prec);
         let keep = match prec {
             Prec::G => 18,
@@ -1167,7 +1344,8 @@ impl Machine {
             for c in 0..4 {
                 let ins: Vec<Bus> = (0..4).map(|p| self.read_alu_input(mab * 4 + p, &e.srcs[0], Some(prec), c)).collect::<Result<_, _>>()?;
                 // Blocks: lists of (pe, element index within the PE's bus, width in bits).
-                let mut outs = ins.clone();
+                // Except for half precision, the LSB long word of the output is 0 (emulator).
+                let mut outs: Vec<Bus> = if prec == Prec::H { ins.clone() } else { ins.iter().map(|b| [b[0], b[1], 0, 0]).collect() };
                 let blocks: Vec<Vec<(usize, usize)>> = match prec {
                     Prec::D => vec![(0..4).map(|p| (p, 0)).collect()],
                     Prec::F => vec![(0..4).map(|p| (p, 0)).collect(), (0..4).map(|p| (p, 1)).collect()],
@@ -1189,7 +1367,7 @@ impl Machine {
                 }
             }
         }
-        Ok(Output { bus, flags: vec![[0; 4]; PES], fwd: Some(FwdKind::Aluf) })
+        Ok(Output { bus, flags: vec![[0; 4]; PES], fwd: Some(FwdKind::Aluf), poison: None })
     }
 }
 

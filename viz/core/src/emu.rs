@@ -64,7 +64,7 @@ fn tempdir() -> PathBuf {
 
 /// Key of one dumped value: memory name as printed by the emulator (`LM0`, `GREG1`, `TREG`,
 /// `OMR`, ...), PE path (`n0c0b0m0p0`), and address. The address is the word address for
-/// LM/GRF, the long word index for T, and `entry * 4 + cycle` for the mask register.
+/// LM/GRF, the long word index for T (2 * cycle + k, as read by `d get $llt`), and `entry * 4 + cycle` for the mask register.
 pub type DumpKey = (String, String, u32);
 
 /// Parses `d get` / `d get[dfh]` output into a map from location to long word value
@@ -86,6 +86,16 @@ pub fn parse_dump(dump: &str) -> HashMap<DumpKey, u64> {
             let cycle = *k % 4;
             *k += 1;
             out.insert((mem.to_string(), pe.to_string(), addr * 4 + cycle), v);
+            continue;
+        } else if rest.matches("v:0x").count() > 1 {
+            // Two long word access prints both long words on one line. For T the address is
+            // the cycle, so the long words are numbered 2 * cycle and 2 * cycle + 1.
+            for (k, v) in rest.split("v:0x").skip(1).enumerate() {
+                let hex: String = v.chars().take_while(|c| c.is_ascii_hexdigit()).collect();
+                let Ok(val) = u64::from_str_radix(&hex, 16) else { continue };
+                let a = if mem == "TREG" { addr * 2 + k as u32 } else { addr + 2 * k as u32 };
+                out.insert((mem.to_string(), pe.to_string(), a), val);
+            }
             continue;
         } else if let Some(v) = rest.split("v:0x").nth(1) {
             v

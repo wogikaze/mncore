@@ -182,21 +182,40 @@ fn add_exact(a: Val, b: Val) -> Val {
     }
 }
 
+/// Aligns c to the adder grid of the MAU before it is added to the product.
+///
+/// Not in the SDM; measured with the emulator (see docs/dataflow-viz/NUMERICS.md). The adder's
+/// least significant bit has weight 2^grid, which is the smallest partial product of the
+/// multiplication. Bits of c below the grid are truncated and, if any of them is set, the grid
+/// LSB is set instead (sticky jamming). If the leading bit of c lies two or more places below
+/// the grid LSB, c is ignored.
+fn align_c(c: Val, grid: i32) -> Val {
+    let Val::Fin { neg, sig, exp } = c else { return c };
+    if exp >= grid {
+        return c;
+    }
+    let lead = exp + 127 - sig.leading_zeros() as i32;
+    if lead - grid <= -2 {
+        return Val::Zero { neg: false };
+    }
+    let s = (grid - exp) as u32;
+    let kept = if s >= 128 { 0 } else { sig >> s };
+    let sticky = s >= 128 || sig & ((1u128 << s) - 1) != 0;
+    Val::Fin { neg, sig: kept | sticky as u128, exp: grid }
+}
+
 /// Vector fused multiply-add `a * b + c` of MAU (SDM 4.3).
 ///
 /// `in_fmt` is the format of a, b and c after any precision extension, and `out_fmt` is the
 /// format the result is rounded to (which may be lower when output rounding is requested).
 pub fn vfma(in_fmt: Fmt, out_fmt: Fmt, a: Val, b: Val, c: Val) -> u64 {
     let mut c = c;
-    // Not in the SDM. The emulator ignores c entirely when its exponent is too far below the
-    // product's: 43 for single and 90 for double, which is full + man_bits + 2 (difftest_mau).
-    if let (Val::Fin { exp: ea, .. }, Val::Fin { exp: eb, .. }, Val::Fin { exp: ec, .. }) = (a, b, c) {
-        let full = in_fmt.mul_full_bits.unwrap_or(in_fmt.man_bits) as i32;
+    if let (Val::Fin { exp: ea, .. }, Val::Fin { exp: eb, .. }) = (a, b) {
+        // Unbiased exponents are exp + man_bits. The smallest kept partial product has weight
+        // 2^(ea + eb - full - man_bits).
         let m = in_fmt.man_bits as i32;
-        let (ea, eb, ec) = (ea + m, eb + m, ec + m);
-        if (ea + eb) - ec >= full + m + 2 {
-            c = Val::Zero { neg: false };
-        }
+        let full = in_fmt.mul_full_bits.unwrap_or(in_fmt.man_bits) as i32;
+        c = align_c(c, (ea + m) + (eb + m) - full - m);
     }
     encode(out_fmt, add_exact(mul_exact(in_fmt, a, b), c))
 }
@@ -238,8 +257,9 @@ pub fn block_float(fmt: Fmt, block: &[u64], keep: u32, extended: bool) -> Vec<u6
             if max_e == 0 {
                 return s;
             }
+            // Zero input: exponent = common exponent, or 0 with the extended representation.
             if exp(v) == 0 {
-                return s | (common << m);
+                return if extended { s } else { s | (common << m) };
             }
             let d = (common - exp(v)) as u32;
             let sig = (1u128 << m) | man(v) as u128;
@@ -249,11 +269,9 @@ pub fn block_float(fmt: Fmt, block: &[u64], keep: u32, extended: bool) -> Vec<u6
             let shift = if flag { d - 6 } else { d } + 1 + if fmt == HALF { 0 } else { dropped };
             let r = round_shift(sig, shift);
             let r = if fmt == HALF { r } else { r << dropped };
+            // Underflow: the extended representation clears the exponent too (SDM 4.4, step 7).
             if r == 0 {
-                if flag {
-                    return s;
-                }
-                return s | (common << m);
+                return if extended { s } else { s | (common << m) };
             }
             let e = if flag { 0 } else { common };
             s | (e << m) | (r as u64 & ((1 << m) - 1))
@@ -289,7 +307,7 @@ pub const BF_PSEUDO: BfFmt = BfFmt { fmt: SINGLE, m: 18 };
 pub const BF_HALF: BfFmt = BfFmt { fmt: HALF, m: 9 };
 
 /// Exact dot product of block-float vectors (SDM 4.5), as a value to be added to c and rounded.
-pub fn bf_dot(bf: BfFmt, a: &[u64], b: &[u64]) -> Val {
+pub fn bf_dot(bf: BfFmt, a: &[u64], b: &[u64]) -> (Val, Option<i32>) {
     let f = bf.fmt;
     let emax = f.exp_max();
     let decode = |v: u64| {
@@ -301,17 +319,32 @@ pub fn bf_dot(bf: BfFmt, a: &[u64], b: &[u64]) -> Val {
     // The half extended representation stores exponent 0 for "common exponent - 6".
     let common = |xs: &[u64]| xs.iter().map(|&v| (v >> f.man_bits) & emax).max().unwrap_or(0);
     let (ca, cb) = (common(a), common(b));
+    // The adder grid is the smallest kept partial product for the common exponents (see
+    // align_c). With BF mantissa bits weighted 2^(1-j), it is 2^(ca + cb - 2 bias + 2 - low),
+    // where low is the largest j + k that is kept.
+    // A block whose common exponent is infinity makes the result +inf, whatever the signs,
+    // mantissas and c are, unless the other block is all zero (measured with the emulator).
+    if ca == 0 || cb == 0 {
+        return (Val::Zero { neg: false }, None);
+    }
+    if ca == emax || cb == emax {
+        return (Val::Inf { neg: false }, None);
+    }
+    let grid = if ca == 0 || cb == 0 {
+        None
+    } else {
+        let low = match f.mul_full_bits {
+            Some(full) if bf.m == f.man_bits => full + bf.m,
+            _ => 2 * bf.m,
+        } as i32;
+        Some(ca as i32 + cb as i32 - 2 * f.bias() + 2 - low)
+    };
     let mut terms: Vec<(bool, u128, i32)> = Vec::new();
-    let mut inf: Option<bool> = None;
     for (&x, &y) in a.iter().zip(b) {
         let (na, mut ea, ma) = decode(x);
         let (nb, mut eb, mb) = decode(y);
         let neg = na ^ nb;
         if ma == 0 || mb == 0 {
-            continue;
-        }
-        if ea == emax || eb == emax {
-            inf = Some(neg);
             continue;
         }
         if ea == 0 {
@@ -335,11 +368,8 @@ pub fn bf_dot(bf: BfFmt, a: &[u64], b: &[u64]) -> Val {
         let e = ea as i32 + eb as i32 - 2 * f.bias() - 2 * (bf.m as i32 - 1);
         terms.push((neg, p, e));
     }
-    if let Some(neg) = inf {
-        return Val::Inf { neg };
-    }
     let Some(min_e) = terms.iter().map(|t| t.2).min() else {
-        return Val::Zero { neg: false };
+        return (Val::Zero { neg: false }, grid);
     };
     let mut acc: Val = Val::Zero { neg: false };
     let mut int: i128 = 0;
@@ -355,19 +385,24 @@ pub fn bf_dot(bf: BfFmt, a: &[u64], b: &[u64]) -> Val {
     }
     if exact {
         if int == 0 {
-            return Val::Zero { neg: false };
+            return (Val::Zero { neg: false }, grid);
         }
-        return Val::Fin { neg: int < 0, sig: int.unsigned_abs(), exp: min_e };
+        return (Val::Fin { neg: int < 0, sig: int.unsigned_abs(), exp: min_e }, grid);
     }
     // Invalid block-float input (exponents differ widely): undefined in the SDM.
     for &(neg, p, e) in &terms {
         acc = add_exact(acc, Val::Fin { neg, sig: p, exp: e });
     }
-    acc
+    (acc, grid)
 }
 
 /// Matrix FMA: rounds `dot + c` once to `out` (SDM 4.5, then the same steps as 4.3).
-pub fn mat_fma(out: Fmt, dot: Val, c: Val) -> u64 {
+pub fn mat_fma(out: Fmt, dot: (Val, Option<i32>), c: Val) -> u64 {
+    let (dot, grid) = dot;
+    let c = match grid {
+        Some(g) => align_c(c, g),
+        None => c,
+    };
     encode(out, add_exact(dot, c))
 }
 
