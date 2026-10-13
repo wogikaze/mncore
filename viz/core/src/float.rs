@@ -206,6 +206,171 @@ pub fn widen(to: Fmt, v: Val) -> u64 {
     encode(to, v)
 }
 
+/// Block-float conversion (SDM 4.4) of one block of raw values of `fmt`.
+///
+/// `keep` is the number of mantissa bits kept: `man_bits` for double and single, 18 for
+/// pseudo-single, and 6 to 9 for half (`hbfn/<n>`). `extended` selects the half-precision
+/// extended representation (`hbfe`).
+pub fn block_float(fmt: Fmt, block: &[u64], keep: u32, extended: bool) -> Vec<u64> {
+    let m = fmt.man_bits;
+    let emax = fmt.exp_max();
+    let sign_bit = 1u64 << (fmt.width() - 1);
+    let exp = |v: u64| (v >> m) & emax;
+    let man = |v: u64| v & ((1 << m) - 1);
+    // Half drops b = 9 - n low bits; pseudo-single keeps the top 18 of 23 bits.
+    let dropped = m - keep;
+    let max_e = block.iter().map(|&v| exp(v)).max().unwrap_or(0);
+    let mut common = max_e;
+    let top_ones = |v: u64| (man(v) >> dropped) == (1 << keep) - 1;
+    if block.iter().any(|&v| exp(v) == max_e && top_ones(v)) {
+        common += 1;
+    }
+    if fmt == HALF {
+        common += dropped as u64;
+    }
+    block
+        .iter()
+        .map(|&v| {
+            let s = v & sign_bit;
+            if common >= emax {
+                return s | (emax << m);
+            }
+            if max_e == 0 {
+                return s;
+            }
+            if exp(v) == 0 {
+                return s | (common << m);
+            }
+            let d = (common - exp(v)) as u32;
+            let sig = (1u128 << m) | man(v) as u128;
+            let flag = extended && (d > 6 + dropped || (d == 6 + dropped && !top_ones(v)));
+            // M = sig * 2^(e - common - 1): the hidden bit lands on the field MSB when d == 0.
+            // Pseudo-single rounds to its top 18 bits, so it shifts `dropped` more and back.
+            let shift = if flag { d - 6 } else { d } + 1 + if fmt == HALF { 0 } else { dropped };
+            let r = round_shift(sig, shift);
+            let r = if fmt == HALF { r } else { r << dropped };
+            if r == 0 {
+                if flag {
+                    return s;
+                }
+                return s | (common << m);
+            }
+            let e = if flag { 0 } else { common };
+            s | (e << m) | (r as u64 & ((1 << m) - 1))
+        })
+        .collect()
+}
+
+fn round_shift(v: u128, shift: u32) -> u128 {
+    if shift == 0 {
+        return v;
+    }
+    if shift >= 128 {
+        return 0;
+    }
+    let k = v >> shift;
+    let rem = v & ((1u128 << shift) - 1);
+    let half = 1u128 << (shift - 1);
+    k + (rem > half || (rem == half && k & 1 == 1)) as u128
+}
+
+/// Format of block-float values for the matrix product: mantissa bits used and dropped
+/// partial products, per SDM 4.5.
+#[derive(Clone, Copy, Debug)]
+pub struct BfFmt {
+    pub fmt: Fmt,
+    /// Mantissa field bits that take part (18 for pseudo-single).
+    pub m: u32,
+}
+
+pub const BF_DOUBLE: BfFmt = BfFmt { fmt: DOUBLE, m: 52 };
+pub const BF_SINGLE: BfFmt = BfFmt { fmt: SINGLE, m: 23 };
+pub const BF_PSEUDO: BfFmt = BfFmt { fmt: SINGLE, m: 18 };
+pub const BF_HALF: BfFmt = BfFmt { fmt: HALF, m: 9 };
+
+/// Exact dot product of block-float vectors (SDM 4.5), as a value to be added to c and rounded.
+pub fn bf_dot(bf: BfFmt, a: &[u64], b: &[u64]) -> Val {
+    let f = bf.fmt;
+    let emax = f.exp_max();
+    let decode = |v: u64| {
+        let neg = (v >> (f.width() - 1)) & 1 == 1;
+        let e = (v >> f.man_bits) & emax;
+        let mant = (v & ((1 << f.man_bits) - 1)) >> (f.man_bits - bf.m);
+        (neg, e, mant as u128)
+    };
+    // The half extended representation stores exponent 0 for "common exponent - 6".
+    let common = |xs: &[u64]| xs.iter().map(|&v| (v >> f.man_bits) & emax).max().unwrap_or(0);
+    let (ca, cb) = (common(a), common(b));
+    let mut terms: Vec<(bool, u128, i32)> = Vec::new();
+    let mut inf: Option<bool> = None;
+    for (&x, &y) in a.iter().zip(b) {
+        let (na, mut ea, ma) = decode(x);
+        let (nb, mut eb, mb) = decode(y);
+        let neg = na ^ nb;
+        if ma == 0 || mb == 0 {
+            continue;
+        }
+        if ea == emax || eb == emax {
+            inf = Some(neg);
+            continue;
+        }
+        if ea == 0 {
+            ea = ca.saturating_sub(6);
+        }
+        if eb == 0 {
+            eb = cb.saturating_sub(6);
+        }
+        let mut p = ma * mb;
+        if let Some(full) = f.mul_full_bits {
+            if bf.m == f.man_bits {
+                let low = f.man_bits - full;
+                let lm = (1u128 << low) - 1;
+                let dropped = (ma & lm) * (mb & lm);
+                if dropped != 0 {
+                    p = p - dropped + (1u128 << (2 * low - 2));
+                }
+            }
+        }
+        // value = Ma * Mb * 2^(ea + eb - 2 bias - 2 (m - 1))
+        let e = ea as i32 + eb as i32 - 2 * f.bias() - 2 * (bf.m as i32 - 1);
+        terms.push((neg, p, e));
+    }
+    if let Some(neg) = inf {
+        return Val::Inf { neg };
+    }
+    let Some(min_e) = terms.iter().map(|t| t.2).min() else {
+        return Val::Zero { neg: false };
+    };
+    let mut acc: Val = Val::Zero { neg: false };
+    let mut int: i128 = 0;
+    let mut exact = true;
+    for &(neg, p, e) in &terms {
+        let sh = (e - min_e) as u32;
+        if sh > 16 || p.leading_zeros() < sh + 4 {
+            exact = false;
+            break;
+        }
+        let v = (p << sh) as i128;
+        int += if neg { -v } else { v };
+    }
+    if exact {
+        if int == 0 {
+            return Val::Zero { neg: false };
+        }
+        return Val::Fin { neg: int < 0, sig: int.unsigned_abs(), exp: min_e };
+    }
+    // Invalid block-float input (exponents differ widely): undefined in the SDM.
+    for &(neg, p, e) in &terms {
+        acc = add_exact(acc, Val::Fin { neg, sig: p, exp: e });
+    }
+    acc
+}
+
+/// Matrix FMA: rounds `dot + c` once to `out` (SDM 4.5, then the same steps as 4.3).
+pub fn mat_fma(out: Fmt, dot: Val, c: Val) -> u64 {
+    encode(out, add_exact(dot, c))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -147,9 +147,23 @@ pub struct MaskState {
     pub entry: u8,
 }
 
+/// One face of a MAB's matrix register: 16 physical rows of 256 bits (8 words, MSB first).
+pub type MatFace = [[u32; 8]; 16];
+
 pub struct Machine {
     pub pes: Vec<Pe>,
+    /// Matrix registers x (index 0) and y (index 1) of each MAB.
+    pub mats: Vec<[MatFace; 2]>,
     pub mask_state: MaskState,
+}
+
+/// A pending write to a matrix register: MAB, face, physical row, and the 8 words of the row.
+struct MatWrite {
+    mab: usize,
+    side: usize,
+    phys_row: usize,
+    /// Words to write; `None` keeps the old word.
+    words: [Option<u32>; 8],
 }
 
 /// One computed output of an expression: the value for each PE and cycle, and the mask flags.
@@ -168,7 +182,7 @@ impl Default for Machine {
 
 impl Machine {
     pub fn new() -> Machine {
-        Machine { pes: vec![Pe::default(); PES], mask_state: MaskState::default() }
+        Machine { pes: vec![Pe::default(); PES], mats: vec![[[[0; 8]; 16]; 2]; PES / 4], mask_state: MaskState::default() }
     }
 
     // ---- reads ----------------------------------------------------------------------------
@@ -223,13 +237,26 @@ impl Machine {
         let noforward = exprs.iter().any(|e| e.op == Op::Noforward);
         let single_line_mask = exprs.iter().any(|e| e.dsts.iter().any(has_mask));
         let mut outputs: Vec<(&Expr, Output)> = Vec::new();
+        let mut mat_writes: Vec<MatWrite> = Vec::new();
         for e in exprs {
             match &e.op {
                 Op::Noforward | Op::Wait(_) => continue,
+                Op::MatWrite { prec } => {
+                    mat_writes.extend(self.compute_mwrite(e, *prec)?);
+                    continue;
+                }
                 _ => {}
             }
             let out = self.compute(e)?;
             outputs.push((e, out));
+        }
+        for w in mat_writes {
+            let row = &mut self.mats[w.mab][w.side][w.phys_row];
+            for (i, v) in w.words.iter().enumerate() {
+                if let Some(v) = v {
+                    row[i] = *v;
+                }
+            }
         }
         for (e, out) in &outputs {
             let flush = match e.flush {
@@ -390,8 +417,11 @@ impl Machine {
                 let bus = if *u { [v, 0, v, 0] } else { [v; 4] };
                 Ok(self.alu_like(|_, _| ([bus; 4], [0; 4])))
             }
-            Op::Alu { name, prec, unsigned } => self.compute_alu(e, *name, *prec, *unsigned),
+            Op::Alu { name: name @ (AluOp::Bfn | AluOp::Bfe), prec, arg, .. } => self.compute_bfn(e, *name, prec.unwrap(), *arg),
+            Op::Alu { name, prec, unsigned, .. } => self.compute_alu(e, *name, *prec, *unsigned),
             Op::Mau { prec, matrix: false, kind, half, round } => self.compute_vec(e, *prec, *kind, *half, *round),
+            Op::Mau { prec, matrix: true, kind, half, round } => self.compute_mat(e, *prec, *kind, *half, *round),
+            Op::MatRead { prec } => self.compute_mread(e, *prec),
             other => Err(Unsupported(format!("{other:?}"))),
         }
     }
@@ -533,7 +563,7 @@ impl Machine {
         let one_a = float::decode(fa, (fa.bias() as u64) << fa.man_bits);
         let zero = Val::Zero { neg: false };
         let mut bus = vec![[[0u32; 4]; 4]; PES];
-        let flags = vec![[0u8; 4]; PES];
+        let mut flags = vec![[0u8; 4]; PES];
         for pe in 0..PES {
             for c in 0..4 {
                 let a = read_vals(self, pe, ia, fa, c)?.unwrap();
@@ -556,6 +586,7 @@ impl Machine {
                     out.push(float::vfma(fa, fout, x, y, z));
                 }
                 bus[pe][c] = pack(&out, fout.width());
+                flags[pe][c] = mau_flags(&out, fout);
             }
         }
         Ok(Output { bus, flags, fwd: Some(FwdKind::Mauf) })
@@ -903,4 +934,279 @@ fn float_ftoi(fmt: Fmt, v: u64, unsigned: bool, bits: u32) -> u64 {
         let s = if neg { (-mag).max(smin) } else { mag.min(smax) };
         (s as i64 as u64) & mask
     }
+}
+
+/// MAU mask flags: the inverted sign bit of each output element (SDM 3.6.9.26).
+fn mau_flags(out: &[u64], f: Fmt) -> u8 {
+    let pos = |v: u64| (v >> (f.width() - 1)) & 1 == 0;
+    match out.len() {
+        1 if f.width() == 64 => {
+            if pos(out[0]) {
+                0xf
+            } else {
+                0
+            }
+        }
+        // Rounded to one word: the LSB two flags are 0.
+        1 => {
+            if pos(out[0]) {
+                0xc
+            } else {
+                0
+            }
+        }
+        2 => (if pos(out[0]) { 0xc } else { 0 }) | (if pos(out[1]) { 0x3 } else { 0 }),
+        _ => (0..4).map(|i| (pos(out[i]) as u8) << (3 - i)).fold(0, |a, b| a | b),
+    }
+}
+
+fn prec_fmt(prec: Prec) -> Fmt {
+    match prec {
+        Prec::D => DOUBLE,
+        Prec::H => HALF,
+        _ => SINGLE,
+    }
+}
+
+/// Logical shape of the matrix register for a precision: (rows, physical row step).
+fn mat_shape(prec: Prec) -> (usize, usize) {
+    match prec {
+        Prec::D => (4, 4),
+        Prec::H => (16, 1),
+        _ => (8, 2),
+    }
+}
+
+impl Machine {
+    /// Raw bits of logical element (row, col) of a matrix register face.
+    fn mat_get(&self, mab: usize, side: usize, prec: Prec, row: usize, col: usize) -> u64 {
+        let (_, step) = mat_shape(prec);
+        let r = &self.mats[mab][side][row * step];
+        match prec {
+            Prec::D => ((r[2 * col] as u64) << 32) | r[2 * col + 1] as u64,
+            Prec::H => ((r[col / 2] >> if col % 2 == 0 { 16 } else { 0 }) & 0xffff) as u64,
+            _ => r[col] as u64,
+        }
+    }
+
+    /// Reads the raw elements of an operand for mwrite / matrix-vector input, applying the
+    /// sign inversion, precision extension and rounding options. Values keep their bit pattern,
+    /// because block-float values must not be normalized.
+    fn read_raw_elems(&self, pe: usize, op: &Operand, f: Fmt, n: usize, cycle: usize) -> Result<Vec<u64>, Unsupported> {
+        let bus = self.read_raw(pe, op, cycle)?;
+        let (neg, ext, rnd) = match op {
+            Operand::Mem { neg, ext, rnd, .. } | Operand::Forward { neg, ext, rnd, .. } => (*neg, *ext, *rnd),
+            _ => (false, false, false),
+        };
+        let raw_fmt = if ext {
+            lower(f).ok_or_else(|| Unsupported("extension below half".into()))?
+        } else if rnd {
+            higher(f).ok_or_else(|| Unsupported("rounding from above double".into()))?
+        } else {
+            f
+        };
+        let raw = unpack(&bus, raw_fmt.width(), n);
+        Ok(raw
+            .into_iter()
+            .map(|r| {
+                let v = if raw_fmt == f { r } else { float::encode(f, float::decode(raw_fmt, r)) };
+                if neg {
+                    v ^ (1 << (f.width() - 1))
+                } else {
+                    v
+                }
+            })
+            .collect())
+    }
+
+    fn compute_mwrite(&self, e: &Expr, prec: Prec) -> Result<Vec<MatWrite>, Unsupported> {
+        let Some(Operand::Mat { y, wl, row: Some(addr) }) = e.dsts.first() else {
+            return Err(Unsupported(format!("mwrite destination in `{}`", e.text)));
+        };
+        let side = *y as usize;
+        let f = prec_fmt(prec);
+        let (rows, step) = mat_shape(prec);
+        let two_rows = prec == Prec::H && *wl == 4;
+        // Elements each PE supplies per cycle: d 1, f/g 2, h 4 (8 with two rows).
+        let per_pe = match prec {
+            Prec::D => 1,
+            Prec::H => if two_rows { 8 } else { 4 },
+            _ => 2,
+        };
+        let mut out = Vec::new();
+        for mab in 0..PES / 4 {
+            for c in 0..4 {
+                let mut elems: Vec<u64> = Vec::with_capacity(per_pe * 4);
+                for p in 0..4 {
+                    elems.extend(self.read_raw_elems(mab * 4 + p, &e.srcs[0], f, per_pe, c)?);
+                }
+                let nrows = if two_rows { 2 } else { 1 };
+                for k in 0..nrows {
+                    let row = if two_rows { (*addr as usize + 2 * c) % rows + k } else { (*addr as usize + c) % rows };
+                    let row_elems: Vec<u64> = if two_rows {
+                        // row a: halves 0..3 of each PE; row a+1: halves 4..7.
+                        (0..16).map(|j| elems[(j / 4) * 8 + k * 4 + j % 4]).collect()
+                    } else {
+                        elems.clone()
+                    };
+                    let words = pack_row(&row_elems, f.width());
+                    out.push(MatWrite { mab, side, phys_row: row * step, words: words.map(Some) });
+                }
+            }
+        }
+        Ok(out)
+    }
+
+    fn compute_mread(&self, e: &Expr, prec: Prec) -> Result<Output, Unsupported> {
+        let Some(Operand::Mat { y, row: Some(addr), .. }) = e.srcs.first() else {
+            return Err(Unsupported(format!("mread source in `{}`", e.text)));
+        };
+        let side = *y as usize;
+        let f = prec_fmt(prec);
+        let (rows, _) = mat_shape(prec);
+        let mut bus = vec![[[0u32; 4]; 4]; PES];
+        for mab in 0..PES / 4 {
+            for c in 0..4 {
+                for p in 0..4 {
+                    let vals: Vec<u64> = match prec {
+                        Prec::D => vec![self.mat_get(mab, side, prec, p, (*addr as usize + c) % rows)],
+                        Prec::H => {
+                            let c0 = (*addr as usize + 2 * c) % rows;
+                            let mut v: Vec<u64> = (0..4).map(|k| self.mat_get(mab, side, prec, 4 * p + k, c0)).collect();
+                            v.extend((0..4).map(|k| self.mat_get(mab, side, prec, 4 * p + k, (c0 + 1) % rows)));
+                            v
+                        }
+                        _ => {
+                            let col = (*addr as usize + c) % rows;
+                            vec![self.mat_get(mab, side, prec, 2 * p, col), self.mat_get(mab, side, prec, 2 * p + 1, col)]
+                        }
+                    };
+                    bus[mab * 4 + p][c] = pack(&vals, f.width());
+                }
+            }
+        }
+        Ok(Output { bus, flags: vec![[0; 4]; PES], fwd: Some(FwdKind::Mreadf) })
+    }
+
+    fn compute_mat(&self, e: &Expr, prec: Prec, kind: MauKind, half: Option<char>, round: bool) -> Result<Output, Unsupported> {
+        let Some(Operand::Mat { y: side_y, row: None, .. }) = e.srcs.first() else {
+            return Err(Unsupported(format!("matrix operand in `{}`", e.text)));
+        };
+        let side = *side_y as usize;
+        let (bf, fx, fy, fout) = match prec {
+            Prec::D => (float::BF_DOUBLE, DOUBLE, DOUBLE, if round { SINGLE } else { DOUBLE }),
+            Prec::F => (float::BF_SINGLE, SINGLE, SINGLE, SINGLE),
+            Prec::G => (float::BF_PSEUDO, SINGLE, SINGLE, SINGLE),
+            Prec::H => (float::BF_HALF, HALF, SINGLE, if round { HALF } else { SINGLE }),
+            _ => unreachable!(),
+        };
+        // Elements per PE: x vector, y vector and output.
+        let (nx, ny) = match prec {
+            Prec::D => (1, 1),
+            Prec::F => (1, 2),
+            Prec::G => (2, 2),
+            _ => (4, 4),
+        };
+        let (rows, _) = mat_shape(prec);
+        let mut bus = vec![[[0u32; 4]; 4]; PES];
+        let mut flags = vec![[0u8; 4]; PES];
+        for mab in 0..PES / 4 {
+            for c in 0..4 {
+                let mut x: Vec<u64> = Vec::new();
+                let mut yv: Vec<Val> = Vec::new();
+                for p in 0..4 {
+                    x.extend(self.read_raw_elems(mab * 4 + p, &e.srcs[1], fx, nx, c)?);
+                    if kind == MauKind::Fma {
+                        let raw = self.read_raw_elems(mab * 4 + p, &e.srcs[2], fy, ny, c)?;
+                        yv.extend(raw.into_iter().map(|r| float::decode(fy, r)));
+                    } else {
+                        yv.extend((0..ny).map(|_| Val::Zero { neg: false }));
+                    }
+                }
+                let active = |i: usize| match half {
+                    Some('u') => i < 2,
+                    Some('d') => i >= 2,
+                    _ => true,
+                };
+                let out: Vec<u64> = (0..rows)
+                    .map(|i| {
+                        let dot = if active(i) {
+                            let arow: Vec<u64> = match prec {
+                                // fmfma uses columns 0, 2, 4, 6.
+                                Prec::F => (0..4).map(|j| self.mat_get(mab, side, prec, i, 2 * j)).collect(),
+                                _ => (0..rows).map(|j| self.mat_get(mab, side, prec, i, j)).collect(),
+                            };
+                            float::bf_dot(bf, &arow, &x)
+                        } else {
+                            Val::Zero { neg: false }
+                        };
+                        float::mat_fma(fout, dot, yv[i])
+                    })
+                    .collect();
+                let per_pe = rows / 4;
+                for p in 0..4 {
+                    let o = &out[p * per_pe..(p + 1) * per_pe];
+                    bus[mab * 4 + p][c] = pack(o, fout.width());
+                    flags[mab * 4 + p][c] = mau_flags(o, fout);
+                }
+            }
+        }
+        Ok(Output { bus, flags, fwd: Some(FwdKind::Mauf) })
+    }
+
+    fn compute_bfn(&self, e: &Expr, name: AluOp, prec: Prec, arg: Option<u8>) -> Result<Output, Unsupported> {
+        let f = prec_fmt(prec);
+        let keep = match prec {
+            Prec::G => 18,
+            Prec::H => arg.unwrap_or(9) as u32,
+            _ => f.man_bits,
+        };
+        let extended = name == AluOp::Bfe;
+        let mut bus = vec![[[0u32; 4]; 4]; PES];
+        for mab in 0..PES / 4 {
+            for c in 0..4 {
+                let ins: Vec<Bus> = (0..4).map(|p| self.read_alu_input(mab * 4 + p, &e.srcs[0], Some(prec), c)).collect::<Result<_, _>>()?;
+                // Blocks: lists of (pe, element index within the PE's bus, width in bits).
+                let mut outs = ins.clone();
+                let blocks: Vec<Vec<(usize, usize)>> = match prec {
+                    Prec::D => vec![(0..4).map(|p| (p, 0)).collect()],
+                    Prec::F => vec![(0..4).map(|p| (p, 0)).collect(), (0..4).map(|p| (p, 1)).collect()],
+                    Prec::G => vec![(0..4).flat_map(|p| [(p, 0), (p, 1)]).collect()],
+                    _ => vec![(0..4).flat_map(|p| (0..4).map(move |k| (p, k))).collect(), (0..4).flat_map(|p| (4..8).map(move |k| (p, k))).collect()],
+                };
+                let w = f.width();
+                for blk in blocks {
+                    let vals: Vec<u64> = blk.iter().map(|&(p, k)| unpack(&ins[p], w, k + 1)[k]).collect();
+                    let conv = float::block_float(f, &vals, keep, extended);
+                    for (&(p, k), v) in blk.iter().zip(conv) {
+                        let mut all = unpack(&outs[p], w, (128 / w) as usize);
+                        all[k] = v;
+                        outs[p] = pack(&all, w);
+                    }
+                }
+                for p in 0..4 {
+                    bus[mab * 4 + p][c] = outs[p];
+                }
+            }
+        }
+        Ok(Output { bus, flags: vec![[0; 4]; PES], fwd: Some(FwdKind::Aluf) })
+    }
+}
+
+/// Packs the elements of one logical matrix row into the 8 words of a physical row.
+fn pack_row(elems: &[u64], width: u32) -> [u32; 8] {
+    let mut out = [0u32; 8];
+    let per_word = (32 / width.min(32)) as usize;
+    if width == 64 {
+        for (j, v) in elems.iter().enumerate().take(4) {
+            out[2 * j] = (v >> 32) as u32;
+            out[2 * j + 1] = *v as u32;
+        }
+    } else {
+        for (j, v) in elems.iter().enumerate().take(8 * per_word) {
+            let shift = 32 - width * (j % per_word + 1) as u32;
+            out[j / per_word] |= ((*v as u32) & ((1u64 << width) - 1) as u32) << shift;
+        }
+    }
+    out
 }

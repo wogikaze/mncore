@@ -109,7 +109,8 @@ pub enum Prec {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Op {
-    Alu { name: AluOp, prec: Option<Prec>, unsigned: bool },
+    Alu { name: AluOp, prec: Option<Prec>, unsigned: bool, /// Mantissa length of `hbfn/<n>` and `hbfe/<n>`.
+        arg: Option<u8> },
     Imm { value: u32, u: bool },
     Zero,
     Mau { prec: Prec, matrix: bool, kind: MauKind, half: Option<char>, round: bool },
@@ -542,6 +543,16 @@ fn tokenize(part: &str) -> (String, Vec<String>) {
 fn parse_expr(part: &str) -> Result<Expr, String> {
     let (opcode, toks) = tokenize(part);
     let text = part.trim().to_string();
+    // `hbfn/<n>` and `hbfe/<n>` carry the mantissa length after the slash.
+    let (opcode, bf_arg) = match opcode.strip_prefix("hbfn/").or_else(|| opcode.strip_prefix("hbfe/")) {
+        Some(rest) => {
+            let (n, tail) = rest.split_once('/').map(|(a, b)| (a, Some(b))).unwrap_or((rest, None));
+            let n: u8 = n.parse().map_err(|_| format!("bad mantissa length in `{opcode}`"))?;
+            let name = &opcode[..4];
+            (match tail { Some(t) => format!("{name}/{t}"), None => name.to_string() }, Some(n))
+        }
+        None => (opcode, None),
+    };
     let (opcode, flush) = match opcode.split_once('/') {
         Some((o, m)) if !o.starts_with("mv") => (o.to_string(), Some(parse_mask_sel(m)?)),
         _ => (opcode, None),
@@ -568,7 +579,12 @@ fn parse_expr(part: &str) -> Result<Expr, String> {
         let dsts = toks[1..].iter().map(|t| parse_operand(t)).collect::<Result<_, _>>()?;
         return Ok(Expr { op: Op::Imm { value, u: opcode == "immu" }, srcs: vec![], dsts, flush, text });
     }
-    let op = classify(&opcode).ok_or_else(|| format!("unknown opcode `{opcode}`"))?;
+    let mut op = classify(&opcode).ok_or_else(|| format!("unknown opcode `{opcode}`"))?;
+    if let Op::Alu { arg, name, .. } = &mut op {
+        if matches!(name, AluOp::Bfn | AluOp::Bfe) {
+            *arg = bf_arg;
+        }
+    }
     let n_in = match &op {
         Op::Alu { name, .. } => name.inputs(),
         Op::Mau { matrix, kind, .. } => match (matrix, kind) {
@@ -666,7 +682,7 @@ fn classify(opcode: &str) -> Option<Op> {
             (AluType::Bfe, Some(p)) => p == Prec::H,
         };
         if ok && !(unsigned && prec.is_none()) {
-            return Some(Op::Alu { name: op, prec, unsigned });
+            return Some(Op::Alu { name: op, prec, unsigned, arg: None });
         }
     }
     None
