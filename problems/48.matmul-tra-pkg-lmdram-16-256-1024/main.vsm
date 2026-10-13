@@ -1,143 +1,58 @@
-# Local kernel: same 16x32x8 matmul as problem 47 (writes partial C to ln0..)
-gmwrite $lm128v $lx0
-gmwrite $lm136v $lx4
+ipassa $mabid $nowrite;gmwrite $lm128v8 $lx0
+iadd $aluf $aluf $t;gmwrite $lm160v8 $lx4
 gmread $lx0 $nowrite
-gbfn $mreadf $nowrite
-gmwrite $aluf $ly0
-gmread $lx4 $nowrite
-gbfn $mreadf $nowrite
-gmwrite $aluf $ly4
-gmwrite $lm0v4 $lx0
-gmwrite $lm16v4 $lx4
-gmread $lx0 $nowrite
-gbfn $mreadf $nowrite
-gmmul $ly $aluf $ln0v
-gmread $lx4 $nowrite
-gbfn $mreadf $nowrite
-gmmul $ly $aluf $ln8v
-gmwrite $lm2v4 $lx0
-gmwrite $lm18v4 $lx4
-gmread $lx0 $nowrite
-gbfn $mreadf $nowrite
-gmmul $ly $aluf $ln16v
-gmread $lx4 $nowrite
-gbfn $mreadf $nowrite
-gmmul $ly $aluf $ln24v
-gmwrite $lm144v $lx0
-gmwrite $lm152v $lx4
-gmread $lx0 $nowrite
-gbfn $mreadf $nowrite
-gmwrite $aluf $ly0
-gmread $lx4 $nowrite
-gbfn $mreadf $nowrite
-gmwrite $aluf $ly4
-gmwrite $lm32v4 $lx0
-gmwrite $lm48v4 $lx4
-gmread $lx0 $nowrite
-gbfn $mreadf $nowrite
-gmfma $ly $aluf $ln0v $ln0v
-gmread $lx4 $nowrite
-gbfn $mreadf $nowrite
-gmfma $ly $aluf $ln8v $ln8v
-gmwrite $lm34v4 $lx0
-gmwrite $lm50v4 $lx4
-gmread $lx0 $nowrite
-gbfn $mreadf $nowrite
-gmfma $ly $aluf $ln16v $ln16v
-gmread $lx4 $nowrite
-gbfn $mreadf $nowrite
-gmfma $ly $aluf $ln24v $ln24v
-gmwrite $lm160v $lx0
-gmwrite $lm168v $lx4
-gmread $lx0 $nowrite
-gbfn $mreadf $nowrite
-gmwrite $aluf $ly0
-gmread $lx4 $nowrite
-gbfn $mreadf $nowrite
-gmwrite $aluf $ly4
-gmwrite $lm64v4 $lx0
-gmwrite $lm80v4 $lx4
-gmread $lx0 $nowrite
-gbfn $mreadf $nowrite
-gmfma $ly $aluf $ln0v $ln0v
-gmread $lx4 $nowrite
-gbfn $mreadf $nowrite
-gmfma $ly $aluf $ln8v $ln8v
-gmwrite $lm66v4 $lx0
-gmwrite $lm82v4 $lx4
-gmread $lx0 $nowrite
-gbfn $mreadf $nowrite
-gmfma $ly $aluf $ln16v $ln16v
-gmread $lx4 $nowrite
-gbfn $mreadf $nowrite
-gmfma $ly $aluf $ln24v $ln24v
-gmwrite $lm176v $lx0
-gmwrite $lm184v $lx4
-gmread $lx0 $nowrite
-gbfn $mreadf $nowrite
-gmwrite $aluf $ly0
-gmread $lx4 $nowrite
-gbfn $mreadf $nowrite
-gmwrite $aluf $ly4
-gmwrite $lm96v4 $lx0
-gmwrite $lm112v4 $lx4
-gmread $lx0 $nowrite
-gbfn $mreadf $nowrite
-gmfma $ly $aluf $ln0v $ln0v
-gmread $lx4 $nowrite
-gbfn $mreadf $nowrite
-gmfma $ly $aluf $ln8v $ln8v
-gmwrite $lm98v4 $lx0
-gmwrite $lm114v4 $lx4
-gmread $lx0 $nowrite
-gbfn $mreadf $nowrite
-gmfma $ly $aluf $ln16v $ln16v
-gmread $lx4 $nowrite
-gbfn $mreadf $nowrite
-gmfma $ly $aluf $ln24v $ln24v
-
-# PE -> L1BM concat (4 rows per instruction)
-nop/2
-l1bmd $ln0v $lb0
-l1bmd $ln8v $lb256
-l1bmd $ln16v $lb512
-l1bmd $ln24v $lb768
-
-# L1BM -> L2BM concat (16 rows x 2 chunks per row)
-l2bmd $lb0 $lc0
-l2bmd $lb32 $lc256
-l2bmd $lb64 $lc512
-l2bmd $lb96 $lc768
-l2bmd $lb128 $lc1024
-l2bmd $lb160 $lc1280
-l2bmd $lb192 $lc1536
-l2bmd $lb224 $lc1792
-l2bmd $lb256 $lc2048
-l2bmd $lb288 $lc2304
-l2bmd $lb320 $lc2560
-l2bmd $lb352 $lc2816
-l2bmd $lb384 $lc3072
-l2bmd $lb416 $lc3328
-l2bmd $lb448 $lc3584
-l2bmd $lb480 $lc3840
-l2bmd $lb512 $lc4096
-l2bmd $lb544 $lc4352
-l2bmd $lb576 $lc4608
-l2bmd $lb608 $lc4864
-l2bmd $lb640 $lc5120
-l2bmd $lb672 $lc5376
-l2bmd $lb704 $lc5632
-l2bmd $lb736 $lc5888
-l2bmd $lb768 $lc6144
-l2bmd $lb800 $lc6400
-l2bmd $lb832 $lc6656
-l2bmd $lb864 $lc6912
-l2bmd $lb896 $lc7168
-l2bmd $lb928 $lc7424
-l2bmd $lb960 $lc7680
-l2bmd $lb992 $lc7936
-
-# L2B reduce -> PDM, then write DRAM
+gbfn $mreadf $lr0v;gmwrite $lmt0v16 $ly0;gmread $lx4 $nowrite
+gbfn $mreadf $lr8v;gmwrite $lmt64v16 $ly4
+gmwrite $lm130v8 $lx0;gmread $ly0 $nowrite
+gbfn $mreadf $nowrite;gmwrite $lm162v8 $lx4;gmread $ly4 $nowrite
+gbfn $mreadf $nowrite;gmwrite $lm132v8 $ly0;gmread $lx0 $nowrite;l1bmd $aluf $lb0
+gbfn $mreadf $lr16v;gmwrite $lm164v8 $ly4;gmread $lx4 $nowrite;l1bmd $aluf $lb256
+gbfn $mreadf $lr24v;gmwrite $lm134v8 $lx0;gmread $ly0 $nowrite
+gbfn $mreadf $lr32v;gmwrite $lm166v8 $lx4;gmread $ly4 $nowrite
+gbfn $mreadf $lr40v;gmwrite $lr0v $ly0;gmread $lx0 $nowrite;l1bmm $llb0 $lls0v
+gbfn $mreadf $lr48v;gmwrite $lr8v $ly4;gmread $lx4 $nowrite;l1bmm $llb64 $lls16v
+gbfn $mreadf $lr56v;gmwrite $lr16v $lx0;l1bmm $llb128 $lls32v
+gmwrite $lr24v $lx4;l1bmm $llb192 $lls48v;gmmul $ly $ls[0,2,16,18] $nowrite
+l1bmm $llb256 $lls64v;gmfma $lx $ls[4,6,20,22] $mauf $lm[1024,1040,1026,1042];gmwrite $lr32v $ly0
+l1bmm $llb320 $lls80v;gmmul $lx $ls[36,38,52,54] $nowrite;gmwrite $lr40v $ly4
+l1bmm $llb384 $lls96v;gmfma $ly $ls[40,42,56,58] $mauf $ln[1028,1044,1030,1046];gmwrite $lr48v $lx0
+l1bmm $llb448 $lls112v;gmfma $ly $ls[8,10,24,26] $lm[1024,1040,1026,1042] $nowrite;gmwrite $lr56v $lx4
+gmfma $lx $ls[12,14,28,30] $mauf $nowrite;gmwrite $lr0v $ly0
+gmfma $lx $ls[44,46,60,62] $ln[1028,1044,1030,1046] $nowrite;gmwrite $lr8v $ly4;l1bmd $mauf $lb1024
+gmfma $ly $ls[32,34,48,50] $mauf $nowrite;gmwrite $lr16v $lx0
+gmmul $ly $ls[64,66,80,82] $nowrite;gmwrite $lr24v $lx4;l1bmd $mauf $lb1280
+gmfma $lx $ls[68,70,84,86] $mauf $lm[1032,1048,1034,1050];l2bmd $lb1024 $lc0
+gmmul $ly $ls[96,98,112,114] $nowrite;l2bmd $lb1056 $lc256
+gmfma $lx $ls[100,102,116,118] $mauf $ln[1036,1052,1038,1054];gmwrite $lr32v $ly0;l2bmd $lb1088 $lc4096
+gmwrite $lr40v $ly4;l2bmd $lb1120 $lc4352
+gmfma $ly $ls[72,74,88,90] $lm[1032,1048,1034,1050] $lm[1032,1048,1034,1050];gmwrite $lr48v $lx0;l2bmd $lb1152 $lc512
+gmfma $ly $ls[104,106,120,122] $ln[1036,1052,1038,1054] $nowrite;gmwrite $lr56v $lx4;l2bmd $lb1184 $lc768
+gmfma $lx $ls[108,110,124,126] $mauf $nowrite;l2bmd $lb1216 $lc4608
+gmfma $lx $ls[76,78,92,94] $lm[1032,1048,1034,1050] $nowrite;l1bmd $mauf $lb1792;l2bmd $lb1248 $lc4864
+l1bmd $mauf $lb1536;l2bmd $lb1280 $lc1024
+l2bmd $lb1312 $lc1280
+l2bmd $lb1344 $lc5120
+l2bmd $lb1376 $lc5376
+l2bmd $lb1408 $lc1536
+l2bmd $lb1440 $lc1792
+l2bmd $lb1472 $lc5632
+l2bmd $lb1504 $lc5888
+l2bmd $lb1792 $lc3072
+l2bmd $lb1824 $lc3328
+l2bmd $lb1856 $lc7168
+l2bmd $lb1888 $lc7424
+l2bmd $lb1920 $lc3584
+l2bmd $lb1952 $lc3840
+l2bmd $lb1984 $lc7680
+l2bmd $lb2016 $lc7936
+l2bmd $lb1536 $lc2048
+l2bmd $lb1568 $lc2304
+l2bmd $lb1600 $lc6144
+l2bmd $lb1632 $lc6400
+l2bmd $lb1664 $lc2560
+l2bmd $lb1696 $lc2816
+l2bmd $lb1728 $lc6656
+l2bmd $lb1760 $lc6912
 nop
 mvrffadd/n8192 $lc0 $p0@0
 mvp/n2048 $p0@0 $d0@0
