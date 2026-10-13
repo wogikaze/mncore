@@ -19,6 +19,10 @@ pub struct ExprInfo {
     pub unit: &'static str,
     /// The forwarding register this expression updates (aluf, mauf, mreadf, lbf).
     pub fwd: Option<&'static str>,
+    /// Issue group of SDM 3.6.4 (table 3.6): at most one expression per group in a step.
+    /// alu, mau-calc, mau-mwrite, mau-mread, l1bm, l1bm-turnaround, l2bm, l2bmdarw, wait,
+    /// noforward.
+    pub group: &'static str,
 }
 
 #[derive(Serialize)]
@@ -57,7 +61,21 @@ fn expr_infos(l: &Line) -> Vec<ExprInfo> {
                 Op::Noforward => ("noforward", None),
                 Op::Other(_) => ("other", None),
             };
-            ExprInfo { text: e.text.clone(), unit, fwd }
+            let turnaround = e.srcs.iter().chain(&e.dsts).any(|o| matches!(o, Operand::L1bm { addr: None, .. }));
+            let group = match &e.op {
+                Op::Alu { .. } | Op::Imm { .. } | Op::Zero => "alu",
+                Op::Mau { .. } => "mau-calc",
+                Op::MatWrite { .. } => "mau-mwrite",
+                Op::MatRead { .. } => "mau-mread",
+                Op::L1(_) if turnaround => "l1bm-turnaround",
+                Op::L1(_) => "l1bm",
+                Op::L2(crate::blockop::L2Op::Darw) => "l2bmdarw",
+                Op::L2(_) => "l2bm",
+                Op::Wait(_) => "wait",
+                Op::Noforward => "noforward",
+                Op::Other(_) => "other",
+            };
+            ExprInfo { text: e.text.clone(), unit, fwd, group }
         })
         .collect()
 }

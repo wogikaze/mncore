@@ -7,8 +7,10 @@
   import Inspector from './components/Inspector.svelte';
   import Timeline from './components/Timeline.svelte';
   import Story from './components/Story.svelte';
+  import Occupancy from './components/Occupancy.svelte';
 
   let mode = $state<'explorer' | 'story'>('explorer');
+  let lower = $state<'pe' | 'occupancy'>('pe');
   let editing = $state(false);
   let draft = $state('');
 
@@ -79,7 +81,13 @@
       <div class="left panel"><SourceView /></div>
       <div class="center">
         <div class="panel chipwrap"><ChipView /></div>
-        <div class="panel pewrap"><PeView /></div>
+        <div class="panel pewrap">
+          <div class="tabs">
+            <button class:on={lower === 'pe'} onclick={() => (lower = 'pe')}>MAB 内部</button>
+            <button class:on={lower === 'occupancy'} onclick={() => (lower = 'occupancy')}>命令グループ占有</button>
+          </div>
+          {#if lower === 'pe'}<PeView />{:else}<Occupancy />{/if}
+        </div>
       </div>
       <div class="right panel"><Inspector /></div>
     </main>
@@ -143,6 +151,7 @@
   }
   .panel {
     min-height: 0;
+    min-width: 0;
     display: flex;
     flex-direction: column;
   }
@@ -153,15 +162,26 @@
     border-left: 1px solid var(--line);
   }
   .center {
+    min-width: 0;
     display: grid;
     grid-template-rows: minmax(0, 0.7fr) minmax(0, 1.3fr);
     min-height: 0;
+  }
+  .tabs {
+    display: flex;
+    gap: 4px;
+    padding: 4px 8px 0;
+    flex: none !important;
+  }
+  .tabs button.on {
+    background: var(--accent);
+    color: var(--bg);
   }
   .chipwrap {
     border-bottom: 1px solid var(--line);
   }
   .chipwrap > :global(*),
-  .pewrap > :global(*) {
+  .pewrap > :global(section) {
     flex: 1;
   }
 </style>

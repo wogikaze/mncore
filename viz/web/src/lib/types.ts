@@ -34,6 +34,8 @@ export interface ExprInfo {
   unit: 'alu' | 'mau' | 'matrix' | 'mwrite' | 'mread' | 'l1-to-pe' | 'pe-to-l1' | 'l2' | 'wait' | 'noforward' | 'other';
   /** Forwarding register this expression updates. */
   fwd: 'aluf' | 'mauf' | 'mreadf' | 'lbf' | null;
+  /** Issue group of SDM 3.6.4: at most one expression per group in a step. */
+  group: string;
 }
 
 export interface LineInfo {
