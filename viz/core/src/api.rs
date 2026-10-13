@@ -11,6 +11,16 @@ use crate::vsm::{self, Line};
 
 pub const VSM_HERE: &str = "# ======= YOUR VSM WILL BE INSERTED HERE =======";
 
+/// One expression of a PE statement.
+#[derive(Serialize)]
+pub struct ExprInfo {
+    pub text: String,
+    /// alu, mau, matrix, mwrite, mread, l1-to-pe, pe-to-l1, l2, wait, noforward
+    pub unit: &'static str,
+    /// The forwarding register this expression updates (aluf, mauf, mreadf, lbf).
+    pub fwd: Option<&'static str>,
+}
+
 #[derive(Serialize)]
 pub struct LineInfo {
     /// Line number in the solution (1-based).
@@ -22,8 +32,34 @@ pub struct LineInfo {
     pub step: u32,
     pub words: u32,
     pub flows: Vec<Flow>,
+    /// Expressions of a PE statement (empty for other lines).
+    pub exprs: Vec<ExprInfo>,
     /// Accesses of the focus PEs in this line.
     pub accesses: Vec<Access>,
+}
+
+fn expr_infos(l: &Line) -> Vec<ExprInfo> {
+    use crate::vsm::{Op, Operand};
+    let Line::Pe(exprs) = l else { return Vec::new() };
+    exprs
+        .iter()
+        .map(|e| {
+            let (unit, fwd) = match &e.op {
+                Op::Alu { .. } | Op::Imm { .. } | Op::Zero => ("alu", Some("aluf")),
+                Op::Mau { matrix: true, .. } => ("matrix", Some("mauf")),
+                Op::Mau { .. } => ("mau", Some("mauf")),
+                Op::MatWrite { .. } => ("mwrite", None),
+                Op::MatRead { .. } => ("mread", Some("mreadf")),
+                Op::L1(_) if matches!(e.srcs.first(), Some(Operand::L1bm { .. })) => ("l1-to-pe", Some("lbf")),
+                Op::L1(_) => ("pe-to-l1", None),
+                Op::L2(_) => ("l2", None),
+                Op::Wait(_) => ("wait", None),
+                Op::Noforward => ("noforward", None),
+                Op::Other(_) => ("other", None),
+            };
+            ExprInfo { text: e.text.clone(), unit, fwd }
+        })
+        .collect()
 }
 
 #[derive(Serialize)]
@@ -126,6 +162,7 @@ pub fn trace(testcase: &str, solution: &str, focus: &[usize]) -> Result<Trace, S
             step,
             words: l.words(),
             flows: trace::flows(l),
+            exprs: expr_infos(l),
             accesses,
         });
         step += l.words();
