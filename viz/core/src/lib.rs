@@ -2,6 +2,7 @@ pub mod blockop;
 pub mod blocks;
 pub mod emu;
 pub mod float;
+pub mod hazard;
 pub mod machine;
 pub mod mv;
 pub mod rrn;

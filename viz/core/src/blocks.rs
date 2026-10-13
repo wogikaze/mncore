@@ -99,6 +99,10 @@ impl Blocks {
                             L1Op::Mbcast => {
                                 if two {
                                     (self.l1_read(l1b, addr, base(8) + pe, c)?, self.l1_read(l1b, addr, base(8) + 4 + pe, c)?)
+                                } else if addr.is_none() {
+                                    // From the turnaround register, the LSB long word carries what
+                                    // a two long word transfer would (visible when writing T).
+                                    (self.l1_read(l1b, addr, pe, c)?, self.l1_read(l1b, addr, 4 + pe, c)?)
                                 } else {
                                     (self.l1_read(l1b, addr, base(4) + pe, c)?, 0)
                                 }
@@ -132,7 +136,8 @@ impl Blocks {
     pub fn pe_to_l1(&self, op: L1Op, dst: &Operand, src: &[[Bus; 4]], ext: bool, src_two: bool, w: &mut BlockWrites) -> Result<(), ExecError> {
         let (wl, addr) = l1_operand(dst).ok_or_else(|| ExecError::Unsupported(format!("L1BM destination {dst:?}")))?;
         let two = wl == 4;
-        let mut lbi = vec![[[0u64; 64]; 4]; L1BS];
+        // Positions not written keep their old values (measured with the emulator).
+        let mut lbi = self.lbi.clone();
         for l1b in 0..L1BS {
             let pe_of = |mab: usize, pe: usize| l1b * 64 + mab * 4 + pe;
             for c in 0..4 {
@@ -172,33 +177,37 @@ impl Blocks {
                             }
                         }
                     }
-                    L1Op::Reduce { rrn, round } if round || ext || rrn.prec == 'h' && matches!(rrn.op, RrnOp::Fadd | RrnOp::Max | RrnOp::Min) => {
-                        let rounded = round || rrn.prec == 'h';
-                        let mut res: Vec<Bus> = Vec::new();
-                        for pe in 0..4 {
-                            let vals: Vec<Bus> = (0..16).map(|m| src[pe_of(m, pe)][c]).collect();
-                            res.push(reduce_buses(rrn, round, ext, two || (rounded && src_two), &vals, true)?);
-                        }
-                        if rounded {
-                            // Each PE lane gives 4 results (as halves in single lanes).
-                            let mut halves = [0u64; 16];
+                    L1Op::Reduce { rrn, round } | L1Op::Reduce4 { rrn, round }
+                        if round || ext || rrn.prec == 'h' && rrn.op == RrnOp::Fadd =>
+                    {
+                        // Reductions with precision extension and/or output rounding (including
+                        // the half-precision float reductions, which are implemented that way).
+                        let four = matches!(op, L1Op::Reduce4 { .. });
+                        let rounded = round || (rrn.prec == 'h' && rrn.op == RrnOp::Fadd);
+                        for group in 0..(if four { 4 } else { 1 }) {
+                            let mabs: Vec<usize> = if four { (group * 4..group * 4 + 4).collect() } else { (0..16).collect() };
+                            let mut res: Vec<Bus> = Vec::new();
                             for pe in 0..4 {
-                                for j in 0..4 {
-                                    let l = long(&res[pe], j / 2);
-                                    halves[4 * pe + j] = (l >> (32 - 32 * (j % 2) as u32)) & 0xffff;
+                                let vals: Vec<Bus> = mabs.iter().map(|&m| src[pe_of(m, pe)][c]).collect();
+                                res.push(reduce_buses(rrn, round, ext, two || (rounded && src_two), &vals, !four)?);
+                            }
+                            for pe in 0..4 {
+                                if rounded {
+                                    // PE p's 4 halves stay together in one long word (measured with
+                                    // the emulator); the orders in SDM 3.6.8.4 and 3.6.8.5 describe
+                                    // the reduction circuit and cancel out.
+                                    let v = (0..4).fold(0u64, |acc, j| {
+                                        let l = long(&res[pe], j / 2);
+                                        (acc << 16) | ((l >> (32 - 32 * (j % 2) as u32)) & 0xffff)
+                                    });
+                                    items.push((group * 4 + pe, v));
+                                } else if four {
+                                    items.push((group * 8 + pe, long(&res[pe], 0)));
+                                    items.push((group * 8 + 4 + pe, long(&res[pe], 1)));
+                                } else {
+                                    items.push((pe, long(&res[pe], 0)));
+                                    items.push((4 + pe, long(&res[pe], 1)));
                                 }
-                            }
-                            // PE p's 4 halves stay together in long word p, with or without input
-                            // extension (measured with the emulator). The orders in SDM 3.6.8.4
-                            // and 3.6.8.5 describe the reduction circuit and cancel out.
-                            for pe in 0..4 {
-                                let v = (0..4).fold(0u64, |acc, j| (acc << 16) | halves[4 * pe + j]);
-                                items.push((pe, v));
-                            }
-                        } else {
-                            for pe in 0..4 {
-                                items.push((pe, long(&res[pe], 0)));
-                                items.push((4 + pe, long(&res[pe], 1)));
                             }
                         }
                     }
@@ -231,9 +240,11 @@ impl Blocks {
                 if let Some(a) = addr {
                     let step = match op {
                         L1Op::Gather { .. } => 64,
-                        L1Op::M4write { .. } | L1Op::Reduce4 { .. } => if two { 32 } else { 16 },
-                        L1Op::Reduce { rrn, round } if round || rrn.prec == 'h' && matches!(rrn.op, RrnOp::Fadd | RrnOp::Max | RrnOp::Min) => 4,
+                        L1Op::Reduce { rrn, round } if round || rrn.prec == 'h' && rrn.op == RrnOp::Fadd => 4,
+                        L1Op::Reduce4 { rrn, round } if round || rrn.prec == 'h' && rrn.op == RrnOp::Fadd => 16,
                         L1Op::Reduce { .. } if ext => 8,
+                        L1Op::Reduce4 { .. } if ext => 32,
+                        L1Op::M4write { .. } | L1Op::Reduce4 { .. } => if two { 32 } else { 16 },
                         _ => if two { 8 } else { 4 },
                     };
                     for (o, v) in items {
@@ -372,7 +383,7 @@ fn reduce_longs(rrn: Rrn, vals: &[u64]) -> u64 {
 /// With extension, the 4 halves of each PE's MSB long word become 4 singles (two long words).
 /// Returns the reduced two long words; with rounding, each single lane holds a half.
 fn reduce_buses(rrn: Rrn, round: bool, ext: bool, two: bool, vals: &[Bus], sixteen: bool) -> Result<Bus, ExecError> {
-    let half_alias = rrn.prec == 'h' && matches!(rrn.op, RrnOp::Fadd | RrnOp::Max | RrnOp::Min);
+    let half_alias = rrn.prec == 'h' && rrn.op == RrnOp::Fadd;
     let ext = ext || half_alias;
     let round = round || half_alias;
     let rrn = if half_alias { Rrn { prec: 'f', ..rrn } } else { rrn };
