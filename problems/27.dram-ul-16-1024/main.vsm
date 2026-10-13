@@ -2,8 +2,6 @@ l1bmd $lm0v $lb0
 l1bmd $lm8v $lb256
 l1bmd $lm16v $lb512
 l1bmd $lm24v $lb768
-nop
-nop
 l2bmd $lb0 $lc0
 l2bmd $lb32 $lc256
 l2bmd $lb64 $lc512

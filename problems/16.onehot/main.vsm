@@ -8,7 +8,6 @@ iadd $subpeid $r3 $r0
 imm i"1" $s12
 imm i"8" $s14
 nop
-nop
 iadd $r0 $s12 $r4
 iadd $r0 $s14 $r6
 nop
@@ -47,7 +46,6 @@ zero $ln224v
 zero $ln232v
 zero $ln240v
 zero $ln248v
-nop
 ixor $m0 $r0 $omr1
 maskn 1
 fpassa $r8 $n0

@@ -112,8 +112,6 @@ l1bmrffadd $ln96v $lb192
 l1bmrffadd $ln104v $lb208
 l1bmrffadd $ln112v $lb224
 l1bmrffadd $ln120v $lb240
-nop
-nop
 l2bmrffadd $lb0 $lc0
 l2bmrffadd $lb64 $lc64
 l2bmrffadd $lb128 $lc128

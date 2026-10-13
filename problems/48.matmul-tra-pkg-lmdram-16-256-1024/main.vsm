@@ -97,14 +97,13 @@ gbfn $mreadf $nowrite
 gmfma $ly $aluf $ln24v $ln24v
 
 # PE -> L1BM concat (4 rows per instruction)
-nop/8
+nop/2
 l1bmd $ln0v $lb0
 l1bmd $ln8v $lb256
 l1bmd $ln16v $lb512
 l1bmd $ln24v $lb768
 
 # L1BM -> L2BM concat (16 rows x 2 chunks per row)
-nop/4
 l2bmd $lb0 $lc0
 l2bmd $lb32 $lc256
 l2bmd $lb64 $lc512
@@ -139,7 +138,7 @@ l2bmd $lb960 $lc7680
 l2bmd $lb992 $lc7936
 
 # L2B reduce -> PDM, then write DRAM
-nop/4
+nop
 mvrffadd/n8192 $lc0 $p0@0
 mvp/n2048 $p0@0 $d0@0
 mvp/n2048 $p2048@0 $d0@1

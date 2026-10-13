@@ -32,7 +32,6 @@ nop
 l1bmm@0 $lr0v $lb28
 nop
 nop
-nop
 l2bm@0 $lb0 $lc0
 nop
 mvp/n64 $lc0@.0 $d0

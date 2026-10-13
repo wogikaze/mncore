@@ -7,7 +7,6 @@ l2bmb $lc0 $lb0
 l2bmb $lc64 $lb32
 l2bmb $lc128 $lb64
 l2bmb $lc192 $lb96
-nop
 l1bmm $llb0 $llm0v
 l1bmm $llb32 $llm16v
 l1bmm $llb64 $llm32v

@@ -13,7 +13,6 @@ nop
 nop
 iadd $s0v $r4 $s0v
 nop
-nop
 ixor $s0v $r0 $omr1
 maskn 1
 iadd $s4 $r5 $n0v

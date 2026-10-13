@@ -14,7 +14,6 @@ l1bmm@0 $llm192v $llb384
 l1bmm@0 $llm208v $llb416
 l1bmm@0 $llm224v $llb448
 l1bmm@0 $llm240v $llb480
-nop
 l2bm@0 $lb0 $lc0
 l2bm@0 $lb64 $lc64
 l2bm@0 $lb128 $lc128
