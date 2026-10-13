@@ -62,22 +62,80 @@ fn tempdir() -> PathBuf {
     dir
 }
 
-/// Parses lines of plain `d get` output, such as
-/// `DEBUG-GREG1(n0c0b0m0p0,6):(f:..., i:{...}, v:0x3F8000013F800001) #d get ...`,
-/// into a map from (memory name, PE path, word address) to the long word value.
-pub fn parse_dump(dump: &str) -> HashMap<(String, String, u32), u64> {
+/// Key of one dumped value: memory name as printed by the emulator (`LM0`, `GREG1`, `TREG`,
+/// `OMR`, ...), PE path (`n0c0b0m0p0`), and address. The address is the word address for
+/// LM/GRF, the long word index for T, and `entry * 4 + cycle` for the mask register.
+pub type DumpKey = (String, String, u32);
+
+/// Parses `d get` / `d get[dfh]` output into a map from location to long word value
+/// (or 4-bit flags for the mask register).
+pub fn parse_dump(dump: &str) -> HashMap<DumpKey, u64> {
     let mut out = HashMap::new();
+    let mut omr_seen: HashMap<(String, u32), u32> = HashMap::new();
     for line in dump.lines() {
         let Some(rest) = line.strip_prefix("DEBUG-") else { continue };
         let Some((mem, rest)) = rest.split_once('(') else { continue };
         let Some((loc, rest)) = rest.split_once(')') else { continue };
         let Some((pe, addr)) = loc.split_once(',') else { continue };
-        let Some(v) = rest.split("v:0x").nth(1) else { continue };
-        let hex: String = v.chars().take_while(|c| c.is_ascii_hexdigit()).collect();
-        let (Ok(addr), Ok(val)) = (addr.parse::<u32>(), u64::from_str_radix(&hex, 16)) else {
+        let Ok(addr) = addr.parse::<u32>() else { continue };
+        let rest = rest.trim_start_matches(':');
+        let val = if let Some(m) = rest.strip_prefix("Mask{") {
+            let n: String = m.chars().take_while(|c| c.is_ascii_digit()).collect();
+            let Ok(v) = n.parse::<u64>() else { continue };
+            let k = omr_seen.entry((pe.to_string(), addr)).or_insert(0);
+            let cycle = *k % 4;
+            *k += 1;
+            out.insert((mem.to_string(), pe.to_string(), addr * 4 + cycle), v);
+            continue;
+        } else if let Some(v) = rest.split("v:0x").nth(1) {
+            v
+        } else if let Some(v) = rest.split("(0x").nth(1) {
+            v
+        } else {
             continue;
         };
+        let hex: String = val.chars().take_while(|c| c.is_ascii_hexdigit()).collect();
+        let Ok(val) = u64::from_str_radix(&hex, 16) else { continue };
         out.insert((mem.to_string(), pe.to_string(), addr), val);
     }
     out
+}
+
+/// Assembles VSM with the official assembler in the judge's flat instruction mode.
+pub fn assemble(vsm: &str) -> Result<String, String> {
+    let dir = tempdir();
+    let vsm_path = dir.join("in.vsm");
+    std::fs::write(&vsm_path, vsm).map_err(|e| e.to_string())?;
+    let asm = Command::new(emu_dir().join("assemble3"))
+        .arg("--instruction-mode")
+        .arg("flat")
+        .arg(&vsm_path)
+        .output()
+        .map_err(|e| e.to_string())?;
+    let _ = std::fs::remove_dir_all(&dir);
+    if !asm.status.success() {
+        return Err(format!("assemble3 failed:\n{}", String::from_utf8_lossy(&asm.stderr)));
+    }
+    Ok(String::from_utf8_lossy(&asm.stdout).into_owned())
+}
+
+/// Runs already assembled input with the emulator and returns the debug dump.
+pub fn run_asm(asm: &str) -> Result<String, String> {
+    let dir = tempdir();
+    let asm_path = dir.join("in.asm");
+    let dmp_path = dir.join("out.dmp");
+    std::fs::write(&asm_path, asm).map_err(|e| e.to_string())?;
+    let emu = Command::new(emu_dir().join("gpfn3_package_main"))
+        .arg("-i")
+        .arg(&asm_path)
+        .arg("-d")
+        .arg(&dmp_path)
+        .output()
+        .map_err(|e| e.to_string())?;
+    if !emu.status.success() {
+        return Err(format!("emulator failed:\n{}", String::from_utf8_lossy(&emu.stderr)));
+    }
+    let dump = std::fs::read_to_string(&dmp_path).map_err(|e| e.to_string())?;
+    let _ = std::fs::remove_dir_all(&dir);
+    Ok(dump)
 }
