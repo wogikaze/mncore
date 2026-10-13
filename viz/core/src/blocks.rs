@@ -83,54 +83,61 @@ impl Blocks {
         }
     }
 
-    /// Values an L1BM-to-PE transfer delivers to every PE in every cycle.
-    pub fn l1_to_pe(&self, op: L1Op, src: &Operand) -> Result<Vec<[Bus; 4]>, ExecError> {
+    /// Values an L1BM-to-PE transfer delivers to every PE in every cycle, and the L1BM long
+    /// word address each PE's MSB long word came from (None for the turnaround register).
+    #[allow(clippy::type_complexity)]
+    pub fn l1_to_pe(&self, op: L1Op, src: &Operand) -> Result<(Vec<[Bus; 4]>, Vec<[Option<u32>; 4]>), ExecError> {
         let (wl, addr) = l1_operand(src).ok_or_else(|| ExecError::Unsupported(format!("L1BM source {src:?}")))?;
         let two = wl == 4;
         let mut out = vec![[[0u32; 4]; 4]; PES];
+        let mut from = vec![[None; 4]; PES];
         for l1b in 0..L1BS {
             for c in 0..4 {
                 // For the turnaround register the address is relative to this cycle's block.
                 let base = |step: usize| if addr.is_some() { c * step } else { 0 };
                 for mab in 0..16 {
                     for pe in 0..4 {
-                        let (m, l) = match op {
+                        // Offsets of the MSB and (if any) LSB long words read for this PE.
+                        let (om, ol): (usize, Option<usize>) = match op {
                             L1Op::Pbcast => {
                                 let o = if addr.is_some() { c } else { 0 };
-                                (self.l1_read(l1b, addr, o, c)?, if two { self.l1_read(l1b, addr, o + 4, c)? } else { 0 })
+                                (o, two.then_some(o + 4))
                             }
                             L1Op::Mbcast => {
                                 if two {
-                                    (self.l1_read(l1b, addr, base(8) + pe, c)?, self.l1_read(l1b, addr, base(8) + 4 + pe, c)?)
+                                    (base(8) + pe, Some(base(8) + 4 + pe))
                                 } else if addr.is_none() {
                                     // From the turnaround register, the LSB long word carries what
                                     // a two long word transfer would (visible when writing T).
-                                    (self.l1_read(l1b, addr, pe, c)?, self.l1_read(l1b, addr, 4 + pe, c)?)
+                                    (pe, Some(4 + pe))
                                 } else {
-                                    (self.l1_read(l1b, addr, base(4) + pe, c)?, 0)
+                                    (base(4) + pe, None)
                                 }
                             }
                             L1Op::M4bcast => {
                                 let i = mab >> 2;
-                                if two {
-                                    (self.l1_read(l1b, addr, base(32) + i * 8 + pe, c)?, self.l1_read(l1b, addr, base(32) + i * 8 + 4 + pe, c)?)
-                                } else {
-                                    (self.l1_read(l1b, addr, base(16) + i * 4 + pe, c)?, 0)
-                                }
+                                if two { (base(32) + i * 8 + pe, Some(base(32) + i * 8 + 4 + pe)) } else { (base(16) + i * 4 + pe, None) }
                             }
                             L1Op::Distrib { mabdiff } => {
                                 // PE (mab, pe) receives what MAB (mab - mabdiff) would have.
                                 let src_mab = (mab as i32 - mabdiff as i32).rem_euclid(16) as usize;
-                                (self.l1_read(l1b, addr, base(64) + src_mab * 4 + pe, c)?, 0)
+                                (base(64) + src_mab * 4 + pe, None)
                             }
                             other => return Err(ExecError::Unsupported(format!("{other:?} is not an L1BM-to-PE transfer"))),
                         };
-                        out[l1b * 64 + mab * 4 + pe][c] = bus_of(m, l);
+                        let m = self.l1_read(l1b, addr, om, c)?;
+                        let l = match ol {
+                            Some(o) => self.l1_read(l1b, addr, o, c)?,
+                            None => 0,
+                        };
+                        let idx = l1b * 64 + mab * 4 + pe;
+                        out[idx][c] = bus_of(m, l);
+                        from[idx][c] = addr.map(|a| ((a as usize + om) % L1BM_LONGS) as u32);
                     }
                 }
             }
         }
-        Ok(out)
+        Ok((out, from))
     }
 
     /// Computes a PE-to-L1BM transfer from the PE values `src[pe][cycle]`.

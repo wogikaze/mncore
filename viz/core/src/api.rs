@@ -23,6 +23,10 @@ pub struct ExprInfo {
     /// alu, mau-calc, mau-mwrite, mau-mread, l1bm, l1bm-turnaround, l2bm, l2bmdarw, wait,
     /// noforward.
     pub group: &'static str,
+    /// Opcode and operand texts as written.
+    pub opcode: String,
+    pub srcs: Vec<String>,
+    pub dsts: Vec<String>,
 }
 
 #[derive(Serialize)]
@@ -75,7 +79,10 @@ fn expr_infos(l: &Line) -> Vec<ExprInfo> {
                 Op::Noforward => "noforward",
                 Op::Other(_) => "other",
             };
-            ExprInfo { text: e.text.clone(), unit, fwd, group }
+            let (opcode, toks) = crate::vsm::tokenize(&e.text);
+            let ndst = e.dsts.len().min(toks.len());
+            let (srcs, dsts) = toks.split_at(toks.len() - ndst);
+            ExprInfo { text: e.text.clone(), unit, fwd, group, opcode, srcs: srcs.to_vec(), dsts: dsts.to_vec() }
         })
         .collect()
 }

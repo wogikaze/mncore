@@ -3,7 +3,7 @@
   import { app } from './lib/state.svelte';
   import SourceView from './components/SourceView.svelte';
   import ChipView from './components/ChipView.svelte';
-  import PeView from './components/PeView.svelte';
+  import Datapath from './components/Datapath.svelte';
   import Inspector from './components/Inspector.svelte';
   import Timeline from './components/Timeline.svelte';
   import Story from './components/Story.svelte';
@@ -83,10 +83,10 @@
         <div class="panel chipwrap"><ChipView /></div>
         <div class="panel pewrap">
           <div class="tabs">
-            <button class:on={lower === 'pe'} onclick={() => (lower = 'pe')}>MAB 内部</button>
+            <button class:on={lower === 'pe'} onclick={() => (lower = 'pe')}>PE データパス</button>
             <button class:on={lower === 'occupancy'} onclick={() => (lower = 'occupancy')}>命令グループ占有</button>
           </div>
-          {#if lower === 'pe'}<PeView />{:else}<Occupancy />{/if}
+          {#if lower === 'pe'}<Datapath />{:else}<Occupancy />{/if}
         </div>
       </div>
       <div class="right panel"><Inspector /></div>
@@ -164,7 +164,7 @@
   .center {
     min-width: 0;
     display: grid;
-    grid-template-rows: minmax(0, 0.7fr) minmax(0, 1.3fr);
+    grid-template-rows: minmax(0, 0.36fr) minmax(0, 0.64fr);
     min-height: 0;
   }
   .tabs {

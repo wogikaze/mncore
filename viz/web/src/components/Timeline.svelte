@@ -1,5 +1,6 @@
 <script lang="ts">
   import { app } from '../lib/state.svelte';
+  import { player } from '../lib/player.svelte';
   import { volume } from '../lib/numbers';
   import { CATEGORY_COLORS, CATEGORY_NAMES, category } from '../lib/flows';
 
@@ -47,22 +48,32 @@
       if (l.words && l.step <= step) best = i;
     });
     app.seek(best);
+    player.progress = 1;
   }
 
-  // Playback: advance one line per step duration.
-  $effect(() => {
-    if (!app.playing) return;
-    const words = trace?.lines[app.line]?.words || 1;
-    const t = setTimeout(() => app.next(), app.stepSeconds * 1000 * Math.min(words, 4));
-    return () => clearTimeout(t);
-  });
+  function nextLine(): number {
+    let i = app.line + 1;
+    while (trace && i < trace.lines.length - 1 && trace.lines[i].words === 0) i++;
+    return i;
+  }
 
   function onKey(ev: KeyboardEvent) {
     if ((ev.target as HTMLElement).tagName === 'TEXTAREA') return;
-    if (ev.key === 'ArrowRight') app.next();
-    else if (ev.key === 'ArrowLeft') app.prev();
-    else if (ev.key === ' ') {
-      app.playing = !app.playing;
+    if (ev.key === 'ArrowRight') {
+      if (ev.shiftKey) player.nextCycle();
+      else {
+        player.pause();
+        player.goto(app.line + 1 < (trace?.lines.length ?? 0) ? nextLine() : app.line);
+      }
+    } else if (ev.key === 'ArrowLeft') {
+      if (ev.shiftKey) player.prevCycle();
+      else {
+        player.pause();
+        app.prev();
+        player.progress = 1;
+      }
+    } else if (ev.key === ' ') {
+      player.toggle();
       ev.preventDefault();
     }
   }
@@ -72,9 +83,12 @@
 
 <section class="timeline">
   <div class="controls">
-    <button onclick={() => app.prev()} title="前のステップ (←)">◀︎</button>
-    <button onclick={() => (app.playing = !app.playing)} title="再生 / 停止 (Space)">{app.playing ? '❚❚' : '▶︎'}</button>
-    <button onclick={() => app.next()} title="次のステップ (→)">▶︎|</button>
+    <button onclick={() => { player.pause(); app.prev(); player.progress = 1; }} title="前の行 (←)">⏮</button>
+    <button onclick={() => player.prevCycle()} title="前のサイクル (Shift+←)">◀︎</button>
+    <button onclick={() => player.toggle()} title="再生 / 停止 (Space)">{player.playing ? '❚❚ 停止' : '▶︎ 再生'}</button>
+    <button onclick={() => player.nextCycle()} title="次のサイクル (Shift+→)">▶︎</button>
+    <button onclick={() => { player.pause(); player.goto(nextLine()); }} title="次の行 (→)">⏭</button>
+    <span class="cyc">サイクル {player.progress >= 1 ? '—' : player.cycle}</span>
     <label title="1ステップあたりの秒数">
       速度 <input type="range" min="0.2" max="3" step="0.1" bind:value={app.stepSeconds} /> {app.stepSeconds.toFixed(1)}s
     </label>
@@ -98,6 +112,7 @@
     onpointerdown={(e) => {
       dragging = true;
       (e.currentTarget as Element).setPointerCapture(e.pointerId);
+      player.pause();
       seekAt(e);
     }}
     onpointermove={(e) => dragging && seekAt(e)}
@@ -131,6 +146,10 @@
   }
   .controls button {
     min-width: 2.2em;
+  }
+  .cyc {
+    font-family: var(--mono);
+    min-width: 6em;
   }
   .pos {
     font-family: var(--mono);

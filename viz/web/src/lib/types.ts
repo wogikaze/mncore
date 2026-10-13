@@ -6,6 +6,7 @@ export type Loc =
   | 'omr' | 'bar0' | 'bar1'
   | 'matx' | 'maty'
   | 'l1bm'
+  | 'l1bm_src'
   | 'out';
 
 export interface Access {
@@ -20,6 +21,16 @@ export interface Access {
   addr: number | null;
   /** Words read or written, MSB first. */
   words: number[];
+  /** Index of the operand among the expression's sources (reads) or destinations (writes). */
+  slot: number | null;
+}
+
+export interface Region {
+  mem: 'dram' | 'pdm' | 'l2bm' | 'l1bm';
+  /** Groups (dram/pdm), L2Bs (group * 2 + l2b) or L1Bs. */
+  units: number[];
+  addr: number;
+  len: number;
 }
 
 export interface Flow {
@@ -27,6 +38,8 @@ export interface Flow {
   to: string;
   longs: number;
   kind: string;
+  src: Region | null;
+  dst: Region | null;
 }
 
 export interface ExprInfo {
@@ -36,6 +49,9 @@ export interface ExprInfo {
   fwd: 'aluf' | 'mauf' | 'mreadf' | 'lbf' | null;
   /** Issue group of SDM 3.6.4: at most one expression per group in a step. */
   group: string;
+  opcode: string;
+  srcs: string[];
+  dsts: string[];
 }
 
 export interface LineInfo {

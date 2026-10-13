@@ -4,7 +4,8 @@
   import { ScrollTrigger } from 'gsap/ScrollTrigger';
   import { app } from '../lib/state.svelte';
   import ChipView from './ChipView.svelte';
-  import PeView from './PeView.svelte';
+  import Datapath from './Datapath.svelte';
+  import { player } from '../lib/player.svelte';
 
   gsap.registerPlugin(ScrollTrigger);
 
@@ -110,7 +111,7 @@
   }
 
   onMount(() => {
-    app.playing = false;
+    player.pause();
     const triggers = sections.map((s, i) =>
       ScrollTrigger.create({
         trigger: els[i],
@@ -123,6 +124,9 @@
           if (active !== i || !app.trace || app.problem !== s.problem) return;
           const line = s.from + Math.round(self.progress * (s.to - s.from));
           if (line !== app.line) app.seek(line);
+          // Within a line, the scroll position also moves through its 4 cycles.
+          const span = (s.to - s.from + 1);
+          player.progress = Math.min(0.999, (self.progress * span) % 1);
         },
       }),
     );
@@ -178,7 +182,7 @@
       <div class="now"><span>{l?.lineno}行目 ・ step {l?.step}</span><code>{l?.text}</code></div>
     {/if}
     <div class="chip"><ChipView /></div>
-    <div class="pe"><PeView /></div>
+    <div class="pe"><Datapath /></div>
   </aside>
 </div>
 

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { app } from '../lib/state.svelte';
+  import { player } from '../lib/player.svelte';
   import type { Hazard } from '../lib/types';
 
   let list: HTMLOListElement | undefined = $state();
@@ -54,7 +55,7 @@
           class:dim={l.words === 0}
           class:err={trace.error_line === i}
         >
-          <button onclick={() => app.seek(i)} title={reasons ? (reasons.length ? reasons.map(reason).join('\n') : 'どの規則にも必要とされていない（1ステップ削れる候補）') : ''}>
+          <button onclick={() => { player.pause(); player.goto(i); }} title={reasons ? (reasons.length ? reasons.map(reason).join('\n') : 'どの規則にも必要とされていない（1ステップ削れる候補）') : ''}>
             <span class="step">{l.words ? l.step : ''}</span>
             <span class="text">{l.text}</span>
             {#if reasons}

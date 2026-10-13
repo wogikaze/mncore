@@ -276,9 +276,9 @@ impl Machine {
             match op {
                 Operand::Mem { mem, wl, addr, .. } => {
                     let (a, n) = if *mem == MemKind::T { (cycle as u32, 4) } else { (self.word_addrs(pe, *mem, *wl, addr, cycle) as u32, *wl as usize) };
-                    t.pe(pe, cycle, mem_name(*mem), false, Some(a), &bus[..n]);
+                    t.pe_read(pe, cycle, mem_name(*mem), op as *const Operand as usize, Some(a), &bus[..n]);
                 }
-                Operand::Forward { kind, .. } => t.pe(pe, cycle, fwd_name(*kind), false, None, &bus),
+                Operand::Forward { kind, .. } => t.pe_read(pe, cycle, fwd_name(*kind), op as *const Operand as usize, None, &bus),
                 _ => {}
             }
         }
@@ -331,6 +331,7 @@ impl Machine {
         for (ei, e) in exprs.iter().enumerate() {
             if let Some(t) = self.tracer.borrow_mut().as_mut() {
                 t.expr = ei as u16;
+                t.srcs = e.srcs.iter().map(|o| o as *const Operand as usize).collect();
             }
             match &e.op {
                 Op::Noforward | Op::Wait(_) => continue,
@@ -412,6 +413,7 @@ impl Machine {
                 for c in 0..4 {
                     let mut bus = out.bus[pe][c];
                     if let Some(t) = self.tracer.borrow_mut().as_mut() {
+                        t.wslot = None;
                         t.pe(pe, c, "out", true, None, &bus);
                     }
                     if let Some(sel) = flush {
@@ -419,7 +421,10 @@ impl Machine {
                         bus = apply_flush(bus, f, sel.ll);
                     }
                     let poison = out.poison.as_ref().filter(|p| p.hits(pe, c)).map(|p| p.msg.as_str());
-                    for d in &e.dsts {
+                    for (di, d) in e.dsts.iter().enumerate() {
+                        if let Some(t) = self.tracer.borrow_mut().as_mut() {
+                            t.wslot = Some(di as u8);
+                        }
                         self.write(pe, d, c, bus, out.flags[pe][c], single_line_mask, poison)?;
                     }
                 }
@@ -602,7 +607,15 @@ impl Machine {
             Op::Mau { prec, matrix: true, kind, half, round } => self.compute_mat(e, *prec, *kind, *half, *round),
             Op::MatRead { prec } => self.compute_mread(e, *prec),
             Op::L1(op) => {
-                let bus = self.blocks.l1_to_pe(*op, &e.srcs[0])?;
+                let (bus, from) = self.blocks.l1_to_pe(*op, &e.srcs[0])?;
+                if let Some(t) = self.tracer.borrow_mut().as_mut() {
+                    for pe in 0..PES {
+                        for c in 0..4 {
+                            let b = &bus[pe][c];
+                            t.pe_read(pe, c, "l1bm_src", &e.srcs[0] as *const Operand as usize, from[pe][c], &[b[0], b[1]]);
+                        }
+                    }
+                }
                 Ok(Output { bus, flags: vec![[0; 4]; PES], fwd: Some(FwdKind::Lbf), poison: None })
             }
             other => Err(ExecError::Unsupported(format!("{other:?}"))),

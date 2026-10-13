@@ -1,160 +1,182 @@
 <script lang="ts">
-  import gsap from 'gsap';
   import { app } from '../lib/state.svelte';
+  import { player } from '../lib/player.svelte';
   import { CATEGORY_COLORS, category } from '../lib/flows';
   import { volume } from '../lib/numbers';
-  import type { Flow } from '../lib/types';
+  import type { Flow, Region } from '../lib/types';
 
+  // Memory map of the chip: each memory is a bar over the addresses the program uses; the
+  // current line's source regions are blue, destinations orange, linked by curves.
   const W = 1000;
-  const H = 300;
-  type Box = { x: number; y: number; w: number; h: number };
-  const center = (b: Box) => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 });
+  const LEFT = 64;
+  const GROUP_W = (W - LEFT - 8) / 4;
+  const BAR_W = GROUP_W / 2 - 12;
+  const Y = { dram: 18, pdm: 46, l2bm: 94, l1bm: 132, pe: 206 };
+  const L1_H = 6;
+  const PE_H = 30;
+  const H = Y.pe + PE_H + 22;
 
-  // Layout of the hierarchy (SDM 1.1): 4 groups, each with DRAM, PDM and 2 L2Bs; 8 L1Bs per
-  // L2B; 16 MABs x 4 PEs per L1B.
-  const LEFT = 40;
-  const groupW = (W - LEFT) / 4;
-  const dram: Box[] = [0, 1, 2, 3].map((g) => ({ x: LEFT + g * groupW + 14, y: 22, w: 96, h: 26 }));
-  const pdm: Box[] = [0, 1, 2, 3].map((g) => ({ x: LEFT + g * groupW + 126, y: 22, w: 96, h: 26 }));
-  const l2bm: Box[] = [...Array(8).keys()].map((k) => ({ x: LEFT + Math.floor(k / 2) * groupW + 14 + (k % 2) * 112, y: 96, w: 96, h: 26 }));
-  const l1bm: Box[] = [...Array(64).keys()].map((i) => {
-    const p = l2bm[Math.floor(i / 8)];
-    return { x: p.x + (i % 8) * 12, y: 168, w: 10, h: 18 };
+  type Bar = { x: number; y: number; w: number; h: number };
+
+  function bar(mem: Region['mem'] | 'pe', unit: number): Bar {
+    switch (mem) {
+      case 'dram':
+        return { x: LEFT + unit * GROUP_W + 4, y: Y.dram, w: BAR_W, h: 16 };
+      case 'pdm':
+        return { x: LEFT + unit * GROUP_W + 4, y: Y.pdm, w: BAR_W, h: 16 };
+      case 'l2bm': {
+        const g = Math.floor(unit / 2);
+        return { x: LEFT + g * GROUP_W + 4 + (unit % 2) * (BAR_W + 12), y: Y.l2bm, w: BAR_W, h: 16 };
+      }
+      case 'l1bm': {
+        const p = bar('l2bm', Math.floor(unit / 8));
+        return { x: p.x, y: Y.l1bm + (unit % 8) * (L1_H + 2), w: BAR_W, h: L1_H };
+      }
+      case 'pe': {
+        const p = bar('l2bm', Math.floor(unit / 8));
+        const w = BAR_W / 8;
+        return { x: p.x + (unit % 8) * w, y: Y.pe, w: w - 1, h: PE_H };
+      }
+    }
+  }
+
+  const trace = $derived(app.trace);
+  const flows = $derived<Flow[]>(trace?.lines[app.line]?.flows ?? []);
+
+  /** Address extent of each memory kind over the whole program (the bars' scale). */
+  const extent = $derived.by(() => {
+    const e: Record<string, number> = { dram: 64, pdm: 64, l2bm: 64, l1bm: 64 };
+    for (const l of trace?.lines ?? []) {
+      for (const f of l.flows) {
+        for (const r of [f.src, f.dst]) if (r) e[r.mem] = Math.max(e[r.mem], r.addr + r.len);
+      }
+    }
+    return e;
   });
-  const pe: Box[] = l1bm.map((b) => ({ x: b.x, y: 226, w: 10, h: 48 }));
+
+  /** Part of a bar covered by a region. */
+  function span(r: Region, unit: number): Bar {
+    const b = bar(r.mem, unit);
+    const ext = extent[r.mem];
+    const x = b.x + (r.addr / ext) * b.w;
+    const w = Math.max(2, (Math.min(r.len, ext - r.addr) / ext) * b.w);
+    return { x, y: b.y, w, h: b.h };
+  }
+
+  function curve(a: Bar, b: Bar): string {
+    const x1 = a.x + a.w / 2;
+    const x2 = b.x + b.w / 2;
+    const down = b.y > a.y;
+    const y1 = down ? a.y + a.h : a.y;
+    const y2 = down ? b.y : b.y + b.h;
+    const my = (y1 + y2) / 2;
+    return `M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2}`;
+  }
+
+  const drawn = $derived.by(() => {
+    const regions: { b: Bar; kind: 'src' | 'dst' }[] = [];
+    const links: { d: string; color: string }[] = [];
+    let compute = false;
+    const peUnits = new Set<number>();
+    for (const f of flows) {
+      const color = CATEGORY_COLORS[category(f.from, f.to)];
+      if (!f.src && !f.dst) {
+        compute = true;
+        continue;
+      }
+      const srcBars = f.src ? f.src.units.map((u) => span(f.src!, u)) : [];
+      const dstBars = f.dst ? f.dst.units.map((u) => span(f.dst!, u)) : [];
+      if (f.from === 'pe' || f.to === 'pe') {
+        // PE side of L1BM transfers: the L1B's column of the PE band.
+        const r = (f.src ?? f.dst)!;
+        for (const u of r.units) peUnits.add(u);
+        const pes = r.units.map((u) => bar('pe', u));
+        if (f.to === 'pe') pes.forEach((p, i) => links.push({ d: curve(srcBars[i], p), color }));
+        else pes.forEach((p, i) => links.push({ d: curve(p, dstBars[i]), color }));
+      } else if (srcBars.length && dstBars.length) {
+        const ns = srcBars.length;
+        const nd = dstBars.length;
+        if (nd >= ns) dstBars.forEach((d, i) => links.push({ d: curve(srcBars[Math.floor((i * ns) / nd)], d), color }));
+        else srcBars.forEach((s, i) => links.push({ d: curve(s, dstBars[Math.floor((i * nd) / ns)]), color }));
+      }
+      srcBars.forEach((b) => regions.push({ b, kind: 'src' }));
+      dstBars.forEach((b) => regions.push({ b, kind: 'dst' }));
+    }
+    return { regions, links, compute, peUnits };
+  });
 
   const focusL1b = $derived(Math.floor(app.focusPe / 64));
   const focusMab = $derived(Math.floor(app.focusPe / 4) % 16);
+  const pulse = $derived(player.progress < 1 ? player.progress : -1);
 
-  function nodes(level: string): Box[] {
-    return ({ dram, pdm, l2bm, l1bm, pe } as Record<string, Box[]>)[level] ?? pe;
+  const FULL: Record<string, number> = { dram: 4, pdm: 4, l2bm: 8, l1bm: 64 };
+  function describe(r: Region | null): string {
+    if (!r) return 'PE';
+    const name = (u: number) => (r.mem === 'l2bm' ? `${Math.floor(u / 2)}.${u % 2}` : r.mem === 'l1bm' ? `${u}` : `g${u}`);
+    const us = r.units.length === FULL[r.mem] ? '全' : r.units.length > 4 ? `${r.units.length}個` : r.units.map(name).join(',');
+    return `${r.mem.toUpperCase()} ${us} [${r.addr}..${r.addr + r.len - 1}]`;
   }
 
-  /** Source-destination pairs of a flow between two levels, following the tree. */
-  function pairs(f: Flow): [Box, Box][] {
-    const from = nodes(f.from);
-    const to = nodes(f.to);
-    const out: [Box, Box][] = [];
-    // Index mapping: a node of the upper level covers a block of the lower level.
-    const parent = (lvl: string, i: number, upper: string): number => {
-      const size: Record<string, number> = { dram: 4, pdm: 4, l2bm: 8, l1bm: 64, pe: 64 };
-      return Math.floor((i * size[upper]) / size[lvl]);
-    };
-    const size = (l: string) => nodes(l).length;
-    if (f.from === f.to) {
-      // Multicast between L1BMs: neighbors within each L2B.
-      for (let i = 0; i < size(f.from); i++) out.push([from[i], to[i % 8 === 7 ? i - 7 : i + 1]]);
-    } else if (size(f.from) <= size(f.to)) {
-      to.forEach((t, j) => out.push([from[parent(f.to, j, f.from)], t]));
-    } else {
-      from.forEach((s, j) => out.push([s, to[parent(f.from, j, f.to)]]));
-    }
-    return out;
-  }
-
-  let layer: SVGGElement | undefined = $state();
-  let tl: gsap.core.Timeline | null = null;
-
-  const flows = $derived(app.trace?.lines[app.line]?.flows ?? []);
-  const words = $derived(app.trace?.lines[app.line]?.words ?? 1);
-
-  $effect(() => {
-    const fs = flows;
-    const duration = Math.max(0.4, app.stepSeconds * Math.min(words, 4) * 0.85);
-    const g = layer;
-    if (!g) return;
-    tl?.kill();
-    g.replaceChildren();
-    tl = gsap.timeline();
-    const ns = 'http://www.w3.org/2000/svg';
-    for (const f of fs) {
-      const color = CATEGORY_COLORS[category(f.from, f.to)];
-      if (f.to === 'alu' || f.to === 'mau' || f.to === 'matrix' || f.from === 'matrix') {
-        // Computation inside PEs: pulse the PE band.
-        const r = document.createElementNS(ns, 'rect');
-        r.setAttribute('x', String(pe[0].x - 4));
-        r.setAttribute('y', String(pe[0].y - 4));
-        r.setAttribute('width', String(pe[63].x + pe[63].w - pe[0].x + 8));
-        r.setAttribute('height', String(pe[0].h + 8));
-        r.setAttribute('rx', '6');
-        r.setAttribute('fill', 'none');
-        r.setAttribute('stroke', color);
-        r.setAttribute('stroke-width', '3');
-        g.appendChild(r);
-        tl.fromTo(r, { opacity: 0.9 }, { opacity: 0, duration, ease: 'power1.out' }, 0);
-        continue;
-      }
-      const ps = pairs(f);
-      // Particles per path grow with the logarithm of the volume.
-      const perPath = Math.max(1, Math.min(6, Math.round(Math.log2(1 + f.longs / ps.length) / 2)));
-      ps.forEach(([s, d], k) => {
-        if (!s || !d) {
-          console.warn('no node for flow', f.from, f.to, k);
-          return;
-        }
-        const a = center(s);
-        const b = center(d);
-        for (let n = 0; n < perPath; n++) {
-          const c = document.createElementNS(ns, 'circle');
-          c.setAttribute('r', f.kind === 'reduce' ? '2.6' : '2');
-          c.setAttribute('fill', color);
-          c.setAttribute('cx', String(a.x));
-          c.setAttribute('cy', String(a.y));
-          c.setAttribute('opacity', '0');
-          g.appendChild(c);
-          const delay = (n / perPath) * duration * 0.6 + (k % 8) * 0.01;
-          tl!.set(c, { opacity: 1 }, delay);
-          tl!.to(c, { attr: { cx: b.x, cy: b.y }, duration: duration * 0.4, ease: 'power1.inOut' }, delay);
-          tl!.to(c, { opacity: 0, duration: 0.15 }, delay + duration * 0.4);
-        }
-      });
-    }
-  });
-
-  const lineFlows = $derived(flows.filter((f) => f.longs > 0));
+  const COMPUTE_NAME: Record<string, string> = { alu: 'ALU 演算', mau: 'MAU ベクトル演算', matrix: '行列演算' };
+  const LEVELS: [string, number][] = [
+    ['DRAM', Y.dram],
+    ['PDM', Y.pdm],
+    ['L2BM', Y.l2bm],
+    ['L1BM', Y.l1bm],
+    ['PE', Y.pe],
+  ];
 </script>
 
 <section class="chip">
-  <svg viewBox="0 0 {W} {H}">
+  <svg viewBox="0 0 {W} {H}" preserveAspectRatio="xMidYMin meet">
+    {#each LEVELS as [name, y]}
+      <text class="lvl" x="6" y={y + 12}>{name}</text>
+    {/each}
     {#each [0, 1, 2, 3] as g}
-      <rect class="group" x={LEFT + g * groupW + 4} y="6" width={groupW - 12} height="128" rx="8" />
-      <text class="glabel" x={LEFT + g * groupW + 10} y="16">group {g}</text>
+      {@const d = bar('dram', g)}
+      {@const p = bar('pdm', g)}
+      <text class="glabel" x={LEFT + g * GROUP_W + 4} y="12">group {g}</text>
+      <rect class="bar dram" x={d.x} y={d.y} width={d.w} height={d.h} />
+      <rect class="bar pdm" x={p.x} y={p.y} width={p.w} height={p.h} />
     {/each}
-    {#each dram as b, g}
-      <rect class="node dram" x={b.x} y={b.y} width={b.w} height={b.h} rx="4" />
-      <text x={b.x + b.w / 2} y={b.y + 17}>DRAM{g}</text>
+    {#each Array(8) as _, u}
+      {@const b = bar('l2bm', u)}
+      <rect class="bar l2" x={b.x} y={b.y} width={b.w} height={b.h} />
+      <text class="unitlabel" x={b.x + b.w / 2} y={b.y + 12}>{Math.floor(u / 2)}.{u % 2}</text>
     {/each}
-    {#each pdm as b, g}
-      <rect class="node pdm" x={b.x} y={b.y} width={b.w} height={b.h} rx="4" />
-      <text x={b.x + b.w / 2} y={b.y + 17}>PDM{g}</text>
+    {#each Array(64) as _, u}
+      {@const b = bar('l1bm', u)}
+      {@const pb = bar('pe', u)}
+      <rect class="bar l1" class:focus={u === focusL1b} x={b.x} y={b.y} width={b.w} height={b.h}><title>L1BM {u}</title></rect>
+      <rect class="pe" class:focus={u === focusL1b} class:hot={drawn.compute || drawn.peUnits.has(u)} x={pb.x} y={pb.y} width={pb.w} height={pb.h}><title>L1B {u} の 64 PE</title></rect>
     {/each}
-    {#each l2bm as b, k}
-      <rect class="node l2" x={b.x} y={b.y} width={b.w} height={b.h} rx="4" />
-      <text x={b.x + b.w / 2} y={b.y + 17}>L2BM {Math.floor(k / 2)}.{k % 2}</text>
+    <rect class="mabmark" x={bar('pe', focusL1b).x - 1} y={Y.pe + (focusMab * PE_H) / 16} width={bar('pe', focusL1b).w + 2} height={PE_H / 16 + 1} />
+
+    {#each drawn.links as l}
+      <path class="link" d={l.d} style:stroke={l.color} />
+      {#if pulse >= 0}
+        <path class="pulse" d={l.d} pathLength="1" style:stroke={l.color} style:stroke-dashoffset={0.1 - pulse * 1.1} />
+      {/if}
     {/each}
-    {#each l1bm as b, i}
-      <rect class="node l1" class:focus={i === focusL1b} x={b.x} y={b.y} width={b.w} height={b.h} rx="2">
-        <title>L1BM n{Math.floor(i / 16)}c{Math.floor(i / 8) % 2}b{i % 8}</title>
-      </rect>
+    {#each drawn.regions as r}
+      <rect class="region {r.kind}" x={r.b.x} y={r.b.y} width={r.b.w} height={r.b.h} />
     {/each}
-    {#each pe as b, i}
-      <rect class="node pe" class:focus={i === focusL1b} x={b.x} y={b.y} width={b.w} height={b.h} rx="2">
-        <title>64 PE (16 MAB) of L1B {i}</title>
-      </rect>
-    {/each}
-    <!-- Focus MAB marker within its L1B column. -->
-    <rect class="mabmark" x={pe[focusL1b].x - 1} y={pe[focusL1b].y + (focusMab * pe[0].h) / 16} width={pe[0].w + 2} height={pe[0].h / 16 + 1} />
-    <text class="lvl" x="4" y={l1bm[0].y + 13}>L1BM</text>
-    <text class="lvl" x="4" y={pe[0].y + 26}>PE</text>
-    <g bind:this={layer}></g>
+    <text class="scale" x={W - 8} y={H - 6}>帯の長さ = プログラムで使うアドレス範囲（DRAM {extent.dram}・PDM {extent.pdm}・L2BM {extent.l2bm}・L1BM {extent.l1bm} 長語）。青 = 読む範囲、橙 = 書く範囲</text>
   </svg>
-  <div class="flows">
-    {#each lineFlows as f}
-      <span style:border-color={CATEGORY_COLORS[category(f.from, f.to)]}>{f.from} → {f.to} <em>{f.kind}</em> {volume(f.longs)}</span>
+  <ul class="flows">
+    {#each flows as f}
+      <li style:border-color={CATEGORY_COLORS[category(f.from, f.to)]}>
+        {#if f.src || f.dst}
+          <b>{describe(f.src)}</b> → <b>{describe(f.dst)}</b>
+        {:else}
+          PE 内の{f.from === 'matrix' ? '行列レジスタ読み出し' : (COMPUTE_NAME[f.to] ?? f.to)}
+        {/if}
+        <span class="kind">{f.kind}・{volume(f.longs)}</span>
+      </li>
     {:else}
-      <span class="none">このステップにチップ規模の転送はありません</span>
+      <li class="none">この行には転送も演算もありません</li>
     {/each}
-  </div>
+  </ul>
 </section>
 
 <style>
@@ -162,76 +184,98 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
+    min-width: 0;
   }
   svg {
     width: 100%;
     flex: 1;
     min-height: 0;
   }
-  .group {
-    fill: none;
-    stroke: var(--line);
-    stroke-dasharray: 3 3;
+  text {
+    font-size: 10px;
+    fill: var(--fg);
   }
+  .lvl,
   .glabel,
-  .lvl {
+  .scale {
+    fill: var(--muted);
+  }
+  .scale {
+    text-anchor: end;
+    font-size: 9px;
+  }
+  .unitlabel {
+    text-anchor: middle;
     font-size: 9px;
     fill: var(--muted);
   }
-  text {
-    font-size: 10px;
-    text-anchor: middle;
-    fill: var(--fg);
-    pointer-events: none;
-  }
-  .lvl,
-  .glabel {
-    text-anchor: start;
-  }
-  .node {
+  .bar {
     stroke: var(--line);
-    fill: var(--panel);
+    stroke-width: 0.5;
   }
   .dram,
   .pdm {
-    fill: color-mix(in srgb, var(--c-offchip) 14%, var(--panel));
+    fill: color-mix(in srgb, var(--c-offchip) 10%, var(--panel));
   }
   .l2 {
-    fill: color-mix(in srgb, var(--c-l2) 14%, var(--panel));
+    fill: color-mix(in srgb, var(--c-l2) 10%, var(--panel));
   }
   .l1 {
-    fill: color-mix(in srgb, var(--c-l1) 14%, var(--panel));
+    fill: color-mix(in srgb, var(--c-l1) 12%, var(--panel));
   }
   .pe {
-    fill: color-mix(in srgb, var(--c-compute) 10%, var(--panel));
+    fill: color-mix(in srgb, var(--c-compute) 8%, var(--panel));
+  }
+  .pe.hot {
+    fill: color-mix(in srgb, var(--c-compute) 40%, var(--panel));
   }
   .focus {
     stroke: var(--fg);
-    stroke-width: 1.5;
+    stroke-width: 1;
   }
   .mabmark {
     fill: var(--fg);
   }
+  .region.src {
+    fill: var(--c-l2);
+  }
+  .region.dst {
+    fill: var(--c-compute);
+  }
+  .link {
+    fill: none;
+    stroke-width: 1;
+    opacity: 0.55;
+  }
+  .pulse {
+    fill: none;
+    stroke-width: 3;
+    stroke-dasharray: 0.1 1;
+    stroke-linecap: round;
+  }
   .flows {
+    list-style: none;
+    margin: 0;
+    padding: 4px 8px;
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
-    padding: 4px 8px;
+    gap: 4px 10px;
     font-size: 11px;
-    min-height: 22px;
   }
-  .flows span {
+  .flows li {
     border-left: 3px solid;
-    padding: 0 6px;
-    background: var(--panel);
+    padding-left: 6px;
   }
-  .flows em {
+  .flows b {
+    font-family: var(--mono);
+    font-weight: 500;
+  }
+  .kind {
     color: var(--muted);
-    font-style: normal;
+    margin-left: 6px;
   }
   .flows .none {
     border: none;
     color: var(--muted);
-    background: none;
   }
 </style>

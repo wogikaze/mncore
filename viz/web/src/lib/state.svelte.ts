@@ -20,7 +20,6 @@ class AppState {
   timeline: MemoryTimeline | null = null;
   /** Index into trace.lines of the line being shown. */
   line = $state(0);
-  playing = $state(false);
   /** Seconds per step when playing. */
   stepSeconds = $state(1.2);
   focusPe = $state(0);
@@ -87,7 +86,6 @@ class AppState {
     let i = this.line + 1;
     while (i < this.trace.lines.length && this.trace.lines[i].words === 0) i++;
     if (i < this.trace.lines.length) this.line = i;
-    else this.playing = false;
   }
 
   prev() {

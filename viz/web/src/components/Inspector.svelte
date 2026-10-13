@@ -20,7 +20,24 @@
     other: 'その他',
   };
 
-  const related = $derived(trace?.hazards.filter((h) => h.from === app.line || h.to === app.line) ?? []);
+  // Hazards that differ only in the L1B or L2B number are shown once, with the range of units.
+  const related = $derived.by(() => {
+    const hs = trace?.hazards.filter((h) => h.from === app.line || h.to === app.line) ?? [];
+    const groups = new Map<string, { h: (typeof hs)[number]; units: number[] }>();
+    for (const h of hs) {
+      const m = h.res.match(/^(\w+)\((\d+)\)$/);
+      const base = m ? m[1] : h.res;
+      const key = [h.rule, h.kind, base, h.addr, h.from, h.to, h.distance, h.required].join('|');
+      const g = groups.get(key);
+      if (g) {
+        if (m) g.units.push(+m[2]);
+      } else groups.set(key, { h: { ...h, res: base }, units: m ? [+m[2]] : [] });
+    }
+    return [...groups.values()].map(({ h, units }) => ({
+      ...h,
+      res: units.length ? `${h.res}（${units.length > 1 ? `${Math.min(...units)}〜${Math.max(...units)}` : units[0]}）` : h.res,
+    }));
+  });
 
   const origins = $derived.by<Origin[]>(() => {
     const s = app.selection;

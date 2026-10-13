@@ -528,7 +528,7 @@ fn take_num(s: &str) -> (Option<u64>, &str) {
 ///
 /// Operands may be written without spaces between them (`imm f"1.0"$r0`, `$lc0@2.1$p0@0`), so a
 /// new operand starts at every `$` that is not part of a mask (`/$imr1`), and at `-$`.
-fn tokenize(part: &str) -> (String, Vec<String>) {
+pub fn tokenize(part: &str) -> (String, Vec<String>) {
     let part = part.trim();
     let (opcode, rest) = match part.find(char::is_whitespace) {
         Some(i) => (&part[..i], &part[i..]),
