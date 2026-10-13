@@ -4,3 +4,4 @@ __pycache__/
 data/
 unit_tests/
 judge/
+result.txt
