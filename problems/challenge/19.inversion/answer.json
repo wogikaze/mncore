@@ -1,0 +1,13 @@
+{
+  "problem_url": "https://mncore-challenge.preferred.jp/problem/inversion",
+  "standings_url": "https://mncore-challenge.preferred.jp/standings/",
+  "shortest_url": "https://mncore-challenge.preferred.jp/shortest/inversion/sosuupoyo/",
+  "submission_url": "https://mncore-challenge.preferred.jp/submission/311ae8aa-e398-4c46-815d-dea09c54982b",
+  "author": "sosuupoyo",
+  "status": "Accepted",
+  "lines": 31,
+  "stdout": "ACCEPTED!! score=31 j=29 m=2 bytes=1376",
+  "fetched_at": "2026-10-14T00:39:05+00:00",
+  "local_validation": "accepted",
+  "local_judge_url": "https://mncore-challenge.preferred.jp/judge.zip"
+}

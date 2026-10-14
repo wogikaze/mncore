@@ -1,0 +1,13 @@
+fvfma $ls256 $ls256 $lm0v $omr1; isub $ls256 $lm0v $ln0v; l1bmd $lm0v $lbi
+fvfma $ls256 $ls256 $lm10v4 $omr2; isub $ls256 $lm10v4 $lr10v4; l1bmd $lm10v4 $lbi; l1bmd $lbi $ln0v/$imr1
+fvfma $ls256 $ls256 $lm24v $omr3; isub $ls256 $lm24v $ln24v; l1bmd $lm24v $lbi; l1bmd $lbi $lr10v4/$imr2
+fvfma $ls256 $ls256 $lm34v4 $omr4; isub $ls256 $lm34v4 $lr34v4; l1bmd $lm34v4 $lbi; l1bmd $lbi $ln24v/$imr3
+fvfma $ls256 $ls256 $llm8v $omr5; isub $llr8v $llm8v $lln8v; l1bmd $llm8v $lbi; l1bmd $lbi $lr34v4/$imr4
+fvfma $ls256 $ls256 $lm50v4 $omr6; isub $ls256 $lm50v4 $lr50v4; l1bmd $lm50v4 $lbi; l1bmd $lbi $ln8v4/$imr5
+fvfma $ls256 $ls256 $llm32v $omr7; isub $llr32v $llm32v $lln32v; l1bmd $llm32v $lbi; l1bmd $lbi $lr50v4/$imr6
+fvfma $ls256 $ls256 $lm66v4 $omr8; isub $ls256 $lm66v4 $lr66v4; l1bmd $lm66v4 $lbi; l1bmd $lbi $ln32v4/$imr7
+fvfma $ls256 $ls256 $llm48v $omr9; isub $llr48v $llm48v $lln48v; l1bmd $llm48v $lbi; l1bmd $lbi $lr66v4/$imr8
+fvfma $ls256 $ls256 $lm80v $omr10; isub $ls256 $lm80v $lr80v; l1bmd $lm80v $lbi; l1bmd $lbi $ln48v4/$imr9
+fvfma $ls256 $ls256 $llm64v $omr11; isub $llr64v $llm64v $lln64v; l1bmd $llm64v $lbi; l1bmd $lbi $lr80v/$imr10
+l1bmd $lbi $ln64v4/$imr11
+ipassa $lr80v $ln80v

@@ -1,0 +1,13 @@
+{
+  "problem_url": "https://mncore-challenge.preferred.jp/problem/inversion_small",
+  "standings_url": "https://mncore-challenge.preferred.jp/standings/",
+  "shortest_url": "https://mncore-challenge.preferred.jp/shortest/inversion_small/logicmachine/",
+  "submission_url": "https://mncore-challenge.preferred.jp/submission/c4c74014-5d44-4543-9154-4e26f4c8a759",
+  "author": "logicmachine",
+  "status": "Accepted",
+  "lines": 9,
+  "stdout": "ACCEPTED!! score=9 j=9 m=0 bytes=493",
+  "fetched_at": "2026-10-14T00:39:04+00:00",
+  "local_validation": "accepted",
+  "local_judge_url": "https://mncore-challenge.preferred.jp/judge.zip"
+}

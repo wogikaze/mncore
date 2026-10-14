@@ -10,7 +10,11 @@ const dst = join(here, '../public/problems');
 mkdirSync(dst, { recursive: true });
 
 const index = [];
-for (const name of readdirSync(src)) {
+const names = readdirSync(src);
+if (existsSync(join(src, 'challenge'))) {
+  names.push(...readdirSync(join(src, 'challenge')).map((name) => `challenge/${name}`));
+}
+for (const name of names) {
   const dir = join(src, name);
   if (!existsSync(join(dir, 'testcase.vsm')) || !existsSync(join(dir, 'main.vsm'))) continue;
   mkdirSync(join(dst, name), { recursive: true });
@@ -19,8 +23,9 @@ for (const name of readdirSync(src)) {
   }
   const md = existsSync(join(dir, 'problem.md')) ? readFileSync(join(dir, 'problem.md'), 'utf8') : '';
   const title = (md.match(/^#\s+(.+)$/m) || [, name])[1].trim();
-  index.push({ name, title, number: parseInt(name, 10) || 0 });
+  const challenge = name.startsWith('challenge/');
+  index.push({ name, title: challenge ? `Challenge: ${title}` : title, number: parseInt(name.split('/').at(-1), 10) || 0 });
 }
-index.sort((a, b) => a.number - b.number);
+index.sort((a, b) => Number(a.name.startsWith('challenge/')) - Number(b.name.startsWith('challenge/')) || a.number - b.number);
 writeFileSync(join(dst, 'index.json'), JSON.stringify(index, null, 1));
 console.log(`copied ${index.length} problems to public/problems`);

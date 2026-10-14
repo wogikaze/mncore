@@ -1,0 +1,9 @@
+imm i"0" $r0
+imm i"2" $r1
+nop
+nop
+ladd $lm0v $lr0 $ln0v
+ladd $lm8v $lr0 $ln8v
+ladd $lm16v $lr0 $ln16v
+ladd $lm24v $lr0 $ln24v
+ladd $lm32v $lr0 $ln32v

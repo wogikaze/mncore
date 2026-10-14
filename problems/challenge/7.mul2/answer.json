@@ -1,0 +1,13 @@
+{
+  "problem_url": "https://mncore-challenge.preferred.jp/problem/mul2",
+  "standings_url": "https://mncore-challenge.preferred.jp/standings/",
+  "shortest_url": "https://mncore-challenge.preferred.jp/shortest/mul2/sosuupoyo/",
+  "submission_url": "https://mncore-challenge.preferred.jp/submission/a5eb9ef1-ae30-42ec-8b4d-ec9c3ad7c379",
+  "author": "sosuupoyo",
+  "status": "Accepted",
+  "lines": 9,
+  "stdout": "ACCEPTED!! score=9 j=9 m=0 bytes=560",
+  "fetched_at": "2026-10-14T00:38:53+00:00",
+  "local_validation": "accepted",
+  "local_judge_url": "https://mncore-challenge.preferred.jp/judge.zip"
+}

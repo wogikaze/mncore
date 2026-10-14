@@ -1,0 +1,157 @@
+# FizzBuzz
+
+# small integers
+
+ipackbit $subpeid $t $nowrite
+dmwrite $aluf $lx0 ; imm i"56" $r16/1000
+dmread $lx0 $lr0v4
+iinc  $mreadf $lr2v4
+
+# calc m=i*8
+
+iand  $l1bid $r[0,0,12,2]  $nowrite
+ilsl  $aluf  $r[0,0,14,8]  $s0v
+iand  $peid  $r[14,16,0,0] $nowrite
+ilsl  $aluf  $r[2,14,0,0]  $nowrite
+ior   $aluf  $s2v          $s0v
+ilsl  $l2bid $r10          $nowrite
+ior   $aluf  $s0           $nowrite
+ior   $aluf  $s1           $nowrite
+ilsl  $aluf  $r4           $s0/1000
+
+#
+
+imm ui"0x4b000000" $t
+imm i"8" $r[16,17,28,0]/1110 ; hvpassa -$aluf $omr15
+
+# constants
+
+# float (*1)
+ior $lr2v $t $nowrite
+fvadd $aluf -$t $lr102v $ls102v $ln102v # 1,2,3,4
+
+# block boundaries
+imm i"32"    $r25
+imm i"408"   $r26
+imm i"4672"  $r27
+# block offsets
+#imm i"8"     $r28 
+imm i"13"    $r29
+imm i"66"    $r30
+imm i"599"   $r31
+
+# (*1) cont.
+fvadd $lr102v $ls108 $lr110v $ls110v $ln110v # 5,6,7,8
+fvadd $mauf   $ls108 $lr118v                 # ..12
+fvadd $mauf   $ls108 $lr126v                 # ..16
+fvfma $ln110 $ls104v $lr116 $lr136v10        # 18,23,28,33
+
+# fvpassable characters
+#imm ui"0x4b000046" $r63            # 'F'
+#imm ui"0x4b000069" $r64            # 'i'
+#imm ui"0x4b000042" $r67            # 'B'
+#imm ui"0x4b000075" $r68            # 'u'
+#imm ui"0x4b00007a" $r[65,66,69,70] # 'z'
+#imm ui"0x4b00000a" $r71            # newline
+
+#imm f"0.001" $lr72
+#imm f"0.01"  $lr74
+#imm f"0.1"   $lr76
+#imm f"1"     $lr78
+#imm f"10"    $lr80
+
+# block info
+
+isub $s0 $r24v    $omr1             ; fvpassa $ln102 $lr78
+iadd $s0 $r28v    $n1/$imr1          # a
+ipassa $r4v2      $s5/$imr1          # w ($ls4)
+imm f"63"         $s3                # s as float
+fvadd $aluf $r116 $s[8,8,3,8]/$imr1 ; imm ui"0x4b000030" $lr12
+fvadd $mauf $r116 $s[8,8,8,3]/$imr1 ; imm ui"0x4b00000a" $r71
+imm f"0.0158731"  $s[8,7,8,8]/$imr1  # 1/s
+imm f"0.0140846"  $s[8,8,7,8]/$imr1
+imm f"0.0126583"  $s[8,8,8,7]/$imr1
+
+# calc b
+
+ior $t $n1 $nowrite        ; fvpassa $lr[102,104,108,114] $lm40v  # 1,2,4,7
+fvadd $aluf -$t $n1
+fvmul $mauf $s7 $nowrite   ; imm f"0.1" $lr76
+ffloor $mauf $s20         # b as float
+
+# calc c
+
+fvfma $s3 -$aluf $n1 $nowrite  ; imm ui"0x4b00007a" $r[65,66,69,70]
+fftoi $mauf $r19          # c ($lr18)
+
+# locate numbers
+
+ior $s5 $t $nowrite         ; fvpassa $lr[116,122,126,128] $lm48v  # 8,11,13,14
+fvadd $aluf -$t $nowrite    ; iadd/$imr15 $s5 $r[6,10,16,71] $s129v2
+fvfma $mauf $ls102v $lr[106,106,116,136] $m17v2 ; noforward
+fvfma $mauf $ls110v $lr[136,156,166,166] $m25v2
+
+                              lsub $lr18 $ls132 $omr1 # w*1+8
+fvadd $t    $lr104 $t/$imr1 ; lsub $aluf $ls4   $omr1 # w*2+8
+fvadd $mauf $lr104 $t/$imr1 ; lsub $aluf $ls130 $omr1 # w*3+13
+fvadd $mauf $lr104 $t/$imr1 ; lsub $aluf $ls134 $omr1 # w*4+23
+fvadd $mauf $lr104 $t/$imr1 ; lsub $aluf $ls134 $omr1 # w*5+33
+fvadd $mauf $lr104 $t/$imr1 ; lsub $aluf $ls4   $omr1 # w*6+33
+fvadd $mauf $lr104 $t/$imr1 ; imm f"0.01"  $lr74
+                            ; imm f"0.001" $lr72
+fvfma $s20 $r130 $mt[43,41,0,0] $s48v/1100    # v2val,v1val
+fftoi $lmt[18,18,16,16] $t                    # v2pos,v1pos
+
+# render numbers
+
+fvmul $lr72v $ls48 $nowrite              ; imm ui"0x4b000046" $r63
+ffloor $mauf $ls18v
+fvadd $aluf $lr12 $nowrite               ; imm ui"0x4b000069" $r64  
+fvfma/$imr15 $ls16v -$lr120 $mauf $ls20v ; imm ui"0x4b000042" $r67
+                                         ; imm ui"0x4b000075" $r68
+ipassa $s[20,22,21,23] $mt[0,1,0,1]
+ipassa $s[24,26,25,27] $mt[2,3,2,3]
+fvpassa/$imr15 $r71 $mt4                 ; ladd $ls4 $ls4 $t $ls6
+
+# render fizz & buzz
+                        
+fvpassa/$imr15 $lr64v $lm0v
+fvpassa/$imr15 $r63v $mt8v
+fvpassa/$imr15 $r71  $mt12               ; ladd $t $ls4 $t
+nop
+fvpassa/$imr15 $r67v $mt13v
+fvpassa/$imr15 $r63v $mt18v
+fvpassa/$imr15 $r71  $mt[17,22,22,22]    ; ladd $t $ls6 $t
+nop
+fvpassa/$imr15 $r63v $mt23v
+fvpassa/$imr15 $r67v $mt28v
+fvpassa/$imr15 $r71  $mt[27,32,32,32]    ; ladd $t $ls4 $t
+nop
+fvpassa/$imr15 $r63v $mt33v
+fvpassa/$imr15 $r71  $mt37               ; ladd $t $ls6 $t
+nop
+fvpassa/$imr15 $r63v $mt38v
+fvpassa/$imr15 $r67v $mt42v
+
+# pack
+
+lpassa $lr18 $t  # LM0 w/r hazard
+imm i"8" $r8     # LM0 w/r hazard
+ilsl $mt[0,4,0,4] $aluf $nowrite
+ior  $mt[1,5,1,5] $aluf $nowrite
+ilsl $aluf        $r8   $nowrite
+ior  $mt[2,6,2,6] $aluf $nowrite
+ilsl $aluf        $r8   $nowrite
+ior  $mt[3,7,3,7] $aluf $s0v/1100
+nop
+
+# output
+
+l1bmd $ls0 $lb0
+nop
+nop
+l2bmd $lb0 $lc0
+l2bmd $lb32 $lc256
+nop
+mvd/n512 $lc0 $p0@0
+mvp/n4096 $p0@0 $d0@0

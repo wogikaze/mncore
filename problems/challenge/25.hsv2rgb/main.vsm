@@ -1,0 +1,12 @@
+imm ui"0x43004300" $lr0v
+filrelud $msb1 $aluf $nowrite; fvmul $alufe $lm0v6 $lr8v
+ffloor $mauf $ls0v; fvmulr $aluf $aluf $nowrite; l1bmd+0 $lm4v6 $lbi
+imm ui"0x10423880" $t; hvfma $mauf $lr0vr $aluf $nowrite; l1bmd $lbi $nowrite
+iadd $mabid $mauf $nowrite; fvmul $lm2v6 $lbf $lr16v
+ilsl $t $aluf $t; fvadd -$ls0v $lr8v $lr8v
+frelu3 $aluf $lr16v $omr1; fvfma $lr16v $mauf $lm4v6 $ls24v; l1bmm@14 $aluf $lbi
+filrelud/$imr1 $t $lr16v $nowrite; fvadd $mauf -$lr16v $ls32v; l1bmd-11 $aluf $lbi; l1bmm $lbi $nowrite
+frelu2 $lbf $ls24v $nowrite; fvfma -$aluf $lr8v $mauf $nowrite; l1bmm@2 $aluf $lbi; l1bmd-11 $lbi $nowrite
+fmax $aluf $ls32v $lr64v; fvadd $lbf $mauf $ln2v6 $t; l1bmm $lbi $nowrite
+fvfma -$lbf $lr8v $aluf $ln0v6; l1bmm@4 $mauf $lbi
+l1bmm $lbi $ln4v6

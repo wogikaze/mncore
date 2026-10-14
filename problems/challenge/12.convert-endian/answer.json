@@ -1,0 +1,13 @@
+{
+  "problem_url": "https://mncore-challenge.preferred.jp/problem/convert_endian",
+  "standings_url": "https://mncore-challenge.preferred.jp/standings/",
+  "shortest_url": "https://mncore-challenge.preferred.jp/shortest/convert_endian/sosuupoyo/",
+  "submission_url": "https://mncore-challenge.preferred.jp/submission/7ae1af35-9ac5-44b9-8995-6e037a539c25",
+  "author": "sosuupoyo",
+  "status": "Accepted",
+  "lines": 3,
+  "stdout": "ACCEPTED!! score=3 j=3 m=0 bytes=102",
+  "fetched_at": "2026-10-14T00:38:57+00:00",
+  "local_validation": "accepted",
+  "local_judge_url": "https://mncore-challenge.preferred.jp/judge.zip"
+}

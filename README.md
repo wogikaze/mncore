@@ -53,6 +53,35 @@ python problems/sync_mnist_problems.py --cookie 'sessionid=...'
 
 When online fetch fails, the script falls back to `testcases/<slug>.vsm` if present.
 
+### Original MN-Core Challenge problems and answers
+
+The original [25 Challenge problems](https://mncore-challenge.preferred.jp/problems/)
+are stored separately in [problems/challenge](problems/challenge/README.md).
+Each includes `problem.md`, official `testcase*.vsm`, an Accepted public submission
+in `answer.vsm`, and an editable copy in `main.vsm`. `answer.md` / `answer.json`
+record the submission URL, author, and line count. Tutorial answers are also saved
+as `official.vsm` when published.
+
+Fetch missing files (existing files are preserved):
+
+```bash
+uv run --with beautifulsoup4 python problems/sync_challenge_problems.py
+```
+
+The helper selects the shortest submission per problem linked from the standings,
+checks its problem and Accepted status, and preserves the original code.
+Run an answer against its official testcases with:
+
+```bash
+python3 problems/run_problem.py challenge/12.convert-endian --solution problems/challenge/12.convert-endian/answer.vsm
+```
+
+The original Challenge's [judge.zip](https://mncore-challenge.preferred.jp/judge.zip)
+can also be used via `--judge /path/to/judge/judge-py/judge.py`.
+The runner adapts older testcase output separators in a temporary copy.
+
+`npm run sync-problems` in `viz/web` includes both problem sets in the visualizer.
+
 ### Low-level tools
 
 - `fx_export/tools/assembler`: wraps the dockerized MN-Core assembler (`assemble3`) so you can assemble standalone VSM without running the full judge.

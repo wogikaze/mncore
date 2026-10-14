@@ -218,7 +218,8 @@ def _compact_inline_text(text: str) -> str:
 def _resolve_href(page_url: str, href: str) -> str:
     # Some pages use bare slugs like "exp_lowprec" instead of absolute paths.
     if re.fullmatch(r"[a-zA-Z0-9_]+", href):
-        return parse.urljoin(page_url, f"/mnist/problem/{href}/")
+        contest_prefix = parse.urlparse(page_url).path.split("/problem/", 1)[0]
+        return parse.urljoin(page_url, f"{contest_prefix}/problem/{href}/")
     return parse.urljoin(page_url, href)
 
 
@@ -258,6 +259,12 @@ def _render_inline_text(tag: Tag, page_url: str) -> str:
 def _render_block(tag: Tag, page_url: str) -> list[str]:
     out: list[str] = []
     name = tag.name
+
+    if name in {"h3", "h4"}:
+        return [f"{'#' * int(name[1])} {_render_inline_text(tag, page_url)}", ""]
+
+    if "editor" in (tag.get("class") or []):
+        return ["```vsm", tag.get_text().strip("\n"), "```", ""]
 
     if name in {"p", "a"}:
         if name == "a":

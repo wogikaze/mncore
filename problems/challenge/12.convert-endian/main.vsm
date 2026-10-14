@@ -1,0 +1,3 @@
+imm i"0x34f80010" $r0v
+ibsl $m0v $aluf $r8v; fvfma $aluf $aluf $aluf $s0v
+sbsl $aluf $mauf $n[1,0,3,2]

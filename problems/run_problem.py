@@ -4,8 +4,10 @@
 from __future__ import annotations
 
 import argparse
+import re
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from typing import List
 
@@ -171,7 +173,25 @@ def run_judge(
     print("    » python3 judge.py " + testcase.name + " " + solution.name +
           (" -v" if verbose else ""))
 
-    proc = subprocess.run(cmd, capture_output=True, text=True)
+    # Original Challenge testcases predate the explicit Output separator that
+    # the downloadable judge expects. Adapt only the temporary input copy.
+    testcase_body = testcase.read_text(encoding="utf-8")
+    output_marker = "# ======= Output ======="
+    insertion_marker = "# ======= YOUR VSM WILL BE INSERTED HERE ======="
+    with tempfile.TemporaryDirectory(prefix="mncore-testcase-") as temporary:
+        if output_marker not in testcase_body and insertion_marker in testcase_body:
+            prefix, suffix = testcase_body.split(insertion_marker, 1)
+            suffix, count = re.subn(
+                r"(?m)^(# ======= Out\(0\):.*)$",
+                lambda match: output_marker + "\n" + match[1],
+                suffix,
+                count=1,
+            )
+            if count:
+                adapted = Path(temporary) / testcase.name
+                adapted.write_text(prefix + insertion_marker + suffix, encoding="utf-8")
+                cmd[2] = str(adapted)
+        proc = subprocess.run(cmd, capture_output=True, text=True)
 
     if raw_judge_output:
         if proc.stderr.strip():

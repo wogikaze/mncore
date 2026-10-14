@@ -1,0 +1,12 @@
+# ======= In(0): ((4_PE:1))@LM0 / ULong =======
+d set $lm0p0 1 5FE1DC66CBEA3DB3 # values=[6909045637428952499] / ULong @[0]
+d set $lm0p1 1 F362035C2EF5950E # values=[17537583593393853710] / ULong @[1]
+d set $lm0p2 1 BB63F46AC799D447 # values=[13502904847239337031] / ULong @[2]
+d set $lm0p3 1 9941AEBC98CB2C14 # values=[11043299886329703444] / ULong @[3]
+
+# ======= YOUR VSM WILL BE INSERTED HERE =======
+# ======= Out(0): ((4_PE:1))@LM1 / ULong =======
+d getd $ln0n0c0b0m0p0 1 # expect=[12915737465693462879] / ULong @[0]
+d getd $ln0n0c0b0m0p1 1 # expect=[1051015667521905395] / ULong @[1]
+d getd $ln0n0c0b0m0p2 1 # expect=[5175930953527485371] / ULong @[2]
+d getd $ln0n0c0b0m0p3 1 # expect=[1453760636594831769] / ULong @[3]

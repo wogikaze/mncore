@@ -1,0 +1,13 @@
+{
+  "problem_url": "https://mncore-challenge.preferred.jp/problem/fizzbuzz",
+  "standings_url": "https://mncore-challenge.preferred.jp/standings/",
+  "shortest_url": "https://mncore-challenge.preferred.jp/shortest/fizzbuzz/tails/",
+  "submission_url": "https://mncore-challenge.preferred.jp/submission/6e9dc8fe-9856-44a1-bdc7-07545627b12d",
+  "author": "tails",
+  "status": "Accepted",
+  "lines": 98,
+  "stdout": "ACCEPTED!! score=98 j=96 m=2 bytes=3318",
+  "fetched_at": "2026-10-14T00:39:06+00:00",
+  "local_validation": "accepted",
+  "local_judge_url": "https://mncore-challenge.preferred.jp/judge.zip"
+}

@@ -1,0 +1,13 @@
+{
+  "problem_url": "https://mncore-challenge.preferred.jp/problem/hello_world",
+  "standings_url": "https://mncore-challenge.preferred.jp/standings/",
+  "shortest_url": "https://mncore-challenge.preferred.jp/shortest/hello_world/syttrea/",
+  "submission_url": "https://mncore-challenge.preferred.jp/submission/5196d59f-5b8c-4565-bf93-369ec3a588b0",
+  "author": "syttrea",
+  "status": "Accepted",
+  "lines": 9,
+  "stdout": "ACCEPTED!! score=9 j=8 m=1 bytes=238",
+  "fetched_at": "2026-10-14T00:39:06+00:00",
+  "local_validation": "accepted",
+  "local_judge_url": "https://mncore-challenge.preferred.jp/judge.zip"
+}
