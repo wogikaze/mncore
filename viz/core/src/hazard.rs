@@ -131,6 +131,10 @@ fn pe_operand_accesses(op: &Operand, write: bool, out: &mut Vec<Access>) {
             (Some(addr.cycles[c]), *wl as u32)
         };
         out.push(Access { write, res, path: Path::Pe, addr: a, len, cycle: c as u8 });
+        // T indirect addressing reads the T register's entry for the cycle (SDM 3.6.1.6).
+        if addr.t_indirect && !write {
+            out.push(Access { write: false, res: Res::T, path: Path::Pe, addr: Some(c as u32), len: 1, cycle: c as u8 });
+        }
     }
 }
 

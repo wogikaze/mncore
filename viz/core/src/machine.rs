@@ -142,6 +142,8 @@ pub enum ExecError {
     /// An error the emulator also raises at run time, such as reading `$aluf` after a step
     /// without an ALU instruction, or a matrix product with invalid block-float input.
     Runtime(String),
+    /// A line the assembler rejects, such as one breaking the issue conditions of SDM 3.6.4.
+    Assembly(String),
 }
 
 impl ExecError {
@@ -149,6 +151,7 @@ impl ExecError {
         match self {
             ExecError::Unsupported(m) => format!("unsupported: {m}"),
             ExecError::Runtime(m) => format!("runtime error: {m}"),
+            ExecError::Assembly(m) => format!("assembler error: {m}"),
         }
     }
 }
