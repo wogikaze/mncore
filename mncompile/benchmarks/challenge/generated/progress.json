@@ -1,0 +1,962 @@
+{
+  "scope": "original Challenge",
+  "formal_whole_domain_proof": false,
+  "line_target_complete": true,
+  "correctness_note": "Official fixtures and line targets alone do not establish whole-domain correctness; independent domain checks and numerical bounds are also required.",
+  "total": 25,
+  "accepted": 25,
+  "meets_public_shortest": 22,
+  "meets_eligible_line_target": 25,
+  "problems": [
+    {
+      "slug": "plus_one",
+      "problem": "1.plus-one",
+      "public_shortest": 2,
+      "reference_submission": "https://mncore-challenge.preferred.jp/submission/0e53f67e-9166-4b01-94a6-825f024b71d7",
+      "status": "accepted",
+      "reference_eligible": true,
+      "lines": 2,
+      "source": "mncompile/benchmarks/challenge/plus_one.py",
+      "artifacts": "mncompile/benchmarks/challenge/generated/plus_one",
+      "error_bound": "0",
+      "preconditions": [],
+      "testcase_results": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 2
+        }
+      ],
+      "meets_public_shortest": true,
+      "meets_eligible_line_target": true
+    },
+    {
+      "slug": "plus_two",
+      "problem": "2.plus-two",
+      "public_shortest": 5,
+      "reference_submission": "https://mncore-challenge.preferred.jp/submission/346e328e-9525-4017-845c-a74c63375299",
+      "status": "accepted",
+      "reference_eligible": false,
+      "reference_exclusion": {
+        "reference_submission": "https://mncore-challenge.preferred.jp/submission/346e328e-9525-4017-845c-a74c63375299",
+        "reference_lines": 5,
+        "eligible": false,
+        "status": "counterexample",
+        "description": "All twenty UInt64 inputs are zero (allowed 0..99).",
+        "input_debug_vsm": "d set $lm0 20 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\n",
+        "output_debug_vsm": "nop\nnop\nd getd $ln0n0c0b0m0p0 20\n",
+        "differences": [
+          {
+            "index": 0,
+            "expected": 2,
+            "actual": 4294967295
+          },
+          {
+            "index": 1,
+            "expected": 2,
+            "actual": 4294967295
+          },
+          {
+            "index": 2,
+            "expected": 2,
+            "actual": 4294967295
+          },
+          {
+            "index": 3,
+            "expected": 2,
+            "actual": 4294967295
+          },
+          {
+            "index": 4,
+            "expected": 2,
+            "actual": 4294967295
+          },
+          {
+            "index": 5,
+            "expected": 2,
+            "actual": 4294967295
+          },
+          {
+            "index": 6,
+            "expected": 2,
+            "actual": 4294967295
+          },
+          {
+            "index": 7,
+            "expected": 2,
+            "actual": 4294967295
+          },
+          {
+            "index": 8,
+            "expected": 2,
+            "actual": 4294967295
+          },
+          {
+            "index": 9,
+            "expected": 2,
+            "actual": 4294967295
+          },
+          {
+            "index": 10,
+            "expected": 2,
+            "actual": 4294967295
+          },
+          {
+            "index": 11,
+            "expected": 2,
+            "actual": 4294967295
+          },
+          {
+            "index": 12,
+            "expected": 2,
+            "actual": 4294967295
+          },
+          {
+            "index": 13,
+            "expected": 2,
+            "actual": 4294967295
+          },
+          {
+            "index": 14,
+            "expected": 2,
+            "actual": 4294967295
+          },
+          {
+            "index": 15,
+            "expected": 2,
+            "actual": 4294967295
+          },
+          {
+            "index": 16,
+            "expected": 2,
+            "actual": 4294967295
+          },
+          {
+            "index": 17,
+            "expected": 2,
+            "actual": 4294967295
+          },
+          {
+            "index": 18,
+            "expected": 2,
+            "actual": 4294967295
+          },
+          {
+            "index": 19,
+            "expected": 2,
+            "actual": 4294967295
+          }
+        ],
+        "reason": "Domain-valid input produces an incorrect output"
+      },
+      "official_tutorial_lines": 9,
+      "reference_is_testcase_dependent": true,
+      "lines": 6,
+      "source": "mncompile/benchmarks/challenge/plus_two.py",
+      "artifacts": "mncompile/benchmarks/challenge/generated/plus_two",
+      "error_bound": "0",
+      "preconditions": [
+        "output LM words are initially zero (standalone Challenge machine)"
+      ],
+      "testcase_results": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 6
+        }
+      ],
+      "meets_public_shortest": false,
+      "meets_eligible_line_target": true,
+      "meets_official_tutorial": true
+    },
+    {
+      "slug": "a_plus_b",
+      "problem": "3.a-plus-b",
+      "public_shortest": 6,
+      "reference_submission": "https://mncore-challenge.preferred.jp/submission/351015a1-a2bf-4317-90ca-597a1abc0e9c",
+      "status": "accepted",
+      "reference_eligible": true,
+      "lines": 6,
+      "source": "mncompile/benchmarks/challenge/a_plus_b.py",
+      "artifacts": "mncompile/benchmarks/challenge/generated/a_plus_b",
+      "error_bound": "0",
+      "preconditions": [],
+      "testcase_results": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 6
+        }
+      ],
+      "meets_public_shortest": true,
+      "meets_eligible_line_target": true
+    },
+    {
+      "slug": "mul7",
+      "problem": "4.mul7",
+      "public_shortest": 6,
+      "reference_submission": "https://mncore-challenge.preferred.jp/submission/af79f0b9-3d3a-4164-ae61-fc0a968ceccf",
+      "status": "accepted",
+      "reference_eligible": true,
+      "lines": 6,
+      "source": "mncompile/benchmarks/challenge/mul7.py",
+      "artifacts": "mncompile/benchmarks/challenge/generated/mul7",
+      "error_bound": "0",
+      "preconditions": [
+        "output LM words are initially zero (standalone Challenge machine)"
+      ],
+      "testcase_results": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 6
+        }
+      ],
+      "meets_public_shortest": true,
+      "meets_eligible_line_target": true
+    },
+    {
+      "slug": "abs",
+      "problem": "5.abs",
+      "public_shortest": 13,
+      "reference_submission": "https://mncore-challenge.preferred.jp/submission/5358fbd4-abad-4390-87ac-54b5089e3e72",
+      "status": "accepted",
+      "reference_eligible": true,
+      "lines": 13,
+      "source": "mncompile/benchmarks/challenge/abs.py",
+      "artifacts": "mncompile/benchmarks/challenge/generated/abs",
+      "error_bound": "0",
+      "preconditions": [
+        "GRF scratch is initially zero (standalone Challenge machine)"
+      ],
+      "testcase_results": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 13
+        }
+      ],
+      "meets_public_shortest": true,
+      "meets_eligible_line_target": true
+    },
+    {
+      "slug": "fadd_mul",
+      "problem": "6.fadd-mul",
+      "public_shortest": 14,
+      "reference_submission": "https://mncore-challenge.preferred.jp/submission/eac95d3e-7635-4166-af44-f4ebeb22e235",
+      "status": "accepted",
+      "reference_eligible": true,
+      "lines": 14,
+      "source": "mncompile/benchmarks/challenge/fadd_mul.py",
+      "artifacts": "mncompile/benchmarks/challenge/generated/fadd_mul",
+      "error_bound": "9/2097152",
+      "preconditions": [
+        "Float inputs are finite MN-Core normal values or signed zero",
+        "GRF scratch is initially zero (standalone Challenge machine)"
+      ],
+      "testcase_results": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 14
+        }
+      ],
+      "meets_public_shortest": true,
+      "meets_eligible_line_target": true
+    },
+    {
+      "slug": "mul2",
+      "problem": "7.mul2",
+      "public_shortest": 9,
+      "reference_submission": "https://mncore-challenge.preferred.jp/submission/a5eb9ef1-ae30-42ec-8b4d-ec9c3ad7c379",
+      "status": "accepted",
+      "reference_eligible": true,
+      "lines": 9,
+      "source": "mncompile/benchmarks/challenge/mul2.py",
+      "artifacts": "mncompile/benchmarks/challenge/generated/mul2",
+      "error_bound": "1/1073741824",
+      "preconditions": [
+        "Half inputs are finite MN-Core normal values or signed zero",
+        "GRF scratch is initially zero (standalone Challenge machine)"
+      ],
+      "testcase_results": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 9
+        }
+      ],
+      "meets_public_shortest": true,
+      "meets_eligible_line_target": true
+    },
+    {
+      "slug": "fle",
+      "problem": "8.fle",
+      "public_shortest": 4,
+      "reference_submission": "https://mncore-challenge.preferred.jp/submission/bb9b24e9-fc28-4206-9cda-b1da73dadb18",
+      "status": "accepted",
+      "reference_eligible": false,
+      "reference_exclusion": {
+        "reference_submission": "https://mncore-challenge.preferred.jp/submission/bb9b24e9-fc28-4206-9cda-b1da73dadb18",
+        "reference_lines": 4,
+        "eligible": false,
+        "status": "counterexample",
+        "description": "All forty Float inputs are zero (allowed 0..5).",
+        "input_debug_vsm": "d set $lm0 20 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\n",
+        "output_debug_vsm": "nop\nnop\nd getd $ln0n0c0b0m0p0 20\n",
+        "differences": [
+          {
+            "index": 0,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 1,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 2,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 3,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 4,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 5,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 6,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 7,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 8,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 9,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 10,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 11,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 12,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 13,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 14,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 15,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 16,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 17,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 18,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 19,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 20,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 21,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 22,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 23,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 24,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 25,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 26,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 27,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 28,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 29,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 30,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 31,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 32,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 33,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 34,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 35,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 36,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 37,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 38,
+            "expected": 0,
+            "actual": 2147483647
+          },
+          {
+            "index": 39,
+            "expected": 0,
+            "actual": 2147483647
+          }
+        ],
+        "reason": "Domain-valid input produces an incorrect output"
+      },
+      "lines": 6,
+      "source": "mncompile/benchmarks/challenge/fle.py",
+      "artifacts": "mncompile/benchmarks/challenge/generated/fle",
+      "error_bound": "0",
+      "preconditions": [
+        "Float inputs are finite MN-Core normal values or signed zero",
+        "output LM words are initially zero"
+      ],
+      "testcase_results": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 6
+        }
+      ],
+      "meets_public_shortest": false,
+      "meets_eligible_line_target": true
+    },
+    {
+      "slug": "transpose_addr",
+      "problem": "9.transpose-addr",
+      "public_shortest": 10,
+      "reference_submission": "https://mncore-challenge.preferred.jp/submission/52a139ff-73ad-4d34-94fa-490cfa6c36ab",
+      "status": "accepted",
+      "reference_eligible": false,
+      "reference_exclusion": {
+        "reference_submission": "https://mncore-challenge.preferred.jp/submission/52a139ff-73ad-4d34-94fa-490cfa6c36ab",
+        "reference_lines": 10,
+        "eligible": false,
+        "status": "counterexample",
+        "description": "All Double inputs are one except X[1,0]=-0.0 (numerically within 0..64).",
+        "input_debug_vsm": "d set $lm0 64 3ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff000000000000080000000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff0000000000000\n",
+        "output_debug_vsm": "nop\nnop\nd getd $ln0n0c0b0m0p0 64\n",
+        "differences": [
+          {
+            "index": 8,
+            "expected": 1.0,
+            "actual": -0.0
+          }
+        ],
+        "reason": "Domain-valid input produces an incorrect output"
+      },
+      "lines": 16,
+      "source": "mncompile/benchmarks/challenge/transpose_addr.py",
+      "artifacts": "mncompile/benchmarks/challenge/generated/transpose_addr",
+      "error_bound": "0",
+      "preconditions": [
+        "LM base registers are initially zero"
+      ],
+      "testcase_results": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 16
+        }
+      ],
+      "meets_public_shortest": false,
+      "meets_eligible_line_target": true
+    },
+    {
+      "slug": "gather_easy",
+      "problem": "10.gather-easy",
+      "public_shortest": 6,
+      "reference_submission": "https://mncore-challenge.preferred.jp/submission/fdceaa68-3192-4a99-b899-1884d0f77ea2",
+      "status": "accepted",
+      "reference_eligible": true,
+      "lines": 6,
+      "source": "mncompile/benchmarks/challenge/gather_easy.py",
+      "artifacts": "mncompile/benchmarks/challenge/generated/gather_easy",
+      "error_bound": "0",
+      "preconditions": [
+        "Double inputs are finite MN-Core normal values or zero; zero signs are equivalent"
+      ],
+      "testcase_results": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 6
+        }
+      ],
+      "meets_public_shortest": true,
+      "meets_eligible_line_target": true
+    },
+    {
+      "slug": "square_sum",
+      "problem": "11.square-sum",
+      "public_shortest": 11,
+      "reference_submission": "https://mncore-challenge.preferred.jp/submission/24ea204d-0925-4160-a0f4-52f36d0beed2",
+      "status": "accepted",
+      "reference_eligible": true,
+      "lines": 11,
+      "source": "mncompile/benchmarks/challenge/square_sum.py",
+      "artifacts": "mncompile/benchmarks/challenge/generated/square_sum",
+      "error_bound": "1/17179869184",
+      "preconditions": [
+        "Double inputs are finite MN-Core normal values or signed zero",
+        "input row is replicated across MABs/L1Bs; MAB ID partitions its reduction",
+        "GRF scratch is initially zero"
+      ],
+      "testcase_results": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 11
+        }
+      ],
+      "meets_public_shortest": true,
+      "meets_eligible_line_target": true
+    },
+    {
+      "slug": "convert_endian",
+      "problem": "12.convert-endian",
+      "public_shortest": 3,
+      "reference_submission": "https://mncore-challenge.preferred.jp/submission/7ae1af35-9ac5-44b9-8995-6e037a539c25",
+      "status": "accepted",
+      "reference_eligible": true,
+      "lines": 3,
+      "source": "mncompile/benchmarks/challenge/convert_endian.py",
+      "artifacts": "mncompile/benchmarks/challenge/generated/convert_endian",
+      "error_bound": "0",
+      "preconditions": [],
+      "testcase_results": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 3
+        }
+      ],
+      "meets_public_shortest": true,
+      "meets_eligible_line_target": true
+    },
+    {
+      "slug": "mod3",
+      "problem": "13.mod3",
+      "public_shortest": 8,
+      "reference_submission": "https://mncore-challenge.preferred.jp/submission/6467ebff-d01a-4a62-bde3-398f80b2f470",
+      "status": "accepted",
+      "reference_eligible": true,
+      "lines": 8,
+      "source": "mncompile/benchmarks/challenge/mod3.py",
+      "artifacts": "mncompile/benchmarks/challenge/generated/mod3",
+      "error_bound": "0",
+      "preconditions": [],
+      "testcase_results": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 8
+        }
+      ],
+      "meets_public_shortest": true,
+      "meets_eligible_line_target": true
+    },
+    {
+      "slug": "mat_sq",
+      "problem": "14.mat-sq",
+      "public_shortest": 10,
+      "reference_submission": "https://mncore-challenge.preferred.jp/submission/7c9e084d-0d4d-4150-ba4e-3cec1d529328",
+      "status": "accepted",
+      "reference_eligible": true,
+      "lines": 10,
+      "source": "mncompile/benchmarks/challenge/mat_sq.py",
+      "artifacts": "mncompile/benchmarks/challenge/generated/mat_sq",
+      "error_bound": "0",
+      "preconditions": [
+        "16x16 matrices distributed over PE/local-row/word, replicated across MAB/L1B",
+        "every Float input is an integer in 0..100",
+        "standalone zero-initialized scratch"
+      ],
+      "testcase_results": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 10
+        }
+      ],
+      "meets_public_shortest": true,
+      "meets_eligible_line_target": true
+    },
+    {
+      "slug": "contains",
+      "problem": "15.contains",
+      "public_shortest": 20,
+      "reference_submission": "https://mncore-challenge.preferred.jp/submission/429396c5-e39f-4deb-a482-e4f9beb2f7ce",
+      "status": "accepted",
+      "reference_eligible": true,
+      "lines": 20,
+      "source": "mncompile/benchmarks/challenge/contains.py",
+      "artifacts": "mncompile/benchmarks/challenge/generated/contains",
+      "error_bound": "0",
+      "preconditions": [
+        "queries are one row per L2B/L1B replicated across MABs/PEs",
+        "members span MAB/PE and are replicated across L1B/L2B",
+        "standalone zero-initialized scratch/output memory"
+      ],
+      "testcase_results": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 20
+        }
+      ],
+      "meets_public_shortest": true,
+      "meets_eligible_line_target": true
+    },
+    {
+      "slug": "count_up",
+      "problem": "16.count-up",
+      "public_shortest": 21,
+      "reference_submission": "https://mncore-challenge.preferred.jp/submission/f589b24d-6c72-4487-a352-75650a7a0bcf",
+      "status": "accepted",
+      "reference_eligible": true,
+      "lines": 21,
+      "source": "mncompile/benchmarks/challenge/count_up.py",
+      "artifacts": "mncompile/benchmarks/challenge/generated/count_up",
+      "error_bound": "0",
+      "preconditions": [
+        "standalone zero-initialized Challenge machine"
+      ],
+      "testcase_results": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 21
+        }
+      ],
+      "meets_public_shortest": true,
+      "meets_eligible_line_target": true
+    },
+    {
+      "slug": "transpose_mab",
+      "problem": "17.transpose-mab",
+      "public_shortest": 15,
+      "reference_submission": "https://mncore-challenge.preferred.jp/submission/84a9104f-d6ca-4a5f-b98c-b0247df48ce8",
+      "status": "accepted",
+      "reference_eligible": true,
+      "lines": 15,
+      "source": "mncompile/benchmarks/challenge/transpose_mab.py",
+      "artifacts": "mncompile/benchmarks/challenge/generated/transpose_mab",
+      "error_bound": "0",
+      "preconditions": [
+        "Double inputs are finite MN-Core normal values or signed zero; zero signs are equivalent",
+        "GRF scratch and LM0 base register initially zero"
+      ],
+      "testcase_results": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 15
+        }
+      ],
+      "meets_public_shortest": true,
+      "meets_eligible_line_target": true
+    },
+    {
+      "slug": "inversion_small",
+      "problem": "18.inversion-small",
+      "public_shortest": 9,
+      "reference_submission": "https://mncore-challenge.preferred.jp/submission/c4c74014-5d44-4543-9154-4e26f4c8a759",
+      "status": "accepted",
+      "reference_eligible": true,
+      "lines": 9,
+      "source": "mncompile/benchmarks/challenge/inversion_small.py",
+      "artifacts": "mncompile/benchmarks/challenge/generated/inversion_small",
+      "error_bound": "0",
+      "preconditions": [
+        "one row per L2B/L1B, replicated across MABs and PEs",
+        "16 zero UInt64 values immediately preceding the input, wrapping within LM0",
+        "standalone zero-initialized scratch and output memory"
+      ],
+      "testcase_results": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 9
+        }
+      ],
+      "meets_public_shortest": true,
+      "meets_eligible_line_target": true
+    },
+    {
+      "slug": "inversion",
+      "problem": "19.inversion",
+      "public_shortest": 31,
+      "reference_submission": "https://mncore-challenge.preferred.jp/submission/311ae8aa-e398-4c46-815d-dea09c54982b",
+      "status": "accepted",
+      "reference_eligible": true,
+      "lines": 31,
+      "source": "mncompile/benchmarks/challenge/inversion.py",
+      "artifacts": "mncompile/benchmarks/challenge/generated/inversion",
+      "error_bound": "0",
+      "preconditions": [
+        "two interleaved rows per MAB/PE, replicated across L1Bs and L2Bs",
+        "zero-filled LM0 padding preceding the input",
+        "standalone zero-initialized scratch and output memory"
+      ],
+      "testcase_results": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 31
+        }
+      ],
+      "meets_public_shortest": true,
+      "meets_eligible_line_target": true
+    },
+    {
+      "slug": "fizzbuzz",
+      "problem": "20.fizzbuzz",
+      "public_shortest": 98,
+      "reference_submission": "https://mncore-challenge.preferred.jp/submission/6e9dc8fe-9856-44a1-bdc7-07545627b12d",
+      "status": "accepted",
+      "reference_eligible": true,
+      "lines": 98,
+      "source": "mncompile/benchmarks/challenge/fizzbuzz.py",
+      "artifacts": "mncompile/benchmarks/challenge/generated/fizzbuzz",
+      "error_bound": "0",
+      "preconditions": [
+        "standalone zero-initialized Challenge machine"
+      ],
+      "testcase_results": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 98
+        }
+      ],
+      "meets_public_shortest": true,
+      "meets_eligible_line_target": true
+    },
+    {
+      "slug": "hello_world",
+      "problem": "21.hello-world",
+      "public_shortest": 9,
+      "reference_submission": "https://mncore-challenge.preferred.jp/submission/5196d59f-5b8c-4565-bf93-369ec3a588b0",
+      "status": "accepted",
+      "reference_eligible": true,
+      "lines": 9,
+      "source": "mncompile/benchmarks/challenge/hello_world.py",
+      "artifacts": "mncompile/benchmarks/challenge/generated/hello_world",
+      "error_bound": "0",
+      "preconditions": [
+        "standalone zero-initialized Challenge machine"
+      ],
+      "testcase_results": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 9
+        }
+      ],
+      "meets_public_shortest": true,
+      "meets_eligible_line_target": true
+    },
+    {
+      "slug": "bit_reverse",
+      "problem": "22.bit-reverse",
+      "public_shortest": 10,
+      "reference_submission": "https://mncore-challenge.preferred.jp/submission/f95e752a-8de9-4154-8055-b57c2faed8ca",
+      "status": "accepted",
+      "reference_eligible": true,
+      "lines": 10,
+      "source": "mncompile/benchmarks/challenge/bit_reverse.py",
+      "artifacts": "mncompile/benchmarks/challenge/generated/bit_reverse",
+      "error_bound": "0",
+      "preconditions": [
+        "input vector is replicated across the sixteen MABs within each L1B",
+        "LM base registers initially zero"
+      ],
+      "testcase_results": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 10
+        }
+      ],
+      "meets_public_shortest": true,
+      "meets_eligible_line_target": true
+    },
+    {
+      "slug": "fizzbuzz_pe",
+      "problem": "23.fizzbuzz-pe",
+      "public_shortest": 9,
+      "reference_submission": "https://mncore-challenge.preferred.jp/submission/7e31d130-0842-498c-9596-b486faabb964",
+      "status": "accepted",
+      "reference_eligible": true,
+      "lines": 9,
+      "source": "mncompile/benchmarks/challenge/fizzbuzz_pe.py",
+      "artifacts": "mncompile/benchmarks/challenge/generated/fizzbuzz_pe",
+      "error_bound": "0",
+      "preconditions": [],
+      "testcase_results": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 9
+        }
+      ],
+      "meets_public_shortest": true,
+      "meets_eligible_line_target": true
+    },
+    {
+      "slug": "log2",
+      "problem": "24.log2",
+      "public_shortest": 7,
+      "reference_submission": "https://mncore-challenge.preferred.jp/submission/9bf46464-1a9f-4a4d-a478-d68a92148d83",
+      "status": "accepted",
+      "reference_eligible": true,
+      "lines": 7,
+      "source": "mncompile/benchmarks/challenge/log2.py",
+      "artifacts": "mncompile/benchmarks/challenge/generated/log2",
+      "error_bound": "0",
+      "preconditions": [
+        "GRF scratch is initially zero (standalone Challenge machine)"
+      ],
+      "testcase_results": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 7
+        }
+      ],
+      "meets_public_shortest": true,
+      "meets_eligible_line_target": true
+    },
+    {
+      "slug": "hsv2rgb",
+      "problem": "25.hsv2rgb",
+      "public_shortest": 12,
+      "reference_submission": "https://mncore-challenge.preferred.jp/submission/94b36572-4e4d-444d-b636-4e179d560c10",
+      "status": "accepted",
+      "reference_eligible": true,
+      "lines": 12,
+      "source": "mncompile/benchmarks/challenge/hsv2rgb.py",
+      "artifacts": "mncompile/benchmarks/challenge/generated/hsv2rgb",
+      "error_bound": "1.52587890625e-05",
+      "preconditions": [
+        "eight colors per PE, pairs of H/S/V words; replicated across MAB/L1B/L2B",
+        "standalone zero-initialized scratch"
+      ],
+      "testcase_results": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 12
+        }
+      ],
+      "meets_public_shortest": true,
+      "meets_eligible_line_target": true
+    }
+  ]
+}

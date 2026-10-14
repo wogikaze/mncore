@@ -1,0 +1,53 @@
+{
+  "function": "kernel",
+  "reference": "row-wise Double gather",
+  "lines": 6,
+  "error_bound": "0",
+  "fast_math": false,
+  "row_partition": "mab",
+  "inputs": {
+    "x": {
+      "dtype": "f64",
+      "memory": "m",
+      "offset": 0,
+      "elements": 1024,
+      "minimum": 0,
+      "maximum": 10000,
+      "allow_infinity": false,
+      "integral_values": false
+    },
+    "indices": {
+      "dtype": "u64",
+      "memory": "m",
+      "offset": 2048,
+      "elements": 16,
+      "minimum": 0,
+      "maximum": 1023,
+      "allow_infinity": false,
+      "integral_values": false
+    }
+  },
+  "output": {
+    "dtype": "f64",
+    "memory": "n",
+    "offset": 0,
+    "elements": 16,
+    "minimum": 0,
+    "maximum": 10000,
+    "allow_infinity": false,
+    "integral_values": false
+  },
+  "preconditions": [
+    "Double inputs are finite MN-Core normal values or zero; zero signs are equivalent"
+  ],
+  "cost_kind": "assembled j+m words",
+  "optimality": "selected 16-element gather microkernel; global shortestness is not established",
+  "frontend": "restricted Python, source-driven semantic matching",
+  "chosen_lowering": "compile_gather",
+  "applicable_lowerings": [
+    {
+      "lowering": "compile_gather",
+      "lines": 6
+    }
+  ]
+}

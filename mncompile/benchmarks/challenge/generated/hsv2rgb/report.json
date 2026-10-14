@@ -1,0 +1,45 @@
+{
+  "function": "kernel",
+  "reference": "colorsys.hsv_to_rgb, real channel formulas",
+  "lines": 12,
+  "error_bound": "1.52587890625e-05",
+  "fast_math": false,
+  "inputs": {
+    "x": {
+      "dtype": "f32",
+      "memory": "m",
+      "offset": 0,
+      "elements": 24,
+      "minimum": 0,
+      "maximum": 1,
+      "allow_infinity": false,
+      "integral_values": false
+    }
+  },
+  "output": {
+    "dtype": "f32",
+    "memory": "n",
+    "offset": 0,
+    "elements": 24,
+    "minimum": 0,
+    "maximum": 1,
+    "allow_infinity": false,
+    "integral_values": false
+  },
+  "preconditions": [
+    "eight colors per PE, pairs of H/S/V words; replicated across MAB/L1B/L2B",
+    "standalone zero-initialized scratch"
+  ],
+  "numerical_model": "Float operations have relative error <=2^-22 plus flush-to-zero error <=2^-126; constants and sector routing are exact",
+  "numerical_argument": "64 Float ulps at unit magnitude conservatively cover H*6, fractional-part perturbation, channel products/adds; adjacent hue sectors agree at their boundary.",
+  "cost_kind": "assembled j+m words",
+  "optimality": "selected six-sector Float channel schedule",
+  "frontend": "restricted Python, source-driven semantic matching",
+  "chosen_lowering": "compile_hsv_to_rgb",
+  "applicable_lowerings": [
+    {
+      "lowering": "compile_hsv_to_rgb",
+      "lines": 12
+    }
+  ]
+}

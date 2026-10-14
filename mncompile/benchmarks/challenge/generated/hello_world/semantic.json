@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "op": "literal_bytes",
+  "hex": "48656c6c6f2c20776f726c6421",
+  "unscaled_words": [
+    979721836,
+    1630278263,
+    1634885220
+  ],
+  "reduction_scale": 128,
+  "derived_last_byte": 33
+}

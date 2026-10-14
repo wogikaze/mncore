@@ -1,0 +1,34 @@
+{
+  "function": "kernel",
+  "reference": "constant-folded Python FizzBuzz text",
+  "lines": 98,
+  "error_bound": "0",
+  "fast_math": false,
+  "inputs": {},
+  "output": {
+    "dtype": "bytes",
+    "group": 0,
+    "offset": 0,
+    "elements": 32766,
+    "minimum": 0,
+    "maximum": 255
+  },
+  "preconditions": [
+    "standalone zero-initialized Challenge machine"
+  ],
+  "allocated_bytes": 32768,
+  "clobbers": [
+    "group-0 DRAM first 32768 bytes; only 32766 bytes are logical output",
+    "LM0/LM1/GRF/matrix/L1BM/L2BM/PDM scratch"
+  ],
+  "cost_kind": "assembled j+m words",
+  "optimality": "selected eight-number-block decimal renderer; other range lengths are not implemented",
+  "frontend": "restricted Python, source-driven semantic matching",
+  "chosen_lowering": "compile_fizzbuzz_text",
+  "applicable_lowerings": [
+    {
+      "lowering": "compile_fizzbuzz_text",
+      "lines": 98
+    }
+  ]
+}

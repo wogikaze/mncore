@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "op": "gather",
+  "data": "x",
+  "indices": "indices",
+  "address": {
+    "op": "shl",
+    "args": [
+      {
+        "op": "input",
+        "args": [],
+        "name": "index",
+        "value": 0
+      },
+      {
+        "op": "const",
+        "args": [],
+        "name": "",
+        "value": 1
+      }
+    ],
+    "name": "",
+    "value": 0
+  },
+  "layout": "one row per MAB; source/index rows broadcast to its PEs"
+}

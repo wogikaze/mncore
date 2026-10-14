@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "source": {
+    "op": "mul",
+    "value": "0",
+    "args": [
+      {
+        "op": "input",
+        "value": "0",
+        "args": []
+      },
+      {
+        "op": "const",
+        "value": "2",
+        "args": []
+      }
+    ]
+  },
+  "selected": {
+    "op": "mul",
+    "value": "0",
+    "args": [
+      {
+        "op": "input",
+        "value": "0",
+        "args": []
+      },
+      {
+        "op": "const",
+        "value": "2",
+        "args": []
+      }
+    ]
+  }
+}

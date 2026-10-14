@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "op": "modulo_classification",
+  "divisors": [
+    15,
+    3,
+    5
+  ],
+  "codes": {
+    "15": 4294949819,
+    "3": 65535,
+    "5": 48059
+  }
+}

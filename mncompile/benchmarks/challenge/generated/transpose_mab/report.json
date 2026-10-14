@@ -1,0 +1,50 @@
+{
+  "function": "kernel",
+  "reference": "16x16 Double matrix transpose",
+  "lines": 15,
+  "error_bound": "0",
+  "fast_math": false,
+  "row_partition": "mab",
+  "inputs": {
+    "x": {
+      "dtype": "f64",
+      "memory": "m",
+      "offset": 0,
+      "elements": 16,
+      "minimum": -1,
+      "maximum": 1,
+      "allow_infinity": false,
+      "integral_values": false
+    }
+  },
+  "output": {
+    "dtype": "f64",
+    "memory": "n",
+    "offset": 0,
+    "elements": 16,
+    "minimum": -1,
+    "maximum": 1,
+    "allow_infinity": false,
+    "integral_values": false
+  },
+  "preconditions": [
+    "Double inputs are finite MN-Core normal values or signed zero; zero signs are equivalent",
+    "GRF scratch and LM0 base register initially zero"
+  ],
+  "clobbers": [
+    "T",
+    "LM1 base register (2*MAB id)",
+    "L1BM scratch",
+    "forwarding registers"
+  ],
+  "cost_kind": "assembled j+m words",
+  "optimality": "selected cyclic MAB transpose schedule",
+  "frontend": "restricted Python, source-driven semantic matching",
+  "chosen_lowering": "compile_transpose",
+  "applicable_lowerings": [
+    {
+      "lowering": "compile_transpose",
+      "lines": 15
+    }
+  ]
+}

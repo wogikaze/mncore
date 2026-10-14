@@ -1,0 +1,58 @@
+{
+  "function": "kernel",
+  "reference": "integer membership using a dense bounded lookup set",
+  "lines": 20,
+  "error_bound": "0",
+  "fast_math": false,
+  "inputs": {
+    "a": {
+      "dtype": "u64",
+      "memory": "m",
+      "offset": 0,
+      "elements": 16,
+      "minimum": 0,
+      "maximum": 1000,
+      "allow_infinity": false,
+      "integral_values": false
+    },
+    "b": {
+      "dtype": "u64",
+      "memory": "n",
+      "offset": 0,
+      "elements": 16,
+      "minimum": 0,
+      "maximum": 1000,
+      "allow_infinity": false,
+      "integral_values": false
+    }
+  },
+  "output": {
+    "dtype": "u64",
+    "memory": "n",
+    "offset": 32,
+    "elements": 16,
+    "minimum": 0,
+    "maximum": 1,
+    "allow_infinity": false,
+    "integral_values": false
+  },
+  "preconditions": [
+    "queries are one row per L2B/L1B replicated across MABs/PEs",
+    "members span MAB/PE and are replicated across L1B/L2B",
+    "standalone zero-initialized scratch/output memory"
+  ],
+  "clobbers": [
+    "LM0 dense table at words 1024..2024",
+    "T/GRF/matrix/L1BM scratch"
+  ],
+  "cost_kind": "assembled j+m words",
+  "optimality": "selected dense-universe lookup and membership reduction schedule",
+  "frontend": "restricted Python, source-driven semantic matching",
+  "chosen_lowering": "compile_membership",
+  "applicable_lowerings": [
+    {
+      "lowering": "compile_membership",
+      "lines": 20
+    }
+  ]
+}

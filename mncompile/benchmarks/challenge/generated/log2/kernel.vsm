@@ -1,0 +1,7 @@
+imm ui"0x0b808017" $t
+sadd $llm0v $aluf $lls0v $omr1; hvpassar -$aluf $lr32; l1bmd+0 $aluf $lbi
+sadd $llm16v $t $llr16v; fvadd $aluf -$t $nowrite; l1bmd+0 $t $lbi; l1bmd $lbi $ls2v4/$imr1
+ilsr $mauf $t $ln0v4; fvadd $aluf -$t $nowrite; l1bmd $lbi $lr18v4/$imr1 $ls32v/$imr1
+ilsr $mauf $t $ln16v4; fvadd $ls2v4 $lr32 $nowrite
+ilsr $mauf $t $ln2v4; fvadd $lr18v4 -$ls32v $nowrite
+ilsr $mauf $t $ln18v4

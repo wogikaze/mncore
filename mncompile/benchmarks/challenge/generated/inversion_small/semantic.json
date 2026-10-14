@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "op": "row_inversions",
+  "row_length": 16,
+  "term": "unsigned_gt",
+  "iteration": "0 <= left < right < row_length",
+  "layout": "one row per L2B/L1B, replicated across MABs and PEs"
+}

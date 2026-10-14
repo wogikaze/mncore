@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "source": {
+    "op": "urem",
+    "args": [
+      {
+        "op": "input",
+        "args": [],
+        "name": "x",
+        "value": 0
+      },
+      {
+        "op": "const",
+        "args": [],
+        "name": "",
+        "value": 3
+      }
+    ],
+    "name": "",
+    "value": 0
+  },
+  "selected": {
+    "op": "urem",
+    "args": [
+      {
+        "op": "input",
+        "args": [],
+        "name": "x",
+        "value": 0
+      },
+      {
+        "op": "const",
+        "args": [],
+        "name": "",
+        "value": 3
+      }
+    ],
+    "name": "",
+    "value": 0
+  }
+}

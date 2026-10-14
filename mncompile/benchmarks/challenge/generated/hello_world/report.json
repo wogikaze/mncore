@@ -1,0 +1,35 @@
+{
+  "function": "kernel",
+  "reference": "compile-time literal UTF-8 bytes",
+  "lines": 9,
+  "error_bound": "0",
+  "fast_math": false,
+  "inputs": {},
+  "output": {
+    "dtype": "bytes",
+    "group": 0,
+    "offset": 0,
+    "elements": 13,
+    "minimum": 0,
+    "maximum": 255
+  },
+  "allocated_bytes": 512,
+  "literal_hex": "48656c6c6f2c20776f726c6421",
+  "preconditions": [
+    "standalone zero-initialized Challenge machine"
+  ],
+  "clobbers": [
+    "group-0 DRAM first 512 bytes (logical output is only 13 bytes)",
+    "PE/L1BM/L2BM scratch"
+  ],
+  "cost_kind": "assembled j+m words",
+  "optimality": "selected three-immediate literal packing schedule; other literal families remain unsupported",
+  "frontend": "restricted Python, source-driven semantic matching",
+  "chosen_lowering": "compile_literal",
+  "applicable_lowerings": [
+    {
+      "lowering": "compile_literal",
+      "lines": 9
+    }
+  ]
+}

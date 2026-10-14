@@ -1,0 +1,43 @@
+{
+  "function": "kernel",
+  "reference": "elementwise modular u64 arithmetic",
+  "lines": 6,
+  "error_bound": "0",
+  "fast_math": false,
+  "inputs": {
+    "x": {
+      "dtype": "u64",
+      "memory": "m",
+      "offset": 0,
+      "elements": 16,
+      "minimum": 0,
+      "maximum": 1000,
+      "allow_infinity": false,
+      "integral_values": false
+    }
+  },
+  "output": {
+    "dtype": "u64",
+    "memory": "n",
+    "offset": 0,
+    "elements": 16,
+    "minimum": 0,
+    "maximum": 7000,
+    "allow_infinity": false,
+    "integral_values": false
+  },
+  "preconditions": [
+    "output LM words are initially zero (standalone Challenge machine)"
+  ],
+  "cost_kind": "assembled j+m words",
+  "optimality": "selected target lowering; global shortestness is not established",
+  "llvm_version": "Ubuntu LLVM version 18.1.3",
+  "frontend": "restricted Python, source-driven semantic matching",
+  "chosen_lowering": "compile_map",
+  "applicable_lowerings": [
+    {
+      "lowering": "compile_map",
+      "lines": 6
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "function": "kernel",
+  "reference": "real-valued row sum of squares",
+  "lines": 11,
+  "atol": 1e-09,
+  "error_bound": "1/17179869184",
+  "error_bound_float": 5.820766091346741e-11,
+  "fast_math": false,
+  "inputs": {
+    "x": {
+      "dtype": "f64",
+      "memory": "m",
+      "offset": 0,
+      "elements": 128,
+      "minimum": -1,
+      "maximum": 1,
+      "allow_infinity": false,
+      "integral_values": false
+    }
+  },
+  "output": {
+    "dtype": "f64",
+    "memory": "n",
+    "offset": 0,
+    "elements": 1,
+    "minimum": 0,
+    "maximum": 128,
+    "allow_infinity": false,
+    "integral_values": false
+  },
+  "row_partition": "l2b_pe",
+  "preconditions": [
+    "Double inputs are finite MN-Core normal values or signed zero",
+    "input row is replicated across MABs/L1Bs; MAB ID partitions its reduction",
+    "GRF scratch is initially zero"
+  ],
+  "cost_kind": "assembled j+m words",
+  "optimality": "selected 128-element MAB-parallel reduction schedule",
+  "frontend": "restricted Python, source-driven semantic matching",
+  "chosen_lowering": "compile_square_sum",
+  "applicable_lowerings": [
+    {
+      "lowering": "compile_square_sum",
+      "lines": 11
+    }
+  ]
+}

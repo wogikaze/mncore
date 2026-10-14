@@ -1,0 +1,10 @@
+{
+  "tests_run": 46,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "successful": true,
+  "implementation_sha256": "7f6985144d5d1169f0549b758789e9a91afdfda58f6c5caa3155f8914bf10a19",
+  "command": "python -m mncompile.validation --assembler PATH --emulator PATH --output PATH",
+  "scope": "Independent domain/boundary/basis/exhaustive-lane tests plus official emulator; not a formal whole-machine proof"
+}

@@ -1,0 +1,31 @@
+ipackbit $l2bid $ls128 $mb
+imm ui"0x49800010" $ln64v $ls64v
+ipackbit $l1bid $ls128 $t; fvmul $aluf $aluf $lr2v4
+spassa $lm64v16 $ls168v; hvpassa -$mauf $omr3
+isub $aluf $lmt[4080,4080,4080,4080] $omr1; fvadd $lr2v4 $ls64v $lr0v4 $ls0v4
+isub $ls168 $lmt0v16 $omr2; fvadd $mauf -$ln64 $lr0v4/$imr1 $ls0v4/$imr1; l1bmd $lmt0v16 $lbi
+isub $ls170 $lmt0v16 $omr1; fvadd $lr2v4 -$ln64 $lr2v4/$imr2; l1bmd $lbi $nowrite; l1bmd $lmt0v16 $lbi
+isub $ls172 $lbf $omr2; fvadd $lr0v4 -$ln64 $lr0v4/$imr1 $ls0v4/$imr1; l1bmd $lbi $nowrite; l1bmd $lm0v16 $lbi
+isub $ls174 $lbf $omr1; fvadd $lr2v4 -$ln64 $lr2v4/$imr2; l1bmd $lbi $ls160v
+isub $ls[170,172,172,174] $lmt[64,64,80,64] $omr2; fvadd $lr0v4 -$ln64 $lr0v4/$imr1 $ls0v4/$imr1
+isub $ls[174,174,160,162] $lmt[80,96,4080,4080] $omr1; fvadd $lr2v4 -$ln64 $lr2v4/$imr2
+isub $ls[162,164,164,164] $lmt[0,4080,0,16] $omr2; fvadd $lr0v4 -$ln64 $lr0v4/$imr1 $ls0v4/$imr1
+isub $ls[166,166,166,166] $lmt[4080,0,16,32] $omr1; fvadd $lr2v4 -$ln64 $lr2v4/$imr2
+fvadd $lr0v4 -$ln64 $lr0v4/$imr1 $ls0v4/$imr1
+fvadd $lr2v4 $ls[256,256,256,0] $lr16v
+fvadd $mauf $lr[256,2,12,2] $lr24v
+fvadd $mauf $lr[256,4,22,256] $lr32v
+fvadd $mauf $lr[256,8,256,256] $nowrite
+fvadd/$imr3 $mauf $lr[256,36,256,256] $lr48v
+l1bmd $mauf $lb0
+nop
+nop
+l2bmriiadd $lb64 $lc0
+nop
+mvriiadd/n64 $lc0 $p0@0
+mvb/n64 $p0@0 $lc0
+nop
+nop
+l2bmb $lc0 $lb192
+nop
+l1bmd $lb0 $ln0/0001

@@ -1,0 +1,14 @@
+imm f"64.0" $lr[256,258,260,262] $ls[256,258,260,262]
+imm f"8.0" $lr[128,130,132,134] $ls[128,130,132,134]; l1bmd $aluf $lb0
+isub $lr256v $aluf $t; hvadd $alufr $llm[0,4,8,12] $llr[0,4,8,12]
+iadd $aluf $mauf $ln[0,4,8,12]; hvadd $lls128r $llm[16,20,24,28] $llr[16,20,24,28]
+iadd $t $lr[2,6,10,14] $ln[2,6,10,14]; hvadd $lls128r $llm[32,36,40,44] $llr[32,36,40,44]; l1bmd $lb0 $nowrite
+iadd $t $lr[18,22,26,30] $lr[18,22,26,30]; fvfma $lm[80,84,88,92] $ls128 $lbf $ln[80,84,88,92]; l1bmd $lb0 $nowrite
+iadd $t $lr[34,38,42,46] $lr[34,38,42,46]; fvfma $lm[82,86,90,94] $ls128 $lbf $ln[82,86,90,94]
+iadd $llr[16,20,24,28] $t $lln[16,20,24,28]; hvadd $lls128r $llm[48,52,56,60] $llr[48,52,56,60]
+iadd $llr[32,36,40,44] $t $lln[32,36,40,44]; hvadd $lls128r $llm[64,68,72,76] $llr[64,68,72,76]; l1bmd $lb0 $nowrite
+iadd $t $lr[50,54,58,62] $lr[50,54,58,62]; fvfma $lm[96,100,104,108] $ls128 $lbf $ln[96,100,104,108]; l1bmd $lb0 $nowrite
+iadd $t $lr[66,70,74,78] $lr[66,70,74,78]; fvfma $lm[98,102,106,110] $ls128 $lbf $ln[98,102,106,110]; l1bmd $lb0 $nowrite
+iadd $llr[48,52,56,60] $t $lln[48,52,56,60]; fvfma $lm[114,118,122,126] $ls128 $lbf $lr[114,118,122,126]
+iadd $llr[64,68,72,76] $t $lln[64,68,72,76]; fvfma $lm[112,116,120,124] $ls128 $lbf $nowrite
+frelu $llr112v $mauf $lln112v

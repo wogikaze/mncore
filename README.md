@@ -25,6 +25,30 @@ bash setup_judge.sh
 
 ## Challenge Problem Toolchain
 
+### Error-budgeted high-level compiler (prototype)
+
+[mncompile](mncompile/README.md) compiles restricted Python kernels through LLVM
+to MN-Core VSM, selecting the shortest generated candidate within a specified
+input domain and absolute error budget. It records error bounds, candidate costs,
+and optimized LLVM IR. All 25 original Challenge problems have readable high-level
+sources and generated VSM accepted by the official judge. The 22 eligible shortest
+references are matched; three references with reproduced domain-valid
+counterexamples are excluded from the line target, prioritizing correctness.
+See the [comparison report](mncompile/benchmarks/challenge/generated/progress.json)
+and [reference audits](mncompile/benchmarks/challenge/reference-audits.json).
+
+For `x + 0.001*x*x` on `[-1, 1]`, changing the budget from
+`1e-5` to `0.002` reduces the generated program from 13 lines to 1 per 8 Floats/PE.
+
+```bash
+python3 -m mncompile mncompile/examples/near_identity.py --domain -1 1 --atol 0.002 --output /tmp/mncompile-demo
+```
+
+LLVM `opt` is required. See the linked README for the supported language subset,
+the numerical model underlying the bounds, and official assembler/emulator checks.
+
+### Running challenge testcases
+
 1. Place the official MN-Core Challenge testcase under `problems/<problem-name>/` (e.g. `problems/1.a-b/testcase.vsm`).
 2. Run `bash setup_judge.sh` once so that `judge/judge-py/judge.py` and the docker image for the assembler/emulator are available.
 3. Write your candidate solution VSM (for example `problems/1.a-b/solution.vsm`).

@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "op": "row_sum",
+  "term": "square",
+  "length": 128,
+  "row_partition": "l2b_pe",
+  "parallel_axis": "mab"
+}

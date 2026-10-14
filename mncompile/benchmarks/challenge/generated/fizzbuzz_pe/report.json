@@ -1,0 +1,45 @@
+{
+  "function": "kernel",
+  "reference": "UInt32 modulo-3/5 classification with constant codes",
+  "lines": 9,
+  "error_bound": "0",
+  "fast_math": false,
+  "inputs": {
+    "x": {
+      "dtype": "u32",
+      "memory": "m",
+      "offset": 0,
+      "elements": 8,
+      "minimum": 1,
+      "maximum": 32768,
+      "allow_infinity": false,
+      "integral_values": false
+    }
+  },
+  "output": {
+    "dtype": "u32",
+    "memory": "n",
+    "offset": 0,
+    "elements": 8,
+    "minimum": 1,
+    "maximum": 4294949819,
+    "allow_infinity": false,
+    "integral_values": false
+  },
+  "codes": {
+    "15": 4294949819,
+    "3": 65535,
+    "5": 48059
+  },
+  "preconditions": [],
+  "cost_kind": "assembled j+m words",
+  "optimality": "selected bounded reciprocal-and-mask classification schedule",
+  "frontend": "restricted Python, source-driven semantic matching",
+  "chosen_lowering": "compile_mod_classification",
+  "applicable_lowerings": [
+    {
+      "lowering": "compile_mod_classification",
+      "lines": 9
+    }
+  ]
+}

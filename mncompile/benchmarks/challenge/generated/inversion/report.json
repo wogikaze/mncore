@@ -1,0 +1,52 @@
+{
+  "function": "kernel",
+  "reference": "strict inversion count for each integer row",
+  "lines": 31,
+  "error_bound": "0",
+  "fast_math": false,
+  "inputs": {
+    "x": {
+      "dtype": "u32",
+      "memory": "m",
+      "offset": 0,
+      "elements": 128,
+      "minimum": 0,
+      "maximum": 100,
+      "allow_infinity": false,
+      "integral_values": false
+    }
+  },
+  "output": {
+    "dtype": "u32",
+    "memory": "n",
+    "offset": 0,
+    "elements": 2,
+    "minimum": 0,
+    "maximum": 2016,
+    "allow_infinity": false,
+    "integral_values": false
+  },
+  "row_length": 64,
+  "row_partition": "mab_pe_word",
+  "preconditions": [
+    "two interleaved rows per MAB/PE, replicated across L1Bs and L2Bs",
+    "zero-filled LM0 padding preceding the input",
+    "standalone zero-initialized scratch and output memory"
+  ],
+  "clobbers": [
+    "LM0 base register",
+    "T",
+    "GRF/matrix/L1BM/L2BM/PDM scratch",
+    "LM1 scratch at output offset + 64 for large rows"
+  ],
+  "cost_kind": "assembled j+m words",
+  "optimality": "selected triangular-comparison and bounded-count reduction schedule",
+  "frontend": "restricted Python, source-driven semantic matching",
+  "chosen_lowering": "compile_inversions",
+  "applicable_lowerings": [
+    {
+      "lowering": "compile_inversions",
+      "lines": 31
+    }
+  ]
+}

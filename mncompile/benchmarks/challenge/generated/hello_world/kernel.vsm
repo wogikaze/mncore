@@ -1,0 +1,9 @@
+imm ui"0x3a655e6c" $lr0 $t
+idec $subpeid $omr1; dvpassar $aluf $r1
+imm ui"0x61725e64" $r0/$imr1; fvadd -$aluf -$t $omr2
+imm ui"0x612c1277" $r1v2/$imr2
+l1bmrhfadd $lr[16,16,16,0] $lb36
+nop
+nop
+l2bmrhfadd $lb16 $lc32
+mvp/n64 $lc64@0.0 $d0@0

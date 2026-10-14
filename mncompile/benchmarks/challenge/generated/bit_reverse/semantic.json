@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "op": "vector_bit_reverse",
+  "word_bits": 64,
+  "global_elements": 16,
+  "layout": "four PEs interleaved; MAB replication",
+  "verification_strategy": "1024 single-bit inputs plus all-zero and random vectors"
+}

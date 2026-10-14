@@ -1,0 +1,9 @@
+hpassa $llm0v $llr0v; hvaddr $llm0v $llm0ve $ln0v4
+hpassa $llm16v $llr16v; hvaddr $llm16v $llm16ve $ln16v4
+hilrelud $msb1 $lr2v4 $ln2v4 $lls256v; hvaddr $lm66v4 $lm66v4e $lr66v4
+hpassa $llm32v $llr32v; hvaddr $llm32v $llm32ve $ln32v4
+hilrelud $msb1 $lr18v4 $ln18v4; hvaddr $lm50v4 $lm50v4e $ls50v4; l1bmd $ls258v4 $lbi
+hilrelud $msb1 $lr34v4 $ln34v4; hvaddr $lm48v4 $lm48v4e $nowrite; l1bmd $ls258v4 $lbi; l1bmd $lbi $lr64v4 $ls80v4
+hrelu $lls48v $mauf $lln48v; hvaddr $lm82v4 $lm82v4e $ls82v4
+hilrelud $llr64v $lm64v4 $lln64v
+hilrelud $lls80v $lm80v4 $lln80v

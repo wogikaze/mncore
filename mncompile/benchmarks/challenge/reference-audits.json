@@ -1,0 +1,348 @@
+{
+  "schema_version": 1,
+  "policy": "Exclude only references with reproduced domain-valid counterexamples; retain correctness as a separate obligation.",
+  "reproduce": "python -m mncompile.reference_audits --assembler PATH --emulator PATH --output PATH",
+  "audits": {
+    "plus_two": {
+      "reference_submission": "https://mncore-challenge.preferred.jp/submission/346e328e-9525-4017-845c-a74c63375299",
+      "reference_lines": 5,
+      "eligible": false,
+      "status": "counterexample",
+      "description": "All twenty UInt64 inputs are zero (allowed 0..99).",
+      "input_debug_vsm": "d set $lm0 20 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\n",
+      "output_debug_vsm": "nop\nnop\nd getd $ln0n0c0b0m0p0 20\n",
+      "differences": [
+        {
+          "index": 0,
+          "expected": 2,
+          "actual": 4294967295
+        },
+        {
+          "index": 1,
+          "expected": 2,
+          "actual": 4294967295
+        },
+        {
+          "index": 2,
+          "expected": 2,
+          "actual": 4294967295
+        },
+        {
+          "index": 3,
+          "expected": 2,
+          "actual": 4294967295
+        },
+        {
+          "index": 4,
+          "expected": 2,
+          "actual": 4294967295
+        },
+        {
+          "index": 5,
+          "expected": 2,
+          "actual": 4294967295
+        },
+        {
+          "index": 6,
+          "expected": 2,
+          "actual": 4294967295
+        },
+        {
+          "index": 7,
+          "expected": 2,
+          "actual": 4294967295
+        },
+        {
+          "index": 8,
+          "expected": 2,
+          "actual": 4294967295
+        },
+        {
+          "index": 9,
+          "expected": 2,
+          "actual": 4294967295
+        },
+        {
+          "index": 10,
+          "expected": 2,
+          "actual": 4294967295
+        },
+        {
+          "index": 11,
+          "expected": 2,
+          "actual": 4294967295
+        },
+        {
+          "index": 12,
+          "expected": 2,
+          "actual": 4294967295
+        },
+        {
+          "index": 13,
+          "expected": 2,
+          "actual": 4294967295
+        },
+        {
+          "index": 14,
+          "expected": 2,
+          "actual": 4294967295
+        },
+        {
+          "index": 15,
+          "expected": 2,
+          "actual": 4294967295
+        },
+        {
+          "index": 16,
+          "expected": 2,
+          "actual": 4294967295
+        },
+        {
+          "index": 17,
+          "expected": 2,
+          "actual": 4294967295
+        },
+        {
+          "index": 18,
+          "expected": 2,
+          "actual": 4294967295
+        },
+        {
+          "index": 19,
+          "expected": 2,
+          "actual": 4294967295
+        }
+      ],
+      "reason": "Domain-valid input produces an incorrect output"
+    },
+    "fle": {
+      "reference_submission": "https://mncore-challenge.preferred.jp/submission/bb9b24e9-fc28-4206-9cda-b1da73dadb18",
+      "reference_lines": 4,
+      "eligible": false,
+      "status": "counterexample",
+      "description": "All forty Float inputs are zero (allowed 0..5).",
+      "input_debug_vsm": "d set $lm0 20 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\n",
+      "output_debug_vsm": "nop\nnop\nd getd $ln0n0c0b0m0p0 20\n",
+      "differences": [
+        {
+          "index": 0,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 1,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 2,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 3,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 4,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 5,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 6,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 7,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 8,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 9,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 10,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 11,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 12,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 13,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 14,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 15,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 16,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 17,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 18,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 19,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 20,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 21,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 22,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 23,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 24,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 25,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 26,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 27,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 28,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 29,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 30,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 31,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 32,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 33,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 34,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 35,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 36,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 37,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 38,
+          "expected": 0,
+          "actual": 2147483647
+        },
+        {
+          "index": 39,
+          "expected": 0,
+          "actual": 2147483647
+        }
+      ],
+      "reason": "Domain-valid input produces an incorrect output"
+    },
+    "transpose_addr": {
+      "reference_submission": "https://mncore-challenge.preferred.jp/submission/52a139ff-73ad-4d34-94fa-490cfa6c36ab",
+      "reference_lines": 10,
+      "eligible": false,
+      "status": "counterexample",
+      "description": "All Double inputs are one except X[1,0]=-0.0 (numerically within 0..64).",
+      "input_debug_vsm": "d set $lm0 64 3ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff000000000000080000000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff00000000000003ff0000000000000\n",
+      "output_debug_vsm": "nop\nnop\nd getd $ln0n0c0b0m0p0 64\n",
+      "differences": [
+        {
+          "index": 8,
+          "expected": 1.0,
+          "actual": -0.0
+        }
+      ],
+      "reason": "Domain-valid input produces an incorrect output"
+    }
+  }
+}
