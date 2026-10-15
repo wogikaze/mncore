@@ -1,0 +1,2 @@
+# Preserve byte-exact tool diagnostics, including trailing whitespace.
+*.stderr.txt -whitespace
