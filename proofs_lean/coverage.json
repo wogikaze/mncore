@@ -33,6 +33,20 @@
         "scope": "Explicit referenceBinary profile for zero/imm/immu/msl/msr; all four PEs of one MAB; unmasked unreduced scalar GRF; nonzero destination/mask sentinels; manual LSB discrepancy remains unresolved",
         "formal_conformance_proof": false
       }
+    },
+    {
+      "source": "proofs_lean/ProofsLean/PEMemory.lean",
+      "sha256": "b762e28073550a734069850b7a1cc0678280ba00da7136e11b266fb9bfd56433",
+      "implemented": "LM0/LM1/GRF0/GRF1/T capacities, address schedules, BAR/T/madpe offset arithmetic, alignment/wrap, raw reads and unmasked writes",
+      "scope": "Combinational memory primitives; writes are instantaneous and cannot establish instruction scheduling correctness",
+      "missing": "Complete operand decoding/legality, masks, precision conversion, read/write timing, forwarding and parallel-port checks; dynamic address modes not yet reference-tested",
+      "reference_experiment": {
+        "path": "proofs_lean/evidence/pe-memory/reference.json",
+        "sha256": "b95a5cacc289d44e401cbfbc1e5513f7f3f1d5c04bd4b502df87040e2fee3b5e",
+        "cases": 204,
+        "scope": "LM0/LM1/GRF0/GRF1/T raw reads via lpassa; 32/64/128-bit accesses; scalar/strided/wrapping/flat addresses; all four cycles; one PE; BAR=0, no indirect/madpe/masks/hazards",
+        "formal_conformance_proof": false
+      }
     }
   ],
   "unresolved_semantic_discrepancies": [
@@ -826,7 +840,7 @@
     },
     {
       "area": "t_indirect_madpe_and_address_mapping",
-      "status": "unimplemented"
+      "status": "partial_datapath_only"
     },
     {
       "area": "matrix_registers_and_matrix_operations",

@@ -51,6 +51,12 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   未解決の差分があるため、ターゲットを指定しない循環転送は`unknown`となる。
   左右の転送で全バスが元に戻る定理は`manualReading`の場合の数学的性質であり、
   実際の循環転送命令の正しさを主張しない。
+- `PEMemory.lean`: LM0/LM1/GRF0/GRF1/Tの32ビット語メモリと、アドレス計算、
+  幅に応じた読み出し・ゼロ埋め、マスクなし書き込み。
+  BAR/T間接値/MADPEのオフセット計算、アラインメント切り下げ、折り返しを定義。
+  書き込み範囲外の値の保存と、書き込んだ語の読み戻しを証明した。
+  書き込みは即時反映する組み合わせ的な部品であり、実際の命令の遅延、同時発行、
+  全サイクルの読み取り後に書き込むスケジュールの正しさは証明していない。
 
 `Machine.positiveCost` はスコアが正の行へ正規化済みであるという条件。
 MN-Coreにはゼロコストの制御文があるので、その正規化の意味保存と完全性を証明するまでは
@@ -100,6 +106,18 @@ python3 proofs_lean/scripts/catalog.py
 ```sh
 python3 proofs_lean/scripts/check_untyped_reference.py \
   --output proofs_lean/evidence/untyped-alu/reference.json
+python3 proofs_lean/scripts/catalog.py
+```
+
+`MemoryProbe.lean`の比較はLM0/LM1/GRF0/GRF1/Tを対象に、51命令・204サイクルで
+上位・下位長語の一致を確認した。単語・長語・2長語アクセス、連続ストライド、
+終端からの折り返し、flatアドレス、Tの幅指定無視を含む。
+対象は1 PE、BAR=0、マスク・T間接・MADPEなし。動的アドレス修飾や
+一般の書き込み先・遅延を含む全命令の対応証明とは別である。
+
+```sh
+python3 proofs_lean/scripts/check_memory_reference.py \
+  --output proofs_lean/evidence/pe-memory/reference.json
 python3 proofs_lean/scripts/catalog.py
 ```
 

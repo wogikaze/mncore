@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-15T15:49:29.784726+00:00",
+  "evidence_kind": "finite_lean_datapath_reference_comparison",
+  "scope": "LM0/LM1/GRF0/GRF1/T raw reads via lpassa; 32/64/128-bit accesses; scalar/strided/wrapping/flat addresses; all four cycles; one PE; BAR=0, no indirect/madpe/masks/hazards",
+  "programs": 51,
+  "cases": 204,
+  "cases_per_spelling": {
+    "m": 48,
+    "n": 48,
+    "r": 48,
+    "s": 48,
+    "t": 12
+  },
+  "matched": 204,
+  "differences": [],
+  "vectors_sha256": "262ba9f025a7c551f3b3fae659f3ca04fb04695daad8350fe44734b158980bad",
+  "vsm_sha256": "b3ec617d390560d9ac2ebcdd70a204756a4be60a0be8c3d0def8f07fc8acbd81",
+  "reference_output_sha256": "990e14725660c66e64ebd219901a442c247c9e3dead283497552d6856c34de0f",
+  "sources": [
+    {
+      "path": "proofs_lean/ProofsLean/IntegerALU.lean",
+      "sha256": "e4f0748c8d119a67d232cbaa3891dd072a80062ad474896fc3b952c84a8f5df2"
+    },
+    {
+      "path": "proofs_lean/ProofsLean/PEMemory.lean",
+      "sha256": "b762e28073550a734069850b7a1cc0678280ba00da7136e11b266fb9bfd56433"
+    },
+    {
+      "path": "proofs_lean/MemoryProbe.lean",
+      "sha256": "129a9fa7592cd59df5baa196dbcfe776103687a4c3825f95b616d230813e7bed"
+    },
+    {
+      "path": "proofs_lean/scripts/check_memory_reference.py",
+      "sha256": "8d0392f626854b7294cd50534d8d60f027626224b067870d1e89753a8046f77d"
+    },
+    {
+      "path": "judge/judge-py/mncore2_emuenv/assemble3",
+      "sha256": "5baabcd47a137fbc4c8ec11fd02e23cb79818bbded9d0cb4c02291aaf738b955"
+    },
+    {
+      "path": "judge/judge-py/mncore2_emuenv/gpfn3_package_main",
+      "sha256": "6008aa202c8bd29e352929cef46ceb4c52b6551fc72ac0dd987cb935bc7993cf"
+    }
+  ],
+  "proves_universal_conformance": false,
+  "proves_isa_completeness": false,
+  "proves_optimality": false
+}

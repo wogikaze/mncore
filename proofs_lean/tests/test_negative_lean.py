@@ -19,7 +19,9 @@ class NegativeKernelTests(unittest.TestCase):
                               "#check ProofsLean.FiniteExample.fill_correct_on_one_case\n"
                               "#check ProofsLean.FiniteExample.missing_cannot_be_sealed\n"
                               "#check ProofsLean.MNCore.UntypedALU.unresolved_rotation_is_unknown\n"
-                              "#check ProofsLean.MNCore.UntypedALU.reference_differs_from_manual_when_lsb_nonzero\n")
+                              "#check ProofsLean.MNCore.UntypedALU.reference_differs_from_manual_when_lsb_nonzero\n"
+                              "#check ProofsLean.MNCore.PEMemory.address_aligned\n"
+                              "#check ProofsLean.MNCore.PEMemory.read_after_write\n")
             result = subprocess.run([cls.lake, "env", "lean", str(source)], cwd=ROOT,
                                     capture_output=True, text=True, timeout=60)
             if result.returncode:
@@ -61,3 +63,11 @@ class NegativeKernelTests(unittest.TestCase):
                     "example (input : MABInput) (pe : Fin 4) :\n"
                     "  (evaluateWithPolicy .referenceBinary .msl input pe).value =\n"
                     "    (evaluateWithPolicy .manualReading .msl input pe).value := by rfl\n")
+
+    def test_lm1_cannot_use_t_indirect(self):
+        self.reject("open ProofsLean.MNCore.PEMemory\n"
+                    "example : Adjustment.Allowed (.tIndirect 1) .lm1 := by decide\n")
+
+    def test_unaligned_static_long_address_is_not_well_formed(self):
+        self.reject("open ProofsLean.MNCore.PEMemory\n"
+                    "example : Schedule.WellFormed (.auto 1 2) .lm0 .long := by decide\n")

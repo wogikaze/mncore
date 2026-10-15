@@ -16,3 +16,7 @@ root = "ALUProbe"
 [[lean_exe]]
 name = "untyped_probe"
 root = "UntypedProbe"
+
+[[lean_exe]]
+name = "memory_probe"
+root = "MemoryProbe"

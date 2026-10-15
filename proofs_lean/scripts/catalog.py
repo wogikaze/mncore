@@ -190,6 +190,7 @@ def coverage_catalog() -> dict:
     ]
     fragment_source = ROOT / "ProofsLean/IntegerALU.lean"
     untyped_source = ROOT / "ProofsLean/UntypedALU.lean"
+    memory_source = ROOT / "ProofsLean/PEMemory.lean"
     return {
         "schema_version": 1,
         "isa_exhaustiveness_proven": False,
@@ -209,12 +210,19 @@ def coverage_catalog() -> dict:
             "scope": "Already-read buses of four PEs in one MAB; unqualified rotation semantics remain unknown",
             "missing": "Operand access, masks, timing, parallel issue, resolution of rotation LSB discrepancy",
             "reference_experiment": datapath_experiment("untyped-alu", 1),
+        }, {
+            "source": memory_source.relative_to(REPO).as_posix(), "sha256": digest(memory_source),
+            "implemented": "LM0/LM1/GRF0/GRF1/T capacities, address schedules, BAR/T/madpe offset arithmetic, alignment/wrap, raw reads and unmasked writes",
+            "scope": "Combinational memory primitives; writes are instantaneous and cannot establish instruction scheduling correctness",
+            "missing": "Complete operand decoding/legality, masks, precision conversion, read/write timing, forwarding and parallel-port checks; dynamic address modes not yet reference-tested",
+            "reference_experiment": datapath_experiment("pe-memory", 1),
         }],
         "unresolved_semantic_discrepancies": [rotation_discrepancy()],
         "syntax_candidates": [{"spelling": name, "formal_step_semantics": "unimplemented"} for name in spellings],
         "obligations": [{"area": area, "status": "partial_datapath_only" if area in (
             "integer_16_32_64_and_signedness", "wide_access_and_lsb_passthrough",
-            "immediates_fixed_operands_and_zero", "pe_rotations_and_coordinate_operands") else "unimplemented"} for area in areas],
+            "immediates_fixed_operands_and_zero", "pe_rotations_and_coordinate_operands",
+            "t_indirect_madpe_and_address_mapping") else "unimplemented"} for area in areas],
     }
 
 
