@@ -13,6 +13,7 @@ import re
 import resource
 import shutil
 import subprocess
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -96,10 +97,12 @@ def main() -> None:
                    if wanted != got]
     sources = [ROOT / "ProofsLean/IntegerALU.lean", ROOT / "ALUProbe.lean",
                Path(__file__).resolve(), assembler, emulator]
+    counts = dict(sorted(Counter(row.split("\t")[0] for row in oracle.splitlines()).items()))
     report = {
         "schema_version": 1, "recorded_at": datetime.now(timezone.utc).isoformat(),
         "evidence_kind": "finite_lean_datapath_reference_comparison",
-        "scope": "54 integer spellings; 30 operand pairs; unmasked unreduced scalar GRF accesses; one PE; all four broadcast cycles",
+        "scope": f"{len(counts)} integer spellings; 30 common operand pairs plus 48 width-specific boundary pairs for each shift spelling; unmasked unreduced scalar GRF accesses; one PE; all four broadcast cycles",
+        "cases_per_spelling": counts,
         "cases": len(expected), "matched": len(expected) - len(differences),
         "differences": differences, "vectors_sha256": sha(oracle.encode()),
         "vsm_sha256": sha(vsm.encode()), "reference_output_sha256": sha(raw.encode()),

@@ -44,16 +44,35 @@ def arithmetic (op : Arithmetic) (unsigned : Bool) (x y : BitVec w) : LaneResult
     | .sub => decide (y.toNat ≤ x.toNat)
   ⟨value, if unsigned then noOverflow else !value.msb⟩
 
+inductive Shift where
+  | left | right (unsigned : Bool) | rotateLeft | rotateRight
+  deriving DecidableEq, Repr
+
+/-- The manual first discards shift-count bits above log2(2*width).
+Logical/arithmetic shifts saturate at width; rotations wrap at width. -/
+def shift (op : Shift) (x y : BitVec w) : LaneResult w :=
+  let count := y.toNat % (2 * w)
+  let value := match op with
+    | .left => x <<< min count w
+    | .right true => x >>> min count w
+    | .right false => x.sshiftRight (min count w)
+    | .rotateLeft => x.rotateLeft count
+    | .rotateRight => x.rotateRight count
+  ⟨value, decide (value = 0)⟩
+
 inductive Op where
   | arith (op : Arithmetic) (unsigned : Bool)
   | bitNot | logicalNot | bitAnd | bitOr | bitXor
   | maximum (unsigned : Bool) | minimum (unsigned : Bool)
+  | shift (op : Shift) | packbit
   | passa
   deriving DecidableEq, Repr
 
 def evaluateLane (op : Op) (x y : BitVec w) : LaneResult w :=
   match op with
   | .arith a u => arithmetic a u x y
+  | .shift s => shift s x y
+  | .packbit => ⟨(x <<< 1) ||| (if y.msb then 1 else 0), !y.msb⟩
   | .bitNot => let value := ~~~x; ⟨value, decide (value = 0)⟩
   | .logicalNot => let value := if x = 0 then 1 else 0; ⟨value, decide (value = 0)⟩
   | .bitAnd => let value := x &&& y; ⟨value, decide (value = 0)⟩
@@ -117,6 +136,19 @@ theorem unsigned_sub_flag (x y : BitVec w) :
 theorem signed_add_flag (x y : BitVec w) :
     (arithmetic .add false x y).flag = !(x + y).msb := rfl
 
+theorem shift_ignores_high_count_bits (op : Shift) (x y z : BitVec w)
+    (sameLowBits : y.toNat % (2 * w) = z.toNat % (2 * w)) :
+    shift op x y = shift op x z := by
+  simp only [shift, sameLowBits]
+
+theorem large_logical_left_is_zero (x y : BitVec w)
+    (large : w ≤ y.toNat % (2 * w)) :
+    (shift .left x y).value = 0 := by
+  simp [shift, Nat.min_eq_right large]
+
+theorem packbit_flag (x y : BitVec w) :
+    (evaluateLane .packbit x y).flag = !y.msb := rfl
+
 theorem max_tie_selects_first (unsigned : Bool) (x : BitVec w) :
     evaluateLane (.maximum unsigned) x x = ⟨x, true⟩ := by
   cases unsigned <;> simp [evaluateLane]
@@ -163,6 +195,12 @@ example : evaluateLane (.maximum false) (65535#16) 1 = ⟨1, false⟩ := by deci
 example : evaluateLane (.maximum true) (65535#16) 1 = ⟨65535, true⟩ := by decide
 example : (evaluateLane .logicalNot (0#16) 0).flag = false := by decide
 example : (evaluateLane .logicalNot (1#16) 0).flag = true := by decide
+example : shift .left (1#16) 16 = ⟨0, true⟩ := by decide
+example : shift .left (1#16) 32 = ⟨1, false⟩ := by decide
+example : shift (.right false) (32768#16) 31 = ⟨65535, false⟩ := by decide
+example : shift (.right true) (32768#16) 31 = ⟨0, true⟩ := by decide
+example : shift .rotateLeft (32768#16) 17 = ⟨1, false⟩ := by decide
+example : evaluateLane .packbit (32768#16) 32768 = ⟨1, false⟩ := by decide
 example : (evaluateBus .half (.arith .inc false)
     ⟨0x0000ffff7fff8000, 0x0123456789abcdef⟩ ⟨0, 0⟩ false).value.high =
       0x0001000080008001 := by decide

@@ -8,15 +8,15 @@
   "datapath_fragments": [
     {
       "source": "proofs_lean/ProofsLean/IntegerALU.lean",
-      "sha256": "ee0a9d8c74f85ec6dbe31123ada5e06231a0a675b5e0b38a23bfadce8b16c6df",
-      "implemented": "16/32/64-bit inc/dec/add/sub/not/lnot/and/or/xor/integer max/min/passa; lane packing, replicated flags and LSB bypass",
+      "sha256": "e4f0748c8d119a67d232cbaa3891dd072a80062ad474896fc3b952c84a8f5df2",
+      "implemented": "16/32/64-bit inc/dec/add/sub/not/lnot/and/or/xor/integer max/min/passa/lsl/lsr/bsl/bsr/packbit; lane packing, replicated flags and LSB bypass",
       "scope": "Already-read and already-reduced buses only; not VSM instruction execution or legality",
       "missing": "Operand decoding/access/reduction, masks, timing/forwarding, parallel issue, all other ISA operations",
       "reference_experiment": {
         "path": "proofs_lean/evidence/integer-alu/reference.json",
-        "sha256": "2267fe966a197b5053171c7f51f9f1eeac5d5a98fbc7ce575aed8bc1e122bea5",
-        "cases": 1620,
-        "scope": "54 integer spellings; 30 operand pairs; unmasked unreduced scalar GRF accesses; one PE; all four broadcast cycles",
+        "sha256": "bf162df268921b415743d5736967a0a87ef039174ec287c6f66ab7e648497fa8",
+        "cases": 2880,
+        "scope": "72 integer spellings; 30 common operand pairs plus 48 width-specific boundary pairs for each shift spelling; unmasked unreduced scalar GRF accesses; one PE; all four broadcast cycles",
         "formal_conformance_proof": false
       }
     }

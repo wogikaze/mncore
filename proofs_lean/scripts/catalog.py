@@ -7,6 +7,7 @@ import ast
 import hashlib
 import json
 import re
+from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -125,6 +126,9 @@ def coverage_catalog() -> dict:
             raise ValueError("integer ALU reference vectors changed")
         if record["cases"] != len(vectors.read_text().splitlines()):
             raise ValueError("integer ALU reference case count mismatch")
+        counts = dict(Counter(row.split("\t")[0] for row in vectors.read_text().splitlines()))
+        if counts != record["cases_per_spelling"]:
+            raise ValueError("integer ALU spelling coverage mismatch")
         if record["matched"] != record["cases"] or record["differences"]:
             raise ValueError("integer ALU reference comparison has unresolved differences")
         for item in record["sources"]:
@@ -150,7 +154,7 @@ def coverage_catalog() -> dict:
         "inventory_scope": "Compiler-generated ALU/MAU spelling candidates only; not an authoritative complete ISA or legality model.",
         "datapath_fragments": [{
             "source": fragment_source.relative_to(REPO).as_posix(), "sha256": digest(fragment_source),
-            "implemented": "16/32/64-bit inc/dec/add/sub/not/lnot/and/or/xor/integer max/min/passa; lane packing, replicated flags and LSB bypass",
+            "implemented": "16/32/64-bit inc/dec/add/sub/not/lnot/and/or/xor/integer max/min/passa/lsl/lsr/bsl/bsr/packbit; lane packing, replicated flags and LSB bypass",
             "scope": "Already-read and already-reduced buses only; not VSM instruction execution or legality",
             "missing": "Operand decoding/access/reduction, masks, timing/forwarding, parallel issue, all other ISA operations",
             "reference_experiment": experiment,

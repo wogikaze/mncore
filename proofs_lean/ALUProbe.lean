@@ -14,6 +14,9 @@ def operations : List (String × Op × Bool) := [
   ("and", .bitAnd, true), ("or", .bitOr, true), ("xor", .bitXor, true),
   ("max", .maximum false, true), ("umax", .maximum true, true),
   ("min", .minimum false, true), ("umin", .minimum true, true),
+  ("lsl", .shift .left, true), ("lsr", .shift (.right false), true),
+  ("ulsr", .shift (.right true), true), ("bsl", .shift .rotateLeft, true),
+  ("bsr", .shift .rotateRight, true), ("packbit", .packbit, true),
   ("passa", .passa, false)]
 
 def pairs : List (Nat × Nat) := [
@@ -30,12 +33,24 @@ def pairs : List (Nat × Nat) := [
     ((seed * 6364136223846793005 + 1442695040888963407) % 2^64,
      (seed * 2862933555777941757 + 3037000493) % 2^64))
 
+/-- Count boundary values are replicated independently in every packed lane. -/
+def shiftPairs (p : Precision) : List (Nat × Nat) :=
+  let counts := [0, 1, p.width - 1, p.width, p.width + 1, 2 * p.width - 1,
+                 2 * p.width, 2 * p.width + 1]
+  [0, 1, 0xffffffffffffffff, 0x8000800080008000,
+   0x7fff8000ffff0001, 0x0123456789abcdef].flatMap fun x =>
+    counts.map fun count =>
+      (x, (List.range p.lanes).foldl (fun acc i => acc + count * 2^(i * p.width)) 0)
+
 def main : IO Unit := do
   for (letter, precision) in [("l", Precision.long), ("i", Precision.word), ("s", Precision.half)] do
     for (name, op, binary) in operations do
       let spelling := if name.startsWith "u" then "u" ++ letter ++ (name.drop 1).toString
                       else letter ++ name
-      for (a, b) in pairs do
+      let inputs := match op with
+        | .shift _ => pairs ++ shiftPairs precision
+        | _ => pairs
+      for (a, b) in inputs do
         let x : Bus := ⟨BitVec.ofNat 64 a, 0x0123456789abcdef⟩
         let y : Bus := ⟨BitVec.ofNat 64 b, 0xfedcba9876543210⟩
         let result := evaluateBus precision op x y false
