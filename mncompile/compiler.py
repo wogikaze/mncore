@@ -24,6 +24,7 @@ from .allgather import allgather_steps
 from .split import split_strategy
 from .pairs import pairs_strategy
 from .fmtseq import fmtseq_strategy
+from .tcsynth import tcsynth_strategy
 from .membership import membership_strategy
 from .machine import Mem, emit, words
 from .oracle import flatten_output
@@ -633,7 +634,7 @@ def movement_strategy(source, contract, outputs, *, variant=None):
     return movement_steps(contract, outputs)
 
 
-STRATEGIES = [("local", local_strategy), ("relayout", relayout_strategy), ("local-reduce", local_reduce_strategy), ("movement", movement_strategy), ("contraction", contraction_strategy), ("pe-reduce", pe_reduce_strategy), ("gather", gather_strategy), ("hierarchy", hierarchy_strategy), ("mab-reduce", mab_reduce_strategy), ("generate", generate_strategy), ("split", split_strategy), ("pairs", pairs_strategy), ("membership", membership_strategy), ("fmtseq", fmtseq_strategy), ("allgather", lambda source, contract, outputs, variant=None: allgather_steps(contract, outputs))]
+STRATEGIES = [("local", local_strategy), ("relayout", relayout_strategy), ("local-reduce", local_reduce_strategy), ("movement", movement_strategy), ("contraction", contraction_strategy), ("pe-reduce", pe_reduce_strategy), ("gather", gather_strategy), ("hierarchy", hierarchy_strategy), ("mab-reduce", mab_reduce_strategy), ("generate", generate_strategy), ("split", split_strategy), ("pairs", pairs_strategy), ("membership", membership_strategy), ("fmtseq", fmtseq_strategy), ("tcsynth", tcsynth_strategy), ("allgather", lambda source, contract, outputs, variant=None: allgather_steps(contract, outputs))]
 
 
 def narrowed_contract(contract: Contract, values) -> Contract:
@@ -665,6 +666,9 @@ def compile_program(source: str, contract: Contract, *, tries: int = 4, verify_c
     t0 = time.time()
     if fixed_inputs is not None:
         contract = narrowed_contract(contract, fixed_inputs)
+        contract.notes["fixed_inputs"] = fixed_inputs
+        if fixed_expected is not None:
+            contract.notes["fixed_expected"] = fixed_expected
     graph, outputs = traced_outputs(source, contract)
     say(f"traced {len(graph.order)} nodes")
     asm = assembler()
