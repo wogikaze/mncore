@@ -92,6 +92,78 @@ def problem_catalog() -> dict:
     }
 
 
+def datapath_experiment(directory: str, spelling_column: int) -> dict | None:
+    reference = ROOT / "evidence" / directory / "reference.json"
+    experiment = None
+    if reference.exists():
+        record = json.loads(reference.read_text())
+        vectors = reference.with_name("vectors.tsv")
+        if digest(vectors) != record["vectors_sha256"]:
+            raise ValueError("datapath reference vectors changed")
+        if record["cases"] != len(vectors.read_text().splitlines()):
+            raise ValueError("datapath reference case count mismatch")
+        counts = dict(Counter(row.split("\t")[spelling_column] for row in vectors.read_text().splitlines()))
+        if counts != record["cases_per_spelling"]:
+            raise ValueError("datapath spelling coverage mismatch")
+        if record["matched"] != record["cases"] or record["differences"]:
+            raise ValueError("datapath reference comparison has unresolved differences")
+        for item in record["sources"]:
+            source = REPO / item["path"]
+            optional_tool = item["path"] in (
+                "judge/judge-py/mncore2_emuenv/assemble3",
+                "judge/judge-py/mncore2_emuenv/gpfn3_package_main")
+            if optional_tool and not source.exists():
+                continue  # Official proprietary binaries are not distributed in CI.
+            if digest(source) != item["sha256"]:
+                raise ValueError(f"stale datapath comparison: {item['path']}")
+        if any(record[key] for key in ("proves_universal_conformance", "proves_isa_completeness", "proves_optimality")):
+            raise ValueError("finite comparison cannot promote a universal claim")
+        experiment = {"path": reference.relative_to(REPO).as_posix(),
+                      "sha256": digest(reference), "cases": record["cases"],
+                      "scope": record["scope"], "formal_conformance_proof": False}
+    return experiment
+
+
+def rotation_discrepancy() -> dict:
+    directory = ROOT / "evidence/untyped-alu/initial-manual-assumption"
+    for name, expected in json.loads((directory / "sha256.json").read_text()).items():
+        if digest(directory / name) != expected:
+            raise ValueError(f"changed rotation discrepancy snapshot: {name}")
+    record = json.loads((directory / "reference.json").read_text())
+    vectors = (directory / "vectors.tsv").read_text().splitlines()
+    if digest(directory / "vectors.tsv") != record["vectors_sha256"]:
+        raise ValueError("rotation discrepancy vectors changed")
+    snapshots = {"proofs_lean/ProofsLean/IntegerALU.lean": "IntegerALU.lean",
+                 "proofs_lean/ProofsLean/UntypedALU.lean": "UntypedALU.lean",
+                 "proofs_lean/UntypedProbe.lean": "UntypedProbe.lean",
+                 "proofs_lean/scripts/check_untyped_reference.py": "check_untyped_reference.py"}
+    for item in record["sources"]:
+        source = directory / snapshots[item["path"]] if item["path"] in snapshots else REPO / item["path"]
+        if not source.exists() and item["path"] in (
+                "judge/judge-py/mncore2_emuenv/assemble3", "judge/judge-py/mncore2_emuenv/gpfn3_package_main"):
+            continue
+        if digest(source) != item["sha256"]:
+            raise ValueError(f"rotation discrepancy source changed: {source}")
+    if (record["cases"], record["matched"], len(record["differences"])) != (384, 256, 128):
+        raise ValueError("unexpected discrepancy counts")
+    for row in record["differences"]:
+        if row["oracle"] != vectors[row["index"]]:
+            raise ValueError("discrepancy row is detached from its vector")
+        fields = row["oracle"].split("\t")
+        if fields[1] not in ("msl", "msr") or int(fields[7]) == 0:
+            raise ValueError("rotation discrepancy must exercise a nonzero input LSB")
+        if row["observed"] != [int(fields[6]), 0, int(fields[8])]:
+            raise ValueError("unexpected rotation discrepancy shape")
+    return {
+        "operations": ["msl", "msr"], "status": "open",
+        "manual_reading": "General one-long-word ALU rule says local first-input LSB passes through",
+        "reference_observation": "MSB rotates; LSB is zero even for nonzero llr input",
+        "canonical_partial_step": "unknown",
+        "evidence": (directory / "reference.json").relative_to(REPO).as_posix(),
+        "snapshot_manifest_sha256": digest(directory / "sha256.json"),
+    }
+
+
 def coverage_catalog() -> dict:
     path = REPO / "mncompile/machine.py"
     tree = ast.parse(path.read_text())
@@ -117,34 +189,7 @@ def coverage_catalog() -> dict:
         "reference_binary_conformance", "all_73_formal_problem_specifications",
     ]
     fragment_source = ROOT / "ProofsLean/IntegerALU.lean"
-    reference = ROOT / "evidence/integer-alu/reference.json"
-    experiment = None
-    if reference.exists():
-        record = json.loads(reference.read_text())
-        vectors = reference.with_name("vectors.tsv")
-        if digest(vectors) != record["vectors_sha256"]:
-            raise ValueError("integer ALU reference vectors changed")
-        if record["cases"] != len(vectors.read_text().splitlines()):
-            raise ValueError("integer ALU reference case count mismatch")
-        counts = dict(Counter(row.split("\t")[0] for row in vectors.read_text().splitlines()))
-        if counts != record["cases_per_spelling"]:
-            raise ValueError("integer ALU spelling coverage mismatch")
-        if record["matched"] != record["cases"] or record["differences"]:
-            raise ValueError("integer ALU reference comparison has unresolved differences")
-        for item in record["sources"]:
-            source = REPO / item["path"]
-            optional_tool = item["path"] in (
-                "judge/judge-py/mncore2_emuenv/assemble3",
-                "judge/judge-py/mncore2_emuenv/gpfn3_package_main")
-            if optional_tool and not source.exists():
-                continue  # Official proprietary binaries are not distributed in CI.
-            if digest(source) != item["sha256"]:
-                raise ValueError(f"stale integer ALU comparison: {item['path']}")
-        if any(record[key] for key in ("proves_universal_conformance", "proves_isa_completeness", "proves_optimality")):
-            raise ValueError("finite comparison cannot promote a universal claim")
-        experiment = {"path": reference.relative_to(REPO).as_posix(),
-                      "sha256": digest(reference), "cases": record["cases"],
-                      "scope": record["scope"], "formal_conformance_proof": False}
+    untyped_source = ROOT / "ProofsLean/UntypedALU.lean"
     return {
         "schema_version": 1,
         "isa_exhaustiveness_proven": False,
@@ -157,11 +202,19 @@ def coverage_catalog() -> dict:
             "implemented": "16/32/64-bit inc/dec/add/sub/not/lnot/and/or/xor/integer max/min/passa/lsl/lsr/bsl/bsr/packbit; lane packing, replicated flags and LSB bypass",
             "scope": "Already-read and already-reduced buses only; not VSM instruction execution or legality",
             "missing": "Operand decoding/access/reduction, masks, timing/forwarding, parallel issue, all other ISA operations",
-            "reference_experiment": experiment,
+            "reference_experiment": datapath_experiment("integer-alu", 0),
+        }, {
+            "source": untyped_source.relative_to(REPO).as_posix(), "sha256": digest(untyped_source),
+            "implemented": "zero and 32-bit imm/immu; explicit manualReading/referenceBinary profiles for msl/msr",
+            "scope": "Already-read buses of four PEs in one MAB; unqualified rotation semantics remain unknown",
+            "missing": "Operand access, masks, timing, parallel issue, resolution of rotation LSB discrepancy",
+            "reference_experiment": datapath_experiment("untyped-alu", 1),
         }],
+        "unresolved_semantic_discrepancies": [rotation_discrepancy()],
         "syntax_candidates": [{"spelling": name, "formal_step_semantics": "unimplemented"} for name in spellings],
         "obligations": [{"area": area, "status": "partial_datapath_only" if area in (
-            "integer_16_32_64_and_signedness", "wide_access_and_lsb_passthrough") else "unimplemented"} for area in areas],
+            "integer_16_32_64_and_signedness", "wide_access_and_lsb_passthrough",
+            "immediates_fixed_operands_and_zero", "pe_rotations_and_coordinate_operands") else "unimplemented"} for area in areas],
     }
 
 

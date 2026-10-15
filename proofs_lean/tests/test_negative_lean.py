@@ -17,7 +17,9 @@ class NegativeKernelTests(unittest.TestCase):
             source.write_text("import ProofsLean\n"
                               "#check ProofsLean.FiniteExample.two_lines_optimal\n"
                               "#check ProofsLean.FiniteExample.fill_correct_on_one_case\n"
-                              "#check ProofsLean.FiniteExample.missing_cannot_be_sealed\n")
+                              "#check ProofsLean.FiniteExample.missing_cannot_be_sealed\n"
+                              "#check ProofsLean.MNCore.UntypedALU.unresolved_rotation_is_unknown\n"
+                              "#check ProofsLean.MNCore.UntypedALU.reference_differs_from_manual_when_lsb_nonzero\n")
             result = subprocess.run([cls.lake, "env", "lean", str(source)], cwd=ROOT,
                                     capture_output=True, text=True, timeout=60)
             if result.returncode:
@@ -47,3 +49,15 @@ class NegativeKernelTests(unittest.TestCase):
 
     def test_unknown_semantics_cannot_be_sealed_as_complete(self):
         self.reject("example : missingSemantics.Complete := by\n  intro line state h\n  cases h\n")
+
+    def test_reference_profile_cannot_resolve_unqualified_rotation(self):
+        self.reject("open ProofsLean.MNCore.UntypedALU\n"
+                    "example (input : MABInput) (pe : Fin 4) :\n"
+                    "  partialEvaluate .msl input pe =\n"
+                    "    .ok (evaluateWithPolicy .referenceBinary .msl input pe) := by rfl\n")
+
+    def test_manual_rotation_cannot_be_relabelled_reference_semantics(self):
+        self.reject("open ProofsLean.MNCore.UntypedALU\n"
+                    "example (input : MABInput) (pe : Fin 4) :\n"
+                    "  (evaluateWithPolicy .referenceBinary .msl input pe).value =\n"
+                    "    (evaluateWithPolicy .manualReading .msl input pe).value := by rfl\n")

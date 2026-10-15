@@ -19,6 +19,34 @@
         "scope": "72 integer spellings; 30 common operand pairs plus 48 width-specific boundary pairs for each shift spelling; unmasked unreduced scalar GRF accesses; one PE; all four broadcast cycles",
         "formal_conformance_proof": false
       }
+    },
+    {
+      "source": "proofs_lean/ProofsLean/UntypedALU.lean",
+      "sha256": "e54967be162459ceb3cdf9d2124b5c7e624a9826444bf10353cc174021f2711e",
+      "implemented": "zero and 32-bit imm/immu; explicit manualReading/referenceBinary profiles for msl/msr",
+      "scope": "Already-read buses of four PEs in one MAB; unqualified rotation semantics remain unknown",
+      "missing": "Operand access, masks, timing, parallel issue, resolution of rotation LSB discrepancy",
+      "reference_experiment": {
+        "path": "proofs_lean/evidence/untyped-alu/reference.json",
+        "sha256": "2984e4fbf7c0aafb4a076df4b057085da37672beaad64602c88bc9a6731a08ac",
+        "cases": 384,
+        "scope": "Explicit referenceBinary profile for zero/imm/immu/msl/msr; all four PEs of one MAB; unmasked unreduced scalar GRF; nonzero destination/mask sentinels; manual LSB discrepancy remains unresolved",
+        "formal_conformance_proof": false
+      }
+    }
+  ],
+  "unresolved_semantic_discrepancies": [
+    {
+      "operations": [
+        "msl",
+        "msr"
+      ],
+      "status": "open",
+      "manual_reading": "General one-long-word ALU rule says local first-input LSB passes through",
+      "reference_observation": "MSB rotates; LSB is zero even for nonzero llr input",
+      "canonical_partial_step": "unknown",
+      "evidence": "proofs_lean/evidence/untyped-alu/initial-manual-assumption/reference.json",
+      "snapshot_manifest_sha256": "78e5138c203fde67b490c592df9ecc787d7fa18177ca5ca69860d7fc1ebc7335"
     }
   ],
   "syntax_candidates": [
@@ -786,7 +814,7 @@
     },
     {
       "area": "immediates_fixed_operands_and_zero",
-      "status": "unimplemented"
+      "status": "partial_datapath_only"
     },
     {
       "area": "masks_flush_and_mask_directives",
@@ -806,7 +834,7 @@
     },
     {
       "area": "pe_rotations_and_coordinate_operands",
-      "status": "unimplemented"
+      "status": "partial_datapath_only"
     },
     {
       "area": "l1bm_transfers_turnaround_and_reductions",

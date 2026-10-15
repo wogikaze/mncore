@@ -45,6 +45,12 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   レーンの分割・結合、4ビットのフラグ複製、下位長語の素通りを実装。
   入力は読み出し・精度縮減済みのバスであり、オペランド読み出しや精度縮減そのもの、
   マスク適用、ハザード、同時発行は未実装。未対応要求は実行失敗ではなく`unknown`を返す。
+- `UntypedALU.lean`: zero、imm/immuの2長語出力と、4 PE間のmsl/msrの部分モデル。
+  循環転送の下位長語について、マニュアルの一般則を適用する`manualReading`と
+  公式バイナリで観測した`referenceBinary`を明示的に分けている。
+  未解決の差分があるため、ターゲットを指定しない循環転送は`unknown`となる。
+  左右の転送で全バスが元に戻る定理は`manualReading`の場合の数学的性質であり、
+  実際の循環転送命令の正しさを主張しない。
 
 `Machine.positiveCost` はスコアが正の行へ正規化済みであるという条件。
 MN-Coreにはゼロコストの制御文があるので、その正規化の意味保存と完全性を証明するまでは
@@ -80,6 +86,20 @@ GRFのスカラアクセスのみ。全入力に対する対応証明や全ISA�
 ```sh
 python3 proofs_lean/scripts/check_alu_reference.py \
   --output proofs_lean/evidence/integer-alu/reference.json
+python3 proofs_lean/scripts/catalog.py
+```
+
+`UntypedProbe.lean`の公式比較は96命令×4 PE＝384観測で実施した。
+即値はゼロ・最大値・符号境界など24種類、循環転送はPEごとに異なる入力を16組使用。
+出力とマスクは事前に非ゼロで埋め、未書き込みを成功と誤認しないようにした。
+最初の`manualReading`では循環転送の128観測で下位長語が不一致となった。
+当時のコードと反例は`evidence/untyped-alu/initial-manual-assumption/`に保存した。
+`referenceBinary`を指定したモデルは384観測すべて一致したが、マニュアルとの対応は未解決。
+`coverage.json`にも未解決の差分として記録し、証明数を増やす根拠にはしない。
+
+```sh
+python3 proofs_lean/scripts/check_untyped_reference.py \
+  --output proofs_lean/evidence/untyped-alu/reference.json
 python3 proofs_lean/scripts/catalog.py
 ```
 

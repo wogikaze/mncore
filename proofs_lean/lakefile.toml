@@ -12,3 +12,7 @@ root = "Main"
 [[lean_exe]]
 name = "alu_probe"
 root = "ALUProbe"
+
+[[lean_exe]]
+name = "untyped_probe"
+root = "UntypedProbe"
