@@ -1080,6 +1080,144 @@ def repair(steps: list[Step], asm) -> list[Step] | None:
     return None
 
 
+def _rw_sets(ins):
+    """(reads, writes) of an instruction as resource tokens (PE words exactly; transfer buffers by
+    kind; forwarding registers and mask entries by name)."""
+    def tokens(x):
+        if isinstance(x, Mem):
+            if x.tind or x.space == "t":
+                return {("pe", x.space)}
+            return {("pe", x.space, w) for c in range(4) for w in x.words(c)}
+        if isinstance(x, L1):
+            if x.addr is None:
+                return {("lbi",)}
+            return {("l1", a) for a in range(x.addr, x.addr + _l1_extent(ins.opcode, x.wl))}
+        if isinstance(x, L2):
+            return {("l2", a) for a in range(x.addr, x.addr + _l2_extent(ins.opcode))}
+        if isinstance(x, Pdm):
+            return {("pdm",)}
+        if isinstance(x, Dram):
+            return {("dram",)}
+        if isinstance(x, Fwd):
+            return {("fwd", x.kind)}
+        if isinstance(x, Omr):
+            return {("omr", x.entry)}
+        if isinstance(x, Mask) and x.entry is not None:
+            return {("omr", x.entry)}
+        return set()
+
+    reads, writes = set(), set()
+    for x in ins.srcs:
+        reads |= tokens(x)
+        if isinstance(x, Mem) and x.tind:
+            reads.add(("pe", "t"))
+    for x in ins.dsts:
+        writes |= tokens(x)
+        if isinstance(x, Mem) and x.mask is not None:
+            reads |= tokens(x.mask)
+    if ins.flush is not None:
+        reads |= tokens(ins.flush)
+    name = ins.opcode.split("/")[0]
+    if name.startswith("mv"):
+        # MV statements: whole L2BM (any group), PDM and DRAM
+        allc = {("l2", a) for a in range(0, 4096)}
+        reads |= allc | {("pdm",), ("dram",)}
+        writes |= allc | {("pdm",), ("dram",)}
+    if any(isinstance(x, L1) and x.addr is not None for x in ins.dsts) and any(isinstance(x, (Mem, Fwd)) for x in ins.srcs):
+        writes.add(("lbi",))  # a PE->L1BM transfer also refreshes the turnaround register
+    return reads, writes
+
+
+def _base_opcode(opcode: str) -> str:
+    return re.split(r"[@+\-/]", opcode, maxsplit=1)[0]
+
+
+def _l1_extent(opcode: str, wl: int) -> int:
+    """L1BM long words an instruction reads or writes over its four cycles (SDM 3.6.7, 3.6.8)."""
+    name = _base_opcode(opcode)
+    k = max(1, wl // 2)
+    if name.startswith("l2bmb") or name.startswith("l2bmi"):
+        return 64
+    if name.startswith("l2bmd"):
+        return 32
+    if name.startswith("l2bm"):
+        return 64
+    if name.startswith(("l1bmm4", "l1bmr4")):
+        return 128
+    if name.startswith("l1bmm") or name.startswith("l1bmr"):
+        return 16 * k
+    if name.startswith("l1bmp"):
+        return 4 * k
+    return 256
+
+
+def _l2_extent(opcode: str) -> int:
+    name = _base_opcode(opcode)
+    if name.startswith("l2bmd"):
+        return 256
+    if name.startswith(("l2bmb", "l2bm")):
+        return 64
+    return 4096
+
+
+def _is_transfer(ins) -> bool:
+    name = ins.opcode.split("/")[0]
+    return name.startswith(("l1bm", "l2bm", "mv"))
+
+
+def hoist_transfers(steps: list[Step], asm) -> list[Step]:
+    """Move L1BM/L2BM/MV instructions to earlier steps where their unit is free and no instruction in
+    between touches what they read or write; the official assembler decides the exact hazard
+    distances. Emptied steps become nops (remove_nops trims them afterwards)."""
+    steps = [Step(list(s.instrs), s.nop) for s in steps]
+    if not asm.assemble(emit(steps)).ok:
+        return steps
+    j = 0
+    while j < len(steps):
+        st = steps[j]
+        moved_any = False
+        for ins in list(st.instrs):
+            if not _is_transfer(ins) or any(isinstance(x, Fwd) for x in ins.srcs):
+                continue
+            unit = transfer_unit(ins)
+            mv = unit == "mv"
+            r, w = _rw_sets(ins)
+            # its forwarding result read by the next step would be lost
+            nxt = steps[j + 1] if j + 1 < len(steps) else None
+            if nxt is not None and not nxt.nop and any(isinstance(x, Fwd) and x.kind == "lbf" for i2 in nxt.instrs for x in i2.srcs):
+                continue
+            best = None
+            for i in range(j - 1, -1, -1):
+                tgt = steps[i]
+                blocked = False
+                for other in tgt.instrs:
+                    r2, w2 = _rw_sets(other)
+                    if (r & w2) or (w & (r2 | w2)):
+                        blocked = True
+                        break
+                if blocked:
+                    break
+                if tgt.nop:
+                    continue
+                units = {transfer_unit(o) if _is_transfer(o) else unit_of(o.opcode) for o in tgt.instrs}
+                if unit in units or (mv and tgt.instrs) or "mv" in units:
+                    continue
+                trial = [Step(list(x.instrs), x.nop) for x in steps]
+                trial[i].instrs.append(ins)
+                trial[j].instrs.remove(ins)
+                if not trial[j].instrs:
+                    trial[j] = Step(nop=1)
+                if asm.assemble(emit(trial)).ok:
+                    best = trial
+            if best is not None:
+                steps = best
+                moved_any = True
+                break
+        if not moved_any:
+            j += 1
+    return steps
+
+
 def remove_nops(steps: list[Step], asm, check=None) -> list[Step]:
     changed = True
     while changed:

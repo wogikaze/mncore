@@ -28,7 +28,7 @@ from .tcsynth import tcsynth_strategy
 from .membership import membership_strategy
 from .machine import Mem, emit, words
 from .oracle import flatten_output
-from .schedule import remove_nops, repair, schedule
+from .schedule import hoist_transfers, remove_nops, repair, schedule
 from .select import Constants, GroupGen, exchange_value, lane_type
 from .sim import assembler
 from .trace import lift, trace
@@ -732,7 +732,8 @@ def compile_program(source: str, contract: Contract, *, tries: int = 4, verify_c
                 say(f"{name}: schedule failed ({exc})")
                 continue
         say(f"{name}: scheduled {words(steps)} words")
-        trimmed = remove_nops(steps, asm)
+        hoisted = hoist_transfers(steps, asm) if words(steps) < 400 else steps
+        trimmed = remove_nops(hoisted, asm)
         attempts = [s for s in (trimmed, steps)
                     if line_limit is None or asm.assemble(emit(s)).words < line_limit]
         if not attempts:
