@@ -215,6 +215,9 @@ def bitlinear_value(prog, consts, c0, c_half, bits, dst=None):
             # one op: F << k or F >> s
             if s:
                 val = _op(prog, "ilsr", [t, Use(consts.word32(s))])
+            elif m == 2:
+                # (F << 1) | MSB(0): no shift-amount constant
+                val = _op(prog, "ipackbit", [t, Use(consts.word32(0))])
             elif m > 1:
                 val = _op(prog, "ilsl", [t, Use(consts.word32(m.bit_length() - 1))])
             else:

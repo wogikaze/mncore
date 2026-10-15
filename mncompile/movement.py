@@ -446,25 +446,34 @@ def down_mv_families(l2req, where: Where):
         pass
 
 
+PLANS = 4  # cheapest plans kept: latencies decide the line count, not the instruction count
+
+
+def _cheapest(plans):
+    out, seen = [], set()
+    for p in sorted(plans, key=lambda p: p.cost):
+        key = tuple(tuple(i.text() if hasattr(i, "text") else repr(i) for i in hop) for hop in p.hops)
+        if key not in seen:
+            seen.add(key)
+            out.append(p)
+    return out[:PLANS]
+
+
 def plan_down(req, src_map, space):
     where = Where(src_map)
-    best = None
+    plans = []
     for pe_name, pe_instrs, l1req in down_pe_families(req, space):
         try:
             mv_instrs, l1_instrs = down_l1_segmented(l1req, where)
-            cost = len(pe_instrs) + len(l1_instrs) + len(mv_instrs)
-            if best is None or cost < best.cost:
-                best = Plan(cost, [mv_instrs, l1_instrs, pe_instrs])
+            plans.append(Plan(len(pe_instrs) + len(l1_instrs) + len(mv_instrs), [mv_instrs, l1_instrs, pe_instrs]))
         except CompileError:
             pass
         for l1_name, l1_instrs, l2req in down_l1_families(l1req):
             for mv_name, mv_instrs, _ in down_mv_families(l2req, where):
-                cost = len(pe_instrs) + len(l1_instrs) + len(mv_instrs)
-                if best is None or cost < best.cost:
-                    best = Plan(cost, [mv_instrs, l1_instrs, pe_instrs])
-    if best is None:
+                plans.append(Plan(len(pe_instrs) + len(l1_instrs) + len(mv_instrs), [mv_instrs, l1_instrs, pe_instrs]))
+    if not plans:
         raise CompileError("movement: no download chain")
-    return best
+    return _cheapest(plans)
 
 
 # ---------------------------------------------------------------- up: PE -> L1BM -> L2BM -> DRAM
@@ -737,16 +746,14 @@ def _up_l1bmd_offset(l1req, where, src_space):
 
 def plan_up(req, src_map, src_space):
     where = Where(src_map)
-    best = None
+    plans = []
     for mv_name, mv_instrs, l2req in up_mv_families(req, where):
         for l2_name, l2_instrs, l1req in up_l2_families(l2req, where):
             for pe_name, pe_instrs in up_pe_families(l1req, where, src_space):
-                cost = len(mv_instrs) + len(l2_instrs) + len(pe_instrs)
-                if best is None or cost < best.cost:
-                    best = Plan(cost, [pe_instrs, l2_instrs, mv_instrs])
-    if best is None:
+                plans.append(Plan(len(mv_instrs) + len(l2_instrs) + len(pe_instrs), [pe_instrs, l2_instrs, mv_instrs]))
+    if not plans:
         raise CompileError("movement: no upload chain")
-    return best
+    return _cheapest(plans)
 
 
 # ---------------------------------------------------------------- driver
@@ -766,7 +773,7 @@ def sequence(plan: Plan) -> list[Step]:
 def movement_steps(contract: Contract, outputs: dict):
     dst_space, src_space, req, src_map = word_requirements(contract, outputs)
     if src_space == "dram" and dst_space in ("lm0", "lm1"):
-        return sequence(plan_down(req, src_map, dst_space))
+        return [(f"plan{k}", sequence(p)) for k, p in enumerate(plan_down(req, src_map, dst_space))]
     if src_space in ("lm0", "lm1") and dst_space == "dram":
-        return sequence(plan_up(req, src_map, src_space))
+        return [(f"plan{k}", sequence(p)) for k, p in enumerate(plan_up(req, src_map, src_space))]
     raise CompileError(f"movement: path {src_space} -> {dst_space} not implemented")
