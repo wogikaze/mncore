@@ -1,9 +1,42 @@
 {
   "lines": 6,
-  "strategy": "local/-staged",
+  "mode": "general",
+  "resources": {
+    "lines": 6,
+    "instructions": 6,
+    "nop_lines": 0,
+    "resource_lower_bound": 6,
+    "scheduling_gap": 0,
+    "bottleneck_units": [
+      "alu"
+    ],
+    "unit_counts": {
+      "alu": 6,
+      "mau": 0,
+      "mwrite": 0,
+      "mread": 0,
+      "l1bm": 0,
+      "l1bm-turnaround": 0,
+      "l2bm": 0,
+      "l2bmdarw": 0,
+      "mv": 0
+    },
+    "unit_utilization": {
+      "alu": 1.0,
+      "mau": 0.0,
+      "mwrite": 0.0,
+      "mread": 0.0,
+      "l1bm": 0.0,
+      "l1bm-turnaround": 0.0,
+      "l2bm": 0.0,
+      "l2bmdarw": 0.0,
+      "mv": 0.0
+    }
+  },
+  "strategy": "local/staged",
   "candidates": [
     {
-      "strategy": "local/-staged",
+      "strategy": "local/staged",
       "lines": 6
     }
   ],
@@ -53,6 +86,14 @@
       "reason": "pairs: output is not a sum"
     },
     {
+      "strategy": "membership",
+      "reason": "membership: a term is not an equality of two inputs"
+    },
+    {
+      "strategy": "fmtseq",
+      "reason": "fmtseq: byte string in DRAM"
+    },
+    {
       "strategy": "allgather",
       "reason": "allgather: one input and one output"
     },
@@ -62,5 +103,5 @@
       "vsm": "iadd $lm0v $ln0v $nowrite\niadd $lm8v $ln8v $nowrite; l1bmd $aluf $lbi\nl1bmd $lbi $lm32v\nnop\nnop\niadd $lm16v $ln16v $nowrite\nl1bmd $aluf $lbi\nl1bmd $lbi $lm40v; l1bmd $aluf $lbi\nl1bmd $lbi $lm48v\nnop/2\niadd $lm24v $ln24v $nowrite\nlpassa $aluf $lm56v\n"
     }
   ],
-  "seconds": 5.62
+  "seconds": 12.17
 }

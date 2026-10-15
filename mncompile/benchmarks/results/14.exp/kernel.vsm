@@ -16,15 +16,15 @@ fvfma $mauf $lr8v $ls464 $nowrite
 fvfma $mauf $lr8v $ls464 $lr24v
 ilsl $lr16v $ls466 $nowrite
 iadd $lr24v $aluf $ln8v
-lpassa $lr448 $nowrite
-fvfma $lr0v $ls450 $aluf $lr8v
-fvadd $mauf -$lr448 $lr16v; ilsl $mauf $ls466 $ls0v
+lpassa $lr448 $lr8v
+fvfma $lr0v $ls450 $aluf $lr16v
+fvadd $mauf -$lr448 $lr24v; ilsl $mauf $ls466 $ls0v
 fvfma $mauf -$ls452 $lr0v $nowrite
-fvfma $lr16v -$ls454 $mauf $lr24v
+fvfma $lr24v -$ls454 $mauf $lr8v
 fvfma $ls456 $mauf $lr450 $nowrite
-fvfma $mauf $lr24v $ls458 $nowrite
-fvfma $mauf $lr24v $ls460 $nowrite
-fvfma $mauf $lr24v $ls462 $nowrite
-fvfma $mauf $lr24v $ls464 $nowrite
-fvfma $mauf $lr24v $ls464 $nowrite
+fvfma $mauf $lr8v $ls458 $nowrite
+fvfma $mauf $lr8v $ls460 $nowrite
+fvfma $mauf $lr8v $ls462 $nowrite
+fvfma $mauf $lr8v $ls464 $nowrite
+fvfma $mauf $lr8v $ls464 $nowrite
 iadd $mauf $ls0v $ln0v

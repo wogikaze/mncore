@@ -37,7 +37,9 @@ and the shortest one is kept. Approximations (Newton steps, polynomial degree, d
 the error budget) are searched under the budget.
 
 On the 73 problems (25 original Challenge + 48 MNIST set) every generated program is accepted by the
-official judge; 19 are at or below the reference line counts. See the table in
+official judge; 16 are at or below the reference line counts, including 3 strictly below.
+The benchmark compares general compilation with an optional mode specialized to the official inputs.
+See the table in
 [mncompile/README.md](mncompile/README.md) and the generated programs in `mncompile/benchmarks/results/`.
 
 ```bash

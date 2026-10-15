@@ -35,18 +35,18 @@ ffloor $mauf $nowrite; fvadd $lr16v $ls460 $lr16v/$imr2
 fvadd $aluf $ls484v $lr8v; imm ui"0x3E4CCCCD" $ls498/1000
 fvadd $lr16v $ls460 $lr16v/$imr3
 fvadd $lr0v $ls492 $lr24v; imm ui"0x3DCCCCCD" $ls500/1000
-fvadd $lr16v $ls460 $ls8v; imm ui"0x4B000075" $lr448/1000
+fvadd $lr16v $ls460 $ls8v; imm ui"0x4B000042" $lr448/1000
 fvmul $lr8v $ls494 $nowrite; imm ui"0x4B000046" $ls504/1000
 ffloor $mauf $ls0v; fvmul $lr8v $ls496 $nowrite
 ffloor $mauf $lr0v; fvmul $lr8v $ls498 $nowrite
 ffloor $mauf $ls16v; fvadd $lr24v $ls8v $nowrite
 fvfma $lr16v $ls0v $mauf $lr24v; imm ui"0x4B000069" $ls506/1000
-fvadd $lr0v $ls16v $ls0v; imm ui"0x4B00000A" $lr450/1000
+fvadd $lr0v $ls16v $ls0v; imm ui"0x4B000075" $lr450/1000
 fvadd $ls492 -$lr16v $nowrite; imm ui"0x4B00007A" $ls508/1000
 fvfma $mauf $ls0v $lr24v $nowrite; imm ui"0x4B000030" $ls502/1000
-fvfma $ls8v $lr8v $mauf $nowrite; imm ui"0x4B000042" $ls510/1000
+fvfma $ls8v $lr8v $mauf $nowrite; imm ui"0x4B00000A" $lr452/1000
 fftoi $mauf $llt; fvmul $ls500 $ls500 $lr16v
-fvmul $mauf $ls500 $nowrite; imm ui"0x00000008" $lr452/1000
+fvmul $mauf $ls500 $nowrite; imm ui"0x00000008" $lr454/1000
 fvmul $lr8v $mauf $nowrite; lpassa $ls504 $mt0
 ffloor $mauf $lr24v; fvmul $lr8v $ls500 $nowrite
 ffloor $mauf $lr32v; fvpassa $ls506 $mt1
@@ -60,7 +60,7 @@ fvadd $mauf -$lr8v $omr1
 fvadd $ls454 -$lr40v $nowrite
 fvmul $ls16v $mauf $nowrite
 fvadd $mauf -$lr8v $omr2; lpassa $ls504 $mt4/$imr1
-fvpassa $ls510 $mt4/$imr2
+fvpassa $lr448 $mt4/$imr2
 lpassa $ls468 $lr0v
 fvadd $ls454 -$aluf $ls0v
 fvmul $lr24v -$mauf $lr40v
@@ -74,20 +74,20 @@ fvmul $lr24v -$ls0v $nowrite
 fvadd $mauf $lr32v $lr16v
 fvadd $lr8v $ls502 $mt5
 fvpassa $ls506 $mt5/$imr1
-fvpassa $lr448 $mt5/$imr2
+fvpassa $lr450 $mt5/$imr2
 fvadd $lr16v $ls502 $mt6
 fvpassa $ls508 $mt6/$imr1
 fvpassa $ls508 $mt6/$imr2
 fvadd $lr0v $ls502 $mt7
 fvpassa $ls508 $mt7/$imr1
 fvpassa $ls508 $mt7/$imr2
-fvpassa $lr450 $mt8
+fvpassa $lr452 $mt8
 nop/2
-ilsl $m[13,17,13,17] $lr452 $nowrite
+ilsl $m[13,17,13,17] $lr454 $nowrite
 ior $aluf $m[14,18,14,18] $nowrite
-ilsl $aluf $lr452 $nowrite
+ilsl $aluf $lr454 $nowrite
 ior $aluf $m[15,19,15,19] $nowrite
-ilsl $aluf $lr452 $lr40v
+ilsl $aluf $lr454 $lr40v
 isub $m[16,20,16,20] $ls448 $nowrite
 ior $lr40v $aluf $n[0,1,0,1]/1100
 nop/2

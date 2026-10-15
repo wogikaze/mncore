@@ -1,5 +1,38 @@
 {
   "lines": 32,
+  "mode": "general",
+  "resources": {
+    "lines": 32,
+    "instructions": 33,
+    "nop_lines": 0,
+    "resource_lower_bound": 31,
+    "scheduling_gap": 1,
+    "bottleneck_units": [
+      "alu"
+    ],
+    "unit_counts": {
+      "alu": 31,
+      "mau": 0,
+      "mwrite": 0,
+      "mread": 0,
+      "l1bm": 1,
+      "l1bm-turnaround": 1,
+      "l2bm": 0,
+      "l2bmdarw": 0,
+      "mv": 0
+    },
+    "unit_utilization": {
+      "alu": 0.96875,
+      "mau": 0.0,
+      "mwrite": 0.0,
+      "mread": 0.0,
+      "l1bm": 0.03125,
+      "l1bm-turnaround": 0.03125,
+      "l2bm": 0.0,
+      "l2bmdarw": 0.0,
+      "mv": 0.0
+    }
+  },
   "strategy": "local",
   "candidates": [
     {
@@ -49,6 +82,14 @@
       "reason": "pairs: a term does not read two elements of one tensor"
     },
     {
+      "strategy": "membership",
+      "reason": "membership: a term is not an equality of two inputs"
+    },
+    {
+      "strategy": "fmtseq",
+      "reason": "fmtseq: byte string in DRAM"
+    },
+    {
       "strategy": "allgather",
       "reason": "allgather: output is not a copy"
     },
@@ -57,5 +98,5 @@
       "reason": "lower bound 52 >= best 32"
     }
   ],
-  "seconds": 4.31
+  "seconds": 3.45
 }

@@ -1,5 +1,38 @@
 {
   "lines": 30,
+  "mode": "general",
+  "resources": {
+    "lines": 30,
+    "instructions": 23,
+    "nop_lines": 7,
+    "resource_lower_bound": 21,
+    "scheduling_gap": 9,
+    "bottleneck_units": [
+      "alu"
+    ],
+    "unit_counts": {
+      "alu": 21,
+      "mau": 0,
+      "mwrite": 0,
+      "mread": 0,
+      "l1bm": 2,
+      "l1bm-turnaround": 0,
+      "l2bm": 0,
+      "l2bmdarw": 0,
+      "mv": 0
+    },
+    "unit_utilization": {
+      "alu": 0.7,
+      "mau": 0.0,
+      "mwrite": 0.0,
+      "mread": 0.0,
+      "l1bm": 0.06666666666666667,
+      "l1bm-turnaround": 0.0,
+      "l2bm": 0.0,
+      "l2bmdarw": 0.0,
+      "mv": 0.0
+    }
+  },
   "strategy": "pairs/l1bmr16/l1bmm2+base",
   "candidates": [
     {
@@ -81,5 +114,5 @@
       "reason": "allgather: output is not a copy"
     }
   ],
-  "seconds": 27.31
+  "seconds": 20.5
 }

@@ -1,5 +1,38 @@
 {
   "lines": 12,
+  "mode": "general",
+  "resources": {
+    "lines": 12,
+    "instructions": 20,
+    "nop_lines": 0,
+    "resource_lower_bound": 8,
+    "scheduling_gap": 4,
+    "bottleneck_units": [
+      "mwrite"
+    ],
+    "unit_counts": {
+      "alu": 6,
+      "mau": 4,
+      "mwrite": 8,
+      "mread": 2,
+      "l1bm": 0,
+      "l1bm-turnaround": 0,
+      "l2bm": 0,
+      "l2bmdarw": 0,
+      "mv": 0
+    },
+    "unit_utilization": {
+      "alu": 0.5,
+      "mau": 0.3333333333333333,
+      "mwrite": 0.6666666666666666,
+      "mread": 0.16666666666666666,
+      "l1bm": 0.0,
+      "l1bm-turnaround": 0.0,
+      "l2bm": 0.0,
+      "l2bmdarw": 0.0,
+      "mv": 0.0
+    }
+  },
   "strategy": "contraction/hm-t",
   "candidates": [
     {
@@ -57,6 +90,14 @@
       "reason": "pairs: integer LM output"
     },
     {
+      "strategy": "membership",
+      "reason": "membership: integer LM output"
+    },
+    {
+      "strategy": "fmtseq",
+      "reason": "fmtseq: byte string in DRAM"
+    },
+    {
       "strategy": "allgather",
       "reason": "allgather: output is not a copy"
     },
@@ -65,5 +106,5 @@
       "reason": "lower bound 20 >= best 12"
     }
   ],
-  "seconds": 68.82
+  "seconds": 50.9
 }

@@ -1,12 +1,6 @@
-gbfn $lm16v4 $nowrite
-gmwrite $aluf $ly0; gbfn $lm32v4 $nowrite
-gmwrite $aluf $ly4; gbfn $lm18v4 $nowrite
-gmwrite $aluf $lx0; gbfn $lm34v4 $nowrite
-gmwrite $aluf $lx4; gbfn $lm0v4 $lr0v
-gmmul $ly $aluf $llr8v; gbfn $lm2v4 $ls0v
-gbfn $lm48v4 $nowrite; gmfma $lx $aluf $mauf $ln0v4
-gmwrite $aluf $ly0; gbfn $lm64v4 $nowrite
-gmwrite $aluf $ly4; gbfn $lm50v4 $nowrite
-gmwrite $aluf $lx0; gbfn $lm66v4 $nowrite; gmmul $ly $lr0v $llr8v
-gmwrite $aluf $lx4
-gmfma $lx $ls0v $llr8v $ln2v4
+hbfn/9 $llm[16,20,48,52]r $nowrite
+hmwrite $aluf $ly0; hbfn/9 $llm[24,28,56,60]r $nowrite
+hmwrite $aluf $ly4; hbfn/9 $llm[32,36,64,68]r $nowrite
+hmwrite $aluf $ly8; hbfn/9 $llm[40,44,72,76]r $nowrite
+hmwrite $aluf $ly12; hbfn/9 $llm0vr $nowrite
+hmmul $ly $aluf $lln0v

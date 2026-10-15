@@ -1,32 +1,32 @@
 imm ui"0x00000001" $ls448/1000
 msl $lm[6,4,2,0] $lr0v
-msr $lm[6,4,2,0] $ls0v
-iand $subpeid $ls448 $omr1
-lpassa $lr0v $ls0v/$imr1
+msr $lm[6,4,2,0] $lr8v
+iand $subpeid $ls448 $omr1; l1bmd $lr0v $lbi
+l1bmd $lbi $lr8v/$imr1
 imm us"0x0008" $ls450/1000
-sbsl $ls0v $aluf $lr0v
+sbsl $lr8v $aluf $lr0v
 imm us"0x0010" $ls452/1000
-ibsl $lr0v $aluf $lr0v
+ibsl $lr0v $aluf $lr8v
 imm us"0x0020" $ls454/1000
-lbsl $lr0v $aluf $lr0v
+lbsl $lr8v $aluf $lr0v
 imm ui"0x55555555" $ls456/1000
 imm ui"0x00000001" $s459/1000
 land $lr0v $ls456 $nowrite
-llsl $aluf $ls458 $lr8v
+llsl $aluf $ls458 $ls0v
 ullsr $lr0v $ls458 $nowrite
 land $aluf $ls456 $nowrite
-lor $aluf $lr8v $lr0v
+lor $aluf $ls0v $lr8v
 imm ui"0x33333333" $ls460/1000
 imm ui"0x00000002" $s463/1000
-land $lr0v $ls460 $nowrite
-llsl $aluf $ls462 $lr8v
-ullsr $lr0v $ls462 $nowrite
+land $lr8v $ls460 $nowrite
+llsl $aluf $ls462 $ls0v
+ullsr $lr8v $ls462 $nowrite
 land $aluf $ls460 $nowrite
-lor $aluf $lr8v $lr0v
+lor $aluf $ls0v $lr0v
 imm ui"0x0F0F0F0F" $ls464/1000
 imm ui"0x00000004" $s467/1000
 land $lr0v $ls464 $nowrite
-llsl $aluf $ls466 $lr8v
+llsl $aluf $ls466 $ls0v
 ullsr $lr0v $ls466 $nowrite
 land $aluf $ls464 $nowrite
-lor $aluf $lr8v $ln0v
+lor $aluf $ls0v $ln0v

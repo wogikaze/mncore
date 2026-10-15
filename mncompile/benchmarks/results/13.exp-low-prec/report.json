@@ -1,5 +1,38 @@
 {
   "lines": 20,
+  "mode": "general",
+  "resources": {
+    "lines": 20,
+    "instructions": 27,
+    "nop_lines": 0,
+    "resource_lower_bound": 15,
+    "scheduling_gap": 5,
+    "bottleneck_units": [
+      "alu"
+    ],
+    "unit_counts": {
+      "alu": 15,
+      "mau": 12,
+      "mwrite": 0,
+      "mread": 0,
+      "l1bm": 0,
+      "l1bm-turnaround": 0,
+      "l2bm": 0,
+      "l2bmdarw": 0,
+      "mv": 0
+    },
+    "unit_utilization": {
+      "alu": 0.75,
+      "mau": 0.6,
+      "mwrite": 0.0,
+      "mread": 0.0,
+      "l1bm": 0.0,
+      "l1bm-turnaround": 0.0,
+      "l2bm": 0.0,
+      "l2bmdarw": 0.0,
+      "mv": 0.0
+    }
+  },
   "strategy": "local/exp_degree3",
   "candidates": [
     {
@@ -8,19 +41,19 @@
     },
     {
       "strategy": "local/exp_degree4",
-      "lines": 27
+      "lines": 24
     },
     {
       "strategy": "local/exp_degree5",
-      "lines": 28
+      "lines": 26
     },
     {
       "strategy": "local/exp_degree6",
-      "lines": 30
+      "lines": 28
     },
     {
       "strategy": "local/exp_degree7",
-      "lines": 33
+      "lines": 30
     }
   ],
   "rejected": [
@@ -106,5 +139,5 @@
       "reason": "lower bound 30 >= best 20"
     }
   ],
-  "seconds": 45.37
+  "seconds": 31.13
 }

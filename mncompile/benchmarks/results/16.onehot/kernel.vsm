@@ -2,14 +2,14 @@ imm ui"0x00000003" $ls450/1000
 imm ui"0x00000001" $ls448/1000
 imm ui"0x00000004" $ls452/1000
 ilsr $peid $ls450 $nowrite
-ilsl $aluf $ls452 $lr0v
+ilsl $aluf $ls452 $ls0v
 ilsr $peid $ls450 $nowrite
-ilsl $aluf $ls452 $lr8v
+ilsl $aluf $ls452 $ls8v
 ilsl $peid $ls448 $nowrite
-isub $aluf $lr0v $nowrite
+isub $aluf $ls0v $nowrite
 iadd $aluf $ls448 $lr0v
 ilsl $peid $ls448 $nowrite
-isub $aluf $lr8v $lr8v
+isub $aluf $ls8v $lr8v
 ilsr $mabid $ls448 $llt
 imm ui"0x3F800000" $ls454/1000
 ixor $mt0v8 $lr8v $omr1

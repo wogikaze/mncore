@@ -1,5 +1,38 @@
 {
   "lines": 6,
+  "mode": "general",
+  "resources": {
+    "lines": 6,
+    "instructions": 10,
+    "nop_lines": 0,
+    "resource_lower_bound": 5,
+    "scheduling_gap": 1,
+    "bottleneck_units": [
+      "alu"
+    ],
+    "unit_counts": {
+      "alu": 5,
+      "mau": 1,
+      "mwrite": 4,
+      "mread": 0,
+      "l1bm": 0,
+      "l1bm-turnaround": 0,
+      "l2bm": 0,
+      "l2bmdarw": 0,
+      "mv": 0
+    },
+    "unit_utilization": {
+      "alu": 0.8333333333333334,
+      "mau": 0.16666666666666666,
+      "mwrite": 0.6666666666666666,
+      "mread": 0.0,
+      "l1bm": 0.0,
+      "l1bm-turnaround": 0.0,
+      "l2bm": 0.0,
+      "l2bmdarw": 0.0,
+      "mv": 0.0
+    }
+  },
   "strategy": "contraction/hm",
   "candidates": [
     {
@@ -10,11 +43,11 @@
   "rejected": [
     {
       "strategy": "relayout",
-      "reason": "local map: ('B', (0, 2)) is not stored in PE 0"
+      "reason": "local map: ('A', (0, 2)) is not stored in PE 0"
     },
     {
       "strategy": "local-reduce",
-      "reason": "local map: ('B', (0, 2)) is not stored in PE 0"
+      "reason": "local map: ('A', (0, 2)) is not stored in PE 0"
     },
     {
       "strategy": "movement",
@@ -37,6 +70,14 @@
       "reason": "pairs: integer LM output"
     },
     {
+      "strategy": "membership",
+      "reason": "membership: integer LM output"
+    },
+    {
+      "strategy": "fmtseq",
+      "reason": "fmtseq: byte string in DRAM"
+    },
+    {
       "strategy": "allgather",
       "reason": "allgather: one input and one output"
     },
@@ -50,27 +91,27 @@
     },
     {
       "strategy": "hierarchy/split-L1B:l1bmm@32/l2bmr/l2bmb/l1bmm2+local",
-      "reason": "lower bound 28 >= best 6"
-    },
-    {
-      "strategy": "hierarchy/split-L1B:l1bmm@16/l2bmr/l2bmb/l1bmm2+local",
-      "reason": "lower bound 29 >= best 6"
+      "reason": "lower bound 34 >= best 6"
     },
     {
       "strategy": "hierarchy/split-MAB:l1bmr32/l1bmm2+local",
-      "reason": "lower bound 32 >= best 6"
+      "reason": "lower bound 35 >= best 6"
+    },
+    {
+      "strategy": "hierarchy/split-L1B:l1bmm@16/l2bmr/l2bmb/l1bmm2+local",
+      "reason": "lower bound 35 >= best 6"
     },
     {
       "strategy": "hierarchy/split-MAB+L1B:l1bmr32/l1bmm2+local",
-      "reason": "lower bound 32 >= best 6"
+      "reason": "lower bound 35 >= best 6"
     },
     {
       "strategy": "hierarchy/split-MAB:l1bmr16/l1bmm2+local",
-      "reason": "lower bound 33 >= best 6"
+      "reason": "lower bound 36 >= best 6"
     },
     {
       "strategy": "hierarchy/split-MAB+L1B:l1bmr16/l1bmm2+local",
-      "reason": "lower bound 33 >= best 6"
+      "reason": "lower bound 36 >= best 6"
     },
     {
       "strategy": "mab-reduce/pe+rot-local",
@@ -78,7 +119,7 @@
     },
     {
       "strategy": "split/mab-reduce/pe+rot-local",
-      "reason": "lower bound 62 >= best 6"
+      "reason": "lower bound 56 >= best 6"
     },
     {
       "strategy": "local",
@@ -86,8 +127,8 @@
     },
     {
       "strategy": "split/local",
-      "reason": "lower bound 310 >= best 6"
+      "reason": "lower bound 278 >= best 6"
     }
   ],
-  "seconds": 39.09
+  "seconds": 31.48
 }

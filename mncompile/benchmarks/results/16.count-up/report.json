@@ -1,5 +1,38 @@
 {
   "lines": 43,
+  "mode": "general",
+  "resources": {
+    "lines": 43,
+    "instructions": 38,
+    "nop_lines": 5,
+    "resource_lower_bound": 27,
+    "scheduling_gap": 16,
+    "bottleneck_units": [
+      "alu"
+    ],
+    "unit_counts": {
+      "alu": 27,
+      "mau": 0,
+      "mwrite": 0,
+      "mread": 0,
+      "l1bm": 1,
+      "l1bm-turnaround": 0,
+      "l2bm": 8,
+      "l2bmdarw": 0,
+      "mv": 2
+    },
+    "unit_utilization": {
+      "alu": 0.627906976744186,
+      "mau": 0.0,
+      "mwrite": 0.0,
+      "mread": 0.0,
+      "l1bm": 0.023255813953488372,
+      "l1bm-turnaround": 0.0,
+      "l2bm": 0.18604651162790697,
+      "l2bmdarw": 0.0,
+      "mv": 0.046511627906976744
+    }
+  },
   "strategy": "generate/spread-pdm",
   "candidates": [
     {
@@ -69,5 +102,5 @@
       "reason": "allgather: one input and one output"
     }
   ],
-  "seconds": 6.42
+  "seconds": 3.37
 }

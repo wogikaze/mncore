@@ -1,12 +1,11 @@
 imm ui"0x00000001" $s449/1000
 ladd $ln0v $ln0v $llt
-imm ui"0x00000000" $ls450/1000
-ixor $subpeid $aluf $omr1
-imm ui"0x00000001" $ls452/1000
+ixor $subpeid $lr510 $omr1
+imm ui"0x00000001" $ls450/1000
 ixor $subpeid $aluf $omr2
-imm ui"0x00000002" $ls454/1000
+imm ui"0x00000002" $ls452/1000
 ixor $subpeid $aluf $omr3
-imm ui"0x00000003" $ls456/1000
+imm ui"0x00000003" $ls454/1000
 ixor $subpeid $aluf $omr4
 lpassa $ls448 $lmt80
 ladd $ln8v $ln8v $llt

@@ -1,5 +1,38 @@
 {
   "lines": 30,
+  "mode": "general",
+  "resources": {
+    "lines": 30,
+    "instructions": 39,
+    "nop_lines": 0,
+    "resource_lower_bound": 20,
+    "scheduling_gap": 10,
+    "bottleneck_units": [
+      "mau"
+    ],
+    "unit_counts": {
+      "alu": 19,
+      "mau": 20,
+      "mwrite": 0,
+      "mread": 0,
+      "l1bm": 0,
+      "l1bm-turnaround": 0,
+      "l2bm": 0,
+      "l2bmdarw": 0,
+      "mv": 0
+    },
+    "unit_utilization": {
+      "alu": 0.6333333333333333,
+      "mau": 0.6666666666666666,
+      "mwrite": 0.0,
+      "mread": 0.0,
+      "l1bm": 0.0,
+      "l1bm-turnaround": 0.0,
+      "l2bm": 0.0,
+      "l2bmdarw": 0.0,
+      "mv": 0.0
+    }
+  },
   "strategy": "local/exp_degree6",
   "candidates": [
     {
@@ -61,28 +94,36 @@
       "reason": "pairs: integer LM output"
     },
     {
+      "strategy": "membership",
+      "reason": "membership: integer LM output"
+    },
+    {
+      "strategy": "fmtseq",
+      "reason": "fmtseq: byte string in DRAM"
+    },
+    {
       "strategy": "allgather",
       "reason": "allgather: output is not a copy"
     },
     {
       "strategy": "local/exp_degree2",
       "reason": "verification: 50 mismatches, e.g. [('C', (0, 10), 0.9999244809150696, 1.0), ('C', (0, 11), 0.02905462309718132, 0.02908809669315815), ('C', (1, 2), 0.9999244809150696, 1.0)]",
-      "vsm": "imm ui\"0xC2AE0000\" $ls448/1000\nfmax $lm0v $aluf $lr0v\nimm ui\"0x3FB8AA3B\" $ls450/1000\nimm ui\"0x4B400000\" $lr448/1000\nfmax $lm8v $ls448 $lr8v\nfvfma $aluf $ls450 $lr448 $lr16v; imm ui\"0x3F317218\" $ls452/1000\nfvadd $mauf -$lr448 $nowrite; imm ui\"0x3F014939\" $ls454/1000\nfvfma $mauf -$ls452 $lr8v $lr8v; imm ui\"0x3F7FFB0D\" $ls456/1000\nimm ui\"0x3F81EE74\" $lr450/1000\nimm ui\"0x00000017\" $ls458/1000; fvfma $ls454 $lr8v $aluf $nowrite\nfvfma $mauf $lr8v $ls456 $lr8v\nilsl $lr16v $ls458 $nowrite\niadd $lr8v $aluf $ln8v\nlpassa $lr448 $nowrite\nfvfma $lr0v $ls450 $aluf $lr16v\nfvadd $mauf -$lr448 $nowrite; ilsl $mauf $ls458 $lr8v\nfvfma $mauf -$ls452 $lr0v $lr16v\nfvfma $ls454 $mauf $lr450 $nowrite\nfvfma $mauf $lr16v $ls456 $nowrite\niadd $mauf $lr8v $ln0v\n"
+      "vsm": "imm ui\"0xC2AE0000\" $ls448/1000\nfmax $lm0v $aluf $lr0v\nimm ui\"0x3FB8AA3B\" $ls450/1000\nimm ui\"0x4B400000\" $lr448/1000\nfmax $lm8v $ls448 $lr8v\nfvfma $aluf $ls450 $lr448 $lr16v; imm ui\"0x3F317218\" $ls452/1000\nfvadd $mauf -$lr448 $nowrite; imm ui\"0x3F014939\" $ls454/1000\nfvfma $mauf -$ls452 $lr8v $lr8v; imm ui\"0x3F7FFB0D\" $ls456/1000\nimm ui\"0x3F81EE74\" $lr450/1000\nimm ui\"0x00000017\" $ls458/1000; fvfma $ls454 $lr8v $aluf $nowrite\nfvfma $mauf $lr8v $ls456 $lr8v\nilsl $lr16v $ls458 $nowrite\niadd $lr8v $aluf $ln8v\nlpassa $lr448 $lr16v\nfvfma $lr0v $ls450 $aluf $lr8v\nfvadd $mauf -$lr448 $nowrite; ilsl $mauf $ls458 $lr16v\nfvfma $mauf -$ls452 $lr0v $lr8v\nfvfma $ls454 $mauf $lr450 $nowrite\nfvfma $mauf $lr8v $ls456 $nowrite\niadd $mauf $lr16v $ln0v\n"
     },
     {
       "strategy": "local/exp_degree3",
       "reason": "verification: 50 mismatches, e.g. [('C', (0, 10), 0.9999244809150696, 1.0), ('C', (0, 11), 0.029086580500006676, 0.02908809669315815), ('C', (1, 2), 0.9999244809150696, 1.0)]",
-      "vsm": "imm ui\"0xC2AE0000\" $ls448/1000\nfmax $lm0v $aluf $lr0v\nimm ui\"0x3FB8AA3B\" $ls450/1000\nimm ui\"0x4B400000\" $lr448/1000\nfmax $lm8v $ls448 $lr8v\nfvfma $aluf $ls450 $lr448 $lr16v; imm ui\"0x3F317218\" $ls452/1000\nfvadd $mauf -$lr448 $nowrite; imm ui\"0x3E2BF3A4\" $ls454/1000\nfvfma $mauf -$ls452 $lr8v $lr8v; imm ui\"0x3F7FFD87\" $ls456/1000\nimm ui\"0x3F014939\" $lr450/1000\nfvfma $ls454 $lr8v $aluf $nowrite; imm ui\"0x3F7FFB0D\" $ls458/1000\nfvfma $mauf $lr8v $ls456 $nowrite; imm ui\"0x00000017\" $ls460/1000\nfvfma $mauf $lr8v $ls458 $lr8v\nilsl $lr16v $ls460 $nowrite\niadd $lr8v $aluf $ln8v\nlpassa $lr448 $nowrite\nfvfma $lr0v $ls450 $aluf $lr16v\nfvadd $mauf -$lr448 $nowrite; ilsl $mauf $ls460 $lr8v\nfvfma $mauf -$ls452 $lr0v $lr16v\nfvfma $ls454 $mauf $lr450 $nowrite\nfvfma $mauf $lr16v $ls456 $nowrite\nfvfma $mauf $lr16v $ls458 $nowrite\niadd $mauf $lr8v $ln0v\n"
+      "vsm": "imm ui\"0xC2AE0000\" $ls448/1000\nfmax $lm0v $aluf $lr0v\nimm ui\"0x3FB8AA3B\" $ls450/1000\nimm ui\"0x4B400000\" $lr448/1000\nfmax $lm8v $ls448 $lr8v\nfvfma $aluf $ls450 $lr448 $lr16v; imm ui\"0x3F317218\" $ls452/1000\nfvadd $mauf -$lr448 $nowrite; imm ui\"0x3E2BF3A4\" $ls454/1000\nfvfma $mauf -$ls452 $lr8v $lr8v; imm ui\"0x3F7FFD87\" $ls456/1000\nimm ui\"0x3F014939\" $lr450/1000\nfvfma $ls454 $lr8v $aluf $nowrite; imm ui\"0x3F7FFB0D\" $ls458/1000\nfvfma $mauf $lr8v $ls456 $nowrite; imm ui\"0x00000017\" $ls460/1000\nfvfma $mauf $lr8v $ls458 $lr8v\nilsl $lr16v $ls460 $nowrite\niadd $lr8v $aluf $ln8v\nlpassa $lr448 $lr16v\nfvfma $lr0v $ls450 $aluf $lr8v\nfvadd $mauf -$lr448 $nowrite; ilsl $mauf $ls460 $lr16v\nfvfma $mauf -$ls452 $lr0v $lr8v\nfvfma $ls454 $mauf $lr450 $nowrite\nfvfma $mauf $lr8v $ls456 $nowrite\nfvfma $mauf $lr8v $ls458 $nowrite\niadd $mauf $lr16v $ln0v\n"
     },
     {
       "strategy": "local/exp_degree4",
       "reason": "verification: 50 mismatches, e.g. [('C', (1, 6), 0.6478845477104187, 0.6478833556175232), ('C', (1, 7), 0.373862087726593, 0.3738632798194885), ('C', (5, 13), 0.6794633865356445, 0.6794623136520386)]",
-      "vsm": "imm ui\"0xC2AE0000\" $ls448/1000\nfmax $lm0v $aluf $lr0v\nimm ui\"0x3FB8AA3B\" $ls450/1000\nimm ui\"0x4B400000\" $lr448/1000\nfmax $lm8v $ls448 $lr8v\nfvfma $aluf $ls450 $lr448 $lr16v; imm ui\"0x3F317218\" $ls452/1000\nfvadd $mauf -$lr448 $lr24v; imm ui\"0xB102E308\" $ls454/1000\nfvfma $mauf -$ls452 $lr8v $nowrite; imm ui\"0x3D2BB1B7\" $ls456/1000\nfvfma $lr24v -$ls454 $mauf $lr8v; imm ui\"0x3EFFFE85\" $ls458/1000\nimm ui\"0x3E2BF3A4\" $lr450/1000\nfvfma $ls456 $lr8v $aluf $nowrite; imm ui\"0x3F7FFD87\" $ls460/1000\nfvfma $mauf $lr8v $ls458 $nowrite; imm ui\"0x3F800001\" $ls462/1000\nfvfma $mauf $lr8v $ls460 $nowrite; imm ui\"0x00000017\" $ls464/1000\nfvfma $mauf $lr8v $ls462 $lr24v\nilsl $lr16v $ls464 $nowrite\niadd $lr24v $aluf $ln8v\nlpassa $lr448 $nowrite\nfvfma $lr0v $ls450 $aluf $lr8v\nfvadd $mauf -$lr448 $lr16v; ilsl $mauf $ls464 $ls0v\nfvfma $mauf -$ls452 $lr0v $nowrite\nfvfma $lr16v -$ls454 $mauf $lr24v\nfvfma $ls456 $mauf $lr450 $nowrite\nfvfma $mauf $lr24v $ls458 $nowrite\nfvfma $mauf $lr24v $ls460 $nowrite\nfvfma $mauf $lr24v $ls462 $nowrite\niadd $mauf $ls0v $ln0v\n"
+      "vsm": "imm ui\"0xC2AE0000\" $ls448/1000\nfmax $lm0v $aluf $lr0v\nimm ui\"0x3FB8AA3B\" $ls450/1000\nimm ui\"0x4B400000\" $lr448/1000\nfmax $lm8v $ls448 $lr8v\nfvfma $aluf $ls450 $lr448 $lr16v; imm ui\"0x3F317218\" $ls452/1000\nfvadd $mauf -$lr448 $lr24v; imm ui\"0xB102E308\" $ls454/1000\nfvfma $mauf -$ls452 $lr8v $nowrite; imm ui\"0x3D2BB1B7\" $ls456/1000\nfvfma $lr24v -$ls454 $mauf $lr8v; imm ui\"0x3EFFFE85\" $ls458/1000\nimm ui\"0x3E2BF3A4\" $lr450/1000\nfvfma $ls456 $lr8v $aluf $nowrite; imm ui\"0x3F7FFD87\" $ls460/1000\nfvfma $mauf $lr8v $ls458 $nowrite; imm ui\"0x3F800001\" $ls462/1000\nfvfma $mauf $lr8v $ls460 $nowrite; imm ui\"0x00000017\" $ls464/1000\nfvfma $mauf $lr8v $ls462 $lr24v\nilsl $lr16v $ls464 $nowrite\niadd $lr24v $aluf $ln8v\nlpassa $lr448 $lr8v\nfvfma $lr0v $ls450 $aluf $lr16v\nfvadd $mauf -$lr448 $lr24v; ilsl $mauf $ls464 $ls0v\nfvfma $mauf -$ls452 $lr0v $nowrite\nfvfma $lr24v -$ls454 $mauf $lr8v\nfvfma $ls456 $mauf $lr450 $nowrite\nfvfma $mauf $lr8v $ls458 $nowrite\nfvfma $mauf $lr8v $ls460 $nowrite\nfvfma $mauf $lr8v $ls462 $nowrite\niadd $mauf $ls0v $ln0v\n"
     },
     {
       "strategy": "local/exp_degree5",
       "reason": "verification: error: max error 9.54e-07 exceeds the safety margin 8e-07",
-      "vsm": "imm ui\"0xC2AE0000\" $ls448/1000\nfmax $lm0v $aluf $lr0v\nimm ui\"0x3FB8AA3B\" $ls450/1000\nimm ui\"0x4B400000\" $lr448/1000\nfmax $lm8v $ls448 $lr8v\nfvfma $aluf $ls450 $lr448 $lr16v; imm ui\"0x3F317218\" $ls452/1000\nfvadd $mauf -$lr448 $lr24v; imm ui\"0xB102E308\" $ls454/1000\nfvfma $mauf -$ls452 $lr8v $nowrite; imm ui\"0x3C0937D6\" $ls456/1000\nfvfma $lr24v -$ls454 $mauf $lr8v; imm ui\"0x3E2AAA02\" $ls458/1000\nimm ui\"0x3D2BB1B7\" $lr450/1000\nfvfma $ls456 $lr8v $aluf $nowrite; imm ui\"0x3EFFFE85\" $ls460/1000\nfvfma $mauf $lr8v $ls458 $nowrite; imm ui\"0x3F800000\" $ls462/1000\nfvfma $mauf $lr8v $ls460 $nowrite; imm ui\"0x3F800001\" $ls464/1000\nfvfma $mauf $lr8v $ls462 $nowrite; imm ui\"0x00000017\" $ls466/1000\nfvfma $mauf $lr8v $ls464 $lr24v\nilsl $lr16v $ls466 $nowrite\niadd $lr24v $aluf $ln8v\nlpassa $lr448 $nowrite\nfvfma $lr0v $ls450 $aluf $lr8v\nfvadd $mauf -$lr448 $lr16v; ilsl $mauf $ls466 $ls0v\nfvfma $mauf -$ls452 $lr0v $nowrite\nfvfma $lr16v -$ls454 $mauf $lr24v\nfvfma $ls456 $mauf $lr450 $nowrite\nfvfma $mauf $lr24v $ls458 $nowrite\nfvfma $mauf $lr24v $ls460 $nowrite\nfvfma $mauf $lr24v $ls462 $nowrite\nfvfma $mauf $lr24v $ls464 $nowrite\niadd $mauf $ls0v $ln0v\n"
+      "vsm": "imm ui\"0xC2AE0000\" $ls448/1000\nfmax $lm0v $aluf $lr0v\nimm ui\"0x3FB8AA3B\" $ls450/1000\nimm ui\"0x4B400000\" $lr448/1000\nfmax $lm8v $ls448 $lr8v\nfvfma $aluf $ls450 $lr448 $lr16v; imm ui\"0x3F317218\" $ls452/1000\nfvadd $mauf -$lr448 $lr24v; imm ui\"0xB102E308\" $ls454/1000\nfvfma $mauf -$ls452 $lr8v $nowrite; imm ui\"0x3C0937D6\" $ls456/1000\nfvfma $lr24v -$ls454 $mauf $lr8v; imm ui\"0x3E2AAA02\" $ls458/1000\nimm ui\"0x3D2BB1B7\" $lr450/1000\nfvfma $ls456 $lr8v $aluf $nowrite; imm ui\"0x3EFFFE85\" $ls460/1000\nfvfma $mauf $lr8v $ls458 $nowrite; imm ui\"0x3F800000\" $ls462/1000\nfvfma $mauf $lr8v $ls460 $nowrite; imm ui\"0x3F800001\" $ls464/1000\nfvfma $mauf $lr8v $ls462 $nowrite; imm ui\"0x00000017\" $ls466/1000\nfvfma $mauf $lr8v $ls464 $lr24v\nilsl $lr16v $ls466 $nowrite\niadd $lr24v $aluf $ln8v\nlpassa $lr448 $lr8v\nfvfma $lr0v $ls450 $aluf $lr16v\nfvadd $mauf -$lr448 $lr24v; ilsl $mauf $ls466 $ls0v\nfvfma $mauf -$ls452 $lr0v $nowrite\nfvfma $lr24v -$ls454 $mauf $lr8v\nfvfma $ls456 $mauf $lr450 $nowrite\nfvfma $mauf $lr8v $ls458 $nowrite\nfvfma $mauf $lr8v $ls460 $nowrite\nfvfma $mauf $lr8v $ls462 $nowrite\nfvfma $mauf $lr8v $ls464 $nowrite\niadd $mauf $ls0v $ln0v\n"
     },
     {
       "strategy": "split/local/exp_degree2",
@@ -105,5 +146,5 @@
       "vsm": "imm ui\"0x00000003\" $ls450/1000\nimm ui\"0x00000001\" $ls448/1000\nilsr $mabid $ls450 $lr0v\nimm ui\"0x00000004\" $ls452/1000\nilsl $mabid $ls448 $lr8v\nilsl $lr0v $ls452 $nowrite\nisub $lr8v $aluf $llt\nimm ui\"0xC2AE0000\" $ls454/1000\nfmax $lmt0 $aluf $lr0v\nimm ui\"0x3FB8AA3B\" $ls456/1000\nimm ui\"0x4B400000\" $lr448/1000\nfvfma $lr0v $ls456 $aluf $lr8v; imm ui\"0x3F317218\" $ls458/1000\nfvadd $mauf -$lr448 $lr16v; imm ui\"0xB102E308\" $ls460/1000\nfvfma $mauf -$ls458 $lr0v $nowrite; imm ui\"0x3C0937D6\" $ls462/1000\nfvfma $lr16v -$ls460 $mauf $lr0v; imm ui\"0x3E2AAA02\" $ls464/1000\nimm ui\"0x3D2BB1B7\" $lr450/1000\nfvfma $ls462 $lr0v $aluf $nowrite; imm ui\"0x3EFFFE85\" $ls466/1000\nfvfma $mauf $lr0v $ls464 $nowrite; imm ui\"0x3F800000\" $ls468/1000\nfvfma $mauf $lr0v $ls466 $nowrite; imm ui\"0x3F800001\" $ls470/1000\nfvfma $mauf $lr0v $ls468 $nowrite; imm ui\"0x00000017\" $ls472/1000\nfvfma $mauf $lr0v $ls470 $lr16v\nilsl $lr8v $ls472 $nowrite\niadd $lr16v $aluf $ln16\nnop/3\nl1bmd $ln16v $lb0\nnop/3\nl1bmm $llb0 $lln0v\n"
     }
   ],
-  "seconds": 71.91
+  "seconds": 51.88
 }

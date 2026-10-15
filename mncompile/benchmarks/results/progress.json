@@ -8,16 +8,29 @@
       "slug": "plus_one",
       "reference_lines": 2,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 2,
+          "strategy": "local"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 2,
+          "strategy": "local"
+        }
+      },
       "lines": 2,
       "strategy": "local",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 2
+          "score": 2,
+          "detail": null
         }
       ],
-      "seconds": 2.0,
       "resources": {
         "lines": 2,
         "instructions": 2,
@@ -50,6 +63,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 0,
       "reference_resources": {
         "lines": 2,
         "instructions": 2,
@@ -82,23 +96,36 @@
           "mv": 0.0
         }
       },
-      "line_delta": 0
+      "seconds": 11.3
     },
     {
       "problem": "2.plus-two",
       "slug": "plus_two",
       "reference_lines": 5,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 7,
+          "strategy": "local"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 7,
+          "strategy": "local"
+        }
+      },
       "lines": 7,
       "strategy": "local",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 7
+          "score": 7,
+          "detail": null
         }
       ],
-      "seconds": 2.2,
       "resources": {
         "lines": 7,
         "instructions": 6,
@@ -131,6 +158,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 2,
       "reference_resources": {
         "lines": 5,
         "instructions": 5,
@@ -163,23 +191,36 @@
           "mv": 0.0
         }
       },
-      "line_delta": 2
+      "seconds": 9.5
     },
     {
       "problem": "3.a-plus-b",
       "slug": "a_plus_b",
       "reference_lines": 6,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 6,
+          "strategy": "local/staged"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 6,
+          "strategy": "local/staged"
+        }
+      },
       "lines": 6,
-      "strategy": "local/-staged",
+      "strategy": "local/staged",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 6
+          "score": 6,
+          "detail": null
         }
       ],
-      "seconds": 6.2,
       "resources": {
         "lines": 6,
         "instructions": 6,
@@ -212,6 +253,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 0,
       "reference_resources": {
         "lines": 6,
         "instructions": 6,
@@ -244,23 +286,36 @@
           "mv": 0.0
         }
       },
-      "line_delta": 0
+      "seconds": 66.5
     },
     {
       "problem": "4.mul7",
       "slug": "mul7",
       "reference_lines": 6,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 10,
+          "strategy": "local"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 10,
+          "strategy": "local"
+        }
+      },
       "lines": 10,
       "strategy": "local",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 10
+          "score": 10,
+          "detail": null
         }
       ],
-      "seconds": 2.2,
       "resources": {
         "lines": 10,
         "instructions": 9,
@@ -293,6 +348,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 4,
       "reference_resources": {
         "lines": 6,
         "instructions": 10,
@@ -326,55 +382,68 @@
           "mv": 0.0
         }
       },
-      "line_delta": 4
+      "seconds": 8.2
     },
     {
       "problem": "5.abs",
       "slug": "abs",
       "reference_lines": 13,
       "status": "accepted",
-      "lines": 23,
-      "strategy": "local",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 15,
+          "strategy": "local/alternating"
+        },
+        "testcase": {
+          "status": "no_improvement",
+          "reason": "no strategy produced a verified program: [{\"strategy\": \"relayout\", \"reason\": \"relayout: operands already aligned (plain local map)\"}, {\"strategy\": \"local-reduce\", \"reason\": \"local reduce: class is not a reduction\"}, {\"strategy\": \"movement\", \"reason\": \"movement: output is not a copy of an input element\"}, {\"strategy\": \"contraction\", \"reason\": \"contraction: output is not a sum of products\"}, {\"strategy\": \"pe-reduce\", \"reason\": \"pe-reduce: output is not a reduction\"}, {\"strategy\": \"gather\", \"reason"
+        }
+      },
+      "lines": 15,
+      "strategy": "local/alternating",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 23
+          "score": 15,
+          "detail": null
         }
       ],
-      "seconds": 5.6,
       "resources": {
-        "lines": 23,
-        "instructions": 23,
+        "lines": 15,
+        "instructions": 47,
         "nop_lines": 0,
-        "resource_lower_bound": 23,
-        "scheduling_gap": 0,
+        "resource_lower_bound": 14,
+        "scheduling_gap": 1,
         "bottleneck_units": [
           "alu"
         ],
         "unit_counts": {
-          "alu": 23,
-          "mau": 0,
+          "alu": 14,
+          "mau": 11,
           "mwrite": 0,
           "mread": 0,
-          "l1bm": 0,
-          "l1bm-turnaround": 0,
+          "l1bm": 11,
+          "l1bm-turnaround": 11,
           "l2bm": 0,
           "l2bmdarw": 0,
           "mv": 0
         },
         "unit_utilization": {
-          "alu": 1.0,
-          "mau": 0.0,
+          "alu": 0.9333333333333333,
+          "mau": 0.7333333333333333,
           "mwrite": 0.0,
           "mread": 0.0,
-          "l1bm": 0.0,
-          "l1bm-turnaround": 0.0,
+          "l1bm": 0.7333333333333333,
+          "l1bm-turnaround": 0.7333333333333333,
           "l2bm": 0.0,
           "l2bmdarw": 0.0,
           "mv": 0.0
         }
       },
+      "line_delta": 2,
       "reference_resources": {
         "lines": 13,
         "instructions": 45,
@@ -407,23 +476,36 @@
           "mv": 0.0
         }
       },
-      "line_delta": 10
+      "seconds": 44.9
     },
     {
       "problem": "6.fadd-mul",
       "slug": "fadd_mul",
       "reference_lines": 14,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 18,
+          "strategy": "local"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 18,
+          "strategy": "local"
+        }
+      },
       "lines": 18,
       "strategy": "local",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 18
+          "score": 18,
+          "detail": null
         }
       ],
-      "seconds": 10.2,
       "resources": {
         "lines": 18,
         "instructions": 18,
@@ -456,6 +538,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 4,
       "reference_resources": {
         "lines": 14,
         "instructions": 32,
@@ -488,23 +571,36 @@
           "mv": 0.0
         }
       },
-      "line_delta": 4
+      "seconds": 40.0
     },
     {
       "problem": "7.mul2",
       "slug": "mul2",
       "reference_lines": 9,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 13,
+          "strategy": "local"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 13,
+          "strategy": "local"
+        }
+      },
       "lines": 13,
       "strategy": "local",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 13
+          "score": 13,
+          "detail": null
         }
       ],
-      "seconds": 13.9,
       "resources": {
         "lines": 13,
         "instructions": 13,
@@ -537,6 +633,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 4,
       "reference_resources": {
         "lines": 9,
         "instructions": 19,
@@ -569,23 +666,36 @@
           "mv": 0.0
         }
       },
-      "line_delta": 4
+      "seconds": 53.5
     },
     {
       "problem": "8.fle",
       "slug": "fle",
       "reference_lines": 4,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 9,
+          "strategy": "local/base"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 9,
+          "strategy": "local/base"
+        }
+      },
       "lines": 9,
-      "strategy": "local",
+      "strategy": "local/base",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 9
+          "score": 9,
+          "detail": null
         }
       ],
-      "seconds": 4.7,
       "resources": {
         "lines": 9,
         "instructions": 12,
@@ -618,6 +728,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 5,
       "reference_resources": {
         "lines": 4,
         "instructions": 7,
@@ -650,23 +761,36 @@
           "mv": 0.0
         }
       },
-      "line_delta": 5
+      "seconds": 28.2
     },
     {
       "problem": "9.transpose-addr",
       "slug": "transpose_addr",
       "reference_lines": 10,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 16,
+          "strategy": "local"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 16,
+          "strategy": "local"
+        }
+      },
       "lines": 16,
       "strategy": "local",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 16
+          "score": 16,
+          "detail": null
         }
       ],
-      "seconds": 6.1,
       "resources": {
         "lines": 16,
         "instructions": 16,
@@ -699,6 +823,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 6,
       "reference_resources": {
         "lines": 10,
         "instructions": 16,
@@ -731,23 +856,35 @@
           "mv": 0.0
         }
       },
-      "line_delta": 6
+      "seconds": 25.6
     },
     {
       "problem": "10.gather-easy",
       "slug": "gather_easy",
       "reference_lines": 6,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 12,
+          "strategy": "gather"
+        },
+        "testcase": {
+          "status": "no_improvement",
+          "reason": "no strategy produced a verified program: [{\"strategy\": \"local\", \"reason\": \"no float rule for gather\"}, {\"strategy\": \"relayout\", \"reason\": \"relayout: 32-bit lanes only\"}, {\"strategy\": \"local-reduce\", \"reason\": \"local reduce: class is not a reduction\"}, {\"strategy\": \"movement\", \"reason\": \"movement: output is not a copy of an input element\"}, {\"strategy\": \"contraction\", \"reason\": \"contraction: output is not a sum of products\"}, {\"strategy\": \"pe-reduce\", \"reason\": \"pe-reduce: mixed dtypes\"}, {\"strat"
+        }
+      },
       "lines": 12,
       "strategy": "gather",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 12
+          "score": 12,
+          "detail": null
         }
       ],
-      "seconds": 172.8,
       "resources": {
         "lines": 12,
         "instructions": 8,
@@ -780,6 +917,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 6,
       "reference_resources": {
         "lines": 6,
         "instructions": 7,
@@ -812,23 +950,35 @@
           "mv": 0.0
         }
       },
-      "line_delta": 6
+      "seconds": 861.6
     },
     {
       "problem": "11.square-sum",
       "slug": "square_sum",
       "reference_lines": 11,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 21,
+          "strategy": "hierarchy/split-MAB+L1B:l1bmr16/l2bmr/l2bmb/l1bmm2+local"
+        },
+        "testcase": {
+          "status": "no_improvement",
+          "reason": "no strategy produced a verified program: [{\"strategy\": \"relayout\", \"reason\": \"relayout: 32-bit lanes only\"}, {\"strategy\": \"movement\", \"reason\": \"movement: output is not a copy of an input element\"}, {\"strategy\": \"contraction\", \"reason\": \"contraction: no unambiguous terms\"}, {\"strategy\": \"pe-reduce\", \"reason\": \"pe-reduce: terms must be input elements\"}, {\"strategy\": \"gather\", \"reason\": \"gather: output is not a table lookup by an input index\"}, {\"strategy\": \"mab-reduce\", \"reason\": \"hierarchy: a PE"
+        }
+      },
       "lines": 21,
       "strategy": "hierarchy/split-MAB+L1B:l1bmr16/l2bmr/l2bmb/l1bmm2+local",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 21
+          "score": 21,
+          "detail": null
         }
       ],
-      "seconds": 101.8,
       "resources": {
         "lines": 21,
         "instructions": 11,
@@ -861,6 +1011,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 10,
       "reference_resources": {
         "lines": 11,
         "instructions": 10,
@@ -893,23 +1044,36 @@
           "mv": 0.0
         }
       },
-      "line_delta": 10
+      "seconds": 307.0
     },
     {
       "problem": "12.convert-endian",
       "slug": "convert_endian",
       "reference_lines": 3,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 6,
+          "strategy": "local"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 6,
+          "strategy": "local"
+        }
+      },
       "lines": 6,
       "strategy": "local",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 6
+          "score": 6,
+          "detail": null
         }
       ],
-      "seconds": 1.0,
       "resources": {
         "lines": 6,
         "instructions": 6,
@@ -942,6 +1106,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 3,
       "reference_resources": {
         "lines": 3,
         "instructions": 4,
@@ -974,23 +1139,36 @@
           "mv": 0.0
         }
       },
-      "line_delta": 3
+      "seconds": 2.2
     },
     {
       "problem": "13.mod3",
       "slug": "mod3",
       "reference_lines": 8,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 15,
+          "strategy": "local"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 15,
+          "strategy": "local"
+        }
+      },
       "lines": 15,
       "strategy": "local",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 15
+          "score": 15,
+          "detail": null
         }
       ],
-      "seconds": 4.8,
       "resources": {
         "lines": 15,
         "instructions": 27,
@@ -1023,6 +1201,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 7,
       "reference_resources": {
         "lines": 8,
         "instructions": 18,
@@ -1055,23 +1234,36 @@
           "mv": 0.0
         }
       },
-      "line_delta": 7
+      "seconds": 7.1
     },
     {
       "problem": "14.mat-sq",
       "slug": "mat_sq",
       "reference_lines": 10,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 12,
+          "strategy": "contraction/hm-t"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 12,
+          "strategy": "contraction/hm-t"
+        }
+      },
       "lines": 12,
       "strategy": "contraction/hm-t",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 12
+          "score": 12,
+          "detail": null
         }
       ],
-      "seconds": 70.3,
       "resources": {
         "lines": 12,
         "instructions": 20,
@@ -1104,6 +1296,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 2,
       "reference_resources": {
         "lines": 10,
         "instructions": 18,
@@ -1137,35 +1330,47 @@
           "mv": 0.0
         }
       },
-      "line_delta": 2
+      "seconds": 102.8
     },
     {
       "problem": "15.contains",
       "slug": "contains",
       "reference_lines": 20,
       "status": "accepted",
-      "lines": 60,
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 59,
+          "strategy": "hierarchy/l1bmr16/l1bmp2+pe+rot-membership/zero-init"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 59,
+          "strategy": "hierarchy/l1bmr16/l1bmp2+pe+rot-membership/zero-init"
+        }
+      },
+      "lines": 59,
       "strategy": "hierarchy/l1bmr16/l1bmp2+pe+rot-membership/zero-init",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 60,
+          "score": 59,
           "detail": null
         }
       ],
-      "seconds": 256.6,
       "resources": {
-        "lines": 60,
-        "instructions": 54,
+        "lines": 59,
+        "instructions": 53,
         "nop_lines": 10,
-        "resource_lower_bound": 47,
+        "resource_lower_bound": 46,
         "scheduling_gap": 13,
         "bottleneck_units": [
           "alu"
         ],
         "unit_counts": {
-          "alu": 47,
+          "alu": 46,
           "mau": 0,
           "mwrite": 0,
           "mread": 0,
@@ -1176,17 +1381,18 @@
           "mv": 0
         },
         "unit_utilization": {
-          "alu": 0.7833333333333333,
+          "alu": 0.7796610169491526,
           "mau": 0.0,
           "mwrite": 0.0,
           "mread": 0.0,
-          "l1bm": 0.08333333333333333,
-          "l1bm-turnaround": 0.03333333333333333,
+          "l1bm": 0.0847457627118644,
+          "l1bm-turnaround": 0.03389830508474576,
           "l2bm": 0.0,
           "l2bmdarw": 0.0,
           "mv": 0.0
         }
       },
+      "line_delta": 39,
       "reference_resources": {
         "lines": 20,
         "instructions": 32,
@@ -1219,15 +1425,28 @@
           "mv": 0.0
         }
       },
-      "line_delta": 40
+      "seconds": 347.1
     },
     {
       "problem": "16.count-up",
       "slug": "count_up",
       "reference_lines": 21,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 43,
+          "strategy": "generate/spread-pdm"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 43,
+          "strategy": "generate/spread-pdm"
+        }
+      },
       "lines": 43,
       "strategy": "generate/spread-pdm",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
@@ -1236,7 +1455,6 @@
           "detail": null
         }
       ],
-      "seconds": 9.2,
       "resources": {
         "lines": 43,
         "instructions": 38,
@@ -1269,6 +1487,7 @@
           "mv": 0.046511627906976744
         }
       },
+      "line_delta": 22,
       "reference_resources": {
         "lines": 21,
         "instructions": 36,
@@ -1301,23 +1520,36 @@
           "mv": 0.42857142857142855
         }
       },
-      "line_delta": 22
+      "seconds": 10.3
     },
     {
       "problem": "17.transpose-mab",
       "slug": "transpose_mab",
       "reference_lines": 15,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 45,
+          "strategy": "allgather"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 45,
+          "strategy": "allgather"
+        }
+      },
       "lines": 45,
       "strategy": "allgather",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 45
+          "score": 45,
+          "detail": null
         }
       ],
-      "seconds": 4.2,
       "resources": {
         "lines": 45,
         "instructions": 42,
@@ -1350,6 +1582,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 30,
       "reference_resources": {
         "lines": 15,
         "instructions": 23,
@@ -1382,15 +1615,28 @@
           "mv": 0.0
         }
       },
-      "line_delta": 30
+      "seconds": 4.4
     },
     {
       "problem": "18.inversion-small",
       "slug": "inversion_small",
       "reference_lines": 9,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 30,
+          "strategy": "pairs/l1bmr16/l1bmm2+base"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 30,
+          "strategy": "pairs/l1bmr16/l1bmm2+base"
+        }
+      },
       "lines": 30,
       "strategy": "pairs/l1bmr16/l1bmm2+base",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
@@ -1399,7 +1645,6 @@
           "detail": null
         }
       ],
-      "seconds": 28.2,
       "resources": {
         "lines": 30,
         "instructions": 23,
@@ -1432,6 +1677,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 21,
       "reference_resources": {
         "lines": 9,
         "instructions": 11,
@@ -1464,15 +1710,28 @@
           "mv": 0.0
         }
       },
-      "line_delta": 21
+      "seconds": 34.3
     },
     {
       "problem": "19.inversion",
       "slug": "inversion",
       "reference_lines": 31,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 76,
+          "strategy": "pairs/l1bmd/l2bmr/pdm/l2bmb/l1bmd+base"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 76,
+          "strategy": "pairs/l1bmd/l2bmr/pdm/l2bmb/l1bmd+base"
+        }
+      },
       "lines": 76,
       "strategy": "pairs/l1bmd/l2bmr/pdm/l2bmb/l1bmd+base",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
@@ -1481,7 +1740,6 @@
           "detail": null
         }
       ],
-      "seconds": 125.8,
       "resources": {
         "lines": 76,
         "instructions": 65,
@@ -1514,6 +1772,7 @@
           "mv": 0.02631578947368421
         }
       },
+      "line_delta": 45,
       "reference_resources": {
         "lines": 31,
         "instructions": 42,
@@ -1546,15 +1805,28 @@
           "mv": 0.06451612903225806
         }
       },
-      "line_delta": 45
+      "seconds": 182.2
     },
     {
       "problem": "20.fizzbuzz",
       "slug": "fizzbuzz",
       "reference_lines": 98,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 103,
+          "strategy": "fmtseq/render-pdm/0p"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 103,
+          "strategy": "fmtseq/render-pdm/0p"
+        }
+      },
       "lines": 103,
       "strategy": "fmtseq/render-pdm/0p",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
@@ -1563,7 +1835,6 @@
           "detail": null
         }
       ],
-      "seconds": 74.3,
       "resources": {
         "lines": 103,
         "instructions": 142,
@@ -1596,6 +1867,7 @@
           "mv": 0.019417475728155338
         }
       },
+      "line_delta": 5,
       "reference_resources": {
         "lines": 98,
         "instructions": 114,
@@ -1628,23 +1900,36 @@
           "mv": 0.02040816326530612
         }
       },
-      "line_delta": 5
+      "seconds": 64.8
     },
     {
       "problem": "21.hello-world",
       "slug": "hello_world",
       "reference_lines": 9,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 13,
+          "strategy": "generate/spread"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 13,
+          "strategy": "generate/spread"
+        }
+      },
       "lines": 13,
       "strategy": "generate/spread",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 13
+          "score": 13,
+          "detail": null
         }
       ],
-      "seconds": 1.2,
       "resources": {
         "lines": 13,
         "instructions": 9,
@@ -1677,6 +1962,7 @@
           "mv": 0.07692307692307693
         }
       },
+      "line_delta": 4,
       "reference_resources": {
         "lines": 9,
         "instructions": 9,
@@ -1709,55 +1995,69 @@
           "mv": 0.1111111111111111
         }
       },
-      "line_delta": 4
+      "seconds": 2.3
     },
     {
       "problem": "22.bit-reverse",
       "slug": "bit_reverse",
       "reference_lines": 10,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 32,
+          "strategy": "local"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 32,
+          "strategy": "local"
+        }
+      },
       "lines": 32,
       "strategy": "local",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 32
+          "score": 32,
+          "detail": null
         }
       ],
-      "seconds": 5.2,
       "resources": {
         "lines": 32,
-        "instructions": 32,
+        "instructions": 33,
         "nop_lines": 0,
-        "resource_lower_bound": 32,
-        "scheduling_gap": 0,
+        "resource_lower_bound": 31,
+        "scheduling_gap": 1,
         "bottleneck_units": [
           "alu"
         ],
         "unit_counts": {
-          "alu": 32,
+          "alu": 31,
           "mau": 0,
           "mwrite": 0,
           "mread": 0,
-          "l1bm": 0,
-          "l1bm-turnaround": 0,
+          "l1bm": 1,
+          "l1bm-turnaround": 1,
           "l2bm": 0,
           "l2bmdarw": 0,
           "mv": 0
         },
         "unit_utilization": {
-          "alu": 1.0,
+          "alu": 0.96875,
           "mau": 0.0,
           "mwrite": 0.0,
           "mread": 0.0,
-          "l1bm": 0.0,
-          "l1bm-turnaround": 0.0,
+          "l1bm": 0.03125,
+          "l1bm-turnaround": 0.03125,
           "l2bm": 0.0,
           "l2bmdarw": 0.0,
           "mv": 0.0
         }
       },
+      "line_delta": 22,
       "reference_resources": {
         "lines": 10,
         "instructions": 17,
@@ -1790,15 +2090,28 @@
           "mv": 0.0
         }
       },
-      "line_delta": 22
+      "seconds": 8.3
     },
     {
       "problem": "23.fizzbuzz-pe",
       "slug": "fizzbuzz_pe",
       "reference_lines": 9,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 12,
+          "strategy": "local/base"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 12,
+          "strategy": "local/base"
+        }
+      },
       "lines": 12,
-      "strategy": "local",
+      "strategy": "local/base",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
@@ -1807,7 +2120,6 @@
           "detail": null
         }
       ],
-      "seconds": 16.0,
       "resources": {
         "lines": 12,
         "instructions": 18,
@@ -1840,6 +2152,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 3,
       "reference_resources": {
         "lines": 9,
         "instructions": 17,
@@ -1872,23 +2185,36 @@
           "mv": 0.0
         }
       },
-      "line_delta": 3
+      "seconds": 26.7
     },
     {
       "problem": "24.log2",
       "slug": "log2",
       "reference_lines": 7,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 15,
+          "strategy": "local"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 15,
+          "strategy": "local"
+        }
+      },
       "lines": 15,
       "strategy": "local",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 15
+          "score": 15,
+          "detail": null
         }
       ],
-      "seconds": 5.7,
       "resources": {
         "lines": 15,
         "instructions": 19,
@@ -1921,6 +2247,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 8,
       "reference_resources": {
         "lines": 7,
         "instructions": 16,
@@ -1953,30 +2280,42 @@
           "mv": 0.0
         }
       },
-      "line_delta": 8
+      "seconds": 6.6
     },
     {
       "problem": "25.hsv2rgb",
       "slug": "hsv2rgb",
       "reference_lines": 12,
       "status": "accepted",
-      "lines": 32,
-      "strategy": "local",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 27,
+          "strategy": "local/alternating"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 27,
+          "strategy": "local/alternating"
+        }
+      },
+      "lines": 27,
+      "strategy": "local/alternating",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 32,
+          "score": 27,
           "detail": null
         }
       ],
-      "seconds": 5.4,
       "resources": {
-        "lines": 32,
+        "lines": 27,
         "instructions": 61,
         "nop_lines": 0,
         "resource_lower_bound": 20,
-        "scheduling_gap": 12,
+        "scheduling_gap": 7,
         "bottleneck_units": [
           "alu"
         ],
@@ -1992,17 +2331,18 @@
           "mv": 0
         },
         "unit_utilization": {
-          "alu": 0.625,
-          "mau": 0.40625,
+          "alu": 0.7407407407407407,
+          "mau": 0.48148148148148145,
           "mwrite": 0.0,
           "mread": 0.0,
-          "l1bm": 0.4375,
-          "l1bm-turnaround": 0.4375,
+          "l1bm": 0.5185185185185185,
+          "l1bm-turnaround": 0.5185185185185185,
           "l2bm": 0.0,
           "l2bmdarw": 0.0,
           "mv": 0.0
         }
       },
+      "line_delta": 15,
       "reference_resources": {
         "lines": 12,
         "instructions": 30,
@@ -2036,23 +2376,36 @@
           "mv": 0.0
         }
       },
-      "line_delta": 20
+      "seconds": 9.2
     },
     {
       "problem": "1.a-b",
       "slug": "mat_sub",
       "reference_lines": 3,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 4,
+          "strategy": "local"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 4,
+          "strategy": "local"
+        }
+      },
       "lines": 4,
       "strategy": "local",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 4
+          "score": 4,
+          "detail": null
         }
       ],
-      "seconds": 5.3,
       "resources": {
         "lines": 4,
         "instructions": 4,
@@ -2086,6 +2439,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 1,
       "reference_resources": {
         "lines": 3,
         "instructions": 3,
@@ -2118,23 +2472,35 @@
           "mv": 0.0
         }
       },
-      "line_delta": 1
+      "seconds": 7.3
     },
     {
       "problem": "2.fmul7",
       "slug": "mul_const",
       "reference_lines": 5,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 5,
+          "strategy": "local"
+        },
+        "testcase": {
+          "status": "unsupported",
+          "reason": "no strategy produced a verified program: [{\"strategy\": \"relayout\", \"reason\": \"relayout: operands already aligned (plain local map)\"}, {\"strategy\": \"local-reduce\", \"reason\": \"local reduce: class is not a reduction\"}, {\"strategy\": \"movement\", \"reason\": \"movement: output is not a copy of an input element\"}, {\"strategy\": \"contraction\", \"reason\": \"contraction: term is not a product of two inputs\"}, {\"strategy\": \"pe-reduce\", \"reason\": \"pe-reduce: output is not a reduction\"}, {\"strategy\": \"gather\", \"re"
+        }
+      },
       "lines": 5,
       "strategy": "local",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 5
+          "score": 5,
+          "detail": null
         }
       ],
-      "seconds": 9.8,
       "resources": {
         "lines": 5,
         "instructions": 5,
@@ -2167,6 +2533,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 0,
       "reference_resources": {
         "lines": 5,
         "instructions": 5,
@@ -2199,23 +2566,35 @@
           "mv": 0.0
         }
       },
-      "line_delta": 0
+      "seconds": 14.2
     },
     {
       "problem": "3.relu",
       "slug": "relu",
       "reference_lines": 2,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 2,
+          "strategy": "local/base"
+        },
+        "testcase": {
+          "status": "no_improvement",
+          "reason": "no strategy produced a verified program: [{\"strategy\": \"relayout\", \"reason\": \"relayout: operands already aligned (plain local map)\"}, {\"strategy\": \"local-reduce\", \"reason\": \"local reduce: class is not a reduction\"}, {\"strategy\": \"movement\", \"reason\": \"movement: output is not a copy of an input element\"}, {\"strategy\": \"contraction\", \"reason\": \"contraction: output is not a sum of products\"}, {\"strategy\": \"pe-reduce\", \"reason\": \"pe-reduce: output is not a reduction\"}, {\"strategy\": \"gather\", \"reason"
+        }
+      },
       "lines": 2,
-      "strategy": "local",
+      "strategy": "local/base",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 2
+          "score": 2,
+          "detail": null
         }
       ],
-      "seconds": 3.5,
       "resources": {
         "lines": 2,
         "instructions": 2,
@@ -2248,6 +2627,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 0,
       "reference_resources": {
         "lines": 2,
         "instructions": 2,
@@ -2280,23 +2660,36 @@
           "mv": 0.0
         }
       },
-      "line_delta": 0
+      "seconds": 27.2
     },
     {
       "problem": "4.relu-grad",
       "slug": "relu_grad",
       "reference_lines": 3,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 3,
+          "strategy": "local/base"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 3,
+          "strategy": "local/base"
+        }
+      },
       "lines": 3,
-      "strategy": "local",
+      "strategy": "local/base",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 3
+          "score": 3,
+          "detail": null
         }
       ],
-      "seconds": 3.5,
       "resources": {
         "lines": 3,
         "instructions": 3,
@@ -2329,6 +2722,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 0,
       "reference_resources": {
         "lines": 3,
         "instructions": 3,
@@ -2361,23 +2755,36 @@
           "mv": 0.0
         }
       },
-      "line_delta": 0
+      "seconds": 8.0
     },
     {
       "problem": "5.addcol-vec",
       "slug": "add_colvec",
       "reference_lines": 3,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 4,
+          "strategy": "local"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 4,
+          "strategy": "local"
+        }
+      },
       "lines": 4,
       "strategy": "local",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 4
+          "score": 4,
+          "detail": null
         }
       ],
-      "seconds": 3.9,
       "resources": {
         "lines": 4,
         "instructions": 4,
@@ -2411,6 +2818,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 1,
       "reference_resources": {
         "lines": 3,
         "instructions": 3,
@@ -2443,23 +2851,36 @@
           "mv": 0.0
         }
       },
-      "line_delta": 1
+      "seconds": 5.3
     },
     {
       "problem": "6.subrow-vec",
       "slug": "sub_rowvec",
       "reference_lines": 24,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 35,
+          "strategy": "split/local"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 35,
+          "strategy": "split/local"
+        }
+      },
       "lines": 35,
       "strategy": "split/local",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 35
+          "score": 35,
+          "detail": null
         }
       ],
-      "seconds": 49.0,
       "resources": {
         "lines": 35,
         "instructions": 29,
@@ -2492,6 +2913,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 11,
       "reference_resources": {
         "lines": 24,
         "instructions": 41,
@@ -2525,23 +2947,36 @@
           "mv": 0.0
         }
       },
-      "line_delta": 11
+      "seconds": 52.6
     },
     {
       "problem": "7.sumcol-mini",
       "slug": "sum_col_mini",
       "reference_lines": 4,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 4,
+          "strategy": "local"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 4,
+          "strategy": "local"
+        }
+      },
       "lines": 4,
       "strategy": "local",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 4
+          "score": 4,
+          "detail": null
         }
       ],
-      "seconds": 6.4,
       "resources": {
         "lines": 4,
         "instructions": 4,
@@ -2574,6 +3009,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 0,
       "reference_resources": {
         "lines": 4,
         "instructions": 4,
@@ -2606,23 +3042,36 @@
           "mv": 0.0
         }
       },
-      "line_delta": 0
+      "seconds": 7.5
     },
     {
       "problem": "8.sumcol",
       "slug": "sum_col",
       "reference_lines": 9,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 12,
+          "strategy": "hierarchy/l1bmm@32/l2bmr/mvr+local"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 12,
+          "strategy": "hierarchy/l1bmm@32/l2bmr/mvr+local"
+        }
+      },
       "lines": 12,
       "strategy": "hierarchy/l1bmm@32/l2bmr/mvr+local",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 12
+          "score": 12,
+          "detail": null
         }
       ],
-      "seconds": 6.4,
       "resources": {
         "lines": 12,
         "instructions": 7,
@@ -2655,6 +3104,7 @@
           "mv": 0.08333333333333333
         }
       },
+      "line_delta": 3,
       "reference_resources": {
         "lines": 9,
         "instructions": 6,
@@ -2688,23 +3138,36 @@
           "mv": 0.1111111111111111
         }
       },
-      "line_delta": 3
+      "seconds": 7.6
     },
     {
       "problem": "9.sumrow-mini",
       "slug": "sum_row_mini",
       "reference_lines": 6,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 9,
+          "strategy": "pe-reduce"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 9,
+          "strategy": "pe-reduce"
+        }
+      },
       "lines": 9,
       "strategy": "pe-reduce",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 9
+          "score": 9,
+          "detail": null
         }
       ],
-      "seconds": 9.8,
       "resources": {
         "lines": 9,
         "instructions": 9,
@@ -2737,6 +3200,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 3,
       "reference_resources": {
         "lines": 6,
         "instructions": 9,
@@ -2769,23 +3233,36 @@
           "mv": 0.0
         }
       },
-      "line_delta": 3
+      "seconds": 12.2
     },
     {
       "problem": "10.sumrow",
       "slug": "sum_row",
       "reference_lines": 16,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 24,
+          "strategy": "split/mab-reduce/pe+rot-local"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 24,
+          "strategy": "split/mab-reduce/pe+rot-local"
+        }
+      },
       "lines": 24,
       "strategy": "split/mab-reduce/pe+rot-local",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 24
+          "score": 24,
+          "detail": null
         }
       ],
-      "seconds": 51.2,
       "resources": {
         "lines": 24,
         "instructions": 17,
@@ -2818,6 +3295,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 8,
       "reference_resources": {
         "lines": 16,
         "instructions": 24,
@@ -2850,23 +3328,36 @@
           "mv": 0.0
         }
       },
-      "line_delta": 8
+      "seconds": 61.1
     },
     {
       "problem": "11.maxrow",
       "slug": "max_row",
       "reference_lines": 20,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 24,
+          "strategy": "split/mab-reduce/pe+rot-local"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 24,
+          "strategy": "split/mab-reduce/pe+rot-local"
+        }
+      },
       "lines": 24,
       "strategy": "split/mab-reduce/pe+rot-local",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 24
+          "score": 24,
+          "detail": null
         }
       ],
-      "seconds": 47.5,
       "resources": {
         "lines": 24,
         "instructions": 17,
@@ -2899,6 +3390,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 4,
       "reference_resources": {
         "lines": 20,
         "instructions": 23,
@@ -2931,15 +3423,28 @@
           "mv": 0.0
         }
       },
-      "line_delta": 4
+      "seconds": 58.7
     },
     {
       "problem": "12.divrow-vec",
       "slug": "div_row",
       "reference_lines": 29,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 56,
+          "strategy": "split/local/newton2"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 56,
+          "strategy": "split/local/newton2"
+        }
+      },
       "lines": 56,
       "strategy": "split/local/newton2",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
@@ -2948,18 +3453,17 @@
           "detail": null
         }
       ],
-      "seconds": 316.8,
       "resources": {
         "lines": 56,
-        "instructions": 54,
-        "nop_lines": 5,
+        "instructions": 59,
+        "nop_lines": 4,
         "resource_lower_bound": 24,
         "scheduling_gap": 32,
         "bottleneck_units": [
           "mau"
         ],
         "unit_counts": {
-          "alu": 12,
+          "alu": 17,
           "mau": 24,
           "mwrite": 0,
           "mread": 0,
@@ -2970,7 +3474,7 @@
           "mv": 0
         },
         "unit_utilization": {
-          "alu": 0.21428571428571427,
+          "alu": 0.30357142857142855,
           "mau": 0.42857142857142855,
           "mwrite": 0.0,
           "mread": 0.0,
@@ -2981,6 +3485,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 27,
       "reference_resources": {
         "lines": 29,
         "instructions": 52,
@@ -3014,15 +3519,28 @@
           "mv": 0.0
         }
       },
-      "line_delta": 27
+      "seconds": 386.2
     },
     {
       "problem": "13.exp-low-prec",
       "slug": "exp_lowprec",
       "reference_lines": 10,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 20,
+          "strategy": "local/exp_degree3"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 20,
+          "strategy": "local/exp_degree3"
+        }
+      },
       "lines": 20,
       "strategy": "local/exp_degree3",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
@@ -3031,7 +3549,6 @@
           "detail": null
         }
       ],
-      "seconds": 47.1,
       "resources": {
         "lines": 20,
         "instructions": 27,
@@ -3064,6 +3581,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 10,
       "reference_resources": {
         "lines": 10,
         "instructions": 17,
@@ -3096,23 +3614,36 @@
           "mv": 0.0
         }
       },
-      "line_delta": 10
+      "seconds": 42.0
     },
     {
       "problem": "14.exp",
       "slug": "exp",
       "reference_lines": 16,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 30,
+          "strategy": "local/exp_degree6"
+        },
+        "testcase": {
+          "status": "rejected",
+          "lines": 28,
+          "strategy": "local/exp_degree5"
+        }
+      },
       "lines": 30,
       "strategy": "local/exp_degree6",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 30
+          "score": 30,
+          "detail": null
         }
       ],
-      "seconds": 73.3,
       "resources": {
         "lines": 30,
         "instructions": 39,
@@ -3145,6 +3676,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 14,
       "reference_resources": {
         "lines": 16,
         "instructions": 33,
@@ -3177,23 +3709,36 @@
           "mv": 0.0
         }
       },
-      "line_delta": 14
+      "seconds": 72.9
     },
     {
       "problem": "15.onehot-mini",
       "slug": "onehot_mini",
       "reference_lines": 7,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 17,
+          "strategy": "relayout/base"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 17,
+          "strategy": "relayout/base"
+        }
+      },
       "lines": 17,
       "strategy": "relayout/base",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 17
+          "score": 17,
+          "detail": null
         }
       ],
-      "seconds": 3.9,
       "resources": {
         "lines": 17,
         "instructions": 17,
@@ -3226,6 +3771,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 10,
       "reference_resources": {
         "lines": 7,
         "instructions": 13,
@@ -3258,23 +3804,36 @@
           "mv": 0.0
         }
       },
-      "line_delta": 10
+      "seconds": 6.7
     },
     {
       "problem": "16.onehot",
       "slug": "onehot",
       "reference_lines": 24,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 44,
+          "strategy": "split/local/base"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 44,
+          "strategy": "split/local/base"
+        }
+      },
       "lines": 44,
       "strategy": "split/local/base",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 44
+          "score": 44,
+          "detail": null
         }
       ],
-      "seconds": 20.7,
       "resources": {
         "lines": 44,
         "instructions": 40,
@@ -3307,6 +3866,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 20,
       "reference_resources": {
         "lines": 24,
         "instructions": 51,
@@ -3340,23 +3900,36 @@
           "mv": 0.0
         }
       },
-      "line_delta": 20
+      "seconds": 40.0
     },
     {
       "problem": "17.dram-dl-256-16",
       "slug": "dram_dl_256_16",
       "reference_lines": 5,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 5,
+          "strategy": "movement"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 5,
+          "strategy": "movement"
+        }
+      },
       "lines": 5,
       "strategy": "movement",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 5
+          "score": 5,
+          "detail": null
         }
       ],
-      "seconds": 2.0,
       "resources": {
         "lines": 5,
         "instructions": 4,
@@ -3389,6 +3962,7 @@
           "mv": 0.4
         }
       },
+      "line_delta": 0,
       "reference_resources": {
         "lines": 5,
         "instructions": 4,
@@ -3421,23 +3995,36 @@
           "mv": 0.4
         }
       },
-      "line_delta": 0
+      "seconds": 2.9
     },
     {
       "problem": "18.dram-ul-256-16",
       "slug": "dram_ul_256_16",
       "reference_lines": 6,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 6,
+          "strategy": "movement"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 6,
+          "strategy": "movement"
+        }
+      },
       "lines": 6,
       "strategy": "movement",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 6
+          "score": 6,
+          "detail": null
         }
       ],
-      "seconds": 4.3,
       "resources": {
         "lines": 6,
         "instructions": 4,
@@ -3470,6 +4057,7 @@
           "mv": 0.3333333333333333
         }
       },
+      "line_delta": 0,
       "reference_resources": {
         "lines": 6,
         "instructions": 4,
@@ -3502,23 +4090,36 @@
           "mv": 0.3333333333333333
         }
       },
-      "line_delta": 0
+      "seconds": 4.6
     },
     {
       "problem": "19.dram-dl-256-16p",
       "slug": "dram_dl_256_16p",
       "reference_lines": 19,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 25,
+          "strategy": "movement"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 25,
+          "strategy": "movement"
+        }
+      },
       "lines": 25,
       "strategy": "movement",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 25
+          "score": 25,
+          "detail": null
         }
       ],
-      "seconds": 2.3,
       "resources": {
         "lines": 25,
         "instructions": 25,
@@ -3551,6 +4152,7 @@
           "mv": 0.04
         }
       },
+      "line_delta": 6,
       "reference_resources": {
         "lines": 19,
         "instructions": 25,
@@ -3583,23 +4185,36 @@
           "mv": 0.05263157894736842
         }
       },
-      "line_delta": 6
+      "seconds": 3.5
     },
     {
       "problem": "20.dram-ul-256-16p",
       "slug": "dram_ul_256_16p",
       "reference_lines": 10,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 16,
+          "strategy": "movement"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 16,
+          "strategy": "movement"
+        }
+      },
       "lines": 16,
       "strategy": "movement",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 16
+          "score": 16,
+          "detail": null
         }
       ],
-      "seconds": 13.2,
       "resources": {
         "lines": 16,
         "instructions": 13,
@@ -3632,6 +4247,7 @@
           "mv": 0.0625
         }
       },
+      "line_delta": 6,
       "reference_resources": {
         "lines": 10,
         "instructions": 7,
@@ -3666,23 +4282,36 @@
           "mv": 0.1
         }
       },
-      "line_delta": 6
+      "seconds": 17.3
     },
     {
       "problem": "21.dram-dl-256-16-l2b",
       "slug": "dram_dl_256_16_l2b",
       "reference_lines": 12,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 14,
+          "strategy": "movement"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 14,
+          "strategy": "movement"
+        }
+      },
       "lines": 14,
       "strategy": "movement",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 14
+          "score": 14,
+          "detail": null
         }
       ],
-      "seconds": 2.0,
       "resources": {
         "lines": 14,
         "instructions": 14,
@@ -3715,6 +4344,7 @@
           "mv": 0.14285714285714285
         }
       },
+      "line_delta": 2,
       "reference_resources": {
         "lines": 12,
         "instructions": 14,
@@ -3747,23 +4377,36 @@
           "mv": 0.16666666666666666
         }
       },
-      "line_delta": 2
+      "seconds": 3.1
     },
     {
       "problem": "22.dram-dl-1024-16",
       "slug": "dram_dl_1024_16",
       "reference_lines": 8,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 10,
+          "strategy": "movement"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 10,
+          "strategy": "movement"
+        }
+      },
       "lines": 10,
       "strategy": "movement",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 10
+          "score": 10,
+          "detail": null
         }
       ],
-      "seconds": 5.2,
       "resources": {
         "lines": 10,
         "instructions": 10,
@@ -3797,6 +4440,7 @@
           "mv": 0.2
         }
       },
+      "line_delta": 2,
       "reference_resources": {
         "lines": 8,
         "instructions": 10,
@@ -3830,23 +4474,36 @@
           "mv": 0.25
         }
       },
-      "line_delta": 2
+      "seconds": 7.3
     },
     {
       "problem": "23.dram-dl-256-1024",
       "slug": "dram_dl_256_1024",
       "reference_lines": 68,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 74,
+          "strategy": "movement"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 74,
+          "strategy": "movement"
+        }
+      },
       "lines": 74,
       "strategy": "movement",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 74
+          "score": 74,
+          "detail": null
         }
       ],
-      "seconds": 70.2,
       "resources": {
         "lines": 74,
         "instructions": 74,
@@ -3879,6 +4536,7 @@
           "mv": 0.02702702702702703
         }
       },
+      "line_delta": 6,
       "reference_resources": {
         "lines": 68,
         "instructions": 74,
@@ -3911,23 +4569,36 @@
           "mv": 0.029411764705882353
         }
       },
-      "line_delta": 6
+      "seconds": 113.1
     },
     {
       "problem": "24.dram-dl-16",
       "slug": "dram_dl_16",
       "reference_lines": 5,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 5,
+          "strategy": "movement"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 5,
+          "strategy": "movement"
+        }
+      },
       "lines": 5,
       "strategy": "movement",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 5
+          "score": 5,
+          "detail": null
         }
       ],
-      "seconds": 1.0,
       "resources": {
         "lines": 5,
         "instructions": 4,
@@ -3960,6 +4631,7 @@
           "mv": 0.4
         }
       },
+      "line_delta": 0,
       "reference_resources": {
         "lines": 5,
         "instructions": 4,
@@ -3992,23 +4664,36 @@
           "mv": 0.4
         }
       },
-      "line_delta": 0
+      "seconds": 1.8
     },
     {
       "problem": "25.dram-ul-16",
       "slug": "dram_ul_16",
       "reference_lines": 5,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 5,
+          "strategy": "movement"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 5,
+          "strategy": "movement"
+        }
+      },
       "lines": 5,
       "strategy": "movement",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 5
+          "score": 5,
+          "detail": null
         }
       ],
-      "seconds": 1.4,
       "resources": {
         "lines": 5,
         "instructions": 3,
@@ -4043,6 +4728,7 @@
           "mv": 0.2
         }
       },
+      "line_delta": 0,
       "reference_resources": {
         "lines": 5,
         "instructions": 3,
@@ -4077,23 +4763,36 @@
           "mv": 0.2
         }
       },
-      "line_delta": 0
+      "seconds": 2.4
     },
     {
       "problem": "26.dram-dl-16-1024",
       "slug": "dram_dl_16_1024",
       "reference_lines": 39,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 44,
+          "strategy": "movement"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 44,
+          "strategy": "movement"
+        }
+      },
       "lines": 44,
       "strategy": "movement",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 44
+          "score": 44,
+          "detail": null
         }
       ],
-      "seconds": 8.4,
       "resources": {
         "lines": 44,
         "instructions": 44,
@@ -4126,6 +4825,7 @@
           "mv": 0.18181818181818182
         }
       },
+      "line_delta": 5,
       "reference_resources": {
         "lines": 39,
         "instructions": 41,
@@ -4158,23 +4858,35 @@
           "mv": 0.1282051282051282
         }
       },
-      "line_delta": 5
+      "seconds": 12.8
     },
     {
       "problem": "27.dram-ul-16-1024",
       "slug": "dram_ul_16_1024",
       "reference_lines": 13,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 18,
+          "strategy": "movement"
+        },
+        "testcase": {
+          "status": "unsupported",
+          "reason": "no strategy produced a verified program: [{\"strategy\": \"local\", \"reason\": \"local map: DRAM output\"}, {\"strategy\": \"relayout\", \"reason\": \"relayout: DRAM operand\"}, {\"strategy\": \"local-reduce\", \"reason\": \"local map: DRAM output\"}, {\"strategy\": \"contraction\", \"reason\": \"contraction: output is not a sum of products\"}, {\"strategy\": \"pe-reduce\", \"reason\": \"pe-reduce: DRAM output\"}, {\"strategy\": \"gather\", \"reason\": \"gather: 64-bit elements only\"}, {\"strategy\": \"hierarchy\", \"reason\": \"hierarchy: no tran"
+        }
+      },
       "lines": 18,
       "strategy": "movement",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 18
+          "score": 18,
+          "detail": null
         }
       ],
-      "seconds": 10.7,
       "resources": {
         "lines": 18,
         "instructions": 14,
@@ -4207,6 +4919,7 @@
           "mv": 0.05555555555555555
         }
       },
+      "line_delta": 5,
       "reference_resources": {
         "lines": 13,
         "instructions": 9,
@@ -4239,23 +4952,36 @@
           "mv": 0.15384615384615385
         }
       },
-      "line_delta": 5
+      "seconds": 15.7
     },
     {
       "problem": "28.dram-dl-16-16",
       "slug": "dram_dl_16_16",
       "reference_lines": 11,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 12,
+          "strategy": "movement"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 12,
+          "strategy": "movement"
+        }
+      },
       "lines": 12,
       "strategy": "movement",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 12
+          "score": 12,
+          "detail": null
         }
       ],
-      "seconds": 0.9,
       "resources": {
         "lines": 12,
         "instructions": 12,
@@ -4290,6 +5016,7 @@
           "mv": 0.3333333333333333
         }
       },
+      "line_delta": 1,
       "reference_resources": {
         "lines": 11,
         "instructions": 13,
@@ -4322,23 +5049,36 @@
           "mv": 0.45454545454545453
         }
       },
-      "line_delta": 1
+      "seconds": 2.0
     },
     {
       "problem": "29.dram-ul-16-16",
       "slug": "dram_ul_16_16",
       "reference_lines": 9,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 13,
+          "strategy": "movement"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 13,
+          "strategy": "movement"
+        }
+      },
       "lines": 13,
       "strategy": "movement",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 13
+          "score": 13,
+          "detail": null
         }
       ],
-      "seconds": 6.9,
       "resources": {
         "lines": 13,
         "instructions": 12,
@@ -4373,6 +5113,7 @@
           "mv": 0.3076923076923077
         }
       },
+      "line_delta": 4,
       "reference_resources": {
         "lines": 9,
         "instructions": 5,
@@ -4405,23 +5146,36 @@
           "mv": 0.1111111111111111
         }
       },
-      "line_delta": 4
+      "seconds": 8.3
     },
     {
       "problem": "30.dram-dl-256",
       "slug": "dram_dl_256",
       "reference_lines": 10,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 11,
+          "strategy": "movement"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 11,
+          "strategy": "movement"
+        }
+      },
       "lines": 11,
       "strategy": "movement",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 11
+          "score": 11,
+          "detail": null
         }
       ],
-      "seconds": 1.0,
       "resources": {
         "lines": 11,
         "instructions": 10,
@@ -4454,6 +5208,7 @@
           "mv": 0.09090909090909091
         }
       },
+      "line_delta": 1,
       "reference_resources": {
         "lines": 10,
         "instructions": 16,
@@ -4486,23 +5241,36 @@
           "mv": 0.1
         }
       },
-      "line_delta": 1
+      "seconds": 2.1
     },
     {
       "problem": "31.dram-ul-256",
       "slug": "dram_ul_256",
       "reference_lines": 7,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 9,
+          "strategy": "movement"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 9,
+          "strategy": "movement"
+        }
+      },
       "lines": 9,
       "strategy": "movement",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 9
+          "score": 9,
+          "detail": null
         }
       ],
-      "seconds": 4.1,
       "resources": {
         "lines": 9,
         "instructions": 5,
@@ -4535,6 +5303,7 @@
           "mv": 0.1111111111111111
         }
       },
+      "line_delta": 2,
       "reference_resources": {
         "lines": 7,
         "instructions": 4,
@@ -4570,23 +5339,36 @@
           "mv": 0.14285714285714285
         }
       },
-      "line_delta": 2
+      "seconds": 5.1
     },
     {
       "problem": "32.matmul-trb-mab-lm-4-8-8",
       "slug": "matmul_trb_mab_lm_4_8_8",
       "reference_lines": 4,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 4,
+          "strategy": "contraction/gm-direct"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 4,
+          "strategy": "contraction/gm-direct"
+        }
+      },
       "lines": 4,
       "strategy": "contraction/gm-direct",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 4
+          "score": 4,
+          "detail": null
         }
       ],
-      "seconds": 11.4,
       "resources": {
         "lines": 4,
         "instructions": 6,
@@ -4619,6 +5401,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 0,
       "reference_resources": {
         "lines": 4,
         "instructions": 6,
@@ -4651,23 +5434,36 @@
           "mv": 0.0
         }
       },
-      "line_delta": 0
+      "seconds": 16.6
     },
     {
       "problem": "33.matmul-trb-mab-lm-4-8-16",
       "slug": "matmul_trb_mab_lm_4_8_16",
       "reference_lines": 7,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 7,
+          "strategy": "contraction/gm-direct"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 7,
+          "strategy": "contraction/gm-direct"
+        }
+      },
       "lines": 7,
       "strategy": "contraction/gm-direct",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 7
+          "score": 7,
+          "detail": null
         }
       ],
-      "seconds": 17.1,
       "resources": {
         "lines": 7,
         "instructions": 11,
@@ -4700,6 +5496,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 0,
       "reference_resources": {
         "lines": 7,
         "instructions": 12,
@@ -4732,23 +5529,36 @@
           "mv": 0.0
         }
       },
-      "line_delta": 0
+      "seconds": 24.9
     },
     {
       "problem": "34.matmul-trb-mab-lm-4-16-8",
       "slug": "matmul_trb_mab_lm_4_16_8",
       "reference_lines": 7,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 6,
+          "strategy": "contraction/hm"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 6,
+          "strategy": "contraction/hm"
+        }
+      },
       "lines": 6,
       "strategy": "contraction/hm",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 6
+          "score": 6,
+          "detail": null
         }
       ],
-      "seconds": 28.2,
       "resources": {
         "lines": 6,
         "instructions": 10,
@@ -4781,6 +5591,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": -1,
       "reference_resources": {
         "lines": 7,
         "instructions": 12,
@@ -4813,23 +5624,36 @@
           "mv": 0.0
         }
       },
-      "line_delta": -1
+      "seconds": 44.6
     },
     {
       "problem": "35.matmul-trb-mab-lm-4-16-16",
       "slug": "matmul_trb_mab_lm_4_16_16",
       "reference_lines": 12,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 6,
+          "strategy": "contraction/hm"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 6,
+          "strategy": "contraction/hm"
+        }
+      },
       "lines": 6,
       "strategy": "contraction/hm",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 6
+          "score": 6,
+          "detail": null
         }
       ],
-      "seconds": 39.9,
       "resources": {
         "lines": 6,
         "instructions": 10,
@@ -4862,6 +5686,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": -6,
       "reference_resources": {
         "lines": 12,
         "instructions": 16,
@@ -4894,36 +5719,49 @@
           "mv": 0.0
         }
       },
-      "line_delta": -6
+      "seconds": 61.5
     },
     {
       "problem": "36.matmul-trb-pkg-lm-256-16-16",
       "slug": "matmul_trb_pkg_lm_256_16_16",
       "reference_lines": 12,
       "status": "accepted",
-      "lines": 12,
-      "strategy": "contraction/gm-direct",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 12,
+          "strategy": "contraction/gm-direct"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 6,
+          "strategy": "contraction/hm"
+        }
+      },
+      "lines": 6,
+      "strategy": "contraction/hm",
+      "mode": "testcase",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 12
+          "score": 6,
+          "detail": null
         }
       ],
-      "seconds": 301.7,
       "resources": {
-        "lines": 12,
-        "instructions": 22,
+        "lines": 6,
+        "instructions": 10,
         "nop_lines": 0,
-        "resource_lower_bound": 10,
-        "scheduling_gap": 2,
+        "resource_lower_bound": 5,
+        "scheduling_gap": 1,
         "bottleneck_units": [
           "alu"
         ],
         "unit_counts": {
-          "alu": 10,
-          "mau": 4,
-          "mwrite": 8,
+          "alu": 5,
+          "mau": 1,
+          "mwrite": 4,
           "mread": 0,
           "l1bm": 0,
           "l1bm-turnaround": 0,
@@ -4933,7 +5771,7 @@
         },
         "unit_utilization": {
           "alu": 0.8333333333333334,
-          "mau": 0.3333333333333333,
+          "mau": 0.16666666666666666,
           "mwrite": 0.6666666666666666,
           "mread": 0.0,
           "l1bm": 0.0,
@@ -4943,6 +5781,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": -6,
       "reference_resources": {
         "lines": 12,
         "instructions": 16,
@@ -4975,23 +5814,36 @@
           "mv": 0.0
         }
       },
-      "line_delta": 0
+      "seconds": 601.5
     },
     {
       "problem": "37.matmul-trb-mab-lm-32-8-16",
       "slug": "matmul_trb_mab_lm_32_8_16",
       "reference_lines": 17,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 21,
+          "strategy": "contraction/gm-direct"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 21,
+          "strategy": "contraction/gm-direct"
+        }
+      },
       "lines": 21,
       "strategy": "contraction/gm-direct",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 21
+          "score": 21,
+          "detail": null
         }
       ],
-      "seconds": 72.1,
       "resources": {
         "lines": 21,
         "instructions": 32,
@@ -5024,6 +5876,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 4,
       "reference_resources": {
         "lines": 17,
         "instructions": 29,
@@ -5057,23 +5910,36 @@
           "mv": 0.0
         }
       },
-      "line_delta": 4
+      "seconds": 105.6
     },
     {
       "problem": "38.matmul-trb-pkg-lm-256-128-16",
       "slug": "matmul_trb_pkg_lm_256_128_16",
       "reference_lines": 23,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 48,
+          "strategy": "hierarchy/l1bmr32/l1bmm2+contraction/gm-direct"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 48,
+          "strategy": "hierarchy/l1bmr32/l1bmm2+contraction/gm-direct"
+        }
+      },
       "lines": 48,
       "strategy": "hierarchy/l1bmr32/l1bmm2+contraction/gm-direct",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 48
+          "score": 48,
+          "detail": null
         }
       ],
-      "seconds": 64.9,
       "resources": {
         "lines": 48,
         "instructions": 48,
@@ -5107,6 +5973,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 25,
       "reference_resources": {
         "lines": 23,
         "instructions": 64,
@@ -5141,23 +6008,35 @@
           "mv": 0.0
         }
       },
-      "line_delta": 25
+      "seconds": 95.6
     },
     {
       "problem": "39.matmul-trb-pkg-lmdram-256-1024-16",
       "slug": "matmul_trb_pkg_lmdram_256_1024_16",
       "reference_lines": 29,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 38,
+          "strategy": "hierarchy/l1bmr32/l2bmr/mvp+contraction/gm-direct"
+        },
+        "testcase": {
+          "status": "unsupported",
+          "reason": "no strategy produced a verified program: [{\"strategy\": \"local\", \"reason\": \"local map: DRAM output\"}, {\"strategy\": \"relayout\", \"reason\": \"relayout: DRAM operand\"}, {\"strategy\": \"local-reduce\", \"reason\": \"local map: DRAM output\"}, {\"strategy\": \"movement\", \"reason\": \"movement: output is not a copy of an input element\"}, {\"strategy\": \"contraction\", \"reason\": \"contraction: contracted axis is mixed\"}, {\"strategy\": \"pe-reduce\", \"reason\": \"pe-reduce: DRAM output\"}, {\"strategy\": \"gather\", \"reason\": \"gath"
+        }
+      },
       "lines": 38,
       "strategy": "hierarchy/l1bmr32/l2bmr/mvp+contraction/gm-direct",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 38
+          "score": 38,
+          "detail": null
         }
       ],
-      "seconds": 250.8,
       "resources": {
         "lines": 38,
         "instructions": 46,
@@ -5190,6 +6069,7 @@
           "mv": 0.05263157894736842
         }
       },
+      "line_delta": 9,
       "reference_resources": {
         "lines": 29,
         "instructions": 46,
@@ -5222,23 +6102,36 @@
           "mv": 0.06896551724137931
         }
       },
-      "line_delta": 9
+      "seconds": 1180.4
     },
     {
       "problem": "40.matmul-notr-mab-lm-4-8-8",
       "slug": "matmul_notr_mab_lm_4_8_8",
       "reference_lines": 7,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 7,
+          "strategy": "contraction/gm"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 7,
+          "strategy": "contraction/gm"
+        }
+      },
       "lines": 7,
       "strategy": "contraction/gm",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 7
+          "score": 7,
+          "detail": null
         }
       ],
-      "seconds": 7.4,
       "resources": {
         "lines": 7,
         "instructions": 10,
@@ -5271,6 +6164,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 0,
       "reference_resources": {
         "lines": 7,
         "instructions": 10,
@@ -5303,23 +6197,36 @@
           "mv": 0.0
         }
       },
-      "line_delta": 0
+      "seconds": 24.7
     },
     {
       "problem": "41.matmul-notr-mab-lm-4-16-16",
       "slug": "matmul_notr_mab_lm_4_16_16",
       "reference_lines": 13,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 23,
+          "strategy": "contraction/gm"
+        },
+        "testcase": {
+          "status": "accepted",
+          "lines": 23,
+          "strategy": "contraction/gm"
+        }
+      },
       "lines": 23,
       "strategy": "contraction/gm",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 23
+          "score": 23,
+          "detail": null
         }
       ],
-      "seconds": 55.7,
       "resources": {
         "lines": 23,
         "instructions": 40,
@@ -5352,6 +6259,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 10,
       "reference_resources": {
         "lines": 13,
         "instructions": 23,
@@ -5384,23 +6292,35 @@
           "mv": 0.0
         }
       },
-      "line_delta": 10
+      "seconds": 330.8
     },
     {
       "problem": "42.matmul-notr-pkg-lm-256-16-16",
       "slug": "matmul_notr_pkg_lm_256_16_16",
       "reference_lines": 13,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 23,
+          "strategy": "contraction/gm"
+        },
+        "testcase": {
+          "status": "no_improvement",
+          "reason": "no strategy produced a verified program: [{\"strategy\": \"relayout\", \"reason\": \"local map: ('A', (0, 2)) is not stored in PE 0\"}, {\"strategy\": \"local-reduce\", \"reason\": \"local map: ('A', (0, 2)) is not stored in PE 0\"}, {\"strategy\": \"movement\", \"reason\": \"movement: output is not a copy of an input element\"}, {\"strategy\": \"pe-reduce\", \"reason\": \"pe-reduce: terms must be input elements\"}, {\"strategy\": \"gather\", \"reason\": \"gather: 64-bit elements only\"}, {\"strategy\": \"mab-reduce\", \"reason\": \"hierarch"
+        }
+      },
       "lines": 23,
       "strategy": "contraction/gm",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 23
+          "score": 23,
+          "detail": null
         }
       ],
-      "seconds": 188.5,
       "resources": {
         "lines": 23,
         "instructions": 40,
@@ -5433,6 +6353,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 10,
       "reference_resources": {
         "lines": 13,
         "instructions": 23,
@@ -5465,23 +6386,35 @@
           "mv": 0.0
         }
       },
-      "line_delta": 10
+      "seconds": 1132.9
     },
     {
       "problem": "43.matmul-tra-mab-lm-8-8-8",
       "slug": "matmul_tra_mab_lm_8_8_8",
       "reference_lines": 8,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 10,
+          "strategy": "contraction/gm"
+        },
+        "testcase": {
+          "status": "no_improvement",
+          "reason": "no strategy produced a verified program: [{\"strategy\": \"local\", \"reason\": \"local map: exchange pattern differs between words\"}, {\"strategy\": \"relayout\", \"reason\": \"local map: ('A', (0, 2)) is not stored in PE 0\"}, {\"strategy\": \"local-reduce\", \"reason\": \"local map: ('A', (0, 2)) is not stored in PE 0\"}, {\"strategy\": \"movement\", \"reason\": \"movement: output is not a copy of an input element\"}, {\"strategy\": \"pe-reduce\", \"reason\": \"pe-reduce: terms must be input elements\"}, {\"strategy\": \"gather\", \"re"
+        }
+      },
       "lines": 10,
       "strategy": "contraction/gm",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 10
+          "score": 10,
+          "detail": null
         }
       ],
-      "seconds": 10.1,
       "resources": {
         "lines": 10,
         "instructions": 16,
@@ -5514,6 +6447,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 2,
       "reference_resources": {
         "lines": 8,
         "instructions": 16,
@@ -5546,23 +6480,35 @@
           "mv": 0.0
         }
       },
-      "line_delta": 2
+      "seconds": 32.2
     },
     {
       "problem": "44.matmul-tra-mab-lm-16-8-16",
       "slug": "matmul_tra_mab_lm_16_8_16",
       "reference_lines": 15,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 26,
+          "strategy": "contraction/gm"
+        },
+        "testcase": {
+          "status": "no_improvement",
+          "reason": "no strategy produced a verified program: [{\"strategy\": \"local\", \"reason\": \"local map: exchange pattern differs between words\"}, {\"strategy\": \"relayout\", \"reason\": \"local map: ('A', (0, 2)) is not stored in PE 0\"}, {\"strategy\": \"local-reduce\", \"reason\": \"local map: ('A', (0, 2)) is not stored in PE 0\"}, {\"strategy\": \"movement\", \"reason\": \"movement: output is not a copy of an input element\"}, {\"strategy\": \"pe-reduce\", \"reason\": \"pe-reduce: terms must be input elements\"}, {\"strategy\": \"gather\", \"re"
+        }
+      },
       "lines": 26,
       "strategy": "contraction/gm",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 26
+          "score": 26,
+          "detail": null
         }
       ],
-      "seconds": 23.5,
       "resources": {
         "lines": 26,
         "instructions": 48,
@@ -5595,6 +6541,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 11,
       "reference_resources": {
         "lines": 15,
         "instructions": 31,
@@ -5627,23 +6574,35 @@
           "mv": 0.0
         }
       },
-      "line_delta": 11
+      "seconds": 83.5
     },
     {
       "problem": "45.matmul-tra-mab-lm-16-4-16",
       "slug": "matmul_tra_mab_lm_16_4_16",
       "reference_lines": 15,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 20,
+          "strategy": "contraction/gm"
+        },
+        "testcase": {
+          "status": "no_improvement",
+          "reason": "no strategy produced a verified program: [{\"strategy\": \"local\", \"reason\": \"local map: exchange pattern differs between words\"}, {\"strategy\": \"relayout\", \"reason\": \"local map: ('A', (0, 2)) is not stored in PE 0\"}, {\"strategy\": \"local-reduce\", \"reason\": \"local map: ('A', (0, 2)) is not stored in PE 0\"}, {\"strategy\": \"movement\", \"reason\": \"movement: output is not a copy of an input element\"}, {\"strategy\": \"pe-reduce\", \"reason\": \"pe-reduce: terms must be input elements\"}, {\"strategy\": \"gather\", \"re"
+        }
+      },
       "lines": 20,
       "strategy": "contraction/gm",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 20
+          "score": 20,
+          "detail": null
         }
       ],
-      "seconds": 14.5,
       "resources": {
         "lines": 20,
         "instructions": 42,
@@ -5677,6 +6636,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 5,
       "reference_resources": {
         "lines": 15,
         "instructions": 35,
@@ -5709,23 +6669,35 @@
           "mv": 0.0
         }
       },
-      "line_delta": 5
+      "seconds": 72.5
     },
     {
       "problem": "46.matmul-tra-pkg-lmdram-16-256-16",
       "slug": "matmul_tra_pkg_lmdram_16_256_16",
       "reference_lines": 25,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 31,
+          "strategy": "hierarchy/l1bmm@32/l2bmr/mvr+contraction/gm"
+        },
+        "testcase": {
+          "status": "no_improvement",
+          "reason": "no strategy produced a verified program: [{\"strategy\": \"local\", \"reason\": \"local map: DRAM output\"}, {\"strategy\": \"relayout\", \"reason\": \"relayout: DRAM operand\"}, {\"strategy\": \"local-reduce\", \"reason\": \"local map: DRAM output\"}, {\"strategy\": \"movement\", \"reason\": \"movement: output is not a copy of an input element\"}, {\"strategy\": \"contraction\", \"reason\": \"contraction: contracted axis is mixed\"}, {\"strategy\": \"pe-reduce\", \"reason\": \"pe-reduce: DRAM output\"}, {\"strategy\": \"gather\", \"reason\": \"gath"
+        }
+      },
       "lines": 31,
       "strategy": "hierarchy/l1bmm@32/l2bmr/mvr+contraction/gm",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 31
+          "score": 31,
+          "detail": null
         }
       ],
-      "seconds": 13.7,
       "resources": {
         "lines": 31,
         "instructions": 49,
@@ -5759,6 +6731,7 @@
           "mv": 0.03225806451612903
         }
       },
+      "line_delta": 6,
       "reference_resources": {
         "lines": 25,
         "instructions": 41,
@@ -5791,23 +6764,35 @@
           "mv": 0.2
         }
       },
-      "line_delta": 6
+      "seconds": 38.9
     },
     {
       "problem": "47.matmul-tra-mab-lm-16-32-8",
       "slug": "matmul_tra_mab_lm_16_32_8",
       "reference_lines": 17,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 50,
+          "strategy": "contraction/gm"
+        },
+        "testcase": {
+          "status": "no_improvement",
+          "reason": "no strategy produced a verified program: [{\"strategy\": \"local\", \"reason\": \"local map: exchange pattern differs between words\"}, {\"strategy\": \"relayout\", \"reason\": \"local map: ('A', (0, 2)) is not stored in PE 0\"}, {\"strategy\": \"local-reduce\", \"reason\": \"local map: ('A', (0, 2)) is not stored in PE 0\"}, {\"strategy\": \"movement\", \"reason\": \"movement: output is not a copy of an input element\"}, {\"strategy\": \"pe-reduce\", \"reason\": \"pe-reduce: terms must be input elements\"}, {\"strategy\": \"gather\", \"re"
+        }
+      },
       "lines": 50,
       "strategy": "contraction/gm",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 50
+          "score": 50,
+          "detail": null
         }
       ],
-      "seconds": 77.6,
       "resources": {
         "lines": 50,
         "instructions": 96,
@@ -5840,6 +6825,7 @@
           "mv": 0.0
         }
       },
+      "line_delta": 33,
       "reference_resources": {
         "lines": 17,
         "instructions": 32,
@@ -5872,23 +6858,35 @@
           "mv": 0.0
         }
       },
-      "line_delta": 33
+      "seconds": 271.5
     },
     {
       "problem": "48.matmul-tra-pkg-lmdram-16-256-1024",
       "slug": "matmul_tra_pkg_lmdram_16_256_1024",
       "reference_lines": 61,
       "status": "accepted",
+      "by_mode": {
+        "general": {
+          "status": "accepted",
+          "lines": 94,
+          "strategy": "hierarchy/l1bmd/l2bmd/mvr-pdm+contraction/gm"
+        },
+        "testcase": {
+          "status": "no_improvement",
+          "reason": "no strategy produced a verified program: [{\"strategy\": \"local\", \"reason\": \"local map: DRAM output\"}, {\"strategy\": \"relayout\", \"reason\": \"relayout: DRAM operand\"}, {\"strategy\": \"local-reduce\", \"reason\": \"local map: DRAM output\"}, {\"strategy\": \"movement\", \"reason\": \"movement: output is not a copy of an input element\"}, {\"strategy\": \"contraction\", \"reason\": \"contraction: contracted axis is mixed\"}, {\"strategy\": \"pe-reduce\", \"reason\": \"pe-reduce: DRAM output\"}, {\"strategy\": \"gather\", \"reason\": \"gath"
+        }
+      },
       "lines": 94,
       "strategy": "hierarchy/l1bmd/l2bmd/mvr-pdm+contraction/gm",
+      "mode": "general",
       "judge": [
         {
           "testcase": "testcase.vsm",
           "accepted": true,
-          "score": 94
+          "score": 94,
+          "detail": null
         }
       ],
-      "seconds": 183.3,
       "resources": {
         "lines": 94,
         "instructions": 137,
@@ -5922,6 +6920,7 @@
           "mv": 0.05319148936170213
         }
       },
+      "line_delta": 33,
       "reference_resources": {
         "lines": 61,
         "instructions": 115,
@@ -5954,7 +6953,7 @@
           "mv": 0.08196721311475409
         }
       },
-      "line_delta": 33
+      "seconds": 380.5
     }
   ]
 }

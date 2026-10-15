@@ -1,10 +1,43 @@
 {
-  "lines": 60,
+  "lines": 59,
+  "mode": "general",
+  "resources": {
+    "lines": 59,
+    "instructions": 53,
+    "nop_lines": 10,
+    "resource_lower_bound": 46,
+    "scheduling_gap": 13,
+    "bottleneck_units": [
+      "alu"
+    ],
+    "unit_counts": {
+      "alu": 46,
+      "mau": 0,
+      "mwrite": 0,
+      "mread": 0,
+      "l1bm": 5,
+      "l1bm-turnaround": 2,
+      "l2bm": 0,
+      "l2bmdarw": 0,
+      "mv": 0
+    },
+    "unit_utilization": {
+      "alu": 0.7796610169491526,
+      "mau": 0.0,
+      "mwrite": 0.0,
+      "mread": 0.0,
+      "l1bm": 0.0847457627118644,
+      "l1bm-turnaround": 0.03389830508474576,
+      "l2bm": 0.0,
+      "l2bmdarw": 0.0,
+      "mv": 0.0
+    }
+  },
   "strategy": "hierarchy/l1bmr16/l1bmp2+pe+rot-membership/zero-init",
   "candidates": [
     {
       "strategy": "hierarchy/l1bmr16/l1bmp2+pe+rot-membership/zero-init",
-      "lines": 60
+      "lines": 59
     }
   ],
   "rejected": [
@@ -66,24 +99,24 @@
     },
     {
       "strategy": "hierarchy/l1bmr16/l2bmd/l2bmd/l1bmp2+pe+rot-membership/zero-init",
-      "reason": "lower bound 61 >= best 60"
+      "reason": "lower bound 60 >= best 59"
     },
     {
       "strategy": "hierarchy/l1bmr16/l1bmp2+pe+rot-membership/clear",
-      "reason": "lower bound 72 >= best 60"
+      "reason": "lower bound 71 >= best 59"
     },
     {
       "strategy": "hierarchy/l1bmr16/l2bmd/l2bmd/l1bmp2+pe+rot-membership/clear",
-      "reason": "lower bound 76 >= best 60"
+      "reason": "lower bound 75 >= best 59"
     },
     {
       "strategy": "hierarchy/l1bmr16/l1bmp2+pe+rot-local-reduce",
-      "reason": "lower bound 108 >= best 60"
+      "reason": "lower bound 106 >= best 59"
     },
     {
       "strategy": "hierarchy/l1bmr16/l2bmd/l2bmd/l1bmp2+pe+rot-local-reduce",
-      "reason": "lower bound 112 >= best 60"
+      "reason": "lower bound 110 >= best 59"
     }
   ],
-  "seconds": 255.36
+  "seconds": 164.8
 }

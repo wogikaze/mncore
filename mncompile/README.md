@@ -84,6 +84,7 @@ def kernel(a):
 | `vprog.py`, `schedule.py` | SSA 風の仮想命令列と VLIW リストスケジューラ（フォワーディング、GRF/T への格納割当て、読み出しポート制約、マスク entry 管理、レジスタ圧迫の考慮、デッドロック時の再計算・ポートコピー）。アセンブラが拒否した行は分割して修復し、不要な nop はアセンブラが受理する限り削る |
 | `select.py` | スカラ関数の命令選択（整数/浮動小数表現、定数、select、除算、exp、PE 座標定数、PE 間交換、ビット置換） |
 | `compiler.py` | 戦略の実行、候補の検証、最短の選択 |
+| `stats.py` | 命令列のユニット別命令数・充填率、ユニット割当を固定した資源下限の計測 |
 
 ### 戦略
 
@@ -138,7 +139,7 @@ XOR 型ビット置換（バイト反転・ビット反転）を `sbsl`/`ibsl`/`
 
 <!-- RESULTS -->
 
-公式ジャッジで 73/73 問 Accepted。参照解（順位表から辿れる最短の公開 Accepted 提出）以下の行数は 16 問。Accepted 問題の行数合計は生成 1617 行 / 参照解 1041 行。
+公式ジャッジで 73/73 問 Accepted。参照解（順位表から辿れる最短の公開 Accepted 提出）以下の行数は 16 問。Accepted 問題の行数合計は生成 1597 行 / 参照解 1041 行。
 
 下限は現在の命令列・ユニット割当を固定した資源下限（ユニット別命令数の最大）。余剰は生成行数との差で、依存・レイテンシ・ポート制約も含む。別の命令選択やアルゴリズムの下限ではない。
 充填率は全行に占める各ユニットの発行行数。A=ALU、M=MAU、W/R=行列レジスタ書込/読出、L1↑/↓=L1BM上り/折り返し、L2=L2BM、DAR=DAR書込、MV=MV。
@@ -147,33 +148,33 @@ XOR 型ビット置換（バイト反転・ビット反転）を `sbsl`/`ibsl`/`
 | --- | --- | ---: | ---: | ---: | ---: | ---: | --- | --- | --- | --- |
 | 1.plus-one | Accepted | 2 | 2 | +0 | 2 | 0 | A:100% | A:100% | general | local |
 | 2.plus-two | Accepted | 7 | 5 | +2 | 6 | 1 | A:86% | A:100% | general | local |
-| 3.a-plus-b | Accepted | 6 | 6 | +0 | 6 | 0 | A:100% | A:100% | general | local/-staged |
+| 3.a-plus-b | Accepted | 6 | 6 | +0 | 6 | 0 | A:100% | A:100% | general | local/staged |
 | 4.mul7 | Accepted | 10 | 6 | +4 | 9 | 1 | A:90% | A:83% M:83% | general | local |
-| 5.abs | Accepted | 23 | 13 | +10 | 23 | 0 | A:100% | A:92% M:85% L1↑:85% L1↓:85% | general | local |
+| 5.abs | Accepted | 15 | 13 | +2 | 14 | 1 | A:93% M:73% L1↑:73% L1↓:73% | A:92% M:85% L1↑:85% L1↓:85% | general | local/alternating |
 | 6.fadd-mul | Accepted | 18 | 14 | +4 | 16 | 2 | A:11% M:89% | A:100% M:79% L1↑:50% | general | local |
 | 7.mul2 | Accepted | 13 | 9 | +4 | 12 | 1 | A:8% M:92% | A:100% M:78% L1↑:22% L1↓:11% | general | local |
-| 8.fle | Accepted | 9 | 4 | +5 | 7 | 2 | A:78% M:56% | A:100% M:75% | general | local |
+| 8.fle | Accepted | 9 | 4 | +5 | 7 | 2 | A:78% M:56% | A:100% M:75% | general | local/base |
 | 9.transpose-addr | Accepted | 16 | 10 | +6 | 16 | 0 | A:100% | A:100% M:60% | general | local |
 | 10.gather-easy | Accepted | 12 | 6 | +6 | 8 | 4 | A:67% | A:83% M:33% | general | gather |
 | 11.square-sum | Accepted | 21 | 11 | +10 | 5 | 16 | A:24% M:10% L1↑:10% L2:10% | A:9% M:64% L1↑:9% L1↓:9% | general | hierarchy/split-MAB+L1B:l1bmr16/l2bmr/l2bmb/l1bmm2+local |
 | 12.convert-endian | Accepted | 6 | 3 | +3 | 6 | 0 | A:100% | A:100% M:33% | general | local |
 | 13.mod3 | Accepted | 15 | 8 | +7 | 15 | 0 | A:100% M:80% | A:100% M:62% L1↑:38% L1↓:25% | general | local |
 | 14.mat-sq | Accepted | 12 | 10 | +2 | 8 | 4 | A:50% M:33% W:67% R:17% | A:60% M:40% W:60% R:20% | general | contraction/hm-t |
-| 15.contains | Accepted | 60 | 20 | +40 | 47 | 13 | A:78% L1↑:8% L1↓:3% | A:45% M:40% W:5% L1↑:35% L1↓:35% | general | hierarchy/l1bmr16/l1bmp2+pe+rot-membership/zero-init |
+| 15.contains | Accepted | 59 | 20 | +39 | 46 | 13 | A:78% L1↑:8% L1↓:3% | A:45% M:40% W:5% L1↑:35% L1↓:35% | general | hierarchy/l1bmr16/l1bmp2+pe+rot-membership/zero-init |
 | 16.count-up | Accepted | 43 | 21 | +22 | 27 | 16 | A:63% L1↑:2% L2:19% MV:5% | A:33% M:14% L1↑:29% L1↓:5% L2:29% DAR:19% MV:43% | general | generate/spread-pdm |
 | 17.transpose-mab | Accepted | 45 | 15 | +30 | 36 | 9 | A:13% L1↑:80% | A:7% M:7% L1↑:80% L1↓:60% | general | allgather |
 | 18.inversion-small | Accepted | 30 | 9 | +21 | 21 | 9 | A:70% L1↑:7% | A:67% M:22% W:11% L1↑:11% L1↓:11% | general | pairs/l1bmr16/l1bmm2+base |
 | 19.inversion | Accepted | 76 | 31 | +45 | 59 | 17 | A:78% L1↑:3% L2:3% MV:3% | A:42% M:55% L1↑:16% L1↓:10% L2:6% MV:6% | general | pairs/l1bmd/l2bmr/pdm/l2bmb/l1bmd+base |
 | 20.fizzbuzz | Accepted | 103 | 98 | +5 | 77 | 26 | A:58% M:75% L1↑:1% L2:2% MV:2% | A:67% M:42% W:1% R:1% L1↑:1% L2:2% MV:2% | general | fmtseq/render-pdm/0p |
 | 21.hello-world | Accepted | 13 | 9 | +4 | 6 | 7 | A:46% L1↑:8% L2:8% MV:8% | A:44% M:22% L1↑:11% L2:11% MV:11% | general | generate/spread |
-| 22.bit-reverse | Accepted | 32 | 10 | +22 | 32 | 0 | A:100% | A:100% M:10% L1↑:30% L1↓:30% | general | local |
-| 23.fizzbuzz-pe | Accepted | 12 | 9 | +3 | 12 | 0 | A:100% M:33% L1↑:8% L1↓:8% | A:100% M:67% L1↑:11% L1↓:11% | general | local |
+| 22.bit-reverse | Accepted | 32 | 10 | +22 | 31 | 1 | A:97% L1↑:3% L1↓:3% | A:100% M:10% L1↑:30% L1↓:30% | general | local |
+| 23.fizzbuzz-pe | Accepted | 12 | 9 | +3 | 12 | 0 | A:100% M:33% L1↑:8% L1↓:8% | A:100% M:67% L1↑:11% L1↓:11% | general | local/base |
 | 24.log2 | Accepted | 15 | 7 | +8 | 15 | 0 | A:100% M:27% | A:100% M:71% L1↑:29% L1↓:29% | general | local |
-| 25.hsv2rgb | Accepted | 32 | 12 | +20 | 20 | 12 | A:62% M:41% L1↑:44% L1↓:44% | A:83% M:83% L1↑:42% L1↓:42% | general | local |
+| 25.hsv2rgb | Accepted | 27 | 12 | +15 | 20 | 7 | A:74% M:48% L1↑:52% L1↓:52% | A:83% M:83% L1↑:42% L1↓:42% | general | local/alternating |
 | 1.a-b | Accepted | 4 | 3 | +1 | 2 | 2 | A:50% M:50% | A:33% M:67% | general | local |
 | 2.fmul7 | Accepted | 5 | 5 | +0 | 4 | 1 | A:20% M:80% | A:20% M:80% | general | local |
-| 3.relu | Accepted | 2 | 2 | +0 | 2 | 0 | A:100% | A:100% | general | local |
-| 4.relu-grad | Accepted | 3 | 3 | +0 | 3 | 0 | A:100% | A:100% | general | local |
+| 3.relu | Accepted | 2 | 2 | +0 | 2 | 0 | A:100% | A:100% | general | local/base |
+| 4.relu-grad | Accepted | 3 | 3 | +0 | 3 | 0 | A:100% | A:100% | general | local/base |
 | 5.addcol-vec | Accepted | 4 | 3 | +1 | 2 | 2 | A:50% M:50% | M:100% | general | local |
 | 6.subrow-vec | Accepted | 35 | 24 | +11 | 18 | 17 | A:20% M:11% L1↑:51% | A:21% M:33% L1↑:58% L1↓:58% | general | split/local |
 | 7.sumcol-mini | Accepted | 4 | 4 | +0 | 3 | 1 | A:25% M:75% | A:25% M:75% | general | local |
@@ -181,7 +182,7 @@ XOR 型ビット置換（バイト反転・ビット反転）を `sbsl`/`ibsl`/`
 | 9.sumrow-mini | Accepted | 9 | 6 | +3 | 6 | 3 | A:33% M:67% | A:67% M:50% W:33% | general | pe-reduce |
 | 10.sumrow | Accepted | 24 | 16 | +8 | 7 | 17 | A:29% M:21% L1↑:21% | A:44% M:25% W:6% L1↑:38% L1↓:38% | general | split/mab-reduce/pe+rot-local |
 | 11.maxrow | Accepted | 24 | 20 | +4 | 12 | 12 | A:50% L1↑:21% | A:55% L1↑:30% L1↓:30% | general | split/mab-reduce/pe+rot-local |
-| 12.divrow-vec | Accepted | 56 | 29 | +27 | 24 | 32 | A:21% M:43% L1↑:32% | A:24% M:38% L1↑:59% L1↓:59% | general | split/local/newton2 |
+| 12.divrow-vec | Accepted | 56 | 29 | +27 | 24 | 32 | A:30% M:43% L1↑:32% | A:24% M:38% L1↑:59% L1↓:59% | general | split/local/newton2 |
 | 13.exp-low-prec | Accepted | 20 | 10 | +10 | 15 | 5 | A:75% M:60% | A:70% M:80% L1↑:10% L1↓:10% | general | local/exp_degree3 |
 | 14.exp | Accepted | 30 | 16 | +14 | 20 | 10 | A:63% M:67% | A:75% M:69% L1↑:31% L1↓:31% | general | local/exp_degree6 |
 | 15.onehot-mini | Accepted | 17 | 7 | +10 | 17 | 0 | A:100% | A:86% M:43% L1↑:29% L1↓:29% | general | relayout/base |
@@ -205,7 +206,7 @@ XOR 型ビット置換（バイト反転・ビット反転）を `sbsl`/`ibsl`/`
 | 33.matmul-trb-mab-lm-4-8-16 | Accepted | 7 | 7 | +0 | 5 | 2 | A:71% M:29% W:57% | A:86% M:29% W:57% | general | contraction/gm-direct |
 | 34.matmul-trb-mab-lm-4-16-8 | Accepted | 6 | 7 | -1 | 5 | 1 | A:83% M:17% W:67% | A:86% M:29% W:57% | general | contraction/hm |
 | 35.matmul-trb-mab-lm-4-16-16 | Accepted | 6 | 12 | -6 | 5 | 1 | A:83% M:17% W:67% | A:67% M:17% W:33% L1↑:8% L1↓:8% | general | contraction/hm |
-| 36.matmul-trb-pkg-lm-256-16-16 | Accepted | 12 | 12 | +0 | 10 | 2 | A:83% M:33% W:67% | A:67% M:17% W:33% L1↑:8% L1↓:8% | general | contraction/gm-direct |
+| 36.matmul-trb-pkg-lm-256-16-16 | Accepted | 6 | 12 | -6 | 5 | 1 | A:83% M:17% W:67% | A:67% M:17% W:33% L1↑:8% L1↓:8% | testcase | contraction/hm |
 | 37.matmul-trb-mab-lm-32-8-16 | Accepted | 21 | 17 | +4 | 16 | 5 | A:57% M:76% W:19% | A:41% M:12% W:24% L1↑:47% L1↓:47% | general | contraction/gm-direct |
 | 38.matmul-trb-pkg-lm-256-128-16 | Accepted | 48 | 23 | +25 | 16 | 32 | A:25% M:33% W:8% L1↑:33% | A:52% M:70% W:17% L1↑:70% L1↓:70% | general | hierarchy/l1bmr32/l1bmm2+contraction/gm-direct |
 | 39.matmul-trb-pkg-lmdram-256-1024-16 | Accepted | 38 | 29 | +9 | 16 | 22 | A:32% M:42% W:11% L1↑:21% L2:11% MV:5% | A:41% M:55% W:14% L1↑:28% L2:14% MV:7% | general | hierarchy/l1bmr32/l2bmr/mvp+contraction/gm-direct |

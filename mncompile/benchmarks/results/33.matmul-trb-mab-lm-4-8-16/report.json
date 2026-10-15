@@ -1,5 +1,38 @@
 {
   "lines": 7,
+  "mode": "general",
+  "resources": {
+    "lines": 7,
+    "instructions": 11,
+    "nop_lines": 0,
+    "resource_lower_bound": 5,
+    "scheduling_gap": 2,
+    "bottleneck_units": [
+      "alu"
+    ],
+    "unit_counts": {
+      "alu": 5,
+      "mau": 2,
+      "mwrite": 4,
+      "mread": 0,
+      "l1bm": 0,
+      "l1bm-turnaround": 0,
+      "l2bm": 0,
+      "l2bmdarw": 0,
+      "mv": 0
+    },
+    "unit_utilization": {
+      "alu": 0.7142857142857143,
+      "mau": 0.2857142857142857,
+      "mwrite": 0.5714285714285714,
+      "mread": 0.0,
+      "l1bm": 0.0,
+      "l1bm-turnaround": 0.0,
+      "l2bm": 0.0,
+      "l2bmdarw": 0.0,
+      "mv": 0.0
+    }
+  },
   "strategy": "contraction/gm-direct",
   "candidates": [
     {
@@ -14,11 +47,11 @@
   "rejected": [
     {
       "strategy": "relayout",
-      "reason": "local map: ('A', (0, 2)) is not stored in PE 0"
+      "reason": "local map: ('B', (0, 2)) is not stored in PE 0"
     },
     {
       "strategy": "local-reduce",
-      "reason": "local map: ('A', (0, 2)) is not stored in PE 0"
+      "reason": "local map: ('B', (0, 2)) is not stored in PE 0"
     },
     {
       "strategy": "movement",
@@ -41,16 +74,24 @@
       "reason": "pairs: integer LM output"
     },
     {
+      "strategy": "membership",
+      "reason": "membership: integer LM output"
+    },
+    {
+      "strategy": "fmtseq",
+      "reason": "fmtseq: byte string in DRAM"
+    },
+    {
       "strategy": "allgather",
       "reason": "allgather: one input and one output"
     },
     {
       "strategy": "hierarchy/split-L1B:l1bmm@32/l2bmr/l2bmb/l1bmm2+local",
-      "reason": "lower bound 29 >= best 7"
+      "reason": "lower bound 26 >= best 7"
     },
     {
       "strategy": "hierarchy/split-L1B:l1bmm@16/l2bmr/l2bmb/l1bmm2+local",
-      "reason": "lower bound 30 >= best 7"
+      "reason": "lower bound 27 >= best 7"
     },
     {
       "strategy": "mab-reduce/pe+rot-local",
@@ -66,8 +107,8 @@
     },
     {
       "strategy": "split/local",
-      "reason": "lower bound 161 >= best 7"
+      "reason": "lower bound 147 >= best 7"
     }
   ],
-  "seconds": 16.32
+  "seconds": 13.33
 }

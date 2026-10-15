@@ -1,9 +1,42 @@
 {
   "lines": 44,
+  "mode": "general",
+  "resources": {
+    "lines": 44,
+    "instructions": 40,
+    "nop_lines": 4,
+    "resource_lower_bound": 22,
+    "scheduling_gap": 22,
+    "bottleneck_units": [
+      "alu"
+    ],
+    "unit_counts": {
+      "alu": 22,
+      "mau": 0,
+      "mwrite": 0,
+      "mread": 0,
+      "l1bm": 18,
+      "l1bm-turnaround": 0,
+      "l2bm": 0,
+      "l2bmdarw": 0,
+      "mv": 0
+    },
+    "unit_utilization": {
+      "alu": 0.5,
+      "mau": 0.0,
+      "mwrite": 0.0,
+      "mread": 0.0,
+      "l1bm": 0.4090909090909091,
+      "l1bm-turnaround": 0.0,
+      "l2bm": 0.0,
+      "l2bmdarw": 0.0,
+      "mv": 0.0
+    }
+  },
   "strategy": "split/local/base",
   "candidates": [
     {
-      "strategy": "local",
+      "strategy": "local/base",
       "lines": 139
     },
     {
@@ -57,13 +90,26 @@
       "reason": "pairs: integer LM output"
     },
     {
+      "strategy": "membership",
+      "reason": "membership: integer LM output"
+    },
+    {
+      "strategy": "fmtseq",
+      "reason": "fmtseq: byte string in DRAM"
+    },
+    {
       "strategy": "allgather",
       "reason": "allgather: LM to LM copies of one dtype"
     },
     {
-      "strategy": "split/local/-staged",
+      "strategy": "local/alternating",
+      "reason": "verification: 50 mismatches, e.g. [('X', (0, 2), 0.0, 1.0), ('X', (1, 10), 0.0, 1.0), ('X', (2, 0), 0.0, 1.0)]",
+      "vsm": "imm ui\"0x00000001\" $ls448/1000\nilsl $subpeid $aluf $nowrite\niadd $aluf $ls448 $ls0v\nilsl $subpeid $ls448 $lr256v\nimm ui\"0x00000008\" $ls450/1000\nilsl $subpeid $ls448 $lr264v\nimm ui\"0x00000009\" $ls452/1000\nilsl $subpeid $ls448 $ls8v\niadd $lr256v $ls450 $ls16v\niadd $lr264v $ls452 $ls24v\nixor $m0v $ls8v $omr1\nimm ui\"0x3F800000\" $ls454/1000\nixor $m0v $ls0v $omr2\nixor $m0v $ls16v $omr3\nixor $m0v $ls24v $omr4\nixor $m4v $ls8v $omr5\nixor $m4v $ls0v $omr6\nixor $m4v $ls16v $omr7\nixor $m4v $ls24v $omr8\nixor $m8v $ls8v $omr9\nixor $m8v $ls0v $omr10\nixor $m8v $ls16v $omr11\nixor $m8v $ls24v $omr12\nixor $m12v $ls8v $omr13\nixor $m12v $ls0v $omr14\nixor $m12v $ls16v $omr15\nlpassa/$imr1 $ls454 $n0v4\nixor $m12v $ls24v $omr1\nlpassa/$imr2 $ls454 $r1v4\nixor $m16v $ls8v $omr2\nlpassa/$imr3 $ls454 $n2v4\nixor $m16v $ls0v $omr3\nlpassa/$imr4 $ls454 $r3v4\nixor $m16v $ls16v $omr4\nlpassa/$imr5 $ls454 $n16v4; l1bmd $lr0v $lbi\nl1bmd $lbi $ln0v; ixor $m16v $ls24v $omr5; l1bmd $lr8v $lbi\nl1bmd $lbi $ln8v; lpassa/$imr6 $ls454 $r17v4\nixor $m20v $ls8v $omr6\nlpassa/$imr7 $ls454 $n18v4\nixor $m20v $ls0v $omr7\nlpassa/$imr8 $ls454 $r19v4\nixor $m20v $ls16v $omr8\nlpassa/$imr9 $ls454 $n32v4; l1bmd $lr16v $lbi\nl1bmd $lbi $ln16v; ixor $m20v $ls24v $omr9; l1bmd $lr24v $lbi\nl1bmd $lbi $ln24v; lpassa/$imr10 $ls454 $r33v4\nixor $m24v $ls8v $omr10\nlpassa/$imr11 $ls454 $n34v4\nixor $m24v $ls0v $omr11\nlpassa/$imr12 $ls454 $r35v4\nixor $m24v $ls16v $omr12\nlpassa/$imr13 $ls454 $n48v4; l1bmd $lr32v $lbi\nl1bmd $lbi $ln32v; ixor $m24v $ls24v $omr13; l1bmd $lr40v $lbi\nl1bmd $lbi $ln40v; lpassa/$imr14 $ls454 $r49v4\nixor $m28v $ls8v $omr14\nlpassa/$imr15 $ls454 $n50v4\nixor $m28v $ls0v $omr15\nlpassa/$imr1 $ls454 $r51v4\nixor $m28v $ls16v $omr1\nlpassa/$imr2 $ls454 $n64v4; l1bmd $lr48v $lbi\nl1bmd $lbi $ln48v; ixor $m28v $ls24v $omr2; l1bmd $lr56v $lbi\nl1bmd $lbi $ln56v; lpassa/$imr3 $ls454 $r65v4\nixor $m32v $ls8v $omr3\nlpassa/$imr4 $ls454 $n66v4\nixor $m32v $ls0v $omr4\nlpassa/$imr5 $ls454 $r67v4\nixor $m32v $ls16v $omr5\nlpassa/$imr6 $ls454 $n80v4; l1bmd $lr64v $lbi\nl1bmd $lbi $ln64v; ixor $m32v $ls24v $omr6; l1bmd $lr72v $lbi\nl1bmd $lbi $ln72v; lpassa/$imr7 $ls454 $r81v4\nixor $m36v $ls8v $omr7\nlpassa/$imr8 $ls454 $n82v4\nixor $m36v $ls0v $omr8\nlpassa/$imr9 $ls454 $r83v4\nixor $m36v $ls16v $omr9\nlpassa/$imr10 $ls454 $n96v4; l1bmd $lr80v $lbi\nl1bmd $lbi $ln80v; ixor $m36v $ls24v $omr10; l1bmd $lr88v $lbi\nl1bmd $lbi $ln88v; lpassa/$imr11 $ls454 $r97v4\nixor $m40v $ls8v $omr11\nlpassa/$imr12 $ls454 $n98v4\nixor $m40v $ls0v $omr12\nlpassa/$imr13 $ls454 $r99v4\nixor $m40v $ls16v $omr13\nlpassa/$imr14 $ls454 $n112v4; l1bmd $lr96v $lbi\nl1bmd $lbi $ln96v; ixor $m40v $ls24v $omr14; l1bmd $lr104v $lbi\nl1bmd $lbi $ln104v; lpassa/$imr15 $ls454 $r113v4\nixor $m44v $ls8v $omr15\nlpassa/$imr1 $ls454 $n114v4\nixor $m44v $ls0v $omr1\nlpassa/$imr2 $ls454 $r115v4\nixor $m44v $ls16v $omr2\nlpassa/$imr3 $ls454 $n128v4; l1bmd $lr112v $lbi\nl1bmd $lbi $ln112v; ixor $m44v $ls24v $omr3; l1bmd $lr120v $lbi\nl1bmd $lbi $ln120v; lpassa/$imr4 $ls454 $r129v4\nixor $m48v $ls8v $omr4\nlpassa/$imr5 $ls454 $n130v4\nixor $m48v $ls0v $omr5\nlpassa/$imr6 $ls454 $r131v4\nixor $m48v $ls16v $omr6\nlpassa/$imr7 $ls454 $n144v4; l1bmd $lr128v $lbi\nl1bmd $lbi $ln128v; ixor $m48v $ls24v $omr7; l1bmd $lr136v $lbi\nl1bmd $lbi $ln136v; lpassa/$imr8 $ls454 $r145v4\nixor $m52v $ls8v $omr8\nlpassa/$imr9 $ls454 $n146v4\nixor $m52v $ls0v $omr9\nlpassa/$imr10 $ls454 $r147v4\nixor $m52v $ls16v $omr10\nlpassa/$imr11 $ls454 $n160v4; l1bmd $lr144v $lbi\nl1bmd $lbi $ln144v; ixor $m52v $ls24v $omr11; l1bmd $lr152v $lbi\nl1bmd $lbi $ln152v; lpassa/$imr12 $ls454 $r161v4\nixor $m56v $ls8v $omr12\nlpassa/$imr13 $ls454 $n162v4\nixor $m56v $ls0v $omr13\nlpassa/$imr14 $ls454 $r163v4\nixor $m56v $ls16v $omr14\nlpassa/$imr15 $ls454 $n176v4; l1bmd $lr160v $lbi\nl1bmd $lbi $ln160v; ixor $m56v $ls24v $omr15; l1bmd $lr168v $lbi\nl1bmd $lbi $ln168v; lpassa/$imr1 $ls454 $r177v4\nixor $m60v $ls8v $omr1\nlpassa/$imr2 $ls454 $n178v4\nixor $m60v $ls0v $omr2\nlpassa/$imr3 $ls454 $r179v4\nixor $m60v $ls16v $omr3\nlpassa/$imr4 $ls454 $n192v4; l1bmd $lr176v $lbi\nl1bmd $lbi $ln176v; ixor $m60v $ls24v $omr4; l1bmd $lr184v $lbi\nl1bmd $lbi $ln184v; lpassa/$imr5 $ls454 $r193v4\nlpassa/$imr6 $ls454 $n194v4\nlpassa/$imr7 $ls454 $r195v4\nlpassa/$imr8 $ls454 $n208v4\nlpassa/$imr9 $ls454 $r209v4; l1bmd $lr192v $lbi\nl1bmd $lbi $ln192v; lpassa/$imr11 $ls454 $r211v4; l1bmd $lr200v $lbi\nl1bmd $lbi $ln200v; lpassa/$imr13 $ls454 $r225v4\nlpassa/$imr10 $ls454 $n210v4; l1bmd $lr208v $lbi\nl1bmd $lbi $ln208v; lpassa/$imr15 $ls454 $r227v4; l1bmd $lr216v $lbi\nl1bmd $lbi $ln216v; lpassa/$imr2 $ls454 $r241v4\nlpassa/$imr12 $ls454 $n224v4\nlpassa/$imr14 $ls454 $n226v4; l1bmd $lr224v $lbi\nl1bmd $lbi $ln224v; lpassa/$imr4 $ls454 $r243v4; l1bmd $lr232v $lbi\nl1bmd $lbi $ln232v\nlpassa/$imr1 $ls454 $n240v4\nlpassa/$imr3 $ls454 $n242v4; l1bmd $lr240v $lbi\nl1bmd $lbi $ln240v; l1bmd $lr248v $lbi\nl1bmd $lbi $ln248v\n"
+    },
+    {
+      "strategy": "split/local/staged",
       "reason": "lower bound 44 >= best 44"
     }
   ],
-  "seconds": 19.5
+  "seconds": 19.88
 }

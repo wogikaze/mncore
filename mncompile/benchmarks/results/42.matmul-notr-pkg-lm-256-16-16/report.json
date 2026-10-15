@@ -1,5 +1,38 @@
 {
   "lines": 23,
+  "mode": "general",
+  "resources": {
+    "lines": 23,
+    "instructions": 40,
+    "nop_lines": 0,
+    "resource_lower_bound": 16,
+    "scheduling_gap": 7,
+    "bottleneck_units": [
+      "mwrite"
+    ],
+    "unit_counts": {
+      "alu": 12,
+      "mau": 4,
+      "mwrite": 16,
+      "mread": 8,
+      "l1bm": 0,
+      "l1bm-turnaround": 0,
+      "l2bm": 0,
+      "l2bmdarw": 0,
+      "mv": 0
+    },
+    "unit_utilization": {
+      "alu": 0.5217391304347826,
+      "mau": 0.17391304347826086,
+      "mwrite": 0.6956521739130435,
+      "mread": 0.34782608695652173,
+      "l1bm": 0.0,
+      "l1bm-turnaround": 0.0,
+      "l2bm": 0.0,
+      "l2bmdarw": 0.0,
+      "mv": 0.0
+    }
+  },
   "strategy": "contraction/gm",
   "candidates": [
     {
@@ -41,24 +74,36 @@
       "reason": "pairs: integer LM output"
     },
     {
+      "strategy": "membership",
+      "reason": "membership: integer LM output"
+    },
+    {
+      "strategy": "fmtseq",
+      "reason": "fmtseq: byte string in DRAM"
+    },
+    {
       "strategy": "allgather",
       "reason": "allgather: one input and one output"
     },
     {
       "strategy": "hierarchy/split-MAB:l1bmr32/l1bmm2+local",
-      "reason": "lower bound 24 >= best 23"
+      "reason": "verification: 50 mismatches, e.g. [('C', (0, 0), 881478.0, 1222548.0), ('C', (0, 1), 913950.0, 1067437.0), ('C', (0, 2), 1171662.0, 1134788.0)]",
+      "vsm": "imm ui\"0x00000001\" $ls450/1000\nimm ui\"0x00000002\" $ls448/1000\nilsr $mabid $ls450 $nowrite\nilsl $aluf $ls450 $ls4v\nimm ui\"0x00000003\" $ls452/1000\nilsl $mabid $ls448 $llt\nipassa $mabid $nowrite\nisub $aluf $ls4v $lr0v\nilsr $mabid $ls452 $nowrite\nilsl $aluf $ls450 $ls4v\nlpassa $mt16v $s0v\niadd $lr0v $ls4v $llt\nnop\nfvmul $mt0 $s0v $n16v\nfvmul $mt4 $s0v $n20v\nfvmul $mt8 $s0v $n24v\nfvmul $mt12 $s0v $n28v\nnop/3\nl1bmrffadd $lln16v $llb0\nnop/3\nl1bmm $llb0 $lln0v\n"
     },
     {
       "strategy": "hierarchy/split-MAB+L1B:l1bmr32/l1bmm2+local",
-      "reason": "lower bound 24 >= best 23"
+      "reason": "verification: 50 mismatches, e.g. [('C', (0, 0), 881478.0, 1222548.0), ('C', (0, 1), 913950.0, 1067437.0), ('C', (0, 2), 1171662.0, 1134788.0)]",
+      "vsm": "imm ui\"0x00000001\" $ls450/1000\nimm ui\"0x00000002\" $ls448/1000\nilsr $mabid $ls450 $nowrite\nilsl $aluf $ls450 $ls4v\nimm ui\"0x00000003\" $ls452/1000\nilsl $mabid $ls448 $llt\nipassa $mabid $nowrite\nisub $aluf $ls4v $lr0v\nilsr $mabid $ls452 $nowrite\nilsl $aluf $ls450 $ls4v\nlpassa $mt16v $s0v\niadd $lr0v $ls4v $llt\nnop\nfvmul $mt0 $s0v $n16v\nfvmul $mt4 $s0v $n20v\nfvmul $mt8 $s0v $n24v\nfvmul $mt12 $s0v $n28v\nnop/3\nl1bmrffadd $lln16v $llb0\nnop/3\nl1bmm $llb0 $lln0v\n"
     },
     {
       "strategy": "hierarchy/split-MAB:l1bmr16/l1bmm2+local",
-      "reason": "lower bound 25 >= best 23"
+      "reason": "verification: 50 mismatches, e.g. [('C', (0, 0), 881478.0, 1222548.0), ('C', (0, 1), 913950.0, 1067437.0), ('C', (0, 2), 1171662.0, 1134788.0)]",
+      "vsm": "imm ui\"0x00000001\" $ls450/1000\nimm ui\"0x00000002\" $ls448/1000\nilsr $mabid $ls450 $nowrite\nilsl $aluf $ls450 $ls4v\nimm ui\"0x00000003\" $ls452/1000\nilsl $mabid $ls448 $llt\nipassa $mabid $nowrite\nisub $aluf $ls4v $lr0v\nilsr $mabid $ls452 $nowrite\nilsl $aluf $ls450 $ls4v\nlpassa $mt16v $s0v\niadd $lr0v $ls4v $llt\nnop\nfvmul $mt0 $s0v $n16v\nfvmul $mt4 $s0v $n20v\nfvmul $mt8 $s0v $n24v\nfvmul $mt12 $s0v $n28v\nnop/3\nl1bmrffadd $ln16v $lb0\nl1bmrffadd $ln24v $lb16\nnop/3\nl1bmm $llb0 $lln0v\n"
     },
     {
       "strategy": "hierarchy/split-MAB+L1B:l1bmr16/l1bmm2+local",
-      "reason": "lower bound 25 >= best 23"
+      "reason": "verification: 50 mismatches, e.g. [('C', (0, 0), 881478.0, 1222548.0), ('C', (0, 1), 913950.0, 1067437.0), ('C', (0, 2), 1171662.0, 1134788.0)]",
+      "vsm": "imm ui\"0x00000001\" $ls450/1000\nimm ui\"0x00000002\" $ls448/1000\nilsr $mabid $ls450 $nowrite\nilsl $aluf $ls450 $ls4v\nimm ui\"0x00000003\" $ls452/1000\nilsl $mabid $ls448 $llt\nipassa $mabid $nowrite\nisub $aluf $ls4v $lr0v\nilsr $mabid $ls452 $nowrite\nilsl $aluf $ls450 $ls4v\nlpassa $mt16v $s0v\niadd $lr0v $ls4v $llt\nnop\nfvmul $mt0 $s0v $n16v\nfvmul $mt4 $s0v $n20v\nfvmul $mt8 $s0v $n24v\nfvmul $mt12 $s0v $n28v\nnop/3\nl1bmrffadd $ln16v $lb0\nl1bmrffadd $ln24v $lb16\nnop/3\nl1bmm $llb0 $lln0v\n"
     },
     {
       "strategy": "contraction/hm-t",
@@ -70,12 +115,12 @@
     },
     {
       "strategy": "split/local",
-      "reason": "lower bound 186 >= best 23"
+      "reason": "lower bound 183 >= best 23"
     },
     {
       "strategy": "local",
       "reason": "lower bound 207 >= best 23"
     }
   ],
-  "seconds": 187.15
+  "seconds": 684.32
 }

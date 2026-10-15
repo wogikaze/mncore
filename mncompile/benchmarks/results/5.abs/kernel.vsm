@@ -1,23 +1,15 @@
-imm ui"0x00000000" $ls448/1000
-isub $aluf $lm0v $nowrite
-imax $lm0v $aluf $ln0v
-isub $ls448 $lm8v $nowrite
-imax $lm8v $aluf $ln8v
-isub $ls448 $lm16v $nowrite
-imax $lm16v $aluf $ln16v
-isub $ls448 $lm24v $nowrite
-imax $lm24v $aluf $ln24v
-isub $ls448 $lm32v $nowrite
-imax $lm32v $aluf $ln32v
-isub $ls448 $lm40v $nowrite
-imax $lm40v $aluf $ln40v
-isub $ls448 $lm48v $nowrite
-imax $lm48v $aluf $ln48v
-isub $ls448 $lm56v $nowrite
-imax $lm56v $aluf $ln56v
-isub $ls448 $lm64v $nowrite
-imax $lm64v $aluf $ln64v
-isub $ls448 $lm72v $nowrite
-imax $lm72v $aluf $ln72v
-isub $ls448 $lm80v $nowrite
-imax $lm80v $aluf $ln80v
+fvpassa $lm0v $omr1; isub $lr510 $lm0v $ln0v; l1bmd $lm0v $lbi
+l1bmd $lbi $ln0v/$imr1; fvpassa $lm8v $omr2; isub $lr510 $lm8v $lr8v; l1bmd $lm8v $lbi
+l1bmd $lbi $lr8v/$imr2; fvpassa $lm16v $omr1; isub $lr510 $lm16v $ln16v; l1bmd $lm16v $lbi
+l1bmd $lbi $ln16v/$imr1; fvpassa $lm24v $omr2; isub $lr510 $lm24v $lr24v; l1bmd $lm24v $lbi
+l1bmd $lbi $lr24v/$imr2; fvpassa $lm32v $omr1; isub $lr510 $lm32v $ln32v; l1bmd $lm32v $lbi
+l1bmd $lbi $ln32v/$imr1; fvpassa $lm40v $omr2; isub $lr510 $lm40v $lr40v; l1bmd $lm40v $lbi
+l1bmd $lbi $lr40v/$imr2; fvpassa $lm48v $omr1; isub $lr510 $lm48v $ln48v; l1bmd $lm48v $lbi
+l1bmd $lbi $ln48v/$imr1; fvpassa $lm56v $omr2; isub $lr510 $lm56v $lr56v; l1bmd $lm56v $lbi
+l1bmd $lbi $lr56v/$imr2; fvpassa $lm64v $omr1; isub $lr510 $lm64v $ln64v; l1bmd $lm64v $lbi
+l1bmd $lbi $ln64v/$imr1; fvpassa $lm72v $omr2; isub $lr510 $lm72v $lr72v; l1bmd $lm72v $lbi
+l1bmd $lbi $lr72v/$imr2; fvpassa $lm80v $omr1; isub $lr510 $lm80v $ln80v; l1bmd $lm80v $lbi
+l1bmd $lbi $ln80v/$imr1
+lpassa $llr[8,12,24,28] $lln[8,12,24,28]
+lpassa $llr[40,44,56,60] $lln[40,44,56,60]
+lpassa $llr[72,76,76,76] $lln[72,76,76,76]

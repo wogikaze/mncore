@@ -1,5 +1,38 @@
 {
   "lines": 4,
+  "mode": "general",
+  "resources": {
+    "lines": 4,
+    "instructions": 6,
+    "nop_lines": 0,
+    "resource_lower_bound": 3,
+    "scheduling_gap": 1,
+    "bottleneck_units": [
+      "alu"
+    ],
+    "unit_counts": {
+      "alu": 3,
+      "mau": 1,
+      "mwrite": 2,
+      "mread": 0,
+      "l1bm": 0,
+      "l1bm-turnaround": 0,
+      "l2bm": 0,
+      "l2bmdarw": 0,
+      "mv": 0
+    },
+    "unit_utilization": {
+      "alu": 0.75,
+      "mau": 0.25,
+      "mwrite": 0.5,
+      "mread": 0.0,
+      "l1bm": 0.0,
+      "l1bm-turnaround": 0.0,
+      "l2bm": 0.0,
+      "l2bmdarw": 0.0,
+      "mv": 0.0
+    }
+  },
   "strategy": "contraction/gm-direct",
   "candidates": [
     {
@@ -41,6 +74,14 @@
       "reason": "pairs: integer LM output"
     },
     {
+      "strategy": "membership",
+      "reason": "membership: integer LM output"
+    },
+    {
+      "strategy": "fmtseq",
+      "reason": "fmtseq: byte string in DRAM"
+    },
+    {
       "strategy": "allgather",
       "reason": "allgather: one input and one output"
     },
@@ -50,15 +91,15 @@
     },
     {
       "strategy": "hierarchy/split-L1B:l1bmm@32/l2bmr/l2bmb/l1bmm2+local",
-      "reason": "lower bound 24 >= best 4"
+      "reason": "lower bound 25 >= best 4"
     },
     {
       "strategy": "hierarchy/split-L1B:l1bmm@16/l2bmr/l2bmb/l1bmm2+local",
-      "reason": "lower bound 24 >= best 4"
+      "reason": "lower bound 25 >= best 4"
     },
     {
       "strategy": "split/mab-reduce/pe+rot-local",
-      "reason": "lower bound 45 >= best 4"
+      "reason": "lower bound 40 >= best 4"
     },
     {
       "strategy": "local",
@@ -66,8 +107,8 @@
     },
     {
       "strategy": "split/local",
-      "reason": "lower bound 156 >= best 4"
+      "reason": "lower bound 144 >= best 4"
     }
   ],
-  "seconds": 10.65
+  "seconds": 7.78
 }

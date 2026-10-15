@@ -1,5 +1,38 @@
 {
   "lines": 103,
+  "mode": "general",
+  "resources": {
+    "lines": 103,
+    "instructions": 142,
+    "nop_lines": 7,
+    "resource_lower_bound": 77,
+    "scheduling_gap": 26,
+    "bottleneck_units": [
+      "mau"
+    ],
+    "unit_counts": {
+      "alu": 60,
+      "mau": 77,
+      "mwrite": 0,
+      "mread": 0,
+      "l1bm": 1,
+      "l1bm-turnaround": 0,
+      "l2bm": 2,
+      "l2bmdarw": 0,
+      "mv": 2
+    },
+    "unit_utilization": {
+      "alu": 0.5825242718446602,
+      "mau": 0.7475728155339806,
+      "mwrite": 0.0,
+      "mread": 0.0,
+      "l1bm": 0.009708737864077669,
+      "l1bm-turnaround": 0.0,
+      "l2bm": 0.019417475728155338,
+      "l2bmdarw": 0.0,
+      "mv": 0.019417475728155338
+    }
+  },
   "strategy": "fmtseq/render-pdm/0p",
   "candidates": [
     {
@@ -69,5 +102,5 @@
       "reason": "lower bound 8371 >= best 103"
     }
   ],
-  "seconds": 71.63
+  "seconds": 45.93
 }

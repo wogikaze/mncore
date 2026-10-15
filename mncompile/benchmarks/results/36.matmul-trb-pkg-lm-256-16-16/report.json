@@ -1,24 +1,53 @@
 {
-  "lines": 12,
-  "strategy": "contraction/gm-direct",
+  "lines": 6,
+  "mode": "testcase",
+  "resources": {
+    "lines": 6,
+    "instructions": 10,
+    "nop_lines": 0,
+    "resource_lower_bound": 5,
+    "scheduling_gap": 1,
+    "bottleneck_units": [
+      "alu"
+    ],
+    "unit_counts": {
+      "alu": 5,
+      "mau": 1,
+      "mwrite": 4,
+      "mread": 0,
+      "l1bm": 0,
+      "l1bm-turnaround": 0,
+      "l2bm": 0,
+      "l2bmdarw": 0,
+      "mv": 0
+    },
+    "unit_utilization": {
+      "alu": 0.8333333333333334,
+      "mau": 0.16666666666666666,
+      "mwrite": 0.6666666666666666,
+      "mread": 0.0,
+      "l1bm": 0.0,
+      "l1bm-turnaround": 0.0,
+      "l2bm": 0.0,
+      "l2bmdarw": 0.0,
+      "mv": 0.0
+    }
+  },
+  "strategy": "contraction/hm",
   "candidates": [
     {
-      "strategy": "contraction/gm-direct",
-      "lines": 12
-    },
-    {
-      "strategy": "contraction/gm",
-      "lines": 13
+      "strategy": "contraction/hm",
+      "lines": 6
     }
   ],
   "rejected": [
     {
       "strategy": "relayout",
-      "reason": "local map: ('A', (0, 2)) is not stored in PE 0"
+      "reason": "local map: ('B', (0, 2)) is not stored in PE 0"
     },
     {
       "strategy": "local-reduce",
-      "reason": "local map: ('A', (0, 2)) is not stored in PE 0"
+      "reason": "local map: ('B', (0, 2)) is not stored in PE 0"
     },
     {
       "strategy": "movement",
@@ -41,46 +70,57 @@
       "reason": "pairs: integer LM output"
     },
     {
+      "strategy": "membership",
+      "reason": "membership: integer LM output"
+    },
+    {
+      "strategy": "fmtseq",
+      "reason": "fmtseq: byte string in DRAM"
+    },
+    {
       "strategy": "allgather",
       "reason": "allgather: one input and one output"
     },
     {
-      "strategy": "contraction/hm",
-      "reason": "verification: 50 mismatches, e.g. [('C', (23, 0), 1172468.0, 1172329.0), ('C', (23, 1), 1080898.0, 1081308.0), ('C', (23, 2), 1215666.0, 1214924.0)]",
-      "vsm": "hbfn/9 $llm[16,20,48,52]r $nowrite\nhmwrite $aluf $ly0; hbfn/9 $llm[24,28,56,60]r $nowrite\nhmwrite $aluf $ly4; hbfn/9 $llm[32,36,64,68]r $nowrite\nhmwrite $aluf $ly8; hbfn/9 $llm[40,44,72,76]r $nowrite\nhmwrite $aluf $ly12; hbfn/9 $llm0vr $nowrite\nhmmul $ly $aluf $lln0v\n"
+      "strategy": "contraction/gm-direct",
+      "reason": "lower bound 6 >= best 6"
+    },
+    {
+      "strategy": "contraction/gm",
+      "reason": "lower bound 6 >= best 6"
     },
     {
       "strategy": "hierarchy/split-MAB:l1bmr32/l1bmm2+local",
-      "reason": "lower bound 32 >= best 12"
+      "reason": "lower bound 32 >= best 6"
     },
     {
       "strategy": "hierarchy/split-MAB+L1B:l1bmr32/l1bmm2+local",
-      "reason": "lower bound 32 >= best 12"
+      "reason": "lower bound 32 >= best 6"
     },
     {
       "strategy": "hierarchy/split-MAB:l1bmr16/l1bmm2+local",
-      "reason": "lower bound 33 >= best 12"
+      "reason": "lower bound 33 >= best 6"
     },
     {
       "strategy": "hierarchy/split-MAB+L1B:l1bmr16/l1bmm2+local",
-      "reason": "lower bound 33 >= best 12"
+      "reason": "lower bound 33 >= best 6"
     },
     {
       "strategy": "mab-reduce/pe+rot-local",
-      "reason": "lower bound 56 >= best 12"
+      "reason": "lower bound 56 >= best 6"
     },
     {
       "strategy": "split/mab-reduce/pe+rot-local",
-      "reason": "lower bound 62 >= best 12"
+      "reason": "lower bound 60 >= best 6"
     },
     {
       "strategy": "local",
-      "reason": "lower bound 251 >= best 12"
+      "reason": "lower bound 251 >= best 6"
     },
     {
       "strategy": "split/local",
-      "reason": "lower bound 304 >= best 12"
+      "reason": "lower bound 278 >= best 6"
     }
   ],
-  "seconds": 300.66
+  "seconds": 341.77
 }

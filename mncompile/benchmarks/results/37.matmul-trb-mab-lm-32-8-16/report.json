@@ -1,5 +1,38 @@
 {
   "lines": 21,
+  "mode": "general",
+  "resources": {
+    "lines": 21,
+    "instructions": 32,
+    "nop_lines": 0,
+    "resource_lower_bound": 16,
+    "scheduling_gap": 5,
+    "bottleneck_units": [
+      "mau"
+    ],
+    "unit_counts": {
+      "alu": 12,
+      "mau": 16,
+      "mwrite": 4,
+      "mread": 0,
+      "l1bm": 0,
+      "l1bm-turnaround": 0,
+      "l2bm": 0,
+      "l2bmdarw": 0,
+      "mv": 0
+    },
+    "unit_utilization": {
+      "alu": 0.5714285714285714,
+      "mau": 0.7619047619047619,
+      "mwrite": 0.19047619047619047,
+      "mread": 0.0,
+      "l1bm": 0.0,
+      "l1bm-turnaround": 0.0,
+      "l2bm": 0.0,
+      "l2bmdarw": 0.0,
+      "mv": 0.0
+    }
+  },
   "strategy": "contraction/gm-direct",
   "candidates": [
     {
@@ -41,36 +74,44 @@
       "reason": "pairs: integer LM output"
     },
     {
+      "strategy": "membership",
+      "reason": "membership: integer LM output"
+    },
+    {
+      "strategy": "fmtseq",
+      "reason": "fmtseq: byte string in DRAM"
+    },
+    {
       "strategy": "allgather",
       "reason": "allgather: one input and one output"
     },
     {
       "strategy": "split/mab-reduce/pe+rot-local",
-      "reason": "lower bound 70 >= best 21"
+      "reason": "lower bound 66 >= best 21"
     },
     {
-      "strategy": "hierarchy/split-L1B:l1bmm@32/l2bmr/l2bmb/l1bmm2+local/-staged",
-      "reason": "lower bound 82 >= best 21"
+      "strategy": "hierarchy/split-L1B:l1bmm@32/l2bmr/l2bmb/l1bmm2+local/staged",
+      "reason": "lower bound 113 >= best 21"
     },
     {
-      "strategy": "hierarchy/split-L1B:l1bmm@16/l2bmr/l2bmb/l1bmm2+local/-staged",
-      "reason": "lower bound 90 >= best 21"
+      "strategy": "hierarchy/split-L1B:l1bmm@16/l2bmr/l2bmb/l1bmm2+local/staged",
+      "reason": "lower bound 121 >= best 21"
     },
     {
       "strategy": "hierarchy/split-L1B:l1bmm@32/l2bmr/l2bmb/l1bmm2+local/base",
-      "reason": "lower bound 106 >= best 21"
+      "reason": "lower bound 137 >= best 21"
     },
     {
       "strategy": "hierarchy/split-L1B:l1bmm@16/l2bmr/l2bmb/l1bmm2+local/base",
-      "reason": "lower bound 114 >= best 21"
+      "reason": "lower bound 145 >= best 21"
     },
     {
       "strategy": "split/local/base",
-      "reason": "lower bound 246 >= best 21"
+      "reason": "lower bound 230 >= best 21"
     },
     {
-      "strategy": "split/local/-staged",
-      "reason": "lower bound 250 >= best 21"
+      "strategy": "split/local/staged",
+      "reason": "lower bound 233 >= best 21"
     },
     {
       "strategy": "mab-reduce/pe+rot-local",
@@ -81,5 +122,5 @@
       "reason": "lower bound 839 >= best 21"
     }
   ],
-  "seconds": 71.1
+  "seconds": 54.42
 }

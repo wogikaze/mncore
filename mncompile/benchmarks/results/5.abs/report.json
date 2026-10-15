@@ -1,10 +1,47 @@
 {
-  "lines": 23,
-  "strategy": "local",
+  "lines": 15,
+  "mode": "general",
+  "resources": {
+    "lines": 15,
+    "instructions": 47,
+    "nop_lines": 0,
+    "resource_lower_bound": 14,
+    "scheduling_gap": 1,
+    "bottleneck_units": [
+      "alu"
+    ],
+    "unit_counts": {
+      "alu": 14,
+      "mau": 11,
+      "mwrite": 0,
+      "mread": 0,
+      "l1bm": 11,
+      "l1bm-turnaround": 11,
+      "l2bm": 0,
+      "l2bmdarw": 0,
+      "mv": 0
+    },
+    "unit_utilization": {
+      "alu": 0.9333333333333333,
+      "mau": 0.7333333333333333,
+      "mwrite": 0.0,
+      "mread": 0.0,
+      "l1bm": 0.7333333333333333,
+      "l1bm-turnaround": 0.7333333333333333,
+      "l2bm": 0.0,
+      "l2bmdarw": 0.0,
+      "mv": 0.0
+    }
+  },
+  "strategy": "local/alternating",
   "candidates": [
     {
-      "strategy": "local",
-      "lines": 23
+      "strategy": "local/base",
+      "lines": 22
+    },
+    {
+      "strategy": "local/alternating",
+      "lines": 15
     }
   ],
   "rejected": [
@@ -53,9 +90,17 @@
       "reason": "pairs: output is not a sum"
     },
     {
+      "strategy": "membership",
+      "reason": "membership: a term is not an equality of two inputs"
+    },
+    {
+      "strategy": "fmtseq",
+      "reason": "fmtseq: byte string in DRAM"
+    },
+    {
       "strategy": "allgather",
       "reason": "allgather: output is not a copy"
     }
   ],
-  "seconds": 4.49
+  "seconds": 23.45
 }

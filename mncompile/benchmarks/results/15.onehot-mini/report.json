@@ -1,9 +1,42 @@
 {
   "lines": 17,
+  "mode": "general",
+  "resources": {
+    "lines": 17,
+    "instructions": 17,
+    "nop_lines": 0,
+    "resource_lower_bound": 17,
+    "scheduling_gap": 0,
+    "bottleneck_units": [
+      "alu"
+    ],
+    "unit_counts": {
+      "alu": 17,
+      "mau": 0,
+      "mwrite": 0,
+      "mread": 0,
+      "l1bm": 0,
+      "l1bm-turnaround": 0,
+      "l2bm": 0,
+      "l2bmdarw": 0,
+      "mv": 0
+    },
+    "unit_utilization": {
+      "alu": 1.0,
+      "mau": 0.0,
+      "mwrite": 0.0,
+      "mread": 0.0,
+      "l1bm": 0.0,
+      "l1bm-turnaround": 0.0,
+      "l2bm": 0.0,
+      "l2bmdarw": 0.0,
+      "mv": 0.0
+    }
+  },
   "strategy": "relayout/base",
   "candidates": [
     {
-      "strategy": "local",
+      "strategy": "local/base",
       "lines": 19
     },
     {
@@ -53,17 +86,30 @@
       "reason": "pairs: integer LM output"
     },
     {
+      "strategy": "membership",
+      "reason": "membership: integer LM output"
+    },
+    {
+      "strategy": "fmtseq",
+      "reason": "fmtseq: byte string in DRAM"
+    },
+    {
       "strategy": "allgather",
       "reason": "allgather: LM to LM copies of one dtype"
+    },
+    {
+      "strategy": "local/alternating",
+      "reason": "verification: 16 mismatches, e.g. [('X', (0, 2), 0.0, 1.0), ('X', (1, 10), 0.0, 1.0), ('X', (2, 0), 0.0, 1.0)]",
+      "vsm": "imm ui\"0x00000001\" $ls448/1000\nilsl $subpeid $aluf $nowrite\niadd $aluf $ls448 $ls8v\nimm ui\"0x00000009\" $ls452/1000\nimm ui\"0x00000008\" $ls450/1000\nilsl $subpeid $ls448 $nowrite\niadd $aluf $ls452 $ls0v\nilsl $subpeid $ls448 $nowrite\niadd $aluf $ls450 $nowrite\nixor $m0v $aluf $omr1\nilsl $subpeid $ls448 $nowrite\nixor $m0v $aluf $omr2\nixor $m0v $ls0v $omr3\nixor $m0v $ls8v $omr4\nimm ui\"0x3F800000\" $ls454/1000\nlpassa/$imr4 $aluf $r1v4\nlpassa/$imr3 $ls454 $r3v4\nlpassa/$imr2 $ls454 $n0v4\nlpassa/$imr1 $ls454 $n2v4; l1bmd $lr0v $lbi\nl1bmd $lbi $ln0v; l1bmd $lr8v $lbi\nl1bmd $lbi $ln8v\n"
     },
     {
       "strategy": "split/local/base",
       "reason": "lower bound 26 >= best 17"
     },
     {
-      "strategy": "split/local/-staged",
+      "strategy": "split/local/staged",
       "reason": "lower bound 29 >= best 17"
     }
   ],
-  "seconds": 2.89
+  "seconds": 2.61
 }
