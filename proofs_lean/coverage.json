@@ -5,6 +5,22 @@
   "compiler_syntax_source": "mncompile/machine.py",
   "compiler_syntax_sha256": "306d729fbd4bf89c2eba10c6ba0b5f97039ea7c019ff660d055077cbf10a34b0",
   "inventory_scope": "Compiler-generated ALU/MAU spelling candidates only; not an authoritative complete ISA or legality model.",
+  "datapath_fragments": [
+    {
+      "source": "proofs_lean/ProofsLean/IntegerALU.lean",
+      "sha256": "ee0a9d8c74f85ec6dbe31123ada5e06231a0a675b5e0b38a23bfadce8b16c6df",
+      "implemented": "16/32/64-bit inc/dec/add/sub/not/lnot/and/or/xor/integer max/min/passa; lane packing, replicated flags and LSB bypass",
+      "scope": "Already-read and already-reduced buses only; not VSM instruction execution or legality",
+      "missing": "Operand decoding/access/reduction, masks, timing/forwarding, parallel issue, all other ISA operations",
+      "reference_experiment": {
+        "path": "proofs_lean/evidence/integer-alu/reference.json",
+        "sha256": "2267fe966a197b5053171c7f51f9f1eeac5d5a98fbc7ce575aed8bc1e122bea5",
+        "cases": 1620,
+        "scope": "54 integer spellings; 30 operand pairs; unmasked unreduced scalar GRF accesses; one PE; all four broadcast cycles",
+        "formal_conformance_proof": false
+      }
+    }
+  ],
   "syntax_candidates": [
     {
       "spelling": "dbfn",
@@ -754,7 +770,7 @@
     },
     {
       "area": "integer_16_32_64_and_signedness",
-      "status": "unimplemented"
+      "status": "partial_datapath_only"
     },
     {
       "area": "floating_16_32_64_rounding_and_special_values",
@@ -766,7 +782,7 @@
     },
     {
       "area": "wide_access_and_lsb_passthrough",
-      "status": "unimplemented"
+      "status": "partial_datapath_only"
     },
     {
       "area": "immediates_fixed_operands_and_zero",

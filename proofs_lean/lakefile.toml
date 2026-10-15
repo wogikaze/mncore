@@ -8,3 +8,7 @@ name = "ProofsLean"
 [[lean_exe]]
 name = "proofs_lean"
 root = "Main"
+
+[[lean_exe]]
+name = "alu_probe"
+root = "ALUProbe"

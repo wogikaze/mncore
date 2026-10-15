@@ -104,12 +104,12 @@ def main() -> None:
     for name, data in (("audit.json", catalog.problem_catalog()), ("coverage.json", catalog.coverage_catalog())):
         if (ROOT / name).read_text() != catalog.render(data):
             raise SystemExit(f"{name} is stale or contains unsupported claims; regenerate it")
-    sources = [ROOT / "ProofsLean.lean", ROOT / "Main.lean", ROOT / "Check.lean", *sorted((ROOT / "ProofsLean").rglob("*.lean"))]
+    sources = [*sorted(ROOT.glob("*.lean")), *sorted((ROOT / "ProofsLean").rglob("*.lean"))]
     for path in sources:
         validate_source(path.read_text(), str(path.relative_to(ROOT)))
     validate_import_closure()
     lake = shutil.which("lake") or str(Path.home() / ".elan/bin/lake")
-    for args in ([lake, "clean"], [lake, "build"], [lake, "env", "lean", "Check.lean"]):
+    for args in ([lake, "clean"], [lake, "build", "proofs_lean", "alu_probe"], [lake, "env", "lean", "Check.lean"]):
         result = subprocess.run(args, cwd=ROOT, capture_output=True, text=True, timeout=300)
         if result.returncode:
             raise SystemExit(result.stdout + result.stderr)

@@ -39,6 +39,11 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   全命令・オペランド・同時発行行がアルファベットに含まれることも証明の引数に含める。
 - `FiniteExample.lean`: 3命令・4入力の小さな機械で、全候補の反証、2行の最適性、
   限定入力では1行解が存在することを証明する回帰例。**MN-Coreではない。**
+- `IntegerALU.lean`: MN-Core整数ALUの部分的なデータパス。
+  16・32・64ビットのinc/dec/add/sub/not/lnot/and/or/xor/max/min/passa、
+  レーンの分割・結合、4ビットのフラグ複製、下位長語の素通りを実装。
+  入力は読み出し・精度縮減済みのバスであり、オペランド読み出しや精度縮減そのもの、
+  マスク適用、ハザード、同時発行は未実装。未対応要求は実行失敗ではなく`unknown`を返す。
 
 `Machine.positiveCost` はスコアが正の行へ正規化済みであるという条件。
 MN-Coreにはゼロコストの制御文があるので、その正規化の意味保存と完全性を証明するまでは
@@ -60,6 +65,19 @@ python3 -m unittest discover -s proofs_lean/tests -v
 公開定理だけでなく、プロジェクト各モジュールの全宣言を調べる。
 rootからimportされない証明ファイルも拒否する。rootのGitHub Actionsに同じ検査を設定した。
 この検査はISAの完全なモデル化を代替しない。
+
+`ALUProbe.lean`はこの整数データパスから期待値を出力する実験用プログラム。
+54綴り×30組の入力を公式アセンブラ・エミュレータと比較し、上位・下位64ビットと
+4サイクルのマスクフラグが1620件すべて一致した。対象は1 PE、マスクなし、精度縮減なし、
+GRFのスカラアクセスのみ。全入力に対する対応証明や全ISAの網羅性ではない。
+`evidence/integer-alu/`に入力・期待値とソース・ツールのハッシュを保存している。
+再実行にはローカルの公式ツールが必要で、通常CIは保存された証拠の整合性を検査する。
+
+```sh
+python3 proofs_lean/scripts/check_alu_reference.py \
+  --output proofs_lean/evidence/integer-alu/reference.json
+python3 proofs_lean/scripts/catalog.py
+```
 
 `audit.json` は全73問の実行済み解の上限と形式的下限を分離する。
 29・34・35番の改善解も別に公式ジャッジで再実行して保存し、実行上の改善を取り消さずに

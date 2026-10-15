@@ -115,6 +115,32 @@ def coverage_catalog() -> dict:
         "initial_state_and_zero_memory", "scoring_and_zero_cost_directive_normalization",
         "reference_binary_conformance", "all_73_formal_problem_specifications",
     ]
+    fragment_source = ROOT / "ProofsLean/IntegerALU.lean"
+    reference = ROOT / "evidence/integer-alu/reference.json"
+    experiment = None
+    if reference.exists():
+        record = json.loads(reference.read_text())
+        vectors = reference.with_name("vectors.tsv")
+        if digest(vectors) != record["vectors_sha256"]:
+            raise ValueError("integer ALU reference vectors changed")
+        if record["cases"] != len(vectors.read_text().splitlines()):
+            raise ValueError("integer ALU reference case count mismatch")
+        if record["matched"] != record["cases"] or record["differences"]:
+            raise ValueError("integer ALU reference comparison has unresolved differences")
+        for item in record["sources"]:
+            source = REPO / item["path"]
+            optional_tool = item["path"] in (
+                "judge/judge-py/mncore2_emuenv/assemble3",
+                "judge/judge-py/mncore2_emuenv/gpfn3_package_main")
+            if optional_tool and not source.exists():
+                continue  # Official proprietary binaries are not distributed in CI.
+            if digest(source) != item["sha256"]:
+                raise ValueError(f"stale integer ALU comparison: {item['path']}")
+        if any(record[key] for key in ("proves_universal_conformance", "proves_isa_completeness", "proves_optimality")):
+            raise ValueError("finite comparison cannot promote a universal claim")
+        experiment = {"path": reference.relative_to(REPO).as_posix(),
+                      "sha256": digest(reference), "cases": record["cases"],
+                      "scope": record["scope"], "formal_conformance_proof": False}
     return {
         "schema_version": 1,
         "isa_exhaustiveness_proven": False,
@@ -122,8 +148,16 @@ def coverage_catalog() -> dict:
         "compiler_syntax_source": "mncompile/machine.py",
         "compiler_syntax_sha256": digest(path),
         "inventory_scope": "Compiler-generated ALU/MAU spelling candidates only; not an authoritative complete ISA or legality model.",
+        "datapath_fragments": [{
+            "source": fragment_source.relative_to(REPO).as_posix(), "sha256": digest(fragment_source),
+            "implemented": "16/32/64-bit inc/dec/add/sub/not/lnot/and/or/xor/integer max/min/passa; lane packing, replicated flags and LSB bypass",
+            "scope": "Already-read and already-reduced buses only; not VSM instruction execution or legality",
+            "missing": "Operand decoding/access/reduction, masks, timing/forwarding, parallel issue, all other ISA operations",
+            "reference_experiment": experiment,
+        }],
         "syntax_candidates": [{"spelling": name, "formal_step_semantics": "unimplemented"} for name in spellings],
-        "obligations": [{"area": area, "status": "unimplemented"} for area in areas],
+        "obligations": [{"area": area, "status": "partial_datapath_only" if area in (
+            "integer_16_32_64_and_signedness", "wide_access_and_lsb_passthrough") else "unimplemented"} for area in areas],
     }
 
 
