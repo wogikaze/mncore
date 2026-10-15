@@ -416,6 +416,8 @@ class GroupGen:
     def write(self, node: Node, dst: Mem):
         if self.lt.kind != "float":
             self._wrap_contexts(node)
+            if self._mau_multiply(node, dst):
+                return
         rep = self.native()
         if node.op == "select" and self.select_in_registers and self._select_depth(node) >= 3:
             v = self.select(node, None, rep)
@@ -815,6 +817,42 @@ class GroupGen:
             f, pol = self.flags(cond.args[0])
             return f, not pol
         raise CompileError(f"no flag rule for {op}")
+
+    def _mau_multiply(self, node: Node, dst):
+        """x * a for a small non-negative integer x and a result below 2^16, written to an output that
+        starts zeroed: usmax(x, M) puts x into the low mantissa bits of M = float(a) (flags mark the
+        16-bit lanes holding x), fma(v, M, M - M*M) leaves M + a*x*ulp(M), and the masked write keeps
+        only those low 16 bits. One ALU and one MAU op per group; M - M*M comes from the MAU too."""
+        import struct
+
+        if node.op != "mul" or len(node.args) != 2 or self.lt.bits not in (32, 64) or not isinstance(dst, Mem):
+            return False
+        if dst.space not in ("lm0", "lm1") or dst.tind or dst.mask is not None or dst.wl != 2:
+            return False
+        x, a = node.args
+        if x.op == "const":
+            x, a = a, x
+        if a.op != "const" or isinstance(a.value, bool) or not isinstance(a.value, int) or not 2 <= a.value < 256:
+            return False
+        r = self._range(x)
+        if r is None or r[0] < 0 or r[1] >= 1 << 16 or a.value * r[1] >= 1 << 16:
+            return False
+        mbits = struct.unpack(">I", struct.pack(">f", float(a.value)))[0]
+        if mbits & 0xFFFF:
+            return False
+        e = (mbits >> 23) & 0xFF
+        ulp = 2.0 ** (e - 127 - 23)
+        if float(a.value) + a.value * r[1] * ulp >= 2.0 ** (e - 127 + 1):
+            return False  # the sum must stay in M's binade
+        m = self.consts.word32(mbits, f"{float(a.value)}")
+        cache = self.prog.notes.setdefault("_mau_mul_c", {})
+        if mbits not in cache:
+            cache[mbits] = self.emit("fvfma", [Use(m, neg=True), m, m])  # M - M * M, once per program
+        c = cache[mbits]
+        v = VOp("usmax", self._stage([self._use(self.operand(x, "int")), Use(m)]), out=Value(2), unit="alu", flags_out=Value(0, "flags"))
+        self.prog.add(v)
+        self.emit("fvfma", [v.out, m, c], dst, write_mask=FlagUse(v.flags_out))
+        return True
 
     def _sign_on_mau(self):
         return self.lt.bits == 32 and self.lt.kind == "int" and not self.lt.unsigned
