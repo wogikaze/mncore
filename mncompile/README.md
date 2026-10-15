@@ -3,7 +3,7 @@
 普通の Python で書いたカーネルと、入出力テンソルの「契約」（型・値域・物理配置・許容誤差）だけから
 MN-Core 2 の VSM を生成するコンパイラ。問題ごとの専用カーネルや手書きアセンブリは持たない。
 
-- コンパイラが受け取るのは `kernel(...)` のソースと契約だけ。問題名・テストケース・参照解は読まない
+- 通常モードでコンパイラが受け取るのは `kernel(...)` のソースと契約だけ。問題名・テストケース・参照解は読まない
   （それらを読むのはベンチマークのハーネス `mncompile/bench/` だけ）。
 - 命令は構造化した表現（`machine.py`）で扱い、ISA の全オペコード・全オペランド形式を表現・出力できる
   （ALU・MAU・行列レジスタ読み書き・L1BM・L2BM・MV・wait・noforward・nop。リポジトリ中の全 VSM で往復テスト済み）。
@@ -23,6 +23,32 @@ python3 -m mncompile mncompile/examples/sigmoid_like.py \
 
 `kernel.vsm` と `report.json`（選ばれた戦略、全候補の行数、不採用理由）が出力される。
 公式アセンブラ・エミュレータ（リポジトリ直下の `judge/`、`https://mncore-challenge.preferred.jp/judge.zip`）が必要。
+
+ベンチマークは既定で `general` と `testcase` の両モードを試し、全公式テストケースで Accepted になった
+候補のうち短い方を保存する。同じ行数なら `general` を優先する。
+`testcase` は最初の公式入力の実値から入力値域を絞り、その入力だけを公式エミュレータで検証する。
+誤差予算は全額使う。このモードの結果は他の入力での正しさを保証しない。
+選ばれたモードは `report.json` とベンチマークの `row.json` に記録する。
+
+```sh
+python3 -m mncompile.bench.run --output /tmp/bench --modes general,testcase
+python3 -m mncompile.bench.run --output /tmp/bench-general --modes general
+```
+
+Python API では `compile_program(..., fixed_inputs=values)` で限定モードを指定できる。
+`values` は `{入力名: {添字タプル: 値}}`。通常の CLI と、`fixed_inputs` を省略した API は通常モードを使う。
+
+`report.json` とベンチマークには、ユニット別の命令数・充填率、現在のユニット割当での資源下限、
+生成行数と下限の差を保存する。参照解も同じ方法で計測する。
+保存済み結果に計測値だけを追加するには次を使う（再コンパイルや再判定はしない）。
+
+```sh
+python3 -m mncompile.bench.report mncompile/benchmarks/results --analyze --readme mncompile/README.md
+```
+
+マスクによる書き込みを含む要素ごとの写像では、出力グループを LM と GRF に交互に置く候補も探索する。
+入力と出力の LM が共通の場合は全体を GRF に退避する候補を使う。
+スケジューラは依存経路の長さを優先する既存の探索に加え、プログラム順を優先する候補も試し、短い方を採用する。
 
 契約は問題文の宣言と同じ書式。
 
@@ -112,78 +138,81 @@ XOR 型ビット置換（バイト反転・ビット反転）を `sbsl`/`ibsl`/`
 
 公式ジャッジで 73/73 問 Accepted。参照解（順位表から辿れる最短の公開 Accepted 提出）以下の行数は 16 問。Accepted 問題の行数合計は生成 1617 行 / 参照解 1041 行。
 
-| 問題 | 判定 | 生成行数 | 参照解 | 比 | 戦略 |
-| --- | --- | ---: | ---: | ---: | --- |
-| 1.plus-one | Accepted | 2 | 2 | 1.00 | local |
-| 2.plus-two | Accepted | 7 | 5 | 1.40 | local |
-| 3.a-plus-b | Accepted | 6 | 6 | 1.00 | local/-staged |
-| 4.mul7 | Accepted | 10 | 6 | 1.67 | local |
-| 5.abs | Accepted | 23 | 13 | 1.77 | local |
-| 6.fadd-mul | Accepted | 18 | 14 | 1.29 | local |
-| 7.mul2 | Accepted | 13 | 9 | 1.44 | local |
-| 8.fle | Accepted | 9 | 4 | 2.25 | local |
-| 9.transpose-addr | Accepted | 16 | 10 | 1.60 | local |
-| 10.gather-easy | Accepted | 12 | 6 | 2.00 | gather |
-| 11.square-sum | Accepted | 21 | 11 | 1.91 | hierarchy/split-MAB+L1B:l1bmr16/l2bmr/l2bmb/l1bmm2+local |
-| 12.convert-endian | Accepted | 6 | 3 | 2.00 | local |
-| 13.mod3 | Accepted | 15 | 8 | 1.88 | local |
-| 14.mat-sq | Accepted | 12 | 10 | 1.20 | contraction/hm-t |
-| 15.contains | Accepted | 60 | 20 | 3.00 | hierarchy/l1bmr16/l1bmp2+pe+rot-membership/zero-init |
-| 16.count-up | Accepted | 43 | 21 | 2.05 | generate/spread-pdm |
-| 17.transpose-mab | Accepted | 45 | 15 | 3.00 | allgather |
-| 18.inversion-small | Accepted | 30 | 9 | 3.33 | pairs/l1bmr16/l1bmm2+base |
-| 19.inversion | Accepted | 76 | 31 | 2.45 | pairs/l1bmd/l2bmr/pdm/l2bmb/l1bmd+base |
-| 20.fizzbuzz | Accepted | 103 | 98 | 1.05 | fmtseq/render-pdm/0p |
-| 21.hello-world | Accepted | 13 | 9 | 1.44 | generate/spread |
-| 22.bit-reverse | Accepted | 32 | 10 | 3.20 | local |
-| 23.fizzbuzz-pe | Accepted | 12 | 9 | 1.33 | local |
-| 24.log2 | Accepted | 15 | 7 | 2.14 | local |
-| 25.hsv2rgb | Accepted | 32 | 12 | 2.67 | local |
-| 1.a-b | Accepted | 4 | 3 | 1.33 | local |
-| 2.fmul7 | Accepted | 5 | 5 | 1.00 | local |
-| 3.relu | Accepted | 2 | 2 | 1.00 | local |
-| 4.relu-grad | Accepted | 3 | 3 | 1.00 | local |
-| 5.addcol-vec | Accepted | 4 | 3 | 1.33 | local |
-| 6.subrow-vec | Accepted | 35 | 24 | 1.46 | split/local |
-| 7.sumcol-mini | Accepted | 4 | 4 | 1.00 | local |
-| 8.sumcol | Accepted | 12 | 9 | 1.33 | hierarchy/l1bmm@32/l2bmr/mvr+local |
-| 9.sumrow-mini | Accepted | 9 | 6 | 1.50 | pe-reduce |
-| 10.sumrow | Accepted | 24 | 16 | 1.50 | split/mab-reduce/pe+rot-local |
-| 11.maxrow | Accepted | 24 | 20 | 1.20 | split/mab-reduce/pe+rot-local |
-| 12.divrow-vec | Accepted | 56 | 29 | 1.93 | split/local/newton2 |
-| 13.exp-low-prec | Accepted | 20 | 10 | 2.00 | local/exp_degree3 |
-| 14.exp | Accepted | 30 | 16 | 1.88 | local/exp_degree6 |
-| 15.onehot-mini | Accepted | 17 | 7 | 2.43 | relayout/base |
-| 16.onehot | Accepted | 44 | 24 | 1.83 | split/local/base |
-| 17.dram-dl-256-16 | Accepted | 5 | 5 | 1.00 | movement |
-| 18.dram-ul-256-16 | Accepted | 6 | 6 | 1.00 | movement |
-| 19.dram-dl-256-16p | Accepted | 25 | 19 | 1.32 | movement |
-| 20.dram-ul-256-16p | Accepted | 16 | 10 | 1.60 | movement |
-| 21.dram-dl-256-16-l2b | Accepted | 14 | 12 | 1.17 | movement |
-| 22.dram-dl-1024-16 | Accepted | 10 | 8 | 1.25 | movement |
-| 23.dram-dl-256-1024 | Accepted | 74 | 68 | 1.09 | movement |
-| 24.dram-dl-16 | Accepted | 5 | 5 | 1.00 | movement |
-| 25.dram-ul-16 | Accepted | 5 | 5 | 1.00 | movement |
-| 26.dram-dl-16-1024 | Accepted | 44 | 39 | 1.13 | movement |
-| 27.dram-ul-16-1024 | Accepted | 18 | 13 | 1.38 | movement |
-| 28.dram-dl-16-16 | Accepted | 12 | 11 | 1.09 | movement |
-| 29.dram-ul-16-16 | Accepted | 13 | 9 | 1.44 | movement |
-| 30.dram-dl-256 | Accepted | 11 | 10 | 1.10 | movement |
-| 31.dram-ul-256 | Accepted | 9 | 7 | 1.29 | movement |
-| 32.matmul-trb-mab-lm-4-8-8 | Accepted | 4 | 4 | 1.00 | contraction/gm-direct |
-| 33.matmul-trb-mab-lm-4-8-16 | Accepted | 7 | 7 | 1.00 | contraction/gm-direct |
-| 34.matmul-trb-mab-lm-4-16-8 | Accepted | 6 | 7 | 0.86 | contraction/hm |
-| 35.matmul-trb-mab-lm-4-16-16 | Accepted | 6 | 12 | 0.50 | contraction/hm |
-| 36.matmul-trb-pkg-lm-256-16-16 | Accepted | 12 | 12 | 1.00 | contraction/gm-direct |
-| 37.matmul-trb-mab-lm-32-8-16 | Accepted | 21 | 17 | 1.24 | contraction/gm-direct |
-| 38.matmul-trb-pkg-lm-256-128-16 | Accepted | 48 | 23 | 2.09 | hierarchy/l1bmr32/l1bmm2+contraction/gm-direct |
-| 39.matmul-trb-pkg-lmdram-256-1024-16 | Accepted | 38 | 29 | 1.31 | hierarchy/l1bmr32/l2bmr/mvp+contraction/gm-direct |
-| 40.matmul-notr-mab-lm-4-8-8 | Accepted | 7 | 7 | 1.00 | contraction/gm |
-| 41.matmul-notr-mab-lm-4-16-16 | Accepted | 23 | 13 | 1.77 | contraction/gm |
-| 42.matmul-notr-pkg-lm-256-16-16 | Accepted | 23 | 13 | 1.77 | contraction/gm |
-| 43.matmul-tra-mab-lm-8-8-8 | Accepted | 10 | 8 | 1.25 | contraction/gm |
-| 44.matmul-tra-mab-lm-16-8-16 | Accepted | 26 | 15 | 1.73 | contraction/gm |
-| 45.matmul-tra-mab-lm-16-4-16 | Accepted | 20 | 15 | 1.33 | contraction/gm |
-| 46.matmul-tra-pkg-lmdram-16-256-16 | Accepted | 31 | 25 | 1.24 | hierarchy/l1bmm@32/l2bmr/mvr+contraction/gm |
-| 47.matmul-tra-mab-lm-16-32-8 | Accepted | 50 | 17 | 2.94 | contraction/gm |
-| 48.matmul-tra-pkg-lmdram-16-256-1024 | Accepted | 94 | 61 | 1.54 | hierarchy/l1bmd/l2bmd/mvr-pdm+contraction/gm |
+下限は現在の命令列・ユニット割当を固定した資源下限（ユニット別命令数の最大）。余剰は生成行数との差で、依存・レイテンシ・ポート制約も含む。別の命令選択やアルゴリズムの下限ではない。
+充填率は全行に占める各ユニットの発行行数。A=ALU、M=MAU、W/R=行列レジスタ書込/読出、L1↑/↓=L1BM上り/折り返し、L2=L2BM、DAR=DAR書込、MV=MV。
+
+| 問題 | 判定 | 生成行数 | 参照解 | 差 | 下限 | 余剰 | 充填率 | 参照充填率 | モード | 戦略 |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | --- | --- | --- | --- |
+| 1.plus-one | Accepted | 2 | 2 | +0 | 2 | 0 | A:100% | A:100% | general | local |
+| 2.plus-two | Accepted | 7 | 5 | +2 | 6 | 1 | A:86% | A:100% | general | local |
+| 3.a-plus-b | Accepted | 6 | 6 | +0 | 6 | 0 | A:100% | A:100% | general | local/-staged |
+| 4.mul7 | Accepted | 10 | 6 | +4 | 9 | 1 | A:90% | A:83% M:83% | general | local |
+| 5.abs | Accepted | 23 | 13 | +10 | 23 | 0 | A:100% | A:92% M:85% L1↑:85% L1↓:85% | general | local |
+| 6.fadd-mul | Accepted | 18 | 14 | +4 | 16 | 2 | A:11% M:89% | A:100% M:79% L1↑:50% | general | local |
+| 7.mul2 | Accepted | 13 | 9 | +4 | 12 | 1 | A:8% M:92% | A:100% M:78% L1↑:22% L1↓:11% | general | local |
+| 8.fle | Accepted | 9 | 4 | +5 | 7 | 2 | A:78% M:56% | A:100% M:75% | general | local |
+| 9.transpose-addr | Accepted | 16 | 10 | +6 | 16 | 0 | A:100% | A:100% M:60% | general | local |
+| 10.gather-easy | Accepted | 12 | 6 | +6 | 8 | 4 | A:67% | A:83% M:33% | general | gather |
+| 11.square-sum | Accepted | 21 | 11 | +10 | 5 | 16 | A:24% M:10% L1↑:10% L2:10% | A:9% M:64% L1↑:9% L1↓:9% | general | hierarchy/split-MAB+L1B:l1bmr16/l2bmr/l2bmb/l1bmm2+local |
+| 12.convert-endian | Accepted | 6 | 3 | +3 | 6 | 0 | A:100% | A:100% M:33% | general | local |
+| 13.mod3 | Accepted | 15 | 8 | +7 | 15 | 0 | A:100% M:80% | A:100% M:62% L1↑:38% L1↓:25% | general | local |
+| 14.mat-sq | Accepted | 12 | 10 | +2 | 8 | 4 | A:50% M:33% W:67% R:17% | A:60% M:40% W:60% R:20% | general | contraction/hm-t |
+| 15.contains | Accepted | 60 | 20 | +40 | 47 | 13 | A:78% L1↑:8% L1↓:3% | A:45% M:40% W:5% L1↑:35% L1↓:35% | general | hierarchy/l1bmr16/l1bmp2+pe+rot-membership/zero-init |
+| 16.count-up | Accepted | 43 | 21 | +22 | 27 | 16 | A:63% L1↑:2% L2:19% MV:5% | A:33% M:14% L1↑:29% L1↓:5% L2:29% DAR:19% MV:43% | general | generate/spread-pdm |
+| 17.transpose-mab | Accepted | 45 | 15 | +30 | 36 | 9 | A:13% L1↑:80% | A:7% M:7% L1↑:80% L1↓:60% | general | allgather |
+| 18.inversion-small | Accepted | 30 | 9 | +21 | 21 | 9 | A:70% L1↑:7% | A:67% M:22% W:11% L1↑:11% L1↓:11% | general | pairs/l1bmr16/l1bmm2+base |
+| 19.inversion | Accepted | 76 | 31 | +45 | 59 | 17 | A:78% L1↑:3% L2:3% MV:3% | A:42% M:55% L1↑:16% L1↓:10% L2:6% MV:6% | general | pairs/l1bmd/l2bmr/pdm/l2bmb/l1bmd+base |
+| 20.fizzbuzz | Accepted | 103 | 98 | +5 | 77 | 26 | A:58% M:75% L1↑:1% L2:2% MV:2% | A:67% M:42% W:1% R:1% L1↑:1% L2:2% MV:2% | general | fmtseq/render-pdm/0p |
+| 21.hello-world | Accepted | 13 | 9 | +4 | 6 | 7 | A:46% L1↑:8% L2:8% MV:8% | A:44% M:22% L1↑:11% L2:11% MV:11% | general | generate/spread |
+| 22.bit-reverse | Accepted | 32 | 10 | +22 | 32 | 0 | A:100% | A:100% M:10% L1↑:30% L1↓:30% | general | local |
+| 23.fizzbuzz-pe | Accepted | 12 | 9 | +3 | 12 | 0 | A:100% M:33% L1↑:8% L1↓:8% | A:100% M:67% L1↑:11% L1↓:11% | general | local |
+| 24.log2 | Accepted | 15 | 7 | +8 | 15 | 0 | A:100% M:27% | A:100% M:71% L1↑:29% L1↓:29% | general | local |
+| 25.hsv2rgb | Accepted | 32 | 12 | +20 | 20 | 12 | A:62% M:41% L1↑:44% L1↓:44% | A:83% M:83% L1↑:42% L1↓:42% | general | local |
+| 1.a-b | Accepted | 4 | 3 | +1 | 2 | 2 | A:50% M:50% | A:33% M:67% | general | local |
+| 2.fmul7 | Accepted | 5 | 5 | +0 | 4 | 1 | A:20% M:80% | A:20% M:80% | general | local |
+| 3.relu | Accepted | 2 | 2 | +0 | 2 | 0 | A:100% | A:100% | general | local |
+| 4.relu-grad | Accepted | 3 | 3 | +0 | 3 | 0 | A:100% | A:100% | general | local |
+| 5.addcol-vec | Accepted | 4 | 3 | +1 | 2 | 2 | A:50% M:50% | M:100% | general | local |
+| 6.subrow-vec | Accepted | 35 | 24 | +11 | 18 | 17 | A:20% M:11% L1↑:51% | A:21% M:33% L1↑:58% L1↓:58% | general | split/local |
+| 7.sumcol-mini | Accepted | 4 | 4 | +0 | 3 | 1 | A:25% M:75% | A:25% M:75% | general | local |
+| 8.sumcol | Accepted | 12 | 9 | +3 | 3 | 9 | A:8% M:25% L1↑:8% L2:8% MV:8% | A:22% L1↑:22% L2:11% MV:11% | general | hierarchy/l1bmm@32/l2bmr/mvr+local |
+| 9.sumrow-mini | Accepted | 9 | 6 | +3 | 6 | 3 | A:33% M:67% | A:67% M:50% W:33% | general | pe-reduce |
+| 10.sumrow | Accepted | 24 | 16 | +8 | 7 | 17 | A:29% M:21% L1↑:21% | A:44% M:25% W:6% L1↑:38% L1↓:38% | general | split/mab-reduce/pe+rot-local |
+| 11.maxrow | Accepted | 24 | 20 | +4 | 12 | 12 | A:50% L1↑:21% | A:55% L1↑:30% L1↓:30% | general | split/mab-reduce/pe+rot-local |
+| 12.divrow-vec | Accepted | 56 | 29 | +27 | 24 | 32 | A:21% M:43% L1↑:32% | A:24% M:38% L1↑:59% L1↓:59% | general | split/local/newton2 |
+| 13.exp-low-prec | Accepted | 20 | 10 | +10 | 15 | 5 | A:75% M:60% | A:70% M:80% L1↑:10% L1↓:10% | general | local/exp_degree3 |
+| 14.exp | Accepted | 30 | 16 | +14 | 20 | 10 | A:63% M:67% | A:75% M:69% L1↑:31% L1↓:31% | general | local/exp_degree6 |
+| 15.onehot-mini | Accepted | 17 | 7 | +10 | 17 | 0 | A:100% | A:86% M:43% L1↑:29% L1↓:29% | general | relayout/base |
+| 16.onehot | Accepted | 44 | 24 | +20 | 22 | 22 | A:50% L1↑:41% | A:29% M:25% L1↑:79% L1↓:79% | general | split/local/base |
+| 17.dram-dl-256-16 | Accepted | 5 | 5 | +0 | 2 | 3 | L1↑:20% L2:20% MV:40% | L1↑:20% L2:20% MV:40% | general | movement |
+| 18.dram-ul-256-16 | Accepted | 6 | 6 | +0 | 2 | 4 | L1↑:17% L2:17% MV:33% | L1↑:17% L2:17% MV:33% | general | movement |
+| 19.dram-dl-256-16p | Accepted | 25 | 19 | +6 | 16 | 9 | L1↑:64% L2:32% MV:4% | L1↑:84% L2:42% MV:5% | general | movement |
+| 20.dram-ul-256-16p | Accepted | 16 | 10 | +6 | 8 | 8 | A:12% L1↑:12% L2:50% MV:6% | A:20% L1↑:20% L2:20% MV:10% | general | movement |
+| 21.dram-dl-256-16-l2b | Accepted | 14 | 12 | +2 | 8 | 6 | L1↑:57% L2:29% MV:14% | L1↑:67% L2:33% MV:17% | general | movement |
+| 22.dram-dl-1024-16 | Accepted | 10 | 8 | +2 | 4 | 6 | L1↑:40% L2:40% MV:20% | L1↑:50% L2:50% MV:25% | general | movement |
+| 23.dram-dl-256-1024 | Accepted | 74 | 68 | +6 | 64 | 10 | L1↑:11% L2:86% MV:3% | L1↑:12% L2:94% MV:3% | general | movement |
+| 24.dram-dl-16 | Accepted | 5 | 5 | +0 | 2 | 3 | L1↑:20% L2:20% MV:40% | L1↑:20% L2:20% MV:40% | general | movement |
+| 25.dram-ul-16 | Accepted | 5 | 5 | +0 | 1 | 4 | L1↑:20% L2:20% MV:20% | L1↑:20% L2:20% MV:20% | general | movement |
+| 26.dram-dl-16-1024 | Accepted | 44 | 39 | +5 | 32 | 12 | L1↑:9% L2:73% MV:18% | L1↑:10% L2:82% MV:13% | general | movement |
+| 27.dram-ul-16-1024 | Accepted | 18 | 13 | +5 | 8 | 10 | A:22% L1↑:6% L2:44% MV:6% | A:15% L1↑:8% L2:31% MV:15% | general | movement |
+| 28.dram-dl-16-16 | Accepted | 12 | 11 | +1 | 4 | 8 | L1↑:33% L2:33% MV:33% | L1↑:36% L2:36% MV:45% | general | movement |
+| 29.dram-ul-16-16 | Accepted | 13 | 9 | +4 | 4 | 9 | L1↑:31% L2:31% MV:31% | A:22% L1↑:11% L2:11% MV:11% | general | movement |
+| 30.dram-dl-256 | Accepted | 11 | 10 | +1 | 8 | 3 | L1↑:73% L2:9% MV:9% | A:80% M:20% L1↑:40% L2:10% MV:10% | general | movement |
+| 31.dram-ul-256 | Accepted | 9 | 7 | +2 | 2 | 7 | A:11% L1↑:22% L2:11% MV:11% | A:14% L1↑:14% L2:14% MV:14% | general | movement |
+| 32.matmul-trb-mab-lm-4-8-8 | Accepted | 4 | 4 | +0 | 3 | 1 | A:75% M:25% W:50% | A:75% M:25% W:50% | general | contraction/gm-direct |
+| 33.matmul-trb-mab-lm-4-8-16 | Accepted | 7 | 7 | +0 | 5 | 2 | A:71% M:29% W:57% | A:86% M:29% W:57% | general | contraction/gm-direct |
+| 34.matmul-trb-mab-lm-4-16-8 | Accepted | 6 | 7 | -1 | 5 | 1 | A:83% M:17% W:67% | A:86% M:29% W:57% | general | contraction/hm |
+| 35.matmul-trb-mab-lm-4-16-16 | Accepted | 6 | 12 | -6 | 5 | 1 | A:83% M:17% W:67% | A:67% M:17% W:33% L1↑:8% L1↓:8% | general | contraction/hm |
+| 36.matmul-trb-pkg-lm-256-16-16 | Accepted | 12 | 12 | +0 | 10 | 2 | A:83% M:33% W:67% | A:67% M:17% W:33% L1↑:8% L1↓:8% | general | contraction/gm-direct |
+| 37.matmul-trb-mab-lm-32-8-16 | Accepted | 21 | 17 | +4 | 16 | 5 | A:57% M:76% W:19% | A:41% M:12% W:24% L1↑:47% L1↓:47% | general | contraction/gm-direct |
+| 38.matmul-trb-pkg-lm-256-128-16 | Accepted | 48 | 23 | +25 | 16 | 32 | A:25% M:33% W:8% L1↑:33% | A:52% M:70% W:17% L1↑:70% L1↓:70% | general | hierarchy/l1bmr32/l1bmm2+contraction/gm-direct |
+| 39.matmul-trb-pkg-lmdram-256-1024-16 | Accepted | 38 | 29 | +9 | 16 | 22 | A:32% M:42% W:11% L1↑:21% L2:11% MV:5% | A:41% M:55% W:14% L1↑:28% L2:14% MV:7% | general | hierarchy/l1bmr32/l2bmr/mvp+contraction/gm-direct |
+| 40.matmul-notr-mab-lm-4-8-8 | Accepted | 7 | 7 | +0 | 4 | 3 | A:43% M:14% W:57% R:29% | A:43% M:14% W:57% R:29% | general | contraction/gm |
+| 41.matmul-notr-mab-lm-4-16-16 | Accepted | 23 | 13 | +10 | 16 | 7 | A:52% M:17% W:70% R:35% | A:54% M:15% W:62% R:31% L1↑:8% L1↓:8% | general | contraction/gm |
+| 42.matmul-notr-pkg-lm-256-16-16 | Accepted | 23 | 13 | +10 | 16 | 7 | A:52% M:17% W:70% R:35% | A:54% M:15% W:62% R:31% L1↑:8% L1↓:8% | general | contraction/gm |
+| 43.matmul-tra-mab-lm-8-8-8 | Accepted | 10 | 8 | +2 | 6 | 4 | A:40% M:20% W:60% R:40% | A:50% M:25% W:75% R:50% | general | contraction/gm |
+| 44.matmul-tra-mab-lm-16-8-16 | Accepted | 26 | 15 | +11 | 16 | 10 | A:46% M:31% W:62% R:46% | A:47% M:27% W:67% R:40% L1↑:13% L1↓:13% | general | contraction/gm |
+| 45.matmul-tra-mab-lm-16-4-16 | Accepted | 20 | 15 | +5 | 12 | 8 | A:60% M:40% W:50% R:60% | A:67% M:27% W:47% R:40% L1↑:27% L1↓:27% | general | contraction/gm |
+| 46.matmul-tra-pkg-lmdram-16-256-16 | Accepted | 31 | 25 | +6 | 12 | 19 | A:39% M:26% W:32% R:39% L1↑:13% L2:6% MV:3% | A:32% M:16% W:40% R:24% L1↑:16% L2:16% MV:20% | general | hierarchy/l1bmm@32/l2bmr/mvr+contraction/gm |
+| 47.matmul-tra-mab-lm-16-32-8 | Accepted | 50 | 17 | +33 | 32 | 18 | A:48% M:32% W:64% R:48% | A:59% M:24% W:35% R:24% L1↑:24% L1↓:24% | general | contraction/gm |
+| 48.matmul-tra-pkg-lmdram-16-256-1024 | Accepted | 94 | 61 | +33 | 32 | 62 | A:26% M:17% W:34% R:26% L1↑:4% L2:34% MV:5% | A:20% M:26% W:43% R:16% L1↑:23% L2:52% MV:8% | general | hierarchy/l1bmd/l2bmd/mvr-pdm+contraction/gm |

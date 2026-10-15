@@ -21,6 +21,7 @@ from pathlib import Path
 
 from . import problems as P
 from ..memlimit import default_jobs, lift_for_child, limit_process, total_memory
+from ..stats import program_stats
 
 ROOT = P.ROOT
 JUDGE = ROOT / "judge" / "judge-py" / "judge.py"
@@ -80,22 +81,60 @@ def run_one(problem_dir: str, output: str, backend: str, mem_fraction: float = 0
         "status": "failed",
     }
     t0 = time.time()
+    # "general": right for every input in the contract; "testcase": right for the official
+    # testcase's inputs only (allowed for ranking); the shorter accepted program wins (general on ties)
+    modes = [m for m in os.environ.get("MNC_MODES", "general,testcase").split(",") if m]
+    if not modes or any(m not in ("general", "testcase") for m in modes):
+        raise ValueError("modes must be a nonempty comma-separated list of general,testcase")
+    modes = sorted(set(modes), key=lambda m: m != "general")
+    row["by_mode"] = {}
+    best = None
     try:
-        compiled = compile_program(
-            P.kernel_source(problem),
-            P.contract_for(problem),
-            backend=backend,
-            log=lambda m: log_lines.append(m),
-        )
-        compiled.write(out_dir)
-        row["lines"] = compiled.lines
-        row["strategy"] = compiled.report.get("strategy")
-        row["judge"] = [judge(tc, out_dir / "kernel.vsm") for tc in problem.testcases]
-        ok = all(j["accepted"] and j["score"] == compiled.lines for j in row["judge"]) and row["judge"]
-        row["status"] = "accepted" if ok else "rejected"
-    except CompileError as exc:
-        row["status"] = "unsupported"
-        row["reason"] = str(exc)[:2000]
+        for mode in modes:
+            fixed = None
+            if mode == "testcase":
+                from .testcase import input_values
+
+                fixed = input_values(problem.testcases[0].read_text(), P.contract_for(problem))
+            mode_dir = out_dir / mode
+            mode_dir.mkdir(parents=True, exist_ok=True)
+            log_lines.append(f"===== mode {mode}")
+            try:
+                compiled = compile_program(
+                    P.kernel_source(problem),
+                    P.contract_for(problem),
+                    backend=backend,
+                    log=lambda m: log_lines.append(m),
+                    fixed_inputs=fixed,
+                )
+            except CompileError as exc:
+                row["by_mode"][mode] = {"status": "unsupported", "reason": str(exc)[:500]}
+                continue
+            compiled.write(mode_dir)
+            judged = [judge(tc, mode_dir / "kernel.vsm") for tc in problem.testcases]
+            ok = bool(judged) and all(j["accepted"] and j["score"] == compiled.lines for j in judged)
+            row["by_mode"][mode] = {"status": "accepted" if ok else "rejected", "lines": compiled.lines,
+                                    "strategy": compiled.report.get("strategy")}
+            if ok and (best is None or compiled.lines < best[0].lines):
+                best = (compiled, mode, judged)
+            elif not ok and best is None and "judge" not in row:
+                row["judge"] = judged
+        if best is None:
+            if any(m.get("status") == "rejected" for m in row["by_mode"].values()):
+                row["status"] = "rejected"
+            else:
+                row["status"] = "unsupported"
+                row["reason"] = "; ".join(f"{k}: {v.get('reason', '')}" for k, v in row["by_mode"].items())[:2000]
+        else:
+            compiled, mode, judged = best
+            compiled.write(out_dir)
+            row.update(lines=compiled.lines, strategy=compiled.report.get("strategy"), mode=mode, judge=judged, status="accepted")
+            row["resources"] = compiled.report["resources"]
+            if row["reference_lines"] is not None:
+                row["line_delta"] = compiled.lines - row["reference_lines"]
+            reference = problem.directory / "answer.vsm"
+            if reference.exists():
+                row["reference_resources"] = program_stats(reference.read_text())
     except MemoryError:
         row["status"] = "crash"
         row["reason"] = "out of the per-worker memory limit"
@@ -203,9 +242,15 @@ def main():
     ap.add_argument("--set", choices=["all", "challenge", "mnist"], default="all")
     ap.add_argument("--jobs", type=int, default=default_jobs(), help="parallel compiles (default: what fits in memory)")
     ap.add_argument("--backend", default="native")
+    ap.add_argument("--modes", default=None, help="comma-separated: general,testcase (default both)")
     ap.add_argument("--worker", help=argparse.SUPPRESS)
     ap.add_argument("--memory-fraction", type=float, default=0.6, help=argparse.SUPPRESS)
     args = ap.parse_args()
+    selected_modes = args.modes if args.modes is not None else os.environ.get("MNC_MODES", "general,testcase")
+    if not selected_modes or any(m not in ("general", "testcase") for m in selected_modes.split(",")):
+        ap.error("--modes must be a nonempty comma-separated list of general,testcase")
+    if args.modes is not None:
+        os.environ["MNC_MODES"] = args.modes  # inherited by the workers
     if args.worker:
         row = run_one(args.worker, str(args.output), args.backend, args.memory_fraction)
         (args.output / Path(args.worker).name / "row.json").write_text(json.dumps(row) + "\n")

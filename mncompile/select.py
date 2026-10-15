@@ -63,6 +63,17 @@ def f32(value: float) -> float:
     return struct.unpack(">f", struct.pack(">f", value))[0]
 
 
+ZERO_WORD = 510  # GRF words 510-511 are never written: they read as zero
+
+
+def zero_value() -> Value:
+    """A value that is zero from the start (no producing op)."""
+    v = Value(2, "zero", home=Mem("grf0", 2, (ZERO_WORD,) * 4))
+    v.preset = True
+    v.nofwd = True
+    return v
+
+
 class Constants:
     """Constant vectors, each materialized once into a fixed GRF home (alternating GRF1/GRF0,
     so that ops reading two constants do not compete for one read port)."""
@@ -78,7 +89,7 @@ class Constants:
     def _home(self):
         # GRF1 first; constants read together by one op are separated later (schedule.rebalance_constants)
         for bank in ("grf1", "grf0"):
-            if self.next[bank] + 2 <= 512:
+            if self.next[bank] + 2 <= ZERO_WORD:
                 a = self.next[bank]
                 self.next[bank] += 2
                 return bank, a
@@ -86,6 +97,10 @@ class Constants:
 
     def _value(self, key, writes_of, label, fwd_ok):
         if key in self.cache:
+            return self.cache[key]
+        if key[1] == 0:
+            # zero needs no immediate: GRF words nothing ever writes read as 0 (memory starts zeroed)
+            self.cache[key] = zero_value()
             return self.cache[key]
         bank, a = self._home()
         home = Mem(bank, 2, (a, a, a, a))

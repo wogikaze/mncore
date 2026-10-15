@@ -114,6 +114,10 @@ class Scheduler:
                     self.storage[op.out.id] = (h.space, h.addrs[0], op.out.width, stride) if h.space != "t" else ("t", 0, 4, 0)
             if op.flags_out is not None:
                 self.flag_op[op.flags_out.id] = op
+            for x in op.srcs:
+                if isinstance(x, Use) and getattr(x.value, "preset", False):
+                    h = x.value.home
+                    self.storage[x.value.id] = (h.space, h.addrs[0], x.value.width, h.addrs[1] - h.addrs[0])
         self._mem_deps = self._fixed_dependencies()
         self.height = self._heights()
         self.uses_left = {}
@@ -317,6 +321,14 @@ class Scheduler:
             if isinstance(src, Use):
                 v = src.value
                 p = self.def_op.get(v.id)
+                if p is None and getattr(v, "preset", False):
+                    # present from the start at its home (e.g. never-written zero words)
+                    mem = self._mem_for(self.storage[v.id], src)
+                    if not self._read_ok(slot, mem, pending_reads):
+                        return None
+                    pending_reads[mem.space] = _pattern(mem)
+                    plan_storage[i] = self.storage[v.id]
+                    continue
                 if p is None:
                     raise CompileError(f"value {v} has no producer")
                 if p.id not in self.step_of or self.step_of[p.id] >= t:
@@ -1031,7 +1043,7 @@ def rebalance_constants(prog: VProgram, wide: bool = True):
         b = bank_of[vid]
         while (b, nxt[b]) in taken:
             nxt[b] += 2
-        if nxt[b] + 2 > GRF_WORDS:
+        if nxt[b] + 2 > 510:  # (510-511 stay unwritten: the zero words)
             return lambda: None  # no room: keep the original homes
         remap[(v.home.space, v.home.addrs[0])] = (b, nxt[b])
         nxt[b] += 2
@@ -1074,16 +1086,21 @@ def _turnaround_ok(steps) -> bool:
 def schedule(prog: VProgram, asm=None, *, tries: int = 1, seed: int = 0) -> list[Step]:
     best = None
     errors = []
-    for kk in range(4 * tries):
+    for kk in range(4 * tries + 1):
         # constant placement policy, register-pressure mode and priority jitter vary by try; the
         # second half schedules without the bank colouring and eager port copies (some programs
         # pack better with the plain heuristics)
-        k, plain = kk % (2 * tries), kk >= 2 * tries
+        fifo = kk == 4 * tries
+        k, plain = (0, False) if fifo else (kk % (2 * tries), kk >= 2 * tries)
         undo = rebalance_constants(prog, wide=(k // 2) % 2 == 0)
         try:
             for l1 in (True, False):
                 try:
                     sch = Scheduler(prog, seed=seed + k // 2, jitter=0.0 if k < 4 else 1.5, pressure=k % 2 == 0)
+                    if fifo:
+                        # Program order keeps streaming groups interleaved; critical-path
+                        # priority can bunch all buffered groups ahead of direct writes.
+                        sch.height = dict.fromkeys(sch.height, 0)
                     if plain:
                         sch.color = {}
                         sch.eager_copies = False

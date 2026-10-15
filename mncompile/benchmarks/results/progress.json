@@ -17,7 +17,72 @@
           "score": 2
         }
       ],
-      "seconds": 2.0
+      "seconds": 2.0,
+      "resources": {
+        "lines": 2,
+        "instructions": 2,
+        "nop_lines": 0,
+        "resource_lower_bound": 2,
+        "scheduling_gap": 0,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 2,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 1.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 2,
+        "instructions": 2,
+        "nop_lines": 0,
+        "resource_lower_bound": 2,
+        "scheduling_gap": 0,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 2,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 1.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 0
     },
     {
       "problem": "2.plus-two",
@@ -33,7 +98,72 @@
           "score": 7
         }
       ],
-      "seconds": 2.2
+      "seconds": 2.2,
+      "resources": {
+        "lines": 7,
+        "instructions": 6,
+        "nop_lines": 1,
+        "resource_lower_bound": 6,
+        "scheduling_gap": 1,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 6,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.8571428571428571,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 5,
+        "instructions": 5,
+        "nop_lines": 0,
+        "resource_lower_bound": 5,
+        "scheduling_gap": 0,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 5,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 1.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 2
     },
     {
       "problem": "3.a-plus-b",
@@ -49,7 +179,72 @@
           "score": 6
         }
       ],
-      "seconds": 6.2
+      "seconds": 6.2,
+      "resources": {
+        "lines": 6,
+        "instructions": 6,
+        "nop_lines": 0,
+        "resource_lower_bound": 6,
+        "scheduling_gap": 0,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 6,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 1.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 6,
+        "instructions": 6,
+        "nop_lines": 0,
+        "resource_lower_bound": 6,
+        "scheduling_gap": 0,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 6,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 1.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 0
     },
     {
       "problem": "4.mul7",
@@ -65,7 +260,73 @@
           "score": 10
         }
       ],
-      "seconds": 2.2
+      "seconds": 2.2,
+      "resources": {
+        "lines": 10,
+        "instructions": 9,
+        "nop_lines": 1,
+        "resource_lower_bound": 9,
+        "scheduling_gap": 1,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 9,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.9,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 6,
+        "instructions": 10,
+        "nop_lines": 0,
+        "resource_lower_bound": 5,
+        "scheduling_gap": 1,
+        "bottleneck_units": [
+          "alu",
+          "mau"
+        ],
+        "unit_counts": {
+          "alu": 5,
+          "mau": 5,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.8333333333333334,
+          "mau": 0.8333333333333334,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 4
     },
     {
       "problem": "5.abs",
@@ -81,7 +342,72 @@
           "score": 23
         }
       ],
-      "seconds": 5.6
+      "seconds": 5.6,
+      "resources": {
+        "lines": 23,
+        "instructions": 23,
+        "nop_lines": 0,
+        "resource_lower_bound": 23,
+        "scheduling_gap": 0,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 23,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 1.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 13,
+        "instructions": 45,
+        "nop_lines": 0,
+        "resource_lower_bound": 12,
+        "scheduling_gap": 1,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 12,
+          "mau": 11,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 11,
+          "l1bm-turnaround": 11,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.9230769230769231,
+          "mau": 0.8461538461538461,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.8461538461538461,
+          "l1bm-turnaround": 0.8461538461538461,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 10
     },
     {
       "problem": "6.fadd-mul",
@@ -97,7 +423,72 @@
           "score": 18
         }
       ],
-      "seconds": 10.2
+      "seconds": 10.2,
+      "resources": {
+        "lines": 18,
+        "instructions": 18,
+        "nop_lines": 0,
+        "resource_lower_bound": 16,
+        "scheduling_gap": 2,
+        "bottleneck_units": [
+          "mau"
+        ],
+        "unit_counts": {
+          "alu": 2,
+          "mau": 16,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.1111111111111111,
+          "mau": 0.8888888888888888,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 14,
+        "instructions": 32,
+        "nop_lines": 0,
+        "resource_lower_bound": 14,
+        "scheduling_gap": 0,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 14,
+          "mau": 11,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 7,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 1.0,
+          "mau": 0.7857142857142857,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.5,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 4
     },
     {
       "problem": "7.mul2",
@@ -113,7 +504,72 @@
           "score": 13
         }
       ],
-      "seconds": 13.9
+      "seconds": 13.9,
+      "resources": {
+        "lines": 13,
+        "instructions": 13,
+        "nop_lines": 0,
+        "resource_lower_bound": 12,
+        "scheduling_gap": 1,
+        "bottleneck_units": [
+          "mau"
+        ],
+        "unit_counts": {
+          "alu": 1,
+          "mau": 12,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.07692307692307693,
+          "mau": 0.9230769230769231,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 9,
+        "instructions": 19,
+        "nop_lines": 0,
+        "resource_lower_bound": 9,
+        "scheduling_gap": 0,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 9,
+          "mau": 7,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 2,
+          "l1bm-turnaround": 1,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 1.0,
+          "mau": 0.7777777777777778,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.2222222222222222,
+          "l1bm-turnaround": 0.1111111111111111,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 4
     },
     {
       "problem": "8.fle",
@@ -129,7 +585,72 @@
           "score": 9
         }
       ],
-      "seconds": 4.7
+      "seconds": 4.7,
+      "resources": {
+        "lines": 9,
+        "instructions": 12,
+        "nop_lines": 0,
+        "resource_lower_bound": 7,
+        "scheduling_gap": 2,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 7,
+          "mau": 5,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.7777777777777778,
+          "mau": 0.5555555555555556,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 4,
+        "instructions": 7,
+        "nop_lines": 0,
+        "resource_lower_bound": 4,
+        "scheduling_gap": 0,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 4,
+          "mau": 3,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 1.0,
+          "mau": 0.75,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 5
     },
     {
       "problem": "9.transpose-addr",
@@ -145,7 +666,72 @@
           "score": 16
         }
       ],
-      "seconds": 6.1
+      "seconds": 6.1,
+      "resources": {
+        "lines": 16,
+        "instructions": 16,
+        "nop_lines": 0,
+        "resource_lower_bound": 16,
+        "scheduling_gap": 0,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 16,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 1.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 10,
+        "instructions": 16,
+        "nop_lines": 0,
+        "resource_lower_bound": 10,
+        "scheduling_gap": 0,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 10,
+          "mau": 6,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 1.0,
+          "mau": 0.6,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 6
     },
     {
       "problem": "10.gather-easy",
@@ -161,7 +747,72 @@
           "score": 12
         }
       ],
-      "seconds": 172.8
+      "seconds": 172.8,
+      "resources": {
+        "lines": 12,
+        "instructions": 8,
+        "nop_lines": 4,
+        "resource_lower_bound": 8,
+        "scheduling_gap": 4,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 8,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.6666666666666666,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 6,
+        "instructions": 7,
+        "nop_lines": 0,
+        "resource_lower_bound": 5,
+        "scheduling_gap": 1,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 5,
+          "mau": 2,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.8333333333333334,
+          "mau": 0.3333333333333333,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 6
     },
     {
       "problem": "11.square-sum",
@@ -177,7 +828,72 @@
           "score": 21
         }
       ],
-      "seconds": 101.8
+      "seconds": 101.8,
+      "resources": {
+        "lines": 21,
+        "instructions": 11,
+        "nop_lines": 10,
+        "resource_lower_bound": 5,
+        "scheduling_gap": 16,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 5,
+          "mau": 2,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 2,
+          "l1bm-turnaround": 0,
+          "l2bm": 2,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.23809523809523808,
+          "mau": 0.09523809523809523,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.09523809523809523,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.09523809523809523,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 11,
+        "instructions": 10,
+        "nop_lines": 1,
+        "resource_lower_bound": 7,
+        "scheduling_gap": 4,
+        "bottleneck_units": [
+          "mau"
+        ],
+        "unit_counts": {
+          "alu": 1,
+          "mau": 7,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 1,
+          "l1bm-turnaround": 1,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.09090909090909091,
+          "mau": 0.6363636363636364,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.09090909090909091,
+          "l1bm-turnaround": 0.09090909090909091,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 10
     },
     {
       "problem": "12.convert-endian",
@@ -193,7 +909,72 @@
           "score": 6
         }
       ],
-      "seconds": 1.0
+      "seconds": 1.0,
+      "resources": {
+        "lines": 6,
+        "instructions": 6,
+        "nop_lines": 0,
+        "resource_lower_bound": 6,
+        "scheduling_gap": 0,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 6,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 1.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 3,
+        "instructions": 4,
+        "nop_lines": 0,
+        "resource_lower_bound": 3,
+        "scheduling_gap": 0,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 3,
+          "mau": 1,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 1.0,
+          "mau": 0.3333333333333333,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 3
     },
     {
       "problem": "13.mod3",
@@ -209,7 +990,72 @@
           "score": 15
         }
       ],
-      "seconds": 4.8
+      "seconds": 4.8,
+      "resources": {
+        "lines": 15,
+        "instructions": 27,
+        "nop_lines": 0,
+        "resource_lower_bound": 15,
+        "scheduling_gap": 0,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 15,
+          "mau": 12,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 1.0,
+          "mau": 0.8,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 8,
+        "instructions": 18,
+        "nop_lines": 0,
+        "resource_lower_bound": 8,
+        "scheduling_gap": 0,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 8,
+          "mau": 5,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 3,
+          "l1bm-turnaround": 2,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 1.0,
+          "mau": 0.625,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.375,
+          "l1bm-turnaround": 0.25,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 7
     },
     {
       "problem": "14.mat-sq",
@@ -225,7 +1071,73 @@
           "score": 12
         }
       ],
-      "seconds": 70.3
+      "seconds": 70.3,
+      "resources": {
+        "lines": 12,
+        "instructions": 20,
+        "nop_lines": 0,
+        "resource_lower_bound": 8,
+        "scheduling_gap": 4,
+        "bottleneck_units": [
+          "mwrite"
+        ],
+        "unit_counts": {
+          "alu": 6,
+          "mau": 4,
+          "mwrite": 8,
+          "mread": 2,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.5,
+          "mau": 0.3333333333333333,
+          "mwrite": 0.6666666666666666,
+          "mread": 0.16666666666666666,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 10,
+        "instructions": 18,
+        "nop_lines": 0,
+        "resource_lower_bound": 6,
+        "scheduling_gap": 4,
+        "bottleneck_units": [
+          "alu",
+          "mwrite"
+        ],
+        "unit_counts": {
+          "alu": 6,
+          "mau": 4,
+          "mwrite": 6,
+          "mread": 2,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.6,
+          "mau": 0.4,
+          "mwrite": 0.6,
+          "mread": 0.2,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 2
     },
     {
       "problem": "15.contains",
@@ -242,7 +1154,72 @@
           "detail": null
         }
       ],
-      "seconds": 256.6
+      "seconds": 256.6,
+      "resources": {
+        "lines": 60,
+        "instructions": 54,
+        "nop_lines": 10,
+        "resource_lower_bound": 47,
+        "scheduling_gap": 13,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 47,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 5,
+          "l1bm-turnaround": 2,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.7833333333333333,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.08333333333333333,
+          "l1bm-turnaround": 0.03333333333333333,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 20,
+        "instructions": 32,
+        "nop_lines": 2,
+        "resource_lower_bound": 9,
+        "scheduling_gap": 11,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 9,
+          "mau": 8,
+          "mwrite": 1,
+          "mread": 0,
+          "l1bm": 7,
+          "l1bm-turnaround": 7,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.45,
+          "mau": 0.4,
+          "mwrite": 0.05,
+          "mread": 0.0,
+          "l1bm": 0.35,
+          "l1bm-turnaround": 0.35,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 40
     },
     {
       "problem": "16.count-up",
@@ -259,7 +1236,72 @@
           "detail": null
         }
       ],
-      "seconds": 9.2
+      "seconds": 9.2,
+      "resources": {
+        "lines": 43,
+        "instructions": 38,
+        "nop_lines": 5,
+        "resource_lower_bound": 27,
+        "scheduling_gap": 16,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 27,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 1,
+          "l1bm-turnaround": 0,
+          "l2bm": 8,
+          "l2bmdarw": 0,
+          "mv": 2
+        },
+        "unit_utilization": {
+          "alu": 0.627906976744186,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.023255813953488372,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.18604651162790697,
+          "l2bmdarw": 0.0,
+          "mv": 0.046511627906976744
+        }
+      },
+      "reference_resources": {
+        "lines": 21,
+        "instructions": 36,
+        "nop_lines": 1,
+        "resource_lower_bound": 9,
+        "scheduling_gap": 12,
+        "bottleneck_units": [
+          "mv"
+        ],
+        "unit_counts": {
+          "alu": 7,
+          "mau": 3,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 6,
+          "l1bm-turnaround": 1,
+          "l2bm": 6,
+          "l2bmdarw": 4,
+          "mv": 9
+        },
+        "unit_utilization": {
+          "alu": 0.3333333333333333,
+          "mau": 0.14285714285714285,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.2857142857142857,
+          "l1bm-turnaround": 0.047619047619047616,
+          "l2bm": 0.2857142857142857,
+          "l2bmdarw": 0.19047619047619047,
+          "mv": 0.42857142857142855
+        }
+      },
+      "line_delta": 22
     },
     {
       "problem": "17.transpose-mab",
@@ -275,7 +1317,72 @@
           "score": 45
         }
       ],
-      "seconds": 4.2
+      "seconds": 4.2,
+      "resources": {
+        "lines": 45,
+        "instructions": 42,
+        "nop_lines": 3,
+        "resource_lower_bound": 36,
+        "scheduling_gap": 9,
+        "bottleneck_units": [
+          "l1bm"
+        ],
+        "unit_counts": {
+          "alu": 6,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 36,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.13333333333333333,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.8,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 15,
+        "instructions": 23,
+        "nop_lines": 1,
+        "resource_lower_bound": 12,
+        "scheduling_gap": 3,
+        "bottleneck_units": [
+          "l1bm"
+        ],
+        "unit_counts": {
+          "alu": 1,
+          "mau": 1,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 12,
+          "l1bm-turnaround": 9,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.06666666666666667,
+          "mau": 0.06666666666666667,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.8,
+          "l1bm-turnaround": 0.6,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 30
     },
     {
       "problem": "18.inversion-small",
@@ -292,7 +1399,72 @@
           "detail": null
         }
       ],
-      "seconds": 28.2
+      "seconds": 28.2,
+      "resources": {
+        "lines": 30,
+        "instructions": 23,
+        "nop_lines": 7,
+        "resource_lower_bound": 21,
+        "scheduling_gap": 9,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 21,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 2,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.7,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.06666666666666667,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 9,
+        "instructions": 11,
+        "nop_lines": 0,
+        "resource_lower_bound": 6,
+        "scheduling_gap": 3,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 6,
+          "mau": 2,
+          "mwrite": 1,
+          "mread": 0,
+          "l1bm": 1,
+          "l1bm-turnaround": 1,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.6666666666666666,
+          "mau": 0.2222222222222222,
+          "mwrite": 0.1111111111111111,
+          "mread": 0.0,
+          "l1bm": 0.1111111111111111,
+          "l1bm-turnaround": 0.1111111111111111,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 21
     },
     {
       "problem": "19.inversion",
@@ -309,7 +1481,72 @@
           "detail": null
         }
       ],
-      "seconds": 125.8
+      "seconds": 125.8,
+      "resources": {
+        "lines": 76,
+        "instructions": 65,
+        "nop_lines": 11,
+        "resource_lower_bound": 59,
+        "scheduling_gap": 17,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 59,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 2,
+          "l1bm-turnaround": 0,
+          "l2bm": 2,
+          "l2bmdarw": 0,
+          "mv": 2
+        },
+        "unit_utilization": {
+          "alu": 0.7763157894736842,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.02631578947368421,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.02631578947368421,
+          "l2bmdarw": 0.0,
+          "mv": 0.02631578947368421
+        }
+      },
+      "reference_resources": {
+        "lines": 31,
+        "instructions": 42,
+        "nop_lines": 6,
+        "resource_lower_bound": 17,
+        "scheduling_gap": 14,
+        "bottleneck_units": [
+          "mau"
+        ],
+        "unit_counts": {
+          "alu": 13,
+          "mau": 17,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 5,
+          "l1bm-turnaround": 3,
+          "l2bm": 2,
+          "l2bmdarw": 0,
+          "mv": 2
+        },
+        "unit_utilization": {
+          "alu": 0.41935483870967744,
+          "mau": 0.5483870967741935,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.16129032258064516,
+          "l1bm-turnaround": 0.0967741935483871,
+          "l2bm": 0.06451612903225806,
+          "l2bmdarw": 0.0,
+          "mv": 0.06451612903225806
+        }
+      },
+      "line_delta": 45
     },
     {
       "problem": "20.fizzbuzz",
@@ -326,7 +1563,72 @@
           "detail": null
         }
       ],
-      "seconds": 74.3
+      "seconds": 74.3,
+      "resources": {
+        "lines": 103,
+        "instructions": 142,
+        "nop_lines": 7,
+        "resource_lower_bound": 77,
+        "scheduling_gap": 26,
+        "bottleneck_units": [
+          "mau"
+        ],
+        "unit_counts": {
+          "alu": 60,
+          "mau": 77,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 1,
+          "l1bm-turnaround": 0,
+          "l2bm": 2,
+          "l2bmdarw": 0,
+          "mv": 2
+        },
+        "unit_utilization": {
+          "alu": 0.5825242718446602,
+          "mau": 0.7475728155339806,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.009708737864077669,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.019417475728155338,
+          "l2bmdarw": 0.0,
+          "mv": 0.019417475728155338
+        }
+      },
+      "reference_resources": {
+        "lines": 98,
+        "instructions": 114,
+        "nop_lines": 8,
+        "resource_lower_bound": 66,
+        "scheduling_gap": 32,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 66,
+          "mau": 41,
+          "mwrite": 1,
+          "mread": 1,
+          "l1bm": 1,
+          "l1bm-turnaround": 0,
+          "l2bm": 2,
+          "l2bmdarw": 0,
+          "mv": 2
+        },
+        "unit_utilization": {
+          "alu": 0.673469387755102,
+          "mau": 0.41836734693877553,
+          "mwrite": 0.01020408163265306,
+          "mread": 0.01020408163265306,
+          "l1bm": 0.01020408163265306,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.02040816326530612,
+          "l2bmdarw": 0.0,
+          "mv": 0.02040816326530612
+        }
+      },
+      "line_delta": 5
     },
     {
       "problem": "21.hello-world",
@@ -342,7 +1644,72 @@
           "score": 13
         }
       ],
-      "seconds": 1.2
+      "seconds": 1.2,
+      "resources": {
+        "lines": 13,
+        "instructions": 9,
+        "nop_lines": 4,
+        "resource_lower_bound": 6,
+        "scheduling_gap": 7,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 6,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 1,
+          "l1bm-turnaround": 0,
+          "l2bm": 1,
+          "l2bmdarw": 0,
+          "mv": 1
+        },
+        "unit_utilization": {
+          "alu": 0.46153846153846156,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.07692307692307693,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.07692307692307693,
+          "l2bmdarw": 0.0,
+          "mv": 0.07692307692307693
+        }
+      },
+      "reference_resources": {
+        "lines": 9,
+        "instructions": 9,
+        "nop_lines": 2,
+        "resource_lower_bound": 4,
+        "scheduling_gap": 5,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 4,
+          "mau": 2,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 1,
+          "l1bm-turnaround": 0,
+          "l2bm": 1,
+          "l2bmdarw": 0,
+          "mv": 1
+        },
+        "unit_utilization": {
+          "alu": 0.4444444444444444,
+          "mau": 0.2222222222222222,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.1111111111111111,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.1111111111111111,
+          "l2bmdarw": 0.0,
+          "mv": 0.1111111111111111
+        }
+      },
+      "line_delta": 4
     },
     {
       "problem": "22.bit-reverse",
@@ -358,7 +1725,72 @@
           "score": 32
         }
       ],
-      "seconds": 5.2
+      "seconds": 5.2,
+      "resources": {
+        "lines": 32,
+        "instructions": 32,
+        "nop_lines": 0,
+        "resource_lower_bound": 32,
+        "scheduling_gap": 0,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 32,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 1.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 10,
+        "instructions": 17,
+        "nop_lines": 0,
+        "resource_lower_bound": 10,
+        "scheduling_gap": 0,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 10,
+          "mau": 1,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 3,
+          "l1bm-turnaround": 3,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 1.0,
+          "mau": 0.1,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.3,
+          "l1bm-turnaround": 0.3,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 22
     },
     {
       "problem": "23.fizzbuzz-pe",
@@ -375,7 +1807,72 @@
           "detail": null
         }
       ],
-      "seconds": 16.0
+      "seconds": 16.0,
+      "resources": {
+        "lines": 12,
+        "instructions": 18,
+        "nop_lines": 0,
+        "resource_lower_bound": 12,
+        "scheduling_gap": 0,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 12,
+          "mau": 4,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 1,
+          "l1bm-turnaround": 1,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 1.0,
+          "mau": 0.3333333333333333,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.08333333333333333,
+          "l1bm-turnaround": 0.08333333333333333,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 9,
+        "instructions": 17,
+        "nop_lines": 0,
+        "resource_lower_bound": 9,
+        "scheduling_gap": 0,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 9,
+          "mau": 6,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 1,
+          "l1bm-turnaround": 1,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 1.0,
+          "mau": 0.6666666666666666,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.1111111111111111,
+          "l1bm-turnaround": 0.1111111111111111,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 3
     },
     {
       "problem": "24.log2",
@@ -391,7 +1888,72 @@
           "score": 15
         }
       ],
-      "seconds": 5.7
+      "seconds": 5.7,
+      "resources": {
+        "lines": 15,
+        "instructions": 19,
+        "nop_lines": 0,
+        "resource_lower_bound": 15,
+        "scheduling_gap": 0,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 15,
+          "mau": 4,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 1.0,
+          "mau": 0.26666666666666666,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 7,
+        "instructions": 16,
+        "nop_lines": 0,
+        "resource_lower_bound": 7,
+        "scheduling_gap": 0,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 7,
+          "mau": 5,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 2,
+          "l1bm-turnaround": 2,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 1.0,
+          "mau": 0.7142857142857143,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.2857142857142857,
+          "l1bm-turnaround": 0.2857142857142857,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 8
     },
     {
       "problem": "25.hsv2rgb",
@@ -408,7 +1970,73 @@
           "detail": null
         }
       ],
-      "seconds": 5.4
+      "seconds": 5.4,
+      "resources": {
+        "lines": 32,
+        "instructions": 61,
+        "nop_lines": 0,
+        "resource_lower_bound": 20,
+        "scheduling_gap": 12,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 20,
+          "mau": 13,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 14,
+          "l1bm-turnaround": 14,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.625,
+          "mau": 0.40625,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.4375,
+          "l1bm-turnaround": 0.4375,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 12,
+        "instructions": 30,
+        "nop_lines": 0,
+        "resource_lower_bound": 10,
+        "scheduling_gap": 2,
+        "bottleneck_units": [
+          "alu",
+          "mau"
+        ],
+        "unit_counts": {
+          "alu": 10,
+          "mau": 10,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 5,
+          "l1bm-turnaround": 5,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.8333333333333334,
+          "mau": 0.8333333333333334,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.4166666666666667,
+          "l1bm-turnaround": 0.4166666666666667,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 20
     },
     {
       "problem": "1.a-b",
@@ -424,7 +2052,73 @@
           "score": 4
         }
       ],
-      "seconds": 5.3
+      "seconds": 5.3,
+      "resources": {
+        "lines": 4,
+        "instructions": 4,
+        "nop_lines": 0,
+        "resource_lower_bound": 2,
+        "scheduling_gap": 2,
+        "bottleneck_units": [
+          "alu",
+          "mau"
+        ],
+        "unit_counts": {
+          "alu": 2,
+          "mau": 2,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.5,
+          "mau": 0.5,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 3,
+        "instructions": 3,
+        "nop_lines": 0,
+        "resource_lower_bound": 2,
+        "scheduling_gap": 1,
+        "bottleneck_units": [
+          "mau"
+        ],
+        "unit_counts": {
+          "alu": 1,
+          "mau": 2,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.3333333333333333,
+          "mau": 0.6666666666666666,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 1
     },
     {
       "problem": "2.fmul7",
@@ -440,7 +2134,72 @@
           "score": 5
         }
       ],
-      "seconds": 9.8
+      "seconds": 9.8,
+      "resources": {
+        "lines": 5,
+        "instructions": 5,
+        "nop_lines": 0,
+        "resource_lower_bound": 4,
+        "scheduling_gap": 1,
+        "bottleneck_units": [
+          "mau"
+        ],
+        "unit_counts": {
+          "alu": 1,
+          "mau": 4,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.2,
+          "mau": 0.8,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 5,
+        "instructions": 5,
+        "nop_lines": 0,
+        "resource_lower_bound": 4,
+        "scheduling_gap": 1,
+        "bottleneck_units": [
+          "mau"
+        ],
+        "unit_counts": {
+          "alu": 1,
+          "mau": 4,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.2,
+          "mau": 0.8,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 0
     },
     {
       "problem": "3.relu",
@@ -456,7 +2215,72 @@
           "score": 2
         }
       ],
-      "seconds": 3.5
+      "seconds": 3.5,
+      "resources": {
+        "lines": 2,
+        "instructions": 2,
+        "nop_lines": 0,
+        "resource_lower_bound": 2,
+        "scheduling_gap": 0,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 2,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 1.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 2,
+        "instructions": 2,
+        "nop_lines": 0,
+        "resource_lower_bound": 2,
+        "scheduling_gap": 0,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 2,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 1.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 0
     },
     {
       "problem": "4.relu-grad",
@@ -472,7 +2296,72 @@
           "score": 3
         }
       ],
-      "seconds": 3.5
+      "seconds": 3.5,
+      "resources": {
+        "lines": 3,
+        "instructions": 3,
+        "nop_lines": 0,
+        "resource_lower_bound": 3,
+        "scheduling_gap": 0,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 3,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 1.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 3,
+        "instructions": 3,
+        "nop_lines": 0,
+        "resource_lower_bound": 3,
+        "scheduling_gap": 0,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 3,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 1.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 0
     },
     {
       "problem": "5.addcol-vec",
@@ -488,7 +2377,73 @@
           "score": 4
         }
       ],
-      "seconds": 3.9
+      "seconds": 3.9,
+      "resources": {
+        "lines": 4,
+        "instructions": 4,
+        "nop_lines": 0,
+        "resource_lower_bound": 2,
+        "scheduling_gap": 2,
+        "bottleneck_units": [
+          "alu",
+          "mau"
+        ],
+        "unit_counts": {
+          "alu": 2,
+          "mau": 2,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.5,
+          "mau": 0.5,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 3,
+        "instructions": 3,
+        "nop_lines": 0,
+        "resource_lower_bound": 3,
+        "scheduling_gap": 0,
+        "bottleneck_units": [
+          "mau"
+        ],
+        "unit_counts": {
+          "alu": 0,
+          "mau": 3,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.0,
+          "mau": 1.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 1
     },
     {
       "problem": "6.subrow-vec",
@@ -504,7 +2459,73 @@
           "score": 35
         }
       ],
-      "seconds": 49.0
+      "seconds": 49.0,
+      "resources": {
+        "lines": 35,
+        "instructions": 29,
+        "nop_lines": 6,
+        "resource_lower_bound": 18,
+        "scheduling_gap": 17,
+        "bottleneck_units": [
+          "l1bm"
+        ],
+        "unit_counts": {
+          "alu": 7,
+          "mau": 4,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 18,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.2,
+          "mau": 0.11428571428571428,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.5142857142857142,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 24,
+        "instructions": 41,
+        "nop_lines": 0,
+        "resource_lower_bound": 14,
+        "scheduling_gap": 10,
+        "bottleneck_units": [
+          "l1bm",
+          "l1bm-turnaround"
+        ],
+        "unit_counts": {
+          "alu": 5,
+          "mau": 8,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 14,
+          "l1bm-turnaround": 14,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.20833333333333334,
+          "mau": 0.3333333333333333,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.5833333333333334,
+          "l1bm-turnaround": 0.5833333333333334,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 11
     },
     {
       "problem": "7.sumcol-mini",
@@ -520,7 +2541,72 @@
           "score": 4
         }
       ],
-      "seconds": 6.4
+      "seconds": 6.4,
+      "resources": {
+        "lines": 4,
+        "instructions": 4,
+        "nop_lines": 0,
+        "resource_lower_bound": 3,
+        "scheduling_gap": 1,
+        "bottleneck_units": [
+          "mau"
+        ],
+        "unit_counts": {
+          "alu": 1,
+          "mau": 3,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.25,
+          "mau": 0.75,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 4,
+        "instructions": 4,
+        "nop_lines": 0,
+        "resource_lower_bound": 3,
+        "scheduling_gap": 1,
+        "bottleneck_units": [
+          "mau"
+        ],
+        "unit_counts": {
+          "alu": 1,
+          "mau": 3,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.25,
+          "mau": 0.75,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 0
     },
     {
       "problem": "8.sumcol",
@@ -536,7 +2622,73 @@
           "score": 12
         }
       ],
-      "seconds": 6.4
+      "seconds": 6.4,
+      "resources": {
+        "lines": 12,
+        "instructions": 7,
+        "nop_lines": 5,
+        "resource_lower_bound": 3,
+        "scheduling_gap": 9,
+        "bottleneck_units": [
+          "mau"
+        ],
+        "unit_counts": {
+          "alu": 1,
+          "mau": 3,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 1,
+          "l1bm-turnaround": 0,
+          "l2bm": 1,
+          "l2bmdarw": 0,
+          "mv": 1
+        },
+        "unit_utilization": {
+          "alu": 0.08333333333333333,
+          "mau": 0.25,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.08333333333333333,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.08333333333333333,
+          "l2bmdarw": 0.0,
+          "mv": 0.08333333333333333
+        }
+      },
+      "reference_resources": {
+        "lines": 9,
+        "instructions": 6,
+        "nop_lines": 3,
+        "resource_lower_bound": 2,
+        "scheduling_gap": 7,
+        "bottleneck_units": [
+          "alu",
+          "l1bm"
+        ],
+        "unit_counts": {
+          "alu": 2,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 2,
+          "l1bm-turnaround": 0,
+          "l2bm": 1,
+          "l2bmdarw": 0,
+          "mv": 1
+        },
+        "unit_utilization": {
+          "alu": 0.2222222222222222,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.2222222222222222,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.1111111111111111,
+          "l2bmdarw": 0.0,
+          "mv": 0.1111111111111111
+        }
+      },
+      "line_delta": 3
     },
     {
       "problem": "9.sumrow-mini",
@@ -552,7 +2704,72 @@
           "score": 9
         }
       ],
-      "seconds": 9.8
+      "seconds": 9.8,
+      "resources": {
+        "lines": 9,
+        "instructions": 9,
+        "nop_lines": 0,
+        "resource_lower_bound": 6,
+        "scheduling_gap": 3,
+        "bottleneck_units": [
+          "mau"
+        ],
+        "unit_counts": {
+          "alu": 3,
+          "mau": 6,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.3333333333333333,
+          "mau": 0.6666666666666666,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 6,
+        "instructions": 9,
+        "nop_lines": 0,
+        "resource_lower_bound": 4,
+        "scheduling_gap": 2,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 4,
+          "mau": 3,
+          "mwrite": 2,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.6666666666666666,
+          "mau": 0.5,
+          "mwrite": 0.3333333333333333,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 3
     },
     {
       "problem": "10.sumrow",
@@ -568,7 +2785,72 @@
           "score": 24
         }
       ],
-      "seconds": 51.2
+      "seconds": 51.2,
+      "resources": {
+        "lines": 24,
+        "instructions": 17,
+        "nop_lines": 7,
+        "resource_lower_bound": 7,
+        "scheduling_gap": 17,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 7,
+          "mau": 5,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 5,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.2916666666666667,
+          "mau": 0.20833333333333334,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.20833333333333334,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 16,
+        "instructions": 24,
+        "nop_lines": 0,
+        "resource_lower_bound": 7,
+        "scheduling_gap": 9,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 7,
+          "mau": 4,
+          "mwrite": 1,
+          "mread": 0,
+          "l1bm": 6,
+          "l1bm-turnaround": 6,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.4375,
+          "mau": 0.25,
+          "mwrite": 0.0625,
+          "mread": 0.0,
+          "l1bm": 0.375,
+          "l1bm-turnaround": 0.375,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 8
     },
     {
       "problem": "11.maxrow",
@@ -584,7 +2866,72 @@
           "score": 24
         }
       ],
-      "seconds": 47.5
+      "seconds": 47.5,
+      "resources": {
+        "lines": 24,
+        "instructions": 17,
+        "nop_lines": 7,
+        "resource_lower_bound": 12,
+        "scheduling_gap": 12,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 12,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 5,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.5,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.20833333333333334,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 20,
+        "instructions": 23,
+        "nop_lines": 1,
+        "resource_lower_bound": 11,
+        "scheduling_gap": 9,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 11,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 6,
+          "l1bm-turnaround": 6,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.55,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.3,
+          "l1bm-turnaround": 0.3,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 4
     },
     {
       "problem": "12.divrow-vec",
@@ -601,7 +2948,73 @@
           "detail": null
         }
       ],
-      "seconds": 316.8
+      "seconds": 316.8,
+      "resources": {
+        "lines": 56,
+        "instructions": 54,
+        "nop_lines": 5,
+        "resource_lower_bound": 24,
+        "scheduling_gap": 32,
+        "bottleneck_units": [
+          "mau"
+        ],
+        "unit_counts": {
+          "alu": 12,
+          "mau": 24,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 18,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.21428571428571427,
+          "mau": 0.42857142857142855,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.32142857142857145,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 29,
+        "instructions": 52,
+        "nop_lines": 2,
+        "resource_lower_bound": 17,
+        "scheduling_gap": 12,
+        "bottleneck_units": [
+          "l1bm",
+          "l1bm-turnaround"
+        ],
+        "unit_counts": {
+          "alu": 7,
+          "mau": 11,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 17,
+          "l1bm-turnaround": 17,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.2413793103448276,
+          "mau": 0.3793103448275862,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.5862068965517241,
+          "l1bm-turnaround": 0.5862068965517241,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 27
     },
     {
       "problem": "13.exp-low-prec",
@@ -618,7 +3031,72 @@
           "detail": null
         }
       ],
-      "seconds": 47.1
+      "seconds": 47.1,
+      "resources": {
+        "lines": 20,
+        "instructions": 27,
+        "nop_lines": 0,
+        "resource_lower_bound": 15,
+        "scheduling_gap": 5,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 15,
+          "mau": 12,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.75,
+          "mau": 0.6,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 10,
+        "instructions": 17,
+        "nop_lines": 0,
+        "resource_lower_bound": 8,
+        "scheduling_gap": 2,
+        "bottleneck_units": [
+          "mau"
+        ],
+        "unit_counts": {
+          "alu": 7,
+          "mau": 8,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 1,
+          "l1bm-turnaround": 1,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.7,
+          "mau": 0.8,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.1,
+          "l1bm-turnaround": 0.1,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 10
     },
     {
       "problem": "14.exp",
@@ -634,7 +3112,72 @@
           "score": 30
         }
       ],
-      "seconds": 73.3
+      "seconds": 73.3,
+      "resources": {
+        "lines": 30,
+        "instructions": 39,
+        "nop_lines": 0,
+        "resource_lower_bound": 20,
+        "scheduling_gap": 10,
+        "bottleneck_units": [
+          "mau"
+        ],
+        "unit_counts": {
+          "alu": 19,
+          "mau": 20,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.6333333333333333,
+          "mau": 0.6666666666666666,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 16,
+        "instructions": 33,
+        "nop_lines": 0,
+        "resource_lower_bound": 12,
+        "scheduling_gap": 4,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 12,
+          "mau": 11,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 5,
+          "l1bm-turnaround": 5,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.75,
+          "mau": 0.6875,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.3125,
+          "l1bm-turnaround": 0.3125,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 14
     },
     {
       "problem": "15.onehot-mini",
@@ -650,7 +3193,72 @@
           "score": 17
         }
       ],
-      "seconds": 3.9
+      "seconds": 3.9,
+      "resources": {
+        "lines": 17,
+        "instructions": 17,
+        "nop_lines": 0,
+        "resource_lower_bound": 17,
+        "scheduling_gap": 0,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 17,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 1.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 7,
+        "instructions": 13,
+        "nop_lines": 0,
+        "resource_lower_bound": 6,
+        "scheduling_gap": 1,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 6,
+          "mau": 3,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 2,
+          "l1bm-turnaround": 2,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.8571428571428571,
+          "mau": 0.42857142857142855,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.2857142857142857,
+          "l1bm-turnaround": 0.2857142857142857,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 10
     },
     {
       "problem": "16.onehot",
@@ -666,7 +3274,73 @@
           "score": 44
         }
       ],
-      "seconds": 20.7
+      "seconds": 20.7,
+      "resources": {
+        "lines": 44,
+        "instructions": 40,
+        "nop_lines": 4,
+        "resource_lower_bound": 22,
+        "scheduling_gap": 22,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 22,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 18,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.5,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.4090909090909091,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 24,
+        "instructions": 51,
+        "nop_lines": 0,
+        "resource_lower_bound": 19,
+        "scheduling_gap": 5,
+        "bottleneck_units": [
+          "l1bm",
+          "l1bm-turnaround"
+        ],
+        "unit_counts": {
+          "alu": 7,
+          "mau": 6,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 19,
+          "l1bm-turnaround": 19,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.2916666666666667,
+          "mau": 0.25,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.7916666666666666,
+          "l1bm-turnaround": 0.7916666666666666,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 20
     },
     {
       "problem": "17.dram-dl-256-16",
@@ -682,7 +3356,72 @@
           "score": 5
         }
       ],
-      "seconds": 2.0
+      "seconds": 2.0,
+      "resources": {
+        "lines": 5,
+        "instructions": 4,
+        "nop_lines": 1,
+        "resource_lower_bound": 2,
+        "scheduling_gap": 3,
+        "bottleneck_units": [
+          "mv"
+        ],
+        "unit_counts": {
+          "alu": 0,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 1,
+          "l1bm-turnaround": 0,
+          "l2bm": 1,
+          "l2bmdarw": 0,
+          "mv": 2
+        },
+        "unit_utilization": {
+          "alu": 0.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.2,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.2,
+          "l2bmdarw": 0.0,
+          "mv": 0.4
+        }
+      },
+      "reference_resources": {
+        "lines": 5,
+        "instructions": 4,
+        "nop_lines": 1,
+        "resource_lower_bound": 2,
+        "scheduling_gap": 3,
+        "bottleneck_units": [
+          "mv"
+        ],
+        "unit_counts": {
+          "alu": 0,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 1,
+          "l1bm-turnaround": 0,
+          "l2bm": 1,
+          "l2bmdarw": 0,
+          "mv": 2
+        },
+        "unit_utilization": {
+          "alu": 0.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.2,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.2,
+          "l2bmdarw": 0.0,
+          "mv": 0.4
+        }
+      },
+      "line_delta": 0
     },
     {
       "problem": "18.dram-ul-256-16",
@@ -698,7 +3437,72 @@
           "score": 6
         }
       ],
-      "seconds": 4.3
+      "seconds": 4.3,
+      "resources": {
+        "lines": 6,
+        "instructions": 4,
+        "nop_lines": 2,
+        "resource_lower_bound": 2,
+        "scheduling_gap": 4,
+        "bottleneck_units": [
+          "mv"
+        ],
+        "unit_counts": {
+          "alu": 0,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 1,
+          "l1bm-turnaround": 0,
+          "l2bm": 1,
+          "l2bmdarw": 0,
+          "mv": 2
+        },
+        "unit_utilization": {
+          "alu": 0.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.16666666666666666,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.16666666666666666,
+          "l2bmdarw": 0.0,
+          "mv": 0.3333333333333333
+        }
+      },
+      "reference_resources": {
+        "lines": 6,
+        "instructions": 4,
+        "nop_lines": 2,
+        "resource_lower_bound": 2,
+        "scheduling_gap": 4,
+        "bottleneck_units": [
+          "mv"
+        ],
+        "unit_counts": {
+          "alu": 0,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 1,
+          "l1bm-turnaround": 0,
+          "l2bm": 1,
+          "l2bmdarw": 0,
+          "mv": 2
+        },
+        "unit_utilization": {
+          "alu": 0.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.16666666666666666,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.16666666666666666,
+          "l2bmdarw": 0.0,
+          "mv": 0.3333333333333333
+        }
+      },
+      "line_delta": 0
     },
     {
       "problem": "19.dram-dl-256-16p",
@@ -714,7 +3518,72 @@
           "score": 25
         }
       ],
-      "seconds": 2.3
+      "seconds": 2.3,
+      "resources": {
+        "lines": 25,
+        "instructions": 25,
+        "nop_lines": 0,
+        "resource_lower_bound": 16,
+        "scheduling_gap": 9,
+        "bottleneck_units": [
+          "l1bm"
+        ],
+        "unit_counts": {
+          "alu": 0,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 16,
+          "l1bm-turnaround": 0,
+          "l2bm": 8,
+          "l2bmdarw": 0,
+          "mv": 1
+        },
+        "unit_utilization": {
+          "alu": 0.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.64,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.32,
+          "l2bmdarw": 0.0,
+          "mv": 0.04
+        }
+      },
+      "reference_resources": {
+        "lines": 19,
+        "instructions": 25,
+        "nop_lines": 0,
+        "resource_lower_bound": 16,
+        "scheduling_gap": 3,
+        "bottleneck_units": [
+          "l1bm"
+        ],
+        "unit_counts": {
+          "alu": 0,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 16,
+          "l1bm-turnaround": 0,
+          "l2bm": 8,
+          "l2bmdarw": 0,
+          "mv": 1
+        },
+        "unit_utilization": {
+          "alu": 0.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.8421052631578947,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.42105263157894735,
+          "l2bmdarw": 0.0,
+          "mv": 0.05263157894736842
+        }
+      },
+      "line_delta": 6
     },
     {
       "problem": "20.dram-ul-256-16p",
@@ -730,7 +3599,74 @@
           "score": 16
         }
       ],
-      "seconds": 13.2
+      "seconds": 13.2,
+      "resources": {
+        "lines": 16,
+        "instructions": 13,
+        "nop_lines": 3,
+        "resource_lower_bound": 8,
+        "scheduling_gap": 8,
+        "bottleneck_units": [
+          "l2bm"
+        ],
+        "unit_counts": {
+          "alu": 2,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 2,
+          "l1bm-turnaround": 0,
+          "l2bm": 8,
+          "l2bmdarw": 0,
+          "mv": 1
+        },
+        "unit_utilization": {
+          "alu": 0.125,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.125,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.5,
+          "l2bmdarw": 0.0,
+          "mv": 0.0625
+        }
+      },
+      "reference_resources": {
+        "lines": 10,
+        "instructions": 7,
+        "nop_lines": 3,
+        "resource_lower_bound": 2,
+        "scheduling_gap": 8,
+        "bottleneck_units": [
+          "alu",
+          "l1bm",
+          "l2bm"
+        ],
+        "unit_counts": {
+          "alu": 2,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 2,
+          "l1bm-turnaround": 0,
+          "l2bm": 2,
+          "l2bmdarw": 0,
+          "mv": 1
+        },
+        "unit_utilization": {
+          "alu": 0.2,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.2,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.2,
+          "l2bmdarw": 0.0,
+          "mv": 0.1
+        }
+      },
+      "line_delta": 6
     },
     {
       "problem": "21.dram-dl-256-16-l2b",
@@ -746,7 +3682,72 @@
           "score": 14
         }
       ],
-      "seconds": 2.0
+      "seconds": 2.0,
+      "resources": {
+        "lines": 14,
+        "instructions": 14,
+        "nop_lines": 0,
+        "resource_lower_bound": 8,
+        "scheduling_gap": 6,
+        "bottleneck_units": [
+          "l1bm"
+        ],
+        "unit_counts": {
+          "alu": 0,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 8,
+          "l1bm-turnaround": 0,
+          "l2bm": 4,
+          "l2bmdarw": 0,
+          "mv": 2
+        },
+        "unit_utilization": {
+          "alu": 0.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.5714285714285714,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.2857142857142857,
+          "l2bmdarw": 0.0,
+          "mv": 0.14285714285714285
+        }
+      },
+      "reference_resources": {
+        "lines": 12,
+        "instructions": 14,
+        "nop_lines": 0,
+        "resource_lower_bound": 8,
+        "scheduling_gap": 4,
+        "bottleneck_units": [
+          "l1bm"
+        ],
+        "unit_counts": {
+          "alu": 0,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 8,
+          "l1bm-turnaround": 0,
+          "l2bm": 4,
+          "l2bmdarw": 0,
+          "mv": 2
+        },
+        "unit_utilization": {
+          "alu": 0.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.6666666666666666,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.3333333333333333,
+          "l2bmdarw": 0.0,
+          "mv": 0.16666666666666666
+        }
+      },
+      "line_delta": 2
     },
     {
       "problem": "22.dram-dl-1024-16",
@@ -762,7 +3763,74 @@
           "score": 10
         }
       ],
-      "seconds": 5.2
+      "seconds": 5.2,
+      "resources": {
+        "lines": 10,
+        "instructions": 10,
+        "nop_lines": 0,
+        "resource_lower_bound": 4,
+        "scheduling_gap": 6,
+        "bottleneck_units": [
+          "l1bm",
+          "l2bm"
+        ],
+        "unit_counts": {
+          "alu": 0,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 4,
+          "l1bm-turnaround": 0,
+          "l2bm": 4,
+          "l2bmdarw": 0,
+          "mv": 2
+        },
+        "unit_utilization": {
+          "alu": 0.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.4,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.4,
+          "l2bmdarw": 0.0,
+          "mv": 0.2
+        }
+      },
+      "reference_resources": {
+        "lines": 8,
+        "instructions": 10,
+        "nop_lines": 0,
+        "resource_lower_bound": 4,
+        "scheduling_gap": 4,
+        "bottleneck_units": [
+          "l1bm",
+          "l2bm"
+        ],
+        "unit_counts": {
+          "alu": 0,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 4,
+          "l1bm-turnaround": 0,
+          "l2bm": 4,
+          "l2bmdarw": 0,
+          "mv": 2
+        },
+        "unit_utilization": {
+          "alu": 0.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.5,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.5,
+          "l2bmdarw": 0.0,
+          "mv": 0.25
+        }
+      },
+      "line_delta": 2
     },
     {
       "problem": "23.dram-dl-256-1024",
@@ -778,7 +3846,72 @@
           "score": 74
         }
       ],
-      "seconds": 70.2
+      "seconds": 70.2,
+      "resources": {
+        "lines": 74,
+        "instructions": 74,
+        "nop_lines": 0,
+        "resource_lower_bound": 64,
+        "scheduling_gap": 10,
+        "bottleneck_units": [
+          "l2bm"
+        ],
+        "unit_counts": {
+          "alu": 0,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 8,
+          "l1bm-turnaround": 0,
+          "l2bm": 64,
+          "l2bmdarw": 0,
+          "mv": 2
+        },
+        "unit_utilization": {
+          "alu": 0.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.10810810810810811,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.8648648648648649,
+          "l2bmdarw": 0.0,
+          "mv": 0.02702702702702703
+        }
+      },
+      "reference_resources": {
+        "lines": 68,
+        "instructions": 74,
+        "nop_lines": 0,
+        "resource_lower_bound": 64,
+        "scheduling_gap": 4,
+        "bottleneck_units": [
+          "l2bm"
+        ],
+        "unit_counts": {
+          "alu": 0,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 8,
+          "l1bm-turnaround": 0,
+          "l2bm": 64,
+          "l2bmdarw": 0,
+          "mv": 2
+        },
+        "unit_utilization": {
+          "alu": 0.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.11764705882352941,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.9411764705882353,
+          "l2bmdarw": 0.0,
+          "mv": 0.029411764705882353
+        }
+      },
+      "line_delta": 6
     },
     {
       "problem": "24.dram-dl-16",
@@ -794,7 +3927,72 @@
           "score": 5
         }
       ],
-      "seconds": 1.0
+      "seconds": 1.0,
+      "resources": {
+        "lines": 5,
+        "instructions": 4,
+        "nop_lines": 1,
+        "resource_lower_bound": 2,
+        "scheduling_gap": 3,
+        "bottleneck_units": [
+          "mv"
+        ],
+        "unit_counts": {
+          "alu": 0,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 1,
+          "l1bm-turnaround": 0,
+          "l2bm": 1,
+          "l2bmdarw": 0,
+          "mv": 2
+        },
+        "unit_utilization": {
+          "alu": 0.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.2,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.2,
+          "l2bmdarw": 0.0,
+          "mv": 0.4
+        }
+      },
+      "reference_resources": {
+        "lines": 5,
+        "instructions": 4,
+        "nop_lines": 1,
+        "resource_lower_bound": 2,
+        "scheduling_gap": 3,
+        "bottleneck_units": [
+          "mv"
+        ],
+        "unit_counts": {
+          "alu": 0,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 1,
+          "l1bm-turnaround": 0,
+          "l2bm": 1,
+          "l2bmdarw": 0,
+          "mv": 2
+        },
+        "unit_utilization": {
+          "alu": 0.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.2,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.2,
+          "l2bmdarw": 0.0,
+          "mv": 0.4
+        }
+      },
+      "line_delta": 0
     },
     {
       "problem": "25.dram-ul-16",
@@ -810,7 +4008,76 @@
           "score": 5
         }
       ],
-      "seconds": 1.4
+      "seconds": 1.4,
+      "resources": {
+        "lines": 5,
+        "instructions": 3,
+        "nop_lines": 2,
+        "resource_lower_bound": 1,
+        "scheduling_gap": 4,
+        "bottleneck_units": [
+          "l1bm",
+          "l2bm",
+          "mv"
+        ],
+        "unit_counts": {
+          "alu": 0,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 1,
+          "l1bm-turnaround": 0,
+          "l2bm": 1,
+          "l2bmdarw": 0,
+          "mv": 1
+        },
+        "unit_utilization": {
+          "alu": 0.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.2,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.2,
+          "l2bmdarw": 0.0,
+          "mv": 0.2
+        }
+      },
+      "reference_resources": {
+        "lines": 5,
+        "instructions": 3,
+        "nop_lines": 2,
+        "resource_lower_bound": 1,
+        "scheduling_gap": 4,
+        "bottleneck_units": [
+          "l1bm",
+          "l2bm",
+          "mv"
+        ],
+        "unit_counts": {
+          "alu": 0,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 1,
+          "l1bm-turnaround": 0,
+          "l2bm": 1,
+          "l2bmdarw": 0,
+          "mv": 1
+        },
+        "unit_utilization": {
+          "alu": 0.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.2,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.2,
+          "l2bmdarw": 0.0,
+          "mv": 0.2
+        }
+      },
+      "line_delta": 0
     },
     {
       "problem": "26.dram-dl-16-1024",
@@ -826,7 +4093,72 @@
           "score": 44
         }
       ],
-      "seconds": 8.4
+      "seconds": 8.4,
+      "resources": {
+        "lines": 44,
+        "instructions": 44,
+        "nop_lines": 0,
+        "resource_lower_bound": 32,
+        "scheduling_gap": 12,
+        "bottleneck_units": [
+          "l2bm"
+        ],
+        "unit_counts": {
+          "alu": 0,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 4,
+          "l1bm-turnaround": 0,
+          "l2bm": 32,
+          "l2bmdarw": 0,
+          "mv": 8
+        },
+        "unit_utilization": {
+          "alu": 0.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.09090909090909091,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.7272727272727273,
+          "l2bmdarw": 0.0,
+          "mv": 0.18181818181818182
+        }
+      },
+      "reference_resources": {
+        "lines": 39,
+        "instructions": 41,
+        "nop_lines": 0,
+        "resource_lower_bound": 32,
+        "scheduling_gap": 7,
+        "bottleneck_units": [
+          "l2bm"
+        ],
+        "unit_counts": {
+          "alu": 0,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 4,
+          "l1bm-turnaround": 0,
+          "l2bm": 32,
+          "l2bmdarw": 0,
+          "mv": 5
+        },
+        "unit_utilization": {
+          "alu": 0.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.10256410256410256,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.8205128205128205,
+          "l2bmdarw": 0.0,
+          "mv": 0.1282051282051282
+        }
+      },
+      "line_delta": 5
     },
     {
       "problem": "27.dram-ul-16-1024",
@@ -842,7 +4174,72 @@
           "score": 18
         }
       ],
-      "seconds": 10.7
+      "seconds": 10.7,
+      "resources": {
+        "lines": 18,
+        "instructions": 14,
+        "nop_lines": 4,
+        "resource_lower_bound": 8,
+        "scheduling_gap": 10,
+        "bottleneck_units": [
+          "l2bm"
+        ],
+        "unit_counts": {
+          "alu": 4,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 1,
+          "l1bm-turnaround": 0,
+          "l2bm": 8,
+          "l2bmdarw": 0,
+          "mv": 1
+        },
+        "unit_utilization": {
+          "alu": 0.2222222222222222,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.05555555555555555,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.4444444444444444,
+          "l2bmdarw": 0.0,
+          "mv": 0.05555555555555555
+        }
+      },
+      "reference_resources": {
+        "lines": 13,
+        "instructions": 9,
+        "nop_lines": 4,
+        "resource_lower_bound": 4,
+        "scheduling_gap": 9,
+        "bottleneck_units": [
+          "l2bm"
+        ],
+        "unit_counts": {
+          "alu": 2,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 1,
+          "l1bm-turnaround": 0,
+          "l2bm": 4,
+          "l2bmdarw": 0,
+          "mv": 2
+        },
+        "unit_utilization": {
+          "alu": 0.15384615384615385,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.07692307692307693,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.3076923076923077,
+          "l2bmdarw": 0.0,
+          "mv": 0.15384615384615385
+        }
+      },
+      "line_delta": 5
     },
     {
       "problem": "28.dram-dl-16-16",
@@ -858,7 +4255,74 @@
           "score": 12
         }
       ],
-      "seconds": 0.9
+      "seconds": 0.9,
+      "resources": {
+        "lines": 12,
+        "instructions": 12,
+        "nop_lines": 0,
+        "resource_lower_bound": 4,
+        "scheduling_gap": 8,
+        "bottleneck_units": [
+          "l1bm",
+          "l2bm",
+          "mv"
+        ],
+        "unit_counts": {
+          "alu": 0,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 4,
+          "l1bm-turnaround": 0,
+          "l2bm": 4,
+          "l2bmdarw": 0,
+          "mv": 4
+        },
+        "unit_utilization": {
+          "alu": 0.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.3333333333333333,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.3333333333333333,
+          "l2bmdarw": 0.0,
+          "mv": 0.3333333333333333
+        }
+      },
+      "reference_resources": {
+        "lines": 11,
+        "instructions": 13,
+        "nop_lines": 0,
+        "resource_lower_bound": 5,
+        "scheduling_gap": 6,
+        "bottleneck_units": [
+          "mv"
+        ],
+        "unit_counts": {
+          "alu": 0,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 4,
+          "l1bm-turnaround": 0,
+          "l2bm": 4,
+          "l2bmdarw": 0,
+          "mv": 5
+        },
+        "unit_utilization": {
+          "alu": 0.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.36363636363636365,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.36363636363636365,
+          "l2bmdarw": 0.0,
+          "mv": 0.45454545454545453
+        }
+      },
+      "line_delta": 1
     },
     {
       "problem": "29.dram-ul-16-16",
@@ -874,7 +4338,74 @@
           "score": 13
         }
       ],
-      "seconds": 6.9
+      "seconds": 6.9,
+      "resources": {
+        "lines": 13,
+        "instructions": 12,
+        "nop_lines": 1,
+        "resource_lower_bound": 4,
+        "scheduling_gap": 9,
+        "bottleneck_units": [
+          "l1bm",
+          "l2bm",
+          "mv"
+        ],
+        "unit_counts": {
+          "alu": 0,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 4,
+          "l1bm-turnaround": 0,
+          "l2bm": 4,
+          "l2bmdarw": 0,
+          "mv": 4
+        },
+        "unit_utilization": {
+          "alu": 0.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.3076923076923077,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.3076923076923077,
+          "l2bmdarw": 0.0,
+          "mv": 0.3076923076923077
+        }
+      },
+      "reference_resources": {
+        "lines": 9,
+        "instructions": 5,
+        "nop_lines": 4,
+        "resource_lower_bound": 2,
+        "scheduling_gap": 7,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 2,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 1,
+          "l1bm-turnaround": 0,
+          "l2bm": 1,
+          "l2bmdarw": 0,
+          "mv": 1
+        },
+        "unit_utilization": {
+          "alu": 0.2222222222222222,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.1111111111111111,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.1111111111111111,
+          "l2bmdarw": 0.0,
+          "mv": 0.1111111111111111
+        }
+      },
+      "line_delta": 4
     },
     {
       "problem": "30.dram-dl-256",
@@ -890,7 +4421,72 @@
           "score": 11
         }
       ],
-      "seconds": 1.0
+      "seconds": 1.0,
+      "resources": {
+        "lines": 11,
+        "instructions": 10,
+        "nop_lines": 1,
+        "resource_lower_bound": 8,
+        "scheduling_gap": 3,
+        "bottleneck_units": [
+          "l1bm"
+        ],
+        "unit_counts": {
+          "alu": 0,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 8,
+          "l1bm-turnaround": 0,
+          "l2bm": 1,
+          "l2bmdarw": 0,
+          "mv": 1
+        },
+        "unit_utilization": {
+          "alu": 0.0,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.7272727272727273,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.09090909090909091,
+          "l2bmdarw": 0.0,
+          "mv": 0.09090909090909091
+        }
+      },
+      "reference_resources": {
+        "lines": 10,
+        "instructions": 16,
+        "nop_lines": 0,
+        "resource_lower_bound": 8,
+        "scheduling_gap": 2,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 8,
+          "mau": 2,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 4,
+          "l1bm-turnaround": 0,
+          "l2bm": 1,
+          "l2bmdarw": 0,
+          "mv": 1
+        },
+        "unit_utilization": {
+          "alu": 0.8,
+          "mau": 0.2,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.4,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.1,
+          "l2bmdarw": 0.0,
+          "mv": 0.1
+        }
+      },
+      "line_delta": 1
     },
     {
       "problem": "31.dram-ul-256",
@@ -906,7 +4502,75 @@
           "score": 9
         }
       ],
-      "seconds": 4.1
+      "seconds": 4.1,
+      "resources": {
+        "lines": 9,
+        "instructions": 5,
+        "nop_lines": 4,
+        "resource_lower_bound": 2,
+        "scheduling_gap": 7,
+        "bottleneck_units": [
+          "l1bm"
+        ],
+        "unit_counts": {
+          "alu": 1,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 2,
+          "l1bm-turnaround": 0,
+          "l2bm": 1,
+          "l2bmdarw": 0,
+          "mv": 1
+        },
+        "unit_utilization": {
+          "alu": 0.1111111111111111,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.2222222222222222,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.1111111111111111,
+          "l2bmdarw": 0.0,
+          "mv": 0.1111111111111111
+        }
+      },
+      "reference_resources": {
+        "lines": 7,
+        "instructions": 4,
+        "nop_lines": 3,
+        "resource_lower_bound": 1,
+        "scheduling_gap": 6,
+        "bottleneck_units": [
+          "alu",
+          "l1bm",
+          "l2bm",
+          "mv"
+        ],
+        "unit_counts": {
+          "alu": 1,
+          "mau": 0,
+          "mwrite": 0,
+          "mread": 0,
+          "l1bm": 1,
+          "l1bm-turnaround": 0,
+          "l2bm": 1,
+          "l2bmdarw": 0,
+          "mv": 1
+        },
+        "unit_utilization": {
+          "alu": 0.14285714285714285,
+          "mau": 0.0,
+          "mwrite": 0.0,
+          "mread": 0.0,
+          "l1bm": 0.14285714285714285,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.14285714285714285,
+          "l2bmdarw": 0.0,
+          "mv": 0.14285714285714285
+        }
+      },
+      "line_delta": 2
     },
     {
       "problem": "32.matmul-trb-mab-lm-4-8-8",
@@ -922,7 +4586,72 @@
           "score": 4
         }
       ],
-      "seconds": 11.4
+      "seconds": 11.4,
+      "resources": {
+        "lines": 4,
+        "instructions": 6,
+        "nop_lines": 0,
+        "resource_lower_bound": 3,
+        "scheduling_gap": 1,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 3,
+          "mau": 1,
+          "mwrite": 2,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.75,
+          "mau": 0.25,
+          "mwrite": 0.5,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 4,
+        "instructions": 6,
+        "nop_lines": 0,
+        "resource_lower_bound": 3,
+        "scheduling_gap": 1,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 3,
+          "mau": 1,
+          "mwrite": 2,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.75,
+          "mau": 0.25,
+          "mwrite": 0.5,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 0
     },
     {
       "problem": "33.matmul-trb-mab-lm-4-8-16",
@@ -938,7 +4667,72 @@
           "score": 7
         }
       ],
-      "seconds": 17.1
+      "seconds": 17.1,
+      "resources": {
+        "lines": 7,
+        "instructions": 11,
+        "nop_lines": 0,
+        "resource_lower_bound": 5,
+        "scheduling_gap": 2,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 5,
+          "mau": 2,
+          "mwrite": 4,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.7142857142857143,
+          "mau": 0.2857142857142857,
+          "mwrite": 0.5714285714285714,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 7,
+        "instructions": 12,
+        "nop_lines": 0,
+        "resource_lower_bound": 6,
+        "scheduling_gap": 1,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 6,
+          "mau": 2,
+          "mwrite": 4,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.8571428571428571,
+          "mau": 0.2857142857142857,
+          "mwrite": 0.5714285714285714,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 0
     },
     {
       "problem": "34.matmul-trb-mab-lm-4-16-8",
@@ -954,7 +4748,72 @@
           "score": 6
         }
       ],
-      "seconds": 28.2
+      "seconds": 28.2,
+      "resources": {
+        "lines": 6,
+        "instructions": 10,
+        "nop_lines": 0,
+        "resource_lower_bound": 5,
+        "scheduling_gap": 1,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 5,
+          "mau": 1,
+          "mwrite": 4,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.8333333333333334,
+          "mau": 0.16666666666666666,
+          "mwrite": 0.6666666666666666,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 7,
+        "instructions": 12,
+        "nop_lines": 0,
+        "resource_lower_bound": 6,
+        "scheduling_gap": 1,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 6,
+          "mau": 2,
+          "mwrite": 4,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.8571428571428571,
+          "mau": 0.2857142857142857,
+          "mwrite": 0.5714285714285714,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": -1
     },
     {
       "problem": "35.matmul-trb-mab-lm-4-16-16",
@@ -970,7 +4829,72 @@
           "score": 6
         }
       ],
-      "seconds": 39.9
+      "seconds": 39.9,
+      "resources": {
+        "lines": 6,
+        "instructions": 10,
+        "nop_lines": 0,
+        "resource_lower_bound": 5,
+        "scheduling_gap": 1,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 5,
+          "mau": 1,
+          "mwrite": 4,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.8333333333333334,
+          "mau": 0.16666666666666666,
+          "mwrite": 0.6666666666666666,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 12,
+        "instructions": 16,
+        "nop_lines": 1,
+        "resource_lower_bound": 8,
+        "scheduling_gap": 4,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 8,
+          "mau": 2,
+          "mwrite": 4,
+          "mread": 0,
+          "l1bm": 1,
+          "l1bm-turnaround": 1,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.6666666666666666,
+          "mau": 0.16666666666666666,
+          "mwrite": 0.3333333333333333,
+          "mread": 0.0,
+          "l1bm": 0.08333333333333333,
+          "l1bm-turnaround": 0.08333333333333333,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": -6
     },
     {
       "problem": "36.matmul-trb-pkg-lm-256-16-16",
@@ -986,7 +4910,72 @@
           "score": 12
         }
       ],
-      "seconds": 301.7
+      "seconds": 301.7,
+      "resources": {
+        "lines": 12,
+        "instructions": 22,
+        "nop_lines": 0,
+        "resource_lower_bound": 10,
+        "scheduling_gap": 2,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 10,
+          "mau": 4,
+          "mwrite": 8,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.8333333333333334,
+          "mau": 0.3333333333333333,
+          "mwrite": 0.6666666666666666,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 12,
+        "instructions": 16,
+        "nop_lines": 1,
+        "resource_lower_bound": 8,
+        "scheduling_gap": 4,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 8,
+          "mau": 2,
+          "mwrite": 4,
+          "mread": 0,
+          "l1bm": 1,
+          "l1bm-turnaround": 1,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.6666666666666666,
+          "mau": 0.16666666666666666,
+          "mwrite": 0.3333333333333333,
+          "mread": 0.0,
+          "l1bm": 0.08333333333333333,
+          "l1bm-turnaround": 0.08333333333333333,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 0
     },
     {
       "problem": "37.matmul-trb-mab-lm-32-8-16",
@@ -1002,7 +4991,73 @@
           "score": 21
         }
       ],
-      "seconds": 72.1
+      "seconds": 72.1,
+      "resources": {
+        "lines": 21,
+        "instructions": 32,
+        "nop_lines": 0,
+        "resource_lower_bound": 16,
+        "scheduling_gap": 5,
+        "bottleneck_units": [
+          "mau"
+        ],
+        "unit_counts": {
+          "alu": 12,
+          "mau": 16,
+          "mwrite": 4,
+          "mread": 0,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.5714285714285714,
+          "mau": 0.7619047619047619,
+          "mwrite": 0.19047619047619047,
+          "mread": 0.0,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 17,
+        "instructions": 29,
+        "nop_lines": 0,
+        "resource_lower_bound": 8,
+        "scheduling_gap": 9,
+        "bottleneck_units": [
+          "l1bm",
+          "l1bm-turnaround"
+        ],
+        "unit_counts": {
+          "alu": 7,
+          "mau": 2,
+          "mwrite": 4,
+          "mread": 0,
+          "l1bm": 8,
+          "l1bm-turnaround": 8,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.4117647058823529,
+          "mau": 0.11764705882352941,
+          "mwrite": 0.23529411764705882,
+          "mread": 0.0,
+          "l1bm": 0.47058823529411764,
+          "l1bm-turnaround": 0.47058823529411764,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 4
     },
     {
       "problem": "38.matmul-trb-pkg-lm-256-128-16",
@@ -1018,7 +5073,75 @@
           "score": 48
         }
       ],
-      "seconds": 64.9
+      "seconds": 64.9,
+      "resources": {
+        "lines": 48,
+        "instructions": 48,
+        "nop_lines": 4,
+        "resource_lower_bound": 16,
+        "scheduling_gap": 32,
+        "bottleneck_units": [
+          "mau",
+          "l1bm"
+        ],
+        "unit_counts": {
+          "alu": 12,
+          "mau": 16,
+          "mwrite": 4,
+          "mread": 0,
+          "l1bm": 16,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.25,
+          "mau": 0.3333333333333333,
+          "mwrite": 0.08333333333333333,
+          "mread": 0.0,
+          "l1bm": 0.3333333333333333,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 23,
+        "instructions": 64,
+        "nop_lines": 0,
+        "resource_lower_bound": 16,
+        "scheduling_gap": 7,
+        "bottleneck_units": [
+          "mau",
+          "l1bm",
+          "l1bm-turnaround"
+        ],
+        "unit_counts": {
+          "alu": 12,
+          "mau": 16,
+          "mwrite": 4,
+          "mread": 0,
+          "l1bm": 16,
+          "l1bm-turnaround": 16,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.5217391304347826,
+          "mau": 0.6956521739130435,
+          "mwrite": 0.17391304347826086,
+          "mread": 0.0,
+          "l1bm": 0.6956521739130435,
+          "l1bm-turnaround": 0.6956521739130435,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 25
     },
     {
       "problem": "39.matmul-trb-pkg-lmdram-256-1024-16",
@@ -1034,7 +5157,72 @@
           "score": 38
         }
       ],
-      "seconds": 250.8
+      "seconds": 250.8,
+      "resources": {
+        "lines": 38,
+        "instructions": 46,
+        "nop_lines": 3,
+        "resource_lower_bound": 16,
+        "scheduling_gap": 22,
+        "bottleneck_units": [
+          "mau"
+        ],
+        "unit_counts": {
+          "alu": 12,
+          "mau": 16,
+          "mwrite": 4,
+          "mread": 0,
+          "l1bm": 8,
+          "l1bm-turnaround": 0,
+          "l2bm": 4,
+          "l2bmdarw": 0,
+          "mv": 2
+        },
+        "unit_utilization": {
+          "alu": 0.3157894736842105,
+          "mau": 0.42105263157894735,
+          "mwrite": 0.10526315789473684,
+          "mread": 0.0,
+          "l1bm": 0.21052631578947367,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.10526315789473684,
+          "l2bmdarw": 0.0,
+          "mv": 0.05263157894736842
+        }
+      },
+      "reference_resources": {
+        "lines": 29,
+        "instructions": 46,
+        "nop_lines": 2,
+        "resource_lower_bound": 16,
+        "scheduling_gap": 13,
+        "bottleneck_units": [
+          "mau"
+        ],
+        "unit_counts": {
+          "alu": 12,
+          "mau": 16,
+          "mwrite": 4,
+          "mread": 0,
+          "l1bm": 8,
+          "l1bm-turnaround": 0,
+          "l2bm": 4,
+          "l2bmdarw": 0,
+          "mv": 2
+        },
+        "unit_utilization": {
+          "alu": 0.41379310344827586,
+          "mau": 0.5517241379310345,
+          "mwrite": 0.13793103448275862,
+          "mread": 0.0,
+          "l1bm": 0.27586206896551724,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.13793103448275862,
+          "l2bmdarw": 0.0,
+          "mv": 0.06896551724137931
+        }
+      },
+      "line_delta": 9
     },
     {
       "problem": "40.matmul-notr-mab-lm-4-8-8",
@@ -1050,7 +5238,72 @@
           "score": 7
         }
       ],
-      "seconds": 7.4
+      "seconds": 7.4,
+      "resources": {
+        "lines": 7,
+        "instructions": 10,
+        "nop_lines": 0,
+        "resource_lower_bound": 4,
+        "scheduling_gap": 3,
+        "bottleneck_units": [
+          "mwrite"
+        ],
+        "unit_counts": {
+          "alu": 3,
+          "mau": 1,
+          "mwrite": 4,
+          "mread": 2,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.42857142857142855,
+          "mau": 0.14285714285714285,
+          "mwrite": 0.5714285714285714,
+          "mread": 0.2857142857142857,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 7,
+        "instructions": 10,
+        "nop_lines": 0,
+        "resource_lower_bound": 4,
+        "scheduling_gap": 3,
+        "bottleneck_units": [
+          "mwrite"
+        ],
+        "unit_counts": {
+          "alu": 3,
+          "mau": 1,
+          "mwrite": 4,
+          "mread": 2,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.42857142857142855,
+          "mau": 0.14285714285714285,
+          "mwrite": 0.5714285714285714,
+          "mread": 0.2857142857142857,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 0
     },
     {
       "problem": "41.matmul-notr-mab-lm-4-16-16",
@@ -1066,7 +5319,72 @@
           "score": 23
         }
       ],
-      "seconds": 55.7
+      "seconds": 55.7,
+      "resources": {
+        "lines": 23,
+        "instructions": 40,
+        "nop_lines": 0,
+        "resource_lower_bound": 16,
+        "scheduling_gap": 7,
+        "bottleneck_units": [
+          "mwrite"
+        ],
+        "unit_counts": {
+          "alu": 12,
+          "mau": 4,
+          "mwrite": 16,
+          "mread": 8,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.5217391304347826,
+          "mau": 0.17391304347826086,
+          "mwrite": 0.6956521739130435,
+          "mread": 0.34782608695652173,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 13,
+        "instructions": 23,
+        "nop_lines": 0,
+        "resource_lower_bound": 8,
+        "scheduling_gap": 5,
+        "bottleneck_units": [
+          "mwrite"
+        ],
+        "unit_counts": {
+          "alu": 7,
+          "mau": 2,
+          "mwrite": 8,
+          "mread": 4,
+          "l1bm": 1,
+          "l1bm-turnaround": 1,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.5384615384615384,
+          "mau": 0.15384615384615385,
+          "mwrite": 0.6153846153846154,
+          "mread": 0.3076923076923077,
+          "l1bm": 0.07692307692307693,
+          "l1bm-turnaround": 0.07692307692307693,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 10
     },
     {
       "problem": "42.matmul-notr-pkg-lm-256-16-16",
@@ -1082,7 +5400,72 @@
           "score": 23
         }
       ],
-      "seconds": 188.5
+      "seconds": 188.5,
+      "resources": {
+        "lines": 23,
+        "instructions": 40,
+        "nop_lines": 0,
+        "resource_lower_bound": 16,
+        "scheduling_gap": 7,
+        "bottleneck_units": [
+          "mwrite"
+        ],
+        "unit_counts": {
+          "alu": 12,
+          "mau": 4,
+          "mwrite": 16,
+          "mread": 8,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.5217391304347826,
+          "mau": 0.17391304347826086,
+          "mwrite": 0.6956521739130435,
+          "mread": 0.34782608695652173,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 13,
+        "instructions": 23,
+        "nop_lines": 0,
+        "resource_lower_bound": 8,
+        "scheduling_gap": 5,
+        "bottleneck_units": [
+          "mwrite"
+        ],
+        "unit_counts": {
+          "alu": 7,
+          "mau": 2,
+          "mwrite": 8,
+          "mread": 4,
+          "l1bm": 1,
+          "l1bm-turnaround": 1,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.5384615384615384,
+          "mau": 0.15384615384615385,
+          "mwrite": 0.6153846153846154,
+          "mread": 0.3076923076923077,
+          "l1bm": 0.07692307692307693,
+          "l1bm-turnaround": 0.07692307692307693,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 10
     },
     {
       "problem": "43.matmul-tra-mab-lm-8-8-8",
@@ -1098,7 +5481,72 @@
           "score": 10
         }
       ],
-      "seconds": 10.1
+      "seconds": 10.1,
+      "resources": {
+        "lines": 10,
+        "instructions": 16,
+        "nop_lines": 0,
+        "resource_lower_bound": 6,
+        "scheduling_gap": 4,
+        "bottleneck_units": [
+          "mwrite"
+        ],
+        "unit_counts": {
+          "alu": 4,
+          "mau": 2,
+          "mwrite": 6,
+          "mread": 4,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.4,
+          "mau": 0.2,
+          "mwrite": 0.6,
+          "mread": 0.4,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 8,
+        "instructions": 16,
+        "nop_lines": 0,
+        "resource_lower_bound": 6,
+        "scheduling_gap": 2,
+        "bottleneck_units": [
+          "mwrite"
+        ],
+        "unit_counts": {
+          "alu": 4,
+          "mau": 2,
+          "mwrite": 6,
+          "mread": 4,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.5,
+          "mau": 0.25,
+          "mwrite": 0.75,
+          "mread": 0.5,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 2
     },
     {
       "problem": "44.matmul-tra-mab-lm-16-8-16",
@@ -1114,7 +5562,72 @@
           "score": 26
         }
       ],
-      "seconds": 23.5
+      "seconds": 23.5,
+      "resources": {
+        "lines": 26,
+        "instructions": 48,
+        "nop_lines": 0,
+        "resource_lower_bound": 16,
+        "scheduling_gap": 10,
+        "bottleneck_units": [
+          "mwrite"
+        ],
+        "unit_counts": {
+          "alu": 12,
+          "mau": 8,
+          "mwrite": 16,
+          "mread": 12,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.46153846153846156,
+          "mau": 0.3076923076923077,
+          "mwrite": 0.6153846153846154,
+          "mread": 0.46153846153846156,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 15,
+        "instructions": 31,
+        "nop_lines": 0,
+        "resource_lower_bound": 10,
+        "scheduling_gap": 5,
+        "bottleneck_units": [
+          "mwrite"
+        ],
+        "unit_counts": {
+          "alu": 7,
+          "mau": 4,
+          "mwrite": 10,
+          "mread": 6,
+          "l1bm": 2,
+          "l1bm-turnaround": 2,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.4666666666666667,
+          "mau": 0.26666666666666666,
+          "mwrite": 0.6666666666666666,
+          "mread": 0.4,
+          "l1bm": 0.13333333333333333,
+          "l1bm-turnaround": 0.13333333333333333,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 11
     },
     {
       "problem": "45.matmul-tra-mab-lm-16-4-16",
@@ -1130,7 +5643,73 @@
           "score": 20
         }
       ],
-      "seconds": 14.5
+      "seconds": 14.5,
+      "resources": {
+        "lines": 20,
+        "instructions": 42,
+        "nop_lines": 0,
+        "resource_lower_bound": 12,
+        "scheduling_gap": 8,
+        "bottleneck_units": [
+          "alu",
+          "mread"
+        ],
+        "unit_counts": {
+          "alu": 12,
+          "mau": 8,
+          "mwrite": 10,
+          "mread": 12,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.6,
+          "mau": 0.4,
+          "mwrite": 0.5,
+          "mread": 0.6,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 15,
+        "instructions": 35,
+        "nop_lines": 0,
+        "resource_lower_bound": 10,
+        "scheduling_gap": 5,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 10,
+          "mau": 4,
+          "mwrite": 7,
+          "mread": 6,
+          "l1bm": 4,
+          "l1bm-turnaround": 4,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.6666666666666666,
+          "mau": 0.26666666666666666,
+          "mwrite": 0.4666666666666667,
+          "mread": 0.4,
+          "l1bm": 0.26666666666666666,
+          "l1bm-turnaround": 0.26666666666666666,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 5
     },
     {
       "problem": "46.matmul-tra-pkg-lmdram-16-256-16",
@@ -1146,7 +5725,73 @@
           "score": 31
         }
       ],
-      "seconds": 13.7
+      "seconds": 13.7,
+      "resources": {
+        "lines": 31,
+        "instructions": 49,
+        "nop_lines": 4,
+        "resource_lower_bound": 12,
+        "scheduling_gap": 19,
+        "bottleneck_units": [
+          "alu",
+          "mread"
+        ],
+        "unit_counts": {
+          "alu": 12,
+          "mau": 8,
+          "mwrite": 10,
+          "mread": 12,
+          "l1bm": 4,
+          "l1bm-turnaround": 0,
+          "l2bm": 2,
+          "l2bmdarw": 0,
+          "mv": 1
+        },
+        "unit_utilization": {
+          "alu": 0.3870967741935484,
+          "mau": 0.25806451612903225,
+          "mwrite": 0.3225806451612903,
+          "mread": 0.3870967741935484,
+          "l1bm": 0.12903225806451613,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.06451612903225806,
+          "l2bmdarw": 0.0,
+          "mv": 0.03225806451612903
+        }
+      },
+      "reference_resources": {
+        "lines": 25,
+        "instructions": 41,
+        "nop_lines": 1,
+        "resource_lower_bound": 10,
+        "scheduling_gap": 15,
+        "bottleneck_units": [
+          "mwrite"
+        ],
+        "unit_counts": {
+          "alu": 8,
+          "mau": 4,
+          "mwrite": 10,
+          "mread": 6,
+          "l1bm": 4,
+          "l1bm-turnaround": 0,
+          "l2bm": 4,
+          "l2bmdarw": 0,
+          "mv": 5
+        },
+        "unit_utilization": {
+          "alu": 0.32,
+          "mau": 0.16,
+          "mwrite": 0.4,
+          "mread": 0.24,
+          "l1bm": 0.16,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.16,
+          "l2bmdarw": 0.0,
+          "mv": 0.2
+        }
+      },
+      "line_delta": 6
     },
     {
       "problem": "47.matmul-tra-mab-lm-16-32-8",
@@ -1162,7 +5807,72 @@
           "score": 50
         }
       ],
-      "seconds": 77.6
+      "seconds": 77.6,
+      "resources": {
+        "lines": 50,
+        "instructions": 96,
+        "nop_lines": 0,
+        "resource_lower_bound": 32,
+        "scheduling_gap": 18,
+        "bottleneck_units": [
+          "mwrite"
+        ],
+        "unit_counts": {
+          "alu": 24,
+          "mau": 16,
+          "mwrite": 32,
+          "mread": 24,
+          "l1bm": 0,
+          "l1bm-turnaround": 0,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.48,
+          "mau": 0.32,
+          "mwrite": 0.64,
+          "mread": 0.48,
+          "l1bm": 0.0,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "reference_resources": {
+        "lines": 17,
+        "instructions": 32,
+        "nop_lines": 1,
+        "resource_lower_bound": 10,
+        "scheduling_gap": 7,
+        "bottleneck_units": [
+          "alu"
+        ],
+        "unit_counts": {
+          "alu": 10,
+          "mau": 4,
+          "mwrite": 6,
+          "mread": 4,
+          "l1bm": 4,
+          "l1bm-turnaround": 4,
+          "l2bm": 0,
+          "l2bmdarw": 0,
+          "mv": 0
+        },
+        "unit_utilization": {
+          "alu": 0.5882352941176471,
+          "mau": 0.23529411764705882,
+          "mwrite": 0.35294117647058826,
+          "mread": 0.23529411764705882,
+          "l1bm": 0.23529411764705882,
+          "l1bm-turnaround": 0.23529411764705882,
+          "l2bm": 0.0,
+          "l2bmdarw": 0.0,
+          "mv": 0.0
+        }
+      },
+      "line_delta": 33
     },
     {
       "problem": "48.matmul-tra-pkg-lmdram-16-256-1024",
@@ -1178,7 +5888,73 @@
           "score": 94
         }
       ],
-      "seconds": 183.3
+      "seconds": 183.3,
+      "resources": {
+        "lines": 94,
+        "instructions": 137,
+        "nop_lines": 3,
+        "resource_lower_bound": 32,
+        "scheduling_gap": 62,
+        "bottleneck_units": [
+          "mwrite",
+          "l2bm"
+        ],
+        "unit_counts": {
+          "alu": 24,
+          "mau": 16,
+          "mwrite": 32,
+          "mread": 24,
+          "l1bm": 4,
+          "l1bm-turnaround": 0,
+          "l2bm": 32,
+          "l2bmdarw": 0,
+          "mv": 5
+        },
+        "unit_utilization": {
+          "alu": 0.2553191489361702,
+          "mau": 0.1702127659574468,
+          "mwrite": 0.3404255319148936,
+          "mread": 0.2553191489361702,
+          "l1bm": 0.0425531914893617,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.3404255319148936,
+          "l2bmdarw": 0.0,
+          "mv": 0.05319148936170213
+        }
+      },
+      "reference_resources": {
+        "lines": 61,
+        "instructions": 115,
+        "nop_lines": 1,
+        "resource_lower_bound": 32,
+        "scheduling_gap": 29,
+        "bottleneck_units": [
+          "l2bm"
+        ],
+        "unit_counts": {
+          "alu": 12,
+          "mau": 16,
+          "mwrite": 26,
+          "mread": 10,
+          "l1bm": 14,
+          "l1bm-turnaround": 0,
+          "l2bm": 32,
+          "l2bmdarw": 0,
+          "mv": 5
+        },
+        "unit_utilization": {
+          "alu": 0.19672131147540983,
+          "mau": 0.26229508196721313,
+          "mwrite": 0.4262295081967213,
+          "mread": 0.16393442622950818,
+          "l1bm": 0.22950819672131148,
+          "l1bm-turnaround": 0.0,
+          "l2bm": 0.5245901639344263,
+          "l2bmdarw": 0.0,
+          "mv": 0.08196721311475409
+        }
+      },
+      "line_delta": 33
     }
   ]
 }

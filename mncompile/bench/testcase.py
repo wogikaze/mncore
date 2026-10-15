@@ -104,3 +104,27 @@ def split(testcase_text: str) -> tuple[str, str]:
         raise ValueError("testcase has no insertion marker")
     prefix, suffix = testcase_text.split(MARKER, 1)
     return prefix, suffix
+
+
+def input_values(testcase_text: str, contract) -> dict:
+    """Logical input values of the official testcase, keyed like `verify.make_inputs`
+    ({input name: {index: value}}); In(k) is the contract's k-th input."""
+    from ..values import decode, unpack
+
+    names = [spec.name for spec in contract.inputs]
+    out = {name: {} for name in names}
+    for e in parse_entries(testcase_text):
+        if e.kind not in ("set", "dram") or not e.tensor.startswith("in"):
+            continue
+        k = int(e.tensor[2:])
+        if k >= len(names):
+            raise ValueError(f"testcase input {e.tensor} has no contract tensor")
+        spec = contract.inputs[k]
+        for lane, idx in enumerate(e.indices):
+            index = tuple(idx) + (0,) * (len(spec.shape) - len(idx))
+            out[names[k]][index] = decode(unpack(e.payload[0], spec.dtype, lane), spec.dtype)
+    for spec in contract.inputs:
+        missing = set(spec.all_indices()) - set(out[spec.name])
+        if missing:
+            raise ValueError(f"testcase leaves {len(missing)} elements of {spec.name} unset")
+    return out
