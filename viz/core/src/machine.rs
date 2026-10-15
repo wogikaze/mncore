@@ -433,7 +433,12 @@ impl Machine {
         if !noforward {
             for k in [FwdKind::Aluf, FwdKind::Mauf, FwdKind::Mreadf, FwdKind::Lbf] {
                 let mine: Vec<&Output> = outputs.iter().map(|(_, o)| o).filter(|o| o.fwd == Some(k)).collect();
-                self.fwd_error[fwd_index(k)] = if mine.is_empty() {
+                self.fwd_error[fwd_index(k)] = if mine.is_empty() && k == FwdKind::Mreadf {
+                    // With no matrix read, the official emulator exposes zero on mreadf
+                    // rather than a disabled-producer error. nop/noforward still preserve it.
+                    for pe in &mut self.pes { pe.mreadf = [[0; 4]; 4]; }
+                    None
+                } else if mine.is_empty() {
                     Some(format!("{} is disabled", unit_name(k)))
                 } else {
                     mine.iter().find_map(|o| o.poison.as_ref().map(|p| p.msg.clone()))
@@ -578,7 +583,8 @@ impl Machine {
                     Some(s) => flags & self.mask_flags(pe, &s, cycle),
                     None => flags,
                 };
-                fail(true)?;
+                // Data poison is not forced by a flags-only write. Flags are computed
+                // separately; a zero selection still writes zero to the mask register.
                 if let Some(t) = self.tracer.borrow_mut().as_mut() {
                     t.pe(pe, cycle, "omr", true, Some(*entry as u32), &[f as u32]);
                 }

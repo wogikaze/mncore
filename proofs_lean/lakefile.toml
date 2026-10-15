@@ -28,3 +28,7 @@ root = "DynamicAddressProbe"
 [[lean_exe]]
 name = "mask_probe"
 root = "MaskProbe"
+
+[[lean_exe]]
+name = "forwarding_probe"
+root = "ForwardingProbe"

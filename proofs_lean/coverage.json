@@ -16,6 +16,8 @@
         "path": "proofs_lean/evidence/integer-alu/reference.json",
         "sha256": "bf162df268921b415743d5736967a0a87ef039174ec287c6f66ab7e648497fa8",
         "cases": 2880,
+        "matched_cases": 2880,
+        "unresolved_cases": 0,
         "scope": "72 integer spellings; 30 common operand pairs plus 48 width-specific boundary pairs for each shift spelling; unmasked unreduced scalar GRF accesses; one PE; all four broadcast cycles",
         "formal_conformance_proof": false
       }
@@ -30,6 +32,8 @@
         "path": "proofs_lean/evidence/untyped-alu/reference.json",
         "sha256": "2984e4fbf7c0aafb4a076df4b057085da37672beaad64602c88bc9a6731a08ac",
         "cases": 384,
+        "matched_cases": 384,
+        "unresolved_cases": 0,
         "scope": "Explicit referenceBinary profile for zero/imm/immu/msl/msr; all four PEs of one MAB; unmasked unreduced scalar GRF; nonzero destination/mask sentinels; manual LSB discrepancy remains unresolved",
         "formal_conformance_proof": false
       }
@@ -46,6 +50,8 @@
         "path": "proofs_lean/evidence/pe-memory/reference.json",
         "sha256": "b95a5cacc289d44e401cbfbc1e5513f7f3f1d5c04bd4b502df87040e2fee3b5e",
         "cases": 204,
+        "matched_cases": 204,
+        "unresolved_cases": 0,
         "scope": "LM0/LM1/GRF0/GRF1/T raw reads via lpassa; 32/64/128-bit accesses; scalar/strided/wrapping/flat addresses; all four cycles; one PE; BAR=0, no indirect/madpe/masks/hazards",
         "formal_conformance_proof": false
       },
@@ -54,6 +60,8 @@
           "path": "proofs_lean/evidence/dynamic-address/reference.json",
           "sha256": "0a8abe15164ff5457f4875d3fe2a2d96324c52db7f5257c7fce923b3a61934bf",
           "cases": 1920,
+          "matched_cases": 1920,
+          "unresolved_cases": 0,
           "scope": "LM0/LM1 BAR and MADPE; LM0 T indirect; 32/64/128-bit reads; all four PEs and cycles; nonaligned/wrapping values; 64-bit T extremes; auto/flat indirect schedules; no masks or port/hazard conformance",
           "formal_conformance_proof": false
         }
@@ -69,7 +77,25 @@
         "path": "proofs_lean/evidence/masks/reference.json",
         "sha256": "904679e14747497655a9e84c5e8dc2bfab5075501bbe7b884ff5ee8879912da5",
         "cases": 768,
+        "matched_cases": 768,
+        "unresolved_cases": 0,
         "scope": "Long/double masks, all 16 lane-flag patterns in every cycle; write/flush/both/mask-register/directive/override; one PE, wide GRF destination; no hazard/port completeness",
+        "formal_conformance_proof": false
+      }
+    },
+    {
+      "source": "proofs_lean/ProofsLean/Forwarding.lean",
+      "sha256": "1fd0043f0b9ee33ce22e58569932f6761e6e121f7d198105757a8824b2721aa8",
+      "implemented": "Four forwarding slots per cycle, nop/noforward preservation, absent producer poison, deferred consumption, unknown distinct from known invalid values",
+      "scope": "Known whole-step producer summaries and whole-value poison only; not a VSM interpreter or complete numeric-error model",
+      "missing": "All initial state/encoding rules, exact memory timing, per-lane numerical poison and full instruction integration",
+      "reference_experiment": {
+        "path": "proofs_lean/evidence/forwarding/reference.json",
+        "sha256": "2d407e443c2dca6926aef55313c98dc35006f55434a19c3a937fb538429d6768",
+        "cases": 42,
+        "matched_cases": 37,
+        "unresolved_cases": 5,
+        "scope": "Explicit reference target for ALU/MAU/mread/L1-to-PE forwarding; absent mread output observed as zero; L1-to-PE absence unresolved; normal finite producer values, nop/noforward, discard/chain/write masks and flags-only writes; not full hazards or numerical poison",
         "formal_conformance_proof": false
       }
     }
@@ -97,9 +123,18 @@
       "error": "Legacy local simulator suppressed LSB write for all-zero long mask; official binary writes it",
       "evidence": "proofs_lean/evidence/masks/initial-simulator-assumption/reference.json",
       "snapshot_manifest_sha256": "a44cf4d978462cf8332519f981210946ed85a3a476ec89160796bd355729f106",
-      "corrected_simulator_source_sha256": "6a97743ff42c0675d46dffb91948ed6f85ce9fe7f936a0ebb3fc316ffd3b5efd"
+      "corrected_simulator_source_sha256": "e16a7f942d762ac3bc81e1e4f39456360773c8cef9a179f52fa045d675422539"
     }
   ],
+  "forwarding_findings": {
+    "evidence": "proofs_lean/evidence/forwarding/initial-uniform-assumption/reference.json",
+    "snapshot_manifest_sha256": "951676c2b4bf40675ac77554617ac1fa735c1fc7bc6031caecfc627031914aca",
+    "withdrawn_retention_hypothesis_manifest_sha256": "35f72f4988c790423e65ebb6a5bee42189e59b4b0093ca64845f8c9f0007b986",
+    "corrected_simulator_source_sha256": "e16a7f942d762ac3bc81e1e4f39456360773c8cef9a179f52fa045d675422539",
+    "corrected_model_error": "Flags-only mask-register writes do not force invalid forwarding data",
+    "open_manual_reference_difference": "Absent matrix-read output observed as zero, not a disabled-producer error",
+    "unresolved_encoding_cases": "Five L1-to-PE absence cases rejected by assembler type inference; runtime remains unknown"
+  },
   "syntax_candidates": [
     {
       "spelling": "dbfn",
@@ -873,7 +908,7 @@
     },
     {
       "area": "forwarding_lifetime_and_latency",
-      "status": "unimplemented"
+      "status": "partial_datapath_only"
     },
     {
       "area": "t_indirect_madpe_and_address_mapping",

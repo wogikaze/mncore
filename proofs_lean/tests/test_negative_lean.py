@@ -23,7 +23,9 @@ class NegativeKernelTests(unittest.TestCase):
                               "#check ProofsLean.MNCore.PEMemory.address_aligned\n"
                               "#check ProofsLean.MNCore.PEMemory.read_after_write\n"
                               "#check ProofsLean.MNCore.Masks.long_write_copies_low\n"
-                              "#check ProofsLean.MNCore.Masks.flush_preserves_flags\n")
+                              "#check ProofsLean.MNCore.Masks.flush_preserves_flags\n"
+                              "#check ProofsLean.MNCore.Forwarding.unknown_not_discardable\n"
+                              "#check ProofsLean.MNCore.Forwarding.noforward_preserves\n")
             result = subprocess.run([cls.lake, "env", "lean", str(source)], cwd=ROOT,
                                     capture_output=True, text=True, timeout=60)
             if result.returncode:
@@ -81,3 +83,16 @@ class NegativeKernelTests(unittest.TestCase):
     def test_zero_mask_register_write_does_not_preserve_old_flags(self):
         self.reject("open ProofsLean.MNCore.Masks\n"
                     "example : writeRegister (fun _ _ => 15) 0 0 15 0 0 0 = 15 := by decide\n")
+
+    def test_unknown_forwarding_is_not_a_known_execution_failure(self):
+        self.reject("open ProofsLean.MNCore.Forwarding\n"
+                    "example : consume (.memory true) (Value.unknown : Value Nat) = .failure := by rfl\n")
+
+    def test_discarding_unknown_does_not_complete_unsupported_semantics(self):
+        self.reject("open ProofsLean.MNCore.Forwarding\n"
+                    "example : consume .discard (Value.unknown : Value Nat) = .ok ⟨⟩ := by rfl\n")
+
+    def test_absent_producer_does_not_prove_all_forwarding_invalid(self):
+        self.reject("open ProofsLean.MNCore.Forwarding\n"
+                    "example (old : Slots) : advance old (.issue false (fun _ => none)) =\n"
+                    "  .ok (fun _ _ => .poison) := by rfl\n")

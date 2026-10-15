@@ -92,7 +92,7 @@ def problem_catalog() -> dict:
     }
 
 
-def datapath_experiment(directory: str, spelling_column: int) -> dict | None:
+def datapath_experiment(directory: str, spelling_column: int, allow_unknown: bool = False) -> dict | None:
     reference = ROOT / "evidence" / directory / "reference.json"
     experiment = None
     if reference.exists():
@@ -105,8 +105,34 @@ def datapath_experiment(directory: str, spelling_column: int) -> dict | None:
         counts = dict(Counter(row.split("\t")[spelling_column] for row in vectors.read_text().splitlines()))
         if counts != record["cases_per_spelling"]:
             raise ValueError("datapath spelling coverage mismatch")
-        if record["matched"] != record["cases"] or record["differences"]:
+        unresolved = sum(bool(row.get("unresolved")) for row in record.get("records", [])) if allow_unknown else 0
+        differences = record.get("differences", [row for row in record.get("records", [])
+                                                  if not row["matched"] and not (allow_unknown and row.get("unresolved"))])
+        if record["matched"] + unresolved != record["cases"] or differences:
             raise ValueError("datapath reference comparison has unresolved differences")
+        if "records" in record:
+            if len(record["records"]) != record["cases"]:
+                raise ValueError("reference execution record count mismatch")
+            if record["matched"] != sum(bool(row["matched"]) for row in record["records"]):
+                raise ValueError("reference match count mismatch")
+            if allow_unknown and record.get("unresolved") != unresolved:
+                raise ValueError("reference unresolved count mismatch")
+            for vector, row in zip(vectors.read_text().splitlines(), record["records"]):
+                if vector.split("\t")[:3] != [row["unit"], row["scenario"], row["expected"]]:
+                    raise ValueError("forwarding record is detached from its expected vector")
+                if digest(reference.parent / row["program"]) != row["program_sha256"]:
+                    raise ValueError("forwarding reference program changed")
+                if allow_unknown and row.get("unresolved"):
+                    if row["expected"] != "unknown" or row["matched"]:
+                        raise ValueError("unknown semantics cannot be promoted to a passing comparison")
+                    continue
+                if not row["assembler_accepted"] or row["expected"] != row["observed"] or not row["values_match"]:
+                    raise ValueError("unknown/assembly failure cannot be a passing forwarding comparison")
+                if row["observed"] == "failure":
+                    if row["returncode"] in (0, None) or "forwarding register failed" not in row["diagnostic"]:
+                        raise ValueError("unrecognized failure cannot establish a forwarding counterexample")
+                elif row["observed"] != "ok" or row["returncode"] != 0:
+                    raise ValueError("unclassified forwarding outcome")
         for item in record["sources"]:
             source = REPO / item["path"]
             optional_tool = item["path"] in (
@@ -120,6 +146,7 @@ def datapath_experiment(directory: str, spelling_column: int) -> dict | None:
             raise ValueError("finite comparison cannot promote a universal claim")
         experiment = {"path": reference.relative_to(REPO).as_posix(),
                       "sha256": digest(reference), "cases": record["cases"],
+                      "matched_cases": record["matched"], "unresolved_cases": unresolved,
                       "scope": record["scope"], "formal_conformance_proof": False}
     return experiment
 
@@ -202,6 +229,49 @@ def mask_model_correction() -> dict:
     }
 
 
+def forwarding_findings() -> dict:
+    directory = ROOT / "evidence/forwarding/initial-uniform-assumption"
+    for name, expected in json.loads((directory / "sha256.json").read_text()).items():
+        if digest(directory / name) != expected:
+            raise ValueError(f"changed forwarding-error snapshot: {name}")
+    record = json.loads((directory / "reference.json").read_text())
+    if (record["cases"], record["matched"]) != (39, 31):
+        raise ValueError("unexpected initial forwarding comparison")
+    vectors = (directory / "vectors.tsv").read_text().splitlines()
+    if digest(directory / "vectors.tsv") != record["vectors_sha256"] or len(record["records"]) != len(vectors):
+        raise ValueError("changed forwarding vectors")
+    for vector, row in zip(vectors, record["records"]):
+        if vector.split("\t")[:3] != [row["unit"], row["scenario"], row["expected"]]:
+            raise ValueError("detached initial forwarding record")
+        if digest(directory / row["program"]) != row["program_sha256"]:
+            raise ValueError("changed initial forwarding program")
+    for item in record["sources"]:
+        candidate = directory / Path(item["path"]).name
+        source = candidate if candidate.exists() else REPO / item["path"]
+        if not source.exists() and item["path"] in (
+                "judge/judge-py/mncore2_emuenv/assemble3", "judge/judge-py/mncore2_emuenv/gpfn3_package_main"):
+            continue
+        if digest(source) != item["sha256"]:
+            raise ValueError("changed initial forwarding source")
+    bad = [row for row in record["records"] if not row["matched"]]
+    if Counter(row["unit"] for row in bad) != {"alu": 1, "mread": 2, "lbf": 5}:
+        raise ValueError("unexpected initial forwarding mismatches")
+    second = ROOT / "evidence/forwarding/matrix-retention-assumption"
+    for name, expected in json.loads((second / "sha256.json").read_text()).items():
+        if digest(second / name) != expected:
+            raise ValueError("changed matrix-retention hypothesis snapshot")
+    second_record = json.loads((second / "reference.json").read_text())
+    if (second_record["cases"], second_record["matched"], second_record["unresolved"]) != (40, 33, 5):
+        raise ValueError("unexpected matrix-retention hypothesis counts")
+    return {"evidence": (directory / "reference.json").relative_to(REPO).as_posix(),
+            "snapshot_manifest_sha256": digest(directory / "sha256.json"),
+            "withdrawn_retention_hypothesis_manifest_sha256": digest(second / "sha256.json"),
+            "corrected_simulator_source_sha256": digest(REPO / "viz/core/src/machine.rs"),
+            "corrected_model_error": "Flags-only mask-register writes do not force invalid forwarding data",
+            "open_manual_reference_difference": "Absent matrix-read output observed as zero, not a disabled-producer error",
+            "unresolved_encoding_cases": "Five L1-to-PE absence cases rejected by assembler type inference; runtime remains unknown"}
+
+
 def coverage_catalog() -> dict:
     path = REPO / "mncompile/machine.py"
     tree = ast.parse(path.read_text())
@@ -231,6 +301,7 @@ def coverage_catalog() -> dict:
     memory_source = ROOT / "ProofsLean/PEMemory.lean"
     address_properties = ROOT / "ProofsLean/AddressProperties.lean"
     mask_source = ROOT / "ProofsLean/Masks.lean"
+    forwarding_source = ROOT / "ProofsLean/Forwarding.lean"
     return {
         "schema_version": 1,
         "isa_exhaustiveness_proven": False,
@@ -264,14 +335,22 @@ def coverage_catalog() -> dict:
             "scope": "Pure mask and register primitives; full-width GRF reference experiments only; no full instruction model",
             "missing": "All masked destinations and width combinations, complete syntax/legality, poisoned values, timing and parallel-issue integration",
             "reference_experiment": datapath_experiment("masks", 1),
+        }, {
+            "source": forwarding_source.relative_to(REPO).as_posix(), "sha256": digest(forwarding_source),
+            "implemented": "Four forwarding slots per cycle, nop/noforward preservation, absent producer poison, deferred consumption, unknown distinct from known invalid values",
+            "scope": "Known whole-step producer summaries and whole-value poison only; not a VSM interpreter or complete numeric-error model",
+            "missing": "All initial state/encoding rules, exact memory timing, per-lane numerical poison and full instruction integration",
+            "reference_experiment": datapath_experiment("forwarding", 0, allow_unknown=True),
         }],
         "unresolved_semantic_discrepancies": [rotation_discrepancy()],
         "corrected_model_errors": [mask_model_correction()],
+        "forwarding_findings": forwarding_findings(),
         "syntax_candidates": [{"spelling": name, "formal_step_semantics": "unimplemented"} for name in spellings],
         "obligations": [{"area": area, "status": "partial_datapath_only" if area in (
             "integer_16_32_64_and_signedness", "wide_access_and_lsb_passthrough",
             "immediates_fixed_operands_and_zero", "pe_rotations_and_coordinate_operands",
-            "t_indirect_madpe_and_address_mapping", "masks_flush_and_mask_directives") else "unimplemented"} for area in areas],
+            "t_indirect_madpe_and_address_mapping", "masks_flush_and_mask_directives",
+            "forwarding_lifetime_and_latency") else "unimplemented"} for area in areas],
     }
 
 
