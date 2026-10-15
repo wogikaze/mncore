@@ -264,16 +264,23 @@ def needs_official(program: str) -> bool:
     return _OFFICIAL_ONLY.search(program) is not None
 
 
-def verify(program: str, source: str, contract: Contract, *, cases: int = 3, seed: int = 1, extra_values=None, backend: str = "native") -> Verdict:
+def verify(program: str, source: str, contract: Contract, *, cases: int = 3, seed: int = 1, extra_values=None, backend: str = "native",
+           expected_for=None) -> Verdict:
+    """`expected_for` (optional, aligned with `extra_values`): given expected outputs for those
+    cases instead of the reference run (an official testcase's own expectations)."""
     if backend == "native" and needs_official(program):
         backend = "official"
     sim = simulator() if backend == "native" else None
     verdict = Verdict(True)
     case_values = [make_inputs(contract, seed + k, exhaustive_round=k) for k in range(cases)]
+    given = {}
     if extra_values:
-        case_values.extend(extra_values)
-    for values in case_values:
-        expected = expected_outputs(source, contract, values)
+        for k, values in enumerate(extra_values):
+            if expected_for is not None and expected_for[k] is not None:
+                given[len(case_values)] = expected_for[k]
+            case_values.append(values)
+    for n_case, values in enumerate(case_values):
+        expected = given.get(n_case) or expected_outputs(source, contract, values)
         prefix = input_prefix(contract, values)
         probes, checks = output_probes(contract, expected)
         result = sim.run(program, prefix=prefix, suffix=probes) if sim else official_run(program, prefix, probes)

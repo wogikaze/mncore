@@ -592,10 +592,11 @@ def narrowed_contract(contract: Contract, values) -> Contract:
 
 
 def compile_program(source: str, contract: Contract, *, tries: int = 4, verify_cases: int = 2, backend: str = "native", log=None,
-                    fixed_inputs=None, line_limit: int | None = None) -> Compilation:
+                    fixed_inputs=None, line_limit: int | None = None, fixed_expected=None) -> Compilation:
     """With `fixed_inputs` (the official testcase's input values) candidates only have to be right
     for those inputs: ranges shrink to the data and verification runs that one case, with the
-    whole error budget (the judge checks exactly that case).
+    whole error budget (the judge checks exactly that case). `fixed_expected` gives that case's
+    official expected outputs, which can differ from the binary64 reference by an ulp.
     With `line_limit`, only programs strictly shorter than that limit are verified and returned.
     Failure to find one raises CompileError; an existing accepted program can remain the winner."""
     def say(msg):
@@ -641,6 +642,7 @@ def compile_program(source: str, contract: Contract, *, tries: int = 4, verify_c
     if fixed_inputs is not None:
         # the judged case itself, on the official emulator (no margin: the judge sees exactly this)
         cases, margin, extra, backend = 0, None, [fixed_inputs], "official"
+    expected_for = [fixed_expected] if fixed_inputs is not None and fixed_expected is not None else None
     # cheapest first; a candidate whose lower bound (a step issues at most ~4 ops) cannot beat the
     # best verified program is not scheduled at all
     def bound(prog):
@@ -676,7 +678,7 @@ def compile_program(source: str, contract: Contract, *, tries: int = 4, verify_c
         for attempt in attempts:
             vsm = emit(attempt)
             try:
-                v = verify(vsm, source, contract, cases=cases, backend=backend, extra_values=extra)
+                v = verify(vsm, source, contract, cases=cases, backend=backend, extra_values=extra, expected_for=expected_for)
             except MemoryError:
                 rejected.append({"strategy": name, "reason": "verification out of memory"})
                 break

@@ -128,3 +128,17 @@ def input_values(testcase_text: str, contract) -> dict:
         if missing:
             raise ValueError(f"testcase leaves {len(missing)} elements of {spec.name} unset")
     return out
+
+
+def expected_values(testcase_text: str, contract) -> dict:
+    """The official testcase's expected outputs ({output name: {index: value}}; Out(k) is the
+    contract's k-th output). They can differ from a binary64 reference by an ulp."""
+    names = [spec.name for spec in contract.outputs]
+    out = {name: {} for name in names}
+    for e in parse_entries(testcase_text):
+        if e.kind != "get" or not e.tensor.startswith("out"):
+            continue
+        k = int(e.tensor[3:])
+        for idx, v in zip(e.indices, e.values):
+            out[names[k]][tuple(idx)] = v
+    return out

@@ -91,11 +91,13 @@ def run_one(problem_dir: str, output: str, backend: str, mem_fraction: float = 0
     best = None
     try:
         for mode in modes:
-            fixed = None
+            fixed = fixed_expected = None
             if mode == "testcase":
-                from .testcase import input_values
+                from .testcase import expected_values, input_values
 
-                fixed = input_values(problem.testcases[0].read_text(), P.contract_for(problem))
+                text = problem.testcases[0].read_text()
+                fixed = input_values(text, P.contract_for(problem))
+                fixed_expected = expected_values(text, P.contract_for(problem))
             mode_dir = out_dir / mode
             mode_dir.mkdir(parents=True, exist_ok=True)
             log_lines.append(f"===== mode {mode}")
@@ -106,6 +108,7 @@ def run_one(problem_dir: str, output: str, backend: str, mem_fraction: float = 0
                     backend=backend,
                     log=lambda m: log_lines.append(m),
                     fixed_inputs=fixed,
+                    fixed_expected=fixed_expected,
                     line_limit=best[0].lines if best is not None else None,
                 )
             except CompileError as exc:
