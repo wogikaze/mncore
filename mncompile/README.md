@@ -26,6 +26,8 @@ python3 -m mncompile mncompile/examples/sigmoid_like.py \
 
 ベンチマークは既定で `general` と `testcase` の両モードを試し、全公式テストケースで Accepted になった
 候補のうち短い方を保存する。同じ行数なら `general` を優先する。
+通常モードが Accepted なら、限定モードではそれより短い候補だけを検証する。
+短い候補が見つからなければ `by_mode` に `no_improvement` を記録し、通常モードの結果を使う。
 `testcase` は最初の公式入力の実値から入力値域を絞り、その入力だけを公式エミュレータで検証する。
 誤差予算は全額使う。このモードの結果は他の入力での正しさを保証しない。
 選ばれたモードは `report.json` とベンチマークの `row.json` に記録する。

@@ -106,9 +106,11 @@ def run_one(problem_dir: str, output: str, backend: str, mem_fraction: float = 0
                     backend=backend,
                     log=lambda m: log_lines.append(m),
                     fixed_inputs=fixed,
+                    line_limit=best[0].lines if best is not None else None,
                 )
             except CompileError as exc:
-                row["by_mode"][mode] = {"status": "unsupported", "reason": str(exc)[:500]}
+                row["by_mode"][mode] = {"status": "no_improvement" if best is not None else "unsupported",
+                                        "reason": str(exc)[:500]}
                 continue
             compiled.write(mode_dir)
             judged = [judge(tc, mode_dir / "kernel.vsm") for tc in problem.testcases]

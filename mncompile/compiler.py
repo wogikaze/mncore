@@ -592,10 +592,12 @@ def narrowed_contract(contract: Contract, values) -> Contract:
 
 
 def compile_program(source: str, contract: Contract, *, tries: int = 4, verify_cases: int = 2, backend: str = "native", log=None,
-                    fixed_inputs=None) -> Compilation:
+                    fixed_inputs=None, line_limit: int | None = None) -> Compilation:
     """With `fixed_inputs` (the official testcase's input values) candidates only have to be right
     for those inputs: ranges shrink to the data and verification runs that one case, with the
-    whole error budget (the judge checks exactly that case)."""
+    whole error budget (the judge checks exactly that case).
+    With `line_limit`, only programs strictly shorter than that limit are verified and returned.
+    Failure to find one raises CompileError; an existing accepted program can remain the winner."""
     def say(msg):
         if log:
             log(f"[{time.time() - t0:7.1f}s] {msg}")
@@ -666,7 +668,12 @@ def compile_program(source: str, contract: Contract, *, tries: int = 4, verify_c
                 continue
         say(f"{name}: scheduled {words(steps)} words")
         trimmed = remove_nops(steps, asm)
-        for attempt in (trimmed, steps):
+        attempts = [s for s in (trimmed, steps)
+                    if line_limit is None or asm.assemble(emit(s)).words < line_limit]
+        if not attempts:
+            rejected.append({"strategy": name, "reason": f"not strictly shorter than {line_limit} lines"})
+            continue
+        for attempt in attempts:
             vsm = emit(attempt)
             try:
                 v = verify(vsm, source, contract, cases=cases, backend=backend, extra_values=extra)
