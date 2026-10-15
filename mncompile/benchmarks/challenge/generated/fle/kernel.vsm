@@ -1,6 +1,0 @@
-imm h"-1.0" $t
-imm ui"0x7fffffff" $lls0v
-hvadd $t $llm[0,4,8,12] $omr1
-hvadd $t $llm[16,20,24,28] $omr2; ipassa $lls0 $lln[0,4,8,12]/$llimr1
-hvadd $t $llm[32,36,32,36] $omr1; ipassa $lls0 $lln[16,20,24,28]/$llimr2
-ipassa $lls0 $lln[32,36,32,36]/$llimr1

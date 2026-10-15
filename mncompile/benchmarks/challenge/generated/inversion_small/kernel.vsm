@@ -1,9 +1,0 @@
-lpackbit $mabid $ls0 $lmb
-imm ui"0xbf003f00" $nowrite
-lpackbit $subpeid $ls0 $lt; hvpassa $aluf $lr0v $omr1; hmwrite $aluf $lx0
-lpassa $lm0 $nowrite
-lsub $aluf $lmt4064v8 $r0v/$imr1
-imm ui"0x4800fc00" $nowrite
-hmfma $lx $llr[4,4,4,0]r $aluf $lls0v
-l1bmriiadd $mauf $lb0
-l1bmm $lbi $n1/$imr1

@@ -1,11 +1,7 @@
 def kernel(x):
+    # Y[i] = (X[i] @ X[i]) transposed
+    n = 16
     return [
-        [
-            [
-                sum(matrix[k][i] * matrix[j][k] for k in range(len(matrix)))
-                for j in range(len(matrix))
-            ]
-            for i in range(len(matrix))
-        ]
-        for matrix in x
+        [[sum(m[k][t] * m[t][j] for t in range(n)) for k in range(n)] for j in range(n)]
+        for m in x
     ]

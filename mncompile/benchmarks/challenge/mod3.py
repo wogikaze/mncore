@@ -1,2 +1,2 @@
 def kernel(x):
-    return [value % 3 for value in x]
+    return [v % 3 for v in x]

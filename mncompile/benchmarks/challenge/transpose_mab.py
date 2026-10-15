@@ -1,2 +1,3 @@
 def kernel(x):
-    return [list(column) for column in zip(*x)]
+    # Same logical vector; only the physical layout differs.
+    return list(x)

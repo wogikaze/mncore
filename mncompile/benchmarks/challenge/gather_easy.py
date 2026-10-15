@@ -1,4 +1,2 @@
 def kernel(x, indices):
-    return [
-        [row[index] for index in row_indices] for row, row_indices in zip(x, indices)
-    ]
+    return [[row[i] for i in idx] for row, idx in zip(x, indices)]

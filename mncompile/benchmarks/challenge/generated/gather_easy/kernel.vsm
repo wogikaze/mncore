@@ -1,6 +1,0 @@
-ladd $lm2048v4j1 $lm2048v4j1 $t
-ladd $lm2064v4j1 $lm2064v4j1 $nowrite
-dvpassa $lmt0 $ln2v4; lpassa $aluf $t
-msl $mauf $ln0v4
-dvpassa $lmt0 $ln18v4
-msl $mauf $ln16v4

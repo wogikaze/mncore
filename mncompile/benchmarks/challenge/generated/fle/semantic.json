@@ -1,8 +1,0 @@
-{
-  "schema_version": 1,
-  "op": "select",
-  "predicate": "ge",
-  "threshold": 1.0,
-  "true": "infinity",
-  "false": 0
-}

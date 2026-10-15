@@ -1,9 +1,0 @@
-imm ui"0x3eaaaaab" $lr32/1000
-iadd $lm0v $aluf $nowrite; l1bmd+0 $lm0v $lbi
-imm ui"0x78" $t; fvadd $aluf -$lr32 $ls0v; l1bmd $lbi $ln0v
-imm ui"0x3e4ccccd" $ls40; fvmul $mauf $lr32 $nowrite
-iand $mauf $t $omr1; fvmul $ls0v $aluf $nowrite
-iand $mauf $t $omr2; fvpassa/$imr1 $lr32 $nowrite
-imm ui"0x0000bbbb" $ln0v/$imr2; fvpassa/$imr2 $mauf $nowrite
-imm ui"0x0000ffff" $ln0v/$imr1; fvadd $mauf -$ls40 $omr3
-imm ui"0xffffbbbb" $ln0v/$imr3

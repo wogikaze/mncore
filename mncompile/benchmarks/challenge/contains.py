@@ -1,2 +1,2 @@
 def kernel(a, b):
-    return [int(value in b) for value in a]
+    return [int(v in b) for v in a]

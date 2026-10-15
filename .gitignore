@@ -5,3 +5,4 @@ data/
 unit_tests/
 judge/
 result.txt
+mncompile/native/target/

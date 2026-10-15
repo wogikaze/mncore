@@ -1,0 +1,12 @@
+{
+  "inputs": [
+    {"name": "A", "dtype": "Float", "memory": "$lm[0:16]",
+     "layout": "(256,16)/((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1); B@[MAB])",
+     "low": -8, "high": 8}
+  ],
+  "outputs": [
+    {"name": "C", "dtype": "Float", "memory": "$ln[0:16]",
+     "layout": "(256,16)/((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1))",
+     "atol": 1e-6}
+  ]
+}

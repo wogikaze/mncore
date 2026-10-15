@@ -1,2 +1,2 @@
 def kernel(x):
-    return [value * 7 for value in x]
+    return [v * 7 for v in x]

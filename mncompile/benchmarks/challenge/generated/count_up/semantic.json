@@ -1,9 +1,0 @@
-{
-  "schema_version": 1,
-  "op": "arange",
-  "start": 1,
-  "stop": 32769,
-  "step": 1,
-  "logical_elements": 32768,
-  "physical_elements": 32768
-}

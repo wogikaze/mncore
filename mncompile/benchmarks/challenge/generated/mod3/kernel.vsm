@@ -1,8 +1,0 @@
-imm ui"3" $t
-imm ui"0x452ad551" $llr16v
-smax $llm0v $aluf $lls0v; hvpassa $aluf $omr1; l1bmd+0 $aluf $lb0
-smax $llm16v $llr16v $llr16v; fvfma $aluf $llr16v -$aluf $nowrite; l1bmd+0 $llr16v $lbi; l1bmd $lbi $ls2v4/$imr1
-iand $mauf $t $ln0v4; fvfma $aluf $lbf -$aluf $nowrite; l1bmd $lbi $lr18v4/$imr1
-iand $mauf $t $ln16v4; fvfma $ls2v4 $lbf -$ls2v4 $nowrite; l1bmd $lb0 $nowrite
-iand $mauf $t $ln2v4; fvfma $lr18v4 $lbf -$lr18v4 $nowrite
-iand $mauf $t $ln18v4

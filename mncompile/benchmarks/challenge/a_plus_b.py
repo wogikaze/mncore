@@ -1,2 +1,2 @@
 def kernel(a, b):
-    return [left + right for left, right in zip(a, b)]
+    return [p + q for p, q in zip(a, b)]

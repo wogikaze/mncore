@@ -1,9 +1,5 @@
-def kernel(x):
+def kernel(a):
     return [
-        sum(
-            row[left] > row[right]
-            for left in range(len(row))
-            for right in range(left + 1, len(row))
-        )
-        for row in x
+        sum(row[j] > row[k] for j in range(len(row)) for k in range(j + 1, len(row)))
+        for row in a
     ]

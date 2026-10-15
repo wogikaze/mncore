@@ -1,6 +1,0 @@
-imm i"2" $t
-iadd $m1v2 $aluf $n1v2
-iadd $m9v2 $t $n9v2
-iadd $m17v2 $t $n17v2
-iadd $m25v2 $t $n25v2
-iadd $m33v2 $t $n33v2
