@@ -1,0 +1,3 @@
+fvpassa $lm[16,18,16,18] $t
+fvadd $lm0v $mauf $ln0v
+fvadd $lm8v $t $ln8v

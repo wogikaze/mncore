@@ -1,0 +1,15 @@
+gmwrite $lm0v4 $ly0; zero $ls128v
+gmwrite $aluf $ly4; ipackbit $mabid $aluf $t
+gmwrite $ls128v $lx4; gmread $ly0 $ls0v4; 
+gmwrite $lmt16v4 $lx0; gmread $ly4 $ls16v4; gbfn $mreadf $lr128v
+gmwrite $lm2v4 $ly0; gmread $lx0 $nowrite; gbfn $mreadf $lr136v
+gmread $lx4 $nowrite; gbfn $mreadf $lr0v4;
+gmwrite $aluf $lx0; gbfn $mreadf $lr16v4
+gmwrite $aluf $lx4; gmread $ly0 $ls2v4;
+gmmul $lx $lr128v $ln0v4; gmread $ly4 $ls18v4; gbfn $mreadf $lr144v
+gmmul $lx $lr136v $ln16v4; gbfn $mreadf $lr152v; l1bmm@1 $mauf $lbi
+gmmul $lx $lr144v $ls32v4; l1bmm@1 $mauf $lbi; l1bmm $lbi $ln2v4
+gmmul $lx $lr152v $ln48v4; l1bmm@1 $mauf $lbi; l1bmm $lbi $lr18v4
+l1bmm@1 $mauf $lbi; l1bmm $lbi $ls34v4; ipassa $lbf $ln18v4
+l1bmm $lbi $ln50v4
+ipassa $lls32v $lln32v

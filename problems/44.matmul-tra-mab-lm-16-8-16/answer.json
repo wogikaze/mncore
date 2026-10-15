@@ -1,0 +1,11 @@
+{
+  "problem_url": "https://mncore-challenge.preferred.jp/mnist/problem/matmul_tra_mab_lm_16_8_16/",
+  "standings_url": "https://mncore-challenge.preferred.jp/mnist/standings/",
+  "shortest_url": "https://mncore-challenge.preferred.jp/mnist/shortest/matmul_tra_mab_lm_16_8_16/sosuupoyo/",
+  "submission_url": "https://mncore-challenge.preferred.jp/mnist/submission/f7b4d010-271e-4603-bbbf-f16881913aa5",
+  "author": "sosuupoyo",
+  "status": "Accepted",
+  "lines": 15,
+  "fetched_at": "2026-10-15T08:20:41+00:00",
+  "local_validation": "accepted (official judge, 2026-10-15)"
+}

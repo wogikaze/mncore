@@ -1,0 +1,24 @@
+lpassa $mabid $t #入力がLM0のときのみ
+imm/0101 ui"0x3F800008" $lr0v $ls0v
+ipackbit $subpeid $aluf $nowrite; hvpassar -$aluf $omr1; l1bmd+0 $mt[0,0,16,16] $lbi
+linc $aluf $nowrite; hvpassar $ls2 $nowrite; l1bmd+0 $mt[32,32,48,48] $lbi; l1bmd+0 $lbi $r8v
+iadd/$imr1 $aluf $lr0v $t; fvpassa $mauf $nowrite; l1bmd+0 $lbi $s0v
+ixor $aluf $lr[8,8,10,10] $omr1; fvpassa $mauf $nowrite; l1bmd+0 $mauf $lbi
+ixor $t $ls[0,0,2,2] $omr2; fvpassa/$imr1 $mauf $ln[0,2,64,66] $lr0v; l1bmd+0 $lbi $nowrite
+fvpassa/$imr2 $lbf $ln[128,130,192,194] $lr8v; l1bmm@1 $mauf $lbi
+l1bmm@1 $mauf $lbi; l1bmm $lbi $ln[4,6,68,70]
+l1bmm@2 $llr0v $llbi; l1bmm $lbi $ln[132,134,196,198]
+l1bmm@3 $llr0v $llbi; l1bmm $llbi $lln[8,72,136,200]
+l1bmm@4 $llr0v $llbi; l1bmm $llbi $lln[12,76,140,204]
+l1bmm@5 $llr0v $llbi; l1bmm $llbi $lln[16,80,144,208]
+l1bmm@6 $llr0v $llbi; l1bmm $llbi $lln[20,84,148,212]
+l1bmm@7 $llr0v $llbi; l1bmm $llbi $lln[24,88,152,216]
+l1bmm@8 $llr0v $llbi; l1bmm $llbi $lln[28,92,156,220]
+l1bmm@9 $llr0v $llbi; l1bmm $llbi $lln[32,96,160,224]
+l1bmm@10 $llr0v $llbi; l1bmm $llbi $lln[36,100,164,228]
+l1bmm@11 $llr0v $llbi; l1bmm $llbi $lln[40,104,168,232]
+l1bmm@12 $llr0v $llbi; l1bmm $llbi $lln[44,108,172,236]
+l1bmm@13 $llr0v $llbi; l1bmm $llbi $lln[48,112,176,240]
+l1bmm@14 $llr0v $llbi; l1bmm $llbi $lln[52,116,180,244]
+l1bmm@15 $llr0v $llbi; l1bmm $llbi $lln[56,120,184,248]
+l1bmm $llbi $lln[60,124,188,252]

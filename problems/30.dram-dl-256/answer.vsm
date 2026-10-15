@@ -1,0 +1,10 @@
+mvb2/n64 $d0 $lc0
+immu ui"1" $nowrite; fvpassa/0000 $lr0 $lr32v4 $ls0v4; l2bmb $lc0 $lb0
+ipassa $aluf $omr1; fvpassa $mauf $lr48v4 $ls16v4
+l1bmp $llb0 $llr0v $lls0v/$llimr1
+fpassa $lbf $lm0v; l1bmp $llb8 $llr16v $lls16v/$llimr1
+fpassa $lbf $lm16v; l1bmp $llb16 $llr32v/$llimr1 $lls32v
+fpassa $lbf $lm32v; l1bmp $llb24 $llr48v/$llimr1 $lls48v
+fpassa $lbf $lm48v
+frelu $lls4v8 $lr2v8 $llm[8,12,24,28]
+frelu $llr36v8 $ls34v8 $llm[40,44,56,60]

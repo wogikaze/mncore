@@ -1,0 +1,11 @@
+{
+  "problem_url": "https://mncore-challenge.preferred.jp/mnist/problem/sum_row_mini/",
+  "standings_url": "https://mncore-challenge.preferred.jp/mnist/standings/",
+  "shortest_url": "https://mncore-challenge.preferred.jp/mnist/shortest/sum_row_mini/syttrea/",
+  "submission_url": "https://mncore-challenge.preferred.jp/mnist/submission/b72bebc2-5dfd-42a4-9313-ed137e9b4533",
+  "author": "syttrea",
+  "status": "Accepted",
+  "lines": 6,
+  "fetched_at": "2026-10-15T08:20:50+00:00",
+  "local_validation": "accepted (official judge, 2026-10-15)"
+}

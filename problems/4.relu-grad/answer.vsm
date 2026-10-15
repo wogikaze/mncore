@@ -1,0 +1,3 @@
+imm ui"0x3F800000" $t
+frelu $lm0v $aluf $ln0v
+frelu $lm8v $t $ln8v

@@ -110,7 +110,7 @@ XOR 型ビット置換（バイト反転・ビット反転）を `sbsl`/`ibsl`/`
 
 <!-- RESULTS -->
 
-公式ジャッジで 73/73 問 Accepted。参照解（公開されている最短の Accepted 提出、MNIST は問題ページの Top）以下の行数は 19 問。Accepted 問題の行数合計は生成 1617 行 / 参照解 1077 行。
+公式ジャッジで 73/73 問 Accepted。参照解（順位表から辿れる最短の公開 Accepted 提出）以下の行数は 16 問。Accepted 問題の行数合計は生成 1617 行 / 参照解 1041 行。
 
 | 問題 | 判定 | 生成行数 | 参照解 | 比 | 戦略 |
 | --- | --- | ---: | ---: | ---: | --- |
@@ -143,16 +143,16 @@ XOR 型ビット置換（バイト反転・ビット反転）を `sbsl`/`ibsl`/`
 | 2.fmul7 | Accepted | 5 | 5 | 1.00 | local |
 | 3.relu | Accepted | 2 | 2 | 1.00 | local |
 | 4.relu-grad | Accepted | 3 | 3 | 1.00 | local |
-| 5.addcol-vec | Accepted | 4 | 4 | 1.00 | local |
+| 5.addcol-vec | Accepted | 4 | 3 | 1.33 | local |
 | 6.subrow-vec | Accepted | 35 | 24 | 1.46 | split/local |
 | 7.sumcol-mini | Accepted | 4 | 4 | 1.00 | local |
 | 8.sumcol | Accepted | 12 | 9 | 1.33 | hierarchy/l1bmm@32/l2bmr/mvr+local |
 | 9.sumrow-mini | Accepted | 9 | 6 | 1.50 | pe-reduce |
-| 10.sumrow | Accepted | 24 | 20 | 1.20 | split/mab-reduce/pe+rot-local |
-| 11.maxrow | Accepted | 24 | 21 | 1.14 | split/mab-reduce/pe+rot-local |
+| 10.sumrow | Accepted | 24 | 16 | 1.50 | split/mab-reduce/pe+rot-local |
+| 11.maxrow | Accepted | 24 | 20 | 1.20 | split/mab-reduce/pe+rot-local |
 | 12.divrow-vec | Accepted | 56 | 29 | 1.93 | split/local/newton2 |
-| 13.exp-low-prec | Accepted | 20 | 14 | 1.43 | local/exp_degree3 |
-| 14.exp | Accepted | 30 | 21 | 1.43 | local/exp_degree6 |
+| 13.exp-low-prec | Accepted | 20 | 10 | 2.00 | local/exp_degree3 |
+| 14.exp | Accepted | 30 | 16 | 1.88 | local/exp_degree6 |
 | 15.onehot-mini | Accepted | 17 | 7 | 2.43 | relayout/base |
 | 16.onehot | Accepted | 44 | 24 | 1.83 | split/local/base |
 | 17.dram-dl-256-16 | Accepted | 5 | 5 | 1.00 | movement |
@@ -161,15 +161,15 @@ XOR 型ビット置換（バイト反転・ビット反転）を `sbsl`/`ibsl`/`
 | 20.dram-ul-256-16p | Accepted | 16 | 10 | 1.60 | movement |
 | 21.dram-dl-256-16-l2b | Accepted | 14 | 12 | 1.17 | movement |
 | 22.dram-dl-1024-16 | Accepted | 10 | 8 | 1.25 | movement |
-| 23.dram-dl-256-1024 | Accepted | 74 | 69 | 1.07 | movement |
+| 23.dram-dl-256-1024 | Accepted | 74 | 68 | 1.09 | movement |
 | 24.dram-dl-16 | Accepted | 5 | 5 | 1.00 | movement |
 | 25.dram-ul-16 | Accepted | 5 | 5 | 1.00 | movement |
-| 26.dram-dl-16-1024 | Accepted | 44 | 40 | 1.10 | movement |
+| 26.dram-dl-16-1024 | Accepted | 44 | 39 | 1.13 | movement |
 | 27.dram-ul-16-1024 | Accepted | 18 | 13 | 1.38 | movement |
 | 28.dram-dl-16-16 | Accepted | 12 | 11 | 1.09 | movement |
 | 29.dram-ul-16-16 | Accepted | 13 | 9 | 1.44 | movement |
-| 30.dram-dl-256 | Accepted | 11 | 11 | 1.00 | movement |
-| 31.dram-ul-256 | Accepted | 9 | 12 | 0.75 | movement |
+| 30.dram-dl-256 | Accepted | 11 | 10 | 1.10 | movement |
+| 31.dram-ul-256 | Accepted | 9 | 7 | 1.29 | movement |
 | 32.matmul-trb-mab-lm-4-8-8 | Accepted | 4 | 4 | 1.00 | contraction/gm-direct |
 | 33.matmul-trb-mab-lm-4-8-16 | Accepted | 7 | 7 | 1.00 | contraction/gm-direct |
 | 34.matmul-trb-mab-lm-4-16-8 | Accepted | 6 | 7 | 0.86 | contraction/hm |
@@ -182,8 +182,8 @@ XOR 型ビット置換（バイト反転・ビット反転）を `sbsl`/`ibsl`/`
 | 41.matmul-notr-mab-lm-4-16-16 | Accepted | 23 | 13 | 1.77 | contraction/gm |
 | 42.matmul-notr-pkg-lm-256-16-16 | Accepted | 23 | 13 | 1.77 | contraction/gm |
 | 43.matmul-tra-mab-lm-8-8-8 | Accepted | 10 | 8 | 1.25 | contraction/gm |
-| 44.matmul-tra-mab-lm-16-8-16 | Accepted | 26 | 17 | 1.53 | contraction/gm |
-| 45.matmul-tra-mab-lm-16-4-16 | Accepted | 20 | 16 | 1.25 | contraction/gm |
-| 46.matmul-tra-pkg-lmdram-16-256-16 | Accepted | 31 | 26 | 1.19 | hierarchy/l1bmm@32/l2bmr/mvr+contraction/gm |
+| 44.matmul-tra-mab-lm-16-8-16 | Accepted | 26 | 15 | 1.73 | contraction/gm |
+| 45.matmul-tra-mab-lm-16-4-16 | Accepted | 20 | 15 | 1.33 | contraction/gm |
+| 46.matmul-tra-pkg-lmdram-16-256-16 | Accepted | 31 | 25 | 1.24 | hierarchy/l1bmm@32/l2bmr/mvr+contraction/gm |
 | 47.matmul-tra-mab-lm-16-32-8 | Accepted | 50 | 17 | 2.94 | contraction/gm |
-| 48.matmul-tra-pkg-lmdram-16-256-1024 | Accepted | 94 | 70 | 1.34 | hierarchy/l1bmd/l2bmd/mvr-pdm+contraction/gm |
+| 48.matmul-tra-pkg-lmdram-16-256-1024 | Accepted | 94 | 61 | 1.54 | hierarchy/l1bmd/l2bmd/mvr-pdm+contraction/gm |

@@ -1,0 +1,11 @@
+{
+  "problem_url": "https://mncore-challenge.preferred.jp/mnist/problem/add_colvec/",
+  "standings_url": "https://mncore-challenge.preferred.jp/mnist/standings/",
+  "shortest_url": "https://mncore-challenge.preferred.jp/mnist/shortest/add_colvec/syttrea/",
+  "submission_url": "https://mncore-challenge.preferred.jp/mnist/submission/2d36bc21-ad88-4493-bdfb-e764e688ce3d",
+  "author": "syttrea",
+  "status": "Accepted",
+  "lines": 3,
+  "fetched_at": "2026-10-15T08:20:46+00:00",
+  "local_validation": "accepted (official judge, 2026-10-15)"
+}

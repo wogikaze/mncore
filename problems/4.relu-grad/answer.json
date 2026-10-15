@@ -1,0 +1,11 @@
+{
+  "problem_url": "https://mncore-challenge.preferred.jp/mnist/problem/relu_grad/",
+  "standings_url": "https://mncore-challenge.preferred.jp/mnist/standings/",
+  "shortest_url": "https://mncore-challenge.preferred.jp/mnist/shortest/relu_grad/syttrea/",
+  "submission_url": "https://mncore-challenge.preferred.jp/mnist/submission/487424e7-270d-48f7-b606-df8bd09e947c",
+  "author": "syttrea",
+  "status": "Accepted",
+  "lines": 3,
+  "fetched_at": "2026-10-15T08:20:37+00:00",
+  "local_validation": "accepted (official judge, 2026-10-15)"
+}

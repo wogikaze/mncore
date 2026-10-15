@@ -1,0 +1,9 @@
+imm ui"0x00000002" $nowrite
+llsl $mabid $aluf $t
+nop
+l1bmr4ffadd $lmt0v $lb0
+l1bmr4ffadd $lmt2v $lb4
+nop
+nop
+l2bmrffadd $lb0 $lc0
+mvrffadd/n64 $lc0 $d0

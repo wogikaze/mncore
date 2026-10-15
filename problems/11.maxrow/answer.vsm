@@ -1,0 +1,20 @@
+imm ui"0x00000004" $nowrite
+llsl $mabid $aluf $t
+nop
+fpassa $mt0v4 $nowrite
+fmax $mt1v4 $aluf $nowrite
+fmax $mt2v4 $aluf $nowrite
+fmax $mt3v4 $aluf $r0v
+msl $aluf $nowrite
+fmax $aluf $r0v $r0v
+msl $aluf $nowrite
+msl $aluf $nowrite
+fmax $aluf $r0v $r0v $s0v $n0v
+l1bmm4@1 $aluf $lbi
+l1bmm4@2 $s0v $lbi; l1bmm4 $lbi $r4v $n4v
+l1bmm4@3 $lls0 $llbi; l1bmm4 $lbi $r8v $n8v
+l1bmm4 $llbi $llr12/ll1000 $lln12/ll1000
+l1bmm@4 $llr0v $llbi
+l1bmm@8 $llr0v $llbi; l1bmm $llbi $lln16v
+l1bmm@12 $llr0v $llbi; l1bmm $llbi $lln32v
+l1bmm $llbi $lln48v

@@ -1,0 +1,12 @@
+# SumRow — Answer
+
+MNIST 順位表から辿れる公開 Accepted 提出を `answer.vsm` に保存しています（`main.vsm` は変更しません）。
+
+- Author: syttrea
+- Lines: 16
+- Status: Accepted（サイト上）
+- Submission: https://mncore-challenge.preferred.jp/mnist/submission/66636e59-22ea-47af-bc46-142fa2df519a
+- Standings: https://mncore-challenge.preferred.jp/mnist/standings/
+
+取得時の順位表で最小行数の提出を選んでいます。同率の場合は先に掲載された提出を採用します。
+提出者のコードをそのまま保存しています。

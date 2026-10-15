@@ -1,0 +1,11 @@
+{
+  "problem_url": "https://mncore-challenge.preferred.jp/mnist/problem/matmul_trb_mab_lm_32_8_16/",
+  "standings_url": "https://mncore-challenge.preferred.jp/mnist/standings/",
+  "shortest_url": "https://mncore-challenge.preferred.jp/mnist/shortest/matmul_trb_mab_lm_32_8_16/syttrea/",
+  "submission_url": "https://mncore-challenge.preferred.jp/mnist/submission/dd9fb5f3-48fd-473e-a4af-8b4449dedce0",
+  "author": "syttrea",
+  "status": "Accepted",
+  "lines": 17,
+  "fetched_at": "2026-10-15T08:20:31+00:00",
+  "local_validation": "accepted (official judge, 2026-10-15)"
+}

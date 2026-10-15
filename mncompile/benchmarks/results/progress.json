@@ -1,7 +1,7 @@
 {
   "total": 73,
   "accepted": 73,
-  "at_or_below_reference": 19,
+  "at_or_below_reference": 16,
   "problems": [
     {
       "problem": "1.plus-one",
@@ -477,7 +477,7 @@
     {
       "problem": "5.addcol-vec",
       "slug": "add_colvec",
-      "reference_lines": 4,
+      "reference_lines": 3,
       "status": "accepted",
       "lines": 4,
       "strategy": "local",
@@ -557,7 +557,7 @@
     {
       "problem": "10.sumrow",
       "slug": "sum_row",
-      "reference_lines": 20,
+      "reference_lines": 16,
       "status": "accepted",
       "lines": 24,
       "strategy": "split/mab-reduce/pe+rot-local",
@@ -573,7 +573,7 @@
     {
       "problem": "11.maxrow",
       "slug": "max_row",
-      "reference_lines": 21,
+      "reference_lines": 20,
       "status": "accepted",
       "lines": 24,
       "strategy": "split/mab-reduce/pe+rot-local",
@@ -606,7 +606,7 @@
     {
       "problem": "13.exp-low-prec",
       "slug": "exp_lowprec",
-      "reference_lines": 14,
+      "reference_lines": 10,
       "status": "accepted",
       "lines": 20,
       "strategy": "local/exp_degree3",
@@ -623,7 +623,7 @@
     {
       "problem": "14.exp",
       "slug": "exp",
-      "reference_lines": 21,
+      "reference_lines": 16,
       "status": "accepted",
       "lines": 30,
       "strategy": "local/exp_degree6",
@@ -767,7 +767,7 @@
     {
       "problem": "23.dram-dl-256-1024",
       "slug": "dram_dl_256_1024",
-      "reference_lines": 69,
+      "reference_lines": 68,
       "status": "accepted",
       "lines": 74,
       "strategy": "movement",
@@ -815,7 +815,7 @@
     {
       "problem": "26.dram-dl-16-1024",
       "slug": "dram_dl_16_1024",
-      "reference_lines": 40,
+      "reference_lines": 39,
       "status": "accepted",
       "lines": 44,
       "strategy": "movement",
@@ -879,7 +879,7 @@
     {
       "problem": "30.dram-dl-256",
       "slug": "dram_dl_256",
-      "reference_lines": 11,
+      "reference_lines": 10,
       "status": "accepted",
       "lines": 11,
       "strategy": "movement",
@@ -895,7 +895,7 @@
     {
       "problem": "31.dram-ul-256",
       "slug": "dram_ul_256",
-      "reference_lines": 12,
+      "reference_lines": 7,
       "status": "accepted",
       "lines": 9,
       "strategy": "movement",
@@ -1103,7 +1103,7 @@
     {
       "problem": "44.matmul-tra-mab-lm-16-8-16",
       "slug": "matmul_tra_mab_lm_16_8_16",
-      "reference_lines": 17,
+      "reference_lines": 15,
       "status": "accepted",
       "lines": 26,
       "strategy": "contraction/gm",
@@ -1119,7 +1119,7 @@
     {
       "problem": "45.matmul-tra-mab-lm-16-4-16",
       "slug": "matmul_tra_mab_lm_16_4_16",
-      "reference_lines": 16,
+      "reference_lines": 15,
       "status": "accepted",
       "lines": 20,
       "strategy": "contraction/gm",
@@ -1135,7 +1135,7 @@
     {
       "problem": "46.matmul-tra-pkg-lmdram-16-256-16",
       "slug": "matmul_tra_pkg_lmdram_16_256_16",
-      "reference_lines": 26,
+      "reference_lines": 25,
       "status": "accepted",
       "lines": 31,
       "strategy": "hierarchy/l1bmm@32/l2bmr/mvr+contraction/gm",
@@ -1167,7 +1167,7 @@
     {
       "problem": "48.matmul-tra-pkg-lmdram-16-256-1024",
       "slug": "matmul_tra_pkg_lmdram_16_256_1024",
-      "reference_lines": 70,
+      "reference_lines": 61,
       "status": "accepted",
       "lines": 94,
       "strategy": "hierarchy/l1bmd/l2bmd/mvr-pdm+contraction/gm",

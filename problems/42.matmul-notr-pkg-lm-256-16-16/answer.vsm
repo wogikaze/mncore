@@ -1,0 +1,13 @@
+lpassa $mabid $t 
+gbfn $lm0v4 $lr0v
+gmwrite $lmt16v4 $lx0
+gmwrite $lmt32v4 $lx4
+gmwrite $lmt48v4 $ly0; gmread $lx0 $nowrite
+gbfn $mreadf $nowrite; gmwrite $lmt64v4 $ly4; gmread $lx4 $nowrite
+gbfn $mreadf $nowrite; gmwrite $aluf $lx0; gmread $ly0 $nowrite
+gbfn $mreadf $nowrite; gmwrite $aluf $lx4; gmread $ly4 $nowrite
+gbfn $mreadf $nowrite; gmwrite $aluf $ly0
+gbfn $lm2v4 $nowrite; gmmul $lx $lr0v $nowrite; gmwrite $aluf $ly4
+gmfma $ly $aluf $mauf $ln0v4
+l1bmm@2 $mauf $lbi
+l1bmm $lbi $ln2v4

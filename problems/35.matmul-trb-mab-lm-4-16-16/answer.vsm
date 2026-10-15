@@ -1,0 +1,12 @@
+imm ui"0x00000005" $nowrite
+llsl $mabid $aluf $t 
+nop
+gbfn $lmt16v4 $nowrite
+gbfn $lmt32v4 $nowrite; gmwrite $aluf $lx0
+gbfn $lm0v4 $nowrite; gmwrite $aluf $lx4
+gbfn $lmt18v4 $nowrite; gmmul $lx $aluf $lr0v
+gbfn $lmt34v4 $nowrite; gmwrite $aluf $lx0
+gbfn $lm2v4 $nowrite; gmwrite $aluf $lx4
+gmfma $lx $aluf $lr0v $ln0v4
+l1bmm@1 $mauf $lbi
+l1bmm $lbi $ln2v4

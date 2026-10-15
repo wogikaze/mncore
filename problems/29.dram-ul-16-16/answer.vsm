@@ -1,0 +1,9 @@
+imm ui"0x00000003" $nowrite
+llsl $l2bid $aluf $t
+nop
+l1bmm@0 $llmt0v $llb32
+nop
+nop
+l2bm@0 $lb0 $lc32
+nop
+mvp/n64i9f $lc64@.0 $d0

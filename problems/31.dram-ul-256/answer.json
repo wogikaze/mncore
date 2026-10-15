@@ -1,0 +1,11 @@
+{
+  "problem_url": "https://mncore-challenge.preferred.jp/mnist/problem/dram_ul_256/",
+  "standings_url": "https://mncore-challenge.preferred.jp/mnist/standings/",
+  "shortest_url": "https://mncore-challenge.preferred.jp/mnist/shortest/dram_ul_256/sosuupoyo/",
+  "submission_url": "https://mncore-challenge.preferred.jp/mnist/submission/3a110155-4687-4997-b9c6-bc973635ed71",
+  "author": "sosuupoyo",
+  "status": "Accepted",
+  "lines": 7,
+  "fetched_at": "2026-10-15T08:20:27+00:00",
+  "local_validation": "accepted (official judge, 2026-10-15)"
+}

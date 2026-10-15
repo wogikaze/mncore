@@ -1,0 +1,11 @@
+{
+  "problem_url": "https://mncore-challenge.preferred.jp/mnist/problem/onehot_mini/",
+  "standings_url": "https://mncore-challenge.preferred.jp/mnist/standings/",
+  "shortest_url": "https://mncore-challenge.preferred.jp/mnist/shortest/onehot_mini/syttrea/",
+  "submission_url": "https://mncore-challenge.preferred.jp/mnist/submission/f5dd2415-bdf6-4677-8c89-b4f0d0d20acd",
+  "author": "syttrea",
+  "status": "Accepted",
+  "lines": 7,
+  "fetched_at": "2026-10-15T08:20:05+00:00",
+  "local_validation": "accepted (official judge, 2026-10-15)"
+}

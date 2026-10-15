@@ -27,7 +27,7 @@ def table(progress: dict) -> str:
         lines.append(f"| {r['problem']} | {status} | {n if n is not None else '-'} | {ref if ref else '-'} | {ratio} | {r.get('strategy') or ''} |")
     acc = sum(r["status"] == "accepted" for r in rows)
     le = sum(r["status"] == "accepted" and r.get("reference_lines") and r["lines"] <= r["reference_lines"] for r in rows)
-    head = (f"公式ジャッジで {acc}/{len(rows)} 問 Accepted。参照解（公開されている最短の Accepted 提出、MNIST は問題ページの Top）"
+    head = (f"公式ジャッジで {acc}/{len(rows)} 問 Accepted。参照解（順位表から辿れる最短の公開 Accepted 提出）"
             f"以下の行数は {le} 問。Accepted 問題の行数合計は生成 {total_gen} 行 / 参照解 {total_ref} 行。\n\n")
     return head + "\n".join(lines) + "\n"
 
