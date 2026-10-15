@@ -98,6 +98,24 @@
         "scope": "Explicit reference target for ALU/MAU/mread/L1-to-PE forwarding; absent mread output observed as zero; L1-to-PE absence unresolved; normal finite producer values, nop/noforward, discard/chain/write masks and flags-only writes; not full hazards or numerical poison",
         "formal_conformance_proof": false
       }
+    },
+    {
+      "source": "proofs_lean/ProofsLean/EncodedForwarding.lean",
+      "sha256": "ac57e9aa50fc1920114c873f941a279d55082eca1da36ff7f76d7aa0b6bf804e",
+      "implemented": "Explicit encoded-stream LBF retention/replacement profile; nop/noforward preservation",
+      "scope": "Assembler-generated 426-bit fragments only; does not change unknown VSM cases",
+      "missing": "Formal decoding/encoding correspondence and whole VSM legality",
+      "reference_experiment": {
+        "path": "proofs_lean/evidence/lbf-encoded/reference.json",
+        "sha256": "267123b5ffd7895fbbc6d26e41236e8e04212c873487f4ee706a8994ede51735",
+        "cases": 11,
+        "matched_cases": 11,
+        "whole_vsm_rejections": 8,
+        "scope": "LBF retention/replacement across ordinary ALU/MAU/nop/noforward steps; unchanged 426-bit assembler-generated words; same emitted prefix as whole-source assembly; one observed PE/four cycles",
+        "whole_vsm_legality_proven": false,
+        "decoder_correspondence_proven": false,
+        "formal_conformance_proof": false
+      }
     }
   ],
   "unresolved_semantic_discrepancies": [
@@ -123,17 +141,17 @@
       "error": "Legacy local simulator suppressed LSB write for all-zero long mask; official binary writes it",
       "evidence": "proofs_lean/evidence/masks/initial-simulator-assumption/reference.json",
       "snapshot_manifest_sha256": "a44cf4d978462cf8332519f981210946ed85a3a476ec89160796bd355729f106",
-      "corrected_simulator_source_sha256": "e16a7f942d762ac3bc81e1e4f39456360773c8cef9a179f52fa045d675422539"
+      "corrected_simulator_source_sha256": "b76d164e5178244f18d91ddd1a29ba4b75fa4cf4cc1e1814e3209e26e028138c"
     }
   ],
   "forwarding_findings": {
     "evidence": "proofs_lean/evidence/forwarding/initial-uniform-assumption/reference.json",
     "snapshot_manifest_sha256": "951676c2b4bf40675ac77554617ac1fa735c1fc7bc6031caecfc627031914aca",
     "withdrawn_retention_hypothesis_manifest_sha256": "35f72f4988c790423e65ebb6a5bee42189e59b4b0093ca64845f8c9f0007b986",
-    "corrected_simulator_source_sha256": "e16a7f942d762ac3bc81e1e4f39456360773c8cef9a179f52fa045d675422539",
+    "corrected_simulator_source_sha256": "b76d164e5178244f18d91ddd1a29ba4b75fa4cf4cc1e1814e3209e26e028138c",
     "corrected_model_error": "Flags-only mask-register writes do not force invalid forwarding data",
     "open_manual_reference_difference": "Absent matrix-read output observed as zero, not a disabled-producer error",
-    "unresolved_encoding_cases": "Five L1-to-PE absence cases rejected by assembler type inference; runtime remains unknown"
+    "unresolved_encoding_cases": "Five whole VSM cases rejected by type inference; encoded-fragment behavior observed separately, but whole-program legality/decoding correspondence remains unproven"
   },
   "syntax_candidates": [
     {

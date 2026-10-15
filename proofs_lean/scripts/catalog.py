@@ -269,7 +269,72 @@ def forwarding_findings() -> dict:
             "corrected_simulator_source_sha256": digest(REPO / "viz/core/src/machine.rs"),
             "corrected_model_error": "Flags-only mask-register writes do not force invalid forwarding data",
             "open_manual_reference_difference": "Absent matrix-read output observed as zero, not a disabled-producer error",
-            "unresolved_encoding_cases": "Five L1-to-PE absence cases rejected by assembler type inference; runtime remains unknown"}
+            "unresolved_encoding_cases": "Five whole VSM cases rejected by type inference; encoded-fragment behavior observed separately, but whole-program legality/decoding correspondence remains unproven"}
+
+
+def encoded_lbf_experiment() -> dict | None:
+    reference = ROOT / "evidence/lbf-encoded/reference.json"
+    if not reference.exists():
+        return None
+    record = json.loads(reference.read_text())
+    vectors = reference.with_name("vectors.tsv")
+    if digest(vectors) != record["vectors_sha256"] or len(vectors.read_text().splitlines()) != record["cases"]:
+        raise ValueError("encoded LBF vectors changed")
+    if record["matched"] != record["cases"] or len(record["records"]) != record["cases"]:
+        raise ValueError("unresolved encoded LBF comparisons")
+    for vector, row in zip(vectors.read_text().splitlines(), record["records"]):
+        if vector.split("\t")[:3] != [row["unit"], row["scenario"], row["expected"]]:
+            raise ValueError("encoded LBF record detached from vector")
+        directory = reference.parent / row["directory"]
+        for name, expected in row["artifacts"].items():
+            if digest(directory / name) != expected:
+                raise ValueError(f"encoded LBF artifact changed: {name}")
+        template = (directory / "template.asm").read_text().splitlines()
+        driver = (directory / "driver.asm").read_text().splitlines()
+        positions = [i for i, line in enumerate(template) if line.startswith("j ")]
+        if len(positions) < 2:
+            raise ValueError("encoded template lacks producer/consumer")
+        insert = positions[0] + 1
+        if (directory / "encoded.asm").read_text() != "\n".join(template[:insert] + driver + template[insert:]) + "\n":
+            raise ValueError("encoded stream is not an unchanged word splice")
+        template_source = (directory / "template.vsm").read_text().splitlines()
+        at = template_source.index("l1bmm $lb0 $nowrite") + 1
+        driver_source = (directory / "driver.vsm").read_text().splitlines()
+        if (directory / "intended.vsm").read_text() != "\n".join(template_source[:at] + driver_source + template_source[at:]) + "\n":
+            raise ValueError("intended VSM does not match source fragments")
+        def words(name):
+            lines = (directory / name).read_text().splitlines()
+            if any(line.startswith("m ") for line in lines):
+                raise ValueError("unexpected MV instruction")
+            result = [line for line in lines if line.startswith("j ")]
+            if any(not re.fullmatch(r"j [01]{426}", line) for line in result):
+                raise ValueError("unexpected PE word width")
+            return result
+        encoded, full = words("encoded.asm"), words("full.asm")
+        if not full or encoded[:len(full)] != full or not row["full_prefix_words_identical"]:
+            raise ValueError("whole assembler output prefix differs from fragments")
+        if row["full_vsm_accepted"]:
+            if row["full_assembler_returncode"] != 0 or full != encoded:
+                raise ValueError("accepted whole VSM differs from encoded stream")
+        elif row["full_assembler_returncode"] == 0 or "ValueTypeFromUOpNode" not in (directory / "full.stderr.txt").read_text():
+            raise ValueError("unclassified whole VSM rejection")
+        if not row["matched"] or not row["fragment_assembly_accepted"] or row["returncode"] != 0 or not row["values_match"]:
+            raise ValueError("encoded observation not verified")
+    for item in record["sources"]:
+        source = REPO / item["path"]
+        if not source.exists() and item["path"] in (
+                "judge/judge-py/mncore2_emuenv/assemble3", "judge/judge-py/mncore2_emuenv/gpfn3_package_main"):
+            continue
+        if digest(source) != item["sha256"]:
+            raise ValueError(f"stale encoded experiment: {item['path']}")
+    for key in ("whole_vsm_legality_proven", "decoder_correspondence_proven", "proves_universal_conformance", "proves_isa_completeness", "proves_optimality"):
+        if record[key]:
+            raise ValueError("fragment execution cannot prove whole VSM legality or optimality")
+    return {"path": reference.relative_to(REPO).as_posix(), "sha256": digest(reference),
+            "cases": record["cases"], "matched_cases": record["matched"],
+            "whole_vsm_rejections": sum(not row["full_vsm_accepted"] for row in record["records"]),
+            "scope": record["scope"], "whole_vsm_legality_proven": False,
+            "decoder_correspondence_proven": False, "formal_conformance_proof": False}
 
 
 def coverage_catalog() -> dict:
@@ -302,6 +367,7 @@ def coverage_catalog() -> dict:
     address_properties = ROOT / "ProofsLean/AddressProperties.lean"
     mask_source = ROOT / "ProofsLean/Masks.lean"
     forwarding_source = ROOT / "ProofsLean/Forwarding.lean"
+    encoded_forwarding = ROOT / "ProofsLean/EncodedForwarding.lean"
     return {
         "schema_version": 1,
         "isa_exhaustiveness_proven": False,
@@ -341,6 +407,12 @@ def coverage_catalog() -> dict:
             "scope": "Known whole-step producer summaries and whole-value poison only; not a VSM interpreter or complete numeric-error model",
             "missing": "All initial state/encoding rules, exact memory timing, per-lane numerical poison and full instruction integration",
             "reference_experiment": datapath_experiment("forwarding", 0, allow_unknown=True),
+        }, {
+            "source": encoded_forwarding.relative_to(REPO).as_posix(), "sha256": digest(encoded_forwarding),
+            "implemented": "Explicit encoded-stream LBF retention/replacement profile; nop/noforward preservation",
+            "scope": "Assembler-generated 426-bit fragments only; does not change unknown VSM cases",
+            "missing": "Formal decoding/encoding correspondence and whole VSM legality",
+            "reference_experiment": encoded_lbf_experiment(),
         }],
         "unresolved_semantic_discrepancies": [rotation_discrepancy()],
         "corrected_model_errors": [mask_model_correction()],

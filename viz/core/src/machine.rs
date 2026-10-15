@@ -438,6 +438,10 @@ impl Machine {
                     // rather than a disabled-producer error. nop/noforward still preserve it.
                     for pe in &mut self.pes { pe.mreadf = [[0; 4]; 4]; }
                     None
+                } else if mine.is_empty() && k == FwdKind::Lbf {
+                    // Encoded-word experiments retain the last L1BM-to-PE value
+                    // across ordinary ALU/MAU steps; absence does not disable it.
+                    self.fwd_error[fwd_index(k)].clone()
                 } else if mine.is_empty() {
                     Some(format!("{} is disabled", unit_name(k)))
                 } else {

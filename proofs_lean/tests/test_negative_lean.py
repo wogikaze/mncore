@@ -25,7 +25,8 @@ class NegativeKernelTests(unittest.TestCase):
                               "#check ProofsLean.MNCore.Masks.long_write_copies_low\n"
                               "#check ProofsLean.MNCore.Masks.flush_preserves_flags\n"
                               "#check ProofsLean.MNCore.Forwarding.unknown_not_discardable\n"
-                              "#check ProofsLean.MNCore.Forwarding.noforward_preserves\n")
+                              "#check ProofsLean.MNCore.Forwarding.noforward_preserves\n"
+                              "#check ProofsLean.MNCore.Forwarding.encoded_lbf_absent_retains\n")
             result = subprocess.run([cls.lake, "env", "lean", str(source)], cwd=ROOT,
                                     capture_output=True, text=True, timeout=60)
             if result.returncode:
@@ -96,3 +97,8 @@ class NegativeKernelTests(unittest.TestCase):
         self.reject("open ProofsLean.MNCore.Forwarding\n"
                     "example (old : Slots) : advance old (.issue false (fun _ => none)) =\n"
                     "  .ok (fun _ _ => .poison) := by rfl\n")
+
+    def test_encoded_profile_cannot_resolve_vsm_model(self):
+        self.reject("open ProofsLean.MNCore.Forwarding\n"
+                    "example (old : Slots) : advanceReference old (.issue false (fun _ => none)) =\n"
+                    "  advanceEncodedReference old (.issue false (fun _ => none)) := by rfl\n")

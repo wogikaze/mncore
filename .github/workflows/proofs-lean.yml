@@ -42,4 +42,4 @@ jobs:
         run: python3 -m unittest discover -s proofs_lean/tests -v
       - uses: dtolnay/rust-toolchain@stable
       - name: Replay resolved official fixtures in the local simulator
-        run: cargo test --release --manifest-path viz/core/Cargo.toml --test mask_reference --test forwarding_reference
+        run: cargo test --release --manifest-path viz/core/Cargo.toml --test mask_reference --test forwarding_reference --test lbf_encoded_reference

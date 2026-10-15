@@ -9,3 +9,4 @@ import ProofsLean.PEMemory
 import ProofsLean.AddressProperties
 import ProofsLean.Masks
 import ProofsLean.Forwarding
+import ProofsLean.EncodedForwarding

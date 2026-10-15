@@ -71,6 +71,10 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   行列転置読み出し/L1BMの生成なしケースは既定モデルで`unknown`。
   公式ターゲットの行列読み出し生成なしでのゼロ出力は`advanceReference`という別プロファイルで明示する。
   マスクレジスタは別に計算したフラグを使うため、データの無効性だけではエラーにしない。
+- `EncodedForwarding.lean`: 明示的な符号化語列向けプロファイル。
+  L1BMフォワーディングの保持、次の生成による更新、noforwardによる保持を定義・証明。
+  全426ビット命令のデコーダや、拒否されたVSMソースの合法性を証明するものではない。
+  元のVSMモデルで未解決だった5ケースを自動昇格させない。
 
 `Machine.positiveCost` はスコアが正の行へ正規化済みであるという条件。
 MN-Coreにはゼロコストの制御文があるので、その正規化の意味保存と完全性を証明するまでは
@@ -192,6 +196,26 @@ Rust回帰テストは判定可能な37ケースを再生し、未解決5ケー�
 python3 proofs_lean/scripts/check_forwarding_reference.py \
   --output proofs_lean/evidence/forwarding/reference.json
 python3 proofs_lean/scripts/catalog.py
+```
+
+`LBFEncodedProbe.lean`と`check_lbf_encoded_reference.py`では、受理されたテンプレートと
+独立した命令断片から、426ビットの命令語を変更せずに挿入した語列を実行する。
+完全なVSMをアセンブルした際の出力（拒否の場合は途中までの出力）とも、命令語の一致を確認する。
+通常ALU/MAU、複数ステップ、nop、新しいL1BM転送、noforward付きL1BM転送を含む11ケースが一致した。
+通常ステップでは以前のL1BM値を保持し、新しい転送では更新する。noforwardでは更新しない。
+ローカルシミュレータが生成なしでLBFを一律に無効化していた点を修正した。
+
+11ソースのうち8件はVSM全体としては拒否される。これはエミュレータでの語列実行の証拠であり、
+それらのVSM合法性や、一般的な符号化・デコード対応の証明ではない。
+元の5ケースの実行時挙動を調べる情報は得られたが、VSMの証明済みケース数には加えない。
+入力断片、アセンブラの出力・拒否診断、実行した語列、ハッシュを`evidence/lbf-encoded/`に保存する。
+監査は命令語を変更していないことと、ソース断片・語列の挿入関係も再検査する。
+
+```sh
+python3 proofs_lean/scripts/check_lbf_encoded_reference.py \
+  --output proofs_lean/evidence/lbf-encoded/reference.json
+python3 proofs_lean/scripts/catalog.py
+cargo test --release --manifest-path viz/core/Cargo.toml --test lbf_encoded_reference
 ```
 
 `audit.json` は全73問の実行済み解の上限と形式的下限を分離する。

@@ -32,3 +32,7 @@ root = "MaskProbe"
 [[lean_exe]]
 name = "forwarding_probe"
 root = "ForwardingProbe"
+
+[[lean_exe]]
+name = "lbf_encoded_probe"
+root = "LBFEncodedProbe"
