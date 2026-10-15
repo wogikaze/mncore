@@ -59,6 +59,10 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   全サイクルの読み取り後に書き込むスケジュールの正しさは証明していない。
 - `AddressProperties.lean`: T間接値の4096を法とする同値性がアドレス計算を保存することと、
   MADPE閾値を超えるPEではアドレスが変わらないことを証明。
+- `Masks.lean`: 固定・可変マスクエントリ、半語/単語ごとの書き込み合成、ゼロフラッシュ、
+  マスクレジスタへの論理積書き込み、単一行マスクによる複数行設定の取り消し。
+  フラッシュが演算フラグを変えないことと、長語マスクの書き込みでは
+  下位長語が常に新値になることを定義・証明。
 
 `Machine.positiveCost` はスコアが正の行へ正規化済みであるという条件。
 MN-Coreにはゼロコストの制御文があるので、その正規化の意味保存と完全性を証明するまでは
@@ -135,6 +139,26 @@ MADPEは全閾値0〜3、T間接はauto/flat両方のアドレス指定を含む
 python3 proofs_lean/scripts/check_dynamic_address_reference.py \
   --output proofs_lean/evidence/dynamic-address/reference.json
 python3 proofs_lean/scripts/catalog.py
+```
+
+`MaskProbe.lean`は長語・2長語マスクについて、書き込み、フラッシュ、両方、
+マスクレジスタ、複数行指定、単一行による取り消しの6モードを比較する。
+各サイクルで16種類すべてのフラグを通し、192命令・768観測で値とフラグが一致した。
+対象は1 PEの2長語GRF書き込み。BAR/T/LMや他演算器、狭い書き込み、毒値の伝播は未検証。
+
+この実験で既存Rustシミュレータの誤りを発見した。長語マスクが全ゼロの場合も
+下位長語は書き込まれるが、以前の実装は旧値を保持していた。非ゼロの旧値と新値により
+12件の不一致を再現し、Leanモデル、`viz/core/src/machine.rs`、数値仕様メモを修正した。
+当時の誤った`referenceBinary`というラベルと「measured」というコメントは撤回し、
+`evidence/masks/initial-simulator-assumption/`にコードと失敗記録を保存した。
+これはマニュアルと公式バイナリの差ではなく、ローカルモデルの誤りだった。
+Rust回帰テストも768観測すべてを再生する。有限一致は全ISAの対応証明とは区別する。
+
+```sh
+python3 proofs_lean/scripts/check_mask_reference.py \
+  --output proofs_lean/evidence/masks/reference.json
+python3 proofs_lean/scripts/catalog.py
+cargo test --manifest-path viz/core/Cargo.toml --test mask_reference
 ```
 
 `audit.json` は全73問の実行済み解の上限と形式的下限を分離する。

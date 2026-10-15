@@ -24,3 +24,7 @@ root = "MemoryProbe"
 [[lean_exe]]
 name = "dynamic_address_probe"
 root = "DynamicAddressProbe"
+
+[[lean_exe]]
+name = "mask_probe"
+root = "MaskProbe"

@@ -826,9 +826,10 @@ fn word_enabled(mflags: Option<(u8, bool)>, i: usize) -> bool {
     match mflags {
         None => true,
         Some((f, true)) => (f >> (3 - i)) & 1 == 1,
-        // Long word mask: the MSB long word as 4 halves. The LSB long word is written whole if
-        // any of the 4 flags is set, and kept otherwise (measured with the emulator).
-        Some((f, false)) => if i < 2 { (f >> (2 - 2 * i)) & 3 != 0 } else { f != 0 },
+        // Long word masks affect only the MSB long word (four halves).
+        // The LSB long word is always written, including when all flags are zero.
+        // Confirmed with nonzero old/new sentinels against the official emulator.
+        Some((f, false)) => if i < 2 { (f >> (2 - 2 * i)) & 3 != 0 } else { true },
     }
 }
 

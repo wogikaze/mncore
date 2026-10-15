@@ -164,6 +164,44 @@ def rotation_discrepancy() -> dict:
     }
 
 
+def mask_model_correction() -> dict:
+    directory = ROOT / "evidence/masks/initial-simulator-assumption"
+    for name, expected in json.loads((directory / "sha256.json").read_text()).items():
+        if digest(directory / name) != expected:
+            raise ValueError(f"changed mask-error snapshot: {name}")
+    record = json.loads((directory / "reference.json").read_text())
+    vectors = (directory / "vectors.tsv").read_text().splitlines()
+    if digest(directory / "vectors.tsv") != record["vectors_sha256"]:
+        raise ValueError("mask-error vectors changed")
+    for item in record["sources"]:
+        snapshot = directory / Path(item["path"]).name
+        source = snapshot if snapshot.exists() else REPO / item["path"]
+        if not source.exists() and item["path"] in (
+                "judge/judge-py/mncore2_emuenv/assemble3", "judge/judge-py/mncore2_emuenv/gpfn3_package_main"):
+            continue
+        if digest(source) != item["sha256"]:
+            raise ValueError(f"mask-error source changed: {source}")
+    if (record["cases"], record["matched"], len(record["differences"])) != (768, 756, 12):
+        raise ValueError("unexpected mask-error counts")
+    if record["manual_profile_disagreements"]:
+        raise ValueError("this correction is not a manual/reference discrepancy")
+    for row in record["differences"]:
+        if row["oracle"] != vectors[row["index"]]:
+            raise ValueError("mask error is detached from its vector")
+        fields = row["oracle"].split("\t")
+        if fields[1] != "l" or fields[2] not in ("write", "both", "directive") or int(fields[5]) != 0:
+            raise ValueError("unexpected mask error shape")
+        if row["observed"] != [int(fields[13]), int(fields[14]), int(fields[12])]:
+            raise ValueError("mask correction does not match observed manual behavior")
+    return {
+        "operations": ["long write mask"], "status": "corrected_local_simulator_and_lean_model",
+        "error": "Legacy local simulator suppressed LSB write for all-zero long mask; official binary writes it",
+        "evidence": (directory / "reference.json").relative_to(REPO).as_posix(),
+        "snapshot_manifest_sha256": digest(directory / "sha256.json"),
+        "corrected_simulator_source_sha256": digest(REPO / "viz/core/src/machine.rs"),
+    }
+
+
 def coverage_catalog() -> dict:
     path = REPO / "mncompile/machine.py"
     tree = ast.parse(path.read_text())
@@ -192,6 +230,7 @@ def coverage_catalog() -> dict:
     untyped_source = ROOT / "ProofsLean/UntypedALU.lean"
     memory_source = ROOT / "ProofsLean/PEMemory.lean"
     address_properties = ROOT / "ProofsLean/AddressProperties.lean"
+    mask_source = ROOT / "ProofsLean/Masks.lean"
     return {
         "schema_version": 1,
         "isa_exhaustiveness_proven": False,
@@ -219,13 +258,20 @@ def coverage_catalog() -> dict:
             "missing": "Complete operand decoding/legality, masks, precision conversion, read/write timing, forwarding, parallel-port checks and universal reference conformance",
             "reference_experiment": datapath_experiment("pe-memory", 1),
             "additional_reference_experiments": [datapath_experiment("dynamic-address", 1)],
+        }, {
+            "source": mask_source.relative_to(REPO).as_posix(), "sha256": digest(mask_source),
+            "implemented": "Fixed/variable mask entries, per-half/word write merging, zero flush, flag preservation, mask-register AND writes, single-line cancellation of multiline selection",
+            "scope": "Pure mask and register primitives; full-width GRF reference experiments only; no full instruction model",
+            "missing": "All masked destinations and width combinations, complete syntax/legality, poisoned values, timing and parallel-issue integration",
+            "reference_experiment": datapath_experiment("masks", 1),
         }],
         "unresolved_semantic_discrepancies": [rotation_discrepancy()],
+        "corrected_model_errors": [mask_model_correction()],
         "syntax_candidates": [{"spelling": name, "formal_step_semantics": "unimplemented"} for name in spellings],
         "obligations": [{"area": area, "status": "partial_datapath_only" if area in (
             "integer_16_32_64_and_signedness", "wide_access_and_lsb_passthrough",
             "immediates_fixed_operands_and_zero", "pe_rotations_and_coordinate_operands",
-            "t_indirect_madpe_and_address_mapping") else "unimplemented"} for area in areas],
+            "t_indirect_madpe_and_address_mapping", "masks_flush_and_mask_directives") else "unimplemented"} for area in areas],
     }
 
 

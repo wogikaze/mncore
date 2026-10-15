@@ -5,6 +5,8 @@ on:
     paths:
       - 'proofs_lean/**'
       - 'mncompile/machine.py'
+      - 'viz/core/**'
+      - 'mncompile/native/**'
       - 'mncompile/benchmarks/results/**'
       - 'problems/**/problem.md'
       - 'problems/**/testcase*.vsm'
@@ -13,6 +15,8 @@ on:
     paths:
       - 'proofs_lean/**'
       - 'mncompile/machine.py'
+      - 'viz/core/**'
+      - 'mncompile/native/**'
       - 'mncompile/benchmarks/results/**'
       - 'problems/**/problem.md'
       - 'problems/**/testcase*.vsm'
@@ -36,3 +40,6 @@ jobs:
         run: python3 proofs_lean/scripts/check.py
       - name: Check rejection of unsupported proof claims
         run: python3 -m unittest discover -s proofs_lean/tests -v
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Replay official mask fixtures in the local simulator
+        run: cargo test --manifest-path viz/core/Cargo.toml --test mask_reference

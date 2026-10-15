@@ -109,7 +109,7 @@ def main() -> None:
         validate_source(path.read_text(), str(path.relative_to(ROOT)))
     validate_import_closure()
     lake = shutil.which("lake") or str(Path.home() / ".elan/bin/lake")
-    for args in ([lake, "clean"], [lake, "build", "proofs_lean", "alu_probe", "untyped_probe", "memory_probe", "dynamic_address_probe"], [lake, "env", "lean", "Check.lean"]):
+    for args in ([lake, "clean"], [lake, "build", "proofs_lean", "alu_probe", "untyped_probe", "memory_probe", "dynamic_address_probe", "mask_probe"], [lake, "env", "lean", "Check.lean"]):
         result = subprocess.run(args, cwd=ROOT, capture_output=True, text=True, timeout=300)
         if result.returncode:
             raise SystemExit(result.stdout + result.stderr)

@@ -21,7 +21,9 @@ class NegativeKernelTests(unittest.TestCase):
                               "#check ProofsLean.MNCore.UntypedALU.unresolved_rotation_is_unknown\n"
                               "#check ProofsLean.MNCore.UntypedALU.reference_differs_from_manual_when_lsb_nonzero\n"
                               "#check ProofsLean.MNCore.PEMemory.address_aligned\n"
-                              "#check ProofsLean.MNCore.PEMemory.read_after_write\n")
+                              "#check ProofsLean.MNCore.PEMemory.read_after_write\n"
+                              "#check ProofsLean.MNCore.Masks.long_write_copies_low\n"
+                              "#check ProofsLean.MNCore.Masks.flush_preserves_flags\n")
             result = subprocess.run([cls.lake, "env", "lean", str(source)], cwd=ROOT,
                                     capture_output=True, text=True, timeout=60)
             if result.returncode:
@@ -71,3 +73,11 @@ class NegativeKernelTests(unittest.TestCase):
     def test_unaligned_static_long_address_is_not_well_formed(self):
         self.reject("open ProofsLean.MNCore.PEMemory\n"
                     "example : Schedule.WellFormed (.auto 1 2) .lm0 .long := by decide\n")
+
+    def test_zero_long_mask_does_not_preserve_entire_old_bus(self):
+        self.reject("open ProofsLean.MNCore.Masks\n"
+                    "example : writeBus .long 0 ⟨1, 2⟩ ⟨3, 4⟩ = ⟨1, 2⟩ := by decide\n")
+
+    def test_zero_mask_register_write_does_not_preserve_old_flags(self):
+        self.reject("open ProofsLean.MNCore.Masks\n"
+                    "example : writeRegister (fun _ _ => 15) 0 0 15 0 0 0 = 15 := by decide\n")
