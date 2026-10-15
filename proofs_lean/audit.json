@@ -1,0 +1,1867 @@
+{
+  "schema_version": 1,
+  "full_isa_optimality_proven": 0,
+  "restricted_mncore_optimality_proven": 0,
+  "legacy_claims_withdrawn": 56,
+  "program_count": 73,
+  "scope": "All 73 problems remain open for formal optimality; Accepted programs are upper bounds only.",
+  "problems": [
+    {
+      "id": "problems/challenge/1.plus-one",
+      "specification_sha256": "c24885154a7bc24b74e18d69bc365fe5bc4cac908fdb68fe6d3aec1d14a8b352",
+      "legacy": {
+        "name": "1.plus-one",
+        "reference_lines": 2,
+        "generated_lines": 2,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 2,
+      "observed_upper_bound": {
+        "score": 2,
+        "mode": "general",
+        "kernel_sha256": "23642c9719446766299bfa29817c18d15ed526b38e4fdd8b6c8709e8599112e0",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/challenge/2.plus-two",
+      "specification_sha256": "9a00151e72395d4a149eaa71073a4b6152fecc9d982f5a36da708369f437b48d",
+      "legacy": {
+        "name": "2.plus-two",
+        "reference_lines": 5,
+        "generated_lines": 7,
+        "verdict": "openGap",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 7,
+      "observed_upper_bound": {
+        "score": 7,
+        "mode": "general",
+        "kernel_sha256": "671954dde36688e87cae376545e013126fad15c1ea4cced4a01d3a5cf74ad9d9",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/challenge/3.a-plus-b",
+      "specification_sha256": "298498d8d9dc92d1146c96722cf529c480900b42fafc6747fc021a5a5597e099",
+      "legacy": {
+        "name": "3.a-plus-b",
+        "reference_lines": 6,
+        "generated_lines": 6,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 6,
+      "observed_upper_bound": {
+        "score": 6,
+        "mode": "general",
+        "kernel_sha256": "c17e90f8f785e753ee2229855797fc70b4abf416ac5a8809fc60ae9215a1f9a5",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/challenge/4.mul7",
+      "specification_sha256": "f226d556dff6011cebcf1cdfa2a5eb728ac4a95114d4fb1f08bd8ca0f788f4f0",
+      "legacy": {
+        "name": "4.mul7",
+        "reference_lines": 6,
+        "generated_lines": 10,
+        "verdict": "openGap",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 10,
+      "observed_upper_bound": {
+        "score": 10,
+        "mode": "general",
+        "kernel_sha256": "596e209953d843b9c882820f3fe7b713dcb3cfa5aaf9951526880168a37dd0db",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/challenge/5.abs",
+      "specification_sha256": "09f806db8c816e3119a7b17eafbc7cdf86af25d3b88324adf39578bdfb6996e1",
+      "legacy": {
+        "name": "5.abs",
+        "reference_lines": 13,
+        "generated_lines": 23,
+        "verdict": "openGap",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 15,
+      "observed_upper_bound": {
+        "score": 15,
+        "mode": "general",
+        "kernel_sha256": "39ff75c91e970e646e8bd5415a114c0cb46b99a136860920b5c39dee31f0b781",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/challenge/6.fadd-mul",
+      "specification_sha256": "2d6134f5e4267ba603d7aca6f57ac8b3e6a70ccc135e0bb7e3d6024c2bda2cac",
+      "legacy": {
+        "name": "6.fadd-mul",
+        "reference_lines": 14,
+        "generated_lines": 18,
+        "verdict": "openGap",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 18,
+      "observed_upper_bound": {
+        "score": 18,
+        "mode": "general",
+        "kernel_sha256": "75505ecde7aa66c63283c5d872d0bd1cea0e2efd0b7321d232a78479e5c571bb",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/challenge/7.mul2",
+      "specification_sha256": "9aeb051cb9f3bfc0dce9ce9bf58aabaacb8d53c8a869614fda9c90a511d4481d",
+      "legacy": {
+        "name": "7.mul2",
+        "reference_lines": 9,
+        "generated_lines": 13,
+        "verdict": "openGap",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 13,
+      "observed_upper_bound": {
+        "score": 13,
+        "mode": "general",
+        "kernel_sha256": "8796c8a39e657c7b9edc0c8a63010b0754d0c02916cbe9aa91f56d4f17ae2e6b",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/challenge/8.fle",
+      "specification_sha256": "2cad4cd96313f416339656fa422b7e8f9f6aa8bbd53da64e920ecebc04075259",
+      "legacy": {
+        "name": "8.fle",
+        "reference_lines": 4,
+        "generated_lines": 9,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 9,
+      "observed_upper_bound": {
+        "score": 9,
+        "mode": "general",
+        "kernel_sha256": "42ec1f3c9079fa2168dfa90acd61b0bc6bb09ce755932c8c9ac2831dab725ca8",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/challenge/9.transpose-addr",
+      "specification_sha256": "a4f1fd4dbe17a9a5711c3f5020dc2309803b56038af71f9d776ac7b89782ff4f",
+      "legacy": {
+        "name": "9.transpose-addr",
+        "reference_lines": 10,
+        "generated_lines": 16,
+        "verdict": "openGap",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 16,
+      "observed_upper_bound": {
+        "score": 16,
+        "mode": "general",
+        "kernel_sha256": "a6ea65dc897b3615ab03e9061f29bfe4bb0a57f18438ff928ebb2ec1964e2ae6",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/challenge/10.gather-easy",
+      "specification_sha256": "4a5ff9b6d0b19b6e52465d1ed070600a9f80a73766c70cc2a299555f100eaaf1",
+      "legacy": {
+        "name": "10.gather-easy",
+        "reference_lines": 6,
+        "generated_lines": 12,
+        "verdict": "openGap",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 12,
+      "observed_upper_bound": {
+        "score": 12,
+        "mode": "general",
+        "kernel_sha256": "37823fb0f33ff4995b1a6b595f4a36d363d7508eb34c5c70acafe01e651c5c4a",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/challenge/11.square-sum",
+      "specification_sha256": "246f4b8c698890d445a9bcd8b80647adf60e572c7ad69a6c734591238f844347",
+      "legacy": {
+        "name": "11.square-sum",
+        "reference_lines": 11,
+        "generated_lines": 21,
+        "verdict": "openGap",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 21,
+      "observed_upper_bound": {
+        "score": 21,
+        "mode": "general",
+        "kernel_sha256": "7dea04f55bd9f0cfb970dc91cda74f97a97b006640590412ba80deb0ee359998",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/challenge/12.convert-endian",
+      "specification_sha256": "4a4cb852ec2c96df6ba099c18bb76f4d392966b486b3d4ba4c10964d36fff8a1",
+      "legacy": {
+        "name": "12.convert-endian",
+        "reference_lines": 3,
+        "generated_lines": 6,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 6,
+      "observed_upper_bound": {
+        "score": 6,
+        "mode": "general",
+        "kernel_sha256": "b5d5873d05e7300c025569c7f433cce50ad2ec67b005c934bcf14de77c025d45",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/challenge/13.mod3",
+      "specification_sha256": "af1212ea2e86674e4562e86ad609f6a2603d379c3216be080b693097c7c33c10",
+      "legacy": {
+        "name": "13.mod3",
+        "reference_lines": 8,
+        "generated_lines": 15,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 15,
+      "observed_upper_bound": {
+        "score": 15,
+        "mode": "general",
+        "kernel_sha256": "985a47ce868c11d1fa7e4753f075033391ff4aeadb726fe87dd7fc98f72dc814",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/challenge/14.mat-sq",
+      "specification_sha256": "9c170d3f810977b02579350c29a6b8d8615e27ec66c39a062b6df60a47cbc9ba",
+      "legacy": {
+        "name": "14.mat-sq",
+        "reference_lines": 10,
+        "generated_lines": 12,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 12,
+      "observed_upper_bound": {
+        "score": 12,
+        "mode": "general",
+        "kernel_sha256": "75f204f3d99bd474deffcf82ca1f25b9e390d1029589abbf955e9bceddafa966",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/challenge/15.contains",
+      "specification_sha256": "f5b31381d5930247c56c91fdc38091e7a3455fd33306b67106476fd0a88cdb90",
+      "legacy": {
+        "name": "15.contains",
+        "reference_lines": 20,
+        "generated_lines": 60,
+        "verdict": "openGap",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 59,
+      "observed_upper_bound": {
+        "score": 59,
+        "mode": "general",
+        "kernel_sha256": "3a76eff59e0c3d2b8ae6e31dc1ca2cffa7da37473261d18792fd7aaf52b08b8e",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/challenge/16.count-up",
+      "specification_sha256": "0ca7bc65c8c9a0bad651b7cca8193f458f17415c3c7349f6a48c53edd4062b1b",
+      "legacy": {
+        "name": "16.count-up",
+        "reference_lines": 21,
+        "generated_lines": 43,
+        "verdict": "openGap",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 43,
+      "observed_upper_bound": {
+        "score": 43,
+        "mode": "general",
+        "kernel_sha256": "2786b3321a906b399356417aae574bfce345abdd487746580e74cbbf1bd7cbdd",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/challenge/17.transpose-mab",
+      "specification_sha256": "f7cf2a2aed8ce7a031274bd0febf5bfd77375e2715c4f5395d888ce80a135116",
+      "legacy": {
+        "name": "17.transpose-mab",
+        "reference_lines": 15,
+        "generated_lines": 45,
+        "verdict": "openGap",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 45,
+      "observed_upper_bound": {
+        "score": 45,
+        "mode": "general",
+        "kernel_sha256": "8f7ad6f3d2ad57bbfe13384811893a5207255490828e399060a996501f09f2bd",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/challenge/18.inversion-small",
+      "specification_sha256": "753e78458e40ab8526d5189647becc5848e19e85d6cb8568010c476e976ffda4",
+      "legacy": {
+        "name": "18.inversion-small",
+        "reference_lines": 9,
+        "generated_lines": 30,
+        "verdict": "openGap",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 30,
+      "observed_upper_bound": {
+        "score": 30,
+        "mode": "general",
+        "kernel_sha256": "fcd146c1885eb57752d408730910ce667e52b3ac30bfe4b14af94abc51fb738b",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/challenge/19.inversion",
+      "specification_sha256": "6a15881db05ff5b70e81b534afc00ca863f486e134e57e884f06f67fd2757fe7",
+      "legacy": {
+        "name": "19.inversion",
+        "reference_lines": 31,
+        "generated_lines": 76,
+        "verdict": "openGap",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 76,
+      "observed_upper_bound": {
+        "score": 76,
+        "mode": "general",
+        "kernel_sha256": "2daa93d0a1e713268de25b16c377982140dbd7dfe5a0c88528c01089ff31eb22",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/challenge/20.fizzbuzz",
+      "specification_sha256": "0ace9e0b2afaf87283d2a4371052da5a83c377a8e7613b82d77d7d46bf792e68",
+      "legacy": {
+        "name": "20.fizzbuzz",
+        "reference_lines": 98,
+        "generated_lines": 103,
+        "verdict": "openGap",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 103,
+      "observed_upper_bound": {
+        "score": 103,
+        "mode": "general",
+        "kernel_sha256": "d032d24c524959980e707b61cc857e76e37a96a2cf3343db9ca9c16d8f7fc9b3",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/challenge/21.hello-world",
+      "specification_sha256": "3ce4dbe56d4390c26bd4721c97b31954573b519ec707b8dd85694f9c2344a9d2",
+      "legacy": {
+        "name": "21.hello-world",
+        "reference_lines": 9,
+        "generated_lines": 13,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 13,
+      "observed_upper_bound": {
+        "score": 13,
+        "mode": "general",
+        "kernel_sha256": "4d100bd849c4fecff9485ca39d2a707de705a9afd1bef5414ffa2acb6d8f6e05",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/challenge/22.bit-reverse",
+      "specification_sha256": "e48258a69de92887fd45cb5866408c49cec4d41c126fddc90639c1086143f534",
+      "legacy": {
+        "name": "22.bit-reverse",
+        "reference_lines": 10,
+        "generated_lines": 32,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 32,
+      "observed_upper_bound": {
+        "score": 32,
+        "mode": "general",
+        "kernel_sha256": "bfa595ec172d67c4ad8a064fc0fd0345a7602f4d24db4f81a2cc5c3eca68f9d3",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/challenge/23.fizzbuzz-pe",
+      "specification_sha256": "6a6b0294008f050d4ee69538261c7dec6faf72cc93f700197c1b6628cb97ee52",
+      "legacy": {
+        "name": "23.fizzbuzz-pe",
+        "reference_lines": 9,
+        "generated_lines": 12,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 12,
+      "observed_upper_bound": {
+        "score": 12,
+        "mode": "general",
+        "kernel_sha256": "d6cdd685b52868007b5481e7108991db4d33f2f2038c232270df9dd9fe93b67c",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/challenge/24.log2",
+      "specification_sha256": "d64dc02eefa1deb4a6757e2f72b2d39a68c8e9e9143bffcf2625fdf538fb829e",
+      "legacy": {
+        "name": "24.log2",
+        "reference_lines": 7,
+        "generated_lines": 15,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 15,
+      "observed_upper_bound": {
+        "score": 15,
+        "mode": "general",
+        "kernel_sha256": "5e350ccfdfdb8c84264979c0893526a285f137b698641b2b6e25462c49162e26",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/challenge/25.hsv2rgb",
+      "specification_sha256": "16a1d6dc0206304a36b2c690e68ef0730fbcc7a0ff5ea528125863d54be885c5",
+      "legacy": {
+        "name": "25.hsv2rgb",
+        "reference_lines": 12,
+        "generated_lines": 32,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 27,
+      "observed_upper_bound": {
+        "score": 27,
+        "mode": "general",
+        "kernel_sha256": "6f2b1db53bb743cbccd474e885800911de21df770d4e9330a6d067d40b2fd77a",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/1.a-b",
+      "specification_sha256": "bebce5c757bf51fc9e064510d99d5b5dd11cee44805c7491993e62185bcd0781",
+      "legacy": {
+        "name": "1.a-b",
+        "reference_lines": 3,
+        "generated_lines": 4,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 4,
+      "observed_upper_bound": {
+        "score": 4,
+        "mode": "general",
+        "kernel_sha256": "0f990e7e3f23090b1266dee1f0ee53bc41f190ecec9185864d1c99ea23732a33",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/2.fmul7",
+      "specification_sha256": "18d83dbf8008b86a94bfc1b2ce5803357acf73c442ff63012f04045ae8e76d6d",
+      "legacy": {
+        "name": "2.fmul7",
+        "reference_lines": 5,
+        "generated_lines": 5,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 5,
+      "observed_upper_bound": {
+        "score": 5,
+        "mode": "general",
+        "kernel_sha256": "31e6e0479496ba912be6289a0c95a3b8aa22daf922f316d958657b84a3d80540",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/3.relu",
+      "specification_sha256": "56fc8a2176a9e1bc44daea3a3be476d7f5a8c8b865b25160920509d88b4fe4f3",
+      "legacy": {
+        "name": "3.relu",
+        "reference_lines": 2,
+        "generated_lines": 2,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 2,
+      "observed_upper_bound": {
+        "score": 2,
+        "mode": "general",
+        "kernel_sha256": "01d353d946abec854aee09f56ae90ba8fe53c22f603716712eb33db4adeb22d7",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/4.relu-grad",
+      "specification_sha256": "b3c3e8017f69459282f61c85ad4ba521911b5f738cd69039e6f949f96b153b93",
+      "legacy": {
+        "name": "4.relu-grad",
+        "reference_lines": 3,
+        "generated_lines": 3,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 3,
+      "observed_upper_bound": {
+        "score": 3,
+        "mode": "general",
+        "kernel_sha256": "25251770d98eb975c0b9e93a5b6a91c57d545caa6ba6fe0ab6259995dd80f095",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/5.addcol-vec",
+      "specification_sha256": "f11134035e1106b40976f5307b3f1e7dd2d5fd26ede8df298f52728743b08aa1",
+      "legacy": {
+        "name": "5.addcol-vec",
+        "reference_lines": 3,
+        "generated_lines": 4,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 4,
+      "observed_upper_bound": {
+        "score": 4,
+        "mode": "general",
+        "kernel_sha256": "b7811c5e7d3d86eb2168c628efadbc1a758b34001caa749b0732df4cc04fff28",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/6.subrow-vec",
+      "specification_sha256": "97f08e4a075c66a71fdad4e33abb762afe8b80c8ebb1c48d400017a0c5be7dae",
+      "legacy": {
+        "name": "6.subrow-vec",
+        "reference_lines": 24,
+        "generated_lines": 35,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 35,
+      "observed_upper_bound": {
+        "score": 35,
+        "mode": "general",
+        "kernel_sha256": "19d26485739f1c3938a4ecdfd5aa615062757f0c3abab2b3ac0d891597424778",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/7.sumcol-mini",
+      "specification_sha256": "8d8d1f9fe1e5b3e775473365e7531757902838de7ea85c3fb8d9d6e5d7998317",
+      "legacy": {
+        "name": "7.sumcol-mini",
+        "reference_lines": 4,
+        "generated_lines": 4,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 4,
+      "observed_upper_bound": {
+        "score": 4,
+        "mode": "general",
+        "kernel_sha256": "4e202690f570faf3872e333677cefe74f818b3d0f58de9bfadf75764c4fb2c52",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/8.sumcol",
+      "specification_sha256": "ea5e70e0ec9955fbc63b8ff5ce547c9e6d44f85f2905c512f0860b5806693a37",
+      "legacy": {
+        "name": "8.sumcol",
+        "reference_lines": 9,
+        "generated_lines": 12,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 12,
+      "observed_upper_bound": {
+        "score": 12,
+        "mode": "general",
+        "kernel_sha256": "c00e81566bfc71cf44af6eb83feca9da4b964166977fccb0ba638995b765724f",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/9.sumrow-mini",
+      "specification_sha256": "01713890a47a44c8e25eb9b57fadfa56237c9e2a8b069bd2e3952d2f66708bc1",
+      "legacy": {
+        "name": "9.sumrow-mini",
+        "reference_lines": 6,
+        "generated_lines": 9,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 9,
+      "observed_upper_bound": {
+        "score": 9,
+        "mode": "general",
+        "kernel_sha256": "1b92969d7cdbb65a93838deb099a296aa8386cdff3b6ab817b0609e3bf8bb73a",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/10.sumrow",
+      "specification_sha256": "6aa1e14cc233e080fa4bb3714327f3b1ac5fa7cafd14dfb7ff3bf0f9bff056ba",
+      "legacy": {
+        "name": "10.sumrow",
+        "reference_lines": 16,
+        "generated_lines": 24,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 24,
+      "observed_upper_bound": {
+        "score": 24,
+        "mode": "general",
+        "kernel_sha256": "a1a6eeb5a24be3bfb3226ddaabb8add3e471388e91f831477650339ad1d02865",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/11.maxrow",
+      "specification_sha256": "58bbbc5f629115c7f459669c41a4f573931b9d0362854dd1d61cb93d21fd405b",
+      "legacy": {
+        "name": "11.maxrow",
+        "reference_lines": 20,
+        "generated_lines": 24,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 24,
+      "observed_upper_bound": {
+        "score": 24,
+        "mode": "general",
+        "kernel_sha256": "f4b14e1b00d43b8ce8c7bdf8923f161719ef52c0c2a3a1fbee7375520b3f42b2",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/12.divrow-vec",
+      "specification_sha256": "46d09e638abac8310eb63fdae01afdf731f2529ef8783c24805af97144800c4c",
+      "legacy": {
+        "name": "12.divrow-vec",
+        "reference_lines": 29,
+        "generated_lines": 56,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 56,
+      "observed_upper_bound": {
+        "score": 56,
+        "mode": "general",
+        "kernel_sha256": "ac07e02be920c5653f796c8afd8b65f441bf0a8f73a87635319b0466e41005b5",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/13.exp-low-prec",
+      "specification_sha256": "e5b42f8614df7c8f2ac15607bd70dfb8afba27349857ee9a5526c99cc075bbce",
+      "legacy": {
+        "name": "13.exp-low-prec",
+        "reference_lines": 10,
+        "generated_lines": 20,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 20,
+      "observed_upper_bound": {
+        "score": 20,
+        "mode": "general",
+        "kernel_sha256": "789d701cc0489962ef6fdd03ef44ebf4d426d75d484ddd7ff8ba48852d953045",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/14.exp",
+      "specification_sha256": "d02c9da262925941dc2e5529202a8d4d63bb1f637cf899dd43fdcd651c30f4e3",
+      "legacy": {
+        "name": "14.exp",
+        "reference_lines": 16,
+        "generated_lines": 30,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 30,
+      "observed_upper_bound": {
+        "score": 30,
+        "mode": "general",
+        "kernel_sha256": "237212d448591c91f24513805cc21c8c64a0101efc28ff2f1555572bfd17804b",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/15.onehot-mini",
+      "specification_sha256": "de849aedd7878b6ce01d387eaea51d9a0202c891ed9199f38aa4e505bc421d16",
+      "legacy": {
+        "name": "15.onehot-mini",
+        "reference_lines": 7,
+        "generated_lines": 17,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 17,
+      "observed_upper_bound": {
+        "score": 17,
+        "mode": "general",
+        "kernel_sha256": "859bbf07a477febb91fa02756aebec3a6d98db782684978a483973ef4199e916",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/16.onehot",
+      "specification_sha256": "31dee8db3af2a4383219adb3558fd52f3311c1315218b07ca99afd221d47d848",
+      "legacy": {
+        "name": "16.onehot",
+        "reference_lines": 24,
+        "generated_lines": 44,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 44,
+      "observed_upper_bound": {
+        "score": 44,
+        "mode": "general",
+        "kernel_sha256": "0359a58b0e38ccc0a4dde173cc2cc772c2c5fc82583b8b355ad9fee0bd2756af",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/17.dram-dl-256-16",
+      "specification_sha256": "bbe1001eb52b92df5020e42bde4b1770a603c10733d3f70ab1286a28b01825cf",
+      "legacy": {
+        "name": "17.dram-dl-256-16",
+        "reference_lines": 5,
+        "generated_lines": 5,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 5,
+      "observed_upper_bound": {
+        "score": 5,
+        "mode": "general",
+        "kernel_sha256": "ef84f2e0257545ef4496e50fafbaede01fe4fc62c19e186d0a64ef548c300f20",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/18.dram-ul-256-16",
+      "specification_sha256": "64ccfee80e95d1c03ffed3948d21874df5259852b09b9261199d58cdacabbf04",
+      "legacy": {
+        "name": "18.dram-ul-256-16",
+        "reference_lines": 6,
+        "generated_lines": 6,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 6,
+      "observed_upper_bound": {
+        "score": 6,
+        "mode": "general",
+        "kernel_sha256": "2825ad1008b0d0471954cfee022290aa8a86cd8841c107b1b8af703c032f8a1e",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/19.dram-dl-256-16p",
+      "specification_sha256": "c8962c7d3fa63e37af01e3572503ad494d45d689dca0df03cdee2da68569cb40",
+      "legacy": {
+        "name": "19.dram-dl-256-16p",
+        "reference_lines": 19,
+        "generated_lines": 25,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 25,
+      "observed_upper_bound": {
+        "score": 25,
+        "mode": "general",
+        "kernel_sha256": "ec77c3404ef135a28a6b238689931306efbdeaf8d319c8c96f1a41888533de71",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/20.dram-ul-256-16p",
+      "specification_sha256": "12ae7f0914e315ec2604bbeb026ed99f930d3b9a1a1f5498e1c7a5e3dd49304b",
+      "legacy": {
+        "name": "20.dram-ul-256-16p",
+        "reference_lines": 10,
+        "generated_lines": 16,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 16,
+      "observed_upper_bound": {
+        "score": 16,
+        "mode": "general",
+        "kernel_sha256": "63df780d92cd9b0582f76997d3ccf65396ff4d4d231b38c8a2f7e0b1bc7bad5c",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/21.dram-dl-256-16-l2b",
+      "specification_sha256": "e49dbc219a7f6e9e3c9e34a99c0d7fb5d27fff1c88bc3c5a2faac3ca62e6c53b",
+      "legacy": {
+        "name": "21.dram-dl-256-16-l2b",
+        "reference_lines": 12,
+        "generated_lines": 14,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 14,
+      "observed_upper_bound": {
+        "score": 14,
+        "mode": "general",
+        "kernel_sha256": "0edaeb031491579365945aa59dd41843fdc3fc910ec60a3316b79c3200fea3f0",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/22.dram-dl-1024-16",
+      "specification_sha256": "f1f9bf39734946a06cc2b910fb55ad3390e41ec5b2149266252fd9784a7aa95a",
+      "legacy": {
+        "name": "22.dram-dl-1024-16",
+        "reference_lines": 8,
+        "generated_lines": 10,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 10,
+      "observed_upper_bound": {
+        "score": 10,
+        "mode": "general",
+        "kernel_sha256": "2ae107da1d3c59531ec9f96fb8493a6aa4888af6be92fd1e5ac6f368c23c6003",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/23.dram-dl-256-1024",
+      "specification_sha256": "90853fa139cffd5bb3625478367b9fb9f22f0b6becd144f58d02b22c069e6035",
+      "legacy": {
+        "name": "23.dram-dl-256-1024",
+        "reference_lines": 68,
+        "generated_lines": 74,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 74,
+      "observed_upper_bound": {
+        "score": 74,
+        "mode": "general",
+        "kernel_sha256": "f1866b30eaecc00845694b1998f63bc6befd04a0ace9f9b9cd81b61a15e9c38d",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/24.dram-dl-16",
+      "specification_sha256": "fe52b95ab78cdcbff93683fc2052f5d9d1b67a6005ebe00b46c360a351030110",
+      "legacy": {
+        "name": "24.dram-dl-16",
+        "reference_lines": 5,
+        "generated_lines": 5,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 5,
+      "observed_upper_bound": {
+        "score": 5,
+        "mode": "general",
+        "kernel_sha256": "0b5486958d5bf10bbe6a949b49a09646c52f0ea6dd28e893f11141c6993ba200",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/25.dram-ul-16",
+      "specification_sha256": "cc4820891690ad220aea374dc02c78dcc939242813d0c8a8cac81be77d976acd",
+      "legacy": {
+        "name": "25.dram-ul-16",
+        "reference_lines": 5,
+        "generated_lines": 5,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 5,
+      "observed_upper_bound": {
+        "score": 5,
+        "mode": "general",
+        "kernel_sha256": "e5ced4faa48324fdda2aeba3b520553f319c8c090155fa75f28c719ca62bf31f",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/26.dram-dl-16-1024",
+      "specification_sha256": "dde52f37d348f73bb5ea0cac45856b7e728a2c43ff666ce127fdf017e5330cd8",
+      "legacy": {
+        "name": "26.dram-dl-16-1024",
+        "reference_lines": 39,
+        "generated_lines": 44,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 44,
+      "observed_upper_bound": {
+        "score": 44,
+        "mode": "general",
+        "kernel_sha256": "925117be16c7367a34743524f4f040986436564543070d558aa605b11e2c81e6",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/27.dram-ul-16-1024",
+      "specification_sha256": "66fdc031ef04aae17f7822cd29ef653e90dd33dcdcedd6e071939924b89ec6e0",
+      "legacy": {
+        "name": "27.dram-ul-16-1024",
+        "reference_lines": 13,
+        "generated_lines": 18,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 18,
+      "observed_upper_bound": {
+        "score": 18,
+        "mode": "general",
+        "kernel_sha256": "1e6f5a2a59a0c370d1c7f8620e7440775dda83d12534147bf61069aa791c1ede",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/28.dram-dl-16-16",
+      "specification_sha256": "0b975c5d531d13aefb811c040c9b386caf7eeac04e11a128271b38deb14d0289",
+      "legacy": {
+        "name": "28.dram-dl-16-16",
+        "reference_lines": 11,
+        "generated_lines": 12,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 12,
+      "observed_upper_bound": {
+        "score": 12,
+        "mode": "general",
+        "kernel_sha256": "fb8d5f716e6c36930287813c3edebe60f0373d5f226320123e064f01eaf5d550",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/29.dram-ul-16-16",
+      "specification_sha256": "25d78f0f8f1e87ae4aed973ef63b887763510d6c518abc21af479f68730b2e8e",
+      "legacy": {
+        "name": "29.dram-ul-16-16",
+        "reference_lines": 9,
+        "generated_lines": 13,
+        "verdict": "improved",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [
+        {
+          "source": "proofs_lean/evidence/ul29/judge.json",
+          "sha256": "90bbbbc66c998faf952a93a657cdeae06ce632c8496323d5b1f306ab1e8cfb74",
+          "evidence_kind": "official_testcase_execution_not_formal_optimality",
+          "accepted": true,
+          "score": 8
+        }
+      ],
+      "known_testcase_upper_bound": 8,
+      "observed_upper_bound": {
+        "score": 13,
+        "mode": "general",
+        "kernel_sha256": "51ec969e5fc8fd2fa44d3aa896b0d61151a6a3bcaa65f97ba715043dca879750",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/30.dram-dl-256",
+      "specification_sha256": "0f4ee2e5b2bb7e676e7c6c1b68d9ccb5dd389ceac0fe0e577cc31cb3e5b556a2",
+      "legacy": {
+        "name": "30.dram-dl-256",
+        "reference_lines": 10,
+        "generated_lines": 11,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 11,
+      "observed_upper_bound": {
+        "score": 11,
+        "mode": "general",
+        "kernel_sha256": "abe53731694b16fd16b623a478ace32f104e72b74ca691d5adef8a5f45b91319",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/31.dram-ul-256",
+      "specification_sha256": "21a52161355b850f293f4337d25f2da861def2a9871e1d994a33ee9fe6641206",
+      "legacy": {
+        "name": "31.dram-ul-256",
+        "reference_lines": 7,
+        "generated_lines": 9,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 9,
+      "observed_upper_bound": {
+        "score": 9,
+        "mode": "general",
+        "kernel_sha256": "dfac2a95d14be2d46321e4d980132f8f88826ca9fab92f2ff8e3181ee4b2cfce",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/32.matmul-trb-mab-lm-4-8-8",
+      "specification_sha256": "973dc5c10bb8c98a5800150f0fc1f9bf1c07d51c26ef778de35c2905bf424a27",
+      "legacy": {
+        "name": "32.trb-mab-4-8-8",
+        "reference_lines": 4,
+        "generated_lines": 4,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 4,
+      "observed_upper_bound": {
+        "score": 4,
+        "mode": "general",
+        "kernel_sha256": "1cd4234de941176888f4c76aef9e18c89cb7f27503f27fc9b52fd33c1cb44183",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/33.matmul-trb-mab-lm-4-8-16",
+      "specification_sha256": "db8811d691854b11bab53d1f30ed3565afdf8441b29866667eb919d5f8440aa4",
+      "legacy": {
+        "name": "33.trb-mab-4-8-16",
+        "reference_lines": 7,
+        "generated_lines": 7,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 7,
+      "observed_upper_bound": {
+        "score": 7,
+        "mode": "general",
+        "kernel_sha256": "fcebbdd2a637d0ef561194bcfb1a70c76a90e144ce081fdaee866e237062fab4",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/34.matmul-trb-mab-lm-4-16-8",
+      "specification_sha256": "6d671ed1c2367ffaf629d792baa669eaaa89d3c3274a8a237c1d80f4eb6e0236",
+      "legacy": {
+        "name": "34.trb-mab-4-16-8",
+        "reference_lines": 7,
+        "generated_lines": 6,
+        "verdict": "improved",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [
+        {
+          "source": "proofs_lean/evidence/hm34/judge.json",
+          "sha256": "67a2e2d69341acb3a6470c2fafb61c1042504160e8a0fa056ed10d8276b64eb9",
+          "evidence_kind": "official_testcase_execution_not_formal_optimality",
+          "accepted": true,
+          "score": 6
+        }
+      ],
+      "known_testcase_upper_bound": 6,
+      "observed_upper_bound": {
+        "score": 6,
+        "mode": "general",
+        "kernel_sha256": "3d3368fa83545302edc83b4e0523aa7d2e883a1178bfef6993279b2ba8a9efc7",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/35.matmul-trb-mab-lm-4-16-16",
+      "specification_sha256": "eb9455a5c6acb83f52f0dad5d3a34a0b6e706235da85e9bb7de57ce1bf1e7a9a",
+      "legacy": {
+        "name": "35.trb-mab-4-16-16",
+        "reference_lines": 12,
+        "generated_lines": 6,
+        "verdict": "improved",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [
+        {
+          "source": "proofs_lean/evidence/hm35/judge.json",
+          "sha256": "4abc425accbb5e375b949152abe449b4b68ebcd52a1d2088f50ef6f3f8ce3d86",
+          "evidence_kind": "official_testcase_execution_not_formal_optimality",
+          "accepted": true,
+          "score": 6
+        }
+      ],
+      "known_testcase_upper_bound": 6,
+      "observed_upper_bound": {
+        "score": 6,
+        "mode": "general",
+        "kernel_sha256": "529df896f5b85e89c01f69c28e99a74ec6e391ca98b5d67b873cbee55113c4ed",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/36.matmul-trb-pkg-lm-256-16-16",
+      "specification_sha256": "76f89b0adffddb6b86de0d5846c1ffe70e358b11ec94a75b252f981667b24283",
+      "legacy": {
+        "name": "36.trb-pkg-256-16-16",
+        "reference_lines": 12,
+        "generated_lines": 12,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [
+        {
+          "source": "proofs_lean/evidence/pkg36/judge.json",
+          "sha256": "f9b61385a446c9ec323d48fc35887a6448c969c20eef97f6581911692bb69fb8",
+          "evidence_kind": "official_testcase_execution_not_formal_optimality",
+          "accepted": true,
+          "score": 6
+        }
+      ],
+      "known_testcase_upper_bound": 6,
+      "observed_upper_bound": {
+        "score": 6,
+        "mode": "testcase",
+        "kernel_sha256": "529df896f5b85e89c01f69c28e99a74ec6e391ca98b5d67b873cbee55113c4ed",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/37.matmul-trb-mab-lm-32-8-16",
+      "specification_sha256": "68601f872fbad8699464b4a97c3273f9821b2f2314820447eb39ef751290bb71",
+      "legacy": {
+        "name": "37.trb-mab-32-8-16",
+        "reference_lines": 17,
+        "generated_lines": 21,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 21,
+      "observed_upper_bound": {
+        "score": 21,
+        "mode": "general",
+        "kernel_sha256": "927f67a9a11c35718a58b528418d3cc0d58fed1209ff52931fdd7529020d3fda",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/38.matmul-trb-pkg-lm-256-128-16",
+      "specification_sha256": "cb504c242629b5f67b3b09749215476977651dc136bb260468c3c2372d44fd58",
+      "legacy": {
+        "name": "38.trb-pkg-256-128-16",
+        "reference_lines": 23,
+        "generated_lines": 48,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 48,
+      "observed_upper_bound": {
+        "score": 48,
+        "mode": "general",
+        "kernel_sha256": "cdaff9f8c9ed671680ebd5c2349f187735429eb496f51b36d88b7e567b9775de",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/39.matmul-trb-pkg-lmdram-256-1024-16",
+      "specification_sha256": "a28fb6b2e626fa08f1169839ee10f927d7b55f56910a71d1b9db1d77379f80f5",
+      "legacy": {
+        "name": "39.trb-pkg-lmdram-256-1024-16",
+        "reference_lines": 29,
+        "generated_lines": 38,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 38,
+      "observed_upper_bound": {
+        "score": 38,
+        "mode": "general",
+        "kernel_sha256": "1c78cbd6f2fd2d067be35ba287f15525c1dd8f1599c8e65e5836a024255b019b",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/40.matmul-notr-mab-lm-4-8-8",
+      "specification_sha256": "fed909fe3361a8d55b777da2c522d5083a4881415cb0a1485414bc5a7ad1ba6c",
+      "legacy": {
+        "name": "40.notr-mab-4-8-8",
+        "reference_lines": 7,
+        "generated_lines": 7,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 7,
+      "observed_upper_bound": {
+        "score": 7,
+        "mode": "general",
+        "kernel_sha256": "04747c216197597f0b32e418392b7974c043afd3f03f19c6f630cfed5c869688",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/41.matmul-notr-mab-lm-4-16-16",
+      "specification_sha256": "3d60a35302f1507a259801e26e8244bcbc7b63cf01273d845ca3b9d159200422",
+      "legacy": {
+        "name": "41.notr-mab-4-16-16",
+        "reference_lines": 13,
+        "generated_lines": 23,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 23,
+      "observed_upper_bound": {
+        "score": 23,
+        "mode": "general",
+        "kernel_sha256": "dfcc865c23baa6ccad58cb3d6a58d466b0c754904c9672c2ecc9a7a35197f4ba",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/42.matmul-notr-pkg-lm-256-16-16",
+      "specification_sha256": "a2da989262edfd103cf1e207809197c3deecfce49f05841c1417ba6bae789ec7",
+      "legacy": {
+        "name": "42.notr-pkg-256-16-16",
+        "reference_lines": 13,
+        "generated_lines": 23,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 23,
+      "observed_upper_bound": {
+        "score": 23,
+        "mode": "general",
+        "kernel_sha256": "dfcc865c23baa6ccad58cb3d6a58d466b0c754904c9672c2ecc9a7a35197f4ba",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/43.matmul-tra-mab-lm-8-8-8",
+      "specification_sha256": "39a34c1cc64e2e10cee54e3f35127783ee211185ee291c1692484a287d523f9a",
+      "legacy": {
+        "name": "43.tra-mab-8-8-8",
+        "reference_lines": 8,
+        "generated_lines": 10,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 10,
+      "observed_upper_bound": {
+        "score": 10,
+        "mode": "general",
+        "kernel_sha256": "0c222d1ba0a267d627d11fa93b3de39fe24d938101322670a34adb01a855b333",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/44.matmul-tra-mab-lm-16-8-16",
+      "specification_sha256": "9ad9bf598c84529fc261952e22b82c726b4fa7ac0f21a31d9a5132082d6d163e",
+      "legacy": {
+        "name": "44.tra-mab-16-8-16",
+        "reference_lines": 15,
+        "generated_lines": 26,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 26,
+      "observed_upper_bound": {
+        "score": 26,
+        "mode": "general",
+        "kernel_sha256": "40216cf97f95f307349980a2734e66e4c147e2a786b7bceafda49ff12b42ee13",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/45.matmul-tra-mab-lm-16-4-16",
+      "specification_sha256": "6c8835c1ae136611fcbc07aeb426cb3a3360893eb788039cd2806b836a9540c8",
+      "legacy": {
+        "name": "45.tra-mab-16-4-16",
+        "reference_lines": 15,
+        "generated_lines": 20,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 20,
+      "observed_upper_bound": {
+        "score": 20,
+        "mode": "general",
+        "kernel_sha256": "a57d7191d6fc470424ea654d40782a2b7d0140ed29d78c9195c6b9f29421fd95",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/46.matmul-tra-pkg-lmdram-16-256-16",
+      "specification_sha256": "48242115ee8154d4e355660a9a8bee1199a3a1bfc42bc0498bb390880d3d4875",
+      "legacy": {
+        "name": "46.tra-pkg-lmdram-16-256-16",
+        "reference_lines": 25,
+        "generated_lines": 31,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 31,
+      "observed_upper_bound": {
+        "score": 31,
+        "mode": "general",
+        "kernel_sha256": "b9660b63974fd39c75f25c59feac4ecff139e61107100caad64e009122459755",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/47.matmul-tra-mab-lm-16-32-8",
+      "specification_sha256": "58eba5d951c822198542c3befef8cf120609bbb9f6efe484612e4ffc0ff3718e",
+      "legacy": {
+        "name": "47.tra-mab-16-32-8",
+        "reference_lines": 17,
+        "generated_lines": 50,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 50,
+      "observed_upper_bound": {
+        "score": 50,
+        "mode": "general",
+        "kernel_sha256": "894c863cd18944a0b33eb0fd99a3409b253bda25fd58ffd2e38ea1b45dea2681",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    },
+    {
+      "id": "problems/48.matmul-tra-pkg-lmdram-16-256-1024",
+      "specification_sha256": "c9562dd01d771b482f3931893c05c0881def60a1e454e25d2685607c03a9ae2b",
+      "legacy": {
+        "name": "48.tra-pkg-lmdram-16-256-1024",
+        "reference_lines": 61,
+        "generated_lines": 94,
+        "verdict": "optimalProven",
+        "claim_status": "withdrawn"
+      },
+      "formal_status": "unproven",
+      "formal_specification": null,
+      "full_isa_certificate": null,
+      "restricted_model_certificate": null,
+      "additional_official_observations": [],
+      "known_testcase_upper_bound": 94,
+      "observed_upper_bound": {
+        "score": 94,
+        "mode": "general",
+        "kernel_sha256": "05a8ae43e802546b1b3a2bed14e153460334b19a67a66c13296ff69d5ee0371e",
+        "source": "mncompile/benchmarks/results/progress.json",
+        "evidence_kind": "stored_official_judge_record_not_a_formal_proof",
+        "accepted": true
+      }
+    }
+  ]
+}

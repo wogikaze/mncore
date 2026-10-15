@@ -1,0 +1,49 @@
+"""The kernel must reject arithmetic masquerading as optimality and missing ISA coverage."""
+import shutil
+import subprocess
+import tempfile
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+class NegativeKernelTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.lake = shutil.which("lake") or str(Path.home() / ".elan/bin/lake")
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "Preflight.lean"
+            source.write_text("import ProofsLean\n"
+                              "#check ProofsLean.FiniteExample.two_lines_optimal\n"
+                              "#check ProofsLean.FiniteExample.fill_correct_on_one_case\n"
+                              "#check ProofsLean.FiniteExample.missing_cannot_be_sealed\n")
+            result = subprocess.run([cls.lake, "env", "lean", str(source)], cwd=ROOT,
+                                    capture_output=True, text=True, timeout=60)
+            if result.returncode:
+                raise AssertionError("build the valid semantic models before negative tests:\n" + result.stdout + result.stderr)
+
+    def reject(self, body):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "Negative.lean"
+            source.write_text("import ProofsLean\nopen ProofsLean ProofsLean.FiniteExample\n" + body)
+            result = subprocess.run([self.lake, "env", "lean", str(source)], cwd=ROOT,
+                                    capture_output=True, text=True, timeout=60)
+            self.assertNotEqual(result.returncode, 0, "invalid proof unexpectedly accepted")
+            self.assertIn("error:", result.stdout + result.stderr)
+            self.assertNotIn("unknown module", result.stdout + result.stderr)
+            self.assertNotIn("Unknown identifier", result.stdout + result.stderr)
+            self.assertNotIn("Unknown constant", result.stdout + result.stderr)
+            self.assertNotIn("object file", result.stdout + result.stderr)
+
+    def test_arithmetic_equality_does_not_prove_lower_bound(self):
+        self.reject("example : LowerBound machine problem 3 := by\n  exact (rfl : 3 = 3)\n")
+
+    def test_omitting_an_instruction_does_not_prove_coverage(self):
+        self.reject("example : ∀ line : machine.Line, line ∈ [Line.flipLeft, Line.flipRight] := by\n  intro line\n  cases line <;> decide\n")
+
+    def test_testcase_proof_cannot_be_relabelled_general(self):
+        self.reject("example : Correct machine problem [Line.fillTrue] := fill_correct_on_one_case\n")
+
+    def test_unknown_semantics_cannot_be_sealed_as_complete(self):
+        self.reject("example : missingSemantics.Complete := by\n  intro line state h\n  cases h\n")

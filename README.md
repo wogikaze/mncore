@@ -47,6 +47,18 @@ python3 -m mncompile mncompile/examples/sigmoid_like.py --contract mncompile/exa
 python3 -m mncompile.bench.run --output /tmp/bench        # all 73 problems with the official judge
 ```
 
+### Lean optimality audit
+
+[proofs_lean](proofs_lean/README.md) records the formal-proof audit separately from benchmark scores.
+The previous `optimalProven` labels were unsupported and have been withdrawn. Full-ISA optimality
+is currently unproven for all 73 problems. The replacement framework checks semantic certificates,
+enumeration completeness, and the distinction between general and testcase-only correctness.
+
+```bash
+python3 proofs_lean/scripts/check.py
+python3 -m unittest discover -s proofs_lean/tests -v
+```
+
 ### Running challenge testcases
 
 1. Place the official MN-Core Challenge testcase under `problems/<problem-name>/` (e.g. `problems/1.a-b/testcase.vsm`).

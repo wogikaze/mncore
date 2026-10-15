@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-15T13:09:37.952280+00:00",
+  "evidence_kind": "official_testcase_execution_not_formal_optimality",
+  "problem": "problems/29.dram-ul-16-16",
+  "solution": "solution.vsm",
+  "solution_sha256": "93be0a80adee1ed145eceec9b2f0012f8bb4966dd25e6667eec0bda6499c6956",
+  "tools": [
+    {
+      "path": "judge/judge-py/judge.py",
+      "sha256": "4dfe730de218edbe806caec1bf276f8e574e61d72123f368dedc09494ac0088a"
+    },
+    {
+      "path": "judge/judge-py/mncore2_emuenv/assemble3",
+      "sha256": "5baabcd47a137fbc4c8ec11fd02e23cb79818bbded9d0cb4c02291aaf738b955"
+    },
+    {
+      "path": "judge/judge-py/mncore2_emuenv/gpfn3_package_main",
+      "sha256": "6008aa202c8bd29e352929cef46ceb4c52b6551fc72ac0dd987cb935bc7993cf"
+    }
+  ],
+  "cases": [
+    {
+      "path": "problems/29.dram-ul-16-16/testcase.vsm",
+      "sha256": "f0f04f529292337d8c451e4ef88794ce6dd39f45a36107715b5fc71ee0494b4c",
+      "judge": {
+        "testcase": "testcase.vsm",
+        "accepted": true,
+        "score": 8,
+        "detail": null
+      }
+    }
+  ],
+  "claimed_testcase_bound": null,
+  "contradicts_claimed_testcase_bound": false,
+  "proves_all_input_correctness": false,
+  "proves_optimality": false
+}

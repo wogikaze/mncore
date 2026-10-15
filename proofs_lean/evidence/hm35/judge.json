@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-15T13:09:37.961493+00:00",
+  "evidence_kind": "official_testcase_execution_not_formal_optimality",
+  "problem": "problems/35.matmul-trb-mab-lm-4-16-16",
+  "solution": "solution.vsm",
+  "solution_sha256": "529df896f5b85e89c01f69c28e99a74ec6e391ca98b5d67b873cbee55113c4ed",
+  "tools": [
+    {
+      "path": "judge/judge-py/judge.py",
+      "sha256": "4dfe730de218edbe806caec1bf276f8e574e61d72123f368dedc09494ac0088a"
+    },
+    {
+      "path": "judge/judge-py/mncore2_emuenv/assemble3",
+      "sha256": "5baabcd47a137fbc4c8ec11fd02e23cb79818bbded9d0cb4c02291aaf738b955"
+    },
+    {
+      "path": "judge/judge-py/mncore2_emuenv/gpfn3_package_main",
+      "sha256": "6008aa202c8bd29e352929cef46ceb4c52b6551fc72ac0dd987cb935bc7993cf"
+    }
+  ],
+  "cases": [
+    {
+      "path": "problems/35.matmul-trb-mab-lm-4-16-16/testcase.vsm",
+      "sha256": "5c0ef20d6f60ecf72756661f6c9dc95723ac0cab13e23973a5b5aac4ce28b8a0",
+      "judge": {
+        "testcase": "testcase.vsm",
+        "accepted": true,
+        "score": 6,
+        "detail": null
+      }
+    }
+  ],
+  "claimed_testcase_bound": null,
+  "contradicts_claimed_testcase_bound": false,
+  "proves_all_input_correctness": false,
+  "proves_optimality": false
+}

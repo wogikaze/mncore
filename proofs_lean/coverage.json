@@ -1,0 +1,828 @@
+{
+  "schema_version": 1,
+  "isa_exhaustiveness_proven": false,
+  "full_semantics_implemented": false,
+  "compiler_syntax_source": "mncompile/machine.py",
+  "compiler_syntax_sha256": "306d729fbd4bf89c2eba10c6ba0b5f97039ea7c019ff660d055077cbf10a34b0",
+  "inventory_scope": "Compiler-generated ALU/MAU spelling candidates only; not an authoritative complete ISA or legality model.",
+  "syntax_candidates": [
+    {
+      "spelling": "dbfn",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "dfloor",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "dftoi",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "dilrelud",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "dlrelud",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "dlreluo",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "dmax",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "dmfmad",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "dmfmadr",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "dmfmau",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "dmfmaur",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "dmin",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "dmmuld",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "dmmuldr",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "dmmulu",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "dmmulur",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "dmread",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "dmwrite",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "dpackbit",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "dpassa",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "drelu",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "drelu0",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "drelu1",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "drelu2",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "drelu3",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "drsqrt",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "dvadd",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "dvaddr",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "dvfmad",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "dvfmadr",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "dvfmau",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "dvfmaur",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "dvmuld",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "dvmuldr",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "dvmulu",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "dvmulur",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "dvpassa",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "dvpassar",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "fbfn",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "ffloor",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "fftoi",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "filrelud",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "flrelud",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "flreluo",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "fmax",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "fmfma",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "fmin",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "fmmul",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "fmread",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "fmwrite",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "fpackbit",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "fpassa",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "frelu",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "frelu0",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "frelu1",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "frelu2",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "frelu3",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "frsqrt",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "fvadd",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "fvfma",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "fvmul",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "fvpassa",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "gbfn",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "gmfma",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "gmmul",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "gmread",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "gmwrite",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hbfe/6",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hbfe/7",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hbfe/8",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hbfe/9",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hbfn/6",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hbfn/7",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hbfn/8",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hbfn/9",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hfloor",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hftoi",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hilrelud",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hlrelud",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hlreluo",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hmax",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hmfma",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hmfmar",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hmin",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hmmul",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hmmulr",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hmread",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hmwrite",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hpackbit",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hpassa",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hrelu",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hrelu0",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hrelu1",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hrelu2",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hrelu3",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hrsqrt",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hvadd",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hvaddr",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hvfma",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hvfmar",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hvmul",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hvmulr",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hvpassa",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "hvpassar",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "iadd",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "iand",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "ibsl",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "ibsr",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "idec",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "iinc",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "ilnot",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "ilsl",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "ilsr",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "imax",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "imin",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "imm",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "immu",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "inot",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "ior",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "ipackbit",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "ipassa",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "isub",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "ixor",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "ladd",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "land",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "lbsl",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "lbsr",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "ldec",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "linc",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "llnot",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "llsl",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "llsr",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "lmax",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "lmin",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "lnot",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "lor",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "lpackbit",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "lpassa",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "lsub",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "lxor",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "msl",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "msr",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "sadd",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "sand",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "sbsl",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "sbsr",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "sdec",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "sinc",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "slnot",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "slsl",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "slsr",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "smax",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "smin",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "snot",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "sor",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "spackbit",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "spassa",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "ssub",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "sxor",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "udftoi",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "ufftoi",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "uhftoi",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "uiadd",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "uidec",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "uiinc",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "uilsr",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "uimax",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "uimin",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "uisub",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "uladd",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "uldec",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "ulinc",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "ullsr",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "ulmax",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "ulmin",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "ulsub",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "usadd",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "usdec",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "usinc",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "uslsr",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "usmax",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "usmin",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "ussub",
+      "formal_step_semantics": "unimplemented"
+    },
+    {
+      "spelling": "zero",
+      "formal_step_semantics": "unimplemented"
+    }
+  ],
+  "obligations": [
+    {
+      "area": "instruction_encoding_and_all_legal_operands",
+      "status": "unimplemented"
+    },
+    {
+      "area": "parallel_issue_and_memory_port_legality",
+      "status": "unimplemented"
+    },
+    {
+      "area": "integer_16_32_64_and_signedness",
+      "status": "unimplemented"
+    },
+    {
+      "area": "floating_16_32_64_rounding_and_special_values",
+      "status": "unimplemented"
+    },
+    {
+      "area": "block_floating_conversion_and_mantissa_width",
+      "status": "unimplemented"
+    },
+    {
+      "area": "wide_access_and_lsb_passthrough",
+      "status": "unimplemented"
+    },
+    {
+      "area": "immediates_fixed_operands_and_zero",
+      "status": "unimplemented"
+    },
+    {
+      "area": "masks_flush_and_mask_directives",
+      "status": "unimplemented"
+    },
+    {
+      "area": "forwarding_lifetime_and_latency",
+      "status": "unimplemented"
+    },
+    {
+      "area": "t_indirect_madpe_and_address_mapping",
+      "status": "unimplemented"
+    },
+    {
+      "area": "matrix_registers_and_matrix_operations",
+      "status": "unimplemented"
+    },
+    {
+      "area": "pe_rotations_and_coordinate_operands",
+      "status": "unimplemented"
+    },
+    {
+      "area": "l1bm_transfers_turnaround_and_reductions",
+      "status": "unimplemented"
+    },
+    {
+      "area": "l2bm_transfers_and_reductions",
+      "status": "unimplemented"
+    },
+    {
+      "area": "mv_dram_pdm_all_transfer_and_reduction_modes",
+      "status": "unimplemented"
+    },
+    {
+      "area": "dar_tags_wait_and_completion",
+      "status": "unimplemented"
+    },
+    {
+      "area": "initial_state_and_zero_memory",
+      "status": "unimplemented"
+    },
+    {
+      "area": "scoring_and_zero_cost_directive_normalization",
+      "status": "unimplemented"
+    },
+    {
+      "area": "reference_binary_conformance",
+      "status": "unimplemented"
+    },
+    {
+      "area": "all_73_formal_problem_specifications",
+      "status": "unimplemented"
+    }
+  ]
+}

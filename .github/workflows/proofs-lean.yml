@@ -1,0 +1,38 @@
+name: Lean semantic proof audit
+
+on:
+  pull_request:
+    paths:
+      - 'proofs_lean/**'
+      - 'mncompile/machine.py'
+      - 'mncompile/benchmarks/results/**'
+      - 'problems/**/problem.md'
+      - 'problems/**/testcase*.vsm'
+      - '.github/workflows/proofs-lean.yml'
+  push:
+    paths:
+      - 'proofs_lean/**'
+      - 'mncompile/machine.py'
+      - 'mncompile/benchmarks/results/**'
+      - 'problems/**/problem.md'
+      - 'problems/**/testcase*.vsm'
+      - '.github/workflows/proofs-lean.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: leanprover/lean-action@v1
+        with:
+          lake-package-directory: proofs_lean
+          build: 'true'
+          use-github-cache: 'false'
+      - name: Audit catalogs, clean build, and kernel dependencies
+        run: python3 proofs_lean/scripts/check.py
+      - name: Check rejection of unsupported proof claims
+        run: python3 -m unittest discover -s proofs_lean/tests -v
