@@ -1,0 +1,103 @@
+{
+  "lines": 76,
+  "strategy": "pairs/l1bmd/l2bmr/pdm/l2bmb/l1bmd+base",
+  "candidates": [
+    {
+      "strategy": "pairs/l1bmd/l2bmr/pdm/l2bmb/l1bmd+base",
+      "lines": 76
+    },
+    {
+      "strategy": "pairs/l1bmd/l2bmr/pdm/l2bmb/l1bmd+split2",
+      "lines": 78
+    }
+  ],
+  "rejected": [
+    {
+      "strategy": "local",
+      "reason": "no integer rule for gt"
+    },
+    {
+      "strategy": "relayout",
+      "reason": "relayout: operands already aligned (plain local map)"
+    },
+    {
+      "strategy": "movement",
+      "reason": "movement: output is not a copy of an input element"
+    },
+    {
+      "strategy": "contraction",
+      "reason": "contraction: term is not a product of two inputs"
+    },
+    {
+      "strategy": "pe-reduce",
+      "reason": "pe-reduce: terms must be input elements"
+    },
+    {
+      "strategy": "gather",
+      "reason": "gather: 64-bit elements only"
+    },
+    {
+      "strategy": "hierarchy",
+      "reason": "hierarchy: no PE-level strategy computes the partials"
+    },
+    {
+      "strategy": "mab-reduce",
+      "reason": "hierarchy: a PE holds none of a partial's terms"
+    },
+    {
+      "strategy": "generate",
+      "reason": "generate: output depends on the inputs"
+    },
+    {
+      "strategy": "split",
+      "reason": "split: an input is not broadcast over the MABs"
+    },
+    {
+      "strategy": "membership",
+      "reason": "membership: a term is not an equality of two inputs"
+    },
+    {
+      "strategy": "fmtseq",
+      "reason": "fmtseq: byte string in DRAM"
+    },
+    {
+      "strategy": "allgather",
+      "reason": "allgather: output is not a copy"
+    },
+    {
+      "strategy": "pairs/l1bmd/l2bmr/l2bmb/l1bmd+base",
+      "reason": "verification: 50 mismatches, e.g. [('I', (0,), 143, 995), ('I', (1,), 141, 989), ('I', (2,), 167, 1120)]",
+      "vsm": "imm ui\"0xFFFFFFFF\" $llr440\nnop/2\nlpassa $llr440 $llm128v\nlpassa $llr440 $llm144v\nlpassa $llr440 $llm160v\nlpassa $llr440 $llm176v\nlpassa $llr440 $llm192v\nlpassa $llr440 $llm208v\nlpassa $llr440 $llm224v\nlpassa $llr440 $llm240v\nnop/2\nimm ui\"0x00000004\" $ls448/1000\nimm ui\"0x00000001\" $ls450/1000\nilsl $l1bid $ls448 $ls0v\nilsl $l2bid $ls450 $nowrite\niadd $ls0v $aluf $llt\nlpassa $llm0v $llr0v\nlpassa $llm16v $llr16v\nuisub $lmt2v $lr0v $omr1\nlpassa/$imr1 $ls450 $lr128v\nuisub $lmt10v $lr8v $omr1\nuiinc $lr128v $lr128v/$imr1\nuisub $lmt18v $lr16v $omr1\nlpassa $llm32v $llr32v\nuiinc $lr128v $lr128v/$imr1\nuisub $lmt26v $lr24v $omr1\nuiinc $lr128v $lr128v/$imr1\nuisub $lmt34v $lr32v $omr1\nlpassa $llm48v $llr48v\nuiinc $lr128v $lr128v/$imr1\nuisub $lmt42v $lr40v $omr1\nuiinc $lr128v $lr128v/$imr1\nuisub $lmt50v $lr48v $omr1\nlpassa $llm64v $llr64v\nuiinc $lr128v $lr128v/$imr1\nuisub $lmt58v $lr56v $omr1\nuiinc $lr128v $lr128v/$imr1\nuisub $lmt66v $lr64v $omr1\nlpassa $llm80v $llr80v\nuiinc $lr128v $lr128v/$imr1\nuisub $lmt74v $lr72v $omr1\nuiinc $lr128v $lr128v/$imr1\nuisub $lmt82v $lr80v $omr1\nlpassa $llm96v $llr96v\nuiinc $lr128v $lr128v/$imr1\nuisub $lmt90v $lr88v $omr1\nuiinc $lr128v $lr128v/$imr1\nuisub $lmt98v $lr96v $omr1\nlpassa $llm112v $llr112v\nuiinc $lr128v $lr128v/$imr1\nuisub $lmt106v $lr104v $omr1\nuiinc $lr128v $lr128v/$imr1\nuisub $lmt114v $lr112v $omr1\nuiinc $lr128v $lr128v/$imr1\nuisub $lmt122v $lr120v $omr1\nuiinc $lr128v $lr128v/$imr1\nimm ui\"0x00000040\" $ls452/1000\nuisub $aluf $lr128 $nowrite\nuisub $aluf $lr130 $nowrite\nuisub $aluf $lr132 $nowrite\nuisub $aluf $lr134 $ln16\nnop/3\nl1bmd $ln16v $lb0\nnop/3\nl2bmriiadd $lb0 $lc0\nnop/3\nl2bmb@0 $lc0 $lb0\nnop/3\nl1bmd $lb0 $ln0/1000\n"
+    },
+    {
+      "strategy": "pairs/l1bmd/l2bmr/l2bmb/l1bmd+split2",
+      "reason": "verification: 50 mismatches, e.g. [('I', (0,), 143, 995), ('I', (1,), 141, 989), ('I', (2,), 167, 1120)]",
+      "vsm": "imm ui\"0xFFFFFFFF\" $llr440\nnop/2\nlpassa $llr440 $llm128v\nlpassa $llr440 $llm144v\nlpassa $llr440 $llm160v\nlpassa $llr440 $llm176v\nlpassa $llr440 $llm192v\nlpassa $llr440 $llm208v\nlpassa $llr440 $llm224v\nlpassa $llr440 $llm240v\nnop/2\nimm ui\"0x00000004\" $ls448/1000\nimm ui\"0x00000001\" $ls450/1000\nilsl $l1bid $ls448 $ls0v\nilsl $l2bid $ls450 $nowrite\niadd $ls0v $aluf $llt\nlpassa $llm0v $llr0v\nlpassa $llm16v $llr16v\nuisub $lmt2v $lr0v $omr1\nuisub $lmt10v $lr8v $omr2\nlpassa $llm32v $llr32v\nlpassa/$imr1 $ls450 $ls0v\nlpassa/$imr2 $ls450 $lr128v\nuisub $lmt18v $lr16v $omr1\nuisub $lmt26v $lr24v $omr2\nlpassa $llm48v $llr48v\nuiinc $ls0v $ls0v/$imr1\nuiinc $lr128v $lr128v/$imr2\nuisub $lmt34v $lr32v $omr1\nuisub $lmt42v $lr40v $omr2\nlpassa $llm64v $llr64v\nuiinc $ls0v $ls0v/$imr1\nuiinc $lr128v $lr128v/$imr2\nuisub $lmt50v $lr48v $omr1\nuisub $lmt58v $lr56v $omr2\nlpassa $llm80v $llr80v\nuiinc $ls0v $ls0v/$imr1\nuiinc $lr128v $lr128v/$imr2\nuisub $lmt66v $lr64v $omr1\nuisub $lmt74v $lr72v $omr2\nlpassa $llm96v $llr96v\nuiinc $ls0v $ls0v/$imr1\nuiinc $lr128v $lr128v/$imr2\nuisub $lmt82v $lr80v $omr1\nuisub $lmt90v $lr88v $omr2\nlpassa $llm112v $llr112v\nuiinc $ls0v $ls0v/$imr1\nuiinc $lr128v $lr128v/$imr2\nuisub $lmt98v $lr96v $omr1\nuisub $lmt106v $lr104v $omr2\nuiinc $ls0v $ls0v/$imr1\nuiinc $lr128v $lr128v/$imr2\nuisub $lmt114v $lr112v $omr1\nuisub $lmt122v $lr120v $omr2\nuiinc $ls0v $ls0v/$imr1\nuiinc $lr128v $lr128v/$imr2\nimm ui\"0x00000040\" $ls452/1000\nuiadd $ls0v $lr128v $lr128v\nnop\nuisub $ls452 $lr128 $nowrite\nuisub $aluf $lr130 $nowrite\nuisub $aluf $lr132 $nowrite\nuisub $aluf $lr134 $ln16\nnop/3\nl1bmd $ln16v $lb0\nnop/3\nl2bmriiadd $lb0 $lc0\nnop/3\nl2bmb@0 $lc0 $lb0\nnop/3\nl1bmd $lb0 $ln0/1000\n"
+    },
+    {
+      "strategy": "pairs/l1bmd/l2bmr/l2bmb/l1bmd+fcmp",
+      "reason": "lower bound 95 >= best 76"
+    },
+    {
+      "strategy": "pairs/l1bmd/l2bmr/pdm/l2bmb/l1bmd+fcmp",
+      "reason": "lower bound 98 >= best 76"
+    },
+    {
+      "strategy": "local-reduce/base",
+      "reason": "lower bound 256 >= best 76"
+    },
+    {
+      "strategy": "local-reduce/split2",
+      "reason": "lower bound 256 >= best 76"
+    },
+    {
+      "strategy": "local-reduce/fcmp",
+      "reason": "lower bound 270 >= best 76"
+    },
+    {
+      "strategy": "local-reduce/fcmp-split4",
+      "reason": "lower bound 271 >= best 76"
+    }
+  ],
+  "seconds": 124.09
+}

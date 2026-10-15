@@ -1,219 +1,189 @@
-# 誤差予算付き MN-Core コンパイラ
+# mncompile — 汎用 MN-Core 2 コンパイラ
 
-通常の Python の制限された部分集合から、型・入力範囲・配置・許容絶対誤差を指定して VSM を生成する。
-多項式の近似候補の探索と、配列演算用の MN-Core 専用命令選択・スケジュールを実装している。
-標準ライブラリと LLVM の `opt` を使う。LLVM 18.1.3 で検証している。
+普通の Python で書いたカーネルと、入出力テンソルの「契約」（型・値域・物理配置・許容誤差）だけから
+MN-Core 2 の VSM を生成するコンパイラ。問題ごとの専用カーネルや手書きアセンブリは持たない。
 
-## original Challenge
+- コンパイラが受け取るのは `kernel(...)` のソースと契約だけ。問題名・テストケース・参照解は読まない
+  （それらを読むのはベンチマークのハーネス `mncompile/bench/` だけ）。
+- 命令は構造化した表現（`machine.py`）で扱い、ISA の全オペコード・全オペランド形式を表現・出力できる
+  （ALU・MAU・行列レジスタ読み書き・L1BM・L2BM・MV・wait・noforward・nop。リポジトリ中の全 VSM で往復テスト済み）。
+- 戦略ごとに候補プログラムを作り、スケジュールし、シミュレータで検証して、検証を通った中で最短の行数のものを選ぶ。
+- 許容誤差がある場合は近似の強さ（Newton 反復回数、exp の多項式次数、誤差予算内に収まる項の削除）を探索し、
+  誤差予算の 8 割以内に収まる最短の候補を選ぶ。
 
-25問の読みやすい高級言語ソースは [benchmarks/challenge](benchmarks/challenge) にあり、
-型・範囲・物理配置は [bindings.json](benchmarks/challenge/bindings.json) に分離している。
-全25問で公式テスト Accepted。22問は収集した公開最短解と同じ行数で、残る3問は下表の反例があるため行数基準から除外する。
-公開 Accepted と問題文の全入力で正しいことは別なので、除外は再現できた反例に限定する。
+ベンチマーク結果は末尾の表を参照。
 
-| 問題 | 生成行数 | 公開最短 | 除外した公開解の反例 |
-| --- | ---: | ---: | --- |
-| Plus Two | 6 | 5 | 全入力0。公開解は固定入力の並べ替えに依存 |
-| Lesseq | 6 | 4 | 入力0に対して、0でなく +∞ を出す |
-| Transpose / local | 16 | 10 | `X[1,0]=-0.0` で別要素の1が消える |
-
-反例・入力VSM・期待値・実測値・対象 submission は [reference-audits.json](benchmarks/challenge/reference-audits.json) に保存している。
-Plus Two の6行は、問題の公式チュートリアルの9行より短い。
-全問の行数と公式テスト結果は [generated/progress.json](benchmarks/challenge/generated/progress.json) を参照。
-`line_target_complete` は行数条件だけの判定。全入力の誤差評価と独立テストも別に確認する。
-`formal_whole_domain_proof: false` を明記し、公式テストの成功を形式証明とは扱わない。
+## 使い方
 
 ```sh
-uv run --with numpy python -m mncompile.challenge \
-  --assembler /path/to/assemble3 --judge /path/to/judge.py \
-  --output /tmp/mncompile-challenge
-
-python3 -m mncompile.reference_audits \
-  --assembler /path/to/assemble3 --emulator /path/to/gpfn3_package_main \
-  --output /tmp/reference-audits.json
-
-python3 -m mncompile.validation \
-  --assembler /path/to/assemble3 --emulator /path/to/gpfn3_package_main \
-  --output /tmp/validation.json
+cargo build --release --manifest-path mncompile/native/Cargo.toml   # 検証用シミュレータ（初回のみ）
+python3 -m mncompile mncompile/examples/sigmoid_like.py \
+  --contract mncompile/examples/sigmoid_like.json --output /tmp/out
 ```
 
-コンパイラは問題名・参照解・テストケースを読み込まない。比較用ハーネスだけがそれらを読む。
-`compile_program` はソースの演算構造から適用可能な命令選択規則を探し、行数の少ない候補を選ぶ。
-bindings の `kind` は説明用で、命令選択には使わない。
-Matrix Square は問題文の「小数点以下を切り捨てた入力」という追加制約を `integral_values: true` として扱う。
-この制約なしに Half 行列演算を選ぶことはない。
+`kernel.vsm` と `report.json`（選ばれた戦略、全候補の行数、不採用理由）が出力される。
+公式アセンブラ・エミュレータ（リポジトリ直下の `judge/`、`https://mncore-challenge.preferred.jp/judge.zip`）が必要。
+
+契約は問題文の宣言と同じ書式。
+
+```json
+{"inputs":  [{"name": "A", "dtype": "Float", "memory": "$lm[0:16]",
+              "layout": "(256,16)/((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1); B@[MAB])",
+              "low": -8, "high": 8}],
+ "outputs": [{"name": "C", "dtype": "Float", "memory": "$ln[0:16]",
+              "layout": "(256,16)/((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1))", "atol": 1e-6}]}
+```
+
+### 誤差予算で変わるコード
 
 ```python
-from mncompile import Tensor, compile_program
-
-compiled = compile_program(
-    "def f(x):\n    return [v + 1 for v in x]\n",
-    inputs={"x": Tensor("i32", "m", 0, 16, 0, 50)},
-    output=Tensor("i32", "n", 0, 16, 1, 51),
-)
-print(compiled.vsm)  # iinc 2行
+def kernel(a):
+    return [[v + 0.001 * v * v for v in row] for row in a]
 ```
 
-単独の bindings オブジェクトをJSONに保存すれば、CLIからも使える。
+入力範囲 `[-1, 1]` で、`atol=1e-5` なら 5 行（`fvmul` + `fvfma`）、`atol=0.002` なら区間解析で
+`0.001*v*v` の大きさ（≤0.001）が予算に収まるので項を落とし、1 行（2 長語コピー `lpassa $llm0v $lln0v`）になる。
 
-```sh
-python3 -m mncompile source.py --bindings contract.json --output /tmp/kernel
-```
+## 構成
 
-配列演算には、整数 map、比較、gather、転置、縮約、行列積、包含判定、転倒数、ビット反転、HSV→RGB、
-定数列・文字列生成がある。対応する意味と配置・形状に制限があり、任意の Python をコンパイルするものではない。
-複雑な演算は意味IRの専用プリミティブから、検証したネイティブ・ライブラリのスケジュールへ下げる。
-公開解の命令選択の工夫を参考にした規則もあるが、入力値の埋め込みや解答ファイルの再生はしない。
+| モジュール | 役割 |
+| --- | --- |
+| `layout.py` | 公式の配置記法（`(4_L2B:2, 64:2), (2:1, 4_PE:1, 2_W:1); B@[MAB]` など）の解析と物理位置計算 |
+| `trace.py`, `ir.py` | カーネルの記号実行。ハッシュコンシングした式グラフ（n 項 sum/max/lor、比較、select、gather 等） |
+| `oracle.py`, `verify.py` | 参照実行（binary64 → 出力型に丸め）と検証。網羅入力と独立ランダム入力を交互に使う |
+| `sim.py`, `native/` | 検証用ネイティブシミュレータ（Rust）と公式アセンブラ・エミュレータの呼び出し。ネイティブ側が正確に模擬しない命令（hv*/hm*/ilrelud/DAR）を含む場合は自動で公式エミュレータを使う |
+| `machine.py` | 構造化命令。全オペコード・オペランド形式の出力、並列発行グループ、読み書きするメモリ語の計算 |
+| `vprog.py`, `schedule.py` | SSA 風の仮想命令列と VLIW リストスケジューラ（フォワーディング、GRF/T への格納割当て、読み出しポート制約、マスク entry 管理、レジスタ圧迫の考慮、デッドロック時の再計算・ポートコピー）。アセンブラが拒否した行は分割して修復し、不要な nop はアセンブラが受理する限り削る |
+| `select.py` | スカラ関数の命令選択（整数/浮動小数表現、定数、select、除算、exp、PE 座標定数、PE 間交換、ビット置換） |
+| `compiler.py` | 戦略の実行、候補の検証、最短の選択 |
 
-LLVM 最適化後の演算グラフを読み戻すのは scalar polynomial / integer map 等の経路。
-行列・縮約・文字列等では LLVM は項・インデックス・定数等を最適化し、全体の処理は意味IRと専用規則が保持する。
-LLVM が単独で公開最短スケジュールを発見した、という実装ではない。
+### 戦略
 
-## 誤差で変わるコード
+| 戦略 | 対象 |
+| --- | --- |
+| `local` | 各出力語が同じ PE の入力の同じ関数（SPMD）。PE 座標に依存する定数は `$peid`/`$mabid` 等のビット線形結合で生成、MAB 内の別 PE の入力は `msl`/`msr` 回転と PE マスクで取得、PE ごとにアドレスがずれる入力は T 間接参照（複数テンソルなら T を切り替えて GRF に退避）。出力が入力と同じ LM にある場合は GRF に計算して 2 長語コピーする変種も作る |
+| `relayout` | レーンがずれた入力（行ベクトルの放送など）。ずれた部分式を元の位置で長語計算し、単語コピーで再配置してから長語で本計算 |
+| `local-reduce`, `pe-reduce`, `mab-reduce` | PE 内・MAB 内（4 PE）の縮約。PE ごとの部分和と `msl` 回転木 |
+| `contraction` | 行列積。MAB の行列ユニット（gm/hm、転置読み出し、K 分割）で計算 |
+| `hierarchy` | MAB・L1B・L2B をまたぐ縮約。PE 側の部分和（上の戦略のどれか）を `l1bmr`/`l2bmr`/`mvr`（DRAM・PDM）で縮約しながら運び、LM 出力なら L1BM/L2BM から戻す。放送された入力の項を複製ユニットに分割する変種もある |
+| `split` | 入力が 16 MAB に放送され出力が MAB 0 だけにある場合、出力を 16 MAB に分担させて計算し、`l1bmd`→`l1bmm` で MAB 0 に集める |
+| `pairs` | 全ペア縮約 Σ_{j<k} f(x_j, x_k)（転倒数など）。対角線 d=k−j ごとに放送された複製ユニットへ割り振り、x_{j+d} を T 間接で読み、行末の外は f(x, S)=0 となる番兵 S で埋めて SPMD にし、ユニットの部分和を階層転送（PDM 経由を含む）で縮約する |
+| `movement`, `gather`, `allgather` | DRAM↔LM の転送計画、T 間接の gather、L1BM 経由の MAB 間コピー |
+| `generate` | 入力に依存しない出力（定数・文字列・連番）を PE で生成して DRAM に上げる。値が PE 座標のビット線形関数なら少数の命令で、そうでなければ PE マスク付き即値の表で生成する。DRAM への経路は L2B ごとの `mvp` か、`mvd` で PDM に結合して 1 本の `mvp` |
+| `membership` | 小さな整数値域の所属判定 any(x == y)。LM0 に値で引く表を置き、T 間接で probe 位置をクリア → 要素をマーク → probe を読み戻す（4 値で 1 回の T ロードと 1 回のアクセス） |
+| `fmtseq` | 定数のバイト列が「カウンタの 10 進表記を 1 バイトの区切りで連結し、整除性で決まるトークンを定数に置き換えたもの」と出力データから分かる場合（区切り・範囲・周期・定数・整除の法はすべてデータから推定）。各 PE が自分の 8 バイト窓を担当し、4 サイクルに連続 4 トークンを載せる。窓の桁数区間はマスク付きマージで選び、先頭トークンは線形推定、各トークンの終端位置は floor(i/m) の閉形式で求めて T に載せ、LM0 のセルに右詰めで（左へのはみ出しは所有トークンが上書きする順序で）描画してから 8 文字を詰める。ホスト側で同じ f32 演算を再現して全窓を検査し、外れる窓はマスク付き即値で補正する |
 
-```python
-def kernel(x):
-    return x + 0.001 * x * x
-```
+スケジューラの主な工夫: ALU が埋まっているときの単純なコピーやマスク付きマージは L1BM の折り返しレジスタ経由
+（`l1bmd src $lbi` → 次の行で `l1bmd $lbi dst`）に回す。一緒に読まれる値は「同じ命令で読まれる」関係の 2 彩色で別々の GRF に
+置き（マスク付きマージで記憶域を共有する値は 1 つとして扱う）、それでも同じ GRF の 2 か所を読む命令は待たずにすぐ片方をコピーする。
+ALU と MAU のどちらでも同じビットになるコピー（定数文字の書き込みなど）は空いている方で発行する。T 間接アクセスは値域が分かれば
+その範囲だけと依存を取る。マスクレジスタの entry が残り少ないときは、フラグを作る命令をプログラム順に置く。
 
-リポジトリルートで実行する。
+命令選択の主な工夫: `frelu`（符号ビットで値か −0 を選ぶ）による比較選択、ゼロフラッシュマスクで「値か 0」の選択を 1 命令に、
+XOR 型ビット置換（バイト反転・ビット反転）を `sbsl`/`ibsl`/`lbsl` 回転とマスク交換に合成、2^64 を超える中間値を
+「下位ビットしか使われない」解析でラップ演算に、除算は `frsqrt`² と Newton 反復（回数は探索）、exp は範囲縮小と多項式（次数は探索）。
 
-```sh
-python3 -m mncompile mncompile/examples/near_identity.py \
-  --domain -1 1 --atol 0.00001 --output /tmp/mncompile-tight
+## 検証について
 
-python3 -m mncompile mncompile/examples/near_identity.py \
-  --domain -1 1 --atol 0.002 --output /tmp/mncompile-loose
-```
+候補はすべて、契約の値域から作った複数の入力ケースで参照実行と比較する（出力型への丸め込み後の値と atol で判定）。
+有限の小さな値域は網羅入力と独立ランダム入力を交互に使う（網羅だけだと「全要素が含まれる」ような退化が起きるため）。
+これは形式証明ではない。近似を使う候補は検証ケースを 8 に増やし、誤差が許容値の 8 割を超えるものは採用しない。
 
-| 入力範囲 | 許容絶対誤差 | 選択される計算 | VSM 行数 / 8 Float / PE |
-| --- | --- | --- | --- |
-| `[-1, 1]` | `1e-5` | 元の多項式 | 13 |
-| `[-1, 1]` | `0.002` | `x` | 1 |
+## 正直な注記・制限
 
-`--assembler /path/to/assemble3` を付けると全候補を公式アセンブラで検証し、出力された `j` と `m` の個数で比較する。
-上の13行・1行は公式アセンブラで確認した値。指定しない場合は、生成 VSM の命令行数で評価し、その旨をレポートに記録する。
-`--words 32` のように、PE あたりの Float 要素数を8の倍数で指定できる。
+- fizzbuzz は `fmtseq`（出力バイト列から「区切りで連結した 10 進カウンタ＋整除で決まる定数トークン」を推定して描画するイディオム）
+  で生成する。推定できない一般の定数バイト列は、従来どおり PE マスク付き即値の表になる（32KB なら 8000 行超）。
+- 符号ビット判定（`frelu`）を `x >= 0` に使うので、入力が −0.0 のときだけ `x >= 0` と異なる値を出しうる（値域の他の点では一致）。
+- 浮動小数の定数は f32 に丸めて使う（誤差は検証で確認）。
+- コンパイル時間は問題により数秒〜10 分程度（多数の候補を作って検証するため）。
+- 参照解の一部（例: plus-two）は公式テストケースの入力値に依存した並べ替えで短くしており、そのような最適化はしない。
 
-`examples/mul7.py` は定数を T に一度だけ置き、32 Float/PE を5行で処理する。
-`--domain -512 512 --atol 0.001 --words 32` で生成したコードは、
-既存の `problems/2.fmul7/testcase.vsm` に対して公式 judge で `ACCEPTED!! score=5` を確認済み。
-ここでの `0.001` は実数多項式を参照するコンパイラの誤差予算で、問題のジャッジ許容誤差とは別の指定である。
+## ベンチマーク
 
-```python
-from mncompile import compile_source
+`python3 -m mncompile.bench.run --output <dir>` で 73 問（original Challenge 25 問、MNIST 特設 48 問）を
+コンパイルし、公式ジャッジで判定する。カーネルのソースは `benchmarks/challenge/*.py`, `benchmarks/mnist/*.py`、
+問題文に書かれた追加の値の制約は `benchmarks/constraints.json`。
+ランナーは問題ごとにワーカープロセスを起動し、空きメモリが全体の 12% を割ると最大のワーカーを止めて最後に単独で再実行する
+（WSL ではメモリ枯渇で VM ごと落ちるため）。並列数の既定値はメモリ量から決まる。
+生成した VSM と各問題のレポートは `benchmarks/results/` に保存している（下表はその `progress.json` から
+`python3 -m mncompile.bench.report mncompile/benchmarks/results --readme mncompile/README.md` で生成）。
 
-compiled = compile_source(
-    "def f(x):\n    return x + 0.001*x*x\n",
-    domain=(-1, 1),
-    atol=0.002,
-)
-print(compiled.vsm)
-print(compiled.report["error_bound"])
-```
+<!-- RESULTS -->
 
-## パイプラインと成果物
+公式ジャッジで 73/73 問 Accepted。参照解（公開されている最短の Accepted 提出、MNIST は問題ページの Top）以下の行数は 19 問。Accepted 問題の行数合計は生成 1617 行 / 参照解 1077 行。
 
-```text
-Python の制限された関数
- → 意味IR / 有理数係数の多項式
- → 元の式 + 次数を変えた Horner 形式の候補
- → LLVM IR / instcombine, early-cse, dce
- → 最適化された演算グラフの読み戻し
- → 誤差解析 + GRF 割り当て + VSM スケジュール
- → 誤差予算を満たす候補の行数比較
-```
-
-上記の多項式経路では、LLVM から読み戻した演算グラフを実際に VSM 生成に使う。
-共通部分式を共有し、LLVM の定数畳み込みで係数が変わった場合も、その変化を近似誤差へ加える。
-`fast-math`、演算順序変更の許可、FMA contraction は使用しない。
-
-出力ディレクトリには次を保存する。再実行時は同名の成果物を上書きする。
-
-- `kernel.vsm`: 選択された MN-Core 2 プログラム。
-- `kernel.ll`: 最適化後の LLVM IR。専用プリミティブでは項や定数等の部分IR。
-- `semantic.json`: 元の式・配列演算・論理形状・選択された規則の意味IR。
-- `report.json`: 入力範囲、誤差上界、前提条件、選択候補と行数等。多項式経路は全候補と LLVM バージョンも保存。
-
-## 多項式経路の誤差の意味
-
-参照する計算は、**入力 Float の数値を実数として代入した多項式**。
-Python の float 演算を逐次実行した結果や、既存の VSM のビット列を参照するモードはまだない。
-ソースの小数リテラルは Python の binary64 値を正確な有理数にして扱う。
-
-入力の契約は、指定範囲内の有限な MN-Core Float の正規化数と0。
-NaN・無限大・IEEE subnormal 入力は対象外。符号付き0の区別は実数の誤差では測らない。
-入力の配置は、全 PE の LM0 先頭に `--words` 個の Float、出力は LM1 先頭。
-テンソルの論理形状や PE 間の配置はこの初期実装では変更しない。
-
-上界の計算に浮動小数点の丸めを使わず、有理数を使う。
-`error_bound` の分数表記が判定に用いた値で、`error_bound_float` は表示用。
-
-1. 多項式の差 `Σ d[k] x**k` を、`R = max(abs(low), abs(high))` として `Σ abs(d[k])*R**k` で押さえる。
-2. 定数の Float 化と subnormal の0化による差を加える。
-3. 各演算の誤差を、加算では `ea + eb`、乗算では `Ma*eb + Mb*ea + ea*eb` で伝播させる。
-4. 演算ごとに、下記の MN-Core Float モデルの丸め・打ち切り誤差を加える。
-5. 中間値のオーバーフローを除外できない候補や、上界が予算を超える候補を棄却する。
-
-### 対象演算の数値モデル
-
-対象は `fvmul` と `fvadd`。FMA、行列演算、半精度、精度拡張は生成しない。
-`viz/core/src/float.rs` と `docs/dataflow-viz/NUMERICS.md` にある既存モデルを前提に、
-演算の絶対誤差を保守的に次で押さえる。
-
-```text
-mul: 2**-22 * abs(a*b)       + 2**-126
-add: 2**-22 * (abs(a)+abs(b)) + 2**-126
-```
-
-単精度 RNE の相対誤差 `2**-24` に加え、乗算の下位5ビットどうしの部分積を省く誤差と、
-加算入力のアラインメントを含めた緩い係数として `2**-22` を使う。
-乗算の部分積については、24ビット仮数の積に対して下位積の変更が最大でも `2**10` 未満なので、
-正規化された非零の積に対する相対差は `2**-36` 未満。
-加算は `a*1+b` の経路で、アラインメントの刻みが `2**(exponent(a)-41)`。
-0へのフラッシュの絶対誤差として `2**-126` を加える。
-
-これは**この数値モデルを前提にした全入力範囲の上界**であり、ハードウェア自体を形式検証した証明書ではない。
-公式エミュレータとの標本比較は別途テストし、全入力の機械実装との一致証明とは区別する。
-不必要に緩い上界で候補を棄却することがある。
-
-## 多項式経路の範囲と今後の拡張
-
-対応するソースは1引数の関数、局所代入、`+`、`-`、`*`、非負整数定数のべき乗。
-多項式の次数は16以下。関数呼び出し・分岐・ループ・除算などは明示的に拒否する。
-予算を満たす候補がなければコンパイルは失敗する。
-
-最適性は**列挙した元の式と次数別 Horner 候補の中での最小**。
-全 VSM プログラムの大域的な最短性は主張しない。
-GRF は単純割り当てで、待機には保守的な nop を入れる。
-配列経路には MN-Core 専用の命令選択・同時発行・転送規則がある。配置の自動探索や一般的なレジスタ割り当ては未実装。
-Half doubling は誤差0なら13行、`atol >= 2^-30` なら9行の候補を選べる。
-低精度化・FMA・縮約等はそれぞれ専用の数値モデルと前提条件をレポートに記録する。
-
-既存 VSM の lifting と往復変換は `docs/vsm-ir.md` の別の入口として接続する。
-既存 Accepted 解答は命令パターン・配置・スケジュールを評価する比較対象にする。
-exp 等の非多項式の近似や、未登録の演算構造・配置を自由に組み合わせる汎用コード生成は未対応。
-
-## テスト
-
-```sh
-python3 -m unittest discover -s mncompile -t . -v
-
-MNCORE_ASSEMBLER=/path/to/assemble3 \
-MNCORE_EMULATOR=/path/to/gpfn3_package_main \
-python3 -m unittest discover -s mncompile -t . -v
-```
-
-後者は生成プログラムを公式エミュレータで実行し、境界値と固定 seed の入力について、
-実際の出力誤差が報告した上界に収まることも検査する。
-Half は範囲内の全30,724表現、log2・mod3・整数mul7・FizzBuzz-PE は全入力値と各レーン、
-ビット反転は全1024基底、Contains は全1001キーの単独出現と重複を検査する。
-さらに独立した行列、HSVのセクター境界、符号付き0、文字定数の変更、全文字出力、別オフセット等を検査する。
-これは数値モデルに基づく根拠と回帰テストの組み合わせであり、全VSMの形式的な同値性証明ではない。
-[validation.json](benchmarks/challenge/validation.json) に最新の件数・結果・Python実装のSHA-256を保存する。
-
-## 参考
-
-- [PolyBake](https://github.com/t3tra-dev/polybake): 入力領域と誤差予算を受け取り、意味IR・最適化・誤差の根拠を分ける構成を参考にした。実装コードの転載や依存追加はしていない。
-- [LLVM opt](https://llvm.org/docs/CommandGuide/opt.html): 使用する最適化パスの実行方法。
-- [LLVM floating-point semantics](https://llvm.org/docs/LangRef.html#fast-math-flags): 浮動小数点の変換を許可するフラグの意味。
+| 問題 | 判定 | 生成行数 | 参照解 | 比 | 戦略 |
+| --- | --- | ---: | ---: | ---: | --- |
+| 1.plus-one | Accepted | 2 | 2 | 1.00 | local |
+| 2.plus-two | Accepted | 7 | 5 | 1.40 | local |
+| 3.a-plus-b | Accepted | 6 | 6 | 1.00 | local/-staged |
+| 4.mul7 | Accepted | 10 | 6 | 1.67 | local |
+| 5.abs | Accepted | 23 | 13 | 1.77 | local |
+| 6.fadd-mul | Accepted | 18 | 14 | 1.29 | local |
+| 7.mul2 | Accepted | 13 | 9 | 1.44 | local |
+| 8.fle | Accepted | 9 | 4 | 2.25 | local |
+| 9.transpose-addr | Accepted | 16 | 10 | 1.60 | local |
+| 10.gather-easy | Accepted | 12 | 6 | 2.00 | gather |
+| 11.square-sum | Accepted | 21 | 11 | 1.91 | hierarchy/split-MAB+L1B:l1bmr16/l2bmr/l2bmb/l1bmm2+local |
+| 12.convert-endian | Accepted | 6 | 3 | 2.00 | local |
+| 13.mod3 | Accepted | 15 | 8 | 1.88 | local |
+| 14.mat-sq | Accepted | 12 | 10 | 1.20 | contraction/hm-t |
+| 15.contains | Accepted | 60 | 20 | 3.00 | hierarchy/l1bmr16/l1bmp2+pe+rot-membership/zero-init |
+| 16.count-up | Accepted | 43 | 21 | 2.05 | generate/spread-pdm |
+| 17.transpose-mab | Accepted | 45 | 15 | 3.00 | allgather |
+| 18.inversion-small | Accepted | 30 | 9 | 3.33 | pairs/l1bmr16/l1bmm2+base |
+| 19.inversion | Accepted | 76 | 31 | 2.45 | pairs/l1bmd/l2bmr/pdm/l2bmb/l1bmd+base |
+| 20.fizzbuzz | Accepted | 103 | 98 | 1.05 | fmtseq/render-pdm/0p |
+| 21.hello-world | Accepted | 13 | 9 | 1.44 | generate/spread |
+| 22.bit-reverse | Accepted | 32 | 10 | 3.20 | local |
+| 23.fizzbuzz-pe | Accepted | 12 | 9 | 1.33 | local |
+| 24.log2 | Accepted | 15 | 7 | 2.14 | local |
+| 25.hsv2rgb | Accepted | 32 | 12 | 2.67 | local |
+| 1.a-b | Accepted | 4 | 3 | 1.33 | local |
+| 2.fmul7 | Accepted | 5 | 5 | 1.00 | local |
+| 3.relu | Accepted | 2 | 2 | 1.00 | local |
+| 4.relu-grad | Accepted | 3 | 3 | 1.00 | local |
+| 5.addcol-vec | Accepted | 4 | 4 | 1.00 | local |
+| 6.subrow-vec | Accepted | 35 | 24 | 1.46 | split/local |
+| 7.sumcol-mini | Accepted | 4 | 4 | 1.00 | local |
+| 8.sumcol | Accepted | 12 | 9 | 1.33 | hierarchy/l1bmm@32/l2bmr/mvr+local |
+| 9.sumrow-mini | Accepted | 9 | 6 | 1.50 | pe-reduce |
+| 10.sumrow | Accepted | 24 | 20 | 1.20 | split/mab-reduce/pe+rot-local |
+| 11.maxrow | Accepted | 24 | 21 | 1.14 | split/mab-reduce/pe+rot-local |
+| 12.divrow-vec | Accepted | 56 | 29 | 1.93 | split/local/newton2 |
+| 13.exp-low-prec | Accepted | 20 | 14 | 1.43 | local/exp_degree3 |
+| 14.exp | Accepted | 30 | 21 | 1.43 | local/exp_degree6 |
+| 15.onehot-mini | Accepted | 17 | 7 | 2.43 | relayout/base |
+| 16.onehot | Accepted | 44 | 24 | 1.83 | split/local/base |
+| 17.dram-dl-256-16 | Accepted | 5 | 5 | 1.00 | movement |
+| 18.dram-ul-256-16 | Accepted | 6 | 6 | 1.00 | movement |
+| 19.dram-dl-256-16p | Accepted | 25 | 19 | 1.32 | movement |
+| 20.dram-ul-256-16p | Accepted | 16 | 10 | 1.60 | movement |
+| 21.dram-dl-256-16-l2b | Accepted | 14 | 12 | 1.17 | movement |
+| 22.dram-dl-1024-16 | Accepted | 10 | 8 | 1.25 | movement |
+| 23.dram-dl-256-1024 | Accepted | 74 | 69 | 1.07 | movement |
+| 24.dram-dl-16 | Accepted | 5 | 5 | 1.00 | movement |
+| 25.dram-ul-16 | Accepted | 5 | 5 | 1.00 | movement |
+| 26.dram-dl-16-1024 | Accepted | 44 | 40 | 1.10 | movement |
+| 27.dram-ul-16-1024 | Accepted | 18 | 13 | 1.38 | movement |
+| 28.dram-dl-16-16 | Accepted | 12 | 11 | 1.09 | movement |
+| 29.dram-ul-16-16 | Accepted | 13 | 9 | 1.44 | movement |
+| 30.dram-dl-256 | Accepted | 11 | 11 | 1.00 | movement |
+| 31.dram-ul-256 | Accepted | 9 | 12 | 0.75 | movement |
+| 32.matmul-trb-mab-lm-4-8-8 | Accepted | 4 | 4 | 1.00 | contraction/gm-direct |
+| 33.matmul-trb-mab-lm-4-8-16 | Accepted | 7 | 7 | 1.00 | contraction/gm-direct |
+| 34.matmul-trb-mab-lm-4-16-8 | Accepted | 6 | 7 | 0.86 | contraction/hm |
+| 35.matmul-trb-mab-lm-4-16-16 | Accepted | 6 | 12 | 0.50 | contraction/hm |
+| 36.matmul-trb-pkg-lm-256-16-16 | Accepted | 12 | 12 | 1.00 | contraction/gm-direct |
+| 37.matmul-trb-mab-lm-32-8-16 | Accepted | 21 | 17 | 1.24 | contraction/gm-direct |
+| 38.matmul-trb-pkg-lm-256-128-16 | Accepted | 48 | 23 | 2.09 | hierarchy/l1bmr32/l1bmm2+contraction/gm-direct |
+| 39.matmul-trb-pkg-lmdram-256-1024-16 | Accepted | 38 | 29 | 1.31 | hierarchy/l1bmr32/l2bmr/mvp+contraction/gm-direct |
+| 40.matmul-notr-mab-lm-4-8-8 | Accepted | 7 | 7 | 1.00 | contraction/gm |
+| 41.matmul-notr-mab-lm-4-16-16 | Accepted | 23 | 13 | 1.77 | contraction/gm |
+| 42.matmul-notr-pkg-lm-256-16-16 | Accepted | 23 | 13 | 1.77 | contraction/gm |
+| 43.matmul-tra-mab-lm-8-8-8 | Accepted | 10 | 8 | 1.25 | contraction/gm |
+| 44.matmul-tra-mab-lm-16-8-16 | Accepted | 26 | 17 | 1.53 | contraction/gm |
+| 45.matmul-tra-mab-lm-16-4-16 | Accepted | 20 | 16 | 1.25 | contraction/gm |
+| 46.matmul-tra-pkg-lmdram-16-256-16 | Accepted | 31 | 26 | 1.19 | hierarchy/l1bmm@32/l2bmr/mvr+contraction/gm |
+| 47.matmul-tra-mab-lm-16-32-8 | Accepted | 50 | 17 | 2.94 | contraction/gm |
+| 48.matmul-tra-pkg-lmdram-16-256-1024 | Accepted | 94 | 70 | 1.34 | hierarchy/l1bmd/l2bmd/mvr-pdm+contraction/gm |

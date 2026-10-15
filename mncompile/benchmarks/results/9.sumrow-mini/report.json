@@ -1,0 +1,85 @@
+{
+  "lines": 9,
+  "strategy": "pe-reduce",
+  "candidates": [
+    {
+      "strategy": "pe-reduce",
+      "lines": 9
+    },
+    {
+      "strategy": "mab-reduce/pe+rot-local",
+      "lines": 12
+    }
+  ],
+  "rejected": [
+    {
+      "strategy": "local",
+      "reason": "local map: exchange needs every PE of the MAB"
+    },
+    {
+      "strategy": "relayout",
+      "reason": "local map: ('A', (0, 2)) is not stored in PE 0"
+    },
+    {
+      "strategy": "local-reduce",
+      "reason": "local map: ('A', (0, 2)) is not stored in PE 0"
+    },
+    {
+      "strategy": "movement",
+      "reason": "movement: output is not a copy of an input element"
+    },
+    {
+      "strategy": "contraction",
+      "reason": "contraction: term is not a product of two inputs"
+    },
+    {
+      "strategy": "gather",
+      "reason": "gather: 64-bit elements only"
+    },
+    {
+      "strategy": "generate",
+      "reason": "generate: output depends on the inputs"
+    },
+    {
+      "strategy": "pairs",
+      "reason": "pairs: integer LM output"
+    },
+    {
+      "strategy": "allgather",
+      "reason": "allgather: output is not a copy"
+    },
+    {
+      "strategy": "hierarchy/split-MAB:l1bmr32/l1bmm2+local",
+      "reason": "lower bound 15 >= best 9"
+    },
+    {
+      "strategy": "hierarchy/split-MAB:l1bmr16/l1bmm2+local",
+      "reason": "lower bound 15 >= best 9"
+    },
+    {
+      "strategy": "hierarchy/split-L1B:l1bmm@32/l2bmr/l2bmb/l1bmm2+local",
+      "reason": "lower bound 15 >= best 9"
+    },
+    {
+      "strategy": "hierarchy/split-L1B:l1bmm@16/l2bmr/l2bmb/l1bmm2+local",
+      "reason": "lower bound 15 >= best 9"
+    },
+    {
+      "strategy": "hierarchy/split-MAB+L1B:l1bmr32/l1bmm2+local",
+      "reason": "lower bound 15 >= best 9"
+    },
+    {
+      "strategy": "hierarchy/split-MAB+L1B:l1bmr16/l1bmm2+local",
+      "reason": "lower bound 15 >= best 9"
+    },
+    {
+      "strategy": "split/mab-reduce/pe+rot-local/base",
+      "reason": "lower bound 24 >= best 9"
+    },
+    {
+      "strategy": "split/mab-reduce/pe+rot-local/-staged",
+      "reason": "lower bound 26 >= best 9"
+    }
+  ],
+  "seconds": 8.7
+}

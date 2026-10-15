@@ -1,0 +1,85 @@
+{
+  "lines": 30,
+  "strategy": "pairs/l1bmr16/l1bmm2+base",
+  "candidates": [
+    {
+      "strategy": "local-reduce/base",
+      "lines": 69
+    },
+    {
+      "strategy": "local-reduce/split2",
+      "lines": 70
+    },
+    {
+      "strategy": "pairs/l1bmr16/l1bmm2+base",
+      "lines": 30
+    },
+    {
+      "strategy": "pairs/l1bmr16/l1bmm1+base",
+      "lines": 30
+    },
+    {
+      "strategy": "pairs/l1bmr16/l1bmm2+split2",
+      "lines": 31
+    },
+    {
+      "strategy": "pairs/l1bmr16/l1bmm1+split2",
+      "lines": 31
+    }
+  ],
+  "rejected": [
+    {
+      "strategy": "local",
+      "reason": "no integer rule for gt"
+    },
+    {
+      "strategy": "relayout",
+      "reason": "relayout: 32-bit lanes only"
+    },
+    {
+      "strategy": "movement",
+      "reason": "movement: output is not a copy of an input element"
+    },
+    {
+      "strategy": "contraction",
+      "reason": "contraction: term is not a product of two inputs"
+    },
+    {
+      "strategy": "pe-reduce",
+      "reason": "pe-reduce: terms must be input elements"
+    },
+    {
+      "strategy": "gather",
+      "reason": "gather: output is not a table lookup by an input index"
+    },
+    {
+      "strategy": "hierarchy",
+      "reason": "hierarchy: no transfer chain"
+    },
+    {
+      "strategy": "mab-reduce",
+      "reason": "hierarchy: a PE holds none of a partial's terms"
+    },
+    {
+      "strategy": "generate",
+      "reason": "generate: output depends on the inputs"
+    },
+    {
+      "strategy": "split",
+      "reason": "split: no PE-level strategy computes the shares"
+    },
+    {
+      "strategy": "membership",
+      "reason": "membership: a term is not an equality of two inputs"
+    },
+    {
+      "strategy": "fmtseq",
+      "reason": "fmtseq: byte string in DRAM"
+    },
+    {
+      "strategy": "allgather",
+      "reason": "allgather: output is not a copy"
+    }
+  ],
+  "seconds": 27.31
+}

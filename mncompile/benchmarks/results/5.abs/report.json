@@ -1,0 +1,61 @@
+{
+  "lines": 23,
+  "strategy": "local",
+  "candidates": [
+    {
+      "strategy": "local",
+      "lines": 23
+    }
+  ],
+  "rejected": [
+    {
+      "strategy": "relayout",
+      "reason": "relayout: operands already aligned (plain local map)"
+    },
+    {
+      "strategy": "local-reduce",
+      "reason": "local reduce: class is not a reduction"
+    },
+    {
+      "strategy": "movement",
+      "reason": "movement: output is not a copy of an input element"
+    },
+    {
+      "strategy": "contraction",
+      "reason": "contraction: output is not a sum of products"
+    },
+    {
+      "strategy": "pe-reduce",
+      "reason": "pe-reduce: output is not a reduction"
+    },
+    {
+      "strategy": "gather",
+      "reason": "gather: 64-bit elements only"
+    },
+    {
+      "strategy": "hierarchy",
+      "reason": "hierarchy: no transfer chain"
+    },
+    {
+      "strategy": "mab-reduce",
+      "reason": "mab-reduce: output is not a reduction"
+    },
+    {
+      "strategy": "generate",
+      "reason": "generate: output depends on the inputs"
+    },
+    {
+      "strategy": "split",
+      "reason": "split: an input is not broadcast over the MABs"
+    },
+    {
+      "strategy": "pairs",
+      "reason": "pairs: output is not a sum"
+    },
+    {
+      "strategy": "allgather",
+      "reason": "allgather: output is not a copy"
+    }
+  ],
+  "seconds": 4.49
+}

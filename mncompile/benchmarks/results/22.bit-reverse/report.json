@@ -1,0 +1,61 @@
+{
+  "lines": 32,
+  "strategy": "local",
+  "candidates": [
+    {
+      "strategy": "local",
+      "lines": 32
+    }
+  ],
+  "rejected": [
+    {
+      "strategy": "relayout",
+      "reason": "relayout: 32-bit lanes only"
+    },
+    {
+      "strategy": "local-reduce",
+      "reason": "local map: ('X', (15,)) is not stored in PE 0"
+    },
+    {
+      "strategy": "movement",
+      "reason": "movement: output is not a copy of an input element"
+    },
+    {
+      "strategy": "contraction",
+      "reason": "contraction: term is not a product of two inputs"
+    },
+    {
+      "strategy": "pe-reduce",
+      "reason": "pe-reduce: terms must be input elements"
+    },
+    {
+      "strategy": "gather",
+      "reason": "gather: output is not a table lookup by an input index"
+    },
+    {
+      "strategy": "hierarchy",
+      "reason": "hierarchy: no PE-level strategy computes the partials"
+    },
+    {
+      "strategy": "mab-reduce",
+      "reason": "hierarchy: a PE holds none of a partial's terms"
+    },
+    {
+      "strategy": "generate",
+      "reason": "generate: output depends on the inputs"
+    },
+    {
+      "strategy": "pairs",
+      "reason": "pairs: a term does not read two elements of one tensor"
+    },
+    {
+      "strategy": "allgather",
+      "reason": "allgather: output is not a copy"
+    },
+    {
+      "strategy": "split/local",
+      "reason": "lower bound 52 >= best 32"
+    }
+  ],
+  "seconds": 4.31
+}

@@ -1,0 +1,12 @@
+mvp/n64 $d0@0 $lc0@0.0
+mvp/n64 $d0@1 $lc64@0.0
+mvp/n64 $d0@2 $lc128@0.0
+mvp/n64 $d0@3 $lc192@0.0
+l2bmb@0 $lc0 $lb0
+l2bmb@0 $lc64 $lb32
+l2bmb@0 $lc128 $lb64
+l2bmb@0 $lc192 $lb96
+l1bmm $llb0 $llm0v
+l1bmm $llb32 $llm16v
+l1bmm $llb64 $llm32v
+l1bmm $llb96 $llm48v

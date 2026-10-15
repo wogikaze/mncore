@@ -1,0 +1,44 @@
+l1bmd $lm0v $lb0
+l1bmd $lm8v $lb256
+l1bmd $lm16v $lb512
+l1bmd $lm24v $lb768
+nop/2
+l1bmm $llb0 $llm32v
+l1bmm $llb32 $llm48v
+l1bmm $llb64 $llm64v
+l1bmm $llb96 $llm80v
+l1bmm $llb128 $llm96v
+l1bmm $llb160 $llm112v
+l1bmm $llb192 $llm128v
+l1bmm $llb224 $llm144v
+l1bmm $llb256 $llm160v
+l1bmm $llb288 $llm176v
+l1bmm $llb320 $llm192v
+l1bmm $llb352 $llm208v
+l1bmm $llb384 $llm224v
+l1bmm $llb416 $llm240v
+l1bmm $llb448 $llm256v
+l1bmm $llb480 $llm272v
+l1bmm $llb512 $llm288v
+l1bmm $llb544 $llm304v
+l1bmm $llb576 $llm320v
+l1bmm $llb608 $llm336v
+l1bmm $llb640 $llm352v
+l1bmm $llb672 $llm368v
+l1bmm $llb704 $llm384v
+l1bmm $llb736 $llm400v
+l1bmm $llb768 $llm416v
+l1bmm $llb800 $llm432v
+l1bmm $llb832 $llm448v
+l1bmm $llb864 $llm464v
+l1bmm $llb896 $llm480v
+l1bmm $llb928 $llm496v
+l1bmm $llb960 $llm512v
+l1bmm $llb992 $llm528v
+imm ui"0x00000005" $ls448/1000
+ilsl $mabid $aluf $llt
+nop
+lpassa $lmt32v $ln0v
+lpassa $lmt40v $ln8v
+lpassa $lmt48v $ln16v
+lpassa $lmt56v $ln24v

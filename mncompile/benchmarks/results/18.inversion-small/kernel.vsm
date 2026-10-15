@@ -1,0 +1,27 @@
+imm ui"0xFFFFFFFF" $llr440
+nop/2
+lpassa $llr440 $llm32v
+lpassa $llr440 $llm48v
+imm ui"0x00000001" $ls448/1000
+ilsl $mabid $aluf $llt
+lpassa $llm0v $llr0v
+imm ui"0x00000001" $s451/1000
+ulsub $lmt2v $lr0v $omr1
+lpassa $llm16v $llr16v
+lpassa/$imr1 $ls450 $lr32v
+ulsub $lmt10v $lr8v $omr1
+ulinc $lr32v $lr32v/$imr1
+ulsub $lmt18v $lr16v $omr1
+ulinc $lr32v $lr32v/$imr1
+ulsub $lmt26v $lr24v $omr1
+ulinc $lr32v $lr32v/$imr1
+imm ui"0x00000010" $s453/1000
+nop
+ulsub $ls452 $lr32 $nowrite
+ulsub $aluf $lr34 $nowrite
+ulsub $aluf $lr36 $nowrite
+ulsub $aluf $lr38 $ln16
+nop/2
+l1bmrliadd $ln16v $lb0
+nop/2
+l1bmm $llb0 $lln0/ll1000

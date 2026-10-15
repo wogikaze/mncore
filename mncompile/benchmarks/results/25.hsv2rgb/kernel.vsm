@@ -1,0 +1,32 @@
+imm ui"0x40C00000" $lr448/1000
+fvmul $lm0v6 $aluf $lr0v
+ffloor $mauf $ls0v; l1bmd $lm4v6 $lbi
+l1bmd $lbi $ln0v6; imm ui"0x3E2AAAAD" $lr450/1000; fvadd $lr0v -$aluf $ls8v
+fvmul $ls0v $aluf $nowrite; imm ui"0x3F800000" $ls450/1000
+ffloor $mauf $nowrite; fvadd $aluf -$ls8v $lr16v
+fvfma $aluf -$lr448 $ls0v $lr0v; imm ui"0x40800000" $ls456/1000
+lpassa $ls450 $lr8v; fvfma $lm2v6 -$lr16v $ls450 $nowrite
+fvmul $lm4v6 $mauf $lr16v; ixor $lr0v $ls456 $omr1
+fvfma $lm2v6 -$ls8v $lr8v $lr8v; lpassa $mauf $ln0v6/$imr1
+imm ui"0x40400000" $ls454/1000
+fvadd $ls450 -$lm2v6 $lr24v; ixor $lr0v $aluf $omr2
+fvmul $lr8v $lm4v6 $ln4v6
+imm ui"0x40000000" $ls452/1000
+fvmul $lm4v6 $lr24v $lr32v; lpassa $lm4v6 $ln4v6/$imr1
+fvmul $lr8v $lm4v6 $lr8v; lpassa $mauf $ln0v6/$imr2; l1bmd $lm4v6 $lbi
+l1bmd $lbi $ln4v6/$imr2; ixor $lr0v $ls452 $omr1
+fvmul $lm4v6 $lr24v $ln2v6
+lpassa $lr8v $ln2v6/$imr2
+imm ui"0x00000000" $ls448/1000; l1bmd $lr32v $lbi
+l1bmd $lbi $ln0v6/$imr1; ixor $lr0v $ls450 $omr2; l1bmd $lm4v6 $lbi
+l1bmd $lbi $ln2v6/$imr1; l1bmd $lr16v $lbi; ixor $lm2v6 $ls448 $omr3
+l1bmd $lbi $ln4v6/$imr1; ixor $lr0v $ls448 $omr4; l1bmd $lm4v6 $lbi
+l1bmd $lbi $ln2v6/$imr2; l1bmd $lr8v $lbi
+l1bmd $lbi $ln0v6/$imr2; l1bmd $lr32v $lbi
+l1bmd $lbi $ln4v6/$imr2; l1bmd $lm4v6 $lbi
+l1bmd $lbi $ln0v6/$imr4; l1bmd $lr16v $lbi
+l1bmd $lbi $ln2v6/$imr4; l1bmd $lr32v $lbi
+l1bmd $lbi $ln4v6/$imr4; l1bmd $lm4v6 $lbi
+l1bmd $lbi $ln0v6/$imr3; l1bmd $lm4v6 $lbi
+l1bmd $lbi $ln2v6/$imr3; l1bmd $lm4v6 $lbi
+l1bmd $lbi $ln4v6/$imr3

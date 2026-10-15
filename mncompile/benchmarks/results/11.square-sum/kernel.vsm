@@ -1,0 +1,16 @@
+imm ui"0x00000001" $ls448/1000
+imm ui"0x00000005" $ls450/1000
+ilsl $mabid $ls448 $lr0v
+ilsl $l1bid $ls450 $nowrite
+iadd $lr0v $aluf $llt
+nop
+dvmulu $lmt0 $lmt0 $nowrite
+dvfmad $lmt0 $lmt0 $mauf $ln16
+nop/2
+l1bmrdfadd $ln16v $lb0
+nop/3
+l2bmrdfadd $lb0 $lc0
+nop/3
+l2bmb@0 $lc0 $lb0
+nop
+l1bmm $llb0 $lln0/ll1000

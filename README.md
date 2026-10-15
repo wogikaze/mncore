@@ -25,27 +25,25 @@ bash setup_judge.sh
 
 ## Challenge Problem Toolchain
 
-### Error-budgeted high-level compiler (prototype)
+### mncompile: generic compiler for Python kernels
 
-[mncompile](mncompile/README.md) compiles restricted Python kernels through LLVM
-to MN-Core VSM, selecting the shortest generated candidate within a specified
-input domain and absolute error budget. It records error bounds, candidate costs,
-and optimized LLVM IR. All 25 original Challenge problems have readable high-level
-sources and generated VSM accepted by the official judge. The 22 eligible shortest
-references are matched; three references with reproduced domain-valid
-counterexamples are excluded from the line target, prioritizing correctness.
-See the [comparison report](mncompile/benchmarks/challenge/generated/progress.json)
-and [reference audits](mncompile/benchmarks/challenge/reference-audits.json).
+[mncompile](mncompile/README.md) compiles an ordinary Python `kernel(...)` plus a tensor contract
+(dtype, value range, physical layout in the official notation, absolute error budget) to MN-Core 2 VSM.
+It contains no problem-specific kernels or handwritten assembly: strategies (local maps, relayout,
+reductions within a PE/MAB, matrix-unit contractions, hierarchical reductions through L1BM/L2BM/MV,
+output splitting over replicated MABs, all-pairs reductions, data movement, constant generation)
+produce candidate programs, a VLIW scheduler places them, every candidate is verified by simulation,
+and the shortest one is kept. Approximations (Newton steps, polynomial degree, dropping terms that fit
+the error budget) are searched under the budget.
 
-For `x + 0.001*x*x` on `[-1, 1]`, changing the budget from
-`1e-5` to `0.002` reduces the generated program from 13 lines to 1 per 8 Floats/PE.
+On the 73 problems (25 original Challenge + 48 MNIST set) every generated program is accepted by the
+official judge; 19 are at or below the reference line counts. See the table in
+[mncompile/README.md](mncompile/README.md) and the generated programs in `mncompile/benchmarks/results/`.
 
 ```bash
-python3 -m mncompile mncompile/examples/near_identity.py --domain -1 1 --atol 0.002 --output /tmp/mncompile-demo
+python3 -m mncompile mncompile/examples/sigmoid_like.py --contract mncompile/examples/sigmoid_like.json --output /tmp/out
+python3 -m mncompile.bench.run --output /tmp/bench        # all 73 problems with the official judge
 ```
-
-LLVM `opt` is required. See the linked README for the supported language subset,
-the numerical model underlying the bounds, and official assembler/emulator checks.
 
 ### Running challenge testcases
 

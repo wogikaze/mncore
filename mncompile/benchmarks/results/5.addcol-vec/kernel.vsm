@@ -1,0 +1,4 @@
+lpassa $lm0v $nowrite
+fvadd $lm[16,18,16,18] $aluf $ln0v
+lpassa $lm8v $nowrite
+fvadd $lm[16,18,16,18] $aluf $ln8v

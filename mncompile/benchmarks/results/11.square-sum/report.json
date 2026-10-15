@@ -1,0 +1,117 @@
+{
+  "lines": 21,
+  "strategy": "hierarchy/split-MAB+L1B:l1bmr16/l2bmr/l2bmb/l1bmm2+local",
+  "candidates": [
+    {
+      "strategy": "hierarchy/split-MAB+L1B:l1bmr16/l2bmr/l2bmb/l1bmm2+local",
+      "lines": 21
+    },
+    {
+      "strategy": "hierarchy/split-MAB+L1B:l1bmr16/l2bmr/l2bmd/l1bmm2+local",
+      "lines": 21
+    },
+    {
+      "strategy": "local-reduce/base",
+      "lines": 70
+    },
+    {
+      "strategy": "local-reduce/split2",
+      "lines": 71
+    },
+    {
+      "strategy": "hierarchy/split-MAB:l1bmr16/l1bmm2+local-reduce/base",
+      "lines": 21
+    },
+    {
+      "strategy": "hierarchy/split-MAB:l1bmr16/l1bmm1+local-reduce/base",
+      "lines": 21
+    },
+    {
+      "strategy": "hierarchy/split-MAB:l1bmr16/l1bmm2+local-reduce/split2",
+      "lines": 22
+    },
+    {
+      "strategy": "hierarchy/split-MAB:l1bmr16/l1bmm1+local-reduce/split2",
+      "lines": 22
+    }
+  ],
+  "rejected": [
+    {
+      "strategy": "relayout",
+      "reason": "relayout: 32-bit lanes only"
+    },
+    {
+      "strategy": "movement",
+      "reason": "movement: output is not a copy of an input element"
+    },
+    {
+      "strategy": "contraction",
+      "reason": "contraction: no unambiguous terms"
+    },
+    {
+      "strategy": "pe-reduce",
+      "reason": "pe-reduce: terms must be input elements"
+    },
+    {
+      "strategy": "gather",
+      "reason": "gather: output is not a table lookup by an input index"
+    },
+    {
+      "strategy": "mab-reduce",
+      "reason": "hierarchy: a PE holds none of a partial's terms"
+    },
+    {
+      "strategy": "generate",
+      "reason": "generate: output depends on the inputs"
+    },
+    {
+      "strategy": "pairs",
+      "reason": "pairs: integer LM output"
+    },
+    {
+      "strategy": "allgather",
+      "reason": "allgather: output is not a copy"
+    },
+    {
+      "strategy": "hierarchy/split-L1B:l1bmd/l2bmr/l2bmb/l1bmm2+local-reduce/base",
+      "reason": "lower bound 27 >= best 21"
+    },
+    {
+      "strategy": "hierarchy/split-L1B:l1bmm@32/l2bmr/l2bmb/l1bmm2+local-reduce/base",
+      "reason": "lower bound 27 >= best 21"
+    },
+    {
+      "strategy": "hierarchy/split-L1B:l1bmd/l2bmr/l2bmb/l1bmm2+local-reduce/split2",
+      "reason": "lower bound 28 >= best 21"
+    },
+    {
+      "strategy": "hierarchy/split-L1B:l1bmm@32/l2bmr/l2bmb/l1bmm2+local-reduce/split2",
+      "reason": "lower bound 28 >= best 21"
+    },
+    {
+      "strategy": "hierarchy/split-MAB:l1bmr16/l1bmm2+local",
+      "reason": "lower bound 29 >= best 21"
+    },
+    {
+      "strategy": "hierarchy/split-MAB:l1bmr16/l1bmm1+local",
+      "reason": "lower bound 29 >= best 21"
+    },
+    {
+      "strategy": "hierarchy/split-L1B:l1bmd/l2bmr/l2bmb/l1bmm2+local",
+      "reason": "lower bound 57 >= best 21"
+    },
+    {
+      "strategy": "hierarchy/split-L1B:l1bmm@32/l2bmr/l2bmb/l1bmm2+local",
+      "reason": "lower bound 57 >= best 21"
+    },
+    {
+      "strategy": "local",
+      "reason": "lower bound 96 >= best 21"
+    },
+    {
+      "strategy": "split/local",
+      "reason": "lower bound 386 >= best 21"
+    }
+  ],
+  "seconds": 100.76
+}

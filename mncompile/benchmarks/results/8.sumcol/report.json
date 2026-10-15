@@ -1,0 +1,81 @@
+{
+  "lines": 12,
+  "strategy": "hierarchy/l1bmm@32/l2bmr/mvr+local",
+  "candidates": [
+    {
+      "strategy": "hierarchy/l1bmm@32/l2bmr/mvr+local",
+      "lines": 12
+    },
+    {
+      "strategy": "hierarchy/l1bmm@16/l2bmr/mvr+local",
+      "lines": 12
+    }
+  ],
+  "rejected": [
+    {
+      "strategy": "local",
+      "reason": "local map: DRAM output"
+    },
+    {
+      "strategy": "relayout",
+      "reason": "relayout: DRAM operand"
+    },
+    {
+      "strategy": "local-reduce",
+      "reason": "local map: DRAM output"
+    },
+    {
+      "strategy": "movement",
+      "reason": "movement: output is not a copy of an input element"
+    },
+    {
+      "strategy": "contraction",
+      "reason": "contraction: term is not a product of two inputs"
+    },
+    {
+      "strategy": "pe-reduce",
+      "reason": "pe-reduce: DRAM output"
+    },
+    {
+      "strategy": "gather",
+      "reason": "gather: 64-bit elements only"
+    },
+    {
+      "strategy": "mab-reduce",
+      "reason": "mab-reduce: DRAM output"
+    },
+    {
+      "strategy": "generate",
+      "reason": "generate: output depends on the inputs"
+    },
+    {
+      "strategy": "split",
+      "reason": "split: LM tensors only"
+    },
+    {
+      "strategy": "pairs",
+      "reason": "pairs: integer LM output"
+    },
+    {
+      "strategy": "allgather",
+      "reason": "allgather: LM to LM copies of one dtype"
+    },
+    {
+      "strategy": "hierarchy/l1bmm@32/l2bmr/mvr+local-reduce/base",
+      "reason": "lower bound 15 >= best 12"
+    },
+    {
+      "strategy": "hierarchy/l1bmm@32/l2bmr/mvr+local-reduce/split2",
+      "reason": "lower bound 15 >= best 12"
+    },
+    {
+      "strategy": "hierarchy/l1bmm@16/l2bmr/mvr+local-reduce/base",
+      "reason": "lower bound 15 >= best 12"
+    },
+    {
+      "strategy": "hierarchy/l1bmm@16/l2bmr/mvr+local-reduce/split2",
+      "reason": "lower bound 15 >= best 12"
+    }
+  ],
+  "seconds": 5.12
+}

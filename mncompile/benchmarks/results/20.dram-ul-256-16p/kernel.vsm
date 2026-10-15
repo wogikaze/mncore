@@ -1,0 +1,16 @@
+imm ui"0x00000001" $ls448/1000
+ilsl $mabid $aluf $llt
+nop
+l1bmd $lmt0v32 $lb0
+l1bmd $lmt128v32 $lb256
+nop
+l2bm@0 $lb0 $lc0
+l2bm@0 $lb64 $lc64
+l2bm@0 $lb128 $lc128
+l2bm@0 $lb192 $lc192
+l2bm@0 $lb256 $lc256
+l2bm@0 $lb320 $lc320
+l2bm@0 $lb384 $lc384
+l2bm@0 $lb448 $lc448
+nop
+mvp/n512 $lc0@.0 $d0

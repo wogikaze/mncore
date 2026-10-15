@@ -1,0 +1,12 @@
+hmwrite $llm0vr $ly0; hbfe/9 $llm0vr $lr16v
+hmwrite $llm16vr $ly4; hbfe/9 $llm16vr $lr40v
+hmwrite $llm32vr $ly8; hbfe/9 $llm32vr $lr48v
+hmwrite $llm48vr $ly12; hbfe/9 $llm48vr $nowrite
+hmwrite $aluf $lx12; hmread $lly0 $nowrite
+hbfe/9 $mreadf $llr0v; hmread $lly8 $nowrite; hmwrite $lr16v $lx0
+hbfe/9 $mreadf $llr24v; hmwrite $lr40v $lx4
+hmwrite $lr48v $lx8
+hmmul $lx $lr0v4 $lln0v8
+hmmul $lx $lr2v4 $lln4v8
+hmmul $lx $lr24v4 $lln32v8
+hmmul $lx $lr26v4 $lln36v8

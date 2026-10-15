@@ -1,0 +1,93 @@
+{
+  "lines": 6,
+  "strategy": "contraction/hm",
+  "candidates": [
+    {
+      "strategy": "contraction/hm",
+      "lines": 6
+    }
+  ],
+  "rejected": [
+    {
+      "strategy": "relayout",
+      "reason": "local map: ('B', (0, 2)) is not stored in PE 0"
+    },
+    {
+      "strategy": "local-reduce",
+      "reason": "local map: ('B', (0, 2)) is not stored in PE 0"
+    },
+    {
+      "strategy": "movement",
+      "reason": "movement: output is not a copy of an input element"
+    },
+    {
+      "strategy": "pe-reduce",
+      "reason": "pe-reduce: terms must be input elements"
+    },
+    {
+      "strategy": "gather",
+      "reason": "gather: 64-bit elements only"
+    },
+    {
+      "strategy": "generate",
+      "reason": "generate: output depends on the inputs"
+    },
+    {
+      "strategy": "pairs",
+      "reason": "pairs: integer LM output"
+    },
+    {
+      "strategy": "allgather",
+      "reason": "allgather: one input and one output"
+    },
+    {
+      "strategy": "contraction/gm-direct",
+      "reason": "lower bound 6 >= best 6"
+    },
+    {
+      "strategy": "contraction/gm",
+      "reason": "lower bound 6 >= best 6"
+    },
+    {
+      "strategy": "hierarchy/split-L1B:l1bmm@32/l2bmr/l2bmb/l1bmm2+local",
+      "reason": "lower bound 28 >= best 6"
+    },
+    {
+      "strategy": "hierarchy/split-L1B:l1bmm@16/l2bmr/l2bmb/l1bmm2+local",
+      "reason": "lower bound 29 >= best 6"
+    },
+    {
+      "strategy": "hierarchy/split-MAB:l1bmr32/l1bmm2+local",
+      "reason": "lower bound 32 >= best 6"
+    },
+    {
+      "strategy": "hierarchy/split-MAB+L1B:l1bmr32/l1bmm2+local",
+      "reason": "lower bound 32 >= best 6"
+    },
+    {
+      "strategy": "hierarchy/split-MAB:l1bmr16/l1bmm2+local",
+      "reason": "lower bound 33 >= best 6"
+    },
+    {
+      "strategy": "hierarchy/split-MAB+L1B:l1bmr16/l1bmm2+local",
+      "reason": "lower bound 33 >= best 6"
+    },
+    {
+      "strategy": "mab-reduce/pe+rot-local",
+      "reason": "lower bound 56 >= best 6"
+    },
+    {
+      "strategy": "split/mab-reduce/pe+rot-local",
+      "reason": "lower bound 62 >= best 6"
+    },
+    {
+      "strategy": "local",
+      "reason": "lower bound 251 >= best 6"
+    },
+    {
+      "strategy": "split/local",
+      "reason": "lower bound 310 >= best 6"
+    }
+  ],
+  "seconds": 39.09
+}

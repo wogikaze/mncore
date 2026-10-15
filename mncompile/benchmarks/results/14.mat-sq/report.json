@@ -1,0 +1,69 @@
+{
+  "lines": 12,
+  "strategy": "contraction/hm-t",
+  "candidates": [
+    {
+      "strategy": "contraction/hm-t",
+      "lines": 12
+    },
+    {
+      "strategy": "contraction/hm-t-bfn",
+      "lines": 12
+    }
+  ],
+  "rejected": [
+    {
+      "strategy": "local",
+      "reason": "local map: an input is shifted by several amounts"
+    },
+    {
+      "strategy": "relayout",
+      "reason": "local map: ('X', (0, 4, 0)) is not stored in PE 0"
+    },
+    {
+      "strategy": "local-reduce",
+      "reason": "local map: ('X', (0, 4, 0)) is not stored in PE 0"
+    },
+    {
+      "strategy": "movement",
+      "reason": "movement: output is not a copy of an input element"
+    },
+    {
+      "strategy": "pe-reduce",
+      "reason": "pe-reduce: terms must be input elements"
+    },
+    {
+      "strategy": "gather",
+      "reason": "gather: 64-bit elements only"
+    },
+    {
+      "strategy": "hierarchy",
+      "reason": "hierarchy: no PE-level strategy computes the partials"
+    },
+    {
+      "strategy": "mab-reduce",
+      "reason": "hierarchy: a term's operands are not in one PE"
+    },
+    {
+      "strategy": "generate",
+      "reason": "generate: output depends on the inputs"
+    },
+    {
+      "strategy": "split",
+      "reason": "split: no PE-level strategy computes the shares"
+    },
+    {
+      "strategy": "pairs",
+      "reason": "pairs: integer LM output"
+    },
+    {
+      "strategy": "allgather",
+      "reason": "allgather: output is not a copy"
+    },
+    {
+      "strategy": "contraction/gm",
+      "reason": "lower bound 20 >= best 12"
+    }
+  ],
+  "seconds": 68.82
+}

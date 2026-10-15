@@ -1,0 +1,69 @@
+{
+  "lines": 4,
+  "strategy": "local",
+  "candidates": [
+    {
+      "strategy": "local",
+      "lines": 4
+    },
+    {
+      "strategy": "local-reduce/base",
+      "lines": 9
+    },
+    {
+      "strategy": "local-reduce/split2",
+      "lines": 9
+    }
+  ],
+  "rejected": [
+    {
+      "strategy": "relayout",
+      "reason": "relayout: operands already aligned (plain local map)"
+    },
+    {
+      "strategy": "movement",
+      "reason": "movement: output is not a copy of an input element"
+    },
+    {
+      "strategy": "contraction",
+      "reason": "contraction: term is not a product of two inputs"
+    },
+    {
+      "strategy": "pe-reduce",
+      "reason": "pe-reduce: PEs hold terms at different addresses"
+    },
+    {
+      "strategy": "gather",
+      "reason": "gather: 64-bit elements only"
+    },
+    {
+      "strategy": "mab-reduce",
+      "reason": "hierarchy: a PE holds none of a partial's terms"
+    },
+    {
+      "strategy": "generate",
+      "reason": "generate: output depends on the inputs"
+    },
+    {
+      "strategy": "pairs",
+      "reason": "pairs: integer LM output"
+    },
+    {
+      "strategy": "allgather",
+      "reason": "allgather: output is not a copy"
+    },
+    {
+      "strategy": "split/local",
+      "reason": "lower bound 15 >= best 4"
+    },
+    {
+      "strategy": "hierarchy/split-L1B:l1bmm@32/l2bmr/l2bmb/l1bmm2+local",
+      "reason": "lower bound 16 >= best 4"
+    },
+    {
+      "strategy": "hierarchy/split-L1B:l1bmm@16/l2bmr/l2bmb/l1bmm2+local",
+      "reason": "lower bound 16 >= best 4"
+    }
+  ],
+  "seconds": 5.38
+}

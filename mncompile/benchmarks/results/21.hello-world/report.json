@@ -1,0 +1,65 @@
+{
+  "lines": 13,
+  "strategy": "generate/spread",
+  "candidates": [
+    {
+      "strategy": "generate/spread",
+      "lines": 13
+    }
+  ],
+  "rejected": [
+    {
+      "strategy": "local",
+      "reason": "local map: DRAM output"
+    },
+    {
+      "strategy": "relayout",
+      "reason": "relayout: DRAM operand"
+    },
+    {
+      "strategy": "local-reduce",
+      "reason": "local map: DRAM output"
+    },
+    {
+      "strategy": "movement",
+      "reason": "movement: output is not a copy of an input element"
+    },
+    {
+      "strategy": "contraction",
+      "reason": "contraction: output is not a sum of products"
+    },
+    {
+      "strategy": "pe-reduce",
+      "reason": "pe-reduce: DRAM output"
+    },
+    {
+      "strategy": "gather",
+      "reason": "gather: 64-bit elements only"
+    },
+    {
+      "strategy": "hierarchy",
+      "reason": "hierarchy: no transfer chain"
+    },
+    {
+      "strategy": "mab-reduce",
+      "reason": "mab-reduce: DRAM output"
+    },
+    {
+      "strategy": "split",
+      "reason": "split: LM tensors only"
+    },
+    {
+      "strategy": "pairs",
+      "reason": "pairs: integer LM output"
+    },
+    {
+      "strategy": "allgather",
+      "reason": "allgather: one input and one output"
+    },
+    {
+      "strategy": "generate/concentrated",
+      "reason": "lower bound 13 >= best 13"
+    }
+  ],
+  "seconds": 0.49
+}

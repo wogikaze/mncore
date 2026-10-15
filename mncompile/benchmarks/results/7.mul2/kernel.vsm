@@ -1,0 +1,13 @@
+imm us"0x4000" $ls448/1000
+hvmulr $lm0v $aluf $ln0v
+hvmulr $lm8v $ls448 $ln8v
+hvmulr $lm16v $ls448 $ln16v
+hvmulr $lm24v $ls448 $ln24v
+hvmulr $lm32v $ls448 $ln32v
+hvmulr $lm40v $ls448 $ln40v
+hvmulr $lm48v $ls448 $ln48v
+hvmulr $lm56v $ls448 $ln56v
+hvmulr $lm64v $ls448 $ln64v
+hvmulr $lm72v $ls448 $ln72v
+hvmulr $lm80v $ls448 $ln80v
+hvmulr $lm88v $ls448 $ln88v

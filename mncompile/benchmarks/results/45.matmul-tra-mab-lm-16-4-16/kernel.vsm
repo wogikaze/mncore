@@ -1,0 +1,20 @@
+gmwrite $lm16v4 $ly0
+gmread $ly0 $nowrite
+gmread $ly4 $nowrite; gbfn $mreadf $lr8v
+gmwrite $lm0v4 $ly0; gbfn $mreadf $nowrite
+gmread $ly0 $nowrite; gmwrite $aluf $lx4
+gmread $ly4 $nowrite; gbfn $mreadf $lr0v; gmwrite $lr8v $lx0
+gmwrite $lm2v4 $ly0; gbfn $mreadf $nowrite; gmmul $lx $aluf $ln0v4
+gmread $ly0 $nowrite; gmmul $lx $aluf $ln16v4
+gmread $ly4 $nowrite; gbfn $mreadf $nowrite
+gmwrite $lm18v4 $ly0; gbfn $mreadf $nowrite; gmmul $lx $aluf $ln32v4
+gmread $ly0 $nowrite; gmmul $lx $aluf $ln48v4
+gmread $ly4 $nowrite; gbfn $mreadf $lr0v
+gmwrite $lm0v4 $ly0; gbfn $mreadf $nowrite
+gmread $ly0 $nowrite; gmwrite $aluf $lx4
+gmread $ly4 $nowrite; gbfn $mreadf $lr8v; gmwrite $lr0v $lx0
+gbfn $mreadf $nowrite; gmwrite $lm2v4 $ly0; gmmul $lx $aluf $ln2v4
+gmmul $lx $aluf $ln18v4; gmread $ly0 $nowrite
+gbfn $mreadf $nowrite; gmread $ly4 $nowrite
+gbfn $mreadf $nowrite; gmmul $lx $aluf $ln34v4
+gmmul $lx $aluf $ln50v4

@@ -1,0 +1,7 @@
+ipackbit $subpeid $ls480 $llt
+nop
+l1bmm@0 $lmt0v8 $lb0
+l1bmm@0 $lmt32v8 $lb16
+nop/3
+l2bm@0 $lb0 $lc0
+mvp/n64 $lc0@.0 $d0

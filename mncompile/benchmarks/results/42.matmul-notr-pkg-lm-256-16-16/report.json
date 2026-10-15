@@ -1,0 +1,81 @@
+{
+  "lines": 23,
+  "strategy": "contraction/gm",
+  "candidates": [
+    {
+      "strategy": "contraction/gm",
+      "lines": 23
+    }
+  ],
+  "rejected": [
+    {
+      "strategy": "relayout",
+      "reason": "local map: ('A', (0, 2)) is not stored in PE 0"
+    },
+    {
+      "strategy": "local-reduce",
+      "reason": "local map: ('A', (0, 2)) is not stored in PE 0"
+    },
+    {
+      "strategy": "movement",
+      "reason": "movement: output is not a copy of an input element"
+    },
+    {
+      "strategy": "pe-reduce",
+      "reason": "pe-reduce: terms must be input elements"
+    },
+    {
+      "strategy": "gather",
+      "reason": "gather: 64-bit elements only"
+    },
+    {
+      "strategy": "mab-reduce",
+      "reason": "hierarchy: a term's operands are not in one PE"
+    },
+    {
+      "strategy": "generate",
+      "reason": "generate: output depends on the inputs"
+    },
+    {
+      "strategy": "pairs",
+      "reason": "pairs: integer LM output"
+    },
+    {
+      "strategy": "allgather",
+      "reason": "allgather: one input and one output"
+    },
+    {
+      "strategy": "hierarchy/split-MAB:l1bmr32/l1bmm2+local",
+      "reason": "lower bound 24 >= best 23"
+    },
+    {
+      "strategy": "hierarchy/split-MAB+L1B:l1bmr32/l1bmm2+local",
+      "reason": "lower bound 24 >= best 23"
+    },
+    {
+      "strategy": "hierarchy/split-MAB:l1bmr16/l1bmm2+local",
+      "reason": "lower bound 25 >= best 23"
+    },
+    {
+      "strategy": "hierarchy/split-MAB+L1B:l1bmr16/l1bmm2+local",
+      "reason": "lower bound 25 >= best 23"
+    },
+    {
+      "strategy": "contraction/hm-t",
+      "reason": "lower bound 35 >= best 23"
+    },
+    {
+      "strategy": "contraction/hm-t-bfn",
+      "reason": "lower bound 35 >= best 23"
+    },
+    {
+      "strategy": "split/local",
+      "reason": "lower bound 186 >= best 23"
+    },
+    {
+      "strategy": "local",
+      "reason": "lower bound 207 >= best 23"
+    }
+  ],
+  "seconds": 187.15
+}

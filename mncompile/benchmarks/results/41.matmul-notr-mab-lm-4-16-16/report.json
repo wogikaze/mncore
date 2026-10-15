@@ -1,0 +1,95 @@
+{
+  "lines": 23,
+  "strategy": "contraction/gm",
+  "candidates": [
+    {
+      "strategy": "contraction/gm",
+      "lines": 23
+    }
+  ],
+  "rejected": [
+    {
+      "strategy": "relayout",
+      "reason": "local map: ('A', (0, 2)) is not stored in PE 0"
+    },
+    {
+      "strategy": "local-reduce",
+      "reason": "local map: ('A', (0, 2)) is not stored in PE 0"
+    },
+    {
+      "strategy": "movement",
+      "reason": "movement: output is not a copy of an input element"
+    },
+    {
+      "strategy": "pe-reduce",
+      "reason": "pe-reduce: terms must be input elements"
+    },
+    {
+      "strategy": "gather",
+      "reason": "gather: 64-bit elements only"
+    },
+    {
+      "strategy": "mab-reduce",
+      "reason": "hierarchy: a term's operands are not in one PE"
+    },
+    {
+      "strategy": "generate",
+      "reason": "generate: output depends on the inputs"
+    },
+    {
+      "strategy": "pairs",
+      "reason": "pairs: integer LM output"
+    },
+    {
+      "strategy": "allgather",
+      "reason": "allgather: one input and one output"
+    },
+    {
+      "strategy": "contraction/hm-t",
+      "reason": "verification: 50 mismatches, e.g. [('C', (0, 0), 519684.0, 519158.0), ('C', (0, 1), 543552.0, 543713.0), ('C', (0, 2), 758080.0, 758087.0)]",
+      "vsm": "hmwrite $llm[16,20,48,52]r $ly0\nhmwrite $llm[24,28,56,60]r $ly4\nhmwrite $llm[32,36,64,68]r $ly8\nhmwrite $llm[40,44,72,76]r $ly12\nhmread $lly0 $nowrite; hbfe/9 $llm0vr $lr0v\nhbfe/9 $mreadf $nowrite; hmread $lly8 $nowrite\nhbfe/9 $mreadf $nowrite; hmwrite $aluf $llx0\nhmwrite $aluf $llx8\nhmmul $lx $lr0v $lln0v\n"
+    },
+    {
+      "strategy": "contraction/hm-t-bfn",
+      "reason": "verification: 50 mismatches, e.g. [('C', (0, 0), 519684.0, 519158.0), ('C', (0, 1), 543552.0, 543713.0), ('C', (0, 2), 758080.0, 758087.0)]",
+      "vsm": "hmwrite $llm[16,20,48,52]r $ly0\nhmwrite $llm[24,28,56,60]r $ly4\nhmwrite $llm[32,36,64,68]r $ly8\nhmwrite $llm[40,44,72,76]r $ly12\nhmread $lly0 $nowrite; hbfn/9 $llm0vr $lr0v\nhbfn/9 $mreadf $nowrite; hmread $lly8 $nowrite\nhbfn/9 $mreadf $nowrite; hmwrite $aluf $llx0\nhmwrite $aluf $llx8\nhmmul $lx $lr0v $lln0v\n"
+    },
+    {
+      "strategy": "hierarchy/split-MAB:l1bmr32/l1bmm2+local",
+      "reason": "verification: 50 mismatches, e.g. [('C', (0, 0), 442307.0, 519158.0), ('C', (0, 1), 579288.0, 543713.0), ('C', (0, 2), 552338.0, 758087.0)]",
+      "vsm": "imm ui\"0x00000001\" $ls450/1000\nimm ui\"0x00000002\" $ls448/1000\nilsr $mabid $ls450 $nowrite\nilsl $aluf $ls450 $lr0v\nimm ui\"0x00000003\" $ls452/1000\nilsl $mabid $ls448 $llt\nipassa $mabid $nowrite\nisub $aluf $lr0v $lr0v\nilsr $mabid $ls452 $nowrite\nilsl $aluf $ls450 $ls4v\nlpassa $mt16v $s0v\niadd $lr0v $ls4v $llt\nnop\nfvmul $mt0 $s0v $n16v\nfvmul $mt4 $s0v $n20v\nfvmul $mt8 $s0v $n24v\nfvmul $mt12 $s0v $n28v\nnop/3\nl1bmrffadd $lln16v $llb0\nnop/3\nl1bmm $llb0 $lln0v\n"
+    },
+    {
+      "strategy": "hierarchy/split-MAB+L1B:l1bmr32/l1bmm2+local",
+      "reason": "verification: 50 mismatches, e.g. [('C', (0, 0), 442307.0, 519158.0), ('C', (0, 1), 579288.0, 543713.0), ('C', (0, 2), 552338.0, 758087.0)]",
+      "vsm": "imm ui\"0x00000001\" $ls450/1000\nimm ui\"0x00000002\" $ls448/1000\nilsr $mabid $ls450 $nowrite\nilsl $aluf $ls450 $lr0v\nimm ui\"0x00000003\" $ls452/1000\nilsl $mabid $ls448 $llt\nipassa $mabid $nowrite\nisub $aluf $lr0v $lr0v\nilsr $mabid $ls452 $nowrite\nilsl $aluf $ls450 $ls4v\nlpassa $mt16v $s0v\niadd $lr0v $ls4v $llt\nnop\nfvmul $mt0 $s0v $n16v\nfvmul $mt4 $s0v $n20v\nfvmul $mt8 $s0v $n24v\nfvmul $mt12 $s0v $n28v\nnop/3\nl1bmrffadd $lln16v $llb0\nnop/3\nl1bmm $llb0 $lln0v\n"
+    },
+    {
+      "strategy": "hierarchy/split-MAB:l1bmr16/l1bmm2+local",
+      "reason": "verification: 50 mismatches, e.g. [('C', (0, 0), 442307.0, 519158.0), ('C', (0, 1), 579288.0, 543713.0), ('C', (0, 2), 552338.0, 758087.0)]",
+      "vsm": "imm ui\"0x00000001\" $ls450/1000\nimm ui\"0x00000002\" $ls448/1000\nilsr $mabid $ls450 $nowrite\nilsl $aluf $ls450 $lr0v\nimm ui\"0x00000003\" $ls452/1000\nilsl $mabid $ls448 $llt\nipassa $mabid $nowrite\nisub $aluf $lr0v $lr0v\nilsr $mabid $ls452 $nowrite\nilsl $aluf $ls450 $ls4v\nlpassa $mt16v $s0v\niadd $lr0v $ls4v $llt\nnop\nfvmul $mt0 $s0v $n16v\nfvmul $mt4 $s0v $n20v\nfvmul $mt8 $s0v $n24v\nfvmul $mt12 $s0v $n28v\nnop/3\nl1bmrffadd $ln16v $lb0\nl1bmrffadd $ln24v $lb16\nnop/3\nl1bmm $llb0 $lln0v\n"
+    },
+    {
+      "strategy": "hierarchy/split-MAB+L1B:l1bmr16/l1bmm2+local",
+      "reason": "verification: 50 mismatches, e.g. [('C', (0, 0), 442307.0, 519158.0), ('C', (0, 1), 579288.0, 543713.0), ('C', (0, 2), 552338.0, 758087.0)]",
+      "vsm": "imm ui\"0x00000001\" $ls450/1000\nimm ui\"0x00000002\" $ls448/1000\nilsr $mabid $ls450 $nowrite\nilsl $aluf $ls450 $lr0v\nimm ui\"0x00000003\" $ls452/1000\nilsl $mabid $ls448 $llt\nipassa $mabid $nowrite\nisub $aluf $lr0v $lr0v\nilsr $mabid $ls452 $nowrite\nilsl $aluf $ls450 $ls4v\nlpassa $mt16v $s0v\niadd $lr0v $ls4v $llt\nnop\nfvmul $mt0 $s0v $n16v\nfvmul $mt4 $s0v $n20v\nfvmul $mt8 $s0v $n24v\nfvmul $mt12 $s0v $n28v\nnop/3\nl1bmrffadd $ln16v $lb0\nl1bmrffadd $ln24v $lb16\nnop/3\nl1bmm $llb0 $lln0v\n"
+    },
+    {
+      "strategy": "hierarchy/split-L1B:l1bmm@32/l2bmr/l2bmb/l1bmm2+local",
+      "reason": "lower bound 25 >= best 23"
+    },
+    {
+      "strategy": "hierarchy/split-L1B:l1bmm@16/l2bmr/l2bmb/l1bmm2+local",
+      "reason": "lower bound 26 >= best 23"
+    },
+    {
+      "strategy": "split/local",
+      "reason": "lower bound 192 >= best 23"
+    },
+    {
+      "strategy": "local",
+      "reason": "lower bound 207 >= best 23"
+    }
+  ],
+  "seconds": 54.42
+}

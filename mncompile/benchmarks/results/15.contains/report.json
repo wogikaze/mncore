@@ -1,0 +1,89 @@
+{
+  "lines": 60,
+  "strategy": "hierarchy/l1bmr16/l1bmp2+pe+rot-membership/zero-init",
+  "candidates": [
+    {
+      "strategy": "hierarchy/l1bmr16/l1bmp2+pe+rot-membership/zero-init",
+      "lines": 60
+    }
+  ],
+  "rejected": [
+    {
+      "strategy": "local",
+      "reason": "local map: ('B', (64,)) is not stored in PE 0"
+    },
+    {
+      "strategy": "relayout",
+      "reason": "relayout: 32-bit lanes only"
+    },
+    {
+      "strategy": "local-reduce",
+      "reason": "local map: ('B', (16,)) is not stored in PE 0"
+    },
+    {
+      "strategy": "movement",
+      "reason": "movement: output is not a copy of an input element"
+    },
+    {
+      "strategy": "contraction",
+      "reason": "contraction: output is not a sum of products"
+    },
+    {
+      "strategy": "pe-reduce",
+      "reason": "pe-reduce: output is not a reduction"
+    },
+    {
+      "strategy": "gather",
+      "reason": "gather: output is not a table lookup by an input index"
+    },
+    {
+      "strategy": "mab-reduce",
+      "reason": "mab-reduce: a term is outside the output's MAB"
+    },
+    {
+      "strategy": "generate",
+      "reason": "generate: output depends on the inputs"
+    },
+    {
+      "strategy": "split",
+      "reason": "split: an input is not broadcast over the MABs"
+    },
+    {
+      "strategy": "pairs",
+      "reason": "pairs: output is not a sum"
+    },
+    {
+      "strategy": "membership",
+      "reason": "membership: an operand is not stored in the output's PE"
+    },
+    {
+      "strategy": "fmtseq",
+      "reason": "fmtseq: byte string in DRAM"
+    },
+    {
+      "strategy": "allgather",
+      "reason": "allgather: one input and one output"
+    },
+    {
+      "strategy": "hierarchy/l1bmr16/l2bmd/l2bmd/l1bmp2+pe+rot-membership/zero-init",
+      "reason": "lower bound 61 >= best 60"
+    },
+    {
+      "strategy": "hierarchy/l1bmr16/l1bmp2+pe+rot-membership/clear",
+      "reason": "lower bound 72 >= best 60"
+    },
+    {
+      "strategy": "hierarchy/l1bmr16/l2bmd/l2bmd/l1bmp2+pe+rot-membership/clear",
+      "reason": "lower bound 76 >= best 60"
+    },
+    {
+      "strategy": "hierarchy/l1bmr16/l1bmp2+pe+rot-local-reduce",
+      "reason": "lower bound 108 >= best 60"
+    },
+    {
+      "strategy": "hierarchy/l1bmr16/l2bmd/l2bmd/l1bmp2+pe+rot-local-reduce",
+      "reason": "lower bound 112 >= best 60"
+    }
+  ],
+  "seconds": 255.36
+}

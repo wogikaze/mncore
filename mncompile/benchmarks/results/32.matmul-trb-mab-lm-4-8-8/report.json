@@ -1,0 +1,73 @@
+{
+  "lines": 4,
+  "strategy": "contraction/gm-direct",
+  "candidates": [
+    {
+      "strategy": "contraction/gm-direct",
+      "lines": 4
+    },
+    {
+      "strategy": "contraction/gm",
+      "lines": 4
+    }
+  ],
+  "rejected": [
+    {
+      "strategy": "relayout",
+      "reason": "local map: ('B', (0, 2)) is not stored in PE 0"
+    },
+    {
+      "strategy": "local-reduce",
+      "reason": "local map: ('B', (0, 2)) is not stored in PE 0"
+    },
+    {
+      "strategy": "movement",
+      "reason": "movement: output is not a copy of an input element"
+    },
+    {
+      "strategy": "pe-reduce",
+      "reason": "pe-reduce: terms must be input elements"
+    },
+    {
+      "strategy": "gather",
+      "reason": "gather: 64-bit elements only"
+    },
+    {
+      "strategy": "generate",
+      "reason": "generate: output depends on the inputs"
+    },
+    {
+      "strategy": "pairs",
+      "reason": "pairs: integer LM output"
+    },
+    {
+      "strategy": "allgather",
+      "reason": "allgather: one input and one output"
+    },
+    {
+      "strategy": "mab-reduce/pe+rot-local",
+      "reason": "lower bound 17 >= best 4"
+    },
+    {
+      "strategy": "hierarchy/split-L1B:l1bmm@32/l2bmr/l2bmb/l1bmm2+local",
+      "reason": "lower bound 24 >= best 4"
+    },
+    {
+      "strategy": "hierarchy/split-L1B:l1bmm@16/l2bmr/l2bmb/l1bmm2+local",
+      "reason": "lower bound 24 >= best 4"
+    },
+    {
+      "strategy": "split/mab-reduce/pe+rot-local",
+      "reason": "lower bound 45 >= best 4"
+    },
+    {
+      "strategy": "local",
+      "reason": "lower bound 74 >= best 4"
+    },
+    {
+      "strategy": "split/local",
+      "reason": "lower bound 156 >= best 4"
+    }
+  ],
+  "seconds": 10.65
+}

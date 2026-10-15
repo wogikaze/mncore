@@ -1,0 +1,73 @@
+{
+  "lines": 48,
+  "strategy": "hierarchy/l1bmr32/l1bmm2+contraction/gm-direct",
+  "candidates": [
+    {
+      "strategy": "hierarchy/l1bmr32/l1bmm2+contraction/gm-direct",
+      "lines": 48
+    }
+  ],
+  "rejected": [
+    {
+      "strategy": "local",
+      "reason": "local map: ('B', (0, 8)) is not stored in PE 0"
+    },
+    {
+      "strategy": "relayout",
+      "reason": "local map: ('B', (0, 2)) is not stored in PE 0"
+    },
+    {
+      "strategy": "local-reduce",
+      "reason": "local map: ('B', (0, 2)) is not stored in PE 0"
+    },
+    {
+      "strategy": "movement",
+      "reason": "movement: output is not a copy of an input element"
+    },
+    {
+      "strategy": "contraction",
+      "reason": "contraction: contracted axis is mixed"
+    },
+    {
+      "strategy": "pe-reduce",
+      "reason": "pe-reduce: terms must be input elements"
+    },
+    {
+      "strategy": "gather",
+      "reason": "gather: 64-bit elements only"
+    },
+    {
+      "strategy": "mab-reduce",
+      "reason": "mab-reduce: a term is outside the output's MAB"
+    },
+    {
+      "strategy": "generate",
+      "reason": "generate: output depends on the inputs"
+    },
+    {
+      "strategy": "split",
+      "reason": "split: an input is not broadcast over the MABs"
+    },
+    {
+      "strategy": "pairs",
+      "reason": "pairs: integer LM output"
+    },
+    {
+      "strategy": "allgather",
+      "reason": "allgather: one input and one output"
+    },
+    {
+      "strategy": "hierarchy/l1bmr32/l1bmm2+contraction/gm",
+      "reason": "lower bound 54 >= best 48"
+    },
+    {
+      "strategy": "hierarchy/l1bmr16/l1bmm2+contraction/gm-direct",
+      "reason": "lower bound 54 >= best 48"
+    },
+    {
+      "strategy": "hierarchy/l1bmr16/l1bmm2+contraction/gm",
+      "reason": "lower bound 62 >= best 48"
+    }
+  ],
+  "seconds": 62.23
+}

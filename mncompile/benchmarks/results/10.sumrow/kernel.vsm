@@ -1,0 +1,21 @@
+imm ui"0x00000003" $ls448/1000
+ilsl $mabid $aluf $llt
+nop
+lpassa $mt[1,5,129,133] $nowrite
+fvadd $mt[0,4,128,132] $aluf $nowrite
+fvadd $mauf $mt[2,6,130,134] $nowrite
+fvadd $mauf $mt[3,7,131,135] $n80v
+nop/2
+lpassa $ln[80,82,82,82] $lr0v
+msl $aluf $nowrite
+fvadd $lr0v $aluf $lr0v
+msl $mauf $nowrite
+msl $aluf $nowrite
+fvadd $lr0v $aluf $ln[64,66,66,66]
+nop/2
+l1bmd $ln64v $lb0
+nop/2
+l1bmm $llb0 $lln0v
+l1bmm $llb32 $lln16v
+l1bmm $llb64 $lln32v
+l1bmm $llb96 $lln48v

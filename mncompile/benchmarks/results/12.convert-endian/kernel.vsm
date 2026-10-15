@@ -1,0 +1,6 @@
+imm us"0x0008" $ls448/1000
+sbsl $lm0 $aluf $lr0v
+imm us"0x0010" $ls450/1000
+ibsl $lr0v $aluf $lr0v
+imm us"0x0020" $ls452/1000
+lbsl $lr0v $aluf $ln0

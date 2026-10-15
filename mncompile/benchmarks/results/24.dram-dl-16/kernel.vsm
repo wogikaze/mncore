@@ -1,0 +1,5 @@
+mvp/n64 $d0@0 $p0@0
+mvb/n64 $p0@0 $lc0
+l2bmb@0 $lc0 $lb0
+nop
+l1bmm $llb0 $llm0/ll1000

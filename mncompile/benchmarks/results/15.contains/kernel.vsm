@@ -1,0 +1,57 @@
+imm ui"0x00000001" $s449/1000
+ladd $ln0v $ln0v $llt
+imm ui"0x00000000" $ls450/1000
+ixor $subpeid $aluf $omr1
+imm ui"0x00000001" $ls452/1000
+ixor $subpeid $aluf $omr2
+imm ui"0x00000002" $ls454/1000
+ixor $subpeid $aluf $omr3
+imm ui"0x00000003" $ls456/1000
+ixor $subpeid $aluf $omr4
+lpassa $ls448 $lmt80
+ladd $ln8v $ln8v $llt
+nop
+lpassa $ls448 $lmt80
+ladd $ln16v $ln16v $llt
+nop
+lpassa $ls448 $lmt80
+ladd $ln24v $ln24v $llt
+nop
+lpassa $ls448 $lmt80
+nop/2
+ladd $lm[0,2,16,18] $lm[0,2,16,18] $llt
+nop
+lpassa $lmt80 $lr0v
+ladd $lm[4,6,20,22] $lm[4,6,20,22] $llt
+msl $lr0v $ls0v
+lpassa $lmt80 $lr8v
+ladd $lm[8,10,24,26] $lm[8,10,24,26] $llt
+lor $lr0v $ls0v $lr0v
+lpassa $lmt80 $lr16v
+ladd $lm[12,14,28,30] $lm[12,14,28,30] $llt
+msl $lr8v $nowrite
+lor $lr8v $aluf $lr8v
+lpassa $lmt80 $lr24v
+msl $lr0v $nowrite
+msl $aluf $nowrite
+lor $lr0v $aluf $nowrite
+msl $lr16v $nowrite; l1bmd $aluf $lbi
+l1bmd $lbi $lm32v/$imr1; lor $lr16v $aluf $lr0v
+msl $lr8v $nowrite
+msl $aluf $nowrite
+lor $lr8v $aluf $nowrite
+msl $lr24v $nowrite; l1bmd $aluf $lbi
+l1bmd $lbi $lm32v/$imr2; lor $lr24v $aluf $lr16v
+msl $lr0v $nowrite
+msl $aluf $nowrite
+lor $lr0v $aluf $nowrite
+lpassa $aluf $lm32v/$imr3
+msl $lr16v $nowrite
+msl $aluf $nowrite
+lor $lr16v $aluf $nowrite
+lpassa $aluf $lm32v/$imr4
+nop/2
+l1bmrlor $lm32v $lb0
+nop/2
+l1bmp $llb0 $lln32v
+l1bmp $llb8 $lln48v

@@ -1,0 +1,61 @@
+{
+  "lines": 94,
+  "strategy": "hierarchy/l1bmd/l2bmd/mvr-pdm+contraction/gm",
+  "candidates": [
+    {
+      "strategy": "hierarchy/l1bmd/l2bmd/mvr-pdm+contraction/gm",
+      "lines": 94
+    }
+  ],
+  "rejected": [
+    {
+      "strategy": "local",
+      "reason": "local map: DRAM output"
+    },
+    {
+      "strategy": "relayout",
+      "reason": "relayout: DRAM operand"
+    },
+    {
+      "strategy": "local-reduce",
+      "reason": "local map: DRAM output"
+    },
+    {
+      "strategy": "movement",
+      "reason": "movement: output is not a copy of an input element"
+    },
+    {
+      "strategy": "contraction",
+      "reason": "contraction: contracted axis is mixed"
+    },
+    {
+      "strategy": "pe-reduce",
+      "reason": "pe-reduce: DRAM output"
+    },
+    {
+      "strategy": "gather",
+      "reason": "gather: 64-bit elements only"
+    },
+    {
+      "strategy": "mab-reduce",
+      "reason": "mab-reduce: DRAM output"
+    },
+    {
+      "strategy": "generate",
+      "reason": "generate: output depends on the inputs"
+    },
+    {
+      "strategy": "split",
+      "reason": "split: LM tensors only"
+    },
+    {
+      "strategy": "pairs",
+      "reason": "pairs: integer LM output"
+    },
+    {
+      "strategy": "allgather",
+      "reason": "allgather: one input and one output"
+    }
+  ],
+  "seconds": 173.47
+}

@@ -1,0 +1,33 @@
+imm ui"0x00000001" $ls448/1000
+ilsl $mabid $aluf $llt
+nop
+lpassa $mt[0,1,32,33] $s0v
+lpassa $mt[64,65,96,97] $s4v
+lpassa $mt[128,129,160,161] $s8v
+lpassa $mt[192,193,224,225] $s12v
+ilsr $mabid $ls448 $llt
+nop
+fvadd $s0v -$mt[256,256,264,264] $n256v
+fvadd $s4v -$mt[272,272,280,280] $n260v
+fvadd $s8v -$mt[288,288,296,296] $n264v
+fvadd $s12v -$mt[304,304,312,312] $n268v
+nop/2
+l1bmd $ln256v $lb0
+l1bmd $ln264v $lb256
+nop/2
+l1bmm $llb0 $lln0v
+l1bmm $llb32 $lln16v
+l1bmm $llb64 $lln32v
+l1bmm $llb96 $lln48v
+l1bmm $llb128 $lln64v
+l1bmm $llb160 $lln80v
+l1bmm $llb192 $lln96v
+l1bmm $llb224 $lln112v
+l1bmm $llb256 $lln128v
+l1bmm $llb288 $lln144v
+l1bmm $llb320 $lln160v
+l1bmm $llb352 $lln176v
+l1bmm $llb384 $lln192v
+l1bmm $llb416 $lln208v
+l1bmm $llb448 $lln224v
+l1bmm $llb480 $lln240v

@@ -1,0 +1,174 @@
+{
+  "_comment": "Additional value constraints from the problem texts, as Python predicates over x (value) and idx (logical index). Entries marked 'inferred' are not stated as a constraint: the statement lists integer-valued matrices or random integers, and with atol 1e-5 on outputs of 1e3..1e6 only exactly representable (integer) data can be checked, so integrality is assumed.",
+  "challenge/log2": {
+    "X": {
+      "domain": "x & (x - 1) == 0"
+    }
+  },
+  "challenge/fle": {
+    "X": {
+      "domain": "x * 512 == int(x * 512) and 1 <= x * 512 <= 2560"
+    }
+  },
+  "challenge/mat_sq": {
+    "X": {
+      "domain": "x == int(x)"
+    }
+  },
+  "challenge/hsv2rgb": {
+    "HSV": {
+      "domain": "idx is None or idx[1] == 1 or x != 1"
+    }
+  },
+  "mnist/matmul_trb_pkg_lm_256_128_16": {
+    "A": {
+      "domain": "x == int(x)"
+    },
+    "B": {
+      "domain": "x == int(x)"
+    }
+  },
+  "mnist/matmul_trb_pkg_lmdram_256_1024_16": {
+    "A": {
+      "domain": "x == int(x)"
+    },
+    "B": {
+      "domain": "x == int(x)"
+    }
+  },
+  "mnist/matmul_trb_mab_lm_4_8_8": {
+    "A": {
+      "domain": "x == int(x)"
+    },
+    "B": {
+      "domain": "x == int(x)"
+    },
+    "_note": "inferred"
+  },
+  "mnist/matmul_trb_mab_lm_4_8_16": {
+    "A": {
+      "domain": "x == int(x)"
+    },
+    "B": {
+      "domain": "x == int(x)"
+    },
+    "_note": "inferred"
+  },
+  "mnist/matmul_trb_mab_lm_4_16_8": {
+    "A": {
+      "domain": "x == int(x)"
+    },
+    "B": {
+      "domain": "x == int(x)"
+    },
+    "_note": "inferred"
+  },
+  "mnist/matmul_trb_mab_lm_4_16_16": {
+    "A": {
+      "domain": "x == int(x)"
+    },
+    "B": {
+      "domain": "x == int(x)"
+    },
+    "_note": "inferred"
+  },
+  "mnist/matmul_trb_pkg_lm_256_16_16": {
+    "A": {
+      "domain": "x == int(x)"
+    },
+    "B": {
+      "domain": "x == int(x)"
+    },
+    "_note": "inferred"
+  },
+  "mnist/matmul_trb_mab_lm_32_8_16": {
+    "A": {
+      "domain": "x == int(x)"
+    },
+    "B": {
+      "domain": "x == int(x)"
+    },
+    "_note": "inferred"
+  },
+  "mnist/matmul_notr_mab_lm_4_8_8": {
+    "A": {
+      "domain": "x == int(x)"
+    },
+    "B": {
+      "domain": "x == int(x)"
+    },
+    "_note": "inferred"
+  },
+  "mnist/matmul_notr_mab_lm_4_16_16": {
+    "A": {
+      "domain": "x == int(x)"
+    },
+    "B": {
+      "domain": "x == int(x)"
+    },
+    "_note": "inferred"
+  },
+  "mnist/matmul_notr_pkg_lm_256_16_16": {
+    "A": {
+      "domain": "x == int(x)"
+    },
+    "B": {
+      "domain": "x == int(x)"
+    },
+    "_note": "inferred"
+  },
+  "mnist/matmul_tra_mab_lm_8_8_8": {
+    "A": {
+      "domain": "x == int(x)"
+    },
+    "B": {
+      "domain": "x == int(x)"
+    },
+    "_note": "inferred"
+  },
+  "mnist/matmul_tra_mab_lm_16_8_16": {
+    "A": {
+      "domain": "x == int(x)"
+    },
+    "B": {
+      "domain": "x == int(x)"
+    },
+    "_note": "inferred"
+  },
+  "mnist/matmul_tra_mab_lm_16_4_16": {
+    "A": {
+      "domain": "x == int(x)"
+    },
+    "B": {
+      "domain": "x == int(x)"
+    },
+    "_note": "inferred"
+  },
+  "mnist/matmul_tra_pkg_lmdram_16_256_16": {
+    "A": {
+      "domain": "x == int(x)"
+    },
+    "B": {
+      "domain": "x == int(x)"
+    },
+    "_note": "inferred"
+  },
+  "mnist/matmul_tra_mab_lm_16_32_8": {
+    "A": {
+      "domain": "x == int(x)"
+    },
+    "B": {
+      "domain": "x == int(x)"
+    },
+    "_note": "inferred"
+  },
+  "mnist/matmul_tra_pkg_lmdram_16_256_1024": {
+    "A": {
+      "domain": "x == int(x)"
+    },
+    "B": {
+      "domain": "x == int(x)"
+    },
+    "_note": "inferred"
+  }
+}

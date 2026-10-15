@@ -1,0 +1,9 @@
+imm ui"0x3F800000" $ls448/1000
+fvadd $lm0v -$aluf $ls0v
+imm ui"0x7F800000" $lr448/1000
+fvadd $lm8v -$ls448 $nowrite
+frelu $mauf $lr448 $ln8v; fvadd $lm16v -$ls448 $nowrite
+frelu $mauf $lr448 $ln16v; fvadd $lm24v -$ls448 $nowrite
+frelu $mauf $lr448 $ln24v; fvadd $lm32v -$ls448 $nowrite
+frelu $mauf $lr448 $ln32v
+frelu $ls0v $lr448 $ln0v

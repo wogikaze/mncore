@@ -1,0 +1,70 @@
+imm ui"0xFFFFFFFF" $llr440
+nop/2
+lpassa $llr440 $llm128v
+lpassa $llr440 $llm144v
+lpassa $llr440 $llm160v
+lpassa $llr440 $llm176v
+lpassa $llr440 $llm192v
+lpassa $llr440 $llm208v
+lpassa $llr440 $llm224v
+lpassa $llr440 $llm240v
+imm ui"0x00000004" $ls448/1000
+imm ui"0x00000001" $ls450/1000
+ilsl $l1bid $ls448 $ls0v
+ilsl $l2bid $ls450 $nowrite
+iadd $ls0v $aluf $llt
+lpassa $llm0v $llr0v
+lpassa $llm16v $llr16v
+uisub $lmt2v $lr0v $omr1
+lpassa/$imr1 $ls450 $lr128v
+uisub $lmt10v $lr8v $omr1
+uiinc $lr128v $lr128v/$imr1
+uisub $lmt18v $lr16v $omr1
+lpassa $llm32v $llr32v
+uiinc $lr128v $lr128v/$imr1
+uisub $lmt26v $lr24v $omr1
+uiinc $lr128v $lr128v/$imr1
+uisub $lmt34v $lr32v $omr1
+lpassa $llm48v $llr48v
+uiinc $lr128v $lr128v/$imr1
+uisub $lmt42v $lr40v $omr1
+uiinc $lr128v $lr128v/$imr1
+uisub $lmt50v $lr48v $omr1
+lpassa $llm64v $llr64v
+uiinc $lr128v $lr128v/$imr1
+uisub $lmt58v $lr56v $omr1
+uiinc $lr128v $lr128v/$imr1
+uisub $lmt66v $lr64v $omr1
+lpassa $llm80v $llr80v
+uiinc $lr128v $lr128v/$imr1
+uisub $lmt74v $lr72v $omr1
+uiinc $lr128v $lr128v/$imr1
+uisub $lmt82v $lr80v $omr1
+lpassa $llm96v $llr96v
+uiinc $lr128v $lr128v/$imr1
+uisub $lmt90v $lr88v $omr1
+uiinc $lr128v $lr128v/$imr1
+uisub $lmt98v $lr96v $omr1
+lpassa $llm112v $llr112v
+uiinc $lr128v $lr128v/$imr1
+uisub $lmt106v $lr104v $omr1
+uiinc $lr128v $lr128v/$imr1
+uisub $lmt114v $lr112v $omr1
+uiinc $lr128v $lr128v/$imr1
+uisub $lmt122v $lr120v $omr1
+uiinc $lr128v $lr128v/$imr1
+imm ui"0x00000040" $ls452/1000
+uisub $aluf $lr128 $nowrite
+uisub $aluf $lr130 $nowrite
+uisub $aluf $lr132 $nowrite
+uisub $aluf $lr134 $ln16
+nop/2
+l1bmd $ln16v $lb0
+nop/2
+l2bmriiadd $lb0 $lc0
+mvriiadd/n64 $lc0 $p0@0
+mvb/n64 $p0@0 $lc0
+nop/3
+l2bmb@0 $lc0 $lb0
+nop/2
+l1bmd $lb0 $ln0/1000

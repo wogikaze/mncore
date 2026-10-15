@@ -1,0 +1,41 @@
+imm ui"0x00000007" $ls448/1000
+imm ui"0x00000001" $ls450/1000
+iand $peid $ls448 $nowrite
+ilsl $aluf $ls450 $lr0v
+iand $l1bid $ls450 $lr8v
+imm ui"0x00000004" $ls452/1000
+imm ui"0x00000006" $ls456/1000
+imm ui"0x00000038" $ls458/1000
+ilsl $lr8v $ls452 $nowrite
+ior $lr0v $aluf $lr8v
+imm ui"0x00000005" $ls454/1000
+iand $l1bid $ls456 $lr0v
+iand $peid $ls458 $nowrite
+ior $lr0v $aluf $nowrite
+ilsl $aluf $ls448 $ls0v
+ilsl $l2bid $ls454 $nowrite
+ior $lr8v $aluf $nowrite
+ior $aluf $ls0v $lr0v
+imm ui"0x00000001" $s461/1000
+imm ui"0x00002001" $ls462/1000
+iadd $lr0v $ls460 $lr8v
+imm ui"0x00004001" $ls464/1000
+imm ui"0x00006001" $ls466/1000
+iadd $lr8v $ls450 $ln0
+iadd $lr8v $ls462 $ln2
+iadd $lr8v $ls464 $ln4
+iadd $lr8v $ls466 $ln6
+nop/2
+l1bmd $ln0v $lb0
+nop/2
+l2bmd $lb0 $lc0
+l2bmd $lb32 $lc256
+l2bmd $lb64 $lc512
+l2bmd $lb96 $lc768
+l2bmd $lb128 $lc1024
+l2bmd $lb160 $lc1280
+l2bmd $lb192 $lc1536
+l2bmd $lb224 $lc1792
+nop
+mvd/n2048 $lc0 $p0@0
+mvp/n16384 $p0@0 $d0@0

@@ -1,0 +1,17 @@
+imm ui"0x00000001" $ls448/1000
+imm ui"0x00000008" $ls452/1000
+ilsl $subpeid $ls448 $lr16v
+imm ui"0x00000001" $s451/1000
+ilsl $subpeid $ls448 $lr24v
+imm ui"0x00000009" $s453/1000
+iadd $lr16v $ls450 $ls0v
+iadd $lr24v $ls452 $ls8v
+lpassa $m[0,0,1,1] $r0v
+lpassa $m[2,2,3,3] $r4v
+lpassa $m[0,0,1,1] $r8v
+lpassa $m[2,2,3,3] $r12v
+ixor $lr0v $ls0v $omr1
+imm ui"0x3F800000" $ls454/1000
+ixor $lr8v $ls8v $omr2
+lpassa/$imr1 $ls454 $ln0v4
+lpassa/$imr2 $ls454 $ln2v4

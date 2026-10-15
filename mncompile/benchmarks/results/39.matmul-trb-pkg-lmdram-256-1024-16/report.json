@@ -1,0 +1,73 @@
+{
+  "lines": 38,
+  "strategy": "hierarchy/l1bmr32/l2bmr/mvp+contraction/gm-direct",
+  "candidates": [
+    {
+      "strategy": "hierarchy/l1bmr32/l2bmr/mvp+contraction/gm-direct",
+      "lines": 38
+    }
+  ],
+  "rejected": [
+    {
+      "strategy": "local",
+      "reason": "local map: DRAM output"
+    },
+    {
+      "strategy": "relayout",
+      "reason": "relayout: DRAM operand"
+    },
+    {
+      "strategy": "local-reduce",
+      "reason": "local map: DRAM output"
+    },
+    {
+      "strategy": "movement",
+      "reason": "movement: output is not a copy of an input element"
+    },
+    {
+      "strategy": "contraction",
+      "reason": "contraction: contracted axis is mixed"
+    },
+    {
+      "strategy": "pe-reduce",
+      "reason": "pe-reduce: DRAM output"
+    },
+    {
+      "strategy": "gather",
+      "reason": "gather: 64-bit elements only"
+    },
+    {
+      "strategy": "mab-reduce",
+      "reason": "mab-reduce: DRAM output"
+    },
+    {
+      "strategy": "generate",
+      "reason": "generate: output depends on the inputs"
+    },
+    {
+      "strategy": "split",
+      "reason": "split: LM tensors only"
+    },
+    {
+      "strategy": "pairs",
+      "reason": "pairs: integer LM output"
+    },
+    {
+      "strategy": "allgather",
+      "reason": "allgather: one input and one output"
+    },
+    {
+      "strategy": "hierarchy/l1bmr32/l2bmr/mvp+contraction/gm",
+      "reason": "lower bound 38 >= best 38"
+    },
+    {
+      "strategy": "hierarchy/l1bmr16/l2bmr/mvp+contraction/gm-direct",
+      "reason": "lower bound 46 >= best 38"
+    },
+    {
+      "strategy": "hierarchy/l1bmr16/l2bmr/mvp+contraction/gm",
+      "reason": "lower bound 46 >= best 38"
+    }
+  ],
+  "seconds": 240.6
+}

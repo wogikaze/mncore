@@ -1,0 +1,12 @@
+ladd $lm2048v $lm2048v $llt
+nop
+lpassa $lmt0 $ln0v
+ladd $lm2056v $lm2056v $llt
+nop
+lpassa $lmt0 $ln8v
+ladd $lm2064v $lm2064v $llt
+nop
+lpassa $lmt0 $ln16v
+ladd $lm2072v $lm2072v $llt
+nop
+lpassa $lmt0 $ln24v

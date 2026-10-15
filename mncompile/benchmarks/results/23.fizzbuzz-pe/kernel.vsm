@@ -1,0 +1,12 @@
+imm ui"0x4B000000" $ls448/1000
+ior $lm0v $aluf $nowrite; l1bmd $lm0v $lbi
+l1bmd $lbi $ln0v; fvadd $aluf -$ls448 $lr0v; imm ui"0x3E4CCCCD" $ls454/1000
+imm ui"0x00000078" $lr448/1000; fvmul $mauf $aluf $nowrite
+iand $mauf $aluf $omr1
+imm ui"0x3EAAAAAB" $ls452/1000
+imm ui"0x3D888889" $ls450/1000; fvmul $lr0v $aluf $nowrite
+iand $mauf $lr448 $omr2
+fvmul $lr0v $ls450 $nowrite; imm ui"0x0000BBBB" $ln0v/$imr1
+iand $mauf $lr448 $omr1
+imm ui"0x0000FFFF" $ln0v/$imr2
+imm ui"0xFFFFBBBB" $ln0v/$imr1

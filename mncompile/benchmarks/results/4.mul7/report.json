@@ -1,0 +1,61 @@
+{
+  "lines": 10,
+  "strategy": "local",
+  "candidates": [
+    {
+      "strategy": "local",
+      "lines": 10
+    }
+  ],
+  "rejected": [
+    {
+      "strategy": "relayout",
+      "reason": "relayout: 32-bit lanes only"
+    },
+    {
+      "strategy": "local-reduce",
+      "reason": "local reduce: class is not a reduction"
+    },
+    {
+      "strategy": "movement",
+      "reason": "movement: output is not a copy of an input element"
+    },
+    {
+      "strategy": "contraction",
+      "reason": "contraction: term is not a product of two inputs"
+    },
+    {
+      "strategy": "pe-reduce",
+      "reason": "pe-reduce: output is not a reduction"
+    },
+    {
+      "strategy": "gather",
+      "reason": "gather: output is not a table lookup by an input index"
+    },
+    {
+      "strategy": "hierarchy",
+      "reason": "hierarchy: no transfer chain"
+    },
+    {
+      "strategy": "mab-reduce",
+      "reason": "mab-reduce: output is not a reduction"
+    },
+    {
+      "strategy": "generate",
+      "reason": "generate: output depends on the inputs"
+    },
+    {
+      "strategy": "split",
+      "reason": "split: an input is not broadcast over the MABs"
+    },
+    {
+      "strategy": "pairs",
+      "reason": "pairs: output is not a sum"
+    },
+    {
+      "strategy": "allgather",
+      "reason": "allgather: output is not a copy"
+    }
+  ],
+  "seconds": 1.36
+}

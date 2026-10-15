@@ -1,0 +1,110 @@
+{
+  "lines": 20,
+  "strategy": "local/exp_degree3",
+  "candidates": [
+    {
+      "strategy": "local/exp_degree3",
+      "lines": 20
+    },
+    {
+      "strategy": "local/exp_degree4",
+      "lines": 27
+    },
+    {
+      "strategy": "local/exp_degree5",
+      "lines": 28
+    },
+    {
+      "strategy": "local/exp_degree6",
+      "lines": 30
+    },
+    {
+      "strategy": "local/exp_degree7",
+      "lines": 33
+    }
+  ],
+  "rejected": [
+    {
+      "strategy": "relayout",
+      "reason": "relayout: operands already aligned (plain local map)"
+    },
+    {
+      "strategy": "local-reduce",
+      "reason": "local reduce: class is not a reduction"
+    },
+    {
+      "strategy": "movement",
+      "reason": "movement: output is not a copy of an input element"
+    },
+    {
+      "strategy": "contraction",
+      "reason": "contraction: output is not a sum of products"
+    },
+    {
+      "strategy": "pe-reduce",
+      "reason": "pe-reduce: output is not a reduction"
+    },
+    {
+      "strategy": "gather",
+      "reason": "gather: 64-bit elements only"
+    },
+    {
+      "strategy": "hierarchy",
+      "reason": "hierarchy: no transfer chain"
+    },
+    {
+      "strategy": "mab-reduce",
+      "reason": "mab-reduce: output is not a reduction"
+    },
+    {
+      "strategy": "generate",
+      "reason": "generate: output depends on the inputs"
+    },
+    {
+      "strategy": "pairs",
+      "reason": "pairs: integer LM output"
+    },
+    {
+      "strategy": "membership",
+      "reason": "membership: integer LM output"
+    },
+    {
+      "strategy": "fmtseq",
+      "reason": "fmtseq: byte string in DRAM"
+    },
+    {
+      "strategy": "allgather",
+      "reason": "allgather: output is not a copy"
+    },
+    {
+      "strategy": "local/exp_degree2",
+      "reason": "verification: 50 mismatches, e.g. [('Y', (1, 6), 6.625855922698975, 6.639317035675049), ('Y', (1, 7), 6.468361854553223, 6.480781078338623), ('Y', (4, 9), 6.426255226135254, 6.438232421875)]",
+      "vsm": "imm ui\"0x3FB8AA3B\" $lr448/1000\nimm ui\"0x4B400000\" $ls448/1000\nfvfma $lm0v $lr448 $aluf $lr0v\nfvfma $lm8v $lr448 $ls448 $lr8v\nfvadd $lr0v -$ls448 $ls0v; imm ui\"0x3F317218\" $lr450/1000\nfvadd $lr8v -$ls448 $nowrite; imm ui\"0x3F014939\" $lr452/1000\nfvfma $mauf -$lr450 $lm8v $ls8v\nfvfma $ls0v -$lr450 $lm0v $ls0v\nimm ui\"0x3F81EE74\" $ls450/1000\nfvfma $lr452 $ls0v $aluf $lr16v; imm ui\"0x00000017\" $ls452/1000\nlpassa $ls450 $lr24v\nimm ui\"0x3F7FFB0D\" $lr454/1000; fvfma $lr452 $ls8v $aluf $nowrite\nfvfma $mauf $ls8v $aluf $lr24v\nlpassa $lr454 $lr32v\nfvfma $lr16v $ls0v $aluf $lr16v\nilsl $lr0v $ls452 $nowrite\niadd $lr16v $aluf $ln0v\nilsl $lr8v $ls452 $nowrite\niadd $lr24v $aluf $ln8v\n"
+    },
+    {
+      "strategy": "split/local/exp_degree2",
+      "reason": "lower bound 22 >= best 20"
+    },
+    {
+      "strategy": "split/local/exp_degree3",
+      "reason": "lower bound 23 >= best 20"
+    },
+    {
+      "strategy": "split/local/exp_degree4",
+      "reason": "lower bound 27 >= best 20"
+    },
+    {
+      "strategy": "split/local/exp_degree5",
+      "reason": "lower bound 28 >= best 20"
+    },
+    {
+      "strategy": "split/local/exp_degree6",
+      "reason": "lower bound 29 >= best 20"
+    },
+    {
+      "strategy": "split/local/exp_degree7",
+      "reason": "lower bound 30 >= best 20"
+    }
+  ],
+  "seconds": 45.37
+}

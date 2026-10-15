@@ -1,0 +1,65 @@
+{
+  "lines": 20,
+  "strategy": "contraction/gm",
+  "candidates": [
+    {
+      "strategy": "contraction/gm",
+      "lines": 20
+    }
+  ],
+  "rejected": [
+    {
+      "strategy": "local",
+      "reason": "local map: exchange pattern differs between words"
+    },
+    {
+      "strategy": "relayout",
+      "reason": "local map: ('A', (0, 2)) is not stored in PE 0"
+    },
+    {
+      "strategy": "local-reduce",
+      "reason": "local map: ('A', (0, 2)) is not stored in PE 0"
+    },
+    {
+      "strategy": "movement",
+      "reason": "movement: output is not a copy of an input element"
+    },
+    {
+      "strategy": "pe-reduce",
+      "reason": "pe-reduce: terms must be input elements"
+    },
+    {
+      "strategy": "gather",
+      "reason": "gather: 64-bit elements only"
+    },
+    {
+      "strategy": "hierarchy",
+      "reason": "hierarchy: no PE-level strategy computes the partials"
+    },
+    {
+      "strategy": "mab-reduce",
+      "reason": "hierarchy: a PE holds none of a partial's terms"
+    },
+    {
+      "strategy": "generate",
+      "reason": "generate: output depends on the inputs"
+    },
+    {
+      "strategy": "pairs",
+      "reason": "pairs: integer LM output"
+    },
+    {
+      "strategy": "allgather",
+      "reason": "allgather: one input and one output"
+    },
+    {
+      "strategy": "split/local/base",
+      "reason": "lower bound 28 >= best 20"
+    },
+    {
+      "strategy": "split/local/-staged",
+      "reason": "lower bound 31 >= best 20"
+    }
+  ],
+  "seconds": 13.52
+}

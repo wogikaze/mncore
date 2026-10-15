@@ -1,0 +1,1184 @@
+{
+  "total": 73,
+  "accepted": 73,
+  "at_or_below_reference": 19,
+  "problems": [
+    {
+      "problem": "1.plus-one",
+      "slug": "plus_one",
+      "reference_lines": 2,
+      "status": "accepted",
+      "lines": 2,
+      "strategy": "local",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 2
+        }
+      ],
+      "seconds": 2.0
+    },
+    {
+      "problem": "2.plus-two",
+      "slug": "plus_two",
+      "reference_lines": 5,
+      "status": "accepted",
+      "lines": 7,
+      "strategy": "local",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 7
+        }
+      ],
+      "seconds": 2.2
+    },
+    {
+      "problem": "3.a-plus-b",
+      "slug": "a_plus_b",
+      "reference_lines": 6,
+      "status": "accepted",
+      "lines": 6,
+      "strategy": "local/-staged",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 6
+        }
+      ],
+      "seconds": 6.2
+    },
+    {
+      "problem": "4.mul7",
+      "slug": "mul7",
+      "reference_lines": 6,
+      "status": "accepted",
+      "lines": 10,
+      "strategy": "local",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 10
+        }
+      ],
+      "seconds": 2.2
+    },
+    {
+      "problem": "5.abs",
+      "slug": "abs",
+      "reference_lines": 13,
+      "status": "accepted",
+      "lines": 23,
+      "strategy": "local",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 23
+        }
+      ],
+      "seconds": 5.6
+    },
+    {
+      "problem": "6.fadd-mul",
+      "slug": "fadd_mul",
+      "reference_lines": 14,
+      "status": "accepted",
+      "lines": 18,
+      "strategy": "local",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 18
+        }
+      ],
+      "seconds": 10.2
+    },
+    {
+      "problem": "7.mul2",
+      "slug": "mul2",
+      "reference_lines": 9,
+      "status": "accepted",
+      "lines": 13,
+      "strategy": "local",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 13
+        }
+      ],
+      "seconds": 13.9
+    },
+    {
+      "problem": "8.fle",
+      "slug": "fle",
+      "reference_lines": 4,
+      "status": "accepted",
+      "lines": 9,
+      "strategy": "local",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 9
+        }
+      ],
+      "seconds": 4.7
+    },
+    {
+      "problem": "9.transpose-addr",
+      "slug": "transpose_addr",
+      "reference_lines": 10,
+      "status": "accepted",
+      "lines": 16,
+      "strategy": "local",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 16
+        }
+      ],
+      "seconds": 6.1
+    },
+    {
+      "problem": "10.gather-easy",
+      "slug": "gather_easy",
+      "reference_lines": 6,
+      "status": "accepted",
+      "lines": 12,
+      "strategy": "gather",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 12
+        }
+      ],
+      "seconds": 172.8
+    },
+    {
+      "problem": "11.square-sum",
+      "slug": "square_sum",
+      "reference_lines": 11,
+      "status": "accepted",
+      "lines": 21,
+      "strategy": "hierarchy/split-MAB+L1B:l1bmr16/l2bmr/l2bmb/l1bmm2+local",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 21
+        }
+      ],
+      "seconds": 101.8
+    },
+    {
+      "problem": "12.convert-endian",
+      "slug": "convert_endian",
+      "reference_lines": 3,
+      "status": "accepted",
+      "lines": 6,
+      "strategy": "local",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 6
+        }
+      ],
+      "seconds": 1.0
+    },
+    {
+      "problem": "13.mod3",
+      "slug": "mod3",
+      "reference_lines": 8,
+      "status": "accepted",
+      "lines": 15,
+      "strategy": "local",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 15
+        }
+      ],
+      "seconds": 4.8
+    },
+    {
+      "problem": "14.mat-sq",
+      "slug": "mat_sq",
+      "reference_lines": 10,
+      "status": "accepted",
+      "lines": 12,
+      "strategy": "contraction/hm-t",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 12
+        }
+      ],
+      "seconds": 70.3
+    },
+    {
+      "problem": "15.contains",
+      "slug": "contains",
+      "reference_lines": 20,
+      "status": "accepted",
+      "lines": 60,
+      "strategy": "hierarchy/l1bmr16/l1bmp2+pe+rot-membership/zero-init",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 60,
+          "detail": null
+        }
+      ],
+      "seconds": 256.6
+    },
+    {
+      "problem": "16.count-up",
+      "slug": "count_up",
+      "reference_lines": 21,
+      "status": "accepted",
+      "lines": 43,
+      "strategy": "generate/spread-pdm",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 43,
+          "detail": null
+        }
+      ],
+      "seconds": 9.2
+    },
+    {
+      "problem": "17.transpose-mab",
+      "slug": "transpose_mab",
+      "reference_lines": 15,
+      "status": "accepted",
+      "lines": 45,
+      "strategy": "allgather",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 45
+        }
+      ],
+      "seconds": 4.2
+    },
+    {
+      "problem": "18.inversion-small",
+      "slug": "inversion_small",
+      "reference_lines": 9,
+      "status": "accepted",
+      "lines": 30,
+      "strategy": "pairs/l1bmr16/l1bmm2+base",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 30,
+          "detail": null
+        }
+      ],
+      "seconds": 28.2
+    },
+    {
+      "problem": "19.inversion",
+      "slug": "inversion",
+      "reference_lines": 31,
+      "status": "accepted",
+      "lines": 76,
+      "strategy": "pairs/l1bmd/l2bmr/pdm/l2bmb/l1bmd+base",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 76,
+          "detail": null
+        }
+      ],
+      "seconds": 125.8
+    },
+    {
+      "problem": "20.fizzbuzz",
+      "slug": "fizzbuzz",
+      "reference_lines": 98,
+      "status": "accepted",
+      "lines": 103,
+      "strategy": "fmtseq/render-pdm/0p",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 103,
+          "detail": null
+        }
+      ],
+      "seconds": 74.3
+    },
+    {
+      "problem": "21.hello-world",
+      "slug": "hello_world",
+      "reference_lines": 9,
+      "status": "accepted",
+      "lines": 13,
+      "strategy": "generate/spread",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 13
+        }
+      ],
+      "seconds": 1.2
+    },
+    {
+      "problem": "22.bit-reverse",
+      "slug": "bit_reverse",
+      "reference_lines": 10,
+      "status": "accepted",
+      "lines": 32,
+      "strategy": "local",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 32
+        }
+      ],
+      "seconds": 5.2
+    },
+    {
+      "problem": "23.fizzbuzz-pe",
+      "slug": "fizzbuzz_pe",
+      "reference_lines": 9,
+      "status": "accepted",
+      "lines": 12,
+      "strategy": "local",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 12,
+          "detail": null
+        }
+      ],
+      "seconds": 16.0
+    },
+    {
+      "problem": "24.log2",
+      "slug": "log2",
+      "reference_lines": 7,
+      "status": "accepted",
+      "lines": 15,
+      "strategy": "local",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 15
+        }
+      ],
+      "seconds": 5.7
+    },
+    {
+      "problem": "25.hsv2rgb",
+      "slug": "hsv2rgb",
+      "reference_lines": 12,
+      "status": "accepted",
+      "lines": 32,
+      "strategy": "local",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 32,
+          "detail": null
+        }
+      ],
+      "seconds": 5.4
+    },
+    {
+      "problem": "1.a-b",
+      "slug": "mat_sub",
+      "reference_lines": 3,
+      "status": "accepted",
+      "lines": 4,
+      "strategy": "local",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 4
+        }
+      ],
+      "seconds": 5.3
+    },
+    {
+      "problem": "2.fmul7",
+      "slug": "mul_const",
+      "reference_lines": 5,
+      "status": "accepted",
+      "lines": 5,
+      "strategy": "local",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 5
+        }
+      ],
+      "seconds": 9.8
+    },
+    {
+      "problem": "3.relu",
+      "slug": "relu",
+      "reference_lines": 2,
+      "status": "accepted",
+      "lines": 2,
+      "strategy": "local",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 2
+        }
+      ],
+      "seconds": 3.5
+    },
+    {
+      "problem": "4.relu-grad",
+      "slug": "relu_grad",
+      "reference_lines": 3,
+      "status": "accepted",
+      "lines": 3,
+      "strategy": "local",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 3
+        }
+      ],
+      "seconds": 3.5
+    },
+    {
+      "problem": "5.addcol-vec",
+      "slug": "add_colvec",
+      "reference_lines": 4,
+      "status": "accepted",
+      "lines": 4,
+      "strategy": "local",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 4
+        }
+      ],
+      "seconds": 3.9
+    },
+    {
+      "problem": "6.subrow-vec",
+      "slug": "sub_rowvec",
+      "reference_lines": 24,
+      "status": "accepted",
+      "lines": 35,
+      "strategy": "split/local",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 35
+        }
+      ],
+      "seconds": 49.0
+    },
+    {
+      "problem": "7.sumcol-mini",
+      "slug": "sum_col_mini",
+      "reference_lines": 4,
+      "status": "accepted",
+      "lines": 4,
+      "strategy": "local",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 4
+        }
+      ],
+      "seconds": 6.4
+    },
+    {
+      "problem": "8.sumcol",
+      "slug": "sum_col",
+      "reference_lines": 9,
+      "status": "accepted",
+      "lines": 12,
+      "strategy": "hierarchy/l1bmm@32/l2bmr/mvr+local",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 12
+        }
+      ],
+      "seconds": 6.4
+    },
+    {
+      "problem": "9.sumrow-mini",
+      "slug": "sum_row_mini",
+      "reference_lines": 6,
+      "status": "accepted",
+      "lines": 9,
+      "strategy": "pe-reduce",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 9
+        }
+      ],
+      "seconds": 9.8
+    },
+    {
+      "problem": "10.sumrow",
+      "slug": "sum_row",
+      "reference_lines": 20,
+      "status": "accepted",
+      "lines": 24,
+      "strategy": "split/mab-reduce/pe+rot-local",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 24
+        }
+      ],
+      "seconds": 51.2
+    },
+    {
+      "problem": "11.maxrow",
+      "slug": "max_row",
+      "reference_lines": 21,
+      "status": "accepted",
+      "lines": 24,
+      "strategy": "split/mab-reduce/pe+rot-local",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 24
+        }
+      ],
+      "seconds": 47.5
+    },
+    {
+      "problem": "12.divrow-vec",
+      "slug": "div_row",
+      "reference_lines": 29,
+      "status": "accepted",
+      "lines": 56,
+      "strategy": "split/local/newton2",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 56,
+          "detail": null
+        }
+      ],
+      "seconds": 316.8
+    },
+    {
+      "problem": "13.exp-low-prec",
+      "slug": "exp_lowprec",
+      "reference_lines": 14,
+      "status": "accepted",
+      "lines": 20,
+      "strategy": "local/exp_degree3",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 20,
+          "detail": null
+        }
+      ],
+      "seconds": 47.1
+    },
+    {
+      "problem": "14.exp",
+      "slug": "exp",
+      "reference_lines": 21,
+      "status": "accepted",
+      "lines": 30,
+      "strategy": "local/exp_degree6",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 30
+        }
+      ],
+      "seconds": 73.3
+    },
+    {
+      "problem": "15.onehot-mini",
+      "slug": "onehot_mini",
+      "reference_lines": 7,
+      "status": "accepted",
+      "lines": 17,
+      "strategy": "relayout/base",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 17
+        }
+      ],
+      "seconds": 3.9
+    },
+    {
+      "problem": "16.onehot",
+      "slug": "onehot",
+      "reference_lines": 24,
+      "status": "accepted",
+      "lines": 44,
+      "strategy": "split/local/base",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 44
+        }
+      ],
+      "seconds": 20.7
+    },
+    {
+      "problem": "17.dram-dl-256-16",
+      "slug": "dram_dl_256_16",
+      "reference_lines": 5,
+      "status": "accepted",
+      "lines": 5,
+      "strategy": "movement",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 5
+        }
+      ],
+      "seconds": 2.0
+    },
+    {
+      "problem": "18.dram-ul-256-16",
+      "slug": "dram_ul_256_16",
+      "reference_lines": 6,
+      "status": "accepted",
+      "lines": 6,
+      "strategy": "movement",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 6
+        }
+      ],
+      "seconds": 4.3
+    },
+    {
+      "problem": "19.dram-dl-256-16p",
+      "slug": "dram_dl_256_16p",
+      "reference_lines": 19,
+      "status": "accepted",
+      "lines": 25,
+      "strategy": "movement",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 25
+        }
+      ],
+      "seconds": 2.3
+    },
+    {
+      "problem": "20.dram-ul-256-16p",
+      "slug": "dram_ul_256_16p",
+      "reference_lines": 10,
+      "status": "accepted",
+      "lines": 16,
+      "strategy": "movement",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 16
+        }
+      ],
+      "seconds": 13.2
+    },
+    {
+      "problem": "21.dram-dl-256-16-l2b",
+      "slug": "dram_dl_256_16_l2b",
+      "reference_lines": 12,
+      "status": "accepted",
+      "lines": 14,
+      "strategy": "movement",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 14
+        }
+      ],
+      "seconds": 2.0
+    },
+    {
+      "problem": "22.dram-dl-1024-16",
+      "slug": "dram_dl_1024_16",
+      "reference_lines": 8,
+      "status": "accepted",
+      "lines": 10,
+      "strategy": "movement",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 10
+        }
+      ],
+      "seconds": 5.2
+    },
+    {
+      "problem": "23.dram-dl-256-1024",
+      "slug": "dram_dl_256_1024",
+      "reference_lines": 69,
+      "status": "accepted",
+      "lines": 74,
+      "strategy": "movement",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 74
+        }
+      ],
+      "seconds": 70.2
+    },
+    {
+      "problem": "24.dram-dl-16",
+      "slug": "dram_dl_16",
+      "reference_lines": 5,
+      "status": "accepted",
+      "lines": 5,
+      "strategy": "movement",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 5
+        }
+      ],
+      "seconds": 1.0
+    },
+    {
+      "problem": "25.dram-ul-16",
+      "slug": "dram_ul_16",
+      "reference_lines": 5,
+      "status": "accepted",
+      "lines": 5,
+      "strategy": "movement",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 5
+        }
+      ],
+      "seconds": 1.4
+    },
+    {
+      "problem": "26.dram-dl-16-1024",
+      "slug": "dram_dl_16_1024",
+      "reference_lines": 40,
+      "status": "accepted",
+      "lines": 44,
+      "strategy": "movement",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 44
+        }
+      ],
+      "seconds": 8.4
+    },
+    {
+      "problem": "27.dram-ul-16-1024",
+      "slug": "dram_ul_16_1024",
+      "reference_lines": 13,
+      "status": "accepted",
+      "lines": 18,
+      "strategy": "movement",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 18
+        }
+      ],
+      "seconds": 10.7
+    },
+    {
+      "problem": "28.dram-dl-16-16",
+      "slug": "dram_dl_16_16",
+      "reference_lines": 11,
+      "status": "accepted",
+      "lines": 12,
+      "strategy": "movement",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 12
+        }
+      ],
+      "seconds": 0.9
+    },
+    {
+      "problem": "29.dram-ul-16-16",
+      "slug": "dram_ul_16_16",
+      "reference_lines": 9,
+      "status": "accepted",
+      "lines": 13,
+      "strategy": "movement",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 13
+        }
+      ],
+      "seconds": 6.9
+    },
+    {
+      "problem": "30.dram-dl-256",
+      "slug": "dram_dl_256",
+      "reference_lines": 11,
+      "status": "accepted",
+      "lines": 11,
+      "strategy": "movement",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 11
+        }
+      ],
+      "seconds": 1.0
+    },
+    {
+      "problem": "31.dram-ul-256",
+      "slug": "dram_ul_256",
+      "reference_lines": 12,
+      "status": "accepted",
+      "lines": 9,
+      "strategy": "movement",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 9
+        }
+      ],
+      "seconds": 4.1
+    },
+    {
+      "problem": "32.matmul-trb-mab-lm-4-8-8",
+      "slug": "matmul_trb_mab_lm_4_8_8",
+      "reference_lines": 4,
+      "status": "accepted",
+      "lines": 4,
+      "strategy": "contraction/gm-direct",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 4
+        }
+      ],
+      "seconds": 11.4
+    },
+    {
+      "problem": "33.matmul-trb-mab-lm-4-8-16",
+      "slug": "matmul_trb_mab_lm_4_8_16",
+      "reference_lines": 7,
+      "status": "accepted",
+      "lines": 7,
+      "strategy": "contraction/gm-direct",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 7
+        }
+      ],
+      "seconds": 17.1
+    },
+    {
+      "problem": "34.matmul-trb-mab-lm-4-16-8",
+      "slug": "matmul_trb_mab_lm_4_16_8",
+      "reference_lines": 7,
+      "status": "accepted",
+      "lines": 6,
+      "strategy": "contraction/hm",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 6
+        }
+      ],
+      "seconds": 28.2
+    },
+    {
+      "problem": "35.matmul-trb-mab-lm-4-16-16",
+      "slug": "matmul_trb_mab_lm_4_16_16",
+      "reference_lines": 12,
+      "status": "accepted",
+      "lines": 6,
+      "strategy": "contraction/hm",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 6
+        }
+      ],
+      "seconds": 39.9
+    },
+    {
+      "problem": "36.matmul-trb-pkg-lm-256-16-16",
+      "slug": "matmul_trb_pkg_lm_256_16_16",
+      "reference_lines": 12,
+      "status": "accepted",
+      "lines": 12,
+      "strategy": "contraction/gm-direct",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 12
+        }
+      ],
+      "seconds": 301.7
+    },
+    {
+      "problem": "37.matmul-trb-mab-lm-32-8-16",
+      "slug": "matmul_trb_mab_lm_32_8_16",
+      "reference_lines": 17,
+      "status": "accepted",
+      "lines": 21,
+      "strategy": "contraction/gm-direct",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 21
+        }
+      ],
+      "seconds": 72.1
+    },
+    {
+      "problem": "38.matmul-trb-pkg-lm-256-128-16",
+      "slug": "matmul_trb_pkg_lm_256_128_16",
+      "reference_lines": 23,
+      "status": "accepted",
+      "lines": 48,
+      "strategy": "hierarchy/l1bmr32/l1bmm2+contraction/gm-direct",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 48
+        }
+      ],
+      "seconds": 64.9
+    },
+    {
+      "problem": "39.matmul-trb-pkg-lmdram-256-1024-16",
+      "slug": "matmul_trb_pkg_lmdram_256_1024_16",
+      "reference_lines": 29,
+      "status": "accepted",
+      "lines": 38,
+      "strategy": "hierarchy/l1bmr32/l2bmr/mvp+contraction/gm-direct",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 38
+        }
+      ],
+      "seconds": 250.8
+    },
+    {
+      "problem": "40.matmul-notr-mab-lm-4-8-8",
+      "slug": "matmul_notr_mab_lm_4_8_8",
+      "reference_lines": 7,
+      "status": "accepted",
+      "lines": 7,
+      "strategy": "contraction/gm",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 7
+        }
+      ],
+      "seconds": 7.4
+    },
+    {
+      "problem": "41.matmul-notr-mab-lm-4-16-16",
+      "slug": "matmul_notr_mab_lm_4_16_16",
+      "reference_lines": 13,
+      "status": "accepted",
+      "lines": 23,
+      "strategy": "contraction/gm",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 23
+        }
+      ],
+      "seconds": 55.7
+    },
+    {
+      "problem": "42.matmul-notr-pkg-lm-256-16-16",
+      "slug": "matmul_notr_pkg_lm_256_16_16",
+      "reference_lines": 13,
+      "status": "accepted",
+      "lines": 23,
+      "strategy": "contraction/gm",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 23
+        }
+      ],
+      "seconds": 188.5
+    },
+    {
+      "problem": "43.matmul-tra-mab-lm-8-8-8",
+      "slug": "matmul_tra_mab_lm_8_8_8",
+      "reference_lines": 8,
+      "status": "accepted",
+      "lines": 10,
+      "strategy": "contraction/gm",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 10
+        }
+      ],
+      "seconds": 10.1
+    },
+    {
+      "problem": "44.matmul-tra-mab-lm-16-8-16",
+      "slug": "matmul_tra_mab_lm_16_8_16",
+      "reference_lines": 17,
+      "status": "accepted",
+      "lines": 26,
+      "strategy": "contraction/gm",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 26
+        }
+      ],
+      "seconds": 23.5
+    },
+    {
+      "problem": "45.matmul-tra-mab-lm-16-4-16",
+      "slug": "matmul_tra_mab_lm_16_4_16",
+      "reference_lines": 16,
+      "status": "accepted",
+      "lines": 20,
+      "strategy": "contraction/gm",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 20
+        }
+      ],
+      "seconds": 14.5
+    },
+    {
+      "problem": "46.matmul-tra-pkg-lmdram-16-256-16",
+      "slug": "matmul_tra_pkg_lmdram_16_256_16",
+      "reference_lines": 26,
+      "status": "accepted",
+      "lines": 31,
+      "strategy": "hierarchy/l1bmm@32/l2bmr/mvr+contraction/gm",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 31
+        }
+      ],
+      "seconds": 13.7
+    },
+    {
+      "problem": "47.matmul-tra-mab-lm-16-32-8",
+      "slug": "matmul_tra_mab_lm_16_32_8",
+      "reference_lines": 17,
+      "status": "accepted",
+      "lines": 50,
+      "strategy": "contraction/gm",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 50
+        }
+      ],
+      "seconds": 77.6
+    },
+    {
+      "problem": "48.matmul-tra-pkg-lmdram-16-256-1024",
+      "slug": "matmul_tra_pkg_lmdram_16_256_1024",
+      "reference_lines": 70,
+      "status": "accepted",
+      "lines": 94,
+      "strategy": "hierarchy/l1bmd/l2bmd/mvr-pdm+contraction/gm",
+      "judge": [
+        {
+          "testcase": "testcase.vsm",
+          "accepted": true,
+          "score": 94
+        }
+      ],
+      "seconds": 183.3
+    }
+  ]
+}

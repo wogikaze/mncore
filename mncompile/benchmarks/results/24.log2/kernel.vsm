@@ -1,0 +1,15 @@
+imm ui"0x4B000000" $ls448/1000
+ior $lm0v $aluf $nowrite
+fvadd $aluf -$ls448 $ls0v; ior $lm8v $ls448 $nowrite
+fvadd $aluf -$ls448 $ls8v; ior $lm16v $ls448 $nowrite
+fvadd $aluf -$ls448 $ls16v; ior $lm24v $ls448 $nowrite
+fvadd $aluf -$ls448 $ls24v; imm ui"0x00000017" $lr448/1000
+ilsr $ls0v $aluf $ls0v
+imm ui"0x0000007F" $lr450/1000
+ilsr $ls8v $lr448 $nowrite
+isub $aluf $lr450 $ln8v
+ilsr $ls16v $lr448 $nowrite
+isub $aluf $lr450 $ln16v
+ilsr $ls24v $lr448 $nowrite
+isub $aluf $lr450 $ln24v
+isub $ls0v $lr450 $ln0v

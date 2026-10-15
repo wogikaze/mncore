@@ -1,0 +1,85 @@
+{
+  "lines": 21,
+  "strategy": "contraction/gm-direct",
+  "candidates": [
+    {
+      "strategy": "contraction/gm-direct",
+      "lines": 21
+    },
+    {
+      "strategy": "contraction/gm",
+      "lines": 21
+    }
+  ],
+  "rejected": [
+    {
+      "strategy": "relayout",
+      "reason": "local map: ('B', (0, 2)) is not stored in PE 0"
+    },
+    {
+      "strategy": "local-reduce",
+      "reason": "local map: ('B', (0, 2)) is not stored in PE 0"
+    },
+    {
+      "strategy": "movement",
+      "reason": "movement: output is not a copy of an input element"
+    },
+    {
+      "strategy": "pe-reduce",
+      "reason": "pe-reduce: terms must be input elements"
+    },
+    {
+      "strategy": "gather",
+      "reason": "gather: 64-bit elements only"
+    },
+    {
+      "strategy": "generate",
+      "reason": "generate: output depends on the inputs"
+    },
+    {
+      "strategy": "pairs",
+      "reason": "pairs: integer LM output"
+    },
+    {
+      "strategy": "allgather",
+      "reason": "allgather: one input and one output"
+    },
+    {
+      "strategy": "split/mab-reduce/pe+rot-local",
+      "reason": "lower bound 70 >= best 21"
+    },
+    {
+      "strategy": "hierarchy/split-L1B:l1bmm@32/l2bmr/l2bmb/l1bmm2+local/-staged",
+      "reason": "lower bound 82 >= best 21"
+    },
+    {
+      "strategy": "hierarchy/split-L1B:l1bmm@16/l2bmr/l2bmb/l1bmm2+local/-staged",
+      "reason": "lower bound 90 >= best 21"
+    },
+    {
+      "strategy": "hierarchy/split-L1B:l1bmm@32/l2bmr/l2bmb/l1bmm2+local/base",
+      "reason": "lower bound 106 >= best 21"
+    },
+    {
+      "strategy": "hierarchy/split-L1B:l1bmm@16/l2bmr/l2bmb/l1bmm2+local/base",
+      "reason": "lower bound 114 >= best 21"
+    },
+    {
+      "strategy": "split/local/base",
+      "reason": "lower bound 246 >= best 21"
+    },
+    {
+      "strategy": "split/local/-staged",
+      "reason": "lower bound 250 >= best 21"
+    },
+    {
+      "strategy": "mab-reduce/pe+rot-local",
+      "reason": "lower bound 274 >= best 21"
+    },
+    {
+      "strategy": "local",
+      "reason": "lower bound 839 >= best 21"
+    }
+  ],
+  "seconds": 71.1
+}

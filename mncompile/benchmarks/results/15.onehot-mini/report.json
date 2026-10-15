@@ -1,0 +1,69 @@
+{
+  "lines": 17,
+  "strategy": "relayout/base",
+  "candidates": [
+    {
+      "strategy": "local",
+      "lines": 19
+    },
+    {
+      "strategy": "relayout/base",
+      "lines": 17
+    },
+    {
+      "strategy": "relayout/base-staged",
+      "lines": 18
+    }
+  ],
+  "rejected": [
+    {
+      "strategy": "local-reduce",
+      "reason": "local map: lane-misaligned operand"
+    },
+    {
+      "strategy": "movement",
+      "reason": "movement: output is not a copy of an input element"
+    },
+    {
+      "strategy": "contraction",
+      "reason": "contraction: output is not a sum of products"
+    },
+    {
+      "strategy": "pe-reduce",
+      "reason": "pe-reduce: mixed dtypes"
+    },
+    {
+      "strategy": "gather",
+      "reason": "gather: 64-bit elements only"
+    },
+    {
+      "strategy": "hierarchy",
+      "reason": "hierarchy: no transfer chain"
+    },
+    {
+      "strategy": "mab-reduce",
+      "reason": "mab-reduce: output is not a reduction"
+    },
+    {
+      "strategy": "generate",
+      "reason": "generate: output depends on the inputs"
+    },
+    {
+      "strategy": "pairs",
+      "reason": "pairs: integer LM output"
+    },
+    {
+      "strategy": "allgather",
+      "reason": "allgather: LM to LM copies of one dtype"
+    },
+    {
+      "strategy": "split/local/base",
+      "reason": "lower bound 26 >= best 17"
+    },
+    {
+      "strategy": "split/local/-staged",
+      "reason": "lower bound 29 >= best 17"
+    }
+  ],
+  "seconds": 2.89
+}

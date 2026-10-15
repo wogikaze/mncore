@@ -1,0 +1,42 @@
+imm ui"0x00000003" $ls450/1000
+imm ui"0x00000001" $ls448/1000
+imm ui"0x00000004" $ls452/1000
+ilsr $peid $ls450 $nowrite
+ilsl $aluf $ls452 $lr0v
+ilsr $peid $ls450 $nowrite
+ilsl $aluf $ls452 $lr8v
+ilsl $peid $ls448 $nowrite
+isub $aluf $lr0v $nowrite
+iadd $aluf $ls448 $lr0v
+ilsl $peid $ls448 $nowrite
+isub $aluf $lr8v $lr8v
+ilsr $mabid $ls448 $llt
+imm ui"0x3F800000" $ls454/1000
+ixor $mt0v8 $lr8v $omr1
+ixor $mt0v8 $lr0v $omr2
+ixor $mt32v8 $lr8v $omr3
+ixor $mt32v8 $lr0v $omr4
+lpassa/$imr1 $ls454 $m64v2
+lpassa/$imr2 $ls454 $m65v2
+lpassa/$imr3 $ls454 $m72v2
+lpassa/$imr4 $ls454 $m73v2
+nop/2
+l1bmd $lm64v $lb0
+l1bmd $lm72v $lb256
+nop/2
+l1bmm $llb0 $lln0v
+l1bmm $llb32 $lln16v
+l1bmm $llb64 $lln32v
+l1bmm $llb96 $lln48v
+l1bmm $llb128 $lln64v
+l1bmm $llb160 $lln80v
+l1bmm $llb192 $lln96v
+l1bmm $llb224 $lln112v
+l1bmm $llb256 $lln128v
+l1bmm $llb288 $lln144v
+l1bmm $llb320 $lln160v
+l1bmm $llb352 $lln176v
+l1bmm $llb384 $lln192v
+l1bmm $llb416 $lln208v
+l1bmm $llb448 $lln224v
+l1bmm $llb480 $lln240v

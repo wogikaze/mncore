@@ -1,0 +1,10 @@
+imm ui"0x00000003" $s449/1000
+nop
+llsl $lm0v $ls448 $nowrite
+lsub $aluf $lm0v $ln0v
+llsl $lm8v $ls448 $nowrite
+lsub $aluf $lm8v $ln8v
+llsl $lm16v $ls448 $nowrite
+lsub $aluf $lm16v $ln16v
+llsl $lm24v $ls448 $nowrite
+lsub $aluf $lm24v $ln24v

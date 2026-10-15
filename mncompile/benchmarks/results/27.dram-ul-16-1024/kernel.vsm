@@ -1,0 +1,17 @@
+imm ui"0x00000001" $ls448/1000
+ilsr $l2bid $aluf $lr0v
+imm ui"0x00000003" $ls450/1000
+ilsl $lr0v $aluf $llt
+nop
+l1bmd $lmt0v $lb0
+nop/2
+l2bmd $lb0 $lc0
+l2bmd $lb32 $lc256
+l2bmd $lb64 $lc512
+l2bmd $lb96 $lc768
+l2bmd $lb128 $lc1024
+l2bmd $lb160 $lc1280
+l2bmd $lb192 $lc1536
+l2bmd $lb224 $lc1792
+nop
+mvp/n2048 $lc0@.0 $d0

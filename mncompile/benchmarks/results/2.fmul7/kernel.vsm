@@ -1,0 +1,5 @@
+imm ui"0x40E00000" $ls448/1000
+fvmul $lm0v $aluf $ln0v
+fvmul $lm8v $ls448 $ln8v
+fvmul $lm16v $ls448 $ln16v
+fvmul $lm24v $ls448 $ln24v

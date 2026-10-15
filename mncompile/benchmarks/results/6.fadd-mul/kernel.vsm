@@ -1,0 +1,18 @@
+imm ui"0x41000000" $ls448/1000
+imm ui"0x42800000" $lr448/1000
+fvfma $lm0v $ls448 $aluf $ln0v
+fvfma $lm8v $ls448 $lr448 $ln8v
+fvfma $lm16v $ls448 $lr448 $ln16v
+fvfma $lm24v $ls448 $lr448 $ln24v
+fvfma $lm32v $ls448 $lr448 $ln32v
+fvfma $lm40v $ls448 $lr448 $ln40v
+fvfma $lm48v $ls448 $lr448 $ln48v
+fvfma $lm56v $ls448 $lr448 $ln56v
+fvfma $lm64v $ls448 $lr448 $ln64v
+fvfma $lm72v $ls448 $lr448 $ln72v
+fvfma $lm80v $ls448 $lr448 $ln80v
+fvfma $lm88v $ls448 $lr448 $ln88v
+fvfma $lm96v $ls448 $lr448 $ln96v
+fvfma $lm104v $ls448 $lr448 $ln104v
+fvfma $lm112v $ls448 $lr448 $ln112v
+fvfma $lm120v $ls448 $lr448 $ln120v

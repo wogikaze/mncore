@@ -1,0 +1,61 @@
+{
+  "lines": 13,
+  "strategy": "movement",
+  "candidates": [
+    {
+      "strategy": "movement",
+      "lines": 13
+    }
+  ],
+  "rejected": [
+    {
+      "strategy": "local",
+      "reason": "local map: DRAM output"
+    },
+    {
+      "strategy": "relayout",
+      "reason": "relayout: DRAM operand"
+    },
+    {
+      "strategy": "local-reduce",
+      "reason": "local map: DRAM output"
+    },
+    {
+      "strategy": "contraction",
+      "reason": "contraction: output is not a sum of products"
+    },
+    {
+      "strategy": "pe-reduce",
+      "reason": "pe-reduce: DRAM output"
+    },
+    {
+      "strategy": "gather",
+      "reason": "gather: 64-bit elements only"
+    },
+    {
+      "strategy": "hierarchy",
+      "reason": "hierarchy: no transfer chain"
+    },
+    {
+      "strategy": "mab-reduce",
+      "reason": "mab-reduce: DRAM output"
+    },
+    {
+      "strategy": "generate",
+      "reason": "generate: output depends on the inputs"
+    },
+    {
+      "strategy": "split",
+      "reason": "split: LM tensors only"
+    },
+    {
+      "strategy": "pairs",
+      "reason": "pairs: integer LM output"
+    },
+    {
+      "strategy": "allgather",
+      "reason": "allgather: LM to LM copies of one dtype"
+    }
+  ],
+  "seconds": 6.08
+}

@@ -1,0 +1,7 @@
+gmwrite $lm8v $ly0
+gmwrite $lm16v $ly4
+gmread $ly0 $nowrite; gbfn $lm0v $lr0v
+gbfn $mreadf $nowrite; gmread $ly4 $nowrite
+gbfn $mreadf $nowrite; gmwrite $aluf $lx0
+gmwrite $aluf $lx4
+gmmul $lx $lr0v $ln0v
