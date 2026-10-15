@@ -371,8 +371,13 @@ def local_strategy(source, contract, outputs, *, variant=None):
             and any(n.op in ("abs", "select") for n in walk([n for d in outputs.values() for n in d.values()]))):
         stage_opts.append("alternating")
 
+    # several input tensors in one LM: a variant copies one of them to GRF up front
+    lm_spaces = [sp.space for sp in contract.inputs if sp.space in ("lm0", "lm1")]
+    if len(lm_spaces) != len(set(lm_spaces)):
+        stage_opts.append("operand")
+
     def stage_name(staged):
-        return "-alternating" if staged == "alternating" else "-staged" if staged else ""
+        return {"alternating": "-alternating", "operand": "-prestaged"}.get(staged, "-staged" if staged else "")
     out = []
     dropped = drop_small_terms(contract, outputs)
     if dropped is not None:
@@ -467,6 +472,8 @@ def _local(source, contract, outputs, *, words, variant=None, staged=False):
         else:
             joint.append({"operands": dict(operands), "outputs": [(template, dst)]})
     shifts.emit(prog, consts)
+    if staged == "operand":
+        joint = _prestage_operand(prog, contract, joint)
     joint = _wide_copies(prog, joint, words)
     buffered = []
     group_index = 0
@@ -480,7 +487,7 @@ def _local(source, contract, outputs, *, words, variant=None, staged=False):
         gen.fold = out_spec.dtype.is_float and out_spec.atol > 0
         gen.select_in_registers = bool(variant and variant.get("selreg"))
         for template, dst in j["outputs"]:
-            use_buffer = bool(staged) and (staged != "alternating" or group_index % 2 == 1)
+            use_buffer = staged is True or (staged == "alternating" and group_index % 2 == 1)
             group_index += 1
             gen.write(template, _buffered(dst, out_spec, use_buffer))
             if use_buffer:
@@ -488,6 +495,58 @@ def _local(source, contract, outputs, *, words, variant=None, staged=False):
     if buffered:
         _buffer_copies(prog, contract, buffered, words)
     return prog
+
+
+def _prestage_operand(prog, contract, joint):
+    """Ops reading two words of one LM need a staging copy each. Copy the whole input tensor that
+    takes part in those clashes to GRF0 once (two long words per cycle, 16 words per op) and read it
+    there instead."""
+    from .vprog import VOp
+
+    lm_inputs = [sp for sp in contract.inputs if sp.space in ("lm0", "lm1")]
+
+    def tensor_of(m):
+        for sp in lm_inputs:
+            if sp.space == m.space and all(sp.start <= a < sp.end for a in m.addrs):
+                return sp
+        return None
+
+    clash = {}
+    for j in joint:
+        by_space = {}
+        for m in j["operands"].values():
+            if isinstance(m, Mem) and m.space in ("lm0", "lm1") and not m.tind:
+                by_space.setdefault(m.space, set()).add(m)
+        for ms in by_space.values():
+            if len({(m.addrs, m.wl) for m in ms}) > 1:
+                for m in ms:
+                    sp = tensor_of(m)
+                    if sp is not None:
+                        clash[sp.name] = sp
+    if not clash:
+        raise CompileError("prestage: no operands share an LM")
+    sp = min(clash.values(), key=lambda t: (t.end - t.start, t.name))
+    base = prog.notes.get("grf_reserved", {}).get("grf0", 0)
+    base = (base + 3) // 4 * 4
+    lo, hi = sp.start // 4 * 4, -(-sp.end // 4) * 4
+    if base + hi - lo > 448:
+        raise CompileError("prestage: tensor too large for GRF")
+    for a in range(lo, hi, 16):
+        addrs = tuple(min(a + 4 * c, hi - 4) for c in range(4))
+        prog.add(VOp("lpassa", [Mem(sp.space, 4, addrs)], dsts=[Mem("grf0", 4, tuple(base + x - lo for x in addrs))],
+                     unit="alu", note="prestage operand"))
+    res = dict(prog.notes.get("grf_reserved", {}))
+    res["grf0"] = base + hi - lo
+    prog.notes["grf_reserved"] = res
+    out = []
+    for j in joint:
+        ops = {}
+        for tid, m in j["operands"].items():
+            if isinstance(m, Mem) and tensor_of(m) is sp:
+                m = Mem("grf0", m.wl, tuple(base + a - lo for a in m.addrs), neg=m.neg, ext=m.ext, rnd=m.rnd)
+            ops[tid] = m
+        out.append(dict(j, operands=ops))
+    return out
 
 
 def _wide_copies(prog, joint, words):

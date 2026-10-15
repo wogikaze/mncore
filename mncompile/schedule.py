@@ -21,7 +21,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field, replace
 
 from .errors import CompileError
-from .machine import Fixed, Fwd, Imm, Instr, L1, L2, Mask, Mem, NoWrite, Omr, Step, emit, unit_of
+from .machine import Dram, Fixed, Fwd, Imm, Instr, L1, L2, Mask, Mem, NoWrite, Omr, Pdm, Step, emit, unit_of
 from .vprog import FlagUse, Use, Value, VOp, VProgram
 
 FWD_OF_UNIT = {"alu": "aluf", "mau": "mauf", "l1bm": "lbf", "l1bm-turnaround": "lbf", "mread": "mreadf"}
@@ -31,6 +31,67 @@ RESERVED_TOP = 64  # top of each GRF kept for constants
 
 
 EAGER_COPIES = True
+
+# --------------------------------------------------------------------------- transfer instructions
+# L1BM / L2BM / MV instructions scheduled with the computation. Issue distances between transfers
+# that touch the same buffer (SDM 3.6.3; the conservative step counts, so every address works):
+#   data:  PE->L1BM => L1BM->L2BM/multicast 4, L2BM->L1BM => L1BM->PE 3, multicast => L1BM->PE 4,
+#          L1BM->L2BM => MV reading L2BM 4
+#   port:  L1BM->L2BM => L2BM->L1BM 4, PE->L1BM => L1BM->PE 3, L2BM->L1BM => L1BM->L2BM/multicast 3,
+#          multicast => L1BM->L2BM/multicast 4
+_BUFFERS = (L1, L2, Pdm, Dram)
+_DATA_GAP = {("p2b", "b2c"): 4, ("p2b", "mc"): 4, ("c2b", "b2p"): 3, ("mc", "b2p"): 4, ("b2c", "mv"): 4}
+_PORT_GAP = {("b2c", "c2b"): 4, ("p2b", "b2p"): 3, ("c2b", "b2c"): 3, ("c2b", "mc"): 3, ("mc", "b2c"): 4, ("mc", "mc"): 4}
+
+
+def transfer_kind(op) -> str | None:
+    """Direction of a transfer op: p2b (PE->L1BM), b2p (L1BM->PE), b2c (L1BM->L2BM), c2b (L2BM->L1BM),
+    mc (L1BM->L1BM multicast), mv (MV statement); None for PE computation."""
+    name = op.opcode.split("/")[0]
+    srcs = [x for x in op.srcs if isinstance(x, _BUFFERS)]
+    dsts = [x for x in op.dsts if isinstance(x, _BUFFERS)]
+    if name.startswith("mv"):
+        return "mv"
+    if not (name.startswith("l1bm") or name.startswith("l2bm")):
+        return None
+    s = type(srcs[0]) if srcs else None
+    d = type(dsts[0]) if dsts else None
+    if s is None and d is L1:
+        return "p2b"
+    if s is L1 and d is None:
+        return "b2p"
+    if s is L1 and d is L2:
+        return "b2c"
+    if s is L2 and d is L1:
+        return "c2b"
+    if s is L1 and d is L1:
+        return "mc"
+    return "other"
+
+
+def transfer_unit(instr) -> str:
+    name = instr.opcode.split("/")[0]
+    if name.startswith("mv"):
+        return "mv"
+    if name.startswith("l1bm") and any(isinstance(x, L1) and x.addr is None for x in instr.srcs):
+        return "l1bm-turnaround"
+    return unit_of(instr.opcode)
+
+
+def hop_ops(hops) -> list:
+    """VOps for the instructions of a transfer chain (in order); the scheduler interleaves them with
+    the computation under the issue distances above."""
+    ops = []
+    for hop in hops:
+        for ins in hop:
+            ops.append(VOp(ins.opcode, list(ins.srcs), dsts=list(ins.dsts), unit=transfer_unit(ins),
+                           flush=ins.flush, note="transfer"))
+    return ops
+
+
+def with_hops(prog: VProgram, hops) -> VProgram:
+    """A copy of prog followed by the transfer chain as schedulable ops."""
+    return VProgram(list(prog.ops) + hop_ops(hops), dict(prog.notes))
 
 
 def op_unit(op: VOp) -> str:
@@ -46,6 +107,7 @@ class Slot:
     flush_used: bool = False
     imm: bool = False
     lm0_access: bool = False
+    write_pat: dict = field(default_factory=dict)  # LM space -> pattern written in this step
 
     @property
     def empty(self):
@@ -152,6 +214,7 @@ class Scheduler:
         deps = {op.id: [] for op in self.prog.ops}
         self._dst_deps = {op.id: [] for op in self.prog.ops}  # the part due to the op's own writes
         written, read = [], []
+        transfers = []  # (op, kind, buffer types read, buffer types written)
         for op in self.prog.ops:
             srcs = [s for s in op.srcs if isinstance(s, Mem)]
             srcs += [Mem("t", 4) for s in list(op.srcs) + list(op.dsts) if isinstance(s, Mem) and s.tind]
@@ -169,6 +232,22 @@ class Scheduler:
                     if d.space == mem.space and _overlap(d, mem):
                         deps[op.id].append((prev, 0))
                         self._dst_deps[op.id].append((prev, 0))
+            kind = transfer_kind(op)
+            if kind is not None:
+                bufs_r = {type(x) for x in op.srcs if isinstance(x, _BUFFERS)}
+                bufs_w = {type(x) for x in op.dsts if isinstance(x, _BUFFERS)}
+                if kind == "mv":
+                    bufs_r, bufs_w = bufs_r | {L2, Pdm, Dram}, bufs_w | {L2, Pdm, Dram}
+                for prev, pkind, pr, pw in transfers:
+                    gap = 1 if (pw & (bufs_r | bufs_w)) or (pr & bufs_w) else 0
+                    if pw & bufs_r:
+                        gap = max(gap, _DATA_GAP.get((pkind, kind), 1))
+                    gap = max(gap, _PORT_GAP.get((pkind, kind), 0))
+                    if pkind == "mv" or kind == "mv":
+                        gap = max(gap, 1)  # MV statements keep their program order
+                    if gap:
+                        deps[op.id].append((prev, gap))
+                transfers.append((op, kind, bufs_r, bufs_w))
             written += [(op, d) for d in dsts]
             read += [(op, s) for s in srcs]
             for v in op.after:
@@ -217,6 +296,11 @@ class Scheduler:
 
     def _read_ok(self, slot, mem, pending):
         have = pending.get(mem.space, slot.reads.get(mem.space))
+        if mem.space in ("lm0", "lm1"):
+            # an LM read and write in one step must cover the same words (SDM 3.6.4)
+            wp = slot.write_pat.get(mem.space)
+            if wp is not None and wp != _pattern(replace(mem, mask=None, neg=False, ext=False, rnd=False)):
+                return False
         return have is None or have == _pattern(mem)
 
     def _alloc(self, bank, width, pending, at_step=None):
@@ -278,6 +362,8 @@ class Scheduler:
         slot = self._slot(t)
         if unit in slot.units:
             return None
+        if (unit == "mv" and slot.units) or "mv" in slot.units:
+            return None  # an MV statement is a line of its own
         if unit in ("mau", "mwrite", "mread") and sum(u in ("mau", "mwrite", "mread") for u in slot.units) >= 2:
             return None
         prev = self._prev_nonnop(t)
@@ -435,6 +521,9 @@ class Scheduler:
         slot.reads.update(plan["reads"])
         for mem in plan["writes"]:
             slot.writes[mem] = op.id
+        for d in op.dsts:
+            if isinstance(d, Mem) and d.space in ("lm0", "lm1"):
+                slot.write_pat[d.space] = _pattern(replace(d, mask=None))
         slot.mask_read = plan["mask_read"]
         if op.flush is not None:
             slot.flush_used = True
@@ -876,6 +965,8 @@ class Scheduler:
             self.last_use[mi.id] = max(self.last_use.get(mi.id, -1), t + 1)
         nxt.units["l1bm-turnaround"] = op
         nxt.writes[dst.space] = op.id
+        if dst.space in ("lm0", "lm1"):
+            nxt.write_pat[dst.space] = _pattern(replace(dst, mask=None))
         if key is not None:
             nxt.mask_read = key
         if dst.space == "lm0":
@@ -972,10 +1063,19 @@ def repair(steps: list[Step], asm) -> list[Step] | None:
         step = steps[idx]
         if step.nop:
             return None
+
+        def reads_fwd(st):
+            return any(isinstance(x, Fwd) for ins in st.instrs for x in ins.srcs)
+
         if len(step.instrs) > 1:
             moved = step.instrs.pop()
+            # a new step would separate forwarding pairs: the moved op's reads, or the next step's
+            if any(isinstance(x, Fwd) for x in moved.srcs) or (idx + 1 < len(steps) and not steps[idx + 1].nop and reads_fwd(steps[idx + 1])):
+                return None
             steps.insert(idx + 1, Step([moved]))
         else:
+            if reads_fwd(step):
+                return None
             steps.insert(idx, Step(nop=1))
     return None
 

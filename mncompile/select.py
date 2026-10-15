@@ -279,7 +279,12 @@ class GroupGen:
             if isinstance(s, Mem):
                 pat = (s.addrs, s.wl, s.tind)
                 if s.space in seen and seen[s.space] != pat:
-                    v = self.op("lpassa", [replace(s, neg=False, ext=False, rnd=False)], "alu").out
+                    # one copy per input words for the whole program (inputs do not change)
+                    cache = self.prog.notes.setdefault("_stage_cache", {})
+                    key = replace(s, neg=False, ext=False, rnd=False)
+                    v = cache.get(key)
+                    if v is None:
+                        v = cache[key] = self.op("lpassa", [key], "alu").out
                     s = Use(v, neg=s.neg, ext=s.ext, rnd=s.rnd)
                 else:
                     seen[s.space] = pat

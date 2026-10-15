@@ -827,7 +827,7 @@ def hierarchy_strategy(source, contract, outputs, *, variant=None):
     from .matmul import contraction_strategy
     from .pereduce import pe_reduce_strategy
     from .reduce import local_reduce_strategy
-    from .schedule import schedule
+    from .schedule import schedule, with_hops
     from .sim import assembler
 
     graph = outputs.graph
@@ -890,11 +890,17 @@ def hierarchy_strategy(source, contract, outputs, *, variant=None):
             except CompileError:
                 continue
             for vname, prog in (res if isinstance(res, list) else [("", res)]):
+                label = f"{name}+{sname}{'/' + vname if vname else ''}"
                 try:
                     steps = schedule(prog, asm, tries=2)
+                    results.append((label, steps + phase_b))
                 except CompileError:
-                    continue
-                results.append((f"{name}+{sname}{'/' + vname if vname else ''}", steps + phase_b))
+                    pass
+                # the transfer chain scheduled with the computation (overlaps its latencies)
+                try:
+                    results.append((label + "/fused", schedule(with_hops(prog, hops), asm, tries=2)))
+                except CompileError:
+                    pass
     if not results:
         raise CompileError("hierarchy: no PE-level strategy computes the partials")
     return results
