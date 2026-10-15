@@ -37,16 +37,27 @@
     {
       "source": "proofs_lean/ProofsLean/PEMemory.lean",
       "sha256": "b762e28073550a734069850b7a1cc0678280ba00da7136e11b266fb9bfd56433",
+      "properties_source": "proofs_lean/ProofsLean/AddressProperties.lean",
+      "properties_sha256": "91930d11a17bc4ce5560ee0a0ba65a17c0151a66bfc236a3423af2f1732fb84e",
       "implemented": "LM0/LM1/GRF0/GRF1/T capacities, address schedules, BAR/T/madpe offset arithmetic, alignment/wrap, raw reads and unmasked writes",
       "scope": "Combinational memory primitives; writes are instantaneous and cannot establish instruction scheduling correctness",
-      "missing": "Complete operand decoding/legality, masks, precision conversion, read/write timing, forwarding and parallel-port checks; dynamic address modes not yet reference-tested",
+      "missing": "Complete operand decoding/legality, masks, precision conversion, read/write timing, forwarding, parallel-port checks and universal reference conformance",
       "reference_experiment": {
         "path": "proofs_lean/evidence/pe-memory/reference.json",
         "sha256": "b95a5cacc289d44e401cbfbc1e5513f7f3f1d5c04bd4b502df87040e2fee3b5e",
         "cases": 204,
         "scope": "LM0/LM1/GRF0/GRF1/T raw reads via lpassa; 32/64/128-bit accesses; scalar/strided/wrapping/flat addresses; all four cycles; one PE; BAR=0, no indirect/madpe/masks/hazards",
         "formal_conformance_proof": false
-      }
+      },
+      "additional_reference_experiments": [
+        {
+          "path": "proofs_lean/evidence/dynamic-address/reference.json",
+          "sha256": "0a8abe15164ff5457f4875d3fe2a2d96324c52db7f5257c7fce923b3a61934bf",
+          "cases": 1920,
+          "scope": "LM0/LM1 BAR and MADPE; LM0 T indirect; 32/64/128-bit reads; all four PEs and cycles; nonaligned/wrapping values; 64-bit T extremes; auto/flat indirect schedules; no masks or port/hazard conformance",
+          "formal_conformance_proof": false
+        }
+      ]
     }
   ],
   "unresolved_semantic_discrepancies": [

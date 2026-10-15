@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-15T15:55:31.409741+00:00",
+  "evidence_kind": "finite_lean_datapath_reference_comparison",
+  "scope": "LM0/LM1 BAR and MADPE; LM0 T indirect; 32/64/128-bit reads; all four PEs and cycles; nonaligned/wrapping values; 64-bit T extremes; auto/flat indirect schedules; no masks or port/hazard conformance",
+  "programs": 120,
+  "cases": 1920,
+  "cases_per_spelling": {
+    "m": 1248,
+    "n": 672
+  },
+  "matched": 1920,
+  "differences": [],
+  "vectors_sha256": "263c509cf672831e0ed978066f1821283e8a91ece68925545e158e9cade87fb6",
+  "vsm_sha256": "46fabda6f112f79eae54db3c31ab0cd56cd35f3106fa3ca92be5899133d29e09",
+  "reference_output_sha256": "b1473d904bcd80113e65627e5ece79c9b77561bdbac471ec5248461c07a6f64e",
+  "sources": [
+    {
+      "path": "proofs_lean/ProofsLean/IntegerALU.lean",
+      "sha256": "e4f0748c8d119a67d232cbaa3891dd072a80062ad474896fc3b952c84a8f5df2"
+    },
+    {
+      "path": "proofs_lean/ProofsLean/PEMemory.lean",
+      "sha256": "b762e28073550a734069850b7a1cc0678280ba00da7136e11b266fb9bfd56433"
+    },
+    {
+      "path": "proofs_lean/DynamicAddressProbe.lean",
+      "sha256": "5df0b06e378b5209f044db7e6243eb325ace72df05995027928fe447af755800"
+    },
+    {
+      "path": "proofs_lean/scripts/check_memory_reference.py",
+      "sha256": "8d0392f626854b7294cd50534d8d60f027626224b067870d1e89753a8046f77d"
+    },
+    {
+      "path": "proofs_lean/scripts/check_dynamic_address_reference.py",
+      "sha256": "4e4541cefd357bb609bd6b013ce74ed82a4eb980dfc88ced921a82758c447804"
+    },
+    {
+      "path": "judge/judge-py/mncore2_emuenv/assemble3",
+      "sha256": "5baabcd47a137fbc4c8ec11fd02e23cb79818bbded9d0cb4c02291aaf738b955"
+    },
+    {
+      "path": "judge/judge-py/mncore2_emuenv/gpfn3_package_main",
+      "sha256": "6008aa202c8bd29e352929cef46ceb4c52b6551fc72ac0dd987cb935bc7993cf"
+    }
+  ],
+  "proves_universal_conformance": false,
+  "proves_isa_completeness": false,
+  "proves_optimality": false
+}

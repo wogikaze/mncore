@@ -20,3 +20,7 @@ root = "UntypedProbe"
 [[lean_exe]]
 name = "memory_probe"
 root = "MemoryProbe"
+
+[[lean_exe]]
+name = "dynamic_address_probe"
+root = "DynamicAddressProbe"

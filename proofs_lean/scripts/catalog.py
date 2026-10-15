@@ -191,6 +191,7 @@ def coverage_catalog() -> dict:
     fragment_source = ROOT / "ProofsLean/IntegerALU.lean"
     untyped_source = ROOT / "ProofsLean/UntypedALU.lean"
     memory_source = ROOT / "ProofsLean/PEMemory.lean"
+    address_properties = ROOT / "ProofsLean/AddressProperties.lean"
     return {
         "schema_version": 1,
         "isa_exhaustiveness_proven": False,
@@ -212,10 +213,12 @@ def coverage_catalog() -> dict:
             "reference_experiment": datapath_experiment("untyped-alu", 1),
         }, {
             "source": memory_source.relative_to(REPO).as_posix(), "sha256": digest(memory_source),
+            "properties_source": address_properties.relative_to(REPO).as_posix(), "properties_sha256": digest(address_properties),
             "implemented": "LM0/LM1/GRF0/GRF1/T capacities, address schedules, BAR/T/madpe offset arithmetic, alignment/wrap, raw reads and unmasked writes",
             "scope": "Combinational memory primitives; writes are instantaneous and cannot establish instruction scheduling correctness",
-            "missing": "Complete operand decoding/legality, masks, precision conversion, read/write timing, forwarding and parallel-port checks; dynamic address modes not yet reference-tested",
+            "missing": "Complete operand decoding/legality, masks, precision conversion, read/write timing, forwarding, parallel-port checks and universal reference conformance",
             "reference_experiment": datapath_experiment("pe-memory", 1),
+            "additional_reference_experiments": [datapath_experiment("dynamic-address", 1)],
         }],
         "unresolved_semantic_discrepancies": [rotation_discrepancy()],
         "syntax_candidates": [{"spelling": name, "formal_step_semantics": "unimplemented"} for name in spellings],

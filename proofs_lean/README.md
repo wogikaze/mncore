@@ -57,6 +57,8 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   書き込み範囲外の値の保存と、書き込んだ語の読み戻しを証明した。
   書き込みは即時反映する組み合わせ的な部品であり、実際の命令の遅延、同時発行、
   全サイクルの読み取り後に書き込むスケジュールの正しさは証明していない。
+- `AddressProperties.lean`: T間接値の4096を法とする同値性がアドレス計算を保存することと、
+  MADPE閾値を超えるPEではアドレスが変わらないことを証明。
 
 `Machine.positiveCost` はスコアが正の行へ正規化済みであるという条件。
 MN-Coreにはゼロコストの制御文があるので、その正規化の意味保存と完全性を証明するまでは
@@ -118,6 +120,20 @@ python3 proofs_lean/scripts/catalog.py
 ```sh
 python3 proofs_lean/scripts/check_memory_reference.py \
   --output proofs_lean/evidence/pe-memory/reference.json
+python3 proofs_lean/scripts/catalog.py
+```
+
+`DynamicAddressProbe.lean`は動的アドレスを別に検証する。
+LM0/LM1のBARとMADPE、LM0のT間接を、120命令×4 PE×4サイクル＝1920観測で比較し、
+上位・下位長語がすべて一致した。BARは0、1、2、3、4093、4095を含み、
+T値には64ビット最大値や上位32ビットが非ゼロの値を使用。
+MADPEは全閾値0〜3、T間接はauto/flat両方のアドレス指定を含む。
+入力Tの下位長語は非ゼロにして、上位長語だけが参照されることも確認した。
+マスク、ポート制約、ハザードの対応証明は含まない。
+
+```sh
+python3 proofs_lean/scripts/check_dynamic_address_reference.py \
+  --output proofs_lean/evidence/dynamic-address/reference.json
 python3 proofs_lean/scripts/catalog.py
 ```
 
