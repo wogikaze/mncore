@@ -1,0 +1,114 @@
+import Mathlib.Data.Fintype.Basic
+import Mathlib.Data.Fintype.Card
+import ProofsLean.Issue
+
+namespace ProofsLean.MNCore.Issue
+
+private def Group.code : Group → Fin 10
+  | .alu => 0
+  | .mauCalc => 1
+  | .mauWrite => 2
+  | .mauRead => 3
+  | .l1bm => 4
+  | .l1bmTurnaround => 5
+  | .l2bm => 6
+  | .l2bmDarw => 7
+  | .wait => 8
+  | .noforward => 9
+
+private theorem Group.code_injective : Function.Injective Group.code := by
+  intro a b equal
+  cases a <;> cases b <;> simp [Group.code] at equal ⊢
+
+private def groupCodes (expressions : List Expr) : List (Fin 10) :=
+  expressions.map (fun expression => Group.code (expression.group.getD .alu))
+
+private theorem projectFrom_length (nextId : Nat) (expressions : List ParsedExpr) :
+    (projectFrom nextId expressions).length = expressions.length := by
+  induction expressions generalizing nextId with
+  | nil => rfl
+  | cons _ _ ih => simp [projectFrom, ih]
+
+private theorem ParsedExpr.issueGroup_isSome (expression : ParsedExpr) :
+    expression.issueGroup.isSome := by
+  cases expression with
+  | mk op sources destinations flush text =>
+    simp only [ParsedExpr.issueGroup]
+    split <;> first | rfl | (split <;> rfl)
+
+private theorem projectFrom_group_some (nextId : Nat) (expressions : List ParsedExpr)
+    (expression : Expr) (member : expression ∈ projectFrom nextId expressions) :
+    expression.group.isSome := by
+  induction expressions generalizing nextId with
+  | nil => simp [projectFrom] at member
+  | cons parsed rest ih =>
+    simp only [projectFrom, List.mem_cons] at member
+    rcases member with head | tail
+    · subst expression
+      simpa [ParsedExpr.toIssueExpr] using parsed.issueGroup_isSome
+    · exact ih (nextId + 1) tail
+
+private theorem projectFrom_groupCodes_nodup (nextId : Nat)
+    (expressions : List ParsedExpr)
+    (groups : groupsUnique (projectFrom nextId expressions)) :
+    (groupCodes (projectFrom nextId expressions)).Nodup := by
+  induction expressions generalizing nextId with
+  | nil => simp [groupCodes, projectFrom]
+  | cons parsed rest ih =>
+    change (Group.code ((parsed.toIssueExpr nextId).group.getD .alu) ::
+      groupCodes (projectFrom (nextId + 1) rest)).Nodup
+    rw [List.nodup_cons]
+    constructor
+    · intro member
+      simp only [groupCodes, List.mem_map] at member
+      rcases member with ⟨expression, tailMem, codeEqual⟩
+      have someHead : (parsed.toIssueExpr nextId).group.isSome := by
+        simpa [ParsedExpr.toIssueExpr] using parsed.issueGroup_isSome
+      have someTail : expression.group.isSome :=
+        projectFrom_group_some (nextId + 1) rest expression tailMem
+      have groupEqual : (parsed.toIssueExpr nextId).group = expression.group := by
+        cases headOption : (parsed.toIssueExpr nextId).group with
+        | none => simp [headOption] at someHead
+        | some headGroup =>
+          cases tailOption : expression.group with
+          | none => simp [tailOption] at someTail
+          | some tailGroup =>
+            have codeEq : Group.code tailGroup = Group.code headGroup := by
+              simpa [groupCodes, headOption, tailOption] using codeEqual
+            exact (congrArg some (Group.code_injective codeEq)).symm
+      have idsDiffer : (parsed.toIssueExpr nextId).id ≠ expression.id := by
+        intro idsEqual
+        have lower := projectFrom_id_lower (nextId + 1) rest expression tailMem
+        simp [ParsedExpr.toIssueExpr] at idsEqual
+        omega
+      cases headOption : (parsed.toIssueExpr nextId).group with
+      | none => simp [headOption] at someHead
+      | some group =>
+        have rejectTail := groups (parsed.toIssueExpr nextId)
+          (by simp [projectFrom]) expression
+          (List.mem_cons_of_mem _ tailMem) idsDiffer group headOption
+        have tailHasSameGroup : expression.group = some group := by
+          rw [← groupEqual, headOption]
+        exact rejectTail tailHasSameGroup
+    · apply ih
+      intro e he f hf different group eGroup
+      exact groups e (List.mem_cons_of_mem _ he) f (List.mem_cons_of_mem _ hf)
+        different group eGroup
+
+theorem projectLine_expression_count_le_ten (expressions : List ParsedExpr)
+    (legal : LegalParsedLine expressions) : expressions.length ≤ 10 := by
+  have groups := legal.2.1
+  have nodup := projectFrom_groupCodes_nodup 0 expressions groups
+  have lengthEq : (groupCodes (projectFrom 0 expressions)).length = expressions.length := by
+    simp [groupCodes, projectFrom_length]
+  have finiteCard := List.toFinset_card_of_nodup nodup
+  have subset : (groupCodes (projectLine expressions)).toFinset ⊆ Finset.univ :=
+    Finset.subset_univ _
+  have cardLe := Finset.card_le_card subset
+  rw [Finset.card_univ, Fintype.card_fin] at cardLe
+  have cardLe' : (groupCodes (projectFrom 0 expressions)).toFinset.card ≤ 10 := by
+    simpa [projectLine] using cardLe
+  rw [← lengthEq, ← finiteCard]
+  exact cardLe'
+
+end ProofsLean.MNCore.Issue

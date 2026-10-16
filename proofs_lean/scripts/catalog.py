@@ -455,6 +455,13 @@ def coverage_catalog() -> dict:
             "scope": "Finite subtype for the PE region envelope documented by assemble3 boundary probes: width < 5, four addresses < 4096, and madpe < 4.",
             "evidence": "proofs_lean/evidence/isa-bounds/reference.json: region_address_cycle0_max through region_address_cycle3_overflow, madpe_3/madpe_4, and LM0/LM1/GRF capacity findings.",
             "missing": "A universal assembler soundness theorem from parsed legal operands to this envelope, bank-specific alignment, all other operand fields, bounded line lists, and machine-level coverage.",
+        }, {
+            "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
+            "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
+            "theorem": "ProofsLean.MNCore.Issue.projectLine_expression_count_le_ten",
+            "scope": "Legal projected PE rows have at most ten expressions, from ten unique issue groups and projection-assigned distinct IDs.",
+            "evidence": "Formal consequence of Issue.groupsUnique and ParsedExpr.issueGroup being total; issue groups are mirrored from viz/core/src/issue.rs.",
+            "missing": "Per-op source/destination arity constraints, finite numeric payloads, parser/assembler completeness, and finite PE line alphabet.",
         }],
         "datapath_fragments": [{
             "source": fragment_source.relative_to(REPO).as_posix(), "sha256": digest(fragment_source),

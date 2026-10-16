@@ -83,6 +83,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   `madpe < 4`の`Region` envelopeを有限型へ埋め込み、`Region.inFiniteEnvelope_finite`を証明した。
   プローブは`evidence/isa-bounds/reference.json`にある。bank別の合法範囲/alignmentや、
   パーサーからこの上限への一般的な健全性証明は未実装で、PE line alphabet全体の有限性にも未接続。
+- `FiniteIssue.lean`: issue projectionが付ける連番IDと同時発行group一意性から、合法なPE行の式数が
+  10以下であることを証明した（`projectLine_expression_count_le_ten`）。各式のoperand列・数値payloadを
+  有限化する補題ではなく、行全体の有限性にも未接続。
 - `FiniteExample.lean`: 3命令・4入力の小さな機械で、全候補の反証、2行の最適性、
   限定入力では1行解が存在することを証明する回帰例。**MN-Coreではない。**
 - `PlusOne.lean`: Welcome（`challenge/1.plus-one`）の2行の `iinc` 解について、
