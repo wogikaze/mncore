@@ -62,6 +62,7 @@ CASES = {
     "l1bm_long_addr_8192": ("l1bmm $lb8192 $nowrite\n", False, None),
     "l1bm_mab_15": ("l1bmm@15 $lm0 $lb0\n", True, 1),
     "l1bm_mab_16": ("l1bmm@16 $lm0 $lb0\n", False, None),
+    "l1bm_m4_mab_16": ("l1bmm4@16 $lr0v $lb0\n", False, None),
     "l1b_set_address_8": ("l2bmb@8/0 $lc0 $lb0\n", False, None),
     "l1b_set_immode_8": ("l2bmb@0/8 $lc0 $lb0\n", False, None),
     "l2bm_dar_l2b_0": ("l2bmdars $lc1024@.0 $dar0; l2bmdarw\n", True, 1),
@@ -135,6 +136,9 @@ for entry in range(8):
 for entry in range(9):
     CASES[f"l2bm_from_l1b_{entry}"] = (
         f"l2bm@{entry} $lb0 $lc0\n", entry < 8, 1 if entry < 8 else None)
+for entry in range(16):
+    CASES[f"l1bm_m4_mab_{entry}"] = (
+        f"l1bmm4@{entry} $lr0v $lb0\n", True, 1)
 for offset in range(-255, 256):
     opcode = f"l1bmd{offset:+d}" if offset else "l1bmd+0"
     CASES[f"mabdiff_{offset:+d}"] = (f"{opcode} $lm0 $lb0\n", True, 1)
@@ -195,7 +199,7 @@ def main() -> None:
             "L1BM width-2 addresses require 4-word alignment and width-4 addresses require 8-word alignment, within the 8192-long-word capacity. The L2BM transfer source accepts 16-aligned addresses through 32752 and rejects 32760 (alignment) and 32768 (range).",
             "Wait tags 1 through 255 are accepted; 0 and 256 are rejected.",
             "Matrix rows 0..15 were checked using gmread. The tested matrix operand widths are instruction-specific: gmread/gmwrite accept width 2 and reject width 4, while gmmul accepts widths 2 and 4.",
-            "$lb8188 is accepted while $lb8192 fails the 13-bit encoding field; the L1BM address must also be 4-word aligned. l1bmm@15 is accepted and @16 is rejected.",
+            "$lb8188 is accepted while $lb8192 fails the 13-bit encoding field; the L1BM address must also be 4-word aligned. l1bmm@15 is accepted and @16 is rejected. All l1bmm4@ selectors 0..15 are accepted, and @16 is rejected.",
             "DAR address 1023 is accepted and 1024 is rejected; `$lc...@.<l2b>` accepts selectors 0 and 1 and rejects 2.",
             "For l1bmd, every explicit signed offset from -255 through +255 was accepted, while -256 and +256 were rejected. The manual documents useful offsets 0..15. The Rust visualizer's i8 parser is narrower and cannot parse accepted values 128..255; Rust is not used as range evidence. These assembler probes still do not prove global parser completeness.",
             "The assembler accepts d set, d get and r input records, but the challenge judge's default solution sanitizer retains only j/m instruction rows; these records are filtered before execution. The scored program therefore excludes debug and DRAM initialization records.",
