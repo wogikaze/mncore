@@ -366,6 +366,34 @@ def isa_bounds_experiment() -> dict:
     }
 
 
+def opcode_arity_experiment() -> dict:
+    reference = ROOT / "evidence/opcode-arity/reference.json"
+    script = ROOT / "scripts/check_opcode_arity_reference.py"
+    record = json.loads(reference.read_text())
+    for item in record["tool_hashes"]:
+        path = REPO / item["path"]
+        if item["path"] == "judge/judge-py/mncore2_emuenv/assemble3" and not path.exists():
+            continue
+        if digest(path) != item["sha256"]:
+            raise ValueError(f"stale opcode arity experiment: {item['path']}")
+    if record["candidate_count"] != 184 or len(record["observations"]) != 184:
+        raise ValueError("opcode arity experiment must cover all 184 compiler candidates")
+    if record["accepted_maximal_candidates"] != 184 or record["rejected_duplicate_overflows"] != 184:
+        raise ValueError("opcode arity experiment contains unexpected assembler results")
+    return {
+        "source": reference.relative_to(REPO).as_posix(),
+        "sha256": digest(reference),
+        "generator": script.relative_to(REPO).as_posix(),
+        "generator_sha256": digest(script),
+        "candidates": record["candidate_count"],
+        "accepted_maximal_templates": record["accepted_maximal_candidates"],
+        "rejected_duplicate_overflows": record["rejected_duplicate_overflows"],
+        "scope": record["scope"],
+        "full_isa_completeness_proof": False,
+        "limitations": record["limitations"],
+    }
+
+
 def answer_parser_gap_audit() -> dict:
     reference = ROOT / "evidence/parser-gap-audit/answers.json"
     record = json.loads(reference.read_text())
@@ -458,6 +486,7 @@ def coverage_catalog() -> dict:
         "compiler_syntax_sha256": digest(path),
         "inventory_scope": "Compiler-generated ALU/MAU spelling candidates plus separately scoped source-derived records; not an authoritative complete ISA or legality model.",
         "selected_parser_boundary_experiment": isa_bounds_experiment(),
+        "opcode_destination_arity_experiment": opcode_arity_experiment(),
         "answer_parser_gap_audit": answer_parser_gap_audit(),
         "finite_carrier_proofs": [{
             "source": "proofs_lean/ProofsLean/FiniteRegion.lean",

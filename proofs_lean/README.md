@@ -73,6 +73,11 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   0件で、opcode綴りを155種類確認した。さらにコンパイラ由来の184候補はすべて
   汎用operandを与えたときRust parserに分類された。これは候補の構文解析確認であり、
   assemble3での合法性や全命令の列挙完了を意味しない。
+- `evidence/opcode-arity/reference.json`: 184 compiler ALU/MAU/matrix/immediate/zero候補すべてに
+  opcode別source数のtemplateを与え、各候補が6以下の固有destination categoryからなる
+  maximal templateをassemble3で受理し、同一destinationを追加したoverflowを拒否することを記録した。
+  これは選択templateの信頼境界で、オペランド全域を走査せず、L1BM/L2BM、wait/noforward、
+  マニュアル上の全opcode inventoryも網羅していない。coverage catalogにもこの範囲を明記する。
 - `Issue.lean`の`NormalizedExpr`/`NormalizedMv`/`NormalizedLine`は、表示用の
   `text`を候補同一性から除き、PE式の順序を維持する。未知opcodeはRust parserで
   拒否されるため、Leanの到達可能な`ParsedOp`から文字列付き`other`を除いた。

@@ -39,6 +39,22 @@
     "scope": "Only listed probes. Acceptance/encoding evidence is not proof of complete ISA ranges or semantics.",
     "formal_isa_completeness_proof": false
   },
+  "opcode_destination_arity_experiment": {
+    "source": "proofs_lean/evidence/opcode-arity/reference.json",
+    "sha256": "85bc1a5cce835a8263780665f970fd41cb2eafdd46590d4e86fd2709529a84c8",
+    "generator": "proofs_lean/scripts/check_opcode_arity_reference.py",
+    "generator_sha256": "5cd45f0b5b98176c6bdc3ac6c002aff0433743dfbe505186e9b2b3f658b34313",
+    "candidates": 184,
+    "accepted_maximal_templates": 184,
+    "rejected_duplicate_overflows": 184,
+    "scope": "184 compiler-generated ALU/MAU/matrix/immediate/zero candidates with one parser-arity-correct source template and the listed destination categories; not the complete manual ISA.",
+    "full_isa_completeness_proof": false,
+    "limitations": [
+      "A single source/destination template per spelling does not exhaust operand encodings.",
+      "The candidates omit L1BM/L2BM transfer opcodes, wait/noforward, and any manual spelling absent from the compiler inventory.",
+      "Rejecting one extra duplicate output does not prove that every other destination form is covered or that this rule applies to every assembler-accepted syntax."
+    ]
+  },
   "answer_parser_gap_audit": {
     "source": "proofs_lean/evidence/parser-gap-audit/answers.json",
     "sha256": "d6ba1fe3e29882986daf33606c16c921692ca612110351fb1ad4853c61022662",
