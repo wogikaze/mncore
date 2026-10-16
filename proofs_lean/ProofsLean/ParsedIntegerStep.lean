@@ -4127,6 +4127,12 @@ theorem parsed_nop_line_lowers_to_count_issue_words (count : Nat) (wait : Option
       some (List.replicate count (.issue ParsedMaskedIssueLine.nop)) := by
   simp [lowerParsedMaskedSource, ParsedLine.toParsedMaskedStatements?]
 
+theorem parsed_mask_directive_text_lowers_to_zero_cost :
+    (parseMaskDirective? "maskllm 258").bind (fun line =>
+      (lowerParsedMaskedSource [line]).map ProofsLean.ControlNormalization.cost) =
+        some 0 := by
+  rfl
+
 theorem parsedMaskedSource_score (source : List ParsedMaskedSourceStatement)
     (control : ParsedMaskExecutionControl) :
     ProofsLean.score parsedMaskedNormalizedMachine
