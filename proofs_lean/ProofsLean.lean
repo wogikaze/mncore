@@ -7,6 +7,7 @@ import ProofsLean.IntegerALU
 import ProofsLean.UntypedALU
 import ProofsLean.PEMemory
 import ProofsLean.BusLayout
+import ProofsLean.ParsedIntegerStep
 import ProofsLean.Issue
 import ProofsLean.AddressProperties
 import ProofsLean.Masks
