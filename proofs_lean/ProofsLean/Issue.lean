@@ -26,12 +26,13 @@ structure Region where
   madpe : Option Nat
   deriving DecidableEq, Repr
 
-/-- A deliberately generous finite envelope for parsed PE address regions.
-The bank-specific limits and alignment rules are imposed separately by
-instruction legality; this predicate is only the finite carrier bound. -/
+/-- A finite envelope for PE address regions. The address bound is the largest
+single-word PE memory capacity in the checked assemble3 probes (LM0/LM1: 4096;
+GRF0/GRF1: 512). Width-specific alignment and bank-specific legality remain
+separate. See `evidence/isa-bounds/reference.json`. -/
 def Region.inFiniteEnvelope (r : Region) : Prop :=
-  r.width < 5 ∧ r.address0 < 32768 ∧ r.address1 < 32768 ∧
-  r.address2 < 32768 ∧ r.address3 < 32768 ∧
+  r.width < 5 ∧ r.address0 < 4096 ∧ r.address1 < 4096 ∧
+  r.address2 < 4096 ∧ r.address3 < 4096 ∧
   ∀ n, r.madpe = some n → n < 4
 
 structure Access where

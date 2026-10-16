@@ -452,8 +452,9 @@ def coverage_catalog() -> dict:
             "source": "proofs_lean/ProofsLean/FiniteRegion.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteRegion.lean"),
             "theorem": "ProofsLean.MNCore.Issue.Region.inFiniteEnvelope_finite",
-            "scope": "Finite subtype for a generous bounded envelope on width, four cycle addresses, and madpe.",
-            "missing": "Bank-specific legality, address alignment, all operand fields, bounded line lists, and machine-level coverage.",
+            "scope": "Finite subtype for the PE region envelope documented by assemble3 boundary probes: width < 5, four addresses < 4096, and madpe < 4.",
+            "evidence": "proofs_lean/evidence/isa-bounds/reference.json: region_address_cycle0_max through region_address_cycle3_overflow, madpe_3/madpe_4, and LM0/LM1/GRF capacity findings.",
+            "missing": "A universal assembler soundness theorem from parsed legal operands to this envelope, bank-specific alignment, all other operand fields, bounded line lists, and machine-level coverage.",
         }],
         "datapath_fragments": [{
             "source": fragment_source.relative_to(REPO).as_posix(), "sha256": digest(fragment_source),

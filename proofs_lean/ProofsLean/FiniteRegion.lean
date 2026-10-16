@@ -7,7 +7,7 @@ import ProofsLean.Issue
 namespace ProofsLean.MNCore.Issue
 
 private abbrev RegionCode :=
-  Fin 5 × Fin 32768 × Fin 32768 × Fin 32768 × Fin 32768 × Bool × Option (Fin 4)
+  Fin 5 × Fin 4096 × Fin 4096 × Fin 4096 × Fin 4096 × Bool × Option (Fin 4)
 
 private def boundedMadpe (m : Option Nat) (h : ∀ n, m = some n → n < 4) :
     Option (Fin 4) :=
@@ -53,8 +53,9 @@ private theorem regionCode_injective :
       rfl
 
 /-- Finite carrier for regions whose width, four cycle addresses, and madpe
-fall within the intentionally generous PE address envelope. This says nothing
-about bank-specific legality, alignment, or line-level boundedness. -/
+fall within the PE envelope recorded by the assemble3 boundary probes. This
+does not establish bank-specific legality, alignment, parser correspondence,
+or line-level boundedness. -/
 theorem Region.inFiniteEnvelope_finite :
     Finite {r : Region // r.inFiniteEnvelope} :=
   Finite.of_injective (fun r => regionCode r.1 r.2) regionCode_injective

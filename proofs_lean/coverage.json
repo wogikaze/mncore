@@ -55,10 +55,11 @@
   "finite_carrier_proofs": [
     {
       "source": "proofs_lean/ProofsLean/FiniteRegion.lean",
-      "sha256": "e7d8fe7c617762adba15b3d8adcc0debe6ce021fd4a351eb4633bb8724a1c9d0",
+      "sha256": "c28b777caf84d4e819093de2c359c5dfd8f49fc39f4c6eb1a7851140b5d18ffd",
       "theorem": "ProofsLean.MNCore.Issue.Region.inFiniteEnvelope_finite",
-      "scope": "Finite subtype for a generous bounded envelope on width, four cycle addresses, and madpe.",
-      "missing": "Bank-specific legality, address alignment, all operand fields, bounded line lists, and machine-level coverage."
+      "scope": "Finite subtype for the PE region envelope documented by assemble3 boundary probes: width < 5, four addresses < 4096, and madpe < 4.",
+      "evidence": "proofs_lean/evidence/isa-bounds/reference.json: region_address_cycle0_max through region_address_cycle3_overflow, madpe_3/madpe_4, and LM0/LM1/GRF capacity findings.",
+      "missing": "A universal assembler soundness theorem from parsed legal operands to this envelope, bank-specific alignment, all other operand fields, bounded line lists, and machine-level coverage."
     }
   ],
   "datapath_fragments": [
@@ -188,7 +189,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/Issue.lean",
-      "sha256": "0fdc2116b9feef1e2649987b8eee58ccbdafd7c667b14090aa82c73b2f820dcc",
+      "sha256": "822cf477eb1bebc8619aad99ff736acfe2547d783b871639a635ac86be8de8af",
       "implemented": "Full structural PE Op/Operand payload mirror, issue projection, abstract PE-line rules, and a partial parsed-op to integer-ALU bridge for supported L/I/S integer operations and packbit",
       "scope": "The Rust enum inventory is checked against Lean constructors. A separate partial executor covers supported integer ALU/zero/immediate expressions with direct PE-memory destinations, masks/flush and ordered multiple destinations; this is not full ISA semantics",
       "source_basis": [
