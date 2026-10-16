@@ -1,0 +1,1351 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-15T18:01:34.481188+00:00",
+  "evidence_kind": "official_testcase_empty_program_observation_not_formal_lower_bound",
+  "mode": "default noto judge; debug get/set disabled; official normalization for older testcases",
+  "program": "empty.vsm",
+  "program_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "program_count": 73,
+  "accepted_problems": 1,
+  "problems": [
+    {
+      "problem": "problems/challenge/1.plus-one",
+      "cases": [
+        {
+          "path": "problems/challenge/1.plus-one/testcase.vsm",
+          "sha256": "58ced086d6a2bf23c82f63ac449c0d46c8fb6bc55fa61c6cd378a63a8be46842",
+          "normalized_sha256": "e7ea8ee59f28a941b08cfcb862e3a968bb0e50c343fe175b20f45fe1fc764529",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 16 value(s) mismatch",
+          "output_sha256": "e1b6dae89d65144891f1a8f8f7b99237a508321a85aee1a1fc58d5eb141ffe53"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/challenge/2.plus-two",
+      "cases": [
+        {
+          "path": "problems/challenge/2.plus-two/testcase.vsm",
+          "sha256": "aeec02366cdb27d21b7395b96a52fdcb01c65a2396477b6d837138787ee055ed",
+          "normalized_sha256": "2431b73118ae27538f441230ab04396ea45572fa8456d6ab086f4800f2c166dc",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 20 value(s) mismatch",
+          "output_sha256": "0bf572011f114604004ae7af164697fa07beb0ffe9e0b35e51db101f45301a47"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/challenge/3.a-plus-b",
+      "cases": [
+        {
+          "path": "problems/challenge/3.a-plus-b/testcase.vsm",
+          "sha256": "5448657428219ae653f6a7d479c948bbdb3ae40a1e84275a50b1f1afcf1f2a0a",
+          "normalized_sha256": "fef8856d2dea48673fd2127ff75a39e7ce1d8ff9f25f21b8b28afb8e8d1ec0aa",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 128 value(s) mismatch",
+          "output_sha256": "b01d4d6b4d9e8f904fe83c2770b94d8fd90607b5e0c3a90b36b31f393eef78ae"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/challenge/4.mul7",
+      "cases": [
+        {
+          "path": "problems/challenge/4.mul7/testcase.vsm",
+          "sha256": "e3adde5cc1ab3b1e9486096b0260e6984a7987c2c4719191edd0acdc9dc6200d",
+          "normalized_sha256": "7e5d381a3bc4ce2b52023f778e917395f3ed83118707066610a9dc35bfb27c89",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "2 value(s) correct, but 1022 value(s) mismatch",
+          "output_sha256": "0ce2750a0c8678e12a8ec6c4636db9d9fb27606a2c772f94dfbafafd40a032ce"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/challenge/5.abs",
+      "cases": [
+        {
+          "path": "problems/challenge/5.abs/testcase.vsm",
+          "sha256": "abc6d9167a5982dccfbb4698df38bb5238406bc3193af8b50a442e11b0a56b13",
+          "normalized_sha256": "2bcbb17ce5ccd9186c68b6c8f12a916bf74fcf28b988c7516e88ae2fad6af0c4",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "34 value(s) correct, but 5598 value(s) mismatch",
+          "output_sha256": "1054d3655a11ac418fe653f69781065e469e51bf60581259e81fe074b88fa1ac"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/challenge/6.fadd-mul",
+      "cases": [
+        {
+          "path": "problems/challenge/6.fadd-mul/testcase.vsm",
+          "sha256": "c1f1f1bc63d85a8088aa1e059792ac5284f69328047693974c94360b133776ab",
+          "normalized_sha256": "e51a9b353ed817ae6d3ddbe11c3512611cbd9e76792d77e3eeb7c5f7f39f0a95",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 8192 value(s) mismatch",
+          "output_sha256": "17117fd2e3a2ba175704fa8983206a5ee45a915eb9318d6e540d2c2fb579427e"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/challenge/7.mul2",
+      "cases": [
+        {
+          "path": "problems/challenge/7.mul2/testcase.vsm",
+          "sha256": "7685af9b4ec2008f159a749a657556c8ae08710e45ecdf723564f1eeafc11903",
+          "normalized_sha256": "5ed548e65c4cd5cd3969d028ddb3fc2f2583ce8e2c14dc12b02ddb9ab2d8fe5a",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "2457 value(s) correct, but 9831 value(s) mismatch",
+          "output_sha256": "019a4c4bc03f9bd022327001e424ba1415dac4f300c4d89e4933508c00effe6b"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/challenge/8.fle",
+      "cases": [
+        {
+          "path": "problems/challenge/8.fle/testcase.vsm",
+          "sha256": "edd5cab12d4ce0e230daa01279c211ed1a845b88269c703c79c44d7b1d4edf66",
+          "normalized_sha256": "01aa03e531561c71089ffdbf10d5cb4e4e4d32d7b65aef7dfa4477810464dfe5",
+          "observed": "accepted",
+          "score": 0,
+          "returncode": 0,
+          "reason": null,
+          "diagnostic": "",
+          "output_sha256": "8afeec179a630fd735f0b697a353beaa13d5f033937eb11a91fa7d1575f4670e"
+        }
+      ],
+      "empty_accepted_on_all_testcases": true,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/challenge/9.transpose-addr",
+      "cases": [
+        {
+          "path": "problems/challenge/9.transpose-addr/testcase.vsm",
+          "sha256": "8b13a423c08c14adfbcf6626cff12981ad9f97fa758f2091c4619cd3d1fd0871",
+          "normalized_sha256": "21042baac6df23abb2720b06d6610fb6e124647572fd7585ee96d82028de5871",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 64 value(s) mismatch",
+          "output_sha256": "67f95db4089066d6cbb4a0c49dfec6f83398db65d68c5975ef1159251f0fdcc0"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/challenge/10.gather-easy",
+      "cases": [
+        {
+          "path": "problems/challenge/10.gather-easy/testcase.vsm",
+          "sha256": "c483be597e611d44b26d223519f016cd7a3f77c61f03f978f5b80b32fdd89376",
+          "normalized_sha256": "6154ce6d09d6c308486764416fd07af2cbb208ecb8ca5313482edb8d325df508",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 256 value(s) mismatch",
+          "output_sha256": "3cc2b4a0e42eecd12630d20933b4846c3b76e5d130b70c114ad781d9635eb400"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/challenge/11.square-sum",
+      "cases": [
+        {
+          "path": "problems/challenge/11.square-sum/testcase.vsm",
+          "sha256": "71833450da12d6b05791f1b97b6fb98861cbb1375bcf6688d6ab844ec245a7ca",
+          "normalized_sha256": "8e5469a1b0798ed79c2fbce607707ef08228ffbe3ea73f6b440a9261bfafbb43",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "1 value(s) correct, but 31 value(s) mismatch",
+          "output_sha256": "1056a898090eb523be4ce0a9dec42d93ccb27fe0de05dd6a8c1ec669b1b42917"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/challenge/12.convert-endian",
+      "cases": [
+        {
+          "path": "problems/challenge/12.convert-endian/testcase.vsm",
+          "sha256": "ab93f4ccec167aa9d2d8f9ef151a4faa9a1354d2ca5ad1bcdf4e578b200dbdb3",
+          "normalized_sha256": "cf27c58a6892b9ed54eaf5738fe2afa29c52b22fa4528de0450495e397055676",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 4 value(s) mismatch",
+          "output_sha256": "9034d137bba3796f6bb01a60760bfc0364e4a3f122d36882e765839103ae164e"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/challenge/13.mod3",
+      "cases": [
+        {
+          "path": "problems/challenge/13.mod3/testcase.vsm",
+          "sha256": "08aff523c2ac6701e8fc5da89b3ff95a785358184d0e3f7288b31ebec09aa8f1",
+          "normalized_sha256": "98a650303689d02b2cce27719258d503f8221f64e50e6bc22c47a1df175b6244",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "664 value(s) correct, but 1384 value(s) mismatch",
+          "output_sha256": "6fa32bb45512a0ae8a31856f07fe7978313c0800be01abbf6ce0c6b922efe55f"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/challenge/14.mat-sq",
+      "cases": [
+        {
+          "path": "problems/challenge/14.mat-sq/testcase.vsm",
+          "sha256": "328ddc1209d2a46265e7f6e0c3fd9fd21d60d6291f22a1c84f469cb59b6710ff",
+          "normalized_sha256": "e43ac7baeb7a4a651bbd6b9219912d027843494ecdb67241083467b39f84d48a",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 2048 value(s) mismatch",
+          "output_sha256": "9a0cda18cd600a604f0c76af9515873f6e17c40f068a831c27b6a1c88d4c2404"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/challenge/15.contains",
+      "cases": [
+        {
+          "path": "problems/challenge/15.contains/testcase.vsm",
+          "sha256": "663d0afb6fe01ec5a998276d3a37d3acdeb1d4a6704c4ba41c458968b8db1ed6",
+          "normalized_sha256": "d6410509a2a4f89504ce294254f770f0b6f47e6bfa86d9d835d328fe47dce324",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "491 value(s) correct, but 533 value(s) mismatch",
+          "output_sha256": "84900bbaca8d0f79f6cfe91d32946c1c9cb7e3db5f9b692bf577debcee306ffc"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/challenge/16.count-up",
+      "cases": [
+        {
+          "path": "problems/challenge/16.count-up/testcase.vsm",
+          "sha256": "bfba509a8758fcacb1b99466924e00e3e9cc3fad9b96c9c7a6f6b4b1d4ce1300",
+          "normalized_sha256": "04db2edca0da743a6c1f8bc2bfc546c51226830671810c49abf95e9ba34a22c9",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 32768 value(s) mismatch",
+          "output_sha256": "dee333c7f86d1e0f75df24a62adb061b3912d7c2d43f76219108acf3ceff85aa"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/challenge/17.transpose-mab",
+      "cases": [
+        {
+          "path": "problems/challenge/17.transpose-mab/testcase.vsm",
+          "sha256": "c2a164e5400ca8d52d401376b77fd17e4c5518b50757ce5768d8f5133afe95e2",
+          "normalized_sha256": "a91dc0385de845021be9c880d112230f8c74f77f11faa478cf0a2209c410b39b",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 256 value(s) mismatch",
+          "output_sha256": "abab9df2204641b8f8654d67181d199bf2fa881a8ccab2fd590dffeb616ac106"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/challenge/18.inversion-small",
+      "cases": [
+        {
+          "path": "problems/challenge/18.inversion-small/testcase.vsm",
+          "sha256": "f108fd6f169b5fc0499ebe223cabcf650d41ae83938e0fe9d49418860b2f8d75",
+          "normalized_sha256": "81c80fd38843dfbe99d278880f246117e41ba58f843fa6ef19114480413ed42b",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "3 value(s) correct, but 61 value(s) mismatch",
+          "output_sha256": "995e88a924428d8b20c22895384e8f0914d7f8776593286e047d320616615082"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/challenge/19.inversion",
+      "cases": [
+        {
+          "path": "problems/challenge/19.inversion/testcase.vsm",
+          "sha256": "b3a9a5d51d7f4848c457d89f54df56f03facdf1c9173d4050301cf50987c2467",
+          "normalized_sha256": "b6e8de7bd8a2cbb1a412f5b059779d5fc090a546665f42f713c5ecb6d6539590",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "3 value(s) correct, but 125 value(s) mismatch",
+          "output_sha256": "549d777e94c94715d08debcb4a8257d24d828e78f77d91c863af30585d19d8e0"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/challenge/20.fizzbuzz",
+      "cases": [
+        {
+          "path": "problems/challenge/20.fizzbuzz/testcase.vsm",
+          "sha256": "7a590a210acfadb632d7bfe7c54262f00fe72edc521aa68acc2488ab592ab4a3",
+          "normalized_sha256": "5d77a7ce2bfc1295a0a9dc5d8b6b8e5c77cdf9c6851f5fc835c3c81ebb50e631",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 32766 value(s) mismatch",
+          "output_sha256": "11aabcb9a22bb79604f6432d669c52280baa1b55d732ad112aedb98a48ec5751"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/challenge/21.hello-world",
+      "cases": [
+        {
+          "path": "problems/challenge/21.hello-world/testcase.vsm",
+          "sha256": "4cd638654c6c9c00ac9e1c389ab62f97500a4f382ef9f2bd57691e9c7f7d4d65",
+          "normalized_sha256": "10db512108977b200942c15ae5053cbd18ecc1d57368e792dc020167dc8434ea",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 13 value(s) mismatch",
+          "output_sha256": "e6e0a3c5ea3ae25dcd6d2f49c9f70e074ead291ecec80fdf10bb1822116dd3c5"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/challenge/22.bit-reverse",
+      "cases": [
+        {
+          "path": "problems/challenge/22.bit-reverse/testcase.vsm",
+          "sha256": "472e9052587a5955be7983e2b88ec6ef7d302fec7734cceae555cf9b0c05e5fa",
+          "normalized_sha256": "f00803554aad67d54b092db26ae6f1c9a6f8db7cbe012d3b9749ea3f22411278",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 16 value(s) mismatch",
+          "output_sha256": "b0566572e74c4b2867fece368e300a7014ad7c271c1a0cc8a84baf1bc89ce8a6"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/challenge/23.fizzbuzz-pe",
+      "cases": [
+        {
+          "path": "problems/challenge/23.fizzbuzz-pe/testcase.vsm",
+          "sha256": "a66deda96c7c47d955bbdf75670c342916e32fa983f4231259cdeaf8a299e258",
+          "normalized_sha256": "2de81af30b34cd775ea2fd9f76673256c1c93a0ab183635986c5ed7ab3e92ae0",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 32768 value(s) mismatch",
+          "output_sha256": "9b96c93921ed98f9d7545f0b99fb3df6cb46c30bc84b03d0346744f18197cf78"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/challenge/24.log2",
+      "cases": [
+        {
+          "path": "problems/challenge/24.log2/testcase.vsm",
+          "sha256": "134c3f5f2a9ab8b1fb096d65154e8d77928488186b9a38dc6234832bd7b0f9ac",
+          "normalized_sha256": "01fe350b81e90d78e56ef7c47193c065fb9e8ea9a0dbc94d3ff3b3f9d2447fc5",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "195 value(s) correct, but 1853 value(s) mismatch",
+          "output_sha256": "06864e629cf65ebac25dd0b3e671ebd63730f4415a1a2840821b7e3387f1459e"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/challenge/25.hsv2rgb",
+      "cases": [
+        {
+          "path": "problems/challenge/25.hsv2rgb/testcase.vsm",
+          "sha256": "b78fd874b0de480e8eb555c1aee2a310839478fd729e66f01df71f143aed1ff6",
+          "normalized_sha256": "0948bb461ed29992e424b708ee6b63e43e2c74684a4a85e6e5af373a1c34b09d",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "1 value(s) correct, but 95 value(s) mismatch",
+          "output_sha256": "d5eea20cc5796049afddafbd659453c4e0ce5f83baefbc19f508cd54932426e2"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/1.a-b",
+      "cases": [
+        {
+          "path": "problems/1.a-b/testcase.vsm",
+          "sha256": "e89241a5e6eb50ede76b46bbf1c162e7e3066ca8d41648e3cff1fc892c1624bc",
+          "normalized_sha256": "e89241a5e6eb50ede76b46bbf1c162e7e3066ca8d41648e3cff1fc892c1624bc",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 4096 value(s) mismatch",
+          "output_sha256": "ae0d68e02bea07d9e766b4c960cc452d463394c2c35ae047aab3f0956cc2b13f"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/2.fmul7",
+      "cases": [
+        {
+          "path": "problems/2.fmul7/testcase.vsm",
+          "sha256": "6d774e8ee6d6de1e49360a373d21656a9dbf6e8a673d2d5c9ef0d22360e80d0a",
+          "normalized_sha256": "6d774e8ee6d6de1e49360a373d21656a9dbf6e8a673d2d5c9ef0d22360e80d0a",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 16384 value(s) mismatch",
+          "output_sha256": "c499da57b5731ba916a95ef0607ce1909d153b7c9c41402004f27b507ac0ff70"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/3.relu",
+      "cases": [
+        {
+          "path": "problems/3.relu/testcase.vsm",
+          "sha256": "840deeafe9a88b71a9eb20ecdbc923c0c7cd9e14590584f96726fb08e7c9f355",
+          "normalized_sha256": "840deeafe9a88b71a9eb20ecdbc923c0c7cd9e14590584f96726fb08e7c9f355",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "2043 value(s) correct, but 2053 value(s) mismatch",
+          "output_sha256": "7161f31e4269252590ccbe8f716930b8367d797590275824b183f6c8d4740c9e"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/4.relu-grad",
+      "cases": [
+        {
+          "path": "problems/4.relu-grad/testcase.vsm",
+          "sha256": "47a81a09259c428346c04c3cd9fb46458c3f1049cd12abf733e08dc0fd20b406",
+          "normalized_sha256": "47a81a09259c428346c04c3cd9fb46458c3f1049cd12abf733e08dc0fd20b406",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "2043 value(s) correct, but 2053 value(s) mismatch",
+          "output_sha256": "22a48420ff85d977cfcc7c08568ebc8a6dc81d3fa8041c15d7ab3238f3958b19"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/5.addcol-vec",
+      "cases": [
+        {
+          "path": "problems/5.addcol-vec/testcase.vsm",
+          "sha256": "9369c6ae5b16306ebb26359e511476786f4e7793fe9675d426f040176b5d8575",
+          "normalized_sha256": "c34e5d2a35d3788ae49f69e3ffb1230b306b962bf25825a1f01a23913f582bc2",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 4096 value(s) mismatch",
+          "output_sha256": "09c50f2667a9e2e7fc3524b5a3e39fd569e2bc4956a3db2af50f8c5ef43a72cb"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/6.subrow-vec",
+      "cases": [
+        {
+          "path": "problems/6.subrow-vec/testcase.vsm",
+          "sha256": "fdd8e1735effc11c33e35dae568148e9df9b7770419ef33cb81e3f4cd69d9fe1",
+          "normalized_sha256": "fc6855d5b34504e8b9bd4931317d750ff941c78ae8d884756b7521d47d9d5ade",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 4096 value(s) mismatch",
+          "output_sha256": "8dd6af9b78f4aae050a5e65b2c7a15a08c6a35a7f6d685a9b92593ea6d750f44"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/7.sumcol-mini",
+      "cases": [
+        {
+          "path": "problems/7.sumcol-mini/testcase.vsm",
+          "sha256": "9c6a623e26dc1444958cfc637d4eeddc5d8492862788905f65710c4e0191486a",
+          "normalized_sha256": "9c6a623e26dc1444958cfc637d4eeddc5d8492862788905f65710c4e0191486a",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 16 value(s) mismatch",
+          "output_sha256": "ad1e6f79a58fcbf7e373b4811e9a7fc3106f16d04c04f14824ff83f880b49116"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/8.sumcol",
+      "cases": [
+        {
+          "path": "problems/8.sumcol/testcase.vsm",
+          "sha256": "073e4147b320bbfc16b220a7496cebe1b6e512b867432990dac0734f797ae340",
+          "normalized_sha256": "3652e67dfd0d4d7bcce8ed87e64242d302b13fcc12ed32bd70d3db0a75a6bec0",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 16 value(s) mismatch",
+          "output_sha256": "61c56746366d5917a48e75d40ba6a8e6d9f10644e07ac9a1b584ea10e7707270"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/9.sumrow-mini",
+      "cases": [
+        {
+          "path": "problems/9.sumrow-mini/testcase.vsm",
+          "sha256": "6dc6315f2510091a2cb428f6ac94f5818147e2df6654def88d2cfaff87186444",
+          "normalized_sha256": "6dc6315f2510091a2cb428f6ac94f5818147e2df6654def88d2cfaff87186444",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 4 value(s) mismatch",
+          "output_sha256": "4017302046ee434515b73abd189c73db2729d1bea24111804d30b50fe6ef87cb"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/10.sumrow",
+      "cases": [
+        {
+          "path": "problems/10.sumrow/testcase.vsm",
+          "sha256": "75ef4bf84bea2c00e3fb200b9bb9d867e1bfd4c2e5a35df645320aea2754a376",
+          "normalized_sha256": "f4b87172281a0fff371bdeed073ae273c53849ab36855ab06da77c009cf5fabd",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 256 value(s) mismatch",
+          "output_sha256": "5697bb3584258438027e76846f51e0969aef7a1f7ed97c5490cd16d4c24d0eb5"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/11.maxrow",
+      "cases": [
+        {
+          "path": "problems/11.maxrow/testcase.vsm",
+          "sha256": "6911ec0d4bc7d704d16c327e5eff1200e4279ceb5c65f5a084f09a108dbd39c2",
+          "normalized_sha256": "491d01632d92351c0ab466f07e04c13b630cda515b90e543bd2fe3858b9dabbd",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 256 value(s) mismatch",
+          "output_sha256": "3ce030dd73a36caacf0af00984b9b77be8f72a5725eccf972222ee85e452c78c"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/12.divrow-vec",
+      "cases": [
+        {
+          "path": "problems/12.divrow-vec/testcase.vsm",
+          "sha256": "ac744a3e6711a8df39a6903c13e371569d6d0ac06656de4bd24cc868d4458f94",
+          "normalized_sha256": "81f7f70d127178f6ba6e878a721993513c85649c8d9d0e241363a43bca680f78",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 4096 value(s) mismatch",
+          "output_sha256": "ae0f0b1de5e85bf3c78a7ef4ddb951cbe4450cdcac9dfe3ef770469a9a2c230d"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/13.exp-low-prec",
+      "cases": [
+        {
+          "path": "problems/13.exp-low-prec/testcase.vsm",
+          "sha256": "ea2edf2949edf8537f35ba7aa426faed8987802ffbc40989648d9a87f2217f45",
+          "normalized_sha256": "ea2edf2949edf8537f35ba7aa426faed8987802ffbc40989648d9a87f2217f45",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 4096 value(s) mismatch",
+          "output_sha256": "ed45549f31ddf7f30b5910e878ea3f0cb82b90c9d018b0da6c0737c1c2f38ea6"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/14.exp",
+      "cases": [
+        {
+          "path": "problems/14.exp/testcase.vsm",
+          "sha256": "1801571770e7da347be13a598c4bc11a0b09a0896c7a9098ea51790baba0da7d",
+          "normalized_sha256": "bdecad1676ed5973637617de1e8b5b84483ff4e403bc65d2727e7f4702b1694c",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "3400 value(s) correct, but 696 value(s) mismatch",
+          "output_sha256": "ae4c9961acb306f20e9a2efcffd72d905c8aeda3135f87e1ffc69cccfea095e5"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/15.onehot-mini",
+      "cases": [
+        {
+          "path": "problems/15.onehot-mini/testcase.vsm",
+          "sha256": "3af28567d1d447d2c1cf7a82821a2d44ad8998a2bd6807c5339561706fb3d288",
+          "normalized_sha256": "3af28567d1d447d2c1cf7a82821a2d44ad8998a2bd6807c5339561706fb3d288",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "480 value(s) correct, but 32 value(s) mismatch",
+          "output_sha256": "a5519ebad2adb2957c97cbeed54be787f33d486e0cec3c8e9f63d164af52292c"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/16.onehot",
+      "cases": [
+        {
+          "path": "problems/16.onehot/testcase.vsm",
+          "sha256": "cc00a26e91b07d48215c13bb08ebe0ddb8375590c2cdf68365ebc2866e9ce061",
+          "normalized_sha256": "0dd1c08b24fa728de38105f9abb58d4b4d91e2e740817125e4c6abfd478d0e1b",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "3840 value(s) correct, but 256 value(s) mismatch",
+          "output_sha256": "d9b1df5325cb042e5d1bf9ada9e53cc8e51d4d123b2cb2ae1e47eb0ef610b9c9"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/17.dram-dl-256-16",
+      "cases": [
+        {
+          "path": "problems/17.dram-dl-256-16/testcase.vsm",
+          "sha256": "709c2e1985b9c9895c3890e8cef681a75265f9c2d947fd23469e598d057b86c0",
+          "normalized_sha256": "e773a26d09c97319a5ba67827f280abac2ebcd2aae54d590b8452dfc33c41397",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 4096 value(s) mismatch",
+          "output_sha256": "13c8d76f0dcc979e0ee636e71ddc492f0bb36e21b5e67452f345daff70304fe4"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/18.dram-ul-256-16",
+      "cases": [
+        {
+          "path": "problems/18.dram-ul-256-16/testcase.vsm",
+          "sha256": "b863225bf3e86598ff6e660b9e4a133f28ec31b206aec23bca860971c7ba3441",
+          "normalized_sha256": "89f6c280d60f8936cd5a9064fa623c0082b4528616cf71bb9c5ae31bcb0de7bb",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 4096 value(s) mismatch",
+          "output_sha256": "13c8d76f0dcc979e0ee636e71ddc492f0bb36e21b5e67452f345daff70304fe4"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/19.dram-dl-256-16p",
+      "cases": [
+        {
+          "path": "problems/19.dram-dl-256-16p/testcase.vsm",
+          "sha256": "2c8e91d354798c8eb0aa08a19b00a5ba09890e5864555dcf6d6ae25c7a884ccc",
+          "normalized_sha256": "f5c3722529c27abddb43a21c62c50111c28cf127b2a560c08b7b9e4906ebbacf",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 4096 value(s) mismatch",
+          "output_sha256": "13c8d76f0dcc979e0ee636e71ddc492f0bb36e21b5e67452f345daff70304fe4"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/20.dram-ul-256-16p",
+      "cases": [
+        {
+          "path": "problems/20.dram-ul-256-16p/testcase.vsm",
+          "sha256": "7dba192569bfb1f8754dec7df0523a140c868a54c6108a52ea13f4539a294dd0",
+          "normalized_sha256": "36e40fcc13eaf673cc3306bdb49f77d6e602dec9bfbe04b8dadc42b974be895d",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 4096 value(s) mismatch",
+          "output_sha256": "13c8d76f0dcc979e0ee636e71ddc492f0bb36e21b5e67452f345daff70304fe4"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/21.dram-dl-256-16-l2b",
+      "cases": [
+        {
+          "path": "problems/21.dram-dl-256-16-l2b/testcase.vsm",
+          "sha256": "faf7388ccceafabd37c4be709b601508ff0031cd5a5f8b93d130c71c2de63d1a",
+          "normalized_sha256": "87f47ae249f5ca5681e69ffcc6438b4a57612102f50d2d795cf83b439c5fb94e",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 4096 value(s) mismatch",
+          "output_sha256": "13c8d76f0dcc979e0ee636e71ddc492f0bb36e21b5e67452f345daff70304fe4"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/22.dram-dl-1024-16",
+      "cases": [
+        {
+          "path": "problems/22.dram-dl-1024-16/testcase.vsm",
+          "sha256": "1b008e0edd3358bc8f62f936296513596f25baddcc105a8e663df7538b77e6e6",
+          "normalized_sha256": "4a6868868baa53d621fc9e8382f9c3747ebb76cdb0395a4f7057365be4248eec",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 16384 value(s) mismatch",
+          "output_sha256": "f313bfd142a24547b755d5116f1e30c08c5bfad1d5da015e774d930051d5a30d"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/23.dram-dl-256-1024",
+      "cases": [
+        {
+          "path": "problems/23.dram-dl-256-1024/testcase.vsm",
+          "sha256": "94e68aa3f2bc9fbbcec1bd8a3d176eb86a3525b34338543ab5883ae79b9f02bd",
+          "normalized_sha256": "0145899c4db2e74232c9d8a1f218c62c2b8190a51123d642eaa8a88417be75d1",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 262144 value(s) mismatch",
+          "output_sha256": "69eeb2416c614a2684efaa4ac350dc9b75c9a00f3e0796b63090824f927dbe83"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/24.dram-dl-16",
+      "cases": [
+        {
+          "path": "problems/24.dram-dl-16/testcase.vsm",
+          "sha256": "f8d32cd798312e4a0ada8ca696268fc30578b13ad0981d5ee5eecf8386ca13e4",
+          "normalized_sha256": "321c8451d4b1c97a73de7590bfa751effb1bc85b1c616977928b72b0ba5815ce",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 128 value(s) mismatch",
+          "output_sha256": "efaf4e14e7843f16bf8048c0b50c805c183006cb12d09bd9162a1d8e737ca0ac"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/25.dram-ul-16",
+      "cases": [
+        {
+          "path": "problems/25.dram-ul-16/testcase.vsm",
+          "sha256": "fcde7f91c3d4bd370b66eb7f46693b67b64d42af330489ea0df7273d78598fe5",
+          "normalized_sha256": "82a6cb9d51e8c21b111aa8a65754d1538f9e4f7a18d5d0320f37ab0f21293f14",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 16 value(s) mismatch",
+          "output_sha256": "836ef074575ba2bb815279ff1510929889cda6b435ceff2e0b3324bafe26539b"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/26.dram-dl-16-1024",
+      "cases": [
+        {
+          "path": "problems/26.dram-dl-16-1024/testcase.vsm",
+          "sha256": "45bd6238c92b5054079787bd5855176696570c9aaa86c6407189a0242e2700fd",
+          "normalized_sha256": "03fc7efe82d9d56cbbdf4b5780ea3573f4755d867364f645b5d1c647c1aca0cf",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 32768 value(s) mismatch",
+          "output_sha256": "f6de8f457557333368489501ad52deace122320a9065a9c0520d580a0664892c"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/27.dram-ul-16-1024",
+      "cases": [
+        {
+          "path": "problems/27.dram-ul-16-1024/testcase.vsm",
+          "sha256": "22104fdf2b68f93a39defa7119a0958abcc3c7f3214839fd4b34a5c69eb0041d",
+          "normalized_sha256": "f8ef7e1c92f6253a7a8db1f95f18e23fd6dab2c80208966e1ca6b8c4951ac5de",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 16384 value(s) mismatch",
+          "output_sha256": "0d45c31c159b2be1cee5bca37c1f1e5345b6d120ffcbfc032bf6fc27dd3c37ca"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/28.dram-dl-16-16",
+      "cases": [
+        {
+          "path": "problems/28.dram-dl-16-16/testcase.vsm",
+          "sha256": "b82601cdb44743815160d73882ff49d60b04b14d8e1623f847643301a73b3efc",
+          "normalized_sha256": "93da02d748e0acd098941cfff07b1843226cf41184d277f331591acc223dab75",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 256 value(s) mismatch",
+          "output_sha256": "44851cbe08b0c5c21251146e96df219ced9f8acf9917c71738283d6865046f70"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/29.dram-ul-16-16",
+      "cases": [
+        {
+          "path": "problems/29.dram-ul-16-16/testcase.vsm",
+          "sha256": "f0f04f529292337d8c451e4ef88794ce6dd39f45a36107715b5fc71ee0494b4c",
+          "normalized_sha256": "aecfcacaaca67e7f98a42016ea6936e5a91d42191cc2ed3d83994a92f6fa8cec",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 256 value(s) mismatch",
+          "output_sha256": "44851cbe08b0c5c21251146e96df219ced9f8acf9917c71738283d6865046f70"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/30.dram-dl-256",
+      "cases": [
+        {
+          "path": "problems/30.dram-dl-256/testcase.vsm",
+          "sha256": "829c16766b8ea4e37d0a56db29e5ef7a567020c7f9e87d804cc8a52f03404135",
+          "normalized_sha256": "581d074b678648fbe59a406d98a5d57180529e162e58736d7443681f756858b1",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 256 value(s) mismatch",
+          "output_sha256": "4dcb9b6af2a76c1e4c029e869a51bde855371943a263db3b6e7c253a779ec8a5"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/31.dram-ul-256",
+      "cases": [
+        {
+          "path": "problems/31.dram-ul-256/testcase.vsm",
+          "sha256": "699aad4e91e5d80fdf920758e487061299015561f3537642816e556a168c3b5e",
+          "normalized_sha256": "5ef3cd1e4a7cd031f921a4cc79f7adb223e6af392c624062a22f8a9c5e2775ba",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 256 value(s) mismatch",
+          "output_sha256": "4dcb9b6af2a76c1e4c029e869a51bde855371943a263db3b6e7c253a779ec8a5"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/32.matmul-trb-mab-lm-4-8-8",
+      "cases": [
+        {
+          "path": "problems/32.matmul-trb-mab-lm-4-8-8/testcase.vsm",
+          "sha256": "a2fa38cab4e545aa25db7ef4f1e3260e539c30b97ef7601593dc5343c0e7c057",
+          "normalized_sha256": "a2fa38cab4e545aa25db7ef4f1e3260e539c30b97ef7601593dc5343c0e7c057",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 32 value(s) mismatch",
+          "output_sha256": "8e0d53a564064bb8782b478dcd9d38a4f928a4c59937f03b39f45fa68549390b"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/33.matmul-trb-mab-lm-4-8-16",
+      "cases": [
+        {
+          "path": "problems/33.matmul-trb-mab-lm-4-8-16/testcase.vsm",
+          "sha256": "acd41b9a38426879e16d6c86807d021756fab9a7fc8e2042419c5de0e68c23d7",
+          "normalized_sha256": "acd41b9a38426879e16d6c86807d021756fab9a7fc8e2042419c5de0e68c23d7",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 64 value(s) mismatch",
+          "output_sha256": "5812631f4c7cfa6040b63386733d82319b24c14c38cc335ed09bbc08dfa594a1"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/34.matmul-trb-mab-lm-4-16-8",
+      "cases": [
+        {
+          "path": "problems/34.matmul-trb-mab-lm-4-16-8/testcase.vsm",
+          "sha256": "0904f9099400fa84cbd636633cbe033ff5583caba903600449baef2088d1b460",
+          "normalized_sha256": "0904f9099400fa84cbd636633cbe033ff5583caba903600449baef2088d1b460",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 32 value(s) mismatch",
+          "output_sha256": "534632dd47873a367b9a4ecd40aa90d8dd7b86618e4badf54ce056d810447d24"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/35.matmul-trb-mab-lm-4-16-16",
+      "cases": [
+        {
+          "path": "problems/35.matmul-trb-mab-lm-4-16-16/testcase.vsm",
+          "sha256": "5c0ef20d6f60ecf72756661f6c9dc95723ac0cab13e23973a5b5aac4ce28b8a0",
+          "normalized_sha256": "5c0ef20d6f60ecf72756661f6c9dc95723ac0cab13e23973a5b5aac4ce28b8a0",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 64 value(s) mismatch",
+          "output_sha256": "71c58854f18139bada7fd5552edba4c5cc6e93e19113fb484003ce1ce7330b3d"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/36.matmul-trb-pkg-lm-256-16-16",
+      "cases": [
+        {
+          "path": "problems/36.matmul-trb-pkg-lm-256-16-16/testcase.vsm",
+          "sha256": "0d17c95c4935bdb9735f1a99f7853a605eac81aa6fbeda7f9887d2e2ac554073",
+          "normalized_sha256": "6a824b79fb160ece3594e2161e4ad380a536c857177ed3fd63f3c7ff4c453464",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 4096 value(s) mismatch",
+          "output_sha256": "37c5fd17428e5f11e8230c4c5db52865d02ec9165a9a7c958ebe82aa27a240ff"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/37.matmul-trb-mab-lm-32-8-16",
+      "cases": [
+        {
+          "path": "problems/37.matmul-trb-mab-lm-32-8-16/testcase.vsm",
+          "sha256": "f9411bcc6d783ac579807dacfa29912c7f154b04938ff8825d42eac8723df3a8",
+          "normalized_sha256": "f9411bcc6d783ac579807dacfa29912c7f154b04938ff8825d42eac8723df3a8",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 512 value(s) mismatch",
+          "output_sha256": "35fb424ce6cc1afab0f076e88871b80222f3c130bc4ee789b5ae871bd8f526f7"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/38.matmul-trb-pkg-lm-256-128-16",
+      "cases": [
+        {
+          "path": "problems/38.matmul-trb-pkg-lm-256-128-16/testcase.vsm",
+          "sha256": "9018e1675830d807c5ce0b70331896acfdfb3d03d05578238a1496e6d4754dec",
+          "normalized_sha256": "9018e1675830d807c5ce0b70331896acfdfb3d03d05578238a1496e6d4754dec",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 4096 value(s) mismatch",
+          "output_sha256": "07e8ca4bd57f4d0b3eee107a29d80b69d9a6447bf877d8115adf009af7272e24"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/39.matmul-trb-pkg-lmdram-256-1024-16",
+      "cases": [
+        {
+          "path": "problems/39.matmul-trb-pkg-lmdram-256-1024-16/testcase.vsm",
+          "sha256": "3959f95a0d6f66e6350a74bb8b30a2b3a196c852297cbb5d17f338d5734af91f",
+          "normalized_sha256": "d35aaee80ff556e49ed4c9fe01e9f7a85ae2ccf134255e8410733c494bc7d06f",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 4096 value(s) mismatch",
+          "output_sha256": "3b05da50272f0d449a00fba056ba0ad2c2fe370273cf14324e90a57e3ef4d819"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/40.matmul-notr-mab-lm-4-8-8",
+      "cases": [
+        {
+          "path": "problems/40.matmul-notr-mab-lm-4-8-8/testcase.vsm",
+          "sha256": "04a5d05dfed49eabc8117a39a2fd2e74f6759814234e688026db78863415ed5f",
+          "normalized_sha256": "04a5d05dfed49eabc8117a39a2fd2e74f6759814234e688026db78863415ed5f",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 32 value(s) mismatch",
+          "output_sha256": "e211d044b0081618be5e21f94a671a2065a6f7b72126438e2b6e03885bde6ed0"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/41.matmul-notr-mab-lm-4-16-16",
+      "cases": [
+        {
+          "path": "problems/41.matmul-notr-mab-lm-4-16-16/testcase.vsm",
+          "sha256": "2a4b8de3af9db119b9fcae1992faa3b6309f83bdf8ef502cd3e1fee4bba6fa09",
+          "normalized_sha256": "2a4b8de3af9db119b9fcae1992faa3b6309f83bdf8ef502cd3e1fee4bba6fa09",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 64 value(s) mismatch",
+          "output_sha256": "031317a22c426938c162d19bed72334fbb3c50561dd6a4215dfa23eb8bee3c89"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/42.matmul-notr-pkg-lm-256-16-16",
+      "cases": [
+        {
+          "path": "problems/42.matmul-notr-pkg-lm-256-16-16/testcase.vsm",
+          "sha256": "fb9e5e84aa237155a18a805915e380178c04389d8fcd672327a88f85088031ae",
+          "normalized_sha256": "178f9da116d139e6f861244ef9af7ef25d1d8af295230766aabb7fa9688f2696",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 4096 value(s) mismatch",
+          "output_sha256": "7bb88c0f10750a94db6db5f66498f8fcbb61b5c880e6dad4012f1990fc5b188e"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/43.matmul-tra-mab-lm-8-8-8",
+      "cases": [
+        {
+          "path": "problems/43.matmul-tra-mab-lm-8-8-8/testcase.vsm",
+          "sha256": "9fbd9eb1380a1364631df993bbcd6a89740cecb11c2aaa8c6c85debac3e84f55",
+          "normalized_sha256": "9fbd9eb1380a1364631df993bbcd6a89740cecb11c2aaa8c6c85debac3e84f55",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 64 value(s) mismatch",
+          "output_sha256": "322206f8a5c08340c1b6ed9a2e7d17204501a3aaa078a4bf4e6f0da003640581"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/44.matmul-tra-mab-lm-16-8-16",
+      "cases": [
+        {
+          "path": "problems/44.matmul-tra-mab-lm-16-8-16/testcase.vsm",
+          "sha256": "cdf96cbe5ca35cda120b76c2aa92d2bb06329c7e6de5491733c7f91d526f51b1",
+          "normalized_sha256": "cdf96cbe5ca35cda120b76c2aa92d2bb06329c7e6de5491733c7f91d526f51b1",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 256 value(s) mismatch",
+          "output_sha256": "76773f8ce632e1b08b3d780de9ce581b5d5d86d38215fedd21ddb14324163280"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/45.matmul-tra-mab-lm-16-4-16",
+      "cases": [
+        {
+          "path": "problems/45.matmul-tra-mab-lm-16-4-16/testcase.vsm",
+          "sha256": "d12873fa0f773ed6f6cdbab981e17c123b9aeb5ecebe734ec24895cb298afa46",
+          "normalized_sha256": "d12873fa0f773ed6f6cdbab981e17c123b9aeb5ecebe734ec24895cb298afa46",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 256 value(s) mismatch",
+          "output_sha256": "e1235b88ecabeeb3b4beff5a793a10b12f9da8997eec7648499ed79e1b2c3d57"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/46.matmul-tra-pkg-lmdram-16-256-16",
+      "cases": [
+        {
+          "path": "problems/46.matmul-tra-pkg-lmdram-16-256-16/testcase.vsm",
+          "sha256": "71975068263f38085a53f6c92fb4482d3f7c498bca1452140bd8f048931c49c6",
+          "normalized_sha256": "6ee651f26e56dc3691f3a9d0ce44042c00a947f6037627266bd3f78166b1e181",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 256 value(s) mismatch",
+          "output_sha256": "47783fd52c414e49001ad5645f2c10a30f0d6ac3cdf3d655ea90c136578ab1f8"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/47.matmul-tra-mab-lm-16-32-8",
+      "cases": [
+        {
+          "path": "problems/47.matmul-tra-mab-lm-16-32-8/testcase.vsm",
+          "sha256": "40777b5bfd2a6a28fe789a70923831238add63e04c7cd988da3f3b197db3b1bf",
+          "normalized_sha256": "40777b5bfd2a6a28fe789a70923831238add63e04c7cd988da3f3b197db3b1bf",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 128 value(s) mismatch",
+          "output_sha256": "1bb7fd531af1c4e5ef02a51746e9cc695171d4f65161dbab651c283669d95704"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    },
+    {
+      "problem": "problems/48.matmul-tra-pkg-lmdram-16-256-1024",
+      "cases": [
+        {
+          "path": "problems/48.matmul-tra-pkg-lmdram-16-256-1024/testcase.vsm",
+          "sha256": "711e5ce2beeae9cc9436985a74712716c82cdfeb17276457be20b4bcf865f901",
+          "normalized_sha256": "d77e129935338a2ac6453219d7cae279899aecf36d6d8363ed1681a4d0dd0722",
+          "observed": "rejected",
+          "score": null,
+          "returncode": 1,
+          "reason": "output_mismatch",
+          "diagnostic": "0 value(s) correct, but 16384 value(s) mismatch",
+          "output_sha256": "bae42ea514d84069ee9aaa7b483f96c18fb206f729e03796825725ae6191dd15"
+        }
+      ],
+      "empty_accepted_on_all_testcases": false,
+      "contains_unclassified_timeout": false
+    }
+  ],
+  "sources": [
+    {
+      "path": "judge/judge-py/judge.py",
+      "sha256": "4dfe730de218edbe806caec1bf276f8e574e61d72123f368dedc09494ac0088a"
+    },
+    {
+      "path": "judge/judge-py/mncore2_emuenv/assemble3",
+      "sha256": "5baabcd47a137fbc4c8ec11fd02e23cb79818bbded9d0cb4c02291aaf738b955"
+    },
+    {
+      "path": "judge/judge-py/mncore2_emuenv/gpfn3_package_main",
+      "sha256": "6008aa202c8bd29e352929cef46ceb4c52b6551fc72ac0dd987cb935bc7993cf"
+    },
+    {
+      "path": "mncompile/bench/run.py",
+      "sha256": "65437bcb2b05498f5fb46993a75cdc116e874486ed516d988ed0d020cf69c0f6"
+    },
+    {
+      "path": "proofs_lean/scripts/check_empty_baselines.py",
+      "sha256": "009579305e1cabf4dd4a2fcde94d4fdbc5961284db15ba21714f15065bc43053"
+    }
+  ],
+  "proves_all_input_correctness": false,
+  "proves_positive_lower_bound": false,
+  "proves_optimality": false
+}
