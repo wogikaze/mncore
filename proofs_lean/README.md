@@ -85,6 +85,8 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   パーサーからこの上限への一般的な健全性証明は未実装で、PE line alphabet全体の有限性にも未接続。
 - `FiniteIssue.lean`: issue projectionが付ける連番IDと同時発行group一意性から、合法なPE行の式数が
   10以下であることを証明した（`projectLine_expression_count_le_ten`）。operandの数値envelopeも定義し、
+  有限な要素型上で長さ上限付きListの部分型が有限である補題`listLengthLE_finite`も追加した。
+  これは各命令のsources/destinations件数上限を得て初めて、式やPE行の有限性に適用できる。
   全ての構造化`ParsedOperand` constructorを有限コードへ写して
   `ParsedOperand.inFiniteEnvelope_finite`を証明した。
   同ファイルで`ParsedMask.entry < 32`の有限部分型も証明した。assemble3では`$imr0..31`が受理され

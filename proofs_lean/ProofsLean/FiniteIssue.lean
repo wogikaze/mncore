@@ -10,6 +10,63 @@ import ProofsLean.FiniteRegion
 
 namespace ProofsLean.MNCore.Issue
 
+/-- A finite element type has only finitely many lists up to any fixed length.
+This is the container-level finiteness lemma needed when bounded PE expression
+and operand lists are composed into line carriers. -/
+theorem listLengthLE_finite (α : Type) [Finite α] (bound : Nat) :
+    Finite {values : List α // values.length ≤ bound} := by
+  classical
+  letI : Fintype α := Fintype.ofFinite α
+  induction bound with
+  | zero =>
+      apply Finite.of_injective (fun _ : {values : List α // values.length ≤ 0} => PUnit.unit)
+      intro a b _
+      apply Subtype.ext
+      have aBound := a.property
+      have bBound := b.property
+      have ha : a.1 = [] := by
+        cases h : a.1 with
+        | nil => rfl
+        | cons head rest => simp [h] at aBound
+      have hb : b.1 = [] := by
+        cases h : b.1 with
+        | nil => rfl
+        | cons head rest => simp [h] at bBound
+      exact ha.trans hb.symm
+  | succ bound ih =>
+      let Tail := {values : List α // values.length ≤ bound}
+      letI : Finite Tail := ih
+      letI : Fintype Tail := Fintype.ofFinite Tail
+      let code (values : {values : List α // values.length ≤ bound.succ}) : Option α × Tail :=
+        match values with
+        | ⟨[], _⟩ => (none, ⟨[], Nat.zero_le _⟩)
+        | ⟨head :: rest, hlen⟩ =>
+            (some head, ⟨rest, by
+              have hlen' : rest.length + 1 ≤ bound + 1 := by simpa using hlen
+              omega⟩)
+      apply Finite.of_injective code
+      intro a b equal
+      cases a with
+      | mk av ah =>
+        cases b with
+        | mk bv bh =>
+          apply Subtype.ext
+          cases av with
+          | nil =>
+              cases bv with
+              | nil => rfl
+              | cons head rest => simp [code] at equal
+          | cons ahead arest =>
+              cases bv with
+              | nil => simp [code] at equal
+              | cons bhead brest =>
+                  simp [code] at equal
+                  rcases equal with ⟨heads, tails⟩
+                  cases heads
+                  have tailEq : arest = brest := congrArg Subtype.val tails
+                  cases tailEq
+                  rfl
+
 theorem natBelow_finite (bound : Nat) : Finite {value : Nat // value < bound} := by
   apply Finite.of_injective (fun value => (⟨value.1, value.2⟩ : Fin bound))
   intro a b equal

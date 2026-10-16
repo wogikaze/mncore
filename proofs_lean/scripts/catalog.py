@@ -458,6 +458,13 @@ def coverage_catalog() -> dict:
         }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
+            "theorem": "ProofsLean.MNCore.Issue.listLengthLE_finite",
+            "scope": "For any finite element type and any fixed bound, the subtype of lists with length at most that bound is finite.",
+            "evidence": "Lean encodes each bounded list as either nil or a head paired with a shorter bounded tail; no external parser evidence is needed for this generic theorem.",
+            "missing": "Per-opcode source/destination arity bounds and their parser correspondence are still needed before applying this lemma to all PE expressions.",
+        }, {
+            "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
+            "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
             "theorem": "ProofsLean.MNCore.Issue.Access.inFiniteEnvelope_finite",
             "scope": "Finite carrier for accesses whose region lies in the assembler-probed PE region envelope; the bank is one of ten constructors.",
             "evidence": "Region bounds are listed in proofs_lean/evidence/isa-bounds/reference.json; Bank constructors are mirrored from the issue checker.",
