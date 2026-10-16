@@ -46,6 +46,11 @@ fn op_name(op: &Op) -> &'static str {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let arguments: Vec<String> = std::env::args().collect();
+    let spellings_path = arguments
+        .windows(2)
+        .find(|pair| pair[0] == "--spellings")
+        .map(|pair| PathBuf::from(&pair[1]));
     let mut files = Vec::new();
     collect_answers(Path::new("problems"), &mut files)?;
     files.sort();
@@ -53,6 +58,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut other_ops = Vec::new();
     let mut parse_errors = Vec::new();
     let mut op_spellings = BTreeSet::new();
+    let mut candidate_results = Vec::new();
 
     for path in &files {
         let source = fs::read_to_string(path)?;
@@ -105,6 +111,47 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
+    if let Some(path) = spellings_path {
+        for spelling in fs::read_to_string(path)?
+            .lines()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        {
+            let source = match spelling {
+                "imm" => "imm i\"0\" $n0 $r0 $s0 $lm0 $ln0 $lr0 $ls0".to_string(),
+                "immu" => "immu ui\"0\" $n0 $r0 $s0 $lm0 $ln0 $lr0 $ls0".to_string(),
+                _ => format!("{spelling} $m0 $n0 $r0 $s0 $lm0 $ln0 $lr0 $ls0"),
+            };
+            let result = match vsm::parse(&source) {
+                Ok(lines) => {
+                    let mut parsed = Vec::new();
+                    for (_, line) in lines {
+                        if let Line::Pe(expressions) = line {
+                            for expression in expressions {
+                                let raw: Vec<_> = expression
+                                    .srcs
+                                    .iter()
+                                    .chain(&expression.dsts)
+                                    .filter_map(raw_operand)
+                                    .collect();
+                                parsed.push(json!({
+                                    "class": op_name(&expression.op),
+                                    "raw_operands": raw,
+                                }));
+                            }
+                        }
+                    }
+                    json!({ "parsed": true, "expressions": parsed })
+                }
+                Err(error) => json!({
+                    "parsed": false,
+                    "error": error.msg,
+                }),
+            };
+            candidate_results.push(json!({ "spelling": spelling, "result": result }));
+        }
+    }
+
     let result: Value = json!({
         "schema_version": 1,
         "scope": "Checked-in problems/**/answer.vsm files only; not a complete ISA spelling inventory.",
@@ -113,6 +160,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "raw_operand_occurrences": raw_operands,
         "other_opcode_occurrences": other_ops,
         "parse_errors": parse_errors,
+        "opcode_candidate_results": candidate_results,
     });
     println!("{}", serde_json::to_string_pretty(&result)?);
     Ok(())

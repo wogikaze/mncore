@@ -5,11 +5,13 @@ import argparse
 import hashlib
 import json
 import subprocess
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 REPO = ROOT.parent
 SCANNER = REPO / "viz/core/src/bin/parser_gap_scan.rs"
+SPELLINGS_SOURCE = REPO / "mncompile/machine.py"
 REFERENCE = ROOT / "evidence/parser-gap-audit/answers.json"
 
 
@@ -21,11 +23,16 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
-    result = subprocess.run(
-        ["cargo", "run", "--quiet", "--manifest-path", "viz/core/Cargo.toml",
-         "--bin", "parser_gap_scan"],
-        cwd=REPO, capture_output=True, text=True, timeout=300,
-    )
+    coverage = json.loads((ROOT / "coverage.json").read_text())
+    spellings = [row["spelling"] for row in coverage["syntax_candidates"]]
+    with tempfile.TemporaryDirectory(prefix="mncore-opcode-candidates-") as directory:
+        spelling_file = Path(directory) / "spellings.txt"
+        spelling_file.write_text("\n".join(spellings) + "\n")
+        result = subprocess.run(
+            ["cargo", "run", "--quiet", "--manifest-path", "viz/core/Cargo.toml",
+             "--bin", "parser_gap_scan", "--", "--spellings", str(spelling_file)],
+            cwd=REPO, capture_output=True, text=True, timeout=300,
+        )
     if result.returncode:
         raise SystemExit(result.stdout + result.stderr)
     audit = json.loads(result.stdout)
@@ -38,6 +45,11 @@ def main() -> None:
         "path": SCANNER.relative_to(REPO).as_posix(),
         "sha256": sha(SCANNER),
     }
+    audit["opcode_candidate_source"] = {
+        "path": SPELLINGS_SOURCE.relative_to(REPO).as_posix(),
+        "sha256": sha(SPELLINGS_SOURCE),
+        "candidate_count": len(spellings),
+    }
     text = json.dumps(audit, indent=2, ensure_ascii=False) + "\n"
     if args.check:
         if not REFERENCE.exists() or REFERENCE.read_text() != text:
@@ -48,7 +60,8 @@ def main() -> None:
     print(
         f"recorded {audit['answer_files']} answers, "
         f"{len(audit['raw_operand_occurrences'])} raw operands, "
-        f"{len(audit['other_opcode_occurrences'])} other opcodes"
+        f"{len(audit['other_opcode_occurrences'])} other opcodes, "
+        f"{len(audit['opcode_candidate_results'])} syntax candidates"
     )
 
 

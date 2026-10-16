@@ -371,9 +371,11 @@ def answer_parser_gap_audit() -> dict:
     record = json.loads(reference.read_text())
     if record["answer_files"] != 73:
         raise ValueError("parser-gap audit must cover all 73 checked-in answers")
+    if record["opcode_candidate_source"]["candidate_count"] != 184:
+        raise ValueError("parser-gap audit must cover all 184 syntax candidates")
     if record["parse_errors"] or record["raw_operand_occurrences"] or record["other_opcode_occurrences"]:
         raise ValueError("checked-in answers contain parser errors or structural fallbacks")
-    for item in [*record["input_hashes"], record["scanner"]]:
+    for item in [*record["input_hashes"], record["scanner"], record["opcode_candidate_source"]]:
         if digest(REPO / item["path"]) != item["sha256"]:
             raise ValueError(f"stale parser-gap audit input: {item['path']}")
     return {
@@ -382,6 +384,19 @@ def answer_parser_gap_audit() -> dict:
         "generator": "proofs_lean/scripts/check_parser_gap_reference.py",
         "generator_sha256": digest(ROOT / "scripts/check_parser_gap_reference.py"),
         "answers": record["answer_files"],
+        "syntax_candidates": len(record["opcode_candidate_results"]),
+        "parsed_syntax_candidates": sum(
+            row["result"]["parsed"] for row in record["opcode_candidate_results"]
+        ),
+        "unparsed_syntax_candidates": [
+            row["spelling"] for row in record["opcode_candidate_results"]
+            if not row["result"]["parsed"]
+        ],
+        "raw_operands_in_syntax_candidates": sum(
+            len(expression["raw_operands"])
+            for row in record["opcode_candidate_results"]
+            for expression in row["result"].get("expressions", [])
+        ),
         "unique_opcode_spellings": len(record["parsed_operator_spellings"]),
         "raw_operand_occurrences": len(record["raw_operand_occurrences"]),
         "other_opcode_occurrences": len(record["other_opcode_occurrences"]),

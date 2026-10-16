@@ -64,8 +64,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   構文・意味や完全網羅を証明するものではない。
 - `evidence/parser-gap-audit/answers.json`: 問題ディレクトリの全73 `answer.vsm`を
   Rust VSM parserで走査した結果。parse error、`Operand::Raw`、`Op::Other`はいずれも
-  0件で、opcode綴りを155種類確認した。これは既存解のコーパスに限る監査であり、
-  マニュアル全体・assemble3が受理する全命令の列挙完了を意味しない。
+  0件で、opcode綴りを155種類確認した。さらにコンパイラ由来の184候補はすべて
+  汎用operandを与えたときRust parserに分類された。これは候補の構文解析確認であり、
+  assemble3での合法性や全命令の列挙完了を意味しない。
 - `Issue.lean`の`NormalizedExpr`/`NormalizedMv`/`NormalizedLine`は、表示用の
   `text`を候補同一性から除き、PE式の順序を維持する。PEのissue投影と検査が
   正規化で変わらないことを証明した。正規化後の実行命令型ではnop countを正に

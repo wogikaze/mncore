@@ -1,5 +1,2215 @@
 {
   "answer_files": 73,
+  "opcode_candidate_results": [
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "dbfn"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "dfloor"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "dftoi"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "dilrelud"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "dlrelud"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "dlreluo"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "dmax"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "dmfmad"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "dmfmadr"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "dmfmau"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "dmfmaur"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "dmin"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "dmmuld"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "dmmuldr"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "dmmulu"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "dmmulur"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mat_read",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "dmread"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mat_write",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "dmwrite"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "dpackbit"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "dpassa"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "drelu"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "drelu0"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "drelu1"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "drelu2"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "drelu3"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "drsqrt"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "dvadd"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "dvaddr"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "dvfmad"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "dvfmadr"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "dvfmau"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "dvfmaur"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "dvmuld"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "dvmuldr"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "dvmulu"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "dvmulur"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "dvpassa"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "dvpassar"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "fbfn"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "ffloor"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "fftoi"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "filrelud"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "flrelud"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "flreluo"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "fmax"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "fmfma"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "fmin"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "fmmul"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mat_read",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "fmread"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mat_write",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "fmwrite"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "fpackbit"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "fpassa"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "frelu"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "frelu0"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "frelu1"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "frelu2"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "frelu3"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "frsqrt"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "fvadd"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "fvfma"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "fvmul"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "fvpassa"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "gbfn"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "gmfma"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "gmmul"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mat_read",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "gmread"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mat_write",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "gmwrite"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hbfe/6"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hbfe/7"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hbfe/8"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hbfe/9"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hbfn/6"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hbfn/7"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hbfn/8"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hbfn/9"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hfloor"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hftoi"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hilrelud"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hlrelud"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hlreluo"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hmax"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hmfma"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hmfmar"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hmin"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hmmul"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hmmulr"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mat_read",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hmread"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mat_write",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hmwrite"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hpackbit"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hpassa"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hrelu"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hrelu0"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hrelu1"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hrelu2"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hrelu3"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hrsqrt"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hvadd"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hvaddr"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hvfma"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hvfmar"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hvmul"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hvmulr"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hvpassa"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "mau",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "hvpassar"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "iadd"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "iand"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "ibsl"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "ibsr"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "idec"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "iinc"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "ilnot"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "ilsl"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "ilsr"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "imax"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "imin"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "imm",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "imm"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "imm",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "immu"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "inot"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "ior"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "ipackbit"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "ipassa"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "isub"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "ixor"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "ladd"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "land"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "lbsl"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "lbsr"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "ldec"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "linc"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "llnot"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "llsl"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "llsr"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "lmax"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "lmin"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "lnot"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "lor"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "lpackbit"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "lpassa"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "lsub"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "lxor"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "msl"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "msr"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "sadd"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "sand"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "sbsl"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "sbsr"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "sdec"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "sinc"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "slnot"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "slsl"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "slsr"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "smax"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "smin"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "snot"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "sor"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "spackbit"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "spassa"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "ssub"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "sxor"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "udftoi"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "ufftoi"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "uhftoi"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "uiadd"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "uidec"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "uiinc"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "uilsr"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "uimax"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "uimin"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "uisub"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "uladd"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "uldec"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "ulinc"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "ullsr"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "ulmax"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "ulmin"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "ulsub"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "usadd"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "usdec"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "usinc"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "uslsr"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "usmax"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "usmin"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "ussub"
+    },
+    {
+      "result": {
+        "expressions": [
+          {
+            "class": "zero",
+            "raw_operands": []
+          }
+        ],
+        "parsed": true
+      },
+      "spelling": "zero"
+    }
+  ],
   "other_opcode_occurrences": [],
   "parse_errors": [],
   "parsed_operator_spellings": [
@@ -458,6 +2668,11 @@
   ],
   "scanner": {
     "path": "viz/core/src/bin/parser_gap_scan.rs",
-    "sha256": "ff45ca2c65ea98ac3d6d93d7112be351cef3f10c4b1cf01e135d254333c447f4"
+    "sha256": "988e912a24ae1ced2011345310e256b05406af68a6d550b0ee2be25efc227c90"
+  },
+  "opcode_candidate_source": {
+    "path": "mncompile/machine.py",
+    "sha256": "306d729fbd4bf89c2eba10c6ba0b5f97039ea7c019ff660d055077cbf10a34b0",
+    "candidate_count": 184
   }
 }
