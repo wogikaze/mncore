@@ -3292,7 +3292,7 @@ theorem mask_directive_replaces_selection_preserves_context
 
 structure PreparedParsedMaskedWrite where
   destination : Option DirectMemoryAccess
-  maskUpdate : Option (Fin 15 × Fin 4)
+  maskUpdate : Option (Fin 15 × Fin 4 × BitVec 4)
   data : WordBus
   selection : PEWordSelection
 
@@ -3339,8 +3339,22 @@ def prepareParsedConstantTarget (files : IntegerRegisterFiles) (cycle : Fin 4)
   match target with
   | .memory accesses => prepareParsedMaskedWrite files accesses false
   | .maskRegister entry =>
-      .ok ⟨none, some (entry, cycle), (fun _ => 0), ⟨BitVec.allOnes 4, true⟩⟩
+      .ok ⟨none, some (entry, cycle, 0), (fun _ => 0), ⟨BitVec.allOnes 4, true⟩⟩
   | .noWrite => .ok ⟨none, none, (fun _ => 0), ⟨BitVec.allOnes 4, true⟩⟩
+
+def prepareParsedIntegerMaskWrite (files : IntegerRegisterFiles) (cycle : Fin 4)
+    (accesses : ParsedIntegerMaskAccesses) (reduced : Bool) :
+    ProofsLean.StepResult PreparedParsedMaskedWrite :=
+  match evaluateParsedIntegerAlu accesses.op
+      (pack (readDirectAccess files accesses.sourceX))
+      (pack (readDirectAccess files accesses.sourceY)) reduced with
+  | .failure => .failure
+  | .unknown => .unknown
+  | .ok output =>
+      .ok ⟨none,
+        some (accesses.destination, cycle,
+          BitVec.ofBoolListLE [output.flags 0, output.flags 1, output.flags 2, output.flags 3]),
+        (fun _ => 0), ⟨accesses.selection, true⟩⟩
 
 def prepareParsedMaskedConstantWrites (files : IntegerRegisterFiles) (cycle : Fin 4)
     (targets : List ParsedConstantDestination) :
@@ -3482,6 +3496,50 @@ theorem prepareParsedMaskedIntegerWritesWithForwarding_is_traverse
               simp [prepareParsedMaskedIntegerWritesWithForwarding,
                 traverseStepResult, h, htail, ih]
 
+def parsedIntegerMaskExprAccessesInLine? (expression : ParsedExpr)
+    (registers : ProofsLean.MNCore.Masks.RegisterFile)
+    (directive : ParsedMaskDirective) (hasSingleLineMask : Bool)
+    (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
+    Option ParsedIntegerMaskAccesses :=
+  match expression.op with
+  | .alu name (some _) _ _ =>
+      match hRequest : expression.op.integerRequest with
+      | .ok (.integer precision aluOp) =>
+          match expression.sources, expression.destinations with
+          | [source], [destination] =>
+              if ParsedAluName.integerInputCount name != 1 then none else
+              match ParsedOperand.toDirectMemoryAccess? source pe cycle bar0 bar1 tWord,
+                    ParsedOperand.toMaskRegisterEntry? destination,
+                    ParsedOperand.resolveOmrWriteSelection? destination registers cycle directive
+                      hasSingleLineMask with
+              | some sourceAccess, some entry, some selection =>
+                  some ⟨expression.op, sourceAccess, sourceAccess, entry,
+                    selection, ⟨precision, aluOp, hRequest⟩⟩
+              | _, _, _ => none
+          | [sourceX, sourceY], [destination] =>
+              if ParsedAluName.integerInputCount name != 2 then none else
+              match ParsedOperand.toDirectMemoryAccess? sourceX pe cycle bar0 bar1 tWord,
+                    ParsedOperand.toDirectMemoryAccess? sourceY pe cycle bar0 bar1 tWord,
+                    ParsedOperand.toMaskRegisterEntry? destination,
+                    ParsedOperand.resolveOmrWriteSelection? destination registers cycle directive
+                      hasSingleLineMask with
+              | some xAccess, some yAccess, some entry, some selection =>
+                  some ⟨expression.op, xAccess, yAccess, entry,
+                    selection, ⟨precision, aluOp, hRequest⟩⟩
+              | _, _, _, _ => none
+          | _, _ => none
+      | _ => none
+  | _ => none
+
+def parsedIntegerMaskExprAccesses? (expression : ParsedExpr)
+    (registers : ProofsLean.MNCore.Masks.RegisterFile)
+    (directive : ParsedMaskDirective)
+    (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
+    Option ParsedIntegerMaskAccesses :=
+  parsedIntegerMaskExprAccessesInLine? expression registers directive
+    (parsedExprHasSingleLineWriteMask expression) pe cycle bar0 bar1 tWord
+
+
 def prepareParsedMaskedLine (files : IntegerRegisterFiles)
     (expressions : List ParsedExpr) (control : ParsedMaskExecutionControl) :
     ProofsLean.StepResult (List PreparedParsedMaskedWrite) :=
@@ -3506,6 +3564,34 @@ def prepareParsedMaskedLine (files : IntegerRegisterFiles)
                   | .ok writes => .ok (lineWrites ++ writes)
                   | .failure => .failure
                   | .unknown => .unknown
+        | .alu .. =>
+          match parsedIntegerMaskExprAccessesInLine? expression files.maskRegisters
+              control.directive hasSingleLineMask control.context.pe control.context.cycle
+              control.context.bar0 control.context.bar1 control.context.tWord with
+          | some accesses =>
+              match prepareParsedIntegerMaskWrite files control.context.cycle accesses false with
+              | .failure => .failure
+              | .unknown => .unknown
+              | .ok write =>
+                  match prepare rest with
+                  | .ok writes => .ok (write :: writes)
+                  | .failure => .failure
+                  | .unknown => .unknown
+          | none =>
+              match ParsedExpr.toDirectMaskedIntegerWritesInLine? expression files.maskRegisters
+                  control.directive hasSingleLineMask control.context.group control.context.l2b
+                  control.context.l1b control.context.mab control.context.pe control.context.cycle
+                  control.context.bar0 control.context.bar1 control.context.tWord with
+              | none => .unknown
+              | some accesses =>
+                  match prepareParsedMaskedIntegerWrites files accesses false with
+                  | .failure => .failure
+                  | .unknown => .unknown
+                  | .ok lineWrites =>
+                      match prepare rest with
+                      | .ok writes => .ok (lineWrites ++ writes)
+                      | .failure => .failure
+                      | .unknown => .unknown
         | _ =>
           match ParsedExpr.toDirectMaskedIntegerWritesInLine? expression files.maskRegisters
               control.directive hasSingleLineMask control.context.group control.context.l2b
@@ -3548,6 +3634,36 @@ def prepareParsedMaskedLineWithForwarding (files : IntegerRegisterFiles)
                   | .ok tail => .ok (writes ++ tail)
                   | .failure => .failure
                   | .unknown => .unknown
+        | .alu .. =>
+          match parsedIntegerMaskExprAccessesInLine? expression files.maskRegisters
+              control.directive hasSingleLineMask control.context.pe control.context.cycle
+              control.context.bar0 control.context.bar1 control.context.tWord with
+          | some accesses =>
+              match prepareParsedIntegerMaskWrite files control.context.cycle accesses false with
+              | .failure => .failure
+              | .unknown => .unknown
+              | .ok write =>
+                  match prepare rest with
+                  | .ok tail => .ok (write :: tail)
+                  | .failure => .failure
+                  | .unknown => .unknown
+          | none =>
+              match ParsedExpr.toDirectMaskedIntegerWritesInLine? expression
+                  files.maskRegisters control.directive hasSingleLineMask
+                  control.context.group control.context.l2b control.context.l1b control.context.mab
+                  control.context.pe control.context.cycle control.context.bar0 control.context.bar1
+                  control.context.tWord with
+              | none => .unknown
+              | some accesses =>
+                  match prepareParsedMaskedIntegerWritesWithForwarding files slots
+                      control.context.cycle accesses false with
+                  | .failure => .failure
+                  | .unknown => .unknown
+                  | .ok lineWrites =>
+                      match prepare rest with
+                      | .ok tail => .ok (lineWrites ++ tail)
+                      | .failure => .failure
+                      | .unknown => .unknown
         | _ =>
           match ParsedExpr.toDirectMaskedIntegerWritesInLine? expression
               files.maskRegisters control.directive hasSingleLineMask
@@ -3571,10 +3687,10 @@ def commitParsedMaskedWrites (files : IntegerRegisterFiles)
     (writes : List PreparedParsedMaskedWrite) : IntegerRegisterFiles :=
   writes.foldl (fun current write =>
     match write.maskUpdate with
-    | some (entry, cycle) =>
+    | some (entry, cycle, flags) =>
         { current with maskRegisters :=
             (ProofsLean.MNCore.Masks.writeRegister current.maskRegisters entry cycle
-              (0 : BitVec 4) (BitVec.allOnes 4)) }
+              flags write.selection.flags) }
     | none =>
         match write.destination with
         | some destination =>
@@ -4118,7 +4234,7 @@ theorem parsedIntegerMaskedRegisterStepWithForwarding_resolves_to_fixed
 theorem commit_constant_omr_destination_writes_zero
     (files : IntegerRegisterFiles) (entry : Fin 15) (cycle : Fin 4) :
     (commitParsedMaskedWrites files
-      [⟨none, some (entry, cycle), (fun _ => 0), ⟨BitVec.allOnes 4, true⟩⟩]).maskRegisters
+      [⟨none, some (entry, cycle, 0), (fun _ => 0), ⟨BitVec.allOnes 4, true⟩⟩]).maskRegisters
       entry cycle = 0 := by
   simp [commitParsedMaskedWrites, ProofsLean.MNCore.Masks.writeRegister]
 
@@ -4454,40 +4570,25 @@ def parsedIntegerMaskRegisterStep (files : IntegerRegisterFiles)
   | .failure => .failure
   | .unknown => .unknown
 
-def parsedIntegerMaskExprAccesses? (expression : ParsedExpr)
-    (registers : ProofsLean.MNCore.Masks.RegisterFile)
-    (directive : ParsedMaskDirective)
-    (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
-    Option ParsedIntegerMaskAccesses :=
-  match expression.op with
-  | .alu name (some _) _ _ =>
-      match hRequest : expression.op.integerRequest with
-      | .ok (.integer precision aluOp) =>
-          match expression.sources, expression.destinations with
-          | [source], [destination] =>
-              if ParsedAluName.integerInputCount name != 1 then none else
-              match ParsedOperand.toDirectMemoryAccess? source pe cycle bar0 bar1 tWord,
-                    ParsedOperand.toMaskRegisterEntry? destination,
-                    ParsedOperand.resolveOmrWriteSelection? destination registers cycle directive
-                      (parsedExprHasSingleLineWriteMask expression) with
-              | some sourceAccess, some entry, some selection =>
-                  some ⟨expression.op, sourceAccess, sourceAccess, entry,
-                    selection, ⟨precision, aluOp, hRequest⟩⟩
-              | _, _, _ => none
-          | [sourceX, sourceY], [destination] =>
-              if ParsedAluName.integerInputCount name != 2 then none else
-              match ParsedOperand.toDirectMemoryAccess? sourceX pe cycle bar0 bar1 tWord,
-                    ParsedOperand.toDirectMemoryAccess? sourceY pe cycle bar0 bar1 tWord,
-                    ParsedOperand.toMaskRegisterEntry? destination,
-                    ParsedOperand.resolveOmrWriteSelection? destination registers cycle directive
-                      (parsedExprHasSingleLineWriteMask expression) with
-              | some xAccess, some yAccess, some entry, some selection =>
-                  some ⟨expression.op, xAccess, yAccess, entry,
-                    selection, ⟨precision, aluOp, hRequest⟩⟩
-              | _, _, _, _ => none
-          | _, _ => none
-      | _ => none
-  | _ => none
+theorem parsedIntegerMaskPreparedStep_matches_direct_step
+    (files : IntegerRegisterFiles) (cycle : Fin 4)
+    (accesses : ParsedIntegerMaskAccesses) (reduced : Bool) :
+    (match prepareParsedIntegerMaskWrite files cycle accesses reduced with
+     | .ok write => .ok (commitParsedMaskedWrites files [write])
+     | .failure => .failure
+     | .unknown => .unknown) =
+      parsedIntegerMaskRegisterStep files accesses.sourceX accesses.sourceY
+        accesses.destination cycle accesses.selection accesses.op reduced := by
+  unfold prepareParsedIntegerMaskWrite parsedIntegerMaskRegisterStep
+  cases h : evaluateParsedIntegerAlu accesses.op
+      (pack (readDirectAccess files accesses.sourceX))
+      (pack (readDirectAccess files accesses.sourceY)) reduced with
+  | failure => simp [h]
+  | unknown => simp [h]
+  | ok output =>
+      simp [h, commitParsedMaskedWrites, integerFlagsVector,
+        ProofsLean.MNCore.Masks.writeRegister]
+
 
 example : (parsedIntegerMaskExprAccesses?
     ({ op := .alu .inc (some .i) false none,
