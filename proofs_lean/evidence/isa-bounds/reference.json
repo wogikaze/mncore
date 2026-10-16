@@ -25,7 +25,7 @@
     },
     {
       "path": "proofs_lean/scripts/check_isa_parser_bounds.py",
-      "sha256": "1c9827a68f95921bbf41aae96ca3ed0a22ceb128c9bf1efc7661e4ea3a4c5b4e"
+      "sha256": "fd71564055aa6a5c9e64abfdec95310055f3b39be783405cffedab1140d41643"
     }
   ],
   "observations": [
@@ -59,7 +59,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "No output location.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "nop_zero_with_wait",
@@ -67,7 +68,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "Unexpected token after pseudo op.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "wait_zero_tag",
@@ -75,7 +77,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "Wait tag must be non-zero.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "wait_tag_1",
@@ -99,7 +102,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "Tag must consists of 3 letters and starts with 'i'.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "omr_0",
@@ -107,7 +111,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "Address of $omr must be positive.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "omr_1",
@@ -147,7 +152,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "LM1 used twice as output.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "zero_multi_output_four_memories_and_omr",
@@ -179,7 +185,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "nowrite used twice as output",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "zero_duplicate_lm0_distinct_addresses",
@@ -187,7 +194,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "LM0 used twice as output.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "zero_duplicate_omr_distinct_entries",
@@ -195,7 +203,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "Mask register used twice as output.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "matrix_write_two_matrix_destinations",
@@ -203,7 +212,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "Too many operand given to mwrite instruction.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "zero_duplicate_lm0_output",
@@ -211,7 +221,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "LM0 used twice as output.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "zero_duplicate_lm1_output",
@@ -219,7 +230,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "LM1 used twice as output.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "zero_duplicate_grf0_output",
@@ -227,7 +239,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "GRF0 used twice as output.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "zero_duplicate_grf1_output",
@@ -235,7 +248,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "GRF1 used twice as output.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "zero_duplicate_t_output",
@@ -243,7 +257,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "T register used twice as output.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "zero_duplicate_mask_output",
@@ -251,7 +266,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "Mask register used twice as output.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "zero_nowrite_with_other_output",
@@ -259,7 +275,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "Used $nowrite output. mr can't use with $nowrite as output",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "matrix_row_15",
@@ -275,7 +292,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "Matrix register address must be less than  16.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "hbfn_6",
@@ -454,6 +472,51 @@
       "matches_expected": true
     },
     {
+      "case": "raw_operand_alu_source",
+      "source": "iadd $raw $lm0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Empty integer.",
+      "matches_expected": true,
+      "returncode": -6
+    },
+    {
+      "case": "raw_operand_alu_destination",
+      "source": "iadd $lm0 $raw",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Empty integer.",
+      "matches_expected": true,
+      "returncode": -6
+    },
+    {
+      "case": "raw_operand_zero_destination",
+      "source": "zero $raw",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Empty integer.",
+      "matches_expected": true,
+      "returncode": -6
+    },
+    {
+      "case": "raw_operand_matrix_source",
+      "source": "gmread $raw $nowrite",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Empty integer.",
+      "matches_expected": true,
+      "returncode": -6
+    },
+    {
+      "case": "raw_operand_l1bm_source",
+      "source": "l1bmm $raw $lb0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Empty integer.",
+      "matches_expected": true,
+      "returncode": -6
+    },
+    {
       "case": "debug_set_record",
       "source": "d set $lm0n0c0b0m0p0 1 0000000000000000",
       "accepted": true,
@@ -507,7 +570,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "Too large mab_id.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "l1bm_m4_mab_16",
@@ -515,7 +579,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "Too large mab_id.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "l1b_set_address_8",
@@ -523,7 +588,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "l1b id should be in the range [0, 8)",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "l1b_set_immode_8",
@@ -555,7 +621,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "Invalid l2bm id",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "l2bmdars_with_l2bmb",
@@ -563,7 +630,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "Instruction field conflict detected between `l2bmdars(lwrite or bdmode)` and `l2bm`.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "l2bmdars_with_l2bmb2",
@@ -571,7 +639,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "Instruction field conflict detected between `l2bmdars(darwadr)` and `l2bm`.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "l2bmdars_with_l2bmd",
@@ -579,7 +648,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "Instruction field conflict detected between `l2bmdars(darwadr)` and `l2bm`.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "l2bmdars_with_l2bm_from_l1b",
@@ -587,7 +657,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "Instruction field conflict detected between `l2bmdars` and `l2bm`.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "l2bmdars_with_l2bm_reduce",
@@ -595,7 +666,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "Instruction field conflict detected between `l2bmdars` and `l2bm`.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "l2bmdars_with_l2bm_reduce2",
@@ -603,7 +675,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "Instruction field conflict detected between `l2bmdars` and `l2bm`.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "l2bmdars_with_l2bm_internal_multicast",
@@ -611,7 +684,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "Instruction field conflict detected between `l2bmdars` and `l2bm`.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "dar_addr_1023",
@@ -627,7 +701,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "DAR address is too big.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "mabdiff_minus256",
@@ -635,7 +710,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "Too large unsigned integer.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "mabdiff_plus256",
@@ -643,7 +719,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "Too large unsigned integer.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "region_address_cycle0_max",
@@ -683,7 +760,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "LM0 address (in single word addressing) must be less than 4096.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "madpe_2",
@@ -707,7 +785,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "MAB PE number must be less than  4.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "mv_size_1",
@@ -715,7 +794,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "nw must be aligned to the multiple of 64.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "mv_size_64",
@@ -755,7 +835,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "Too many operand given to mv instruction.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "pe_then_mv_same_line",
@@ -763,7 +844,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "No output location.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "l1bm_width2_max",
@@ -779,7 +861,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "L1BM address must be aligned to the multiple of 4.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "l1bm_width2_capacity",
@@ -803,7 +886,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "L1BM address must be aligned to the multiple of 8.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "l1bm_width4_capacity",
@@ -835,7 +919,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "L2BM address that is src of L2BM -> L1BM transfer must be aligned to the multiple of 16.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "l2bm_address_32768",
@@ -843,7 +928,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "Out of range L2BM address.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "matrix_read_width2",
@@ -859,7 +945,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "mread except half-word input should be long word size",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "matrix_write_width2",
@@ -875,7 +962,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "mwrite output should be long word size except half word dmode",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "matrix_mul_width2",
@@ -3651,7 +3739,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "LM0 address (in single word addressing) must be less than 4096.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "memory_n_aligned_max",
@@ -3667,7 +3756,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "LM1 address (in single word addressing) must be less than 4096.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "memory_r_aligned_max",
@@ -3683,7 +3773,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "GRF0 address (in single word addressing) must be less than 512.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "memory_s_aligned_max",
@@ -3699,7 +3790,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "GRF1 address (in single word addressing) must be less than 512.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "memory_lm_aligned_max",
@@ -3715,7 +3807,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "LM0 address (in single word addressing) must be less than 4096.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "memory_ln_aligned_max",
@@ -3731,7 +3824,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "LM1 address (in single word addressing) must be less than 4096.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "memory_lr_aligned_max",
@@ -3747,7 +3841,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "GRF0 address (in single word addressing) must be less than 512.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "memory_ls_aligned_max",
@@ -3763,7 +3858,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "GRF1 address (in single word addressing) must be less than 512.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "memory_llm_aligned_max",
@@ -3779,7 +3875,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "LM0 address (in single word addressing) must be less than 4096.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "memory_lln_aligned_max",
@@ -3795,7 +3892,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "LM1 address (in single word addressing) must be less than 4096.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "memory_llr_aligned_max",
@@ -3811,7 +3909,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "GRF0 address (in single word addressing) must be less than 512.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "memory_lls_aligned_max",
@@ -3827,7 +3926,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "GRF1 address (in single word addressing) must be less than 512.",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     },
     {
       "case": "l1b_set_0_0",
@@ -8779,7 +8879,8 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "double long word can't be written to base address register",
-      "matches_expected": true
+      "matches_expected": true,
+      "returncode": -6
     }
   ],
   "findings": [
@@ -8787,6 +8888,7 @@
     "wait i00 is rejected; i01 and iFF are accepted; i100 is rejected.",
     "$omr0 and $omr16 are rejected; $omr1 and $omr15 are accepted.",
     "$imr0, $imr31 are accepted while $imr32 and $imr255 fail encoding. Active `maskn`, `maskln`, and `masklln` directives accept selector 31 and reject 32. This conflicts with the Rust MaskSource comment claiming entries 1 through 15.",
+    "Representative unknown `$raw` operands in ALU source/destination, zero destination, matrix-read source, and L1BM source positions produce no assembler output; assemble3 aborts with return code -6 on these malformed tokens. This is sampled rejection evidence, not a proof over every Raw string.",
     "Matrix rows 0 through 15 are accepted; row 16 is rejected.",
     "PE destination lists are not sized by source arity: lpassa accepts three outputs across LM1/GRF0/GRF1, and zero accepts LM0/LM1/GRF0/GRF1 plus OMR. The sampled duplicate-bank and nowrite combinations are rejected; this is not an exhaustive output grammar proof.",
     "hbfe and hbfn accept /6 through /9 and reject /10 in the selected boundary probes.",

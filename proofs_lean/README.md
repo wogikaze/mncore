@@ -71,6 +71,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   有限envelopeに属することもLeanで接続した。parser単体はu8値を255まで保持するため、
   0〜31の条件は合法性の前提として明示している。
   `maskln`/`masklln`の境界probeがこれらの幅の字句形式を確認する。
+  Rust parserがRawへ落とす代表的な未知operandは、ALU source/destination、zero destination、
+  matrix-read source、L1BM sourceでassemble3が出力せず異常終了した。これは標本証拠であり、
+  全Raw文字列や未知opcodeの不存在を証明するものではない。
   `zero`はLM0/LM1/GRF0/GRF1/T/OMRへ1個ずつ出力する6 destination を受理し、
   各カテゴリ内の重複出力を拒否した。Rust parserはopcodeごとのsource個数で分割後、
   残りの全tokenをdestinationにするため、このassembler観測だけではparser-encoding間の
