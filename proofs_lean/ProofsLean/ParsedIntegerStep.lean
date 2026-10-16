@@ -28,6 +28,25 @@ structure DirectMemoryAccess where
   address : Fin bank.capacity
   deriving DecidableEq, Repr
 
+inductive ParsedIntegerInput where
+  | memory (access : DirectMemoryAccess)
+  | fixed (value : IntegerALU.Bus)
+  deriving DecidableEq, Repr
+
+def replicateIntegerLane : (precision : IntegerALU.Precision) → Nat → IntegerALU.Bus
+  | .long, value =>
+      let lane := BitVec.ofNat 64 value
+      ⟨lane, lane⟩
+  | .word, value =>
+      let lane := BitVec.ofNat 32 value
+      let longword := lane ++ lane
+      ⟨longword, longword⟩
+  | .half, value =>
+      let lane := BitVec.ofNat 16 value
+      let longword := lane ++ lane ++ lane ++ lane
+      ⟨longword, longword⟩
+
+
 def issueBankToRegisterBank : ProofsLean.MNCore.Issue.Bank → Option Bank
   | .lm0 => some .lm0
   | .lm1 => some .lm1
@@ -86,10 +105,33 @@ def ParsedOperand.toDirectMemoryAccessMode? (operand : ParsedOperand)
       | none, _ | _, none => none
   | _ => none
 
+
 def ParsedOperand.toDirectMemoryAccess? (operand : ParsedOperand)
     (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
     Option DirectMemoryAccess :=
   ParsedOperand.toDirectMemoryAccessMode? operand false pe cycle bar0 bar1 tWord
+
+def ParsedOperand.toParsedIntegerInput? (operand : ParsedOperand)
+    (precision : IntegerALU.Precision) (pe cycle : Fin 4)
+    (bar0 bar1 : BitVec 12) (tWord : BitVec 32) : Option ParsedIntegerInput :=
+  match operand with
+  | .fixed .subpeid => some (.fixed (replicateIntegerLane precision pe.val))
+  | .fixed .msb1 =>
+      some (.fixed (replicateIntegerLane precision (2 ^ (precision.width - 1))))
+  | .fixed _ => none
+  | _ => (ParsedOperand.toDirectMemoryAccess? operand pe cycle bar0 bar1 tWord).map .memory
+
+theorem parsed_subpeid_integer_input
+    (precision : IntegerALU.Precision) (pe cycle : Fin 4)
+    (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
+    ParsedOperand.toParsedIntegerInput? (.fixed .subpeid) precision pe cycle bar0 bar1 tWord =
+      some (.fixed (replicateIntegerLane precision pe.val)) := rfl
+
+theorem parsed_msb1_integer_input
+    (precision : IntegerALU.Precision) (pe cycle : Fin 4)
+    (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
+    ParsedOperand.toParsedIntegerInput? (.fixed .msb1) precision pe cycle bar0 bar1 tWord =
+      some (.fixed (replicateIntegerLane precision (2 ^ (precision.width - 1)))) := rfl
 
 def ParsedOperand.toDirectMemoryDestination? (operand : ParsedOperand)
     (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
@@ -290,8 +332,8 @@ structure ParsedIntegerAccesses where
 
 structure ParsedMaskedIntegerAccesses where
   op : ParsedOp
-  sourceX : DirectMemoryAccess
-  sourceY : DirectMemoryAccess
+  sourceX : ParsedIntegerInput
+  sourceY : ParsedIntegerInput
   destination : DirectMemoryAccess
   writeSelection : PEWordSelection
   flushSelection : Option PEWordSelection
@@ -353,13 +395,14 @@ def ParsedExpr.toDirectMaskedIntegerAccessesInLine? (expression : ParsedExpr)
     (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
     Option ParsedMaskedIntegerAccesses :=
   match expression.op with
-  | .alu name (some _) _ _ =>
+  | .alu name (some parsedPrecision) _ _ =>
       match hRequest : expression.op.executionRequest with
       | .ok (.integer precision aluOp) =>
           match expression.sources, expression.destinations with
           | [source], [destination] =>
               if ParsedAluName.integerInputCount name != 1 then none else
-              match ParsedOperand.toDirectMemoryAccess? source pe cycle bar0 bar1 tWord with
+              match ParsedOperand.toParsedIntegerInput? source parsedPrecision.laneWidth
+                  pe cycle bar0 bar1 tWord with
               | none => none
               | some sourceAccess =>
                   match ParsedOperand.toDirectMemoryDestination? destination pe cycle bar0 bar1 tWord with
@@ -375,8 +418,10 @@ def ParsedExpr.toDirectMaskedIntegerAccessesInLine? (expression : ParsedExpr)
                       | _, _ => none
           | [sourceX, sourceY], [destination] =>
               if ParsedAluName.integerInputCount name != 2 then none else
-              match ParsedOperand.toDirectMemoryAccess? sourceX pe cycle bar0 bar1 tWord,
-                    ParsedOperand.toDirectMemoryAccess? sourceY pe cycle bar0 bar1 tWord with
+              match ParsedOperand.toParsedIntegerInput? sourceX parsedPrecision.laneWidth
+                    pe cycle bar0 bar1 tWord,
+                    ParsedOperand.toParsedIntegerInput? sourceY parsedPrecision.laneWidth
+                    pe cycle bar0 bar1 tWord with
               | some xAccess, some yAccess =>
                   match ParsedOperand.toDirectMemoryDestination? destination pe cycle bar0 bar1 tWord with
                   | none => none
@@ -404,7 +449,7 @@ def ParsedExpr.toDirectMaskedIntegerAccessesInLine? (expression : ParsedExpr)
                       destinationAccess.bank registers cycle directive hasSingleLineMask,
                       resolveFlushSelection? expression.flush registers cycle with
                   | some writeSelection, some flushSelection =>
-                      some ⟨expression.op, destinationAccess, destinationAccess,
+                      some ⟨expression.op, .memory destinationAccess, .memory destinationAccess,
                         destinationAccess, writeSelection, flushSelection, ⟨request, hRequest⟩⟩
                   | _, _ => none
           | _, _ => none
@@ -462,6 +507,26 @@ def parsedImmediateMaskedExpr (value : BitVec 32) (unsigned : Bool) : ParsedExpr
   destinations := [plusOneWrite]
   flush := none
   text := "imm $ln0v"
+
+def parsedSubpeidMaskedExpr : ParsedExpr where
+  op := .alu .inc (some .i) false none
+  sources := [.fixed .subpeid]
+  destinations := [plusOneWrite]
+  flush := none
+  text := "iinc $subpeid $ln0v"
+
+def parsedMsb1MaskedExpr : ParsedExpr where
+  op := .alu .inc (some .i) false none
+  sources := [.fixed .msb1]
+  destinations := [plusOneWrite]
+  flush := none
+  text := "iinc $msb1 $ln0v"
+
+example : (ParsedExpr.toDirectMaskedIntegerAccesses? parsedSubpeidMaskedExpr
+    (fun _ _ => 0) {} 2 0 0 0 0).isSome = true := by decide
+
+example : (ParsedExpr.toDirectMaskedIntegerAccesses? parsedMsb1MaskedExpr
+    (fun _ _ => 0) {} 2 0 0 0 0).isSome = true := by decide
 
 def parsedImmediateMultiDestinationExpr : ParsedExpr where
   op := .immediate 0x12345678 false
@@ -576,6 +641,12 @@ def writeRegisterBankMasked (files : IntegerRegisterFiles) (bank : Bank) (width 
 def readDirectAccess (files : IntegerRegisterFiles) (access : DirectMemoryAccess) : WordBus :=
   readRegisterBank files access.bank access.width access.address
 
+def ParsedIntegerInput.read (files : IntegerRegisterFiles) (input : ParsedIntegerInput) :
+    IntegerALU.Bus :=
+  match input with
+  | .memory access => pack (readDirectAccess files access)
+  | .fixed value => value
+
 def writeDirectAccess (files : IntegerRegisterFiles) (access : DirectMemoryAccess)
     (data : WordBus) : IntegerRegisterFiles :=
   writeRegisterBank files access.bank access.width access.address data
@@ -642,8 +713,8 @@ def parsedOutputAfterFlush (selection : Option PEWordSelection)
 def parsedIntegerMaskedRegisterStep (files : IntegerRegisterFiles)
     (accesses : ParsedMaskedIntegerAccesses) (reduced : Bool) :
     ProofsLean.StepResult IntegerRegisterFiles :=
-  let x := pack (readDirectAccess files accesses.sourceX)
-  let y := pack (readDirectAccess files accesses.sourceY)
+  let x := ParsedIntegerInput.read files accesses.sourceX
+  let y := ParsedIntegerInput.read files accesses.sourceY
   match evaluateParsedIntegerAlu accesses.op x y reduced with
   | .ok output =>
       .ok (writeDirectAccessMasked files accesses.destination
@@ -656,8 +727,8 @@ theorem parsedIntegerMaskedRegisterStep_success (files : IntegerRegisterFiles)
     (accesses : ParsedMaskedIntegerAccesses) (reduced : Bool)
     (output : IntegerALU.BusResult)
     (evaluated : evaluateParsedIntegerAlu accesses.op
-      (pack (readDirectAccess files accesses.sourceX))
-      (pack (readDirectAccess files accesses.sourceY)) reduced = .ok output) :
+      (ParsedIntegerInput.read files accesses.sourceX)
+      (ParsedIntegerInput.read files accesses.sourceY) reduced = .ok output) :
     parsedIntegerMaskedRegisterStep files accesses reduced =
       .ok (writeDirectAccessMasked files accesses.destination
         (unpackALUBus (parsedOutputAfterFlush accesses.flushSelection output.value))
@@ -1058,8 +1129,8 @@ structure PreparedParsedMaskedWrite where
 def prepareParsedMaskedWrite (files : IntegerRegisterFiles)
     (accesses : ParsedMaskedIntegerAccesses) (reduced : Bool) :
     ProofsLean.StepResult PreparedParsedMaskedWrite :=
-  let x := pack (readDirectAccess files accesses.sourceX)
-  let y := pack (readDirectAccess files accesses.sourceY)
+  let x := ParsedIntegerInput.read files accesses.sourceX
+  let y := ParsedIntegerInput.read files accesses.sourceY
   match evaluateParsedIntegerAlu accesses.op x y reduced with
   | .ok output =>
       let bus := parsedOutputAfterFlush accesses.flushSelection output.value
