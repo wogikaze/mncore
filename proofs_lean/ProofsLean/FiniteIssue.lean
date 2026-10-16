@@ -332,6 +332,36 @@ theorem ParsedOperand.inFiniteEnvelope_finite :
     Finite {operand : ParsedOperand // operand.inFiniteEnvelope} :=
   Finite.of_injective ParsedOperand.finiteCode ParsedOperand.finiteCode_injective
 
+def ParsedL1bSet.inFiniteEnvelope (set : ParsedL1bSet) : Prop :=
+  set.mask < 8 ∧ set.immode < 8
+
+def ParsedL1bSet.finiteCode
+    (set : {set : ParsedL1bSet // set.inFiniteEnvelope}) : Fin 8 × Fin 8 :=
+  (⟨set.1.mask, set.2.1⟩, ⟨set.1.immode, set.2.2⟩)
+
+theorem ParsedL1bSet.finiteCode_injective : Function.Injective ParsedL1bSet.finiteCode := by
+  intro a b equal
+  cases a with
+  | mk av ah =>
+    cases b with
+    | mk bv bh =>
+      apply Subtype.ext
+      cases av with
+      | mk am ai =>
+        cases bv with
+        | mk bm bi =>
+          simp only [ParsedL1bSet.finiteCode, Prod.mk.injEq] at equal
+          rcases equal with ⟨maskCodeEq, immodeCodeEq⟩
+          have maskEq : am = bm := congrArg Fin.val maskCodeEq
+          have immodeEq : ai = bi := congrArg Fin.val immodeCodeEq
+          cases maskEq
+          cases immodeEq
+          rfl
+
+theorem ParsedL1bSet.inFiniteEnvelope_finite :
+    Finite {set : ParsedL1bSet // set.inFiniteEnvelope} :=
+  Finite.of_injective ParsedL1bSet.finiteCode ParsedL1bSet.finiteCode_injective
+
 def omrEntryInFiniteEnvelope (entry : Nat) : Prop := entry < 16
 
 private def omrEntryCode

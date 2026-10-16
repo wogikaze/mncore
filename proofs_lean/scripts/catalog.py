@@ -350,7 +350,7 @@ def isa_bounds_experiment() -> dict:
             raise ValueError(f"stale ISA boundary experiment: {item['path']}")
     if not all(row["matches_expected"] for row in record["observations"]):
         raise ValueError("ISA boundary experiment contains an unexpected assembler result")
-    if len(record["observations"]) != 516:
+    if len(record["observations"]) != 518:
         raise ValueError("ISA boundary experiment case count changed")
     return {
         "source": reference.relative_to(REPO).as_posix(),
@@ -469,6 +469,13 @@ def coverage_catalog() -> dict:
             "scope": "Finite carrier for all structured PE operand constructors under the numeric envelope: region, mask, OMR, matrix, L1BM, L2BM, and DAR bounds.",
             "evidence": "proofs_lean/evidence/isa-bounds/reference.json: OMR, mask selectors, matrix rows, L1BM and L2BM addresses/selectors, DAR addresses, and PE region bounds.",
             "missing": "Proof that every assembler-accepted operand parses inside this envelope; bank/opcode-specific alignment and width legality; finite PE lines and complete machine-level legality.",
+        }, {
+            "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
+            "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
+            "theorem": "ProofsLean.MNCore.Issue.ParsedL1bSet.inFiniteEnvelope_finite",
+            "scope": "Finite carrier for L1B sets with address and immode selectors below 8.",
+            "evidence": "proofs_lean/evidence/isa-bounds/reference.json: all 64 set pairs in 0..7 accepted; address 8 and immode 8 rejected.",
+            "missing": "Connection from every accepted L1/L2 operation to this set envelope and finite carriers for remaining operation fields.",
         }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
