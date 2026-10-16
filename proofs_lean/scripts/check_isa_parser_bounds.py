@@ -64,6 +64,19 @@ for index in range(16):
     CASES[f"matrix_row_{index}"] = (f"gmread $lx{index} $nowrite\n", True, 1)
 for index in range(6, 10):
     CASES[f"hbfn_{index}"] = (f"hbfn/{index} $lm0 $ln0\n", True, 1)
+for prefix, aligned_max, capacity in [
+    ("m", 4095, 4096), ("n", 4095, 4096),
+    ("r", 511, 512), ("s", 511, 512),
+    ("lm", 4094, 4096), ("ln", 4094, 4096),
+    ("lr", 510, 512), ("ls", 510, 512),
+    ("llm", 4092, 4096), ("lln", 4092, 4096),
+    ("llr", 508, 512), ("lls", 508, 512),
+]:
+    other_lm = "m0" if prefix in {"n", "ln", "lln"} else "n0"
+    CASES[f"memory_{prefix}_aligned_max"] = (
+        f"lpassa ${prefix}{aligned_max} ${other_lm}\n", True, 1)
+    CASES[f"memory_{prefix}_capacity"] = (
+        f"lpassa ${prefix}{capacity} ${other_lm}\n", False, None)
 
 
 def sha(path: Path) -> str:
@@ -110,6 +123,7 @@ def main() -> None:
             "$imr0, $imr31 are accepted while $imr32 and $imr255 fail encoding. Active mask directives `maskn 0` and `maskn 31` are accepted, while `maskn 32` fails. This conflicts with the Rust MaskSource comment claiming entries 1 through 15.",
             "Matrix rows 0 through 15 are accepted; row 16 is rejected.",
             "hbfn/6 through hbfn/9 are accepted; hbfn/10 is rejected.",
+            "LM0/LM1 and GRF0/GRF1 accept aligned final addresses at widths 1, 2, and 4; their single-word capacities are respectively 4096 and 512, and the capacity address is rejected.",
             "$lb8188 is accepted while $lb8192 fails the 13-bit encoding field; the L1BM address must also be 4-word aligned. l1bmm@15 is accepted and @16 is rejected.",
             "DAR address 1023 is accepted and 1024 is rejected; `$lc...@.<l2b>` accepts selectors 0 and 1 and rejects 2.",
             "l1bmd-129, l1bmd-128, l1bmd127, and l1bmd128 are all accepted by assemble3; this is parser/encoding acceptance evidence, not a claim that these offsets are semantically useful.",
