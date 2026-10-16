@@ -83,6 +83,7 @@ import Lean
 #print axioms ProofsLean.MNCore.HazardTrace.collectBlockHazardConstraints
 #print axioms ProofsLean.MNCore.HazardTrace.l1SourceHazardConstraints
 #print axioms ProofsLean.MNCore.HazardTrace.l2BlockRangeEvents_count
+#print axioms ProofsLean.MNCore.HazardTrace.blockHazardConstraintsBetween_complete
 #print axioms ProofsLean.MNCore.L1Transfer.m4writeWrites_count
 #print axioms ProofsLean.MNCore.L1Transfer.mwriteFourCycleWrites_count
 #print axioms ProofsLean.MNCore.L1Transfer.m4writeFourCycleWrites_count

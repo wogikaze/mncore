@@ -158,6 +158,15 @@ def blockHazardConstraintsBetween
   earlier.flatMap fun write => later.filterMap fun access =>
     ProofsLean.MNCore.PEMemory.makeTimedBlockHazardConstraint? write access
 
+theorem blockHazardConstraintsBetween_complete
+    (earlier later : List ProofsLean.MNCore.PEMemory.TimedBlockAccess)
+    (constraint : ProofsLean.MNCore.PEMemory.TimedBlockHazardConstraint) :
+    constraint ∈ blockHazardConstraintsBetween earlier later ↔
+      ∃ write, write ∈ earlier ∧ ∃ access, access ∈ later ∧
+        ProofsLean.MNCore.PEMemory.makeTimedBlockHazardConstraint? write access =
+          some constraint := by
+  simp [blockHazardConstraintsBetween, List.mem_flatMap, List.mem_filterMap]
+
 def collectBlockHazardConstraintsAux
     (events : List ProofsLean.MNCore.PEMemory.TimedBlockAccess) :
     List ProofsLean.MNCore.PEMemory.TimedBlockHazardConstraint :=
