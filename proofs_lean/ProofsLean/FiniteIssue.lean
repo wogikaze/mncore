@@ -3,10 +3,55 @@ import Mathlib.Data.Fintype.Card
 import Mathlib.Data.Fintype.EquivFin
 import Mathlib.Data.Fintype.Prod
 import Mathlib.Data.Fintype.Sum
+import Mathlib.Data.Fintype.Option
 import Mathlib.Data.BitVec
 import ProofsLean.Issue
 
 namespace ProofsLean.MNCore.Issue
+
+theorem natBelow_finite (bound : Nat) : Finite {value : Nat // value < bound} := by
+  apply Finite.of_injective (fun value => (⟨value.1, value.2⟩ : Fin bound))
+  intro a b equal
+  apply Subtype.ext
+  exact congrArg Fin.val equal
+
+def optionNatInFiniteEnvelope (bound : Nat) (value : Option Nat) : Prop :=
+  ∀ n, value = some n → n < bound
+
+private def optionNatCode (bound : Nat) :
+    {value : Option Nat // optionNatInFiniteEnvelope bound value} → Option (Fin bound)
+  | ⟨none, _⟩ => none
+  | ⟨some n, property⟩ => some ⟨n, property n rfl⟩
+
+private theorem optionNatCode_injective (bound : Nat) :
+    Function.Injective (optionNatCode bound) := by
+  intro a b equal
+  cases a with
+  | mk a ha =>
+    cases b with
+    | mk b hb =>
+      apply Subtype.ext
+      cases a with
+      | none =>
+        cases b with
+        | none => rfl
+        | some n =>
+          simp only [optionNatCode] at equal
+          cases equal
+      | some n =>
+        cases b with
+        | none =>
+          simp only [optionNatCode] at equal
+          cases equal
+        | some m =>
+          simp only [optionNatCode, Option.some.injEq] at equal
+          have valuesEqual : n = m := congrArg Fin.val equal
+          cases valuesEqual
+          rfl
+
+theorem optionNatBelow_finite (bound : Nat) :
+    Finite {value : Option Nat // optionNatInFiniteEnvelope bound value} :=
+  Finite.of_injective (optionNatCode bound) (optionNatCode_injective bound)
 
 def ParsedMask.inFiniteEnvelope : ParsedMask → Prop
   | .pattern .. => True

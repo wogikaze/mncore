@@ -64,7 +64,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
-      "sha256": "2e10142696427f682ee892b8ccf418b9d8f57ce77c5fd418388daeb2214400d1",
+      "sha256": "346069ab49d7f3ef2f9afd45b346e56f7a5a46dfc8cfdac46c6c1d2895b592a6",
       "theorem": "ProofsLean.MNCore.Issue.projectLine_expression_count_le_ten",
       "scope": "Legal projected PE rows have at most ten expressions, from ten unique issue groups and projection-assigned distinct IDs.",
       "evidence": "Formal consequence of Issue.groupsUnique and ParsedExpr.issueGroup being total; issue groups are mirrored from viz/core/src/issue.rs.",
@@ -72,7 +72,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
-      "sha256": "2e10142696427f682ee892b8ccf418b9d8f57ce77c5fd418388daeb2214400d1",
+      "sha256": "346069ab49d7f3ef2f9afd45b346e56f7a5a46dfc8cfdac46c6c1d2895b592a6",
       "theorem": "ProofsLean.MNCore.Issue.ParsedMask.inFiniteEnvelope_finite",
       "scope": "Finite subtype for ParsedMask patterns and entry selectors below 32.",
       "evidence": "proofs_lean/evidence/isa-bounds/reference.json: imr_selector_0, imr_selector_31, imr_selector_32; these are IMR mask selectors, not OMR entries.",
@@ -80,11 +80,27 @@
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
-      "sha256": "2e10142696427f682ee892b8ccf418b9d8f57ce77c5fd418388daeb2214400d1",
+      "sha256": "346069ab49d7f3ef2f9afd45b346e56f7a5a46dfc8cfdac46c6c1d2895b592a6",
       "theorem": "ProofsLean.MNCore.Issue.omrEntryInFiniteEnvelope_finite",
       "scope": "Finite subtype for OMR entry values below 16, including invalid zero as a generous envelope.",
       "evidence": "proofs_lean/evidence/isa-bounds/reference.json: omr_0, omr_1, omr_15, omr_16.",
       "missing": "Proof that all assembler-accepted OMR operands parse into this subtype, plus other operand fields and whole-line finiteness."
+    },
+    {
+      "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
+      "sha256": "346069ab49d7f3ef2f9afd45b346e56f7a5a46dfc8cfdac46c6c1d2895b592a6",
+      "theorem": "ProofsLean.MNCore.Issue.natBelow_finite",
+      "scope": "Every subtype of Nat below an arbitrary bound is finite, by injection into Fin bound.",
+      "evidence": "General Lean encoding argument; per-field numeric bounds remain supported by their individual assembler probes.",
+      "missing": "A PE operand/line carrier combining these bounded scalar fields and parser correspondence proofs."
+    },
+    {
+      "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
+      "sha256": "346069ab49d7f3ef2f9afd45b346e56f7a5a46dfc8cfdac46c6c1d2895b592a6",
+      "theorem": "ProofsLean.MNCore.Issue.optionNatBelow_finite",
+      "scope": "Optional Nat values whose present payloads are below an arbitrary bound form a finite subtype.",
+      "evidence": "General Lean encoding argument; optional operand-field bounds are recorded in the ISA boundary evidence.",
+      "missing": "A PE operand/line carrier combining these bounded scalar fields and parser correspondence proofs."
     }
   ],
   "datapath_fragments": [

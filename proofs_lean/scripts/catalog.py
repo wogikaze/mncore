@@ -476,6 +476,20 @@ def coverage_catalog() -> dict:
             "scope": "Finite subtype for OMR entry values below 16, including invalid zero as a generous envelope.",
             "evidence": "proofs_lean/evidence/isa-bounds/reference.json: omr_0, omr_1, omr_15, omr_16.",
             "missing": "Proof that all assembler-accepted OMR operands parse into this subtype, plus other operand fields and whole-line finiteness.",
+        }, {
+            "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
+            "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
+            "theorem": "ProofsLean.MNCore.Issue.natBelow_finite",
+            "scope": "Every subtype of Nat below an arbitrary bound is finite, by injection into Fin bound.",
+            "evidence": "General Lean encoding argument; per-field numeric bounds remain supported by their individual assembler probes.",
+            "missing": "A PE operand/line carrier combining these bounded scalar fields and parser correspondence proofs.",
+        }, {
+            "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
+            "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
+            "theorem": "ProofsLean.MNCore.Issue.optionNatBelow_finite",
+            "scope": "Optional Nat values whose present payloads are below an arbitrary bound form a finite subtype.",
+            "evidence": "General Lean encoding argument; optional operand-field bounds are recorded in the ISA boundary evidence.",
+            "missing": "A PE operand/line carrier combining these bounded scalar fields and parser correspondence proofs.",
         }],
         "datapath_fragments": [{
             "source": fragment_source.relative_to(REPO).as_posix(), "sha256": digest(fragment_source),
