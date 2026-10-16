@@ -116,6 +116,14 @@
         "decoder_correspondence_proven": false,
         "formal_conformance_proof": false
       }
+    },
+    {
+      "source": "proofs_lean/ProofsLean/Issue.lean",
+      "sha256": "eb392d5d2a125605e00cb42aca061278459753c47285fec5714ff6a6c6db92ef",
+      "implemented": "Abstract PE-line issue predicates: group uniqueness, MAU compatibility, matrix register use, PE memory ports, immediate/LM0 conflict and zero-flush uniqueness",
+      "scope": "Formal rule layer corresponding to the local issue checker; Expr construction from parsed VSM and proof of assembler/hardware completeness are absent",
+      "missing": "VSM parser correspondence, all assembler legality checks outside issue.rs, hardware correspondence and integration with the total instruction transition",
+      "reference_experiment": null
     }
   ],
   "unresolved_semantic_discrepancies": [
@@ -898,7 +906,7 @@
     },
     {
       "area": "parallel_issue_and_memory_port_legality",
-      "status": "unimplemented"
+      "status": "partial_datapath_only"
     },
     {
       "area": "integer_16_32_64_and_signedness",

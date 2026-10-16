@@ -368,6 +368,7 @@ def coverage_catalog() -> dict:
     mask_source = ROOT / "ProofsLean/Masks.lean"
     forwarding_source = ROOT / "ProofsLean/Forwarding.lean"
     encoded_forwarding = ROOT / "ProofsLean/EncodedForwarding.lean"
+    issue_source = ROOT / "ProofsLean/Issue.lean"
     return {
         "schema_version": 1,
         "isa_exhaustiveness_proven": False,
@@ -413,13 +414,19 @@ def coverage_catalog() -> dict:
             "scope": "Assembler-generated 426-bit fragments only; does not change unknown VSM cases",
             "missing": "Formal decoding/encoding correspondence and whole VSM legality",
             "reference_experiment": encoded_lbf_experiment(),
+        }, {
+            "source": issue_source.relative_to(REPO).as_posix(), "sha256": digest(issue_source),
+            "implemented": "Abstract PE-line issue predicates: group uniqueness, MAU compatibility, matrix register use, PE memory ports, immediate/LM0 conflict and zero-flush uniqueness",
+            "scope": "Formal rule layer corresponding to the local issue checker; Expr construction from parsed VSM and proof of assembler/hardware completeness are absent",
+            "missing": "VSM parser correspondence, all assembler legality checks outside issue.rs, hardware correspondence and integration with the total instruction transition",
+            "reference_experiment": None,
         }],
         "unresolved_semantic_discrepancies": [rotation_discrepancy()],
         "corrected_model_errors": [mask_model_correction()],
         "forwarding_findings": forwarding_findings(),
         "syntax_candidates": [{"spelling": name, "formal_step_semantics": "unimplemented"} for name in spellings],
         "obligations": [{"area": area, "status": "partial_datapath_only" if area in (
-            "integer_16_32_64_and_signedness", "wide_access_and_lsb_passthrough",
+            "integer_16_32_64_and_signedness", "parallel_issue_and_memory_port_legality", "wide_access_and_lsb_passthrough",
             "immediates_fixed_operands_and_zero", "pe_rotations_and_coordinate_operands",
             "t_indirect_madpe_and_address_mapping", "masks_flush_and_mask_directives",
             "forwarding_lifetime_and_latency") else "unimplemented"} for area in areas],

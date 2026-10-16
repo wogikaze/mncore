@@ -22,6 +22,9 @@ import Lean
 #print axioms ProofsLean.MNCore.PlusOne.step_writes_cycle_output_high
 #print axioms ProofsLean.MNCore.PlusOne.step_writes_cycle_output_low
 #print axioms ProofsLean.MNCore.PlusOne.increment_numerical
+#print axioms ProofsLean.MNCore.Issue.check_sound
+#print axioms ProofsLean.MNCore.Issue.check_complete
+#print axioms ProofsLean.MNCore.Issue.duplicate_alu_groups_rejected
 #print axioms ProofsLean.ControlNormalization.compile_length
 #print axioms ProofsLean.ControlNormalization.run_compiles
 #print axioms ProofsLean.ControlNormalization.source_execution
