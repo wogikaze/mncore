@@ -19,7 +19,7 @@ from dataclasses import dataclass, replace
 from .errors import CompileError
 from .ir import Node, walk
 from .layout import DType
-from .machine import Imm, Mask, Mem
+from .machine import Fixed, Imm, Mask, Mem
 from .values import float_decode, float_encode
 from .vprog import FlagUse, Use, Value, VOp, VProgram
 
@@ -648,7 +648,15 @@ class GroupGen:
         if op == "mul":
             if len(a) != 2:
                 raise CompileError("n-ary float product")
-            return self.emit(f"{p}vmul", [self.operand(a[0], "float"), self.operand(a[1], "float")], dst)
+            res = self.emit(f"{p}vmul", [self.operand(a[0], "float"), self.operand(a[1], "float")], dst)
+            const = next((t.value for t in a if t.op == "const" and not isinstance(t.value, bool)), None)
+            alu = {2.0: "ilrelud", 0.5: "lrelud", 0.125: "lreluo"}.get(const) if isinstance(const, (int, float)) else None
+            last = self.prog.ops[-1]
+            if alu is not None and last.opcode.startswith(f"{p}vmul") and p in "hfd":
+                # x * 2, x / 2, x / 8 also on the ALU: the relu family scales y when MSB(x) is set
+                x = next(t for t in a if not (t.op == "const" and t.value == const))
+                last.alt = (f"{p}{alu}", "alu", [Fixed("msb1"), self._use(self.operand(x, "float"))])
+            return res
         if op == "neg":
             return self.emit(f"{p}vpassa", [self._use(self.operand(a[0], "float"), neg=True)], dst)
         if op == "max" and len(a) == 2 and any(self._zero(t) for t in a):

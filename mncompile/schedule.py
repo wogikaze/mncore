@@ -836,11 +836,14 @@ class Scheduler:
             for op in ready:
                 plan = self._try(op, t)
                 if plan is None and op.alt is not None:
-                    own = (op.opcode, op.unit)
-                    op.opcode, op.unit = op.alt
+                    # (opcode, unit[, srcs]): the same result on another unit
+                    own = (op.opcode, op.unit, list(op.srcs))
+                    op.opcode, op.unit = op.alt[0], op.alt[1]
+                    if len(op.alt) > 2:
+                        op.srcs = list(op.alt[2])
                     plan = self._try(op, t)
                     if plan is None:
-                        op.opcode, op.unit = own
+                        op.opcode, op.unit, op.srcs = own
                     else:
                         op.alt = own
                 if plan is not None:
