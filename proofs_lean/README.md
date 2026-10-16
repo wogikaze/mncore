@@ -218,7 +218,10 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   出力形式への正規化round-pack、infinity/zero規則を定義し、singleの具体例を証明した。
   native single/doubleのlane別RRN結果をMAB選択後に`reduce`/`reduce4`のpending列へ接続し、
   1/2 long-word時の件数と両方の出力結果のアドレス対応を証明した。
-  half precision extensionとoutput roundingの例外配置、PE/L1 turnaroundへのcommitは未接続。
+  half aliasでは4 half laneをsingleへ拡張し、16 MAB時の二段縮約、halfへのround-pack、
+  packed outputとL1 pending列への配置を定義・証明した。native single/doubleの明示的なhalf
+  output roundingもsource/destination幅に応じたlane数・packed layoutとL1 pending列へ接続した。
+  PE/L1 turnaroundへのcommitは未接続。
 
 `Machine.positiveCost` はスコアが正の行へ正規化済みであるという条件。
 MN-Coreにはゼロコストの制御文があるので、その正規化の意味保存と完全性を証明するまでは

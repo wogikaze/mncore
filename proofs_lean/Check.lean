@@ -98,6 +98,16 @@ import Lean
 #print axioms ProofsLean.MNCore.L1Transfer.reduceFloatL1Writes_contains_result
 #print axioms ProofsLean.MNCore.L1Transfer.reduceL1Writes_contains_second
 #print axioms ProofsLean.MNCore.L1Transfer.reduceFloatL1Writes_contains_second_result
+#print axioms ProofsLean.MNCore.RRN.half_one_extends_exactly_to_single_one
+#print axioms ProofsLean.MNCore.RRN.negative_half_infinity_extends_with_sign
+#print axioms ProofsLean.MNCore.RRN.half_alias_four_mab_sum_rounds_and_packs
+#print axioms ProofsLean.MNCore.RRN.half_alias_sixteen_mab_uses_two_stages
+#print axioms ProofsLean.MNCore.L1Transfer.reduceHalfAliasL1Writes_count
+#print axioms ProofsLean.MNCore.L1Transfer.reduceHalfAliasL1Writes_contains_result
+#print axioms ProofsLean.MNCore.RRN.half_alias_preserves_half_lane_order
+#print axioms ProofsLean.MNCore.RRN.rounded_single_word_keeps_msb_lanes_first
+#print axioms ProofsLean.MNCore.L1Transfer.reduceRoundedFloatL1Writes_count
+#print axioms ProofsLean.MNCore.L1Transfer.reduceRoundedFloatL1Writes_contains_result
 #print axioms ProofsLean.MNCore.L1Transfer.mwriteWrites_contains_high
 #print axioms ProofsLean.MNCore.L1Transfer.mwriteWrites_contains_low
 #print axioms ProofsLean.MNCore.L1Transfer.m4writeWrites_contains_high

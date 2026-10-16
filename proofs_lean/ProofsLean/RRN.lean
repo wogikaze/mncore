@@ -130,6 +130,17 @@ def reduceFloatAdd (input output : FloatPrecision) (values : List Nat) : Nat :=
         Int.ofNat input.mantissaBits - 3
       roundPack output (sum < 0) sum.natAbs exponent
 
+def extendFloatBits (input output : FloatPrecision) (bits : Nat) : Nat :=
+  let exponent := floatExponent input bits
+  let negative := floatIsNegative input bits
+  if exponent == 0 then 0
+  else if exponent == input.exponentMax then floatInfinity output negative
+  else
+    let significand := 2 ^ input.mantissaBits + bits % 2 ^ input.mantissaBits
+    let binaryExponent := Int.ofNat exponent - Int.ofNat input.bias -
+      Int.ofNat input.mantissaBits
+    roundPack output negative significand binaryExponent
+
 /-- Reduce each native single/double lane independently across L1BM words. -/
 def reduceLongFloatAdd (precision : NativeFloatPrecision)
     (values : List (BitVec 64)) : BitVec 64 :=
@@ -140,6 +151,48 @@ def reduceLongFloatAdd (precision : NativeFloatPrecision)
       (value.extractLsb' (lane * width) width).toNat
     reduceFloatAdd format format inputs * 2 ^ (lane * width)
   BitVec.ofNat 64 (laneValues.foldl (· + ·) 0)
+
+/-- Half alias path: widen each half lane to single, reduce in the single
+network, round each result to half, and pack four halves. The 16-MAB case
+first reduces each group of four to single precision. -/
+def reduceHalfAliasLongWord (fourMabs : Bool) (values : List (BitVec 64)) : BitVec 64 :=
+  let laneResults := (List.range 4).map fun lane =>
+    let halfInputs := values.map fun word =>
+      word.toNat / 2 ^ ((3 - lane) * 16) % 2 ^ 16
+    let singleInputs := halfInputs.map (extendFloatBits .half .single)
+    let result := if fourMabs then
+      reduceFloatAdd .single .half singleInputs
+    else
+      let stage := (List.range 4).map fun group =>
+        reduceFloatAdd .single .single ((singleInputs.drop (group * 4)).take 4)
+      reduceFloatAdd .single .half stage
+    result * 2 ^ (48 - lane * 16)
+  BitVec.ofNat 64 (laneResults.foldl (· + ·) 0)
+
+/-- Explicit output-rounding path for native single/double input. `values`
+contains each MAB's two source long words; `sourceTwoWords` determines whether
+the second word contributes. Missing output lanes are packed as zero, matching
+the emulator's zero-filled result bus. -/
+def reduceRoundedLongFloat (fourMabs sourceTwoWords : Bool)
+    (precision : NativeFloatPrecision)
+    (values : List (BitVec 64 × BitVec 64)) : BitVec 64 :=
+  let format := precision.format
+  let width := format.width
+  let lanesPerWord := 64 / width
+  let activeLanes := lanesPerWord * (if sourceTwoWords then 2 else 1)
+  let laneResults := (List.range 4).map fun lane =>
+    let inputs := if lane < activeLanes then
+      values.map fun words =>
+        let word := if lane < lanesPerWord then words.1 else words.2
+        (word.extractLsb' ((lanesPerWord - 1 - lane % lanesPerWord) * width) width).toNat
+    else []
+    let result := if fourMabs then reduceFloatAdd format .half inputs
+      else
+        let stage := (List.range 4).map fun group =>
+          reduceFloatAdd format format ((inputs.drop (group * 4)).take 4)
+        reduceFloatAdd format .half stage
+    result * 2 ^ (48 - lane * 16)
+  BitVec.ofNat 64 (laneResults.foldl (· + ·) 0)
 
 def signMagnitudeKey (value : BitVec width) : Int :=
   let signPlace := 2 ^ (width - 1)
@@ -239,5 +292,31 @@ theorem single_longword_rrn_reduces_each_lane :
     reduceLongFloatAdd .single
       [BitVec.ofNat 64 0x3f8000003f800000, BitVec.ofNat 64 0x4000000040000000] =
       BitVec.ofNat 64 0x4040000040400000 := by decide
+
+theorem half_one_extends_exactly_to_single_one :
+    extendFloatBits .half .single 0x3e00 = 0x3f800000 := by decide
+
+theorem negative_half_infinity_extends_with_sign :
+    extendFloatBits .half .single 0xfe00 = 0xff800000 := by decide
+
+theorem half_alias_four_mab_sum_rounds_and_packs :
+    reduceHalfAliasLongWord true
+      (List.replicate 4 (BitVec.ofNat 64 0x3e003e003e003e00)) =
+      BitVec.ofNat 64 0x4200420042004200 := by decide
+
+theorem half_alias_sixteen_mab_uses_two_stages :
+    reduceHalfAliasLongWord false
+      (List.replicate 16 (BitVec.ofNat 64 0x3e003e003e003e00)) =
+      BitVec.ofNat 64 0x4600460046004600 := by decide
+
+theorem half_alias_preserves_half_lane_order :
+    reduceHalfAliasLongWord true
+      (List.replicate 4 (BitVec.ofNat 64 0x3e00400041004200)) =
+      BitVec.ofNat 64 0x4200440045004600 := by decide
+
+theorem rounded_single_word_keeps_msb_lanes_first :
+    reduceRoundedLongFloat true false .single
+      [(BitVec.ofNat 64 0x3f80000040000000, 0)] =
+      BitVec.ofNat 64 0x3e00400000000000 := by decide
 
 end ProofsLean.MNCore.RRN

@@ -399,6 +399,95 @@ theorem reduceFloatL1Writes_contains_second_result (memoryBase : Fin l1bmLongWor
         (((List.finRange 16).filter fun mab =>
           !fourGroups || mab.val / 4 == g.val).map fun mab => inputs g p k mab)) hgroup
 
+/-- The `l1bmrh[f]add` alias path: read the MSB long word, extend its four
+half lanes to single, perform the RRN's four-by-four stages where required,
+round each lane back to half, and pack four halves into each L1BM word. -/
+def reduceHalfAliasL1Writes (memoryBase : Fin l1bmLongWords)
+    (fourGroups : Bool) (cycle : Fin 4)
+    (inputs : Fin 4 → Fin 4 → Fin 2 → Fin 16 → BitVec 64) : List L1Write :=
+  let results := fun group pe _part =>
+    RRN.reduceHalfAliasLongWord fourGroups <|
+      ((List.finRange 16).filter fun mab =>
+        !fourGroups || mab.val / 4 == group.val).map fun mab => inputs group pe 0 mab
+  reduceL1Writes memoryBase fourGroups true false cycle results
+
+theorem reduceHalfAliasL1Writes_count (memoryBase : Fin l1bmLongWords)
+    (fourGroups : Bool) (cycle : Fin 4)
+    (inputs : Fin 4 → Fin 4 → Fin 2 → Fin 16 → BitVec 64) :
+    (reduceHalfAliasL1Writes memoryBase fourGroups cycle inputs).length =
+      if fourGroups then 16 else 4 := by
+  simpa [reduceHalfAliasL1Writes, Nat.add_assoc] using
+    reduceL1Writes_count memoryBase fourGroups true false cycle
+      (fun group pe _part => RRN.reduceHalfAliasLongWord fourGroups
+        (((List.finRange 16).filter fun mab =>
+          !fourGroups || mab.val / 4 == group.val).map fun mab => inputs group pe 0 mab))
+
+theorem reduceHalfAliasL1Writes_contains_result (memoryBase : Fin l1bmLongWords)
+    (fourGroups : Bool) (cycle group pe : Fin 4)
+    (inputs : Fin 4 → Fin 4 → Fin 2 → Fin 16 → BitVec 64)
+    (hgroup : fourGroups = true ∨ group.val = 0) :
+    (addressAt memoryBase
+      (cycle.val * (if fourGroups then 16 else 4) + group.val * 4 + pe.val),
+      RRN.reduceHalfAliasLongWord fourGroups
+        (((List.finRange 16).filter fun mab =>
+          !fourGroups || mab.val / 4 == group.val).map fun mab => inputs group pe 0 mab)) ∈
+      reduceHalfAliasL1Writes memoryBase fourGroups cycle inputs := by
+  simpa [reduceHalfAliasL1Writes, Nat.add_assoc] using
+    reduceL1Writes_contains_first memoryBase fourGroups true false cycle group pe
+      (fun g p _part => RRN.reduceHalfAliasLongWord fourGroups
+        (((List.finRange 16).filter fun mab =>
+          !fourGroups || mab.val / 4 == g.val).map fun mab => inputs g p 0 mab)) hgroup
+
+/-- Explicit half-output rounding for native single/double `reduce` operations.
+The destination's two-word mode and the source operand width jointly decide
+whether the second source word participates, matching `pe_to_l1`. -/
+def reduceRoundedFloatL1Writes (memoryBase : Fin l1bmLongWords)
+    (fourGroups twoLongWords sourceTwoWords : Bool)
+    (precision : RRN.NativeFloatPrecision) (cycle : Fin 4)
+    (inputs : Fin 4 → Fin 4 → Fin 2 → Fin 16 → BitVec 64) : List L1Write :=
+  let inputTwoWords := twoLongWords || sourceTwoWords
+  let results := fun group pe _part =>
+    RRN.reduceRoundedLongFloat fourGroups inputTwoWords precision <|
+      ((List.finRange 16).filter fun mab =>
+        !fourGroups || mab.val / 4 == group.val).map fun mab =>
+          (inputs group pe 0 mab, inputs group pe 1 mab)
+  reduceL1Writes memoryBase fourGroups true twoLongWords cycle results
+
+theorem reduceRoundedFloatL1Writes_count (memoryBase : Fin l1bmLongWords)
+    (fourGroups twoLongWords sourceTwoWords : Bool)
+    (precision : RRN.NativeFloatPrecision) (cycle : Fin 4)
+    (inputs : Fin 4 → Fin 4 → Fin 2 → Fin 16 → BitVec 64) :
+    (reduceRoundedFloatL1Writes memoryBase fourGroups twoLongWords sourceTwoWords
+      precision cycle inputs).length = if fourGroups then 16 else 4 := by
+  simpa [reduceRoundedFloatL1Writes] using
+    reduceL1Writes_count memoryBase fourGroups true twoLongWords cycle
+      (fun group pe _part => RRN.reduceRoundedLongFloat fourGroups
+        (twoLongWords || sourceTwoWords) precision <|
+        ((List.finRange 16).filter fun mab =>
+          !fourGroups || mab.val / 4 == group.val).map fun mab =>
+            (inputs group pe 0 mab, inputs group pe 1 mab))
+
+theorem reduceRoundedFloatL1Writes_contains_result (memoryBase : Fin l1bmLongWords)
+    (fourGroups twoLongWords sourceTwoWords : Bool)
+    (precision : RRN.NativeFloatPrecision) (cycle group pe : Fin 4)
+    (inputs : Fin 4 → Fin 4 → Fin 2 → Fin 16 → BitVec 64)
+    (hgroup : fourGroups = true ∨ group.val = 0) :
+    (addressAt memoryBase
+      (cycle.val * (if fourGroups then 16 else 4) + group.val * 4 + pe.val),
+      RRN.reduceRoundedLongFloat fourGroups (twoLongWords || sourceTwoWords) precision <|
+        ((List.finRange 16).filter fun mab =>
+          !fourGroups || mab.val / 4 == group.val).map fun mab =>
+            (inputs group pe 0 mab, inputs group pe 1 mab)) ∈
+      reduceRoundedFloatL1Writes memoryBase fourGroups twoLongWords sourceTwoWords
+        precision cycle inputs := by
+  simpa [reduceRoundedFloatL1Writes, Nat.add_assoc] using
+    reduceL1Writes_contains_first memoryBase fourGroups true twoLongWords cycle group pe
+      (fun g p _part => RRN.reduceRoundedLongFloat fourGroups
+        (twoLongWords || sourceTwoWords) precision <|
+        ((List.finRange 16).filter fun mab =>
+          !fourGroups || mab.val / 4 == g.val).map fun mab =>
+            (inputs g p 0 mab, inputs g p 1 mab)) hgroup
+
 theorem mwriteWrites_count (memoryBase : Fin l1bmLongWords)
     (twoLongWords : Bool) (cycle : Fin 4) (buses : Fin 4 → Bus) :
     (mwriteWrites memoryBase twoLongWords cycle buses).length =
