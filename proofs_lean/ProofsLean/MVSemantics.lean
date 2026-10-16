@@ -261,9 +261,81 @@ theorem bDramCopyPlan_length (source destination : ParsedMvOperand)
     (bDramCopyPlan source destination count).length = count * 8 := by
   exact bBroadcastCopies_length _ _ _ _
 
+def indexedCopiesAux (sourceAt destinationAt : Nat → Cell) : Nat → Nat → List CopyPair
+  | _, 0 => []
+  | position, count + 1 =>
+      (sourceAt position, destinationAt position) ::
+        indexedCopiesAux sourceAt destinationAt (position + 1) count
+
+def indexedCopies (sourceAt destinationAt : Nat → Cell) (count : Nat) : List CopyPair :=
+  indexedCopiesAux sourceAt destinationAt 0 count
+
+theorem indexedCopiesAux_length (sourceAt destinationAt : Nat → Cell)
+    (position count : Nat) :
+    (indexedCopiesAux sourceAt destinationAt position count).length = count := by
+  induction count generalizing position with
+  | zero => simp [indexedCopiesAux]
+  | succ count ih => simp [indexedCopiesAux, ih]
+
+theorem indexedCopies_length (sourceAt destinationAt : Nat → Cell) (count : Nat) :
+    (indexedCopies sourceAt destinationAt count).length = count := by
+  exact indexedCopiesAux_length sourceAt destinationAt 0 count
+
+def dPdmDramCopyPlan (source destination : ParsedMvOperand)
+    (sourceGroup : Fin 4) (count : Nat) : List CopyPair :=
+  indexedCopies
+    (fun position => cellFor source sourceGroup 0 position)
+    (fun position => cellFor destination (bDramSourceGroup position) 0
+      (bDramSourceOffset position)) count
+
+def dDramPdmCopyPlan (source destination : ParsedMvOperand)
+    (destinationGroup : Fin 4) (count : Nat) : List CopyPair :=
+  indexedCopies
+    (fun position => cellFor source (bDramSourceGroup position) 0
+      (bDramSourceOffset position))
+    (fun position => cellFor destination destinationGroup 0 position) count
+
+theorem dPdmDramCopyPlan_length (source destination : ParsedMvOperand)
+    (sourceGroup : Fin 4) (count : Nat) :
+    (dPdmDramCopyPlan source destination sourceGroup count).length = count := by
+  exact indexedCopies_length _ _ _
+
+theorem dDramPdmCopyPlan_length (source destination : ParsedMvOperand)
+    (destinationGroup : Fin 4) (count : Nat) :
+    (dDramPdmCopyPlan source destination destinationGroup count).length = count := by
+  exact indexedCopies_length _ _ _
+
+theorem dPdmDramCoordinates_flatten (block : Nat) (group : Fin 4)
+    (word : Fin 16) :
+    bDramSourceGroup (64 * block + 16 * group.val + word.val) = group ∧
+    bDramSourceOffset (64 * block + 16 * group.val + word.val) =
+      16 * block + word.val := by
+  exact bDramSourceCoordinate_flatten block group word
+
 def mvFirstOperandGroup? (operand : ParsedMvOperand) : Option (Fin 4) := do
   let groups ← mvOperandGroups? operand
   groups.head?
+
+def parsedMvDPlan? (transfer : ParsedMv) : Option (List CopyPair) := do
+  if transfer.kind != .distribute then none else
+  match transfer.source, transfer.destination with
+  | none, _ | _, none => pure []
+  | some source, some destination => do
+      if (match source with | .dram _ _ indirect => indirect | _ => false) ||
+          (match destination with | .dram _ _ indirect => indirect | _ => false) then none else
+      let count := (transfer.size.val / 64) * 64
+      match source, destination with
+      | .pdm _ _, .dram _ _ false => do
+          let sourceGroup ← mvFirstOperandGroup? source
+          pure (dPdmDramCopyPlan source destination sourceGroup count)
+      | .dram _ _ false, .pdm _ _ => do
+          let destinationGroup ← mvFirstOperandGroup? destination
+          pure (dDramPdmCopyPlan source destination destinationGroup count)
+      | _, _ => none
+
+def executeParsedMvD? (memory : Memory) (transfer : ParsedMv) : Option Memory := do
+  let plan ← parsedMvDPlan? transfer
+  pure (executeCopies memory plan)
 
 def parsedMvBPlan? (transfer : ParsedMv) : Option (List CopyPair) := do
   if transfer.kind != .broadcast then none else
@@ -495,6 +567,15 @@ theorem executeParsedMvB4_read (memory : Memory) (transfer : ParsedMv)
         | some source => memory source
         | none => memory cell) := by
   simp [executeParsedMvB4?, hplan, executeCopies_read]
+
+theorem executeParsedMvD_read (memory : Memory) (transfer : ParsedMv)
+    (plan : List CopyPair) (cell : Cell)
+    (hplan : parsedMvDPlan? transfer = some plan) :
+    (executeParsedMvD? memory transfer).map (fun result => result cell) =
+      some (match finalSource plan cell with
+        | some source => memory source
+        | none => memory cell) := by
+  simp [executeParsedMvD?, hplan, executeCopies_read]
 
 /-- An overlapping left-to-right copy reads every source from the old state:
 writing cell 1 cannot change the value subsequently copied from cell 1 to cell 2. -/

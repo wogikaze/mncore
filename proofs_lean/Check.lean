@@ -379,3 +379,9 @@ run_cmd do
 #print axioms ProofsLean.MNCore.MVSemantics.b4DramCopyPlan_length
 #print axioms ProofsLean.MNCore.MVSemantics.b4MvWriteCount
 #print axioms ProofsLean.MNCore.MVSemantics.executeParsedMvB4_read
+#print axioms ProofsLean.MNCore.MVSemantics.indexedCopiesAux_length
+#print axioms ProofsLean.MNCore.MVSemantics.indexedCopies_length
+#print axioms ProofsLean.MNCore.MVSemantics.dPdmDramCopyPlan_length
+#print axioms ProofsLean.MNCore.MVSemantics.dDramPdmCopyPlan_length
+#print axioms ProofsLean.MNCore.MVSemantics.dPdmDramCoordinates_flatten
+#print axioms ProofsLean.MNCore.MVSemantics.executeParsedMvD_read
