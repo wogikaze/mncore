@@ -26,6 +26,40 @@ theorem InstructionLine.costBelowEnvelope_finite (bound : Nat) :
         (fun line : {line : InstructionLine // line.inFiniteEnvelope bound} => line.1)
         equal)
 
+/-- A concrete finite alphabet for one cost bound, obtained from the
+Mathlib `Fintype` of the bounded-envelope subtype. The list can be enormous;
+this definition is for completeness proofs and does not claim enumeration is
+computationally practical. -/
+noncomputable def InstructionLine.costBelowEnvelopeAlphabet (bound : Nat) :
+    List InstructionLine := by
+  let Carrier := {line : InstructionLine //
+    InstructionLine.cost line < bound ∧ line.inFiniteEnvelope bound}
+  letI : Finite Carrier := InstructionLine.costBelowEnvelope_finite bound
+  letI : Fintype Carrier := Fintype.ofFinite _
+  exact (Finset.univ.image fun candidate : Carrier => candidate.1).toList
+
+theorem InstructionLine.mem_costBelowEnvelopeAlphabet (bound : Nat)
+    (line : InstructionLine) (cost : InstructionLine.cost line < bound)
+    (envelope : line.inFiniteEnvelope bound) :
+    line ∈ InstructionLine.costBelowEnvelopeAlphabet bound := by
+  classical
+  simp only [InstructionLine.costBelowEnvelopeAlphabet,
+    Finset.mem_toList, Finset.mem_image, Finset.mem_univ, true_and]
+  exact ⟨⟨line, cost, envelope⟩, rfl⟩
+
+/-- If the supplied legal-line obligation places every bounded legal line in
+the proved payload envelope, the explicit Fintype alphabet covers them all. -/
+theorem InstructionLine.legalCostBelowEnvelope_covered
+    (bound : Nat)
+    (legal : InstructionLine → Prop)
+    (covered : ∀ line, legal line → InstructionLine.cost line < bound →
+      line.inFiniteEnvelope bound) :
+    ∀ line, legal line → InstructionLine.cost line < bound →
+      line ∈ InstructionLine.costBelowEnvelopeAlphabet bound := by
+  intro line isLegal cost
+  exact InstructionLine.mem_costBelowEnvelopeAlphabet bound line cost
+    (covered line isLegal cost)
+
 /-- If every legal line below the score bound satisfies the payload envelope,
 then the legal, cost-bounded lines have a finite carrier. This is the remaining
 linewise inclusion obligation needed by the machine-specific enumeration. -/
