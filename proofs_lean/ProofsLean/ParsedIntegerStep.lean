@@ -281,13 +281,14 @@ theorem integerFlagsVector_bit3 (output : IntegerALU.BusResult) :
 
 def parsedIntegerMaskRegisterStep (files : IntegerRegisterFiles)
     (sourceX sourceY : DirectMemoryAccess) (entry : Fin 15) (cycle : Fin 4)
-    (op : ParsedOp) (reduced : Bool) : ProofsLean.StepResult IntegerRegisterFiles :=
+    (selection : BitVec 4) (op : ParsedOp) (reduced : Bool) :
+    ProofsLean.StepResult IntegerRegisterFiles :=
   match evaluateParsedIntegerAlu op
       (pack (readDirectAccess files sourceX))
       (pack (readDirectAccess files sourceY)) reduced with
   | .ok output => .ok { files with maskRegisters :=
       (ProofsLean.MNCore.Masks.writeRegister files.maskRegisters entry cycle
-        (integerFlagsVector output) (BitVec.allOnes 4)) }
+        (integerFlagsVector output) selection) }
   | .failure => .failure
   | .unknown => .unknown
 
@@ -331,11 +332,20 @@ example : (parsedIntegerMaskExprAccesses?
 
 def executeParsedIntegerMaskExpr? (files : IntegerRegisterFiles)
     (expression : ParsedExpr) (pe cycle : Fin 4) (bar0 bar1 : BitVec 12)
-    (tWord : BitVec 32) : Option (ProofsLean.StepResult IntegerRegisterFiles) :=
+    (tWord : BitVec 32) (selection : BitVec 4) :
+    Option (ProofsLean.StepResult IntegerRegisterFiles) :=
   match parsedIntegerMaskExprAccesses? expression pe cycle bar0 bar1 tWord with
   | some accesses => some (parsedIntegerMaskRegisterStep files accesses.sourceX
-      accesses.sourceY accesses.destination cycle accesses.op false)
+      accesses.sourceY accesses.destination cycle selection accesses.op false)
   | none => none
+
+theorem mask_read_after_selected_write (registers : ProofsLean.MNCore.Masks.RegisterFile)
+    (entry : Fin 15) (cycle : Fin 4) (flags selection : BitVec 4) :
+    ProofsLean.MNCore.Masks.readEntry
+      (ProofsLean.MNCore.Masks.writeRegister registers entry cycle flags selection)
+      ⟨entry.val + 1, by have := entry.isLt; omega⟩ cycle = flags &&& selection := by
+  simp [ProofsLean.MNCore.Masks.readEntry, ProofsLean.MNCore.Masks.writeRegister,
+    show entry.val + 1 < 16 by have := entry.isLt; omega]
 
 theorem mask_read_after_writeRegister (registers : ProofsLean.MNCore.Masks.RegisterFile)
     (entry : Fin 15) (cycle : Fin 4) (flags : BitVec 4) :
@@ -349,25 +359,26 @@ theorem mask_read_after_writeRegister (registers : ProofsLean.MNCore.Masks.Regis
 
 theorem parsedIntegerMaskStep_readback (files : IntegerRegisterFiles)
     (sourceX sourceY : DirectMemoryAccess) (entry : Fin 15) (cycle : Fin 4)
-    (op : ParsedOp) (precision : IntegerALU.Precision) (aluOp : IntegerALU.Op)
+    (selection : BitVec 4) (op : ParsedOp)
+    (precision : IntegerALU.Precision) (aluOp : IntegerALU.Op)
     (selected : op.integerRequest = .ok (.integer precision aluOp))
     (reduced : Bool) :
     ∃ nextFiles,
-      parsedIntegerMaskRegisterStep files sourceX sourceY entry cycle op reduced =
+      parsedIntegerMaskRegisterStep files sourceX sourceY entry cycle selection op reduced =
         .ok nextFiles ∧
       ProofsLean.MNCore.Masks.readEntry nextFiles.maskRegisters
         ⟨entry.val + 1, by have := entry.isLt; omega⟩ cycle =
         integerFlagsVector (parsedIntegerRegisterOutput files sourceX sourceY
-          precision aluOp reduced) := by
+          precision aluOp reduced) &&& selection := by
   let output := parsedIntegerRegisterOutput files sourceX sourceY precision aluOp reduced
   refine ⟨{ files with maskRegisters :=
       (ProofsLean.MNCore.Masks.writeRegister files.maskRegisters entry cycle
-        (integerFlagsVector output) (BitVec.allOnes 4)) }, ?_, ?_⟩
+        (integerFlagsVector output) selection) }, ?_, ?_⟩
   · simp [parsedIntegerMaskRegisterStep, evaluateParsedIntegerAlu, selected,
       output, IntegerALU.partialEvaluate]
     rfl
-  · exact mask_read_after_writeRegister files.maskRegisters entry cycle
-      (integerFlagsVector output)
+  · exact mask_read_after_selected_write files.maskRegisters entry cycle
+      (integerFlagsVector output) selection
 
 theorem parsed_iinc_output_eq_incrementPair (files : IntegerRegisterFiles)
     (address : Fin Bank.lm0.capacity) :
@@ -456,29 +467,30 @@ theorem executeParsedIntegerExpr_readback (files : IntegerRegisterFiles)
 
 theorem executeParsedIntegerMaskExpr_readback (files : IntegerRegisterFiles)
     (expression : ParsedExpr) (pe cycle : Fin 4) (bar0 bar1 : BitVec 12)
-    (tWord : BitVec 32) (accesses : ParsedIntegerMaskAccesses)
+    (tWord : BitVec 32) (selection : BitVec 4)
+    (accesses : ParsedIntegerMaskAccesses)
     (lowered : parsedIntegerMaskExprAccesses? expression pe cycle bar0 bar1 tWord =
       some accesses) :
     ∃ precision aluOp nextFiles,
       accesses.op.integerRequest = .ok (.integer precision aluOp) ∧
-      executeParsedIntegerMaskExpr? files expression pe cycle bar0 bar1 tWord =
+      executeParsedIntegerMaskExpr? files expression pe cycle bar0 bar1 tWord selection =
         some (.ok nextFiles) ∧
       ProofsLean.MNCore.Masks.readEntry nextFiles.maskRegisters
         ⟨accesses.destination.val + 1, by have := accesses.destination.isLt; omega⟩ cycle =
         integerFlagsVector (parsedIntegerRegisterOutput files accesses.sourceX
-          accesses.sourceY precision aluOp false) := by
+          accesses.sourceY precision aluOp false) &&& selection := by
   rcases accesses.hasIntegerRequest with ⟨precision, aluOp, selected⟩
   let output := parsedIntegerRegisterOutput files accesses.sourceX accesses.sourceY
     precision aluOp false
   refine ⟨precision, aluOp,
     { files with maskRegisters :=
       (ProofsLean.MNCore.Masks.writeRegister files.maskRegisters accesses.destination cycle
-        (integerFlagsVector output) (BitVec.allOnes 4)) }, selected, ?_, ?_⟩
+        (integerFlagsVector output) selection) }, selected, ?_, ?_⟩
   · simp [executeParsedIntegerMaskExpr?, lowered, parsedIntegerMaskRegisterStep,
       evaluateParsedIntegerAlu, selected, output, IntegerALU.partialEvaluate]
     rfl
-  · exact mask_read_after_writeRegister files.maskRegisters accesses.destination cycle
-      (integerFlagsVector output)
+  · exact mask_read_after_selected_write files.maskRegisters accesses.destination cycle
+      (integerFlagsVector output) selection
 
 
 end ProofsLean.MNCore.PEMemory

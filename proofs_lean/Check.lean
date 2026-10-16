@@ -52,6 +52,7 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.integerFlagsVector_bit2
 #print axioms ProofsLean.MNCore.PEMemory.integerFlagsVector_bit3
 #print axioms ProofsLean.MNCore.PEMemory.mask_read_after_writeRegister
+#print axioms ProofsLean.MNCore.PEMemory.mask_read_after_selected_write
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerMaskStep_readback
 #print axioms ProofsLean.MNCore.PEMemory.executeParsedIntegerMaskExpr_readback
 #print axioms ProofsLean.MNCore.Issue.parsed_topline_check_sound
