@@ -514,11 +514,26 @@ theorem parsed_check_complete (expressions : List ParsedExpr)
 
 /-- Line constructors corresponding to the categories in the VSM parser's
 top-level `Line` enum. Only `pe` lines enter the PE issue checker. -/
+structure ParsedMaskTargets where
+  grf0 : Bool := false
+  grf1 : Bool := false
+  t : Bool := false
+  lm0 : Bool := false
+  lm1 : Bool := false
+  maskRegister : Bool := false
+  deriving DecidableEq, Repr
+
+structure ParsedMaskDirective where
+  widthWords : Nat := 2
+  targets : ParsedMaskTargets := {}
+  entry : Nat := 0
+  deriving DecidableEq, Repr
+
 inductive ParsedLine where
   | pe (expressions : List ParsedExpr)
   | nop (count : Nat) (wait : Option Nat)
   | mv
-  | maskDirective
+  | maskDirective (widthWords : Nat) (targets : ParsedMaskTargets) (entry : Nat)
   | debugSet
   | debugGet
   | dramSet
@@ -526,23 +541,39 @@ inductive ParsedLine where
 
 def ParsedLine.issueLegal : ParsedLine → Prop
   | .pe expressions => LegalParsedLine expressions
-  | .nop _ _ | .mv | .maskDirective | .debugSet | .debugGet | .dramSet => True
+  | .nop _ _ | .mv | .maskDirective _ _ _ | .debugSet | .debugGet | .dramSet => True
 
 noncomputable def checkParsedTopLine : ParsedLine → Bool
   | .pe expressions => checkParsedLine expressions
-  | .nop _ _ | .mv | .maskDirective | .debugSet | .debugGet | .dramSet => true
+  | .nop _ _ | .mv | .maskDirective _ _ _ | .debugSet | .debugGet | .dramSet => true
 
 theorem parsed_topline_check_sound (line : ParsedLine)
     (accepted : checkParsedTopLine line = true) : line.issueLegal := by
   cases line with
   | pe expressions => exact parsed_check_sound expressions accepted
-  | nop _ _ | mv | maskDirective | debugSet | debugGet | dramSet => trivial
+  | nop _ _ | mv | maskDirective _ _ _ | debugSet | debugGet | dramSet => trivial
 
 theorem parsed_topline_check_complete (line : ParsedLine) (legal : line.issueLegal) :
     checkParsedTopLine line = true := by
   cases line with
   | pe expressions => exact parsed_check_complete expressions legal
-  | nop _ _ | mv | maskDirective | debugSet | debugGet | dramSet => rfl
+  | nop _ _ | mv | maskDirective _ _ _ | debugSet | debugGet | dramSet => rfl
+
+/-- Non-directive source lines retain mask state; directive lines replace it,
+matching `Sim::exec`'s zero-cost state update. -/
+def ParsedLine.updateMaskState (line : ParsedLine) (state : ParsedMaskDirective) :
+    ParsedMaskDirective :=
+  match line with
+  | .maskDirective widthWords targets entry => ⟨widthWords, targets, entry⟩
+  | _ => state
+
+theorem mask_directive_replaces_state (widthWords : Nat) (targets : ParsedMaskTargets)
+    (entry : Nat) (state : ParsedMaskDirective) :
+    ParsedLine.updateMaskState (.maskDirective widthWords targets entry) state =
+      ⟨widthWords, targets, entry⟩ := rfl
+
+theorem ordinary_line_preserves_mask_state (state : ParsedMaskDirective) :
+    ParsedLine.updateMaskState (.nop 1 none) state = state := rfl
 
 def plusOneRead : ParsedOperand :=
   .mem ⟨.lm0, ⟨2, 0, 0, 0, 0, false, none⟩⟩ false false false none

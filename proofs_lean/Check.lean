@@ -57,6 +57,8 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.executeParsedIntegerMaskExpr_readback
 #print axioms ProofsLean.MNCore.Issue.parsed_topline_check_sound
 #print axioms ProofsLean.MNCore.Issue.parsed_topline_check_complete
+#print axioms ProofsLean.MNCore.Issue.mask_directive_replaces_state
+#print axioms ProofsLean.MNCore.Issue.ordinary_line_preserves_mask_state
 #print axioms ProofsLean.ControlNormalization.compile_length
 #print axioms ProofsLean.ControlNormalization.run_compiles
 #print axioms ProofsLean.ControlNormalization.source_execution

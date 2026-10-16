@@ -89,7 +89,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   longアクセスへloweringされ、そのALU出力が既存の2語iincモデルと一致することも証明した。
   OMR宛先についても、1〜15番のlowering、ALUフラグの4ビット順序、サイクル別マスク状態更新を接続した。
   OMR書き込みは明示的なpattern/IMR選択をマスクレジスタ状態から解決し、選択後のフラグを読み戻す。
-  multiline directiveの対象選択と行間状態遷移は依然として呼び出し側の入力。
+  multiline directiveの対象・entry・幅をParsedLineに保持し、mask stateの置換と通常行での保持を証明した。
+  OMR対象directiveから選択フラグを解決する。Rust parserがこのParsedLineを生成する対応と、
+  ソース全体を通したdirective適用は未接続。
   符号反転・精度拡張・丸め・マスク付き入力、非PEメモリはlowering対象外。
 - `Issue.lean`: PE式の同時発行判定について、グループ重複、MAU組み合わせ、
   行列レジスタ使用、PEメモリの読み書きポート、即値とLM0、zero-flush重複を

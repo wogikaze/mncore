@@ -111,12 +111,33 @@ def resolveParsedMaskFlags? (mask : ParsedMask)
           ⟨index % 32, by omega⟩ cycle)
       else none
 
+/-- OMR flag selection is independent of the directive's word width. -/
+def resolveOmrDirectiveSelection? (directive : ParsedMaskDirective)
+    (registers : ProofsLean.MNCore.Masks.RegisterFile) (cycle : Fin 4) :
+    Option (BitVec 4) :=
+  if directive.targets.maskRegister && directive.entry != 0 then
+    resolveParsedMaskFlags? (.entry (directive.widthWords == 4) directive.entry)
+      registers cycle
+  else none
+
+example (registers : ProofsLean.MNCore.Masks.RegisterFile) (cycle : Fin 4) :
+    resolveOmrDirectiveSelection?
+      { targets := { maskRegister := true }, entry := 1 } registers cycle =
+      some (registers 0 cycle) := by
+  simp [resolveOmrDirectiveSelection?, resolveParsedMaskFlags?,
+    ProofsLean.MNCore.Masks.readEntry]
+
+example (registers : ProofsLean.MNCore.Masks.RegisterFile) (cycle : Fin 4) :
+    resolveOmrDirectiveSelection? {} registers cycle = none := by
+  simp [resolveOmrDirectiveSelection?]
+
 def ParsedOperand.resolveOmrWriteSelection? (operand : ParsedOperand)
     (registers : ProofsLean.MNCore.Masks.RegisterFile) (cycle : Fin 4)
-    (directive : Option (BitVec 4)) : Option (BitVec 4) :=
+    (directive : ParsedMaskDirective) : Option (BitVec 4) :=
   match operand with
   | .omr _ (some mask) => resolveParsedMaskFlags? mask registers cycle
-  | .omr _ none => some (directive.getD (BitVec.allOnes 4))
+  | .omr _ none => some ((resolveOmrDirectiveSelection? directive registers cycle).getD
+    (BitVec.allOnes 4))
   | _ => none
 
 example (registers : ProofsLean.MNCore.Masks.RegisterFile) :
@@ -324,7 +345,7 @@ def parsedIntegerMaskRegisterStep (files : IntegerRegisterFiles)
 
 def parsedIntegerMaskExprAccesses? (expression : ParsedExpr)
     (registers : ProofsLean.MNCore.Masks.RegisterFile)
-    (directive : Option (BitVec 4))
+    (directive : ParsedMaskDirective)
     (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
     Option ParsedIntegerMaskAccesses :=
   match expression.op with
@@ -359,7 +380,7 @@ example : (parsedIntegerMaskExprAccesses?
     ({ op := .alu .inc (some .i) false none,
        sources := [.mem ⟨.lm0, ⟨2, 0, 0, 0, 0, false, none⟩⟩ false false false none],
        destinations := [.omr 1 none], flush := none, text := "iinc $lm0v $omr1" } : ParsedExpr)
-    (fun _ _ => 0) none
+    (fun _ _ => 0) {}
     0 0 0 0 0).map ParsedIntegerMaskAccesses.locations =
       some (⟨.lm0, .long, ⟨0, by decide⟩⟩,
         ⟨.lm0, .long, ⟨0, by decide⟩⟩, 0) := by decide
@@ -368,12 +389,12 @@ example : (parsedIntegerMaskExprAccesses?
     ({ op := .alu .inc (some .i) false none,
        sources := [.mem ⟨.lm0, ⟨2, 0, 0, 0, 0, false, none⟩⟩ false false false none],
        destinations := [.omr 1 none], flush := none, text := "iinc $lm0v $omr1" } : ParsedExpr)
-    (fun _ _ => 0) none 0 0 0 0 0).map ParsedIntegerMaskAccesses.selection =
+    (fun _ _ => 0) {} 0 0 0 0 0).map ParsedIntegerMaskAccesses.selection =
       some (BitVec.allOnes 4) := by decide
 
 def executeParsedIntegerMaskExpr? (files : IntegerRegisterFiles)
     (expression : ParsedExpr) (pe cycle : Fin 4) (bar0 bar1 : BitVec 12)
-    (tWord : BitVec 32) (directive : Option (BitVec 4)) :
+    (tWord : BitVec 32) (directive : ParsedMaskDirective) :
     Option (ProofsLean.StepResult IntegerRegisterFiles) :=
   match parsedIntegerMaskExprAccesses? expression files.maskRegisters directive
       pe cycle bar0 bar1 tWord with
@@ -509,7 +530,7 @@ theorem executeParsedIntegerExpr_readback (files : IntegerRegisterFiles)
 
 theorem executeParsedIntegerMaskExpr_readback (files : IntegerRegisterFiles)
     (expression : ParsedExpr) (pe cycle : Fin 4) (bar0 bar1 : BitVec 12)
-    (tWord : BitVec 32) (directive : Option (BitVec 4))
+    (tWord : BitVec 32) (directive : ParsedMaskDirective)
     (accesses : ParsedIntegerMaskAccesses)
     (lowered : parsedIntegerMaskExprAccesses? expression files.maskRegisters directive
       pe cycle bar0 bar1 tWord =
