@@ -25,7 +25,7 @@
     },
     {
       "path": "proofs_lean/scripts/check_isa_parser_bounds.py",
-      "sha256": "85198aaacdde44b6cc712248ff88f2509a03ae5c5e73168e5a6c15506e66b65f"
+      "sha256": "d27db6b6d270378c1e43bab8bc115168a2394b4b8ba52313f9f3c7797e9b6f83"
     }
   ],
   "observations": [
@@ -139,6 +139,54 @@
       "accepted": true,
       "assembler_output_lines": 1,
       "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "zero_multi_output_all_six_categories",
+      "source": "zero $lm0 $ln0 $lr0 $ls0 $t $omr1",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "zero_duplicate_lm0_output",
+      "source": "zero $lm0 $lm2",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "LM0 used twice as output.",
+      "matches_expected": true
+    },
+    {
+      "case": "zero_duplicate_lm1_output",
+      "source": "zero $ln0 $ln2",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "LM1 used twice as output.",
+      "matches_expected": true
+    },
+    {
+      "case": "zero_duplicate_grf0_output",
+      "source": "zero $lr0 $lr2",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "GRF0 used twice as output.",
+      "matches_expected": true
+    },
+    {
+      "case": "zero_duplicate_grf1_output",
+      "source": "zero $ls0 $ls2",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "GRF1 used twice as output.",
+      "matches_expected": true
+    },
+    {
+      "case": "zero_duplicate_t_output",
+      "source": "zero $t $t",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "T register used twice as output.",
       "matches_expected": true
     },
     {
@@ -8593,6 +8641,7 @@
     "DAR address 1023 is accepted and 1024 is rejected; `$lc...@.<l2b>` accepts selectors 0 and 1 and rejects 2.",
     "For l1bmd, every explicit signed offset from -255 through +255 was accepted, while -256 and +256 were rejected. The manual documents useful offsets 0..15. The Rust visualizer's i8 parser is narrower and cannot parse accepted values 128..255; Rust is not used as range evidence. These assembler probes still do not prove global parser completeness.",
     "The assembler accepts d set, d get and r input records, but the challenge judge's default solution sanitizer retains only j/m instruction rows; these records are filtered before execution. The scored program therefore excludes debug and DRAM initialization records.",
+    "A zero instruction with one destination in each of LM0, LM1, GRF0, GRF1, T and OMR is accepted; duplicate destinations within each of those six categories are rejected. This bounds observed destination categories for these probes, but Rust's VSM parser itself still stores all tokens after the fixed source prefix as destinations, and the assembler probes are not a universal parser-to-encoding theorem.",
     "Judge flags can preserve d get/d set, but the normal challenge invocation does not set them; the d-set invalidation applies only when such a record is retained."
   ],
   "submission_normalization": {

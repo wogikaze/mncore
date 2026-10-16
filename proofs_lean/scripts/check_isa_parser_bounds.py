@@ -30,6 +30,13 @@ CASES = {
         "lpassa $lm0 $ln0 $ln2\n", False, None),
     "zero_multi_output_four_memories_and_omr": (
         "zero $lm0 $ln0 $lr0 $ls0 $omr1\n", True, 1),
+    "zero_multi_output_all_six_categories": (
+        "zero $lm0 $ln0 $lr0 $ls0 $t $omr1\n", True, 1),
+    "zero_duplicate_lm0_output": ("zero $lm0 $lm2\n", False, None),
+    "zero_duplicate_lm1_output": ("zero $ln0 $ln2\n", False, None),
+    "zero_duplicate_grf0_output": ("zero $lr0 $lr2\n", False, None),
+    "zero_duplicate_grf1_output": ("zero $ls0 $ls2\n", False, None),
+    "zero_duplicate_t_output": ("zero $t $t\n", False, None),
     "zero_duplicate_mask_output": (
         "zero $omr1 $omr2\n", False, None),
     "zero_nowrite_with_other_output": (
@@ -204,6 +211,7 @@ def main() -> None:
             "DAR address 1023 is accepted and 1024 is rejected; `$lc...@.<l2b>` accepts selectors 0 and 1 and rejects 2.",
             "For l1bmd, every explicit signed offset from -255 through +255 was accepted, while -256 and +256 were rejected. The manual documents useful offsets 0..15. The Rust visualizer's i8 parser is narrower and cannot parse accepted values 128..255; Rust is not used as range evidence. These assembler probes still do not prove global parser completeness.",
             "The assembler accepts d set, d get and r input records, but the challenge judge's default solution sanitizer retains only j/m instruction rows; these records are filtered before execution. The scored program therefore excludes debug and DRAM initialization records.",
+            "A zero instruction with one destination in each of LM0, LM1, GRF0, GRF1, T and OMR is accepted; duplicate destinations within each of those six categories are rejected. This bounds observed destination categories for these probes, but Rust's VSM parser itself still stores all tokens after the fixed source prefix as destinations, and the assembler probes are not a universal parser-to-encoding theorem.",
             "Judge flags can preserve d get/d set, but the normal challenge invocation does not set them; the d-set invalidation applies only when such a record is retained."
         ],
         "submission_normalization": {
