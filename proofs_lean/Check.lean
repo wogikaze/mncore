@@ -43,6 +43,7 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.pack_unpackALUBus
 #print axioms ProofsLean.MNCore.PEMemory.readRegisterBank_after_write
 #print axioms ProofsLean.MNCore.PEMemory.readDirectAccessMasked_after_write
+#print axioms ProofsLean.MNCore.PEMemory.parsedIntegerMaskedRegisterStep_success
 #print axioms ProofsLean.MNCore.PEMemory.direct_access_write_readback
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerRegisterStep_succeeds
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerRegisterStep_readback

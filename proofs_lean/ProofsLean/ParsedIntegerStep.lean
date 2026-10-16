@@ -500,6 +500,13 @@ theorem readDirectAccessMasked_after_write (files : IntegerRegisterFiles)
         simp [readWords, within]
 
 
+def parsedOutputAfterFlush (selection : Option PEWordSelection)
+    (output : IntegerALU.Bus) : IntegerALU.Bus :=
+  match selection with
+  | none => output
+  | some selected => ProofsLean.MNCore.Masks.flushBus
+      (if selected.longLong then .double else .long) selected.flags output
+
 def parsedIntegerMaskedRegisterStep (files : IntegerRegisterFiles)
     (accesses : ParsedMaskedIntegerAccesses) (reduced : Bool) :
     ProofsLean.StepResult IntegerRegisterFiles :=
@@ -507,15 +514,23 @@ def parsedIntegerMaskedRegisterStep (files : IntegerRegisterFiles)
   let y := pack (readDirectAccess files accesses.sourceY)
   match evaluateParsedIntegerAlu accesses.op x y reduced with
   | .ok output =>
-      let outputValue := match accesses.flushSelection with
-        | none => output.value
-        | some selection => ProofsLean.MNCore.Masks.flushBus
-            (if selection.longLong then .double else .long)
-            selection.flags output.value
       .ok (writeDirectAccessMasked files accesses.destination
-        (unpackALUBus outputValue) accesses.writeSelection)
+        (unpackALUBus (parsedOutputAfterFlush accesses.flushSelection output.value))
+        accesses.writeSelection)
   | .failure => .failure
   | .unknown => .unknown
+
+theorem parsedIntegerMaskedRegisterStep_success (files : IntegerRegisterFiles)
+    (accesses : ParsedMaskedIntegerAccesses) (reduced : Bool)
+    (output : IntegerALU.BusResult)
+    (evaluated : evaluateParsedIntegerAlu accesses.op
+      (pack (readDirectAccess files accesses.sourceX))
+      (pack (readDirectAccess files accesses.sourceY)) reduced = .ok output) :
+    parsedIntegerMaskedRegisterStep files accesses reduced =
+      .ok (writeDirectAccessMasked files accesses.destination
+        (unpackALUBus (parsedOutputAfterFlush accesses.flushSelection output.value))
+        accesses.writeSelection) := by
+  simp [parsedIntegerMaskedRegisterStep, evaluated]
 
 def executeParsedMaskedIntegerExpr? (files : IntegerRegisterFiles)
     (expression : ParsedExpr) (directive : ParsedMaskDirective)
