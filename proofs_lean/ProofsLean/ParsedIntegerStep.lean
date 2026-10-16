@@ -1824,8 +1824,13 @@ def prepareParsedALUProducerLineCycles (files : IntegerRegisterFiles)
 def parsedALUProducerLineFourCycleStep (files : IntegerRegisterFiles)
     (slots : ProofsLean.MNCore.Forwarding.Slots)
     (expressions : List ParsedExpr) (control : ParsedMaskExecutionControl)
-    (hasSingleLineMask noForward reduced : Bool) :
+    (reduced : Bool) :
     ProofsLean.StepResult (IntegerRegisterFiles × ProofsLean.MNCore.Forwarding.Slots) :=
+  let hasSingleLineMask := expressions.any parsedExprHasSingleLineWriteMask
+  let noForward := expressions.any fun expression =>
+    match expression.op with
+    | .noforward => true
+    | _ => false
   match prepareParsedALUProducerLineCycles files slots expressions control
       hasSingleLineMask noForward reduced with
   | .failure => .failure
