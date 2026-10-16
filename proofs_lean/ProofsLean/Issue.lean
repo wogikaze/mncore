@@ -350,6 +350,13 @@ def ParsedOp.integerRequest : ParsedOp → StepResult IntegerALU.Request
       else .unknown
   | _ => .unknown
 
+theorem supported_integer_opcode_has_mapping (name : ParsedAluName)
+    (precision : ParsedPrecision) (unsigned : Bool)
+    (supported : name.supportsIntegerAt precision = true) :
+    ∃ op, name.toIntegerOp unsigned = some op := by
+  cases name <;> cases precision <;>
+    simp [ParsedAluName.supportsIntegerAt, ParsedAluName.toIntegerOp] at supported ⊢
+
 def evaluateParsedIntegerAlu (op : ParsedOp) (x y : IntegerALU.Bus)
     (reduced : Bool) : StepResult IntegerALU.BusResult :=
   match op.integerRequest with
@@ -365,6 +372,10 @@ theorem unsupported_parsed_integer_is_unknown (op : ParsedOp)
 theorem iinc_integer_request :
     (ParsedOp.alu .inc (some .i) false none).integerRequest =
       .ok (.integer .word (.arith .inc false)) := rfl
+
+theorem iinc_evaluation_is_integer_alu (x y : IntegerALU.Bus) (reduced : Bool) :
+    evaluateParsedIntegerAlu (.alu .inc (some .i) false none) x y reduced =
+      IntegerALU.partialEvaluate (.integer .word (.arith .inc false)) x y reduced := rfl
 
 theorem parsed_float_rsqrt_is_unknown :
     (ParsedOp.alu .rsqrt (some .f) false none).integerRequest = .unknown := rfl

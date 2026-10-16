@@ -36,6 +36,8 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.ParsedPrecision.code_injective
 #print axioms ProofsLean.MNCore.Issue.unsupported_parsed_integer_is_unknown
 #print axioms ProofsLean.MNCore.Issue.iinc_integer_request
+#print axioms ProofsLean.MNCore.Issue.supported_integer_opcode_has_mapping
+#print axioms ProofsLean.MNCore.Issue.iinc_evaluation_is_integer_alu
 #print axioms ProofsLean.MNCore.Issue.parsed_float_rsqrt_is_unknown
 #print axioms ProofsLean.MNCore.Issue.parsed_topline_check_sound
 #print axioms ProofsLean.MNCore.Issue.parsed_topline_check_complete
