@@ -91,6 +91,10 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.legalCostBelowAlphabet
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.mem_legalCostBelowAlphabet
 #print axioms ProofsLean.MNCore.Issue.ParsedMask.inFiniteEnvelope_finite
+#print axioms ProofsLean.MNCore.Issue.ParsedMaskDirective.inFiniteEnvelope_finite
+#print axioms ProofsLean.MNCore.Issue.ParsedLine.updateMaskState_inFiniteEnvelope
+#print axioms ProofsLean.MNCore.PEMemory.parseMaskDirectiveOperator_width_inFiniteEnvelope
+#print axioms ProofsLean.MNCore.PEMemory.parseMaskDirective_inFiniteEnvelope
 #print axioms ProofsLean.MNCore.Issue.omrEntryInFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.natBelow_finite
 #print axioms ProofsLean.MNCore.Issue.optionNatBelow_finite

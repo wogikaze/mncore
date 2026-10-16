@@ -1034,6 +1034,14 @@ inductive ParsedLine where
   | dramSet
   deriving DecidableEq, Repr
 
+/-- A parsed control line is in the mask-directive envelope when it uses an
+assembler-supported width and selector. Other lines leave the mask state
+unchanged. -/
+def ParsedLine.maskDirectiveInFiniteEnvelope : ParsedLine → Prop
+  | .maskDirective widthWords _ entry =>
+      (widthWords = 2 ∨ widthWords = 4) ∧ entry < 32
+  | _ => True
+
 /-- Candidate instruction lines after removing presentation-only fields and
 judge-stripped debug/DRAM records. PE expression order is preserved. -/
 inductive NormalizedLine where

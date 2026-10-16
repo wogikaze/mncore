@@ -480,6 +480,75 @@ def ParsedMask.inFiniteEnvelope : ParsedMask → Prop
   | .pattern .. => True
   | .entry _ index => index < 32
 
+def ParsedMaskTargets.finiteCode (targets : ParsedMaskTargets) :=
+  (targets.grf0, targets.grf1, targets.t, targets.lm0, targets.lm1,
+    targets.maskRegister)
+
+theorem ParsedMaskTargets.finiteCode_injective :
+    Function.Injective ParsedMaskTargets.finiteCode := by
+  intro a b equal
+  cases a with
+  | mk agrf0 agrf1 atarget alm0 alm1 amask =>
+    cases b with
+    | mk bgrf0 bgrf1 btarget blm0 blm1 bmask =>
+      simp [ParsedMaskTargets.finiteCode] at equal
+      rcases equal with ⟨h0, h1, h2, h3, h4, h5⟩
+      cases h0
+      cases h1
+      cases h2
+      cases h3
+      cases h4
+      cases h5
+      rfl
+
+theorem ParsedMaskTargets.finite : Finite ParsedMaskTargets := by
+  letI : Fintype (Bool × Bool × Bool × Bool × Bool × Bool) := inferInstance
+  exact Finite.of_injective ParsedMaskTargets.finiteCode
+    ParsedMaskTargets.finiteCode_injective
+
+def ParsedMaskDirective.inFiniteEnvelope (directive : ParsedMaskDirective) : Prop :=
+  (directive.widthWords = 2 ∨ directive.widthWords = 4) ∧ directive.entry < 32
+
+abbrev ParsedMaskDirectiveFiniteCode := Fin 5 × ParsedMaskTargets × Fin 32
+
+private def ParsedMaskDirective.finiteCode
+    (directive : {directive : ParsedMaskDirective // directive.inFiniteEnvelope}) :
+    ParsedMaskDirectiveFiniteCode :=
+  (⟨directive.1.widthWords, by
+      rcases directive.2.1 with widthEq | widthEq <;> omega⟩,
+    directive.1.targets, ⟨directive.1.entry, directive.2.2⟩)
+
+private theorem ParsedMaskDirective.finiteCode_injective :
+    Function.Injective ParsedMaskDirective.finiteCode := by
+  intro a b equal
+  rcases a with ⟨⟨aw, atargets, aentry⟩, ha⟩
+  rcases b with ⟨⟨bw, btargets, bentry⟩, hb⟩
+  simp only [ParsedMaskDirective.finiteCode, Prod.mk.injEq, Fin.mk.injEq] at equal
+  rcases equal with ⟨widthEq, targetsEq, entryEq⟩
+  cases widthEq
+  cases targetsEq
+  cases entryEq
+  rfl
+
+theorem ParsedMaskDirective.inFiniteEnvelope_finite :
+    Finite {directive : ParsedMaskDirective // directive.inFiniteEnvelope} := by
+  letI : Finite ParsedMaskTargets := ParsedMaskTargets.finite
+  letI : Fintype ParsedMaskTargets := Fintype.ofFinite _
+  letI : Fintype ParsedMaskDirectiveFiniteCode := inferInstance
+  exact Finite.of_injective ParsedMaskDirective.finiteCode
+    ParsedMaskDirective.finiteCode_injective
+
+/-- Applying an in-envelope mask directive preserves the finite control-state
+carrier; all other parsed lines preserve the prior state. -/
+theorem ParsedLine.updateMaskState_inFiniteEnvelope
+    (line : ParsedLine) (state : ParsedMaskDirective)
+    (stateBound : state.inFiniteEnvelope)
+    (lineBound : line.maskDirectiveInFiniteEnvelope) :
+    (line.updateMaskState state).inFiniteEnvelope := by
+  cases line <;>
+    simp_all [ParsedLine.maskDirectiveInFiniteEnvelope,
+      ParsedLine.updateMaskState, ParsedMaskDirective.inFiniteEnvelope]
+
 abbrev ParsedMaskFiniteCode := (Bool × Fin 16) ⊕ (Bool × Fin 32)
 private instance : Fintype ParsedMaskFiniteCode := inferInstance
 

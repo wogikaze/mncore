@@ -25,7 +25,7 @@
     },
     {
       "path": "proofs_lean/scripts/check_isa_parser_bounds.py",
-      "sha256": "5c987a5ff64ef20bc9dc1731f7d89d82d72c905a4922b785f5f763ee7206f19f"
+      "sha256": "1c9827a68f95921bbf41aae96ca3ed0a22ceb128c9bf1efc7661e4ea3a4c5b4e"
     }
   ],
   "observations": [
@@ -416,6 +416,38 @@
     {
       "case": "mask_directive_n_32",
       "source": "maskn 32\nlpassa $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 32 >= 2^5",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_l_31",
+      "source": "maskln 31\nlpassa $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_l_32",
+      "source": "maskln 32\nlpassa $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 32 >= 2^5",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_ll_31",
+      "source": "masklln 31\nlpassa $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_ll_32",
+      "source": "masklln 32\nlpassa $lm0 $ln0",
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 32 >= 2^5",
@@ -8754,7 +8786,7 @@
     "nop/0 is accepted and emits zero instruction words; nop/0 with a wait is rejected, so the zero-count no-wait form can be erased during normalization.",
     "wait i00 is rejected; i01 and iFF are accepted; i100 is rejected.",
     "$omr0 and $omr16 are rejected; $omr1 and $omr15 are accepted.",
-    "$imr0, $imr31 are accepted while $imr32 and $imr255 fail encoding. Active mask directives `maskn 0` and `maskn 31` are accepted, while `maskn 32` fails. This conflicts with the Rust MaskSource comment claiming entries 1 through 15.",
+    "$imr0, $imr31 are accepted while $imr32 and $imr255 fail encoding. Active `maskn`, `maskln`, and `masklln` directives accept selector 31 and reject 32. This conflicts with the Rust MaskSource comment claiming entries 1 through 15.",
     "Matrix rows 0 through 15 are accepted; row 16 is rejected.",
     "PE destination lists are not sized by source arity: lpassa accepts three outputs across LM1/GRF0/GRF1, and zero accepts LM0/LM1/GRF0/GRF1 plus OMR. The sampled duplicate-bank and nowrite combinations are rejected; this is not an exhaustive output grammar proof.",
     "hbfe and hbfn accept /6 through /9 and reject /10 in the selected boundary probes.",

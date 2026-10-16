@@ -58,12 +58,19 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   抽象的な`nop/n`モデルでは全上限について有限性を証明した。MN-Coreの
   実際の行型については、アドレス・即値・全オペランド範囲、同時発行と
   ハザードに基づく有限性が未証明。
-- `evidence/isa-bounds/reference.json`: 公式`assemble3`の1,090個の境界プローブ。
+- `evidence/isa-bounds/reference.json`: 公式`assemble3`の1,094個の境界プローブ。
   `nop/0`は受理され0語を出力するため正コストの行からは正規化で除外する。
   `$omr`は1〜15が受理、`$imr`と有効なマスク指令のselectorは0〜31が受理され、
   32は拒否された。後者はRustコメントの「1〜15」と不一致。challenge judgeは
   既定で解答から`d get`/`d set`/`r`記録を実行列から除外する。実験範囲外の
   構文・意味や完全網羅を証明するものではない。
+  Leanではmask directiveの幅を2または4語、selectorを0〜31に制限した有限carrierも
+  証明した。指令適用後も制御状態がその範囲を保つ補題を追加した。
+  Leanのmask operator parserが幅2または4だけを生成する補題も追加した。
+  selectorがassemble3の受理範囲にある場合、完全なmask directive parse結果が
+  有限envelopeに属することもLeanで接続した。parser単体はu8値を255まで保持するため、
+  0〜31の条件は合法性の前提として明示している。
+  `maskln`/`masklln`の境界probeがこれらの幅の字句形式を確認する。
   `zero`はLM0/LM1/GRF0/GRF1/T/OMRへ1個ずつ出力する6 destination を受理し、
   各カテゴリ内の重複出力を拒否した。Rust parserはopcodeごとのsource個数で分割後、
   残りの全tokenをdestinationにするため、このassembler観測だけではparser-encoding間の

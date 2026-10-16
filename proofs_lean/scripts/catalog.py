@@ -350,7 +350,7 @@ def isa_bounds_experiment() -> dict:
             raise ValueError(f"stale ISA boundary experiment: {item['path']}")
     if not all(row["matches_expected"] for row in record["observations"]):
         raise ValueError("ISA boundary experiment contains an unexpected assembler result")
-    if len(record["observations"]) != 1090:
+    if len(record["observations"]) != 1094:
         raise ValueError("ISA boundary experiment case count changed")
     return {
         "source": reference.relative_to(REPO).as_posix(),
@@ -648,6 +648,34 @@ def coverage_catalog() -> dict:
             "scope": "Finite subtype for ParsedMask patterns and entry selectors below 32.",
             "evidence": "proofs_lean/evidence/isa-bounds/reference.json: imr_selector_0, imr_selector_31, imr_selector_32; these are IMR mask selectors, not OMR entries.",
             "missing": "Proof that all assembler-accepted PE masks parse into this subtype, plus other operand fields and whole-line finiteness.",
+        }, {
+            "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
+            "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
+            "theorem": "ProofsLean.MNCore.Issue.ParsedMaskDirective.inFiniteEnvelope_finite",
+            "scope": "Finite carrier for control-state mask directives with width 2 or 4 and selector below 32.",
+            "evidence": "proofs_lean/evidence/isa-bounds/reference.json: maskn, maskln, and masklln selectors 31 accepted and 32 rejected; width alternatives follow these directive spellings.",
+            "missing": "Complete proof relating every parsed directive spelling to widthWords 2 or 4 and selector below 32, plus whole-machine finite composition.",
+        }, {
+            "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
+            "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
+            "theorem": "ProofsLean.MNCore.Issue.ParsedLine.updateMaskState_inFiniteEnvelope",
+            "scope": "Mask control-state updates preserve the finite directive envelope; non-directive lines preserve the previous bounded state.",
+            "evidence": "Lean case analysis over ParsedLine.updateMaskState and the directive envelope; accepted width and selector bounds are recorded in isa-bounds/reference.json.",
+            "missing": "Prove every assembler-accepted directive is represented by the bounded ParsedLine case and compose the state transition into MNCore.machine.",
+        }, {
+            "source": "proofs_lean/ProofsLean/ParsedIntegerStep.lean",
+            "sha256": digest(ROOT / "ProofsLean/ParsedIntegerStep.lean"),
+            "theorem": "ProofsLean.MNCore.PEMemory.parseMaskDirectiveOperator_width_inFiniteEnvelope",
+            "scope": "The mask operator parser produces only width 2 or 4.",
+            "evidence": "Direct case analysis of the operator parser: `ll` selects 4; `l` and the default form select 2.",
+            "missing": "Connect complete ParsedLine mask parsing, assembler-accepted selector range, and state normalization into the machine transition model.",
+        }, {
+            "source": "proofs_lean/ProofsLean/ParsedIntegerStep.lean",
+            "sha256": digest(ROOT / "ProofsLean/ParsedIntegerStep.lean"),
+            "theorem": "ProofsLean.MNCore.PEMemory.parseMaskDirective_inFiniteEnvelope",
+            "scope": "Every parsed mask directive with assembler-legal selector 0..31 satisfies the finite ParsedLine envelope.",
+            "evidence": "Lean connects parseMaskDirective? output to the operator-width theorem; the 0..31 selector condition comes from the official assemble3 boundary probes.",
+            "missing": "The selector-range premise is not proved for arbitrary parser outputs because the parser preserves u8-cast values through 255; connect this legal subset to the full machine semantics.",
         }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),

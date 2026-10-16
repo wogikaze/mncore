@@ -571,6 +571,53 @@ def parseMaskDirective? (text : String) : Option ParsedLine := do
   let entry ← parseMaskDirectiveNumber? address
   some (.maskDirective widthWords targets (entry % 256))
 
+/-- The mask operator parser can only produce the two instruction widths used
+by the directive syntax, so its width component is already in a finite range. -/
+theorem parseMaskDirectiveOperator_width_inFiniteEnvelope
+    (operator : String) (widthWords : Nat) (targets : ParsedMaskTargets)
+    (parsed : parseMaskDirectiveOperator? operator = some (widthWords, targets)) :
+    widthWords = 2 ∨ widthWords = 4 := by
+  simp [parseMaskDirectiveOperator?] at parsed
+  rcases parsed with ⟨_, parsed⟩
+  rcases Option.bind_eq_some_iff.mp parsed with ⟨parsedTargets, _, pairEq⟩
+  by_cases isLong : List.take 2 (List.drop 4 operator.toList) = ['l', 'l']
+  · simp_all
+  · by_cases isLong : operator.toList[4]? = some 'l'
+    · simp_all
+    · simp_all
+
+/-- Complete parsed mask lines inherit the finite width from their parsed
+operator. The selector bound is an explicit legality premise because the
+syntax parser casts to u8 while the assembler accepts only selectors 0..31. -/
+theorem parseMaskDirective_inFiniteEnvelope
+    (text : String) (widthWords : Nat) (targets : ParsedMaskTargets)
+    (entry : Nat)
+    (parsed : parseMaskDirective? text =
+      some (.maskDirective widthWords targets entry))
+    (entryBound : entry < 32) :
+    (.maskDirective widthWords targets entry : ParsedLine).maskDirectiveInFiniteEnvelope := by
+  unfold parseMaskDirective? at parsed
+  cases tokensEq : splitMaskDirectiveWhitespace text.toList [] [] with
+  | nil => simp [tokensEq] at parsed
+  | cons operator rest =>
+    cases rest with
+    | nil => simp [tokensEq] at parsed
+    | cons address tail =>
+      cases tail with
+      | nil =>
+        simp [tokensEq] at parsed
+        rcases Option.bind_eq_some_iff.mp parsed with ⟨pair, operatorParsed, numberParsed⟩
+        rcases pair with ⟨parsedWidth, parsedTargets⟩
+        rcases Option.bind_eq_some_iff.mp numberParsed with
+          ⟨parsedNumber, _, lineEq⟩
+        have widthEq : parsedWidth = widthWords := by
+          injection lineEq with someEq
+          injection someEq with widthEq
+        rw [← widthEq]
+        exact ⟨parseMaskDirectiveOperator_width_inFiniteEnvelope operator
+          parsedWidth parsedTargets operatorParsed, entryBound⟩
+      | cons extra more => simp [tokensEq] at parsed
+
 theorem parseMaskDirective_targets_and_u8_cast :
     parseMaskDirective? "maskllrstmnk 0x123" = some
       (.maskDirective 4 (⟨true, true, true, true, true, true⟩ : ParsedMaskTargets) 35) := by
