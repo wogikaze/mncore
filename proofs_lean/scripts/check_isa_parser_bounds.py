@@ -87,6 +87,9 @@ for index in range(16):
     CASES[f"matrix_row_{index}"] = (f"gmread $lx{index} $nowrite\n", True, 1)
 for index in range(6, 10):
     CASES[f"hbfn_{index}"] = (f"hbfn/{index} $lm0 $ln0\n", True, 1)
+for tag in range(1, 257):
+    CASES[f"wait_tag_{tag}"] = (
+        f"nop; wait i{tag:02X}\n", tag < 256, 1 if tag < 256 else None)
 for prefix, aligned_max, capacity in [
     ("m", 4095, 4096), ("n", 4095, 4096),
     ("r", 511, 512), ("s", 511, 512),
@@ -161,6 +164,7 @@ def main() -> None:
             "All 64 L1B set address/immode pairs in 0..7 are accepted; `l2bm@<l1b>` accepts 0..7 and rejects 8. Base-address register writes accept widths 1 and 2 but reject width 4.",
             "The sampled MV encoding requires nonzero transfer size to be a multiple of 64 long words; 32704 is accepted while 32768 overflows the size field. Zero is accepted by the assembler.",
             "L1BM width-2 addresses require 4-word alignment and width-4 addresses require 8-word alignment, within the 8192-long-word capacity. The L2BM transfer source accepts 16-aligned addresses through 32752 and rejects 32760 (alignment) and 32768 (range).",
+            "Wait tags 1 through 255 are accepted; 0 and 256 are rejected.",
             "$lb8188 is accepted while $lb8192 fails the 13-bit encoding field; the L1BM address must also be 4-word aligned. l1bmm@15 is accepted and @16 is rejected.",
             "DAR address 1023 is accepted and 1024 is rejected; `$lc...@.<l2b>` accepts selectors 0 and 1 and rejects 2.",
             "l1bmd-129, l1bmd-128, l1bmd127, and l1bmd128 are all accepted by assemble3; this is parser/encoding acceptance evidence, not a claim that these offsets are semantically useful.",
