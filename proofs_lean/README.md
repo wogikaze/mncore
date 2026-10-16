@@ -125,6 +125,8 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   coverageは`partial_datapath_only`のままとする。
 - `FiniteRegion.lean`: assemble3境界プローブを根拠に、width 1/2/4、4つのアドレス`< 4096`、
   `madpe < 4`の`Region` envelopeを有限型へ埋め込み、`Region.inFiniteEnvelope_finite`を証明した。
+  `Access.inFiniteEnvelope`ではGRF0/GRF1に限り4 cycle addressを`< 512`に狭め、LM0/LM1の`< 4096`と
+  分けた。各bankの容量境界はassemble3記録にあるが、全region cycleと全opcodeの受理集合を結ぶ証明は未完了。
   プローブは`evidence/isa-bounds/reference.json`にある。bank別の合法範囲/alignmentや、
   パーサーからこの上限への一般的な健全性証明は未実装で、PE line alphabet全体の有限性にも未接続。
 - `FiniteIssue.lean`: issue projectionが付ける連番IDと同時発行group一意性から、合法なPE行の式数が

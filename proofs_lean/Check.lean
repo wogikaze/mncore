@@ -56,6 +56,7 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.Region.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.listLengthLE_finite
 #print axioms ProofsLean.MNCore.Issue.Access.inFiniteEnvelope_finite
+#print axioms ProofsLean.MNCore.Issue.Access.grf_capacity_envelope
 #print axioms ProofsLean.MNCore.Issue.ParsedOperand.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.ParsedOperand.bar_inFiniteEnvelope_iff
 #print axioms ProofsLean.MNCore.Issue.ParsedOperand.omr_inFiniteEnvelope_iff

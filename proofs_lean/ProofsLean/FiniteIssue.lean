@@ -596,7 +596,10 @@ theorem ParsedMask.inFiniteEnvelope_finite :
   Finite.of_injective ParsedMask.finiteCode ParsedMask.finiteCode_injective
 
 def Access.inFiniteEnvelope (access : Access) : Prop :=
-  access.region.inFiniteEnvelope
+  access.region.inFiniteEnvelope ∧
+    (access.bank = .grf0 ∨ access.bank = .grf1 →
+      access.region.address0 < 512 ∧ access.region.address1 < 512 ∧
+        access.region.address2 < 512 ∧ access.region.address3 < 512)
 
 def Bank.finiteCode : Bank → Fin 10
   | .grf0 => 0 | .grf1 => 1 | .lm0 => 2 | .lm1 => 3 | .t => 4
@@ -609,7 +612,7 @@ theorem Bank.finiteCode_injective : Function.Injective Bank.finiteCode := by
 def Access.finiteCode
     (access : {access : Access // access.inFiniteEnvelope}) : Fin 10 × RegionFiniteCode :=
   (access.1.bank.finiteCode,
-    Region.finiteCode ⟨access.1.region, access.2⟩)
+    Region.finiteCode ⟨access.1.region, access.2.1⟩)
 
 theorem Access.finiteCode_injective :
     Function.Injective Access.finiteCode := by
@@ -635,6 +638,13 @@ theorem Access.finiteCode_injective :
 theorem Access.inFiniteEnvelope_finite :
     Finite {access : Access // access.inFiniteEnvelope} :=
   Finite.of_injective Access.finiteCode Access.finiteCode_injective
+
+theorem Access.grf_capacity_envelope (access : Access)
+    (bounded : access.inFiniteEnvelope)
+    (bank : access.bank = .grf0 ∨ access.bank = .grf1) :
+    access.region.address0 < 512 ∧ access.region.address1 < 512 ∧
+      access.region.address2 < 512 ∧ access.region.address3 < 512 :=
+  bounded.2 bank
 
 def optionMaskInFiniteEnvelope (mask : Option ParsedMask) : Prop :=
   ∀ value, mask = some value → value.inFiniteEnvelope

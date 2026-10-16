@@ -652,8 +652,8 @@ def coverage_catalog() -> dict:
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
             "theorem": "ProofsLean.MNCore.Issue.Access.inFiniteEnvelope_finite",
-            "scope": "Finite carrier for accesses whose region lies in the assembler-probed PE region envelope; the bank is one of ten constructors.",
-            "evidence": "Region bounds are listed in proofs_lean/evidence/isa-bounds/reference.json; Bank constructors are mirrored from the issue checker.",
+            "scope": "Finite carrier for accesses whose region lies in the parser-supported PE region envelope, with the tighter <512 address bound applied to GRF0/GRF1; the bank is one of ten constructors.",
+            "evidence": "proofs_lean/evidence/isa-bounds/reference.json records LM0/LM1 capacities of 4096 and GRF0/GRF1 capacities of 512; Bank constructors are mirrored from the issue checker.",
             "missing": "Bank-specific address legality, parser correspondence, and bounded operand/line carriers.",
         }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
