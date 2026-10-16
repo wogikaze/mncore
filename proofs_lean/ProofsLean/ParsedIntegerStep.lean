@@ -1764,6 +1764,172 @@ theorem parsedSingleMatrixStore_readback_cell
     simp [writeParsedSingleMatrixStoreRow, odd]
     exact singleMatrixReadBus_after_write_low_cell (old mab sideY) row column values odd
 
+theorem singleMatrixReadBus_other_write_preserves_high_cell
+    (old : DoubleMatrixPhysicalFace) (writeRow readRow column : Fin 8)
+    (values : Fin 8 → BitVec 32) (even : readRow.val % 2 = 0)
+    (different : readRow ≠ writeRow) :
+    (singleMatrixReadBus (writeSingleMatrixPhysicalRow old writeRow values) column
+      ⟨readRow.val / 2, by have h := readRow.isLt; omega⟩ 0).high.extractLsb' 32 32 =
+    (singleMatrixReadBus old column
+      ⟨readRow.val / 2, by have h := readRow.isLt; omega⟩ 0).high.extractLsb' 32 32 := by
+  let row0 : Fin 8 := ⟨2 * (readRow.val / 2), by have h := readRow.isLt; omega⟩
+  let row1 : Fin 8 := ⟨2 * (readRow.val / 2) + 1, by have h := readRow.isLt; omega⟩
+  have row0Eq : row0 = readRow := by
+    apply Fin.ext
+    simp [row0]
+    omega
+  have row0NeWrite : row0 ≠ writeRow := by
+    intro h
+    exact different (row0Eq.symm.trans h)
+  have row0PhysicalNe : singleMatrixPhysicalRow row0 ≠ singleMatrixPhysicalRow writeRow := by
+    intro h
+    exact row0NeWrite (singleMatrixPhysicalRow_injective h)
+  simp [singleMatrixReadBus, singleMatrixReadColumn, writeSingleMatrixPhysicalRow,
+    row0, row1, row0PhysicalNe, Nat.mod_eq_of_lt column.isLt]
+  rw [BitVec.extractLsb'_append_eq_left, BitVec.extractLsb'_append_eq_left]
+
+theorem singleMatrixReadBus_other_write_preserves_low_cell
+    (old : DoubleMatrixPhysicalFace) (writeRow readRow column : Fin 8)
+    (values : Fin 8 → BitVec 32) (odd : readRow.val % 2 = 1)
+    (different : readRow ≠ writeRow) :
+    (singleMatrixReadBus (writeSingleMatrixPhysicalRow old writeRow values) column
+      ⟨readRow.val / 2, by have h := readRow.isLt; omega⟩ 0).high.extractLsb' 0 32 =
+    (singleMatrixReadBus old column
+      ⟨readRow.val / 2, by have h := readRow.isLt; omega⟩ 0).high.extractLsb' 0 32 := by
+  let row0 : Fin 8 := ⟨2 * (readRow.val / 2), by have h := readRow.isLt; omega⟩
+  let row1 : Fin 8 := ⟨2 * (readRow.val / 2) + 1, by have h := readRow.isLt; omega⟩
+  have row1Eq : row1 = readRow := by
+    apply Fin.ext
+    simp [row1]
+    omega
+  have row1NeWrite : row1 ≠ writeRow := by
+    intro h
+    exact different (row1Eq.symm.trans h)
+  have row1PhysicalNe : singleMatrixPhysicalRow row1 ≠ singleMatrixPhysicalRow writeRow := by
+    intro h
+    exact row1NeWrite (singleMatrixPhysicalRow_injective h)
+  simp [singleMatrixReadBus, singleMatrixReadColumn, writeSingleMatrixPhysicalRow,
+    row0, row1, row1PhysicalNe, Nat.mod_eq_of_lt column.isLt]
+  rw [BitVec.extractLsb'_append_eq_right, BitVec.extractLsb'_append_eq_right]
+
+def singleMatrixReadSelectedWord (words : DoubleMatrixPhysicalFace)
+    (row column : Fin 8) : BitVec 32 :=
+  let pe : Fin 4 := ⟨row.val / 2, by have h := row.isLt; omega⟩
+  if row.val % 2 = 0 then
+    (singleMatrixReadBus words column pe 0).high.extractLsb' 32 32
+  else
+    (singleMatrixReadBus words column pe 0).high.extractLsb' 0 32
+
+theorem singleMatrixReadSelectedWord_after_write
+    (old : DoubleMatrixPhysicalFace) (row column : Fin 8)
+    (values : Fin 8 → BitVec 32) :
+    singleMatrixReadSelectedWord (writeSingleMatrixPhysicalRow old row values) row column =
+      values column := by
+  unfold singleMatrixReadSelectedWord
+  by_cases even : row.val % 2 = 0
+  · simp [even]
+    exact singleMatrixReadBus_after_write_high_cell old row column values even
+  · have odd : row.val % 2 = 1 := by
+      have h : row.val % 2 < 2 := Nat.mod_lt _ (by decide)
+      omega
+    simp [even, odd]
+    exact singleMatrixReadBus_after_write_low_cell old row column values odd
+
+theorem singleMatrixReadSelectedWord_other_write
+    (old : DoubleMatrixPhysicalFace) (writeRow readRow column : Fin 8)
+    (values : Fin 8 → BitVec 32) (different : readRow ≠ writeRow) :
+    singleMatrixReadSelectedWord (writeSingleMatrixPhysicalRow old writeRow values)
+      readRow column = singleMatrixReadSelectedWord old readRow column := by
+  unfold singleMatrixReadSelectedWord
+  by_cases even : readRow.val % 2 = 0
+  · simp [even]
+    exact singleMatrixReadBus_other_write_preserves_high_cell
+      old writeRow readRow column values even different
+  · have odd : readRow.val % 2 = 1 := by
+      have h : readRow.val % 2 < 2 := Nat.mod_lt _ (by decide)
+      omega
+    simp [even, odd]
+    exact singleMatrixReadBus_other_write_preserves_low_cell
+      old writeRow readRow column values odd different
+
+theorem parsedSingleMatrixStore_readback_selected_word
+    (old : ParsedMatrixReadStore) (mab : Fin 16) (sideY : Bool)
+    (row column : Fin 8) (values : Fin 8 → BitVec 32) :
+    singleMatrixReadSelectedWord
+      ((writeParsedSingleMatrixStoreRow old mab sideY row values) mab sideY) row column =
+        values column := by
+  simpa [writeParsedSingleMatrixStoreRow] using
+    singleMatrixReadSelectedWord_after_write (old mab sideY) row column values
+
+theorem parsedSingleMatrixStore_other_write_preserves_selected_word
+    (old : ParsedMatrixReadStore) (mab : Fin 16) (sideY : Bool)
+    (writeRow readRow column : Fin 8) (values : Fin 8 → BitVec 32)
+    (different : readRow ≠ writeRow) :
+    singleMatrixReadSelectedWord
+      ((writeParsedSingleMatrixStoreRow old mab sideY writeRow values) mab sideY)
+      readRow column = singleMatrixReadSelectedWord (old mab sideY) readRow column := by
+  simpa [writeParsedSingleMatrixStoreRow] using
+    singleMatrixReadSelectedWord_other_write (old mab sideY) writeRow readRow column
+      values different
+
+theorem parsedSingleMatrixStore_four_rows_readback
+    (old : ParsedMatrixReadStore) (mab : Fin 16) (sideY : Bool) (base : Nat)
+    (values : Fin 4 → Fin 8 → BitVec 32) (cycle : Fin 4) (column : Fin 8) :
+    singleMatrixReadSelectedWord
+      ((writeParsedSingleMatrixStoreFourRows old mab sideY base values) mab sideY)
+      (singleMatrixWriteRowAt base cycle) column = values cycle column := by
+  have rowDifferent (left right : Fin 4) (different : left ≠ right) :
+      singleMatrixWriteRowAt base left ≠ singleMatrixWriteRowAt base right := by
+    intro equal
+    exact different (singleMatrixWriteRowAt_injective base equal)
+  have cycleCases : cycle = 0 ∨ cycle = 1 ∨ cycle = 2 ∨ cycle = 3 := by
+    have h := cycle.isLt
+    omega
+  rcases cycleCases with cycleEq | cycleEq | cycleEq | cycleEq
+  · subst cycle
+    simp only [writeParsedSingleMatrixStoreFourRows]
+    rw [parsedSingleMatrixStore_other_write_preserves_selected_word _ _ _
+      (singleMatrixWriteRowAt base 3) (singleMatrixWriteRowAt base 0) column (values 3)
+      (rowDifferent 0 3 (by decide))]
+    rw [parsedSingleMatrixStore_other_write_preserves_selected_word _ _ _
+      (singleMatrixWriteRowAt base 2) (singleMatrixWriteRowAt base 0) column (values 2)
+      (rowDifferent 0 2 (by decide))]
+    rw [parsedSingleMatrixStore_other_write_preserves_selected_word _ _ _
+      (singleMatrixWriteRowAt base 1) (singleMatrixWriteRowAt base 0) column (values 1)
+      (rowDifferent 0 1 (by decide))]
+    exact parsedSingleMatrixStore_readback_selected_word old mab sideY
+      (singleMatrixWriteRowAt base 0) column (values 0)
+  · subst cycle
+    simp only [writeParsedSingleMatrixStoreFourRows]
+    rw [parsedSingleMatrixStore_other_write_preserves_selected_word _ _ _
+      (singleMatrixWriteRowAt base 3) (singleMatrixWriteRowAt base 1) column (values 3)
+      (rowDifferent 1 3 (by decide))]
+    rw [parsedSingleMatrixStore_other_write_preserves_selected_word _ _ _
+      (singleMatrixWriteRowAt base 2) (singleMatrixWriteRowAt base 1) column (values 2)
+      (rowDifferent 1 2 (by decide))]
+    exact parsedSingleMatrixStore_readback_selected_word
+      (writeParsedSingleMatrixStoreRow old mab sideY (singleMatrixWriteRowAt base 0)
+        (values 0)) mab sideY (singleMatrixWriteRowAt base 1) column (values 1)
+  · subst cycle
+    simp only [writeParsedSingleMatrixStoreFourRows]
+    rw [parsedSingleMatrixStore_other_write_preserves_selected_word _ _ _
+      (singleMatrixWriteRowAt base 3) (singleMatrixWriteRowAt base 2) column (values 3)
+      (rowDifferent 2 3 (by decide))]
+    exact parsedSingleMatrixStore_readback_selected_word
+      (writeParsedSingleMatrixStoreRow
+        (writeParsedSingleMatrixStoreRow old mab sideY (singleMatrixWriteRowAt base 0)
+          (values 0)) mab sideY (singleMatrixWriteRowAt base 1) (values 1))
+      mab sideY (singleMatrixWriteRowAt base 2) column (values 2)
+  · subst cycle
+    simp only [writeParsedSingleMatrixStoreFourRows]
+    exact parsedSingleMatrixStore_readback_selected_word
+      (writeParsedSingleMatrixStoreRow
+        (writeParsedSingleMatrixStoreRow
+          (writeParsedSingleMatrixStoreRow old mab sideY (singleMatrixWriteRowAt base 0)
+            (values 0)) mab sideY (singleMatrixWriteRowAt base 1) (values 1))
+        mab sideY (singleMatrixWriteRowAt base 2) (values 2))
+      mab sideY (singleMatrixWriteRowAt base 3) column (values 3)
+
 def parsedSingleMatrixWriteCycle (files : IntegerRegisterFiles)
     (slots : ProofsLean.MNCore.Forwarding.Slots)
     (groupContext : ParsedPEGroupContext) (expression : ParsedExpr)
@@ -1874,6 +2040,32 @@ theorem parsedSingleMatrixWriteFourCycle_store
       hDestination.1, hDestination.2]
   simp [parsedSingleMatrixWriteFourCycle, parsedSingleMatrixWriteCycles, cycleStep,
     writeParsedSingleMatrixStoreFourRows]
+
+theorem parsedSingleMatrixWriteFourCycle_readback_selected_word
+    (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (groupContext : ParsedPEGroupContext) (expression : ParsedExpr)
+    (oldStore : ParsedMatrixReadStore)
+    (accesses : Fin 4 → Fin 4 → ParsedSingleMatrixWriteAccesses)
+    (buses : Fin 4 → Fin 4 → IntegerALU.Bus)
+    (lowered : ∀ cycle pe, ParsedExpr.toDirectSingleMatrixWriteAccesses? expression
+      (groupContext.at pe cycle) = some (accesses cycle pe))
+    (read : ∀ cycle pe, ParsedIntegerInput.readWithForwarding files slots cycle
+      (accesses cycle pe).source = .ok (buses cycle pe))
+    (cycle : Fin 4) (column : Fin 8) :
+    ∃ newStore, parsedSingleMatrixWriteFourCycle files slots groupContext expression oldStore =
+        .ok newStore ∧
+      singleMatrixReadSelectedWord
+        (newStore groupContext.mab (accesses 0 0).sideY)
+        (singleMatrixWriteRowAt (accesses 0 0).row cycle) column =
+          singleMatrixWriteValues (buses cycle) column := by
+  refine ⟨writeParsedSingleMatrixStoreFourRows oldStore groupContext.mab
+    (accesses 0 0).sideY (accesses 0 0).row
+    (fun writtenCycle => singleMatrixWriteValues (buses writtenCycle)), ?_, ?_⟩
+  · exact parsedSingleMatrixWriteFourCycle_store files slots groupContext expression oldStore
+      accesses buses lowered read
+  · exact parsedSingleMatrixStore_four_rows_readback oldStore groupContext.mab
+      (accesses 0 0).sideY (accesses 0 0).row
+      (fun writtenCycle => singleMatrixWriteValues (buses writtenCycle)) cycle column
 
 def halfMatrixReadColumn (base : Fin 16) (cycle : Fin 4) : Fin 16 :=
   ⟨(base.val + 2 * cycle.val) % 16, Nat.mod_lt _ (by decide)⟩
