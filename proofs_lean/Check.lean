@@ -98,6 +98,10 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.parsed_issue_advances_absolute_cycle
 #print axioms ProofsLean.MNCore.PEMemory.parsed_source_clock_matches_issue_cost
 #print axioms ProofsLean.MNCore.PEMemory.parsed_source_access_clock_matches_issue_cost
+#print axioms ProofsLean.MNCore.PEMemory.lm_pe_hazard_requires_three_issue_words
+#print axioms ProofsLean.MNCore.PEMemory.grf_t_pe_hazard_requires_seven_cycles
+#print axioms ProofsLean.MNCore.PEMemory.lm_pe_hazard_satisfied_after_three_words
+#print axioms ProofsLean.MNCore.PEMemory.grf_t_pe_hazard_satisfied_after_seven_cycles
 
 open Lean Elab Command in
 run_cmd do

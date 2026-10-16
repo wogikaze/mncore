@@ -617,6 +617,107 @@ theorem parsed_source_access_clock_matches_issue_cost
   simp [parsedAccessAbsoluteCycle, parsed_source_clock_matches_issue_cost]
   omega
 
+inductive PEHazardDistance where
+  | steps (count : Nat)
+  | cycles (count : Nat)
+  deriving DecidableEq, Repr
+
+structure TimedPEAccess where
+  access : DirectMemoryAccess
+  write : Bool
+  startWord : Nat
+  cycle : Fin 4
+  deriving DecidableEq, Repr
+
+def TimedPEAccess.absoluteCycle (event : TimedPEAccess) : Nat :=
+  event.startWord * 4 + event.cycle.val
+
+def TimedPEAccess.ofControl (control : ParsedMaskExecutionControl)
+    (access : DirectMemoryAccess) (write : Bool) (cycle : Fin 4) : TimedPEAccess :=
+  ⟨access, write, control.elapsedWords, cycle⟩
+
+def TimedPEAccess.rangeStart (event : TimedPEAccess) : Nat :=
+  if event.access.bank = .t then event.cycle.val else event.access.address.val
+
+def TimedPEAccess.rangeLength (event : TimedPEAccess) : Nat :=
+  if event.access.bank = .t then 1 else event.access.width.words
+
+def TimedPEAccess.rangesOverlap (left right : TimedPEAccess) : Bool :=
+  left.access.bank == right.access.bank &&
+    left.rangeStart < right.rangeStart + right.rangeLength &&
+    right.rangeStart < left.rangeStart + left.rangeLength
+
+def peHazardRequirement? (earlier later : TimedPEAccess) : Option PEHazardDistance :=
+  if !earlier.write || later.write then none
+  else match earlier.access.bank, later.access.bank with
+    | .lm0, .lm0 | .lm1, .lm1 => some (.steps 3)
+    | .grf0, .grf0 | .grf1, .grf1 | .t, .t =>
+        if earlier.rangesOverlap later then some (.cycles 7) else none
+    | _, _ => none
+
+def peHazardSatisfied (earlier later : TimedPEAccess) : Prop :=
+  earlier.startWord < later.startWord ∧
+    match peHazardRequirement? earlier later with
+    | none => True
+    | some (.steps count) =>
+        count * 4 ≤ (later.startWord - earlier.startWord) * 4
+    | some (.cycles count) =>
+        count ≤ later.absoluteCycle - earlier.absoluteCycle
+
+theorem lm_pe_hazard_requires_three_issue_words
+    (earlier later : TimedPEAccess)
+    (write : earlier.write = true) (read : later.write = false)
+    (sameBank : earlier.access.bank = later.access.bank)
+    (lm : earlier.access.bank = .lm0 ∨ earlier.access.bank = .lm1) :
+    peHazardRequirement? earlier later = some (.steps 3) := by
+  cases hEarlier : earlier.access.bank <;>
+    cases hLater : later.access.bank <;>
+    simp_all [peHazardRequirement?]
+
+theorem grf_t_pe_hazard_requires_seven_cycles
+    (earlier later : TimedPEAccess)
+    (write : earlier.write = true) (read : later.write = false)
+    (sameBank : earlier.access.bank = later.access.bank)
+    (grfT : earlier.access.bank = .grf0 ∨ earlier.access.bank = .grf1 ∨
+      earlier.access.bank = .t)
+    (overlap : earlier.rangesOverlap later = true) :
+    peHazardRequirement? earlier later = some (.cycles 7) := by
+  cases hEarlier : earlier.access.bank <;>
+    cases hLater : later.access.bank <;>
+    simp_all [peHazardRequirement?]
+
+theorem lm_pe_hazard_satisfied_after_three_words
+    (earlier later : TimedPEAccess)
+    (sameBank : earlier.access.bank = later.access.bank)
+    (lm : earlier.access.bank = .lm0 ∨ earlier.access.bank = .lm1)
+    (accessed : earlier.write = true ∧ later.write = false)
+    (distance : earlier.startWord + 3 ≤ later.startWord) :
+    peHazardSatisfied earlier later := by
+  constructor
+  · omega
+  rw [lm_pe_hazard_requires_three_issue_words earlier later accessed.1 accessed.2
+    sameBank lm]
+  omega
+
+theorem grf_t_pe_hazard_satisfied_after_seven_cycles
+    (earlier later : TimedPEAccess)
+    (sameBank : earlier.access.bank = later.access.bank)
+    (grfT : earlier.access.bank = .grf0 ∨ earlier.access.bank = .grf1 ∨
+      earlier.access.bank = .t)
+    (accessed : earlier.write = true ∧ later.write = false)
+    (overlap : earlier.rangesOverlap later = true)
+    (distance : earlier.absoluteCycle + 7 ≤ later.absoluteCycle) :
+    peHazardSatisfied earlier later := by
+  have earlierCycleBound := earlier.cycle.isLt
+  have laterCycleBound := later.cycle.isLt
+  simp only [peHazardSatisfied]
+  unfold TimedPEAccess.absoluteCycle at distance ⊢
+  constructor
+  · omega
+  rw [grf_t_pe_hazard_requires_seven_cycles earlier later accessed.1 accessed.2
+    sameBank grfT overlap]
+  omega
+
 theorem parsed_issue_advances_elapsed_word
     (control : ParsedMaskExecutionControl) (line : ParsedMaskedIssueLine) :
     (advanceParsedMaskControl control line).elapsedWords = control.elapsedWords + 1 := rfl
