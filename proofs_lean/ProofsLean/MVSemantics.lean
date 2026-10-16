@@ -20,6 +20,7 @@ structure Cell where
 
 abbrev Memory := Cell → BitVec 64
 abbrev CopyPair := Cell × Cell
+abbrev ReductionPair := List Cell × Cell
 
 def updateLastValue (cell : Cell) (found : Option (BitVec 64))
     (entry : Cell × BitVec 64) : Option (BitVec 64) :=
@@ -458,6 +459,34 @@ theorem dL2bmPdmCopyPlan_length (source destination : ParsedMvOperand)
     (dL2bmPdmCopyPlan source destination destinationGroup count).length = count := by
   exact indexedCopies_length _ _ _
 
+def r2GroupReductions (source destination : ParsedMvOperand)
+    (group : Fin 4) (count : Nat) : List ReductionPair :=
+  (List.range count).map fun offset =>
+    ([cellFor source group 0 offset, cellFor source group 1 offset],
+      cellFor destination group 0 offset)
+
+def r2Plan (source destination : ParsedMvOperand)
+    (groups : List (Fin 4)) (count : Nat) : List ReductionPair :=
+  match groups with
+  | [] => []
+  | group :: rest => r2GroupReductions source destination group count ++
+      r2Plan source destination rest count
+
+theorem r2GroupReductions_length (source destination : ParsedMvOperand)
+    (group : Fin 4) (count : Nat) :
+    (r2GroupReductions source destination group count).length = count := by
+  simp [r2GroupReductions, List.length_map, List.length_range]
+
+theorem r2Plan_length (source destination : ParsedMvOperand)
+    (groups : List (Fin 4)) (count : Nat) :
+    (r2Plan source destination groups count).length = groups.length * count := by
+  induction groups with
+  | nil => simp [r2Plan]
+  | cons group rest ih =>
+      simp [r2Plan, r2GroupReductions_length, ih]
+      rw [Nat.add_mul, Nat.one_mul]
+      omega
+
 def mvFirstOperandGroup? (operand : ParsedMvOperand) : Option (Fin 4) := do
   let groups ← mvOperandGroups? operand
   groups.head?
@@ -490,6 +519,32 @@ def parsedMvDPlan? (transfer : ParsedMv) : Option (List CopyPair) := do
 def executeParsedMvD? (memory : Memory) (transfer : ParsedMv) : Option Memory := do
   let plan ← parsedMvDPlan? transfer
   pure (executeCopies memory plan)
+
+def parsedMvR2Plan? (transfer : ParsedMv) : Option (List ReductionPair) := do
+  match transfer.kind with
+  | .reduce2 _ => pure ()
+  | _ => none
+  match transfer.source, transfer.destination with
+  | none, _ | _, none => pure []
+  | some source, some destination => do
+      let groups ← mvOperandGroups? destination
+      let count := (transfer.size.val / 64) * 64
+      pure (r2Plan source destination groups count)
+
+def stageReductions (memory : Memory) (reduce : List (BitVec 64) → BitVec 64)
+    : List ReductionPair → List (Cell × BitVec 64)
+  | [] => []
+  | (sources, destination) :: rest =>
+      (destination, reduce (sources.map memory)) :: stageReductions memory reduce rest
+
+def executeReductions (memory : Memory) (reduce : List (BitVec 64) → BitVec 64)
+    (reductions : List ReductionPair) : Memory :=
+  commitWrites memory (stageReductions memory reduce reductions)
+
+def executeParsedMvR2? (memory : Memory) (transfer : ParsedMv)
+    (reduce : List (BitVec 64) → BitVec 64) : Option Memory := do
+  let plan ← parsedMvR2Plan? transfer
+  pure (executeReductions memory reduce plan)
 
 def parsedMvBPlan? (transfer : ParsedMv) : Option (List CopyPair) := do
   if transfer.kind != .broadcast then none else
@@ -730,6 +785,23 @@ theorem executeParsedMvD_read (memory : Memory) (transfer : ParsedMv)
         | some source => memory source
         | none => memory cell) := by
   simp [executeParsedMvD?, hplan, executeCopies_read]
+
+theorem executeReductions_read (memory : Memory)
+    (reduce : List (BitVec 64) → BitVec 64)
+    (reductions : List ReductionPair) (cell : Cell) :
+    executeReductions memory reduce reductions cell =
+      match (stageReductions memory reduce reductions).foldl
+          (updateLastValue cell) none with
+      | some value => value
+      | none => memory cell := rfl
+
+theorem executeParsedMvR2_read (memory : Memory) (transfer : ParsedMv)
+    (reduce : List (BitVec 64) → BitVec 64)
+    (plan : List ReductionPair) (cell : Cell)
+    (hplan : parsedMvR2Plan? transfer = some plan) :
+    (executeParsedMvR2? memory transfer reduce).map (fun result => result cell) =
+      some (executeReductions memory reduce plan cell) := by
+  simp [executeParsedMvR2?, hplan]
 
 /-- An overlapping left-to-right copy reads every source from the old state:
 writing cell 1 cannot change the value subsequently copied from cell 1 to cell 2. -/
