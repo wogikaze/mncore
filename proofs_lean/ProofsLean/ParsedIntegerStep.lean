@@ -773,6 +773,16 @@ def peHazardConstraintsBetween (earlier later : List TimedPEAccess) :
           if access.startWord - write.startWord ≤ 4 then some constraint else none
       | none => none
 
+theorem pe_hazard_constraints_between_complete
+    (earlier later : List TimedPEAccess) (constraint : PEHazardConstraint) :
+    constraint ∈ peHazardConstraintsBetween earlier later ↔
+      ∃ write, write ∈ earlier ∧ ∃ access, access ∈ later ∧
+        (match makePEHazardConstraint? write access with
+         | some candidate =>
+             if access.startWord - write.startWord ≤ 4 then some candidate else none
+         | none => none) = some constraint := by
+  simp [peHazardConstraintsBetween, List.mem_flatMap, List.mem_filterMap]
+
 def collectPEHazardConstraintsAux (earlier : List TimedPEAccess)
     (remaining : List (List TimedPEAccess)) : List PEHazardConstraint :=
   match remaining with

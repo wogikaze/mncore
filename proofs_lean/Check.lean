@@ -107,6 +107,7 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.t_indirect_hazard_access_uses_cycle_region
 #print axioms ProofsLean.MNCore.PEMemory.pe_hazard_constraint_uses_rule_distance
 #print axioms ProofsLean.MNCore.PEMemory.pe_hazard_violation_filter_exact
+#print axioms ProofsLean.MNCore.PEMemory.pe_hazard_constraints_between_complete
 #print axioms ProofsLean.MNCore.PEMemory.pe_hazard_constraint_violation_matches_pair_safety
 
 open Lean Elab Command in
