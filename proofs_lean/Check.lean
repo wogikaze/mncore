@@ -53,6 +53,10 @@ import Lean
 #print axioms ProofsLean.MNCore.L1Transfer.pbcastTurnaround_low
 #print axioms ProofsLean.MNCore.L1Transfer.addressAt_wraps
 #print axioms ProofsLean.MNCore.L1Transfer.pbcast_forwarding_readback
+#print axioms ProofsLean.MNCore.L1Transfer.mbcast_addressed_words
+#print axioms ProofsLean.MNCore.L1Transfer.mbcast_turnaround_words
+#print axioms ProofsLean.MNCore.L1Transfer.m4bcastGroup_matches_rust_index
+#print axioms ProofsLean.MNCore.L1Transfer.m4bcast_addressed_words
 #print axioms ProofsLean.MNCore.PEMemory.mask_directive_replaces_selection_preserves_context
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerMaskedLineStep_prepares_then_commits
 #print axioms ProofsLean.MNCore.PEMemory.parsedMaskedSource_execution
