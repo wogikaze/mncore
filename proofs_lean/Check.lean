@@ -284,6 +284,7 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerMaskedRegisterStepWithForwarding_resolves_to_fixed
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerMaskedRegisterStepWithForwarding_success
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerMaskPreparedStep_matches_direct_step
+#print axioms ProofsLean.MNCore.PEMemory.executeParsedIntegerMaskExpr?_uses_lowering
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerMaskedLineStepWithForwarding_prepares_then_commits
 #print axioms ProofsLean.MNCore.PEMemory.updateParsedIntegerALUForwardingCycle_reads_back
 #print axioms ProofsLean.MNCore.PEMemory.updateParsedIntegerALUForwardingCycle_semantics

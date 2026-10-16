@@ -4589,7 +4589,6 @@ theorem parsedIntegerMaskPreparedStep_matches_direct_step
       simp [h, commitParsedMaskedWrites, integerFlagsVector,
         ProofsLean.MNCore.Masks.writeRegister]
 
-
 example : (parsedIntegerMaskExprAccesses?
     ({ op := .alu .inc (some .i) false none,
        sources := [.mem ⟨.lm0, ⟨2, 0, 0, 0, 0, false, none⟩⟩ false false false none],
@@ -4615,6 +4614,17 @@ def executeParsedIntegerMaskExpr? (files : IntegerRegisterFiles)
   | some accesses => some (parsedIntegerMaskRegisterStep files accesses.sourceX
       accesses.sourceY accesses.destination cycle accesses.selection accesses.op false)
   | none => none
+
+theorem executeParsedIntegerMaskExpr?_uses_lowering
+    (files : IntegerRegisterFiles) (expression : ParsedExpr)
+    (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
+    (directive : ParsedMaskDirective) (accesses : ParsedIntegerMaskAccesses)
+    (lowered : parsedIntegerMaskExprAccesses? expression files.maskRegisters directive
+      pe cycle bar0 bar1 tWord = some accesses) :
+    executeParsedIntegerMaskExpr? files expression pe cycle bar0 bar1 tWord directive =
+      some (parsedIntegerMaskRegisterStep files accesses.sourceX accesses.sourceY
+        accesses.destination cycle accesses.selection accesses.op false) := by
+  simp [executeParsedIntegerMaskExpr?, lowered]
 
 theorem mask_read_after_selected_write (registers : ProofsLean.MNCore.Masks.RegisterFile)
     (entry : Fin 15) (cycle : Fin 4) (flags selection : BitVec 4) :
