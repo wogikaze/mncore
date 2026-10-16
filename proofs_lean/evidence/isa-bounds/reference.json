@@ -25,7 +25,7 @@
     },
     {
       "path": "proofs_lean/scripts/check_isa_parser_bounds.py",
-      "sha256": "fedb03a390f2907f5e931e660e3082dc4f978381a0ca089c1b5e96381cb21e5b"
+      "sha256": "72630ce95804d380827ef1efba143a88c8f8af88a2621e85d677d23a47a89d10"
     }
   ],
   "observations": [
@@ -115,6 +115,46 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 16 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "lpassa_multi_output_three_banks",
+      "source": "lpassa $lm0 $ln0 $lr0 $ls0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "lpassa_duplicate_output_bank",
+      "source": "lpassa $lm0 $ln0 $ln2",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "LM1 used twice as output.",
+      "matches_expected": true
+    },
+    {
+      "case": "zero_multi_output_four_memories_and_omr",
+      "source": "zero $lm0 $ln0 $lr0 $ls0 $omr1",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "zero_duplicate_mask_output",
+      "source": "zero $omr1 $omr2",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Mask register used twice as output.",
+      "matches_expected": true
+    },
+    {
+      "case": "zero_nowrite_with_other_output",
+      "source": "zero $nowrite $omr1",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Used $nowrite output. mr can't use with $nowrite as output",
       "matches_expected": true
     },
     {
@@ -4124,6 +4164,7 @@
     "$omr0 and $omr16 are rejected; $omr1 and $omr15 are accepted.",
     "$imr0, $imr31 are accepted while $imr32 and $imr255 fail encoding. Active mask directives `maskn 0` and `maskn 31` are accepted, while `maskn 32` fails. This conflicts with the Rust MaskSource comment claiming entries 1 through 15.",
     "Matrix rows 0 through 15 are accepted; row 16 is rejected.",
+    "PE destination lists are not sized by source arity: lpassa accepts three outputs across LM1/GRF0/GRF1, and zero accepts LM0/LM1/GRF0/GRF1 plus OMR. The sampled duplicate-bank and nowrite combinations are rejected; this is not an exhaustive output grammar proof.",
     "hbfn/6 through hbfn/9 are accepted; hbfn/10 is rejected.",
     "LM0/LM1 and GRF0/GRF1 accept aligned final addresses at widths 1, 2, and 4; their single-word capacities are respectively 4096 and 512, and the capacity address is rejected.",
     "Each of the four explicit LM0 cycle addresses accepts 4095 and rejects 4096; madpe values 0 through 3 are accepted and 4 is rejected.",

@@ -24,6 +24,16 @@ CASES = {
     "omr_1": ("zero $omr1\n", True, 1),
     "omr_15": ("zero $omr15\n", True, 1),
     "omr_16": ("zero $omr16\n", False, None),
+    "lpassa_multi_output_three_banks": (
+        "lpassa $lm0 $ln0 $lr0 $ls0\n", True, 1),
+    "lpassa_duplicate_output_bank": (
+        "lpassa $lm0 $ln0 $ln2\n", False, None),
+    "zero_multi_output_four_memories_and_omr": (
+        "zero $lm0 $ln0 $lr0 $ls0 $omr1\n", True, 1),
+    "zero_duplicate_mask_output": (
+        "zero $omr1 $omr2\n", False, None),
+    "zero_nowrite_with_other_output": (
+        "zero $nowrite $omr1\n", False, None),
     "matrix_row_15": ("gmread $lx15 $nowrite\n", True, 1),
     "matrix_row_16": ("gmread $lx16 $nowrite\n", False, None),
     "hbfn_6": ("hbfn/6 $lm0 $ln0\n", True, 1),
@@ -164,6 +174,7 @@ def main() -> None:
             "$omr0 and $omr16 are rejected; $omr1 and $omr15 are accepted.",
             "$imr0, $imr31 are accepted while $imr32 and $imr255 fail encoding. Active mask directives `maskn 0` and `maskn 31` are accepted, while `maskn 32` fails. This conflicts with the Rust MaskSource comment claiming entries 1 through 15.",
             "Matrix rows 0 through 15 are accepted; row 16 is rejected.",
+            "PE destination lists are not sized by source arity: lpassa accepts three outputs across LM1/GRF0/GRF1, and zero accepts LM0/LM1/GRF0/GRF1 plus OMR. The sampled duplicate-bank and nowrite combinations are rejected; this is not an exhaustive output grammar proof.",
             "hbfn/6 through hbfn/9 are accepted; hbfn/10 is rejected.",
             "LM0/LM1 and GRF0/GRF1 accept aligned final addresses at widths 1, 2, and 4; their single-word capacities are respectively 4096 and 512, and the capacity address is rejected.",
             "Each of the four explicit LM0 cycle addresses accepts 4095 and rejects 4096; madpe values 0 through 3 are accepted and 4 is rejected.",
