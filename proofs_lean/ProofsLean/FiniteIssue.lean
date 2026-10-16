@@ -790,6 +790,70 @@ theorem ParsedOperand.listInFiniteEnvelope_finite (bound : Nat) :
   exact Finite.of_injective (ParsedOperand.listFiniteCode bound)
     (ParsedOperand.listFiniteCode_injective bound)
 
+/-- Lean's `Char` has no built-in `Finite` instance. Unicode scalar values
+still form a finite carrier, encoded by their code points below U+110000. -/
+private def charFiniteCode (character : Char) : Fin 0x110000 := by
+  refine ⟨character.toNat, ?_⟩
+  have valid := character.valid
+  change character.val < 0xd800 ∨
+    (0xdfff < character.val ∧ character.val < 0x110000) at valid
+  have codeBound : character.val.toNat < 0x110000 := by
+    rcases valid with below | ⟨_, below⟩
+    · have belowNat := UInt32.lt_iff_toNat_lt.mp below
+      exact Nat.lt_trans belowNat (by decide)
+    · exact UInt32.lt_iff_toNat_lt.mp below
+  change character.val.toNat < 0x110000
+  exact codeBound
+
+private theorem charFiniteCode_injective : Function.Injective charFiniteCode := by
+  intro a b equal
+  have valuesEqual := congrArg Fin.val equal
+  change a.toNat = b.toNat at valuesEqual
+  exact Char.toNat_inj.mp valuesEqual
+
+theorem char_finite : Finite Char :=
+  Finite.of_injective charFiniteCode charFiniteCode_injective
+
+def ParsedAluName.finiteCode : ParsedAluName → Fin 32
+  | .msl => 0 | .msr => 1 | .passa => 2 | .inc => 3
+  | .dec => 4 | .not => 5 | .lnot => 6 | .rsqrt => 7
+  | .floor => 8 | .ftoi => 9 | .bfe => 10 | .bfn => 11
+  | .max => 12 | .min => 13 | .packbit => 14 | .and => 15
+  | .or => 16 | .xor => 17 | .add => 18 | .sub => 19
+  | .lsl => 20 | .lsr => 21 | .bsl => 22 | .bsr => 23
+  | .relu => 24 | .relu0 => 25 | .relu1 => 26 | .relu2 => 27
+  | .relu3 => 28 | .lrelud => 29 | .lreluo => 30 | .ilrelud => 31
+
+theorem ParsedAluName.finiteCode_injective :
+    Function.Injective ParsedAluName.finiteCode := by
+  intro a b equal
+  cases a <;> cases b <;> simp [ParsedAluName.finiteCode] at equal ⊢
+
+theorem ParsedAluName.finite : Finite ParsedAluName :=
+  Finite.of_injective ParsedAluName.finiteCode ParsedAluName.finiteCode_injective
+
+def ParsedPrecision.finiteCode (precision : ParsedPrecision) : Fin 7 :=
+  ⟨precision.code, by cases precision <;> decide⟩
+
+theorem ParsedPrecision.finiteCode_injective :
+    Function.Injective ParsedPrecision.finiteCode := by
+  intro a b equal
+  apply ParsedPrecision.code_injective
+  exact congrArg Fin.val equal
+
+theorem ParsedPrecision.finite : Finite ParsedPrecision :=
+  Finite.of_injective ParsedPrecision.finiteCode ParsedPrecision.finiteCode_injective
+
+def CalcKind.finiteCode : CalcKind → Fin 4
+  | .fma => 0 | .mul => 1 | .add => 2 | .passa => 3
+
+theorem CalcKind.finiteCode_injective : Function.Injective CalcKind.finiteCode := by
+  intro a b equal
+  cases a <;> cases b <;> simp [CalcKind.finiteCode] at equal ⊢
+
+theorem CalcKind.finite : Finite CalcKind :=
+  Finite.of_injective CalcKind.finiteCode CalcKind.finiteCode_injective
+
 theorem ParsedExpr.sourcesInFiniteEnvelope_finite :
     Finite {sources : List ParsedOperand //
       sources.length ≤ 3 ∧ ∀ operand ∈ sources, operand.inFiniteEnvelope} :=

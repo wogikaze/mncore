@@ -66,6 +66,10 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.ParsedExpr.sourcesInFiniteEnvelope_of_parserArity
 #print axioms ProofsLean.MNCore.Issue.ParsedOperand.listInFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.ParsedExpr.destinationsInFiniteEnvelope_finite
+#print axioms ProofsLean.MNCore.Issue.char_finite
+#print axioms ProofsLean.MNCore.Issue.ParsedAluName.finite
+#print axioms ProofsLean.MNCore.Issue.ParsedPrecision.finite
+#print axioms ProofsLean.MNCore.Issue.CalcKind.finite
 #print axioms ProofsLean.MNCore.Issue.ParsedMask.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.omrEntryInFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.natBelow_finite
