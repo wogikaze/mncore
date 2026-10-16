@@ -4024,10 +4024,13 @@ def ParsedLine.toParsedMaskedStatements? :
   | .nop count _ => some (List.replicate count (.issue .nop))
   | _ => none
 
-def lowerParsedMaskedSource (lines : List ParsedLine) :
-    Option (List ParsedMaskedSourceStatement) := do
-  let lowered ← lines.mapM ParsedLine.toParsedMaskedStatements?
-  pure lowered.flatten
+def lowerParsedMaskedSource : List ParsedLine →
+    Option (List ParsedMaskedSourceStatement)
+  | [] => some []
+  | line :: rest => do
+      let head ← ParsedLine.toParsedMaskedStatements? line
+      let tail ← lowerParsedMaskedSource rest
+      pure (head ++ tail)
 
 def ParsedLine.parsedMaskedIssueWords? : ParsedLine → Option Nat
   | .pe _ => some 1
@@ -4035,6 +4038,13 @@ def ParsedLine.parsedMaskedIssueWords? : ParsedLine → Option Nat
   | .nop count _ => some count
   | .maskDirective _ _ _ => some 0
   | _ => none
+
+def parsedMaskedIssueWordTotal? : List ParsedLine → Option Nat
+  | [] => some 0
+  | line :: rest => do
+      let lineWords ← ParsedLine.parsedMaskedIssueWords? line
+      let restWords ← parsedMaskedIssueWordTotal? rest
+      pure (lineWords + restWords)
 
 
 
@@ -4122,6 +4132,42 @@ theorem parsed_line_lowering_preserves_issue_words (line : ParsedLine)
   | debugSet => simp [ParsedLine.toParsedMaskedStatements?] at lowered
   | debugGet => simp [ParsedLine.toParsedMaskedStatements?] at lowered
   | dramSet => simp [ParsedLine.toParsedMaskedStatements?] at lowered
+
+theorem parsedMaskedSourceCost_append (left right : List ParsedMaskedSourceStatement) :
+    ProofsLean.ControlNormalization.cost (left ++ right) =
+      ProofsLean.ControlNormalization.cost left +
+        ProofsLean.ControlNormalization.cost right := by
+  induction left with
+  | nil => simp [ProofsLean.ControlNormalization.cost]
+  | cons statement rest ih =>
+      cases statement <;>
+        simp [ProofsLean.ControlNormalization.cost, ih, Nat.add_assoc]
+
+theorem parsed_source_lowering_preserves_total_issue_words
+    (lines : List ParsedLine) (source : List ParsedMaskedSourceStatement)
+    (lowered : lowerParsedMaskedSource lines = some source) :
+    parsedMaskedIssueWordTotal? lines =
+      some (ProofsLean.ControlNormalization.cost source) := by
+  induction lines generalizing source with
+  | nil =>
+      simp [lowerParsedMaskedSource] at lowered
+      subst source
+      rfl
+  | cons line rest ih =>
+      cases hline : ParsedLine.toParsedMaskedStatements? line with
+      | none =>
+          simp [lowerParsedMaskedSource, hline] at lowered
+      | some lineSource =>
+          have hlineCost := parsed_line_lowering_preserves_issue_words line lineSource hline
+          rcases hlineCost with ⟨lineWords, hscore, hcost⟩
+          cases hrest : lowerParsedMaskedSource rest with
+          | none => simp [lowerParsedMaskedSource, hline, hrest] at lowered
+          | some restSource =>
+              simp [lowerParsedMaskedSource, hline, hrest] at lowered
+              subst source
+              have hrestCost := ih restSource hrest
+              rw [parsedMaskedSourceCost_append, hcost]
+              simp [parsedMaskedIssueWordTotal?, hscore, hrestCost]
 theorem parsed_nop_line_lowers_to_count_issue_words (count : Nat) (wait : Option Nat) :
     lowerParsedMaskedSource [.nop count wait] =
       some (List.replicate count (.issue ParsedMaskedIssueLine.nop)) := by

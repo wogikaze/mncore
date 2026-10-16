@@ -22,7 +22,7 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
 | 全入力と公式テストケース限定の仕様の区別 | 定義と回帰証明を実装済み |
 | 全ISAの合法な命令・オペランド・同時発行のモデル | 未実装。`coverage.json` |
 | メモリ・通信・丸め・素通り・ハザード・初期化の実行意味論 | 未実装 |
-| ゼロコスト制御文を含む構文と、スコア付き命令列の対応証明 | 汎用正規化を証明済み。VSM構文との接続は未実装 |
+| ゼロコスト制御文を含む構文と、スコア付き命令列の対応証明 | PE/nop/mask directive subsetのloweringとcost保存を証明。完全なVSM接続は未実装 |
 | モデルと公式仕様・エミュレータの対応、信頼境界の記録 | 未完了 |
 | 73問の正式な仕様とそれぞれの最適性証明 | 未実装、0/73問 |
 
@@ -163,8 +163,10 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   issue line全体の single-line mask 集約を定義し、マスクを持つdestinationの存在と集約flagが
   trueであることの同値、およびそのflagが同じ行の別のunmasked memory destinationで
   multiline directiveを打ち消すことを証明した。OMR対象directiveから選択フラグを解決する。
-  Rust parserがこのParsedLineを生成する対応と、
-  ソース全体を通したdirective適用は未接続。
+  PE/nop/mask directiveからなるlowerableなParsedLine列では、ソース順にdirectiveを適用し、
+  instruction clockと合計issue costが一致する定理を追加した。`maskllm 258`の解析・lowering・
+  後続issueへの状態適用も接続した。Rust parser全体からこのParsedLineを生成する対応と、
+  全VSM行種別を含むソース列loweringは未完了。
   整数ALUのRust入力処理に合わせ、sourceの符号反転・精度拡張属性を無視するloweringを接続して証明した。memory sourceの丸め属性はRustと同じsingle→half変換（最近接偶数、非正規数なし）を入力readへ接続し、tie-even・境界・特殊値を計算で証明し、再梱包後のhalf ALU各laneが元busの逆順4語を読む対応も証明した。mask付き入力と非PEメモリは引き続きlowering対象外。forward sourceのoperand loweringと、明示slotを渡す場合の既知値・poison・unknown伝播、およびALUから宛先writebackまでの直接stepも追加した。複数式PE行を同一の旧register state/旧forwarding slotsからprepareし、一括commitするstepも追加した。prepare済みの整数ALU出力をflush後busとして指定cycleの`aluf` slotへ反映し、そのslotのreadbackを証明した。さらに整数ALU・zero・immediate producerからなるissue lineについて、全式を同じ旧register state/旧forwarding slotsから4 cycle分prepareし、Rustの式順・cycle順でwriteをcommitし、cycle別`aluf`を集める遷移を定義した。matrix readはD/H/その他single-width precisionごとにRustのphysical word配置からbusを作り、ParsedExprのsource/destination lowering、flush後のPE-memory write、cycle別`mreadf`更新を4-cycle stepとして接続し、整数ALU/constantsとmatrix readが混在する部分line遷移へ統合した。D精度のstorage-to-bus/readbackと全precisionのbus layoutを証明した。matrix-writeはD精度の未修飾PE-memory/forward sourceに対する4-cycle store更新と、F精度の未修飾sourceに対する4-cycle store更新を定義し、各cycleについて、各PEでlowerしたmemory/forward operandのread結果からPE別のD値を集め、lowering成功時にdestination side/baseがcontextによらず一定である性質を証明し、PEごとのlowering/read結果だけからD精度の4 cycle分のrow更新後readbackまで示す定理を追加した。F/G精度では各PEの2つのsource wordが8-word rowの対応位置へ入り、4 cycleのlowered/read結果が4つの更新rowを作ること、後続更新後も各rowのselected wordが保持されること、および最終storeからcycle別source wordをmatrix-read busで回収できることを証明した。G精度はRust実行器でFと同じ32-bit幅・physical row配置であり、block-float値をraw bitsのまま保持する。Gの式が同じdirect-write shapeへlowerされる定理も追加した。入力の拡張・丸め・符号反転、MAU/L1BM producer、およびそれらを含むlineは未接続。
 - `Issue.lean`: Rust `AluOp::inputs()` と全32 opcodeのsource数をLeanで定義し、issue mirror監査でも両表の一致を確認する。PE式の同時発行判定について、グループ重複、MAU組み合わせ、
   行列レジスタ使用、PEメモリの読み書きポート、即値とLM0、zero-flush重複を
