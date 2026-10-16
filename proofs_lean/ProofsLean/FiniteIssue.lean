@@ -58,6 +58,21 @@ theorem ParsedMask.inFiniteEnvelope_finite :
     Finite {mask : ParsedMask // mask.inFiniteEnvelope} :=
   Finite.of_injective parsedMaskCode parsedMaskCode_injective
 
+def omrEntryInFiniteEnvelope (entry : Nat) : Prop := entry < 16
+
+private def omrEntryCode
+    (entry : {entry : Nat // omrEntryInFiniteEnvelope entry}) : Fin 16 :=
+  ⟨entry.1, entry.2⟩
+
+private theorem omrEntryCode_injective : Function.Injective omrEntryCode := by
+  intro a b equal
+  apply Subtype.ext
+  exact congrArg Fin.val equal
+
+theorem omrEntryInFiniteEnvelope_finite :
+    Finite {entry : Nat // omrEntryInFiniteEnvelope entry} :=
+  Finite.of_injective omrEntryCode omrEntryCode_injective
+
 private def Group.code : Group → Fin 10
   | .alu => 0
   | .mauCalc => 1

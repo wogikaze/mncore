@@ -469,6 +469,13 @@ def coverage_catalog() -> dict:
             "scope": "Finite subtype for ParsedMask patterns and entry selectors below 32.",
             "evidence": "proofs_lean/evidence/isa-bounds/reference.json: imr_selector_0, imr_selector_31, imr_selector_32; these are IMR mask selectors, not OMR entries.",
             "missing": "Proof that all assembler-accepted PE masks parse into this subtype, plus other operand fields and whole-line finiteness.",
+        }, {
+            "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
+            "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
+            "theorem": "ProofsLean.MNCore.Issue.omrEntryInFiniteEnvelope_finite",
+            "scope": "Finite subtype for OMR entry values below 16, including invalid zero as a generous envelope.",
+            "evidence": "proofs_lean/evidence/isa-bounds/reference.json: omr_0, omr_1, omr_15, omr_16.",
+            "missing": "Proof that all assembler-accepted OMR operands parse into this subtype, plus other operand fields and whole-line finiteness.",
         }],
         "datapath_fragments": [{
             "source": fragment_source.relative_to(REPO).as_posix(), "sha256": digest(fragment_source),

@@ -88,6 +88,8 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   有限化する補題ではなく、行全体の有限性にも未接続。
   同ファイルで`ParsedMask.entry < 32`の有限部分型も証明した。assemble3では`$imr0..31`が受理され
   `$imr32`が拒否される一方、OMR entryは別の範囲である。parser出力からこの上限への一般証明は未実装。
+  OMR indexについても`entry < 16`の有限部分型を証明し、assemble3の1..15受理・16拒否を根拠に登録した。
+  envelopeは不正な0も含む上位集合で、parser/assembler受理集合との完全な一致を主張しない。
 - `FiniteExample.lean`: 3命令・4入力の小さな機械で、全候補の反証、2行の最適性、
   限定入力では1行解が存在することを証明する回帰例。**MN-Coreではない。**
 - `PlusOne.lean`: Welcome（`challenge/1.plus-one`）の2行の `iinc` 解について、
