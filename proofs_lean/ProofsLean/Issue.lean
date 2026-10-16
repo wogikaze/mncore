@@ -588,10 +588,31 @@ structure ParsedMaskDirective where
   entry : Nat := 0
   deriving DecidableEq, Repr
 
+inductive ParsedMvKind where
+  | nop | copy | broadcast | broadcast2 | broadcast4 | distribute
+  | reduce (rrn : ParsedRrn) | reduce2 (rrn : ParsedRrn) | reduce4 (rrn : ParsedRrn)
+  deriving DecidableEq, Repr
+
+inductive ParsedMvOperand where
+  | pdm (address : Nat) (group : Option Nat)
+  | dram (address : Nat) (group : Option Nat) (indirect : Bool)
+  | l2bm (address : Nat) (group : Option Nat) (l2b : Option Nat)
+  deriving DecidableEq, Repr
+
+structure ParsedMv where
+  kind : ParsedMvKind
+  size : Nat
+  tag : Option Nat
+  nd : Option Nat
+  priority : Nat
+  source : Option ParsedMvOperand
+  destination : Option ParsedMvOperand
+  deriving DecidableEq, Repr
+
 inductive ParsedLine where
   | pe (expressions : List ParsedExpr)
   | nop (count : Nat) (wait : Option Nat)
-  | mv
+  | mv (transfer : ParsedMv)
   | maskDirective (widthWords : Nat) (targets : ParsedMaskTargets) (entry : Nat)
   | debugSet
   | debugGet
@@ -600,23 +621,23 @@ inductive ParsedLine where
 
 def ParsedLine.issueLegal : ParsedLine → Prop
   | .pe expressions => LegalParsedLine expressions
-  | .nop _ _ | .mv | .maskDirective _ _ _ | .debugSet | .debugGet | .dramSet => True
+  | .nop _ _ | .mv _ | .maskDirective _ _ _ | .debugSet | .debugGet | .dramSet => True
 
 noncomputable def checkParsedTopLine : ParsedLine → Bool
   | .pe expressions => checkParsedLine expressions
-  | .nop _ _ | .mv | .maskDirective _ _ _ | .debugSet | .debugGet | .dramSet => true
+  | .nop _ _ | .mv _ | .maskDirective _ _ _ | .debugSet | .debugGet | .dramSet => true
 
 theorem parsed_topline_check_sound (line : ParsedLine)
     (accepted : checkParsedTopLine line = true) : line.issueLegal := by
   cases line with
   | pe expressions => exact parsed_check_sound expressions accepted
-  | nop _ _ | mv | maskDirective _ _ _ | debugSet | debugGet | dramSet => trivial
+  | nop _ _ | mv _ | maskDirective _ _ _ | debugSet | debugGet | dramSet => trivial
 
 theorem parsed_topline_check_complete (line : ParsedLine) (legal : line.issueLegal) :
     checkParsedTopLine line = true := by
   cases line with
   | pe expressions => exact parsed_check_complete expressions legal
-  | nop _ _ | mv | maskDirective _ _ _ | debugSet | debugGet | dramSet => rfl
+  | nop _ _ | mv _ | maskDirective _ _ _ | debugSet | debugGet | dramSet => rfl
 
 /-- Non-directive source lines retain mask state; directive lines replace it,
 matching `Sim::exec`'s zero-cost state update. -/

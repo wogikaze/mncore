@@ -186,4 +186,43 @@ def l1SourceHazardConstraints
     (startWord : Nat) :=
   collectBlockHazardConstraints (l1SourceHazardEvents source startWord)
 
+def parsedMvOperandHazardEvents (transfer : ParsedMv) (write : Bool)
+    (operand : Option ParsedMvOperand) (startWord : Nat) :
+    List ProofsLean.MNCore.PEMemory.TimedBlockAccess :=
+  match operand with
+  | some (.l2bm address _ selectedBank) =>
+      (List.finRange 2).filterMap fun bank =>
+        if selectedBank.isNone || selectedBank == some bank.val then
+          some ⟨.l2bm bank, .mv, write, some address,
+            if transfer.kind == .nop then 0 else transfer.size,
+            startWord, ⟨0, by decide⟩⟩
+        else none
+  | _ => []
+
+def parsedMvHazardEvents (transfer : ParsedMv) (startWord : Nat) :
+    List ProofsLean.MNCore.PEMemory.TimedBlockAccess :=
+  parsedMvOperandHazardEvents transfer false transfer.source startWord ++
+    parsedMvOperandHazardEvents transfer true transfer.destination startWord
+
+def parsedLineBlockHazardEvents (line : ParsedLine) (startWord : Nat) :
+    List ProofsLean.MNCore.PEMemory.TimedBlockAccess :=
+  match line with
+  | .pe expressions => expressions.flatMap fun expression =>
+      l1ExprHazardEvents expression startWord
+  | .mv transfer => parsedMvHazardEvents transfer startWord
+  | _ => []
+
+def parsedSourceBlockHazardEvents : List ParsedLine → Nat →
+    List ProofsLean.MNCore.PEMemory.TimedBlockAccess
+  | [], _ => []
+  | line :: rest, startWord =>
+      parsedLineBlockHazardEvents line startWord ++
+        parsedSourceBlockHazardEvents rest
+          (startWord +
+            (ProofsLean.MNCore.PEMemory.ParsedLine.parsedMaskedIssueWords? line).getD 0)
+
+def parsedSourceBlockHazardConstraints (source : List ParsedLine)
+    (startWord : Nat) :=
+  collectBlockHazardConstraints (parsedSourceBlockHazardEvents source startWord)
+
 end ProofsLean.MNCore.HazardTrace

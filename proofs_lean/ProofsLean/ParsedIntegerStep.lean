@@ -3837,6 +3837,7 @@ def lowerParsedMaskedSource (lines : List ParsedLine) :
 
 def ParsedLine.parsedMaskedIssueWords? : ParsedLine → Option Nat
   | .pe _ => some 1
+  | .mv _ => some 1
   | .nop count _ => some count
   | .maskDirective _ _ _ => some 0
   | _ => none
@@ -3923,7 +3924,7 @@ theorem parsed_line_lowering_preserves_issue_words (line : ParsedLine)
       simp [ParsedLine.toParsedMaskedStatements?] at lowered
       subst statements
       exact ⟨0, rfl, rfl⟩
-  | mv => simp [ParsedLine.toParsedMaskedStatements?] at lowered
+  | mv _ => simp [ParsedLine.toParsedMaskedStatements?] at lowered
   | debugSet => simp [ParsedLine.toParsedMaskedStatements?] at lowered
   | debugGet => simp [ParsedLine.toParsedMaskedStatements?] at lowered
   | dramSet => simp [ParsedLine.toParsedMaskedStatements?] at lowered

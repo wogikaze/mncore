@@ -148,7 +148,8 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   8 bank×4 cycleの32 eventへloweringする関数を追加した。source文列を走査しdirectiveを0 costとして
   issue wordごとのclockも進めてevent streamを作り、event対を既存のblock hazard ruleと
   in-window条件に通して制約を集める。L2BM opcodeのread/write spanとmulticast bank maskもParsedExprから
-  lowerする。MV側のevent生成、PE operand accessとの合流、
+  lowerする。MVのLean top-level型にも転送kind/size/operand情報を持たせ、L2BM MV accessを生成して
+  ParsedLine列のword clockに接続した。MVのRust parserからの構文射影、PE operand accessとの合流、
   Rust reportのsort/dedupおよび表示値の再現は未完了。
   これは対象PEメモリ規則の条件モデルであり、Rust analyzerの全Access生成、mask directiveの実効状態、
   BARによる静的range照合、reportのsort/dedupを含む出力一致証明ではない。
