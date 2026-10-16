@@ -1103,6 +1103,16 @@ def writeDoubleMatrixPhysicalRow (old : DoubleMatrixPhysicalFace)
 def doubleMatrixWriteRowAt (base : Nat) (cycle : Fin 4) : Fin 4 :=
   ⟨(base + cycle.val) % 4, Nat.mod_lt _ (by decide)⟩
 
+theorem doubleMatrixWriteRowAt_injective (base : Nat) :
+    Function.Injective (doubleMatrixWriteRowAt base) := by
+  intro left right equal
+  apply Fin.ext
+  have values := congrArg Fin.val equal
+  simp [doubleMatrixWriteRowAt] at values
+  have leftLt := left.isLt
+  have rightLt := right.isLt
+  omega
+
 def writeParsedDoubleMatrixStoreRow (old : ParsedMatrixReadStore)
     (mab : Fin 16) (sideY : Bool) (row : Fin 4)
     (values : Fin 4 → BitVec 64) : ParsedMatrixReadStore :=
@@ -1171,20 +1181,23 @@ def parsedDoubleMatrixWriteCycle (files : IntegerRegisterFiles)
 old PE files and forwarding slots; each cycle writes row `(addr + cycle) % 4`
 to the selected matrix side. Only raw, unconverted memory/forward sources are
 currently lowered, matching `read_raw_elems` when its format is already D. -/
+def parsedDoubleMatrixWriteCycles (files : IntegerRegisterFiles)
+    (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (groupContext : ParsedPEGroupContext) (expression : ParsedExpr) :
+    List (Fin 4) → ParsedMatrixReadStore → ProofsLean.StepResult ParsedMatrixReadStore
+  | [], store => .ok store
+  | cycle :: rest, store =>
+      match parsedDoubleMatrixWriteCycle files slots groupContext expression store cycle with
+      | .failure => .failure
+      | .unknown => .unknown
+      | .ok nextStore => parsedDoubleMatrixWriteCycles files slots groupContext expression rest nextStore
+
 def parsedDoubleMatrixWriteFourCycle (files : IntegerRegisterFiles)
     (slots : ProofsLean.MNCore.Forwarding.Slots)
     (groupContext : ParsedPEGroupContext) (expression : ParsedExpr)
     (oldStore : ParsedMatrixReadStore) :
     ProofsLean.StepResult ParsedMatrixReadStore :=
-  let rec writeCycles (cycles : List (Fin 4)) (store : ParsedMatrixReadStore) :=
-    match cycles with
-    | [] => .ok store
-    | cycle :: rest =>
-        match parsedDoubleMatrixWriteCycle files slots groupContext expression store cycle with
-        | .failure => .failure
-        | .unknown => .unknown
-        | .ok nextStore => writeCycles rest nextStore
-  writeCycles [0, 1, 2, 3] oldStore
+  parsedDoubleMatrixWriteCycles files slots groupContext expression [0, 1, 2, 3] oldStore
 
 theorem doubleMatrixWriteRowWords_high_word (values : Fin 4 → BitVec 64)
     (column : Fin 4) :
@@ -1254,6 +1267,147 @@ theorem parsedDoubleMatrixStore_write_readback
         ((writeParsedDoubleMatrixStoreRow old mab sideY row values) mab sideY))
       sourcePE row 0 = ⟨values sourcePE, 0⟩ := by
   simp [writeParsedDoubleMatrixStoreRow, doubleMatrixRead_after_transposed_write]
+
+theorem parsedDoubleMatrixStore_other_write_preserves_readback
+    (old : ParsedMatrixReadStore) (mab : Fin 16) (sideY : Bool)
+    (writeRow readRow sourcePE : Fin 4) (values : Fin 4 → BitVec 64)
+    (different : readRow ≠ writeRow) :
+    doubleMatrixReadBus
+      (doubleMatrixFaceFromPhysicalWords
+        ((writeParsedDoubleMatrixStoreRow old mab sideY writeRow values) mab sideY))
+      sourcePE readRow 0 =
+    doubleMatrixReadBus (doubleMatrixFaceFromPhysicalWords (old mab sideY))
+      sourcePE readRow 0 := by
+  simp [writeParsedDoubleMatrixStoreRow, doubleMatrixReadBus, doubleMatrixReadRow,
+    Nat.mod_eq_of_lt sourcePE.isLt,
+    doubleMatrixFaceFromPhysicalWords_after_write, different]
+
+def writeParsedDoubleMatrixStoreFourRows (old : ParsedMatrixReadStore)
+    (mab : Fin 16) (sideY : Bool) (base : Nat)
+    (values : Fin 4 → Fin 4 → BitVec 64) : ParsedMatrixReadStore :=
+  writeParsedDoubleMatrixStoreRow
+    (writeParsedDoubleMatrixStoreRow
+      (writeParsedDoubleMatrixStoreRow
+        (writeParsedDoubleMatrixStoreRow old mab sideY (doubleMatrixWriteRowAt base 0)
+          (values 0))
+        mab sideY (doubleMatrixWriteRowAt base 1) (values 1))
+      mab sideY (doubleMatrixWriteRowAt base 2) (values 2))
+    mab sideY (doubleMatrixWriteRowAt base 3) (values 3)
+
+theorem parsedDoubleMatrixWriteFourCycle_store
+    (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (groupContext : ParsedPEGroupContext) (expression : ParsedExpr)
+    (oldStore : ParsedMatrixReadStore)
+    (accesses : Fin 4 → Fin 4 → ParsedDoubleMatrixWriteAccesses)
+    (buses : Fin 4 → Fin 4 → IntegerALU.Bus) (sideY : Bool) (base : Fin 4)
+    (lowered : ∀ cycle pe, ParsedExpr.toDirectDoubleMatrixWriteAccesses? expression
+      (groupContext.at pe cycle) = some (accesses cycle pe))
+    (read : ∀ cycle pe, ParsedIntegerInput.readWithForwarding files slots cycle
+      (accesses cycle pe).source = .ok (buses cycle pe))
+    (sameSide : ∀ cycle pe, (accesses cycle pe).sideY = sideY)
+    (sameBase : ∀ cycle pe, (accesses cycle pe).row = base.val) :
+    parsedDoubleMatrixWriteFourCycle files slots groupContext expression oldStore =
+      .ok (writeParsedDoubleMatrixStoreFourRows oldStore groupContext.mab sideY base.val
+        (fun cycle pe => (buses cycle pe).high)) := by
+  have cycleStep (cycle : Fin 4) (store : ParsedMatrixReadStore) :
+      parsedDoubleMatrixWriteCycle files slots groupContext expression store cycle =
+        .ok (writeParsedDoubleMatrixStoreRow store groupContext.mab sideY
+          (doubleMatrixWriteRowAt base.val cycle)
+          (fun pe => (buses cycle pe).high)) := by
+    have prepared := prepareParsedDoubleMatrixWritePEs_all files slots expression
+      groupContext cycle (accesses cycle) (buses cycle) (lowered cycle) (read cycle)
+    have hLower := lowered cycle 0
+    have hSide := sameSide cycle 0
+    have hBase := sameBase cycle 0
+    simp only [parsedDoubleMatrixWriteCycle, hLower, prepared, hSide, hBase]
+  simp [parsedDoubleMatrixWriteFourCycle, parsedDoubleMatrixWriteCycles, cycleStep,
+    writeParsedDoubleMatrixStoreFourRows]
+
+theorem parsedDoubleMatrixStore_four_rows_readback
+    (old : ParsedMatrixReadStore) (mab : Fin 16) (sideY : Bool) (base : Nat)
+    (values : Fin 4 → Fin 4 → BitVec 64) (cycle sourcePE : Fin 4) :
+    doubleMatrixReadBus
+      (doubleMatrixFaceFromPhysicalWords
+        ((writeParsedDoubleMatrixStoreFourRows old mab sideY base values) mab sideY))
+      sourcePE (doubleMatrixWriteRowAt base cycle) 0 = ⟨values cycle sourcePE, 0⟩ := by
+  have rowDifferent (left right : Fin 4) (different : left ≠ right) :
+      doubleMatrixWriteRowAt base left ≠ doubleMatrixWriteRowAt base right := by
+    intro equal
+    exact different (doubleMatrixWriteRowAt_injective base equal)
+  have cycleCases : cycle = 0 ∨ cycle = 1 ∨ cycle = 2 ∨ cycle = 3 := by
+    have h := cycle.isLt
+    omega
+  rcases cycleCases with cycleEq | cycleEq | cycleEq | cycleEq
+  · subst cycle
+    simp only [writeParsedDoubleMatrixStoreFourRows]
+    rw [parsedDoubleMatrixStore_other_write_preserves_readback _ _ _
+      (doubleMatrixWriteRowAt base 3) (doubleMatrixWriteRowAt base 0) sourcePE (values 3)
+      (rowDifferent 0 3 (by decide))]
+    rw [parsedDoubleMatrixStore_other_write_preserves_readback _ _ _
+      (doubleMatrixWriteRowAt base 2) (doubleMatrixWriteRowAt base 0) sourcePE (values 2)
+      (rowDifferent 0 2 (by decide))]
+    rw [parsedDoubleMatrixStore_other_write_preserves_readback _ _ _
+      (doubleMatrixWriteRowAt base 1) (doubleMatrixWriteRowAt base 0) sourcePE (values 1)
+      (rowDifferent 0 1 (by decide))]
+    exact parsedDoubleMatrixStore_write_readback old mab sideY
+      (doubleMatrixWriteRowAt base 0) sourcePE (values 0)
+  · subst cycle
+    simp only [writeParsedDoubleMatrixStoreFourRows]
+    rw [parsedDoubleMatrixStore_other_write_preserves_readback _ _ _
+      (doubleMatrixWriteRowAt base 3) (doubleMatrixWriteRowAt base 1) sourcePE (values 3)
+      (rowDifferent 1 3 (by decide))]
+    rw [parsedDoubleMatrixStore_other_write_preserves_readback _ _ _
+      (doubleMatrixWriteRowAt base 2) (doubleMatrixWriteRowAt base 1) sourcePE (values 2)
+      (rowDifferent 1 2 (by decide))]
+    exact parsedDoubleMatrixStore_write_readback
+      (writeParsedDoubleMatrixStoreRow old mab sideY (doubleMatrixWriteRowAt base 0)
+        (values 0)) mab sideY (doubleMatrixWriteRowAt base 1) sourcePE (values 1)
+  · subst cycle
+    simp only [writeParsedDoubleMatrixStoreFourRows]
+    rw [parsedDoubleMatrixStore_other_write_preserves_readback _ _ _
+      (doubleMatrixWriteRowAt base 3) (doubleMatrixWriteRowAt base 2) sourcePE (values 3)
+      (rowDifferent 2 3 (by decide))]
+    exact parsedDoubleMatrixStore_write_readback
+      (writeParsedDoubleMatrixStoreRow
+        (writeParsedDoubleMatrixStoreRow old mab sideY (doubleMatrixWriteRowAt base 0)
+          (values 0)) mab sideY (doubleMatrixWriteRowAt base 1) (values 1))
+      mab sideY (doubleMatrixWriteRowAt base 2) sourcePE (values 2)
+  · subst cycle
+    simp only [writeParsedDoubleMatrixStoreFourRows]
+    exact parsedDoubleMatrixStore_write_readback
+      (writeParsedDoubleMatrixStoreRow
+        (writeParsedDoubleMatrixStoreRow
+          (writeParsedDoubleMatrixStoreRow old mab sideY (doubleMatrixWriteRowAt base 0)
+            (values 0)) mab sideY (doubleMatrixWriteRowAt base 1) (values 1))
+        mab sideY (doubleMatrixWriteRowAt base 2) (values 2))
+      mab sideY (doubleMatrixWriteRowAt base 3) sourcePE (values 3)
+
+theorem parsedDoubleMatrixWriteFourCycle_readback
+    (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (groupContext : ParsedPEGroupContext) (expression : ParsedExpr)
+    (oldStore : ParsedMatrixReadStore)
+    (accesses : Fin 4 → Fin 4 → ParsedDoubleMatrixWriteAccesses)
+    (buses : Fin 4 → Fin 4 → IntegerALU.Bus) (sideY : Bool) (base : Fin 4)
+    (lowered : ∀ cycle pe, ParsedExpr.toDirectDoubleMatrixWriteAccesses? expression
+      (groupContext.at pe cycle) = some (accesses cycle pe))
+    (read : ∀ cycle pe, ParsedIntegerInput.readWithForwarding files slots cycle
+      (accesses cycle pe).source = .ok (buses cycle pe))
+    (sameSide : ∀ cycle pe, (accesses cycle pe).sideY = sideY)
+    (sameBase : ∀ cycle pe, (accesses cycle pe).row = base.val)
+    (cycle sourcePE : Fin 4) :
+    ∃ newStore, parsedDoubleMatrixWriteFourCycle files slots groupContext expression oldStore =
+        .ok newStore ∧
+      doubleMatrixReadBus
+        (doubleMatrixFaceFromPhysicalWords (newStore groupContext.mab sideY))
+        sourcePE (doubleMatrixWriteRowAt base.val cycle) 0 =
+          ⟨(buses cycle sourcePE).high, 0⟩ := by
+  refine ⟨writeParsedDoubleMatrixStoreFourRows oldStore groupContext.mab sideY base.val
+    (fun writtenCycle pe => (buses writtenCycle pe).high), ?_, ?_⟩
+  · exact parsedDoubleMatrixWriteFourCycle_store files slots groupContext expression oldStore
+      accesses buses sideY base lowered read sameSide sameBase
+  · exact parsedDoubleMatrixStore_four_rows_readback oldStore groupContext.mab sideY base.val
+      (fun writtenCycle pe => (buses writtenCycle pe).high) cycle sourcePE
+
 
 theorem parsedDoubleMatrixWriteCycle_readback
     (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)

@@ -178,3 +178,8 @@ run_cmd do
 #print axioms ProofsLean.MNCore.PEMemory.parsedDoubleMatrixWriteCycle_readback
 #print axioms ProofsLean.MNCore.PEMemory.prepareParsedDoubleMatrixWritePEs_all
 #print axioms ProofsLean.MNCore.PEMemory.parsedDoubleMatrixWriteCycle_readback_of_pe_reads
+#print axioms ProofsLean.MNCore.PEMemory.doubleMatrixWriteRowAt_injective
+#print axioms ProofsLean.MNCore.PEMemory.parsedDoubleMatrixStore_other_write_preserves_readback
+#print axioms ProofsLean.MNCore.PEMemory.parsedDoubleMatrixStore_four_rows_readback
+#print axioms ProofsLean.MNCore.PEMemory.parsedDoubleMatrixWriteFourCycle_store
+#print axioms ProofsLean.MNCore.PEMemory.parsedDoubleMatrixWriteFourCycle_readback
