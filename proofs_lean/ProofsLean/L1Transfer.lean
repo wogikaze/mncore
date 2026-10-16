@@ -224,6 +224,59 @@ def m4writeFourCycleWrites (memoryBase : Fin l1bmLongWords) (twoLongWords : Bool
   (List.finRange 4).flatMap fun cycle =>
     m4writeWrites memoryBase twoLongWords cycle mabGroup (buses cycle)
 
+/-- Address routing for `l1bmr`/`l1bmr4` after the RRN has produced its
+per-group, per-PE result words. The RRN arithmetic is deliberately an input
+here; this definition captures the distinct output layouts and cycle strides
+used by `Blocks::pe_to_l1`. -/
+def reduceL1Writes (memoryBase : Fin l1bmLongWords) (fourGroups rounded twoLongWords : Bool)
+    (cycle : Fin 4) (results : Fin 4 → Fin 4 → Fin 2 → BitVec 64) : List L1Write :=
+  (List.finRange 4).flatMap fun group =>
+    (List.finRange 4).flatMap fun pe =>
+      if fourGroups || group.val == 0 then
+        let stride := if rounded then (if fourGroups then 16 else 4)
+          else if fourGroups then (if twoLongWords then 32 else 16)
+          else if twoLongWords then 8 else 4
+        let offset := if rounded then group.val * 4 + pe.val
+          else group.val * (if twoLongWords then 8 else 4) + pe.val
+        let first := (addressAt memoryBase (cycle.val * stride + offset),
+          results group pe 0)
+        if rounded then [first]
+        else [first] ++ if twoLongWords then
+          [(addressAt memoryBase (cycle.val * stride + offset + 4), results group pe 1)]
+        else []
+      else []
+
+theorem reduceL1Writes_count (memoryBase : Fin l1bmLongWords)
+    (fourGroups rounded twoLongWords : Bool) (cycle : Fin 4)
+    (results : Fin 4 → Fin 4 → Fin 2 → BitVec 64) :
+    (reduceL1Writes memoryBase fourGroups rounded twoLongWords cycle results).length =
+      if fourGroups then (if rounded then 16 else if twoLongWords then 32 else 16)
+      else if rounded then 4 else if twoLongWords then 8 else 4 := by
+  cases fourGroups <;> cases rounded <;> cases twoLongWords <;>
+    simp [reduceL1Writes, List.length_flatMap, List.finRange]
+
+theorem reduceL1Writes_contains_first (memoryBase : Fin l1bmLongWords)
+    (fourGroups rounded twoLongWords : Bool) (cycle group pe : Fin 4)
+    (results : Fin 4 → Fin 4 → Fin 2 → BitVec 64)
+    (hgroup : fourGroups = true ∨ group.val = 0) :
+    (addressAt memoryBase
+      (cycle.val * (if rounded then (if fourGroups then 16 else 4)
+        else if fourGroups then (if twoLongWords then 32 else 16)
+        else if twoLongWords then 8 else 4) +
+        (if rounded then group.val * 4 + pe.val
+          else group.val * (if twoLongWords then 8 else 4) + pe.val)),
+      results group pe 0) ∈
+      reduceL1Writes memoryBase fourGroups rounded twoLongWords cycle results := by
+  apply List.mem_flatMap.mpr
+  refine ⟨group, List.mem_finRange group, ?_⟩
+  apply List.mem_flatMap.mpr
+  refine ⟨pe, List.mem_finRange pe, ?_⟩
+  have hkeep : (fourGroups || group.val == 0) = true := by
+    rcases hgroup with hfour | hzero
+    · simp [hfour]
+    · simp [hzero]
+  cases rounded <;> cases twoLongWords <;> simp [reduceL1Writes, hkeep]
+
 theorem mwriteWrites_count (memoryBase : Fin l1bmLongWords)
     (twoLongWords : Bool) (cycle : Fin 4) (buses : Fin 4 → Bus) :
     (mwriteWrites memoryBase twoLongWords cycle buses).length =

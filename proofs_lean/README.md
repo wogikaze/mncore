@@ -209,7 +209,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   turnaround pending writesを定義した。両列の64要素数と各(source MAB, PE)値の対応に加え、
   両pending列をcommitした後の最終word readbackを証明した。さらに`mwrite`/`m4write`の
   4-cycle列をcycle順に連結し、1/2-word幅ごとの総書込み数と、各cycle/PEのhigh/low payloadが
-  連結列に含まれることを証明した。
+  連結列に含まれることを証明した。`reduce`/`reduce4`はRRN結果を明示入力とするpending列を追加し、
+  4-group・rounding・出力幅ごとの件数と先頭payloadの配置を証明した。RRN演算値の算出、
+  precision extension、rounding、PE/L1 turnaroundへのcommitは未接続。
 
 `Machine.positiveCost` はスコアが正の行へ正規化済みであるという条件。
 MN-Coreにはゼロコストの制御文があるので、その正規化の意味保存と完全性を証明するまでは
