@@ -109,7 +109,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   すべての宛先loweringへ渡す。Issueモデルの合法性、source executionとnormalized issue
   executionの一致、directiveのissue costが0であること、lowering成功時の実行一致を証明した。
   nop行は指定count分のno-op issueへ展開し、register状態を保持することとscoreがcountに
-  一致することを証明した。PE行内のwait式もmachine.step同様にskipしてregister状態を保つ。
+  一致することを証明した。PE/nop/mask directive各行について、lowering後のissue costが
+  Rustのline.words()（1/count/0）に一致する定理も追加した。これはhazard analyzerの累積step時計
+  と接続する基礎である。PE行内のwait式もmachine.step同様にskipしてregister状態を保つ。
   noforward markerから既存Forwarding状態遷移への抑制信号を接続し、当該行にnoforwardがあると
   forwarding slotsが保持されることも証明した。ただし現在のParsedMaskedNormalizedMachineは
   PEメモリ状態のみを持ち、producer値・poison・wait距離・hazard状態との統合は未完了。

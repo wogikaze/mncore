@@ -691,6 +691,14 @@ def lowerParsedMaskedSource (lines : List ParsedLine) :
   let lowered ← lines.mapM ParsedLine.toParsedMaskedStatements?
   pure lowered.flatten
 
+def ParsedLine.parsedMaskedIssueWords? : ParsedLine → Option Nat
+  | .pe _ => some 1
+  | .nop count _ => some count
+  | .maskDirective _ _ _ => some 0
+  | _ => none
+
+
+
 def runParsedMaskedSource (source : List ParsedMaskedSourceStatement)
     (control : ParsedMaskExecutionControl) (files : IntegerRegisterFiles) :
     Option IntegerRegisterFiles :=
@@ -753,6 +761,28 @@ theorem parsed_nop_count_has_matching_issue_cost (count : Nat) :
   | zero => rfl
   | succ count ih => simp [List.replicate_succ, ProofsLean.ControlNormalization.cost, ih]; omega
 
+theorem parsed_line_lowering_preserves_issue_words (line : ParsedLine)
+    (statements : List ParsedMaskedSourceStatement)
+    (lowered : ParsedLine.toParsedMaskedStatements? line = some statements) :
+    ∃ words, ParsedLine.parsedMaskedIssueWords? line = some words ∧
+      ProofsLean.ControlNormalization.cost statements = words := by
+  cases line with
+  | pe expressions =>
+      simp [ParsedLine.toParsedMaskedStatements?] at lowered
+      subst statements
+      exact ⟨1, rfl, rfl⟩
+  | nop count wait =>
+      simp [ParsedLine.toParsedMaskedStatements?] at lowered
+      subst statements
+      exact ⟨count, rfl, parsed_nop_count_has_matching_issue_cost count⟩
+  | maskDirective width targets entry =>
+      simp [ParsedLine.toParsedMaskedStatements?] at lowered
+      subst statements
+      exact ⟨0, rfl, rfl⟩
+  | mv => simp [ParsedLine.toParsedMaskedStatements?] at lowered
+  | debugSet => simp [ParsedLine.toParsedMaskedStatements?] at lowered
+  | debugGet => simp [ParsedLine.toParsedMaskedStatements?] at lowered
+  | dramSet => simp [ParsedLine.toParsedMaskedStatements?] at lowered
 theorem parsed_nop_line_lowers_to_count_issue_words (count : Nat) (wait : Option Nat) :
     lowerParsedMaskedSource [.nop count wait] =
       some (List.replicate count (.issue ParsedMaskedIssueLine.nop)) := by
