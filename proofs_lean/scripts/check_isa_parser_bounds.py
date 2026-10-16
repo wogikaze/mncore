@@ -62,6 +62,11 @@ CASES = {
     "madpe_2": ("lpassa $m0j2 $n0\n", True, 1),
     "madpe_3": ("lpassa $m0j3 $n0\n", True, 1),
     "madpe_4": ("lpassa $m0j4 $n0\n", False, None),
+    "mv_size_1": ("mvp/n1 $d0 $lc0@.0\n", False, None),
+    "mv_size_64": ("mvp/n64 $d0 $lc0@.0\n", True, 1),
+    "mv_size_32704": ("mvp/n32704 $d0 $lc0@.0\n", True, 1),
+    "mv_size_32768": ("mvp/n32768 $d0 $lc0@.0\n", False, None),
+    "mv_size_65536": ("mvp/n65536 $d0 $lc0@.0\n", False, None),
 }
 for index in range(2, 31):
     CASES[f"imr_selector_{index}"] = (f"lpassa $lm0 $ln0/$imr{index}\n", True, 1)
@@ -144,6 +149,7 @@ def main() -> None:
             "LM0/LM1 and GRF0/GRF1 accept aligned final addresses at widths 1, 2, and 4; their single-word capacities are respectively 4096 and 512, and the capacity address is rejected.",
             "Each of the four explicit LM0 cycle addresses accepts 4095 and rejects 4096; madpe values 0 through 3 are accepted and 4 is rejected.",
             "All 64 L1B set address/immode pairs in 0..7 are accepted; `l2bm@<l1b>` accepts 0..7 and rejects 8. Base-address register writes accept widths 1 and 2 but reject width 4.",
+            "The sampled MV encoding requires nonzero transfer size to be a multiple of 64 long words; 32704 is accepted while 32768 overflows the size field. Zero is accepted by the assembler.",
             "$lb8188 is accepted while $lb8192 fails the 13-bit encoding field; the L1BM address must also be 4-word aligned. l1bmm@15 is accepted and @16 is rejected.",
             "DAR address 1023 is accepted and 1024 is rejected; `$lc...@.<l2b>` accepts selectors 0 and 1 and rejects 2.",
             "l1bmd-129, l1bmd-128, l1bmd127, and l1bmd128 are all accepted by assemble3; this is parser/encoding acceptance evidence, not a claim that these offsets are semantically useful.",
