@@ -86,6 +86,8 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
 - `FiniteIssue.lean`: issue projectionが付ける連番IDと同時発行group一意性から、合法なPE行の式数が
   10以下であることを証明した（`projectLine_expression_count_le_ten`）。各式のoperand列・数値payloadを
   有限化する補題ではなく、行全体の有限性にも未接続。
+  同ファイルで`ParsedMask.entry < 32`の有限部分型も証明した。assemble3では`$imr0..31`が受理され
+  `$imr32`が拒否される一方、OMR entryは別の範囲である。parser出力からこの上限への一般証明は未実装。
 - `FiniteExample.lean`: 3命令・4入力の小さな機械で、全候補の反証、2行の最適性、
   限定入力では1行解が存在することを証明する回帰例。**MN-Coreではない。**
 - `PlusOne.lean`: Welcome（`challenge/1.plus-one`）の2行の `iinc` 解について、

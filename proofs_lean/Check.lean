@@ -43,6 +43,7 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.check_sound
 #print axioms ProofsLean.MNCore.Issue.Region.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.projectLine_expression_count_le_ten
+#print axioms ProofsLean.MNCore.Issue.ParsedMask.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.check_complete
 #print axioms ProofsLean.MNCore.Issue.duplicate_alu_groups_rejected
 #print axioms ProofsLean.MNCore.Issue.projectLine_idsUnique

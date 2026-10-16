@@ -462,6 +462,13 @@ def coverage_catalog() -> dict:
             "scope": "Legal projected PE rows have at most ten expressions, from ten unique issue groups and projection-assigned distinct IDs.",
             "evidence": "Formal consequence of Issue.groupsUnique and ParsedExpr.issueGroup being total; issue groups are mirrored from viz/core/src/issue.rs.",
             "missing": "Per-op source/destination arity constraints, finite numeric payloads, parser/assembler completeness, and finite PE line alphabet.",
+        }, {
+            "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
+            "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
+            "theorem": "ProofsLean.MNCore.Issue.ParsedMask.inFiniteEnvelope_finite",
+            "scope": "Finite subtype for ParsedMask patterns and entry selectors below 32.",
+            "evidence": "proofs_lean/evidence/isa-bounds/reference.json: imr_selector_0, imr_selector_31, imr_selector_32; these are IMR mask selectors, not OMR entries.",
+            "missing": "Proof that all assembler-accepted PE masks parse into this subtype, plus other operand fields and whole-line finiteness.",
         }],
         "datapath_fragments": [{
             "source": fragment_source.relative_to(REPO).as_posix(), "sha256": digest(fragment_source),

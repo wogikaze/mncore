@@ -1,8 +1,62 @@
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Fintype.Card
+import Mathlib.Data.Fintype.EquivFin
+import Mathlib.Data.Fintype.Prod
+import Mathlib.Data.Fintype.Sum
+import Mathlib.Data.BitVec
 import ProofsLean.Issue
 
 namespace ProofsLean.MNCore.Issue
+
+def ParsedMask.inFiniteEnvelope : ParsedMask → Prop
+  | .pattern .. => True
+  | .entry _ index => index < 32
+
+private abbrev ParsedMaskCode := (Bool × Fin 16) ⊕ (Bool × Fin 32)
+private instance : Fintype ParsedMaskCode := inferInstance
+
+private def parsedMaskCode (mask : {mask : ParsedMask // mask.inFiniteEnvelope}) :
+    ParsedMaskCode :=
+  match mask with
+  | ⟨.pattern longLong bits, _⟩ => Sum.inl (longLong, bits.toFin)
+  | ⟨.entry longLong index, bound⟩ =>
+    Sum.inr (longLong, ⟨index, by simpa [ParsedMask.inFiniteEnvelope] using bound⟩)
+
+private theorem parsedMaskCode_injective :
+    Function.Injective parsedMaskCode := by
+  intro a b codeEqual
+  cases a with
+  | mk a ha =>
+    cases b with
+    | mk b hb =>
+      apply Subtype.ext
+      cases a with
+      | pattern longLong bits =>
+        cases b with
+        | pattern otherLongLong otherBits =>
+          simp only [parsedMaskCode, Sum.inl.injEq, Prod.mk.injEq] at codeEqual
+          rcases codeEqual with ⟨rfl, bitsEqual⟩
+          have bitsEqual' : bits = otherBits := BitVec.toFin_injective bitsEqual
+          subst otherBits
+          rfl
+        | entry otherLongLong otherIndex =>
+          simp only [parsedMaskCode] at codeEqual
+          cases codeEqual
+      | entry longLong index =>
+        cases b with
+        | pattern otherLongLong otherBits =>
+          simp only [parsedMaskCode] at codeEqual
+          cases codeEqual
+        | entry otherLongLong otherIndex =>
+          simp only [parsedMaskCode, Sum.inr.injEq, Prod.mk.injEq] at codeEqual
+          rcases codeEqual with ⟨rfl, valueEqual⟩
+          have indexEqual : index = otherIndex := congrArg Fin.val valueEqual
+          subst otherIndex
+          rfl
+
+theorem ParsedMask.inFiniteEnvelope_finite :
+    Finite {mask : ParsedMask // mask.inFiniteEnvelope} :=
+  Finite.of_injective parsedMaskCode parsedMaskCode_injective
 
 private def Group.code : Group → Fin 10
   | .alu => 0
