@@ -93,6 +93,9 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.ParsedMask.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.ParsedMaskDirective.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.ParsedLine.updateMaskState_inFiniteEnvelope
+#print axioms ProofsLean.MNCore.Issue.projected_mask_applications_are_parser_masks
+#print axioms ProofsLean.MNCore.Issue.conflicting_mask_widths_rejected
+#print axioms ProofsLean.MNCore.Issue.conflicting_mask_entries_rejected
 #print axioms ProofsLean.MNCore.PEMemory.parseMaskDirectiveOperator_width_inFiniteEnvelope
 #print axioms ProofsLean.MNCore.PEMemory.parseMaskDirective_inFiniteEnvelope
 #print axioms ProofsLean.MNCore.Issue.omrEntryInFiniteEnvelope_finite

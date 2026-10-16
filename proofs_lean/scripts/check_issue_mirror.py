@@ -200,9 +200,28 @@ def validate_parser_source_limits() -> None:
         raise ValueError(f"parser source-limit rule drift: Rust={missing_rust}, Lean={missing_lean}")
 
 
+def validate_mask_application_rules() -> None:
+    rust_check = re.search(r"pub fn check\(exprs: &\[Expr\]\).*?\n\}", ISSUE, re.S)
+    rust_masks = re.search(r"fn mask_applications_agree\(exprs: &\[Expr\]\).*?\n\}", ISSUE, re.S)
+    if not rust_check or "mask_applications_agree(exprs)" not in rust_check.group(0):
+        raise ValueError("Rust issue checker omits the mask-application rule")
+    if not rust_masks:
+        raise ValueError("Rust mask-application rule implementation is missing")
+    rust_body = rust_masks.group(0)
+    if "mask.ll" not in rust_body or "MaskSource::Entry" not in rust_body:
+        raise ValueError("Rust mask-application rule must compare widths and variable entries")
+    legal = re.search(r"def Legal \(xs : List Expr\) : Prop :=(.*?)(?=\n(?:theorem|\/--|noncomputable)\b)", LEAN, re.S)
+    projection = re.search(r"def ParsedExpr\.toIssueExpr.*?\n(?=theorem\b)", LEAN, re.S)
+    if not legal or "maskWidthsAgree xs" not in legal.group(1) or "maskEntriesAgree xs" not in legal.group(1):
+        raise ValueError("Lean Legal omits mask width or variable-entry agreement")
+    if not projection or "maskApplications := e.maskApplications" not in projection.group(0):
+        raise ValueError("Lean issue projection omits parsed mask applications")
+
+
 def validate() -> None:
     validate_alu_input_counts()
     validate_parser_source_limits()
+    validate_mask_application_rules()
     parse_expr = re.search(r"fn parse_expr\(part: &str\).*?\n\}", VSM, re.S)
     if not parse_expr or "classify(&opcode).ok_or_else" not in parse_expr.group(0):
         raise ValueError("unknown PE opcode must fail parse_expr classification")
@@ -325,7 +344,7 @@ def validate() -> None:
                     "Noforward", "L1", "L2", "Other"):
         if not re.search(rf"Op::{variant}\b", ISSUE):
             raise ValueError(f"issue.rs does not classify Op::{variant}")
-    print("PASS: parsed Rust/Lean instruction constructors and parser source-limit rules match; Op::Other is parser-unreachable.")
+    print("PASS: Rust/Lean instruction constructors, source limits, and mask-issue rules match; Op::Other is parser-unreachable.")
 
 
 if __name__ == "__main__":

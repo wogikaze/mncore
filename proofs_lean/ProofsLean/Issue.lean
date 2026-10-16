@@ -68,6 +68,13 @@ inductive ParsedMask where
   | entry (longLong : Bool) (index : Nat)
   deriving DecidableEq, Repr
 
+def ParsedMask.isDoubleLong : ParsedMask → Bool
+  | .pattern longLong _ | .entry longLong _ => longLong
+
+def ParsedMask.variableEntry? : ParsedMask → Option Nat
+  | .entry _ index => some index
+  | .pattern .. => none
+
 /-- Structured PE operand syntax. Rust's `Operand::Raw` is a diagnostic parser
 fallback for tokens outside the SDM operand productions and is not a candidate
 in this legal-instruction syntax. -/
@@ -84,6 +91,10 @@ inductive ParsedOperand where
   | dar (address : Nat)
   deriving DecidableEq, Repr
 
+def ParsedOperand.writeMask? : ParsedOperand → Option ParsedMask
+  | .mem _ _ _ _ mask | .bar _ _ mask | .omr _ mask => mask
+  | _ => none
+
 structure Expr where
   id : Nat
   group : Option Group
@@ -96,6 +107,7 @@ structure Expr where
   writes : List Access
   matrixXUses : Nat
   matrixYUses : Nat
+  maskApplications : List ParsedMask
   immediate : Bool
   zeroFlush : Bool
   deriving DecidableEq, Repr
@@ -159,6 +171,18 @@ def immediateExcludesLm0 (xs : List Expr) : Prop :=
 def zeroFlushUnique (xs : List Expr) : Prop :=
   (xs.filter Expr.zeroFlush).length ≤ 1
 
+def maskWidthsAgree (xs : List Expr) : Prop :=
+  let widths := (xs.flatMap Expr.maskApplications).map ParsedMask.isDoubleLong
+  match widths with
+  | [] => True
+  | first :: rest => ∀ width ∈ rest, width = first
+
+def maskEntriesAgree (xs : List Expr) : Prop :=
+  let entries := (xs.flatMap Expr.maskApplications).filterMap ParsedMask.variableEntry?
+  match entries with
+  | [] => True
+  | first :: rest => ∀ entry ∈ rest, entry = first
+
 /-- The explicit constraints enforced in the local PE issue checker. -/
 def Legal (xs : List Expr) : Prop :=
   idsUnique xs ∧
@@ -171,7 +195,9 @@ def Legal (xs : List Expr) : Prop :=
   readsAgree xs ∧
   localReadWriteAgree xs ∧
   immediateExcludesLm0 xs ∧
-  zeroFlushUnique xs
+  zeroFlushUnique xs ∧
+  maskWidthsAgree xs ∧
+  maskEntriesAgree xs
 
 /-- Classical decision specification for the abstract rule set. This is not
 claimed as executable parser or hardware validation. -/
@@ -205,6 +231,7 @@ def emptyExpr : Expr where
   writes := []
   matrixXUses := 0
   matrixYUses := 0
+  maskApplications := []
   immediate := false
   zeroFlush := false
 
@@ -212,11 +239,42 @@ theorem empty_is_legal : Legal [] := by
   simp [Legal, idsUnique, groupsUnique, mauCountBounded, mauExpressions,
     mauPrecisionsAgree, matrixWritePairAgrees, matrixRegistersUnique,
     writesUnique, readsAgree, localReadWriteAgree, immediateExcludesLm0,
-    zeroFlushUnique]
+    zeroFlushUnique, maskWidthsAgree, maskEntriesAgree]
 
 theorem empty_check_accepts : check [] = true := check_complete [] empty_is_legal
 
 def aluExpr (id : Nat) : Expr := { emptyExpr with id := id, group := some .alu }
+
+def maskIssueExpr (id : Nat) (group : Group) (mask : ParsedMask) : Expr :=
+  { emptyExpr with id := id, group := some group, maskApplications := [mask] }
+
+theorem conflicting_mask_widths_are_illegal :
+    ¬ Legal [maskIssueExpr 0 .alu (.entry false 1),
+      maskIssueExpr 1 .l1bm (.entry true 1)] := by
+  intro legal
+  rcases legal with ⟨_, _, _, _, _, _, _, _, _, _, _, widths, _⟩
+  simp [maskWidthsAgree, maskIssueExpr, emptyExpr, ParsedMask.isDoubleLong] at widths
+
+theorem conflicting_mask_widths_rejected :
+    check [maskIssueExpr 0 .alu (.entry false 1),
+      maskIssueExpr 1 .l1bm (.entry true 1)] = false := by
+  classical
+  apply decide_eq_false_iff_not.mpr
+  exact conflicting_mask_widths_are_illegal
+
+theorem conflicting_mask_entries_are_illegal :
+    ¬ Legal [maskIssueExpr 0 .alu (.entry false 1),
+      maskIssueExpr 1 .l1bm (.entry false 2)] := by
+  intro legal
+  rcases legal with ⟨_, _, _, _, _, _, _, _, _, _, _, _, entries⟩
+  simp [maskEntriesAgree, maskIssueExpr, emptyExpr, ParsedMask.variableEntry?] at entries
+
+theorem conflicting_mask_entries_rejected :
+    check [maskIssueExpr 0 .alu (.entry false 1),
+      maskIssueExpr 1 .l1bm (.entry false 2)] = false := by
+  classical
+  apply decide_eq_false_iff_not.mpr
+  exact conflicting_mask_entries_are_illegal
 
 theorem duplicate_alu_groups_rejected (a b : Nat) (different : a ≠ b) :
     check [aluExpr a, aluExpr b] = false := by
@@ -396,6 +454,10 @@ structure ParsedExpr where
   flush : Option ParsedMask
   text : String
   deriving DecidableEq, Repr
+
+def ParsedExpr.maskApplications (expression : ParsedExpr) : List ParsedMask :=
+  (expression.sources ++ expression.destinations).filterMap ParsedOperand.writeMask? ++
+    expression.flush.toList
 
 /-- Source-count condition imposed by the Rust parser's fixed source prefix. -/
 def ParsedExpr.sourcesMatchParserArity (expression : ParsedExpr) : Prop :=
@@ -581,6 +643,7 @@ def ParsedExpr.toIssueExpr (id : Nat) (e : ParsedExpr) : Expr where
     ParsedOperand.matrixUseCount e.destinations false
   matrixYUses := ParsedOperand.matrixUseCount e.sources true +
     ParsedOperand.matrixUseCount e.destinations true
+  maskApplications := e.maskApplications
   immediate := e.op matches .immediate ..
   zeroFlush := e.flush.isSome
 
@@ -595,6 +658,9 @@ theorem projected_group_is_parser_group (id : Nat) (e : ParsedExpr) :
 
 theorem projected_mau_is_parser_mau (id : Nat) (e : ParsedExpr) :
     (e.toIssueExpr id).mau = e.issueMau := rfl
+
+theorem projected_mask_applications_are_parser_masks (id : Nat) (e : ParsedExpr) :
+    (e.toIssueExpr id).maskApplications = e.maskApplications := rfl
 
 theorem normalized_expr_issue_projection (id : Nat) (e : ParsedExpr) :
     (e.normalize.toParsed.toIssueExpr id) = e.toIssueExpr id := by
@@ -1176,11 +1242,12 @@ theorem plusOne_issue_legal : LegalParsedLine [plusOneParsed] := by
   unfold LegalParsedLine projectLine projectFrom ParsedExpr.toIssueExpr
     ParsedExpr.issueGroup ParsedExpr.issueMau ParsedOperand.accesses
     ParsedOperand.matrixUseCount ParsedExpr.hasTurnaround
+    ParsedExpr.maskApplications ParsedOperand.writeMask?
     plusOneParsed plusOneRead plusOneWrite
   simp [Legal, idsUnique, groupsUnique, mauCountBounded, mauExpressions,
     mauPrecisionsAgree, matrixWritePairAgrees, matrixRegistersUnique,
     writesUnique, readsAgree, localReadWriteAgree, immediateExcludesLm0,
-    zeroFlushUnique, projectFrom]
+    zeroFlushUnique, maskWidthsAgree, maskEntriesAgree, projectFrom]
 
 theorem plusOne_issue_accepts : checkParsedLine [plusOneParsed] = true :=
   parsed_check_complete [plusOneParsed] plusOne_issue_legal

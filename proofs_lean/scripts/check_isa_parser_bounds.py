@@ -80,6 +80,16 @@ CASES = {
     "raw_operand_zero_destination": ("zero $qraw\n", False, None),
     "raw_operand_matrix_source": ("gmread $qraw $nowrite\n", False, None),
     "raw_operand_l1bm_source": ("l1bmm $qraw $lb0\n", False, None),
+    "mask_application_same_width": (
+        "lpassa $lm0v $lr0v/$imr1; l1bmm $lb0 $ls0v/$imr1\n", True, 1),
+    "mask_application_conflicting_width": (
+        "lpassa $lm0v $lr0v/$imr1; l1bmm $lb0 $ls0v/$llimr1\n", False, None),
+    "mask_application_conflicting_entry": (
+        "lpassa $lm0v $lr0v/$imr1; l1bmm $lb0 $ls0v/$imr2\n", False, None),
+    "mask_flush_conflicting_entry": (
+        "lpassa/$imr1 $lm0v $lr0v/$imr2\n", False, None),
+    "l2bmdars_parallel_l2bm_exception": (
+        "l2bmdars $lc0@.0 $dar0; l2bmb $lc256 $lb0\n", False, None),
     "debug_set_record": ("d set $lm0n0c0b0m0p0 1 0000000000000000\n", True, 1),
     "debug_get_record": ("d get $lm0n0c0b0m0p0 1\n", True, 1),
     "dram_set_record": ("r 0 000000000 000001 0000000000000000\n", True, 1),
@@ -238,6 +248,8 @@ def main() -> None:
             "$omr0 and $omr16 are rejected; $omr1 and $omr15 are accepted.",
             "$imr0, $imr31 are accepted while $imr32 and $imr255 fail encoding. Active `maskn`, `maskln`, and `masklln` directives accept selector 31 and reject 32. This conflicts with the Rust MaskSource comment claiming entries 1 through 15.",
             "Representative unknown `$qraw` operands in ALU source/destination, zero destination, matrix-read source, and L1BM source positions produce no assembler output; assemble3 aborts with return code -6 on these malformed tokens. This is sampled rejection evidence, not a proof over every Raw string.",
+            "SDM 3.6.4 requires simultaneous mask applications to use the same width; Section 3.6.2.1 also requires matching variable entry addresses. The same-width pair is accepted, while mixed widths, mixed entries, and a write-mask/zero-flush entry mismatch are rejected.",
+            "The June 2026 manual's Section 3.6.4 describes an l2bmdars exception for simultaneous issue with another L2BM operation, but the bundled assemble3 rejects the focused l2bmdars+l2bmb line. The local encoder/model agreement is unresolved against the newer manual.",
             "Matrix rows 0 through 15 are accepted; row 16 is rejected.",
             "PE destination lists are not sized by source arity: lpassa accepts three outputs across LM1/GRF0/GRF1, and zero accepts LM0/LM1/GRF0/GRF1 plus OMR. The sampled duplicate-bank and nowrite combinations are rejected; this is not an exhaustive output grammar proof.",
             "hbfe and hbfn accept /6 through /9 and reject /10 in the selected boundary probes.",

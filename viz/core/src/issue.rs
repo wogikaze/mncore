@@ -5,7 +5,7 @@
 //! which is why they are checked separately here.
 
 use crate::blockop::L2Op;
-use crate::vsm::{Addr, Expr, MemKind, Op, Operand, Prec};
+use crate::vsm::{Addr, Expr, MaskSource, MemKind, Op, Operand, Prec};
 
 /// Issue group of an expression (table 3.6), or `None` for expressions not simulated.
 pub fn group(e: &Expr) -> Option<&'static str> {
@@ -48,6 +48,38 @@ fn prec_of(e: &Expr) -> Option<Prec> {
         Op::Mau { prec, .. } | Op::MatWrite { prec } | Op::MatRead { prec } => Some(prec),
         _ => None,
     }
+}
+
+fn mask_applications_agree(exprs: &[Expr]) -> bool {
+    let mut width = None;
+    let mut entry = None;
+    for expression in exprs {
+        for mask in expression.flush.into_iter().chain(
+            expression.srcs.iter().chain(&expression.dsts).filter_map(|operand| match operand {
+                Operand::Mem { mask, .. } | Operand::Bar { mask, .. } |
+                Operand::Omr { mask, .. } => *mask,
+                _ => None,
+            }),
+        ) {
+            if let Some(previous) = width {
+                if previous != mask.ll {
+                    return false;
+                }
+            } else {
+                width = Some(mask.ll);
+            }
+            if let MaskSource::Entry(current) = mask.source {
+                if let Some(previous) = entry {
+                    if previous != current {
+                        return false;
+                    }
+                } else {
+                    entry = Some(current);
+                }
+            }
+        }
+    }
+    true
 }
 
 /// Checks a line of PE expressions against SDM 3.6.4. Returns the first violation found.
@@ -132,6 +164,12 @@ pub fn check(exprs: &[Expr]) -> Result<(), String> {
     if exprs.iter().filter(|e| e.flush.is_some()).count() > 1 {
         return Err("zero-flush masks are applied more than once in one step".into());
     }
+    // Single-row mask applications in one step must use one width and, when
+    // multiple variable entries are read, one entry. This also covers a
+    // zero-flush mask combined with a write mask.
+    if !mask_applications_agree(exprs) {
+        return Err("mask applications use conflicting widths or entries".into());
+    }
     Ok(())
 }
 
@@ -156,6 +194,7 @@ mod tests {
             "gmfma $ly $ls[0,2,4,6] $lr[8,10,12,14] $lr[16,18,20,22]",
             "gbfn $ls0v $lr0v;gmwrite $lr8v $lx0",
             "gmwrite $aluf $ly0;gmread $lx4 $nowrite",
+            "lpassa $lm0v $lr0v/$imr1; l1bmm $lb0 $ls0v/$imr1",
         ] {
             assert_eq!(issue(ok), Ok(()), "{ok}");
         }
@@ -165,6 +204,9 @@ mod tests {
             "gmfma $ly $ls0v $ln0v $ln8v",
             "gmread $lx0 $lr0v;gmwrite $lr8v $lx4",
             "gbfn $ls0v $lr0v;gmmul $ly $ls0v $lr8v",
+            "lpassa $lm0v $lr0v/$imr1; l1bmm $lb0 $ls0v/$llimr1",
+            "lpassa $lm0v $lr0v/$imr1; l1bmm $lb0 $ls0v/$imr2",
+            "lpassa/$imr1 $lm0v $lr0v/$imr2",
         ] {
             assert!(issue(bad).is_err(), "{bad}");
         }

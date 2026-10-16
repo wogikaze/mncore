@@ -350,7 +350,7 @@ def isa_bounds_experiment() -> dict:
             raise ValueError(f"stale ISA boundary experiment: {item['path']}")
     if not all(row["matches_expected"] for row in record["observations"]):
         raise ValueError("ISA boundary experiment contains an unexpected assembler result")
-    if len(record["observations"]) != 1099:
+    if len(record["observations"]) != 1104:
         raise ValueError("ISA boundary experiment case count changed")
     return {
         "source": reference.relative_to(REPO).as_posix(),
@@ -425,6 +425,8 @@ def answer_parser_gap_audit() -> dict:
         for row in assembler_reference["observations"]
         if row["case"].startswith("raw_operand_")
     }
+
+
     for probe in raw_fallbacks:
         assembler_case = {
             "alu_source": "alu_source",
@@ -480,6 +482,40 @@ def answer_parser_gap_audit() -> dict:
         "scope": record["scope"],
     }
 
+def parallel_issue_boundary_experiment() -> dict:
+    reference = ROOT / "evidence/isa-bounds/reference.json"
+    record = json.loads(reference.read_text())
+    observations = {row["case"]: row for row in record["observations"]}
+    expected = {
+        "mask_application_same_width": (True, 1),
+        "mask_application_conflicting_width": (False, None),
+        "mask_application_conflicting_entry": (False, None),
+        "mask_flush_conflicting_entry": (False, None),
+        "l2bmdars_parallel_l2bm_exception": (False, None),
+    }
+    for case, (accepted, words) in expected.items():
+        row = observations.get(case)
+        if row is None or (row["accepted"], row["assembler_output_lines"]) != (accepted, words):
+            raise ValueError(f"unexpected assemble3 mask-issue boundary: {case}")
+    return {
+        "source": reference.relative_to(REPO).as_posix(),
+        "sha256": digest(reference),
+        "manual_sections": ["SDM 3.6.2.1", "SDM 3.6.4"],
+        "observations": [
+            {"case": case, "accepted": observations[case]["accepted"],
+             "assembler_output_lines": observations[case]["assembler_output_lines"]}
+            for case in expected
+        ],
+        "formal_rules": [
+            "ProofsLean.MNCore.Issue.maskWidthsAgree",
+            "ProofsLean.MNCore.Issue.maskEntriesAgree",
+            "ProofsLean.MNCore.Issue.projected_mask_applications_are_parser_masks",
+            "ProofsLean.MNCore.Issue.conflicting_mask_widths_rejected",
+            "ProofsLean.MNCore.Issue.conflicting_mask_entries_rejected",
+        ],
+        "limitations": "These probes cover single-row applications and zero-flush entry agreement; they do not establish complete parser, assembler, or hazard legality correspondence.",
+    }
+
 
 def coverage_catalog() -> dict:
     path = REPO / "mncompile/machine.py"
@@ -525,6 +561,7 @@ def coverage_catalog() -> dict:
         "selected_parser_boundary_experiment": isa_bounds_experiment(),
         "opcode_destination_arity_experiment": opcode_arity_experiment(),
         "answer_parser_gap_audit": answer_parser_gap_audit(),
+        "parallel_issue_boundary_experiment": parallel_issue_boundary_experiment(),
         "finite_carrier_proofs": [{
             "source": "proofs_lean/ProofsLean/FiniteRegion.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteRegion.lean"),
