@@ -410,6 +410,8 @@ def answer_parser_gap_audit() -> dict:
     answer_shapes = record.get("answer_expression_shapes", [])
     if not answer_shapes or any(row["source_count"] > 3 for row in answer_shapes):
         raise ValueError("a parsed answer expression exceeds the Lean three-source envelope")
+    if any(not row["destinations_nodup"] for row in answer_shapes):
+        raise ValueError("a checked-in answer expression has repeated parsed destinations")
     if record["parse_errors"] or record["raw_operand_occurrences"] or record["other_opcode_occurrences"]:
         raise ValueError("checked-in answers contain parser errors or structural fallbacks")
     for item in [*record["input_hashes"], record["scanner"], record["opcode_candidate_source"]]:
@@ -442,6 +444,7 @@ def answer_parser_gap_audit() -> dict:
         ).items())),
         "answer_expression_count": sum(row["occurrences"] for row in answer_shapes),
         "answer_max_source_count": max(row["source_count"] for row in answer_shapes),
+        "answer_destination_lists_nodup": True,
         "answer_parser_source_arity": dict(sorted(Counter(
             f"{row['class']}:src{row['source_count']}"
             for row in answer_shapes

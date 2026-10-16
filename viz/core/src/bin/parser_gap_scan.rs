@@ -87,6 +87,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             op_name(&expression.op),
                             expression.srcs.len(),
                             expression.dsts.len(),
+                            expression.dsts.iter().enumerate().all(|(index, operand)| {
+                                !expression.dsts[index + 1..].contains(operand)
+                            }),
                         )).or_insert(0usize) += 1;
                         if let Op::Other(text) = &expression.op {
                             other_ops.push(json!({
@@ -162,11 +165,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let answer_expression_shapes: Vec<_> = answer_expression_shape_counts
         .into_iter()
-        .map(|((spelling, class, source_count, destination_count), occurrences)| json!({
+        .map(|((spelling, class, source_count, destination_count, destinations_nodup), occurrences)| json!({
             "spelling": spelling,
             "class": class,
             "source_count": source_count,
             "destination_count": destination_count,
+            "destinations_nodup": destinations_nodup,
             "occurrences": occurrences,
         }))
         .collect();

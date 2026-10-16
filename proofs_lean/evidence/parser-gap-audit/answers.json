@@ -3,6 +3,7 @@
     {
       "class": "mat_read",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 1,
       "spelling": "dmread"
@@ -10,6 +11,7 @@
     {
       "class": "mat_write",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 1,
       "spelling": "dmwrite"
@@ -17,6 +19,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 6,
       "source_count": 2,
       "spelling": "drelu"
@@ -24,6 +27,7 @@
     {
       "class": "mau",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 3,
       "source_count": 2,
       "spelling": "dvadd"
@@ -31,6 +35,7 @@
     {
       "class": "mau",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 2,
       "source_count": 3,
       "spelling": "dvfmad"
@@ -38,6 +43,7 @@
     {
       "class": "mau",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 3,
       "spelling": "dvfmau"
@@ -45,6 +51,7 @@
     {
       "class": "mau",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 2,
       "spelling": "dvmulu"
@@ -52,6 +59,7 @@
     {
       "class": "mau",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 9,
       "source_count": 1,
       "spelling": "dvpassa"
@@ -59,6 +67,7 @@
     {
       "class": "mau",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 1,
       "spelling": "dvpassar"
@@ -66,6 +75,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 4,
       "source_count": 1,
       "spelling": "fbfn"
@@ -73,6 +83,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 4,
       "source_count": 1,
       "spelling": "ffloor"
@@ -80,6 +91,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 3,
       "source_count": 1,
       "spelling": "fftoi"
@@ -87,6 +99,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 2,
       "spelling": "filrelud"
@@ -94,6 +107,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 2,
       "spelling": "filrelud/$imr1"
@@ -101,6 +115,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 2,
       "source_count": 2,
       "spelling": "flrelud"
@@ -108,6 +123,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 6,
       "source_count": 2,
       "spelling": "fmax"
@@ -115,6 +131,7 @@
     {
       "class": "alu",
       "destination_count": 3,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 2,
       "spelling": "fmax"
@@ -122,6 +139,7 @@
     {
       "class": "mau",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 2,
       "source_count": 3,
       "spelling": "fmfma"
@@ -129,6 +147,7 @@
     {
       "class": "mau",
       "destination_count": 3,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 3,
       "spelling": "fmfma"
@@ -136,6 +155,7 @@
     {
       "class": "mau",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 2,
       "spelling": "fmmul"
@@ -143,6 +163,7 @@
     {
       "class": "mat_write",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 1,
       "spelling": "fmwrite"
@@ -150,6 +171,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 7,
       "source_count": 1,
       "spelling": "fpassa"
@@ -157,6 +179,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 7,
       "source_count": 2,
       "spelling": "frelu"
@@ -164,6 +187,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 2,
       "spelling": "frelu2"
@@ -171,6 +195,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 2,
       "spelling": "frelu3"
@@ -178,6 +203,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 1,
       "spelling": "frsqrt"
@@ -185,6 +211,7 @@
     {
       "class": "mau",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 41,
       "source_count": 2,
       "spelling": "fvadd"
@@ -192,6 +219,7 @@
     {
       "class": "mau",
       "destination_count": 2,
+      "destinations_nodup": true,
       "occurrences": 10,
       "source_count": 2,
       "spelling": "fvadd"
@@ -199,6 +227,7 @@
     {
       "class": "mau",
       "destination_count": 3,
+      "destinations_nodup": true,
       "occurrences": 2,
       "source_count": 2,
       "spelling": "fvadd"
@@ -206,6 +235,7 @@
     {
       "class": "mau",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 2,
       "spelling": "fvadd/$imr3"
@@ -213,6 +243,7 @@
     {
       "class": "mau",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 49,
       "source_count": 3,
       "spelling": "fvfma"
@@ -220,6 +251,7 @@
     {
       "class": "mau",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 3,
       "spelling": "fvfma/$imr15"
@@ -227,6 +259,7 @@
     {
       "class": "mau",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 20,
       "source_count": 2,
       "spelling": "fvmul"
@@ -234,6 +267,7 @@
     {
       "class": "mau",
       "destination_count": 2,
+      "destinations_nodup": true,
       "occurrences": 2,
       "source_count": 2,
       "spelling": "fvmul"
@@ -241,6 +275,7 @@
     {
       "class": "mau",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 2,
       "spelling": "fvmulr"
@@ -248,6 +283,7 @@
     {
       "class": "mau",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 15,
       "source_count": 1,
       "spelling": "fvpassa"
@@ -255,6 +291,7 @@
     {
       "class": "mau",
       "destination_count": 2,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 1,
       "spelling": "fvpassa"
@@ -262,6 +299,7 @@
     {
       "class": "mau",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 1,
       "spelling": "fvpassa/$imr1"
@@ -269,6 +307,7 @@
     {
       "class": "mau",
       "destination_count": 2,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 1,
       "spelling": "fvpassa/$imr1"
@@ -276,6 +315,7 @@
     {
       "class": "mau",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 14,
       "source_count": 1,
       "spelling": "fvpassa/$imr15"
@@ -283,6 +323,7 @@
     {
       "class": "mau",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 1,
       "spelling": "fvpassa/$imr2"
@@ -290,6 +331,7 @@
     {
       "class": "mau",
       "destination_count": 2,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 1,
       "spelling": "fvpassa/$imr2"
@@ -297,6 +339,7 @@
     {
       "class": "mau",
       "destination_count": 2,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 1,
       "spelling": "fvpassa/0000"
@@ -304,6 +347,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 108,
       "source_count": 1,
       "spelling": "gbfn"
@@ -311,6 +355,7 @@
     {
       "class": "mau",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 17,
       "source_count": 3,
       "spelling": "gmfma"
@@ -318,6 +363,7 @@
     {
       "class": "mau",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 54,
       "source_count": 2,
       "spelling": "gmmul"
@@ -325,6 +371,7 @@
     {
       "class": "mau",
       "destination_count": 2,
+      "destinations_nodup": true,
       "occurrences": 10,
       "source_count": 2,
       "spelling": "gmmul"
@@ -332,6 +379,7 @@
     {
       "class": "mat_read",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 46,
       "source_count": 1,
       "spelling": "gmread"
@@ -339,6 +387,7 @@
     {
       "class": "mat_write",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 117,
       "source_count": 1,
       "spelling": "gmwrite"
@@ -346,6 +395,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 6,
       "source_count": 1,
       "spelling": "hbfe/9"
@@ -353,6 +403,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 1,
       "spelling": "hbfn/9"
@@ -360,6 +411,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 4,
       "source_count": 2,
       "spelling": "hilrelud"
@@ -367,6 +419,7 @@
     {
       "class": "alu",
       "destination_count": 2,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 2,
       "spelling": "hilrelud"
@@ -374,6 +427,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 2,
       "spelling": "hlrelud"
@@ -381,6 +435,7 @@
     {
       "class": "mau",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 3,
       "spelling": "hmfma"
@@ -388,6 +443,7 @@
     {
       "class": "mau",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 8,
       "source_count": 2,
       "spelling": "hmmul"
@@ -395,6 +451,7 @@
     {
       "class": "mat_read",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 2,
       "source_count": 1,
       "spelling": "hmread"
@@ -402,6 +459,7 @@
     {
       "class": "mat_write",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 8,
       "source_count": 1,
       "spelling": "hmwrite"
@@ -409,6 +467,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 3,
       "source_count": 1,
       "spelling": "hpassa"
@@ -416,6 +475,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 2,
       "spelling": "hrelu"
@@ -423,6 +483,7 @@
     {
       "class": "mau",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 6,
       "source_count": 2,
       "spelling": "hvadd"
@@ -430,6 +491,7 @@
     {
       "class": "mau",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 7,
       "source_count": 2,
       "spelling": "hvaddr"
@@ -437,6 +499,7 @@
     {
       "class": "mau",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 6,
       "source_count": 3,
       "spelling": "hvfma"
@@ -444,6 +507,7 @@
     {
       "class": "mau",
       "destination_count": 2,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 3,
       "spelling": "hvfma"
@@ -451,6 +515,7 @@
     {
       "class": "mau",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 2,
       "spelling": "hvmulr"
@@ -458,6 +523,7 @@
     {
       "class": "mau",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 6,
       "source_count": 1,
       "spelling": "hvpassa"
@@ -465,6 +531,7 @@
     {
       "class": "mau",
       "destination_count": 2,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 1,
       "spelling": "hvpassa"
@@ -472,6 +539,7 @@
     {
       "class": "mau",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 5,
       "source_count": 1,
       "spelling": "hvpassar"
@@ -479,6 +547,7 @@
     {
       "class": "mau",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 1,
       "spelling": "hvpassar/$imr1"
@@ -486,6 +555,7 @@
     {
       "class": "mau",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 1,
       "spelling": "hvpassar/$imr2"
@@ -493,6 +563,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 20,
       "source_count": 2,
       "spelling": "iadd"
@@ -500,6 +571,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 2,
       "source_count": 2,
       "spelling": "iadd/$imr1"
@@ -507,6 +579,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 2,
       "spelling": "iadd/$imr15"
@@ -514,6 +587,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 2,
       "spelling": "iadd/$imr2"
@@ -521,6 +595,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 8,
       "source_count": 2,
       "spelling": "iand"
@@ -528,6 +603,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 2,
       "source_count": 2,
       "spelling": "ibsl"
@@ -535,6 +611,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 2,
       "spelling": "ibsl/$imr1"
@@ -542,6 +619,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 3,
       "source_count": 1,
       "spelling": "idec"
@@ -549,6 +627,7 @@
     {
       "class": "alu",
       "destination_count": 2,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 1,
       "spelling": "idec"
@@ -556,6 +635,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 3,
       "source_count": 1,
       "spelling": "iinc"
@@ -563,6 +643,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 11,
       "source_count": 2,
       "spelling": "ilsl"
@@ -570,6 +651,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 4,
       "source_count": 2,
       "spelling": "ilsr"
@@ -577,6 +659,7 @@
     {
       "class": "imm",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 72,
       "source_count": 0,
       "spelling": "imm"
@@ -584,6 +667,7 @@
     {
       "class": "imm",
       "destination_count": 2,
+      "destinations_nodup": true,
       "occurrences": 5,
       "source_count": 0,
       "spelling": "imm"
@@ -591,6 +675,7 @@
     {
       "class": "imm",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 0,
       "spelling": "imm/0101"
@@ -598,6 +683,7 @@
     {
       "class": "imm",
       "destination_count": 2,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 0,
       "spelling": "imm/0101"
@@ -605,6 +691,7 @@
     {
       "class": "imm",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 0,
       "spelling": "immu"
@@ -612,6 +699,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 1,
       "spelling": "inot"
@@ -619,6 +707,7 @@
     {
       "class": "alu",
       "destination_count": 2,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 1,
       "spelling": "inot"
@@ -626,6 +715,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 9,
       "source_count": 2,
       "spelling": "ior"
@@ -633,6 +723,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 11,
       "source_count": 2,
       "spelling": "ipackbit"
@@ -640,6 +731,7 @@
     {
       "class": "alu",
       "destination_count": 2,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 2,
       "spelling": "ipackbit"
@@ -647,6 +739,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 14,
       "source_count": 1,
       "spelling": "ipassa"
@@ -654,6 +747,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 22,
       "source_count": 2,
       "spelling": "isub"
@@ -661,6 +755,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 6,
       "source_count": 2,
       "spelling": "ixor"
@@ -668,6 +763,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 60,
       "source_count": 1,
       "spelling": "l1bmd"
@@ -675,6 +771,7 @@
     {
       "class": "l1",
       "destination_count": 2,
+      "destinations_nodup": true,
       "occurrences": 2,
       "source_count": 1,
       "spelling": "l1bmd"
@@ -682,6 +779,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 34,
       "source_count": 1,
       "spelling": "l1bmd+0"
@@ -689,6 +787,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 2,
       "source_count": 1,
       "spelling": "l1bmd+1"
@@ -696,6 +795,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 2,
       "source_count": 1,
       "spelling": "l1bmd+2"
@@ -703,6 +803,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 2,
       "source_count": 1,
       "spelling": "l1bmd+3"
@@ -710,6 +811,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 2,
       "source_count": 1,
       "spelling": "l1bmd+4"
@@ -717,6 +819,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 2,
       "source_count": 1,
       "spelling": "l1bmd+5"
@@ -724,6 +827,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 2,
       "source_count": 1,
       "spelling": "l1bmd+6"
@@ -731,6 +835,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 2,
       "source_count": 1,
       "spelling": "l1bmd+7"
@@ -738,6 +843,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 5,
       "source_count": 1,
       "spelling": "l1bmd+8"
@@ -745,6 +851,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 1,
       "spelling": "l1bmd+9"
@@ -752,6 +859,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 1,
       "spelling": "l1bmd+9/1100"
@@ -759,6 +867,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 2,
       "source_count": 1,
       "spelling": "l1bmd-1"
@@ -766,6 +875,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 2,
       "source_count": 1,
       "spelling": "l1bmd-11"
@@ -773,6 +883,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 142,
       "source_count": 1,
       "spelling": "l1bmm"
@@ -780,6 +891,7 @@
     {
       "class": "l1",
       "destination_count": 2,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 1,
       "spelling": "l1bmm"
@@ -787,6 +899,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 7,
       "source_count": 1,
       "spelling": "l1bmm4"
@@ -794,6 +907,7 @@
     {
       "class": "l1",
       "destination_count": 2,
+      "destinations_nodup": true,
       "occurrences": 6,
       "source_count": 1,
       "spelling": "l1bmm4"
@@ -801,6 +915,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 2,
       "source_count": 1,
       "spelling": "l1bmm4@1"
@@ -808,6 +923,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 2,
       "source_count": 1,
       "spelling": "l1bmm4@2"
@@ -815,6 +931,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 2,
       "source_count": 1,
       "spelling": "l1bmm4@3"
@@ -822,6 +939,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 8,
       "source_count": 1,
       "spelling": "l1bmm@0"
@@ -829,6 +947,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 16,
       "source_count": 1,
       "spelling": "l1bmm@1"
@@ -836,6 +955,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 3,
       "source_count": 1,
       "spelling": "l1bmm@10"
@@ -843,6 +963,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 3,
       "source_count": 1,
       "spelling": "l1bmm@11"
@@ -850,6 +971,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 5,
       "source_count": 1,
       "spelling": "l1bmm@12"
@@ -857,6 +979,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 3,
       "source_count": 1,
       "spelling": "l1bmm@13"
@@ -864,6 +987,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 4,
       "source_count": 1,
       "spelling": "l1bmm@14"
@@ -871,6 +995,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 3,
       "source_count": 1,
       "spelling": "l1bmm@15"
@@ -878,6 +1003,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 7,
       "source_count": 1,
       "spelling": "l1bmm@2"
@@ -885,6 +1011,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 4,
       "source_count": 1,
       "spelling": "l1bmm@3"
@@ -892,6 +1019,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 8,
       "source_count": 1,
       "spelling": "l1bmm@4"
@@ -899,6 +1027,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 4,
       "source_count": 1,
       "spelling": "l1bmm@5"
@@ -906,6 +1035,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 4,
       "source_count": 1,
       "spelling": "l1bmm@6"
@@ -913,6 +1043,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 4,
       "source_count": 1,
       "spelling": "l1bmm@7"
@@ -920,6 +1051,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 7,
       "source_count": 1,
       "spelling": "l1bmm@8"
@@ -927,6 +1059,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 3,
       "source_count": 1,
       "spelling": "l1bmm@9"
@@ -934,6 +1067,7 @@
     {
       "class": "l1",
       "destination_count": 2,
+      "destinations_nodup": true,
       "occurrences": 4,
       "source_count": 1,
       "spelling": "l1bmp"
@@ -941,6 +1075,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 7,
       "source_count": 1,
       "spelling": "l1bmr4ffadd"
@@ -948,6 +1083,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 1,
       "spelling": "l1bmr4fmin"
@@ -955,6 +1091,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 1,
       "spelling": "l1bmr4hfadd"
@@ -962,6 +1099,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 1,
       "spelling": "l1bmr4ior"
@@ -969,6 +1107,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 1,
       "spelling": "l1bmrdfadd"
@@ -976,6 +1115,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 25,
       "source_count": 1,
       "spelling": "l1bmrffadd"
@@ -983,6 +1123,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 1,
       "spelling": "l1bmrhfadd"
@@ -990,6 +1131,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 1,
       "spelling": "l1bmriiadd"
@@ -997,6 +1139,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 3,
       "source_count": 1,
       "spelling": "l1bmrior"
@@ -1004,6 +1147,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 1,
       "spelling": "l1bmrsbor"
@@ -1011,6 +1155,7 @@
     {
       "class": "l1",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 1,
       "spelling": "l1bmrsor"
@@ -1018,6 +1163,7 @@
     {
       "class": "l2",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 2,
       "source_count": 1,
       "spelling": "l2bm@0"
@@ -1025,6 +1171,7 @@
     {
       "class": "l2",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 2,
       "source_count": 1,
       "spelling": "l2bm@1"
@@ -1032,6 +1179,7 @@
     {
       "class": "l2",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 19,
       "source_count": 1,
       "spelling": "l2bmb"
@@ -1039,6 +1187,7 @@
     {
       "class": "l2",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 143,
       "source_count": 1,
       "spelling": "l2bmd"
@@ -1046,6 +1195,7 @@
     {
       "class": "l2",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 1,
       "spelling": "l2bmdars"
@@ -1053,6 +1203,7 @@
     {
       "class": "l2",
       "destination_count": 0,
+      "destinations_nodup": true,
       "occurrences": 4,
       "source_count": 0,
       "spelling": "l2bmdarw"
@@ -1060,6 +1211,7 @@
     {
       "class": "l2",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 2,
       "source_count": 1,
       "spelling": "l2bmr2fmin"
@@ -1067,6 +1219,7 @@
     {
       "class": "l2",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 9,
       "source_count": 1,
       "spelling": "l2bmrffadd"
@@ -1074,6 +1227,7 @@
     {
       "class": "l2",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 1,
       "spelling": "l2bmrhfadd"
@@ -1081,6 +1235,7 @@
     {
       "class": "l2",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 2,
       "source_count": 1,
       "spelling": "l2bmriiadd"
@@ -1088,6 +1243,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 6,
       "source_count": 2,
       "spelling": "ladd"
@@ -1095,6 +1251,7 @@
     {
       "class": "alu",
       "destination_count": 2,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 2,
       "spelling": "ladd"
@@ -1102,6 +1259,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 2,
       "source_count": 2,
       "spelling": "land"
@@ -1109,6 +1267,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 2,
       "spelling": "lbsl"
@@ -1116,6 +1275,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 3,
       "source_count": 1,
       "spelling": "linc"
@@ -1123,6 +1283,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 13,
       "source_count": 2,
       "spelling": "llsl"
@@ -1130,6 +1291,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 2,
       "spelling": "llsr"
@@ -1137,6 +1299,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 2,
       "spelling": "lor"
@@ -1144,6 +1307,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 3,
       "source_count": 2,
       "spelling": "lpackbit"
@@ -1151,6 +1315,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 11,
       "source_count": 1,
       "spelling": "lpassa"
@@ -1158,6 +1323,7 @@
     {
       "class": "alu",
       "destination_count": 2,
+      "destinations_nodup": true,
       "occurrences": 4,
       "source_count": 1,
       "spelling": "lpassa"
@@ -1165,6 +1331,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 7,
       "source_count": 2,
       "spelling": "lsub"
@@ -1172,6 +1339,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 6,
       "source_count": 1,
       "spelling": "msl"
@@ -1179,6 +1347,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 2,
       "source_count": 1,
       "spelling": "msr"
@@ -1186,6 +1355,7 @@
     {
       "class": "noforward",
       "destination_count": 0,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 0,
       "spelling": "noforward"
@@ -1193,6 +1363,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 2,
       "spelling": "sadd"
@@ -1200,6 +1371,7 @@
     {
       "class": "alu",
       "destination_count": 2,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 2,
       "spelling": "sadd"
@@ -1207,6 +1379,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 2,
       "source_count": 2,
       "spelling": "sand"
@@ -1214,6 +1387,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 3,
       "source_count": 2,
       "spelling": "sbsl"
@@ -1221,6 +1395,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 1,
       "source_count": 2,
       "spelling": "slsl/$imr1"
@@ -1228,6 +1403,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 6,
       "source_count": 2,
       "spelling": "smax"
@@ -1235,6 +1411,7 @@
     {
       "class": "alu",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 2,
       "source_count": 1,
       "spelling": "spassa"
@@ -1242,6 +1419,7 @@
     {
       "class": "zero",
       "destination_count": 1,
+      "destinations_nodup": true,
       "occurrences": 4,
       "source_count": 0,
       "spelling": "zero"
@@ -4284,7 +4462,7 @@
   ],
   "scanner": {
     "path": "viz/core/src/bin/parser_gap_scan.rs",
-    "sha256": "bfad0dd6c94f59f8370645f8d9af21b6f1f909930fed880471851676dae627f9"
+    "sha256": "16c6ef85ea2bfa895160e9ef8a17d4593d5cb0f807d1d9d27ca9dc059494d1e3"
   },
   "opcode_candidate_source": {
     "path": "mncompile/machine.py",

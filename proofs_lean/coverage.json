@@ -43,7 +43,7 @@
   },
   "opcode_destination_arity_experiment": {
     "source": "proofs_lean/evidence/opcode-arity/reference.json",
-    "sha256": "515230d4149fe3e0c0969f152b007e5d091a6fac33b308355243cb47ca56b9bd",
+    "sha256": "8bedb8ef4a2eea81cd233290150d71cd704cb7a096f870a0683b7a78e8b8a19a",
     "generator": "proofs_lean/scripts/check_opcode_arity_reference.py",
     "generator_sha256": "5cd45f0b5b98176c6bdc3ac6c002aff0433743dfbe505186e9b2b3f658b34313",
     "candidates": 184,
@@ -59,7 +59,7 @@
   },
   "answer_parser_gap_audit": {
     "source": "proofs_lean/evidence/parser-gap-audit/answers.json",
-    "sha256": "babb3a1930dd5467ca1c098dde6ee0b9a2b86c5498598e8f71b82332df5c6d89",
+    "sha256": "407ec2ea2390c873a85b1b76975c689446b3985c7c8ca5eda4ef7af5a341b9dd",
     "generator": "proofs_lean/scripts/check_parser_gap_reference.py",
     "generator_sha256": "cf1cddc002d33390c75907f0cbb938871df230a5b8d90365eba03c7c7eb12d26",
     "answers": 73,
@@ -81,6 +81,7 @@
     },
     "answer_expression_count": 1539,
     "answer_max_source_count": 3,
+    "answer_destination_lists_nodup": true,
     "answer_parser_source_arity": {
       "alu:src1": 188,
       "alu:src2": 181,
