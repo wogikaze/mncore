@@ -109,7 +109,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   すべての宛先loweringへ渡す。Issueモデルの合法性、source executionとnormalized issue
   executionの一致、directiveのissue costが0であること、lowering成功時の実行一致を証明した。
   nop行は指定count分のno-op issueへ展開し、register状態を保持することとscoreがcountに
-  一致することを証明した（waitタグはこの状態モデルでは作用しない）。mv、debug、DRAM初期化
+  一致することを証明した。PE行内のwait式もmachine.step同様にskipしてregister状態を保つ。
+  nopに付くwaitタグとnoforwardによるforwarding状態更新は、この状態モデルでは未モデル化。
+  mv、debug、DRAM初期化
   など他のtop-level行はlowering対象外。精度縮減、hazard/port legalityは未接続で、
   完全な命令実行意味論ではない。
   multiline directiveの対象・entry・幅をParsedLineに保持し、mask stateの置換と通常行での保持を証明した。

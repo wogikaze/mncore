@@ -604,19 +604,22 @@ def prepareParsedMaskedLine (files : IntegerRegisterFiles)
   let rec prepare : List ParsedExpr → ProofsLean.StepResult (List PreparedParsedMaskedWrite)
     | [] => .ok []
     | expression :: rest =>
-        match ParsedExpr.toDirectMaskedIntegerAccessesInLine? expression files.maskRegisters
-            control.directive hasSingleLineMask control.context.pe control.context.cycle
-            control.context.bar0 control.context.bar1 control.context.tWord with
-        | none => .unknown
-        | some accesses =>
-            match prepareParsedMaskedWrite files accesses false with
-            | .failure => .failure
-            | .unknown => .unknown
-            | .ok write =>
-                match prepare rest with
-                | .ok writes => .ok (write :: writes)
-                | .failure => .failure
-                | .unknown => .unknown
+        match expression.op with
+        | .wait _ | .noforward => prepare rest
+        | _ =>
+          match ParsedExpr.toDirectMaskedIntegerAccessesInLine? expression files.maskRegisters
+              control.directive hasSingleLineMask control.context.pe control.context.cycle
+              control.context.bar0 control.context.bar1 control.context.tWord with
+          | none => .unknown
+          | some accesses =>
+              match prepareParsedMaskedWrite files accesses false with
+              | .failure => .failure
+              | .unknown => .unknown
+              | .ok write =>
+                  match prepare rest with
+                  | .ok writes => .ok (write :: writes)
+                  | .failure => .failure
+                  | .unknown => .unknown
   prepare expressions
 
 def commitParsedMaskedWrites (files : IntegerRegisterFiles)
@@ -705,6 +708,15 @@ theorem parsedMaskedSource_execution (source : List ParsedMaskedSourceStatement)
 theorem mask_directive_has_zero_issue_cost (directive : ParsedMaskDirective) :
     ProofsLean.ControlNormalization.cost
       ([.directive directive] : List ParsedMaskedSourceStatement) = 0 := rfl
+
+theorem parsed_wait_expression_preserves_register_state
+    (files : IntegerRegisterFiles) (control : ParsedMaskExecutionControl) (tag : Nat) :
+    parsedIntegerMaskedLineStep files
+      [{ op := .wait tag, sources := [], destinations := [], flush := none, text := "wait" }]
+      control = .ok files := by
+  simp [parsedIntegerMaskedLineStep, prepareParsedMaskedLine,
+    prepareParsedMaskedLine.prepare,
+    commitParsedMaskedWrites]
 
 theorem parsed_nop_preserves_register_state
     (control : ParsedMaskExecutionControl) (files : IntegerRegisterFiles) :
