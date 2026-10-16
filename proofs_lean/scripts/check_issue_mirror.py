@@ -13,6 +13,7 @@ REPO = Path(__file__).resolve().parents[2]
 VSM = (REPO / "viz/core/src/vsm.rs").read_text()
 ISSUE = (REPO / "viz/core/src/issue.rs").read_text()
 BLOCK = (REPO / "viz/core/src/blockop.rs").read_text()
+MV = (REPO / "viz/core/src/mv.rs").read_text()
 LEAN = (REPO / "proofs_lean/ProofsLean/Issue.lean").read_text()
 
 
@@ -154,11 +155,19 @@ def validate() -> None:
         "Pe": "pe", "Nop": "nop", "Mv": "mv", "MaskDirective": "maskDirective",
         "DebugSet": "debugSet", "DebugGet": "debugGet", "DramSet": "dramSet",
     })
+    enum_matches(MV, "MvKind", "ParsedMvKind", {
+        "P": "copy", "B": "broadcast", "B2": "broadcast2", "B4": "broadcast4",
+        "D": "distribute", "R": "reduce", "R2": "reduce2", "R4": "reduce4",
+        "Nop": "nop",
+    })
+    enum_matches(MV, "MvOperand", "ParsedMvOperand", {
+        "Pdm": "pdm", "Dram": "dram", "L2bm": "l2bm",
+    })
     for variant in ("Alu", "Imm", "Zero", "Mau", "MatWrite", "MatRead", "Wait",
                     "Noforward", "L1", "L2", "Other"):
         if not re.search(rf"Op::{variant}\b", ISSUE):
             raise ValueError(f"issue.rs does not classify Op::{variant}")
-    print("PASS: Rust/Lean issue projection constructors and ALU input counts match.")
+    print("PASS: Rust/Lean instruction, MV and operand constructors and ALU input counts match.")
 
 
 if __name__ == "__main__":
