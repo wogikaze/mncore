@@ -350,7 +350,7 @@ def isa_bounds_experiment() -> dict:
             raise ValueError(f"stale ISA boundary experiment: {item['path']}")
     if not all(row["matches_expected"] for row in record["observations"]):
         raise ValueError("ISA boundary experiment contains an unexpected assembler result")
-    if len(record["observations"]) != 1127:
+    if len(record["observations"]) != 1132:
         raise ValueError("ISA boundary experiment case count changed")
     return {
         "source": reference.relative_to(REPO).as_posix(),
@@ -499,6 +499,11 @@ def parallel_issue_boundary_experiment() -> dict:
         "zero_duplicate_lm0_output": (False, None),
         "zero_duplicate_nowrite_outputs": (False, None),
         "zero_nowrite_with_other_output": (False, None),
+        "bar_write_lm0": (True, 1),
+        "bar_write_lm1": (True, 1),
+        "bar_write_and_read_other_bank": (True, 1),
+        "bar_write_and_read_same_bank": (False, None),
+        "bar_write_and_data_write_same_bank": (False, None),
         "l2bmdars_parallel_l2bm_exception": (False, None),
     }
     companions = ("bcast", "bcast2", "distrib", "froml1b", "reduce",
@@ -513,7 +518,7 @@ def parallel_issue_boundary_experiment() -> dict:
     return {
         "source": reference.relative_to(REPO).as_posix(),
         "sha256": digest(reference),
-        "manual_sections": ["SDM 3.6.1.15", "SDM 3.6.1.17", "SDM 3.6.1.19", "SDM 3.6.2.1", "SDM 3.6.4", "SDM 3.6.7.10"],
+        "manual_sections": ["SDM 3.6.1.7", "SDM 3.6.1.9", "SDM 3.6.1.15", "SDM 3.6.1.17", "SDM 3.6.1.19", "SDM 3.6.2.1", "SDM 3.6.4", "SDM 3.6.7.10"],
         "observations": [
             {"case": case, "accepted": observations[case]["accepted"],
              "assembler_output_lines": observations[case]["assembler_output_lines"]}
@@ -530,11 +535,13 @@ def parallel_issue_boundary_experiment() -> dict:
             "ProofsLean.MNCore.Issue.projected_lbf_writes_match_transfer_sources",
             "ProofsLean.MNCore.Issue.duplicate_lbf_writes_rejected",
             "ProofsLean.MNCore.Issue.duplicate_memory_destination_bank_is_illegal",
+            "ProofsLean.MNCore.Issue.base_address_write_conflicts_with_same_bank_read",
+            "ProofsLean.MNCore.Issue.projected_bar_writes_are_bar_destinations",
             "ProofsLean.MNCore.Issue.nowrite_with_other_destination_is_illegal",
             "ProofsLean.MNCore.Issue.projected_nowrite_output_validity",
             "ProofsLean.MNCore.Issue.parsed_duplicate_nowrite_output_rejected",
         ],
-        "limitations": "These probes cover mask agreement, OMR and LBF writes, duplicate PE-memory destinations, and `$nowrite` exclusivity; they do not establish complete parser, assembler, or hazard legality correspondence.",
+        "limitations": "These probes cover mask agreement, OMR, LBF and BAR writes, duplicate PE-memory destinations, and `$nowrite` exclusivity; they do not establish complete parser, assembler, or hazard legality correspondence.",
     }
 
 

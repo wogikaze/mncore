@@ -252,10 +252,26 @@ def validate_output_conflict_rules() -> None:
     projection = re.search(r"def ParsedExpr\.toIssueExpr.*?\n(?=theorem\b)", LEAN, re.S)
     if not legal or "nowriteOutputsUnique xs" not in legal.group(1):
         raise ValueError("Lean Legal omits `$nowrite` destination exclusivity")
-    if "(e.writes.map Access.bank).Nodup" not in LEAN:
+    if "e.writeBanks.Nodup" not in LEAN:
         raise ValueError("Lean issue predicate omits within-expression destination uniqueness")
     if not projection or "nowriteOutputValid := e.nowriteOutputValid" not in projection.group(0):
         raise ValueError("Lean projection omits `$nowrite` output validation")
+
+
+def validate_bar_write_rules() -> None:
+    rust_check = re.search(r"pub fn check\(exprs: &\[Expr\]\).*?\n\}", ISSUE, re.S)
+    if not rust_check or "Operand::Bar { lm1, .. }" not in rust_check.group(0):
+        raise ValueError("Rust issue checker omits BAR output banks")
+    if "bar_writes" not in rust_check.group(0) or "for (m, _, reader) in &reads" not in rust_check.group(0):
+        raise ValueError("Rust issue checker omits BAR/read bank conflicts")
+    legal = re.search(r"def Legal \(xs : List Expr\) : Prop :=(.*?)(?=\n(?:theorem|\/--|noncomputable)\b)", LEAN, re.S)
+    projection = re.search(r"def ParsedExpr\.toIssueExpr.*?\n(?=theorem\b)", LEAN, re.S)
+    if not legal or "barWritesExcludeReads xs" not in legal.group(1):
+        raise ValueError("Lean Legal omits BAR/read bank conflicts")
+    if not projection or "barWrites := e.barWrites" not in projection.group(0):
+        raise ValueError("Lean projection omits BAR destination writes")
+    if "def Expr.writeBanks" not in LEAN or "e.writeBanks.Nodup" not in LEAN:
+        raise ValueError("Lean issue predicate omits BAR/data destination bank uniqueness")
 
 
 def validate() -> None:
@@ -265,6 +281,7 @@ def validate() -> None:
     validate_mask_register_write_rule()
     validate_lbf_write_rule()
     validate_output_conflict_rules()
+    validate_bar_write_rules()
     parse_expr = re.search(r"fn parse_expr\(part: &str\).*?\n\}", VSM, re.S)
     if not parse_expr or "classify(&opcode).ok_or_else" not in parse_expr.group(0):
         raise ValueError("unknown PE opcode must fail parse_expr classification")

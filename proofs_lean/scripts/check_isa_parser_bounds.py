@@ -227,6 +227,16 @@ for offset in range(-255, 256):
 for width, expected in [("mb", True), ("lmb", True), ("llmb", False)]:
     CASES[f"bar_width_{width}"] = (
         f"lpassa $n0 ${width}\n", expected, 1 if expected else None)
+CASES.update({
+    "bar_write_lm0": ("iadd $lr0 $lr0 $mb\n", True, 1),
+    "bar_write_lm1": ("iadd $ls0 $ls0 $nb\n", True, 1),
+    "bar_write_and_read_other_bank": (
+        "iadd $lr0 $lr0 $mb; gmmul $lx $ln0v $ls0v\n", True, 1),
+    "bar_write_and_read_same_bank": (
+        "iadd $lr0 $lr0 $mb; gmmul $lx $m0 $lr0v\n", False, None),
+    "bar_write_and_data_write_same_bank": (
+        "iadd $lr0 $lr0 $mb $m0\n", False, None),
+})
 
 
 def sha(path: Path) -> str:

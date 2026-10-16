@@ -14,8 +14,8 @@ proof that `assemble3` accepts every modeled line.
 | At most two MAU groups, same precision | Rust and Lean count calculation, matrix-write, and matrix-read groups and compare precision | Mirrored for represented expression records. |
 | Vector FMA/MUL plus matrix write input agreement | Rust and Lean compare the structured operand at source 2 against the matrix-write source | Mirrored for structured operands; parser correspondence is still open. |
 | Each matrix register side appears at most once | Rust and Lean count X/Y matrix operands in sources and destinations | Mirrored for represented matrix operands. |
-| No two expressions write the same PE operand | PE-memory ports, OMR writes, and implicit `$lbf` writes have separate uniqueness checks | `$lbf` writes from normal and turnaround L1BM groups are now mirrored; broader assembler/parser correspondence remains open. |
-| Reads from one PE operand use one region, including mask-flag reads | Ordinary PE-memory reads compare bank and region; mask reads separately require one width and one variable OMR entry | Mask-flag read constraints are mirrored and assembler checked. Forwarding reads are not yet explicitly represented. |
+| No two expressions write the same PE operand | PE-memory/BAR bank outputs, OMR writes, and implicit `$lbf` writes have separate uniqueness checks | `$lbf` writes from normal and turnaround L1BM groups and shared LM0/LM1 output banks (including `$mb`/`$nb`) are modeled; broader assembler/parser correspondence remains open. |
+| Reads from one PE operand use one region, including mask-flag reads | Ordinary PE-memory reads compare bank and region; mask reads separately require one width and one variable OMR entry; BAR writes exclude reads from their LM bank | Mask-flag and sampled BAR bank constraints are mirrored and assembler checked. Forwarding reads are not yet explicitly represented. |
 | LM0/LM1 read/write regions agree | Rust and Lean compare projected `.mem` accesses | Mirrored for projected accesses only. |
 | Immediate excludes LM0 access | Rust and Lean check projected `.mem` accesses | Mirrored for projected accesses only. |
 | At most one zero-flush mask | Rust and Lean count expressions with a flush | Mirrored for parser-produced flush metadata. |
@@ -26,6 +26,13 @@ destinations within one PE-memory bank, matching the sampled `assemble3`
 rejections for `$nowrite`, `$nowrite` mixed with another output, and duplicate
 LM0 outputs. These output-shape checks supplement the inter-expression port
 rules above.
+
+SDM 3.6.1.7 and 3.6.1.9 identify `$mb` and `$nb` as LM0/LM1 base-address
+registers. Their destinations share the corresponding LM output bank, and a
+base-address write cannot issue with a read from that same bank. The checker
+models both constraints; selected accepted and rejected combinations are
+recorded in `evidence/isa-bounds/reference.json`. This remains sampled
+assembler evidence rather than a proof of full parser correspondence.
 
 The current checker can reject the `l2bmdars` exception, which can omit legal
 candidates. Other memory-port and operand-form conditions may remain outside

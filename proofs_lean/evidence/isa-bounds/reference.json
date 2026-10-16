@@ -25,7 +25,7 @@
     },
     {
       "path": "proofs_lean/scripts/check_isa_parser_bounds.py",
-      "sha256": "1c61a080d900ddea145f950b10c8782d83ff3dd7e2f9a490a43b044807c0d32b"
+      "sha256": "ca20e487ff46649a4af1372f10c88470365ba13ba2dedffc9ed7da8c4ed4573a"
     }
   ],
   "observations": [
@@ -9126,6 +9126,48 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "double long word can't be written to base address register",
+      "matches_expected": true,
+      "returncode": -6
+    },
+    {
+      "case": "bar_write_lm0",
+      "source": "iadd $lr0 $lr0 $mb",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "bar_write_lm1",
+      "source": "iadd $ls0 $ls0 $nb",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "bar_write_and_read_other_bank",
+      "source": "iadd $lr0 $lr0 $mb; gmmul $lx $ln0v $ls0v",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "bar_write_and_read_same_bank",
+      "source": "iadd $lr0 $lr0 $mb; gmmul $lx $m0 $lr0v",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Instruction field conflict detected between `lm0` and `in_lm0`.",
+      "matches_expected": true,
+      "returncode": -6
+    },
+    {
+      "case": "bar_write_and_data_write_same_bank",
+      "source": "iadd $lr0 $lr0 $mb $m0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "LM0 used twice as output.",
       "matches_expected": true,
       "returncode": -6
     }

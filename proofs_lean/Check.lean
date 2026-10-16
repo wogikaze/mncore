@@ -51,6 +51,8 @@ import Lean
 #print axioms ProofsLean.MNCore.PlusOne.step_writes_cycle_output_low
 #print axioms ProofsLean.MNCore.PlusOne.increment_numerical
 #print axioms ProofsLean.MNCore.Issue.check_sound
+#print axioms ProofsLean.MNCore.Issue.base_address_write_conflicts_with_same_bank_read
+#print axioms ProofsLean.MNCore.Issue.projected_bar_writes_are_bar_destinations
 #print axioms ProofsLean.MNCore.Issue.Region.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.listLengthLE_finite
 #print axioms ProofsLean.MNCore.Issue.Access.inFiniteEnvelope_finite

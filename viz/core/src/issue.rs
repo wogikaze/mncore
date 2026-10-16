@@ -126,13 +126,27 @@ pub fn check(exprs: &[Expr]) -> Result<(), String> {
     // PE memories: one writer per memory, one read region per memory, and for LM0/LM1 a read
     // and a write in the same step must access the same region.
     let mut writes: Vec<(MemKind, Region, &Expr)> = Vec::new();
+    let mut write_banks: Vec<(MemKind, &Expr)> = Vec::new();
+    let mut bar_writes: Vec<(MemKind, &Expr)> = Vec::new();
     let mut reads: Vec<(MemKind, Region, &Expr)> = Vec::new();
     for e in exprs {
-        for (ops, list) in [(&e.srcs, &mut reads), (&e.dsts, &mut writes)] {
-            for o in ops {
-                if let Operand::Mem { mem, wl, addr, .. } = o {
-                    list.push((*mem, Region { wl: *wl, addr: *addr }, e));
+        for o in &e.srcs {
+            if let Operand::Mem { mem, wl, addr, .. } = o {
+                reads.push((*mem, Region { wl: *wl, addr: *addr }, e));
+            }
+        }
+        for o in &e.dsts {
+            match o {
+                Operand::Mem { mem, wl, addr, .. } => {
+                    writes.push((*mem, Region { wl: *wl, addr: *addr }, e));
+                    write_banks.push((*mem, e));
                 }
+                Operand::Bar { lm1, .. } => {
+                    let bank = if *lm1 { MemKind::Lm1 } else { MemKind::Lm0 };
+                    bar_writes.push((bank, e));
+                    write_banks.push((bank, e));
+                }
+                _ => {}
             }
         }
     }
@@ -141,9 +155,14 @@ pub fn check(exprs: &[Expr]) -> Result<(), String> {
             return Err(format!("`{}` uses $nowrite with another destination", e.text));
         }
     }
-    for (i, (m, _, e)) in writes.iter().enumerate() {
-        if let Some((_, _, f)) = writes[..i].iter().find(|(n, _, _)| n == m) {
+    for (i, (m, e)) in write_banks.iter().enumerate() {
+        if let Some((_, f)) = write_banks[..i].iter().find(|(n, _)| n == m) {
             return Err(format!("`{}` and `{}` both write {}", f.text, e.text, mem_name(*m)));
+        }
+    }
+    for (m, _, reader) in &reads {
+        if let Some((_, writer)) = bar_writes.iter().find(|(bank, _)| bank == m) {
+            return Err(format!("{} is read while its base-address register is written (`{}` and `{}`)", mem_name(*m), reader.text, writer.text));
         }
     }
     // The mask register file exposes one write port per issue step. This
@@ -223,6 +242,10 @@ mod tests {
             "gmfma $ly $ls0v $lr0v $ln0v $omr1",
             "lpassa $lt $omr1",
             "zero $nowrite",
+            "iadd $lr0 $lr0 $mb",
+            "iadd $ls0 $ls0 $nb",
+            "iadd $lr0 $lr0 $mb; gmmul $lx $ln0v $ls0v",
+            "iadd $lr0 $lr0 $nb; gmmul $lx $lm0v $lr0v",
             "lpassa $lm0v $lr0v/$imr1; gmfma $ly $ls0v $lr0v $ln0v $omr1",
             "lpassa $lm0v $lr0v/$imr1; gmfma $ly $ls0v $lr0v $ln0v $omr2",
             "l1bmm $lb0 $lr0v",
@@ -244,6 +267,12 @@ mod tests {
             "zero $lm0 $lm2",
             "zero $nowrite $omr1",
             "zero $nowrite $nowrite",
+            "iadd $m0 $lr0 $mb",
+            "iadd $n0 $ls0 $nb",
+            "iadd $lr0 $lr0 $mb $m0",
+            "iadd $lr0 $lr0 $mb; gmmul $lx $m0 $lr0v",
+            "iadd $lr0 $lr0 $nb; gmmul $lx $n0 $ls0v",
+            "iadd $lr0 $lr0 $mb; l1bmm $lb0 $mb",
         ] {
             assert!(issue(bad).is_err(), "{bad}");
         }

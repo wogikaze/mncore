@@ -7,12 +7,12 @@
   "inventory_scope": "Compiler-generated ALU/MAU spelling candidates plus separately scoped source-derived records; not an authoritative complete ISA or legality model.",
   "selected_parser_boundary_experiment": {
     "source": "proofs_lean/evidence/isa-bounds/reference.json",
-    "sha256": "0d58011233fdaf569f2075b0e57d06d1ed60a1aff58a623e96e64bd5a08214ef",
+    "sha256": "407a66ab175029ba8fdc6ac7db2e4abe249d809aeb6d14b5bbf127ecd97c4404",
     "generator": "proofs_lean/scripts/check_isa_parser_bounds.py",
-    "generator_sha256": "1c61a080d900ddea145f950b10c8782d83ff3dd7e2f9a490a43b044807c0d32b",
-    "probes": 1127,
-    "accepted": 1024,
-    "rejected": 103,
+    "generator_sha256": "ca20e487ff46649a4af1372f10c88470365ba13ba2dedffc9ed7da8c4ed4573a",
+    "probes": 1132,
+    "accepted": 1027,
+    "rejected": 105,
     "findings": [
       "nop/0 is accepted and emits zero instruction words; nop/0 with a wait is rejected, so the zero-count no-wait form can be erased during normalization.",
       "wait i00 is rejected; i01 and iFF are accepted; i100 is rejected.",
@@ -113,8 +113,10 @@
   },
   "parallel_issue_boundary_experiment": {
     "source": "proofs_lean/evidence/isa-bounds/reference.json",
-    "sha256": "0d58011233fdaf569f2075b0e57d06d1ed60a1aff58a623e96e64bd5a08214ef",
+    "sha256": "407a66ab175029ba8fdc6ac7db2e4abe249d809aeb6d14b5bbf127ecd97c4404",
     "manual_sections": [
+      "SDM 3.6.1.7",
+      "SDM 3.6.1.9",
       "SDM 3.6.1.15",
       "SDM 3.6.1.17",
       "SDM 3.6.1.19",
@@ -180,6 +182,31 @@
       },
       {
         "case": "zero_nowrite_with_other_output",
+        "accepted": false,
+        "assembler_output_lines": null
+      },
+      {
+        "case": "bar_write_lm0",
+        "accepted": true,
+        "assembler_output_lines": 1
+      },
+      {
+        "case": "bar_write_lm1",
+        "accepted": true,
+        "assembler_output_lines": 1
+      },
+      {
+        "case": "bar_write_and_read_other_bank",
+        "accepted": true,
+        "assembler_output_lines": 1
+      },
+      {
+        "case": "bar_write_and_read_same_bank",
+        "accepted": false,
+        "assembler_output_lines": null
+      },
+      {
+        "case": "bar_write_and_data_write_same_bank",
         "accepted": false,
         "assembler_output_lines": null
       },
@@ -280,11 +307,13 @@
       "ProofsLean.MNCore.Issue.projected_lbf_writes_match_transfer_sources",
       "ProofsLean.MNCore.Issue.duplicate_lbf_writes_rejected",
       "ProofsLean.MNCore.Issue.duplicate_memory_destination_bank_is_illegal",
+      "ProofsLean.MNCore.Issue.base_address_write_conflicts_with_same_bank_read",
+      "ProofsLean.MNCore.Issue.projected_bar_writes_are_bar_destinations",
       "ProofsLean.MNCore.Issue.nowrite_with_other_destination_is_illegal",
       "ProofsLean.MNCore.Issue.projected_nowrite_output_validity",
       "ProofsLean.MNCore.Issue.parsed_duplicate_nowrite_output_rejected"
     ],
-    "limitations": "These probes cover mask agreement, OMR and LBF writes, duplicate PE-memory destinations, and `$nowrite` exclusivity; they do not establish complete parser, assembler, or hazard legality correspondence."
+    "limitations": "These probes cover mask agreement, OMR, LBF and BAR writes, duplicate PE-memory destinations, and `$nowrite` exclusivity; they do not establish complete parser, assembler, or hazard legality correspondence."
   },
   "fintype_bounded_enumeration": {
     "source": "proofs_lean/ProofsLean/Enumeration.lean",
@@ -663,7 +692,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/Issue.lean",
-      "sha256": "88befd02819b419efd33c7fdd9660d2c43262aaa43556efe1548211ff0ad7275",
+      "sha256": "3eca91fabfc705c0eb4783400b2cddb24a98440cfd72f721d3f236e389da62e4",
       "implemented": "Full structural PE Op/Operand payload mirror, issue projection, abstract PE-line rules, and a partial parsed-op to integer-ALU bridge for supported L/I/S integer operations and packbit",
       "scope": "The Rust enum inventory is checked against Lean constructors. A separate partial executor covers supported integer ALU/zero/immediate expressions with direct PE-memory destinations, masks/flush and ordered multiple destinations; this is not full ISA semantics",
       "source_basis": [
@@ -673,7 +702,7 @@
         },
         {
           "source": "viz/core/src/issue.rs",
-          "sha256": "87325e0e53d808341589ee4967245df2f07644f3ba57eff29ca50636a504aa7b"
+          "sha256": "9470677f321c79a980a0487706c8e360777fcb5c4f3feab4d4f181e551ad9b29"
         },
         {
           "source": "proofs_lean/ProofsLean/ParsedIntegerStep.lean",

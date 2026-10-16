@@ -99,6 +99,10 @@ def ParsedOperand.maskRegisterWrite? : ParsedOperand → Option Nat
   | .omr entry _ => some entry
   | _ => none
 
+def ParsedOperand.barWriteBank? : ParsedOperand → Option Bank
+  | .bar lm1 .. => some (if lm1 then .lm1 else .lm0)
+  | _ => none
+
 structure Expr where
   id : Nat
   group : Option Group
@@ -109,6 +113,7 @@ structure Expr where
   matrixWriteSource : Option ParsedOperand
   reads : List Access
   writes : List Access
+  barWrites : List Bank
   omrWrites : List Nat
   lbfWrites : Nat
   nowriteOutputValid : Bool
@@ -158,10 +163,17 @@ def matrixWritePairAgrees (xs : List Expr) : Prop :=
 def matrixRegistersUnique (xs : List Expr) : Prop :=
   (xs.map Expr.matrixXUses).sum ≤ 1 ∧ (xs.map Expr.matrixYUses).sum ≤ 1
 
+def Expr.writeBanks (e : Expr) : List Bank :=
+  e.writes.map Access.bank ++ e.barWrites
+
 def writesUnique (xs : List Expr) : Prop :=
-  (∀ e ∈ xs, (e.writes.map Access.bank).Nodup) ∧
-  (∀ e ∈ xs, ∀ f ∈ xs, ∀ a ∈ e.writes, ∀ b ∈ f.writes,
-    e.id ≠ f.id → a.bank = b.bank → False)
+  (∀ e ∈ xs, e.writeBanks.Nodup) ∧
+  (∀ e ∈ xs, ∀ f ∈ xs, ∀ bank ∈ e.writeBanks, ∀ other ∈ f.writeBanks,
+    e.id ≠ f.id → bank = other → False)
+
+def barWritesExcludeReads (xs : List Expr) : Prop :=
+  ∀ e ∈ xs, ∀ f ∈ xs, ∀ bank ∈ e.barWrites, ∀ access ∈ f.reads,
+    bank = access.bank → False
 
 def nowriteOutputsUnique (xs : List Expr) : Prop :=
   ∀ e ∈ xs, e.nowriteOutputValid = true
@@ -212,6 +224,7 @@ def Legal (xs : List Expr) : Prop :=
   matrixWritePairAgrees xs ∧
   matrixRegistersUnique xs ∧
   writesUnique xs ∧
+  barWritesExcludeReads xs ∧
   readsAgree xs ∧
   localReadWriteAgree xs ∧
   immediateExcludesLm0 xs ∧
@@ -252,6 +265,7 @@ def emptyExpr : Expr where
   matrixWriteSource := none
   reads := []
   writes := []
+  barWrites := []
   omrWrites := []
   lbfWrites := 0
   nowriteOutputValid := true
@@ -264,7 +278,7 @@ def emptyExpr : Expr where
 theorem empty_is_legal : Legal [] := by
   simp [Legal, idsUnique, groupsUnique, mauCountBounded, mauExpressions,
     mauPrecisionsAgree, matrixWritePairAgrees, matrixRegistersUnique,
-    writesUnique, readsAgree, localReadWriteAgree, immediateExcludesLm0,
+    writesUnique, Expr.writeBanks, barWritesExcludeReads, readsAgree, localReadWriteAgree, immediateExcludesLm0,
     zeroFlushUnique, maskWidthsAgree, maskEntriesAgree, nowriteOutputsUnique,
     lbfWritesUnique,
     maskRegisterWritesUnique]
@@ -280,7 +294,7 @@ theorem conflicting_mask_widths_are_illegal :
     ¬ Legal [maskIssueExpr 0 .alu (.entry false 1),
       maskIssueExpr 1 .l1bm (.entry true 1)] := by
   intro legal
-  rcases legal with ⟨_, _, _, _, _, _, _, _, _, _, _, widths, _⟩
+  rcases legal with ⟨_, _, _, _, _, _, _, _, _, _, _, _, widths, _⟩
   simp [maskWidthsAgree, maskIssueExpr, emptyExpr, ParsedMask.isDoubleLong] at widths
 
 theorem conflicting_mask_widths_rejected :
@@ -294,7 +308,7 @@ theorem conflicting_mask_entries_are_illegal :
     ¬ Legal [maskIssueExpr 0 .alu (.entry false 1),
       maskIssueExpr 1 .l1bm (.entry false 2)] := by
   intro legal
-  rcases legal with ⟨_, _, _, _, _, _, _, _, _, _, _, _, entries⟩
+  rcases legal with ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, entries⟩
   simp [maskEntriesAgree, maskIssueExpr, emptyExpr, ParsedMask.variableEntry?] at entries
 
 theorem conflicting_mask_entries_rejected :
@@ -307,6 +321,21 @@ theorem conflicting_mask_entries_rejected :
 def maskWriteIssueExpr (id : Nat) (group : Group) (entry : Nat) : Expr :=
   { emptyExpr with id := id, group := some group, omrWrites := [entry] }
 
+def barWriteIssueExpr (id : Nat) (group : Group) (bank : Bank) : Expr :=
+  { emptyExpr with id := id, group := some group, barWrites := [bank] }
+
+def memoryReadIssueExpr (id : Nat) (group : Group) (bank : Bank) : Expr :=
+  { emptyExpr with
+    id := id
+    group := some group
+    reads := [{ bank := bank, region := { width := 1, address0 := 0, address1 := 0, address2 := 0, address3 := 0, tIndirect := false, madpe := none } }] }
+
+theorem base_address_write_conflicts_with_same_bank_read :
+    ¬ Legal [barWriteIssueExpr 0 .alu .lm0, memoryReadIssueExpr 1 .mauCalc .lm0] := by
+  intro legal
+  rcases legal with ⟨_, _, _, _, _, _, _, conflict, _, _, _, _, _, _, _, _, _⟩
+  simp [barWritesExcludeReads, barWriteIssueExpr, memoryReadIssueExpr, emptyExpr] at conflict
+
 def lbfWriteIssueExpr (id : Nat) (group : Group) : Expr :=
   { emptyExpr with id := id, group := some group, lbfWrites := 1 }
 
@@ -316,7 +345,7 @@ def invalidNowriteIssueExpr (id : Nat) : Expr :=
 theorem nowrite_with_other_destination_is_illegal :
     ¬ Legal [invalidNowriteIssueExpr 0] := by
   intro legal
-  rcases legal with ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, valid, _, _⟩
+  rcases legal with ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, valid, _, _⟩
   simp [nowriteOutputsUnique, invalidNowriteIssueExpr, emptyExpr] at valid
 
 def duplicateMemWriteIssueExpr : Expr :=
@@ -329,13 +358,13 @@ def duplicateMemWriteIssueExpr : Expr :=
 theorem duplicate_memory_destination_bank_is_illegal :
     ¬ Legal [duplicateMemWriteIssueExpr] := by
   intro legal
-  rcases legal with ⟨_, _, _, _, _, _, writes, _, _, _, _, _, _, _, _, _⟩
-  simp [writesUnique, duplicateMemWriteIssueExpr, emptyExpr] at writes
+  rcases legal with ⟨_, _, _, _, _, _, writes, _, _, _, _, _, _, _, _, _, _⟩
+  simp [writesUnique, Expr.writeBanks, duplicateMemWriteIssueExpr, emptyExpr] at writes
 
 theorem duplicate_lbf_writes_are_illegal :
     ¬ Legal [lbfWriteIssueExpr 0 .l1bm, lbfWriteIssueExpr 1 .l1bmTurnaround] := by
   intro legal
-  rcases legal with ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, writes, _⟩
+  rcases legal with ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, writes, _⟩
   simp [lbfWritesUnique, lbfWriteIssueExpr, emptyExpr] at writes
 
 theorem duplicate_lbf_writes_rejected :
@@ -347,7 +376,7 @@ theorem duplicate_lbf_writes_rejected :
 theorem duplicate_mask_register_writes_are_illegal :
     ¬ Legal [maskWriteIssueExpr 0 .mauCalc 1, maskWriteIssueExpr 1 .alu 1] := by
   intro legal
-  rcases legal with ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, writes⟩
+  rcases legal with ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, writes⟩
   simp [maskRegisterWritesUnique, maskWriteIssueExpr, emptyExpr] at writes
 
 theorem duplicate_mask_register_writes_rejected :
@@ -355,7 +384,7 @@ theorem duplicate_mask_register_writes_rejected :
   classical
   apply decide_eq_false_iff_not.mpr
   intro legal
-  rcases legal with ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, writes⟩
+  rcases legal with ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, writes⟩
   simp [maskRegisterWritesUnique, maskWriteIssueExpr, emptyExpr] at writes
 
 theorem duplicate_alu_groups_rejected (a b : Nat) (different : a ≠ b) :
@@ -543,6 +572,9 @@ def ParsedExpr.maskApplications (expression : ParsedExpr) : List ParsedMask :=
 
 def ParsedExpr.maskRegisterWrites (expression : ParsedExpr) : List Nat :=
   expression.destinations.filterMap ParsedOperand.maskRegisterWrite?
+
+def ParsedExpr.barWrites (expression : ParsedExpr) : List Bank :=
+  expression.destinations.filterMap ParsedOperand.barWriteBank?
 
 def ParsedExpr.writesLbf (expression : ParsedExpr) : Bool :=
   match expression.op with
@@ -740,6 +772,7 @@ def ParsedExpr.toIssueExpr (id : Nat) (e : ParsedExpr) : Expr where
   matrixWriteSource := e.sources.head?
   reads := ParsedOperand.accesses e.sources
   writes := ParsedOperand.accesses e.destinations
+  barWrites := e.barWrites
   omrWrites := e.maskRegisterWrites
   lbfWrites := if e.writesLbf then 1 else 0
   nowriteOutputValid := e.nowriteOutputValid
@@ -756,6 +789,9 @@ theorem projected_reads_are_mem_operands (id : Nat) (e : ParsedExpr) :
 
 theorem projected_writes_are_mem_operands (id : Nat) (e : ParsedExpr) :
     (e.toIssueExpr id).writes = ParsedOperand.accesses e.destinations := rfl
+
+theorem projected_bar_writes_are_bar_destinations (id : Nat) (e : ParsedExpr) :
+    (e.toIssueExpr id).barWrites = e.destinations.filterMap ParsedOperand.barWriteBank? := rfl
 
 theorem projected_mask_register_writes_are_destinations (id : Nat) (e : ParsedExpr) :
     (e.toIssueExpr id).omrWrites =
@@ -864,7 +900,7 @@ theorem parsed_check_rejects_invalid_nowrite (expression : ParsedExpr)
   | false => rfl
   | true =>
       have legal := parsed_check_sound [expression] checked
-      rcases legal with ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, valid, _, _⟩
+      rcases legal with ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, valid, _, _⟩
       have projected : expression.nowriteOutputValid = true := by
         simpa [LegalParsedLine, projectLine, projectFrom, nowriteOutputsUnique,
           ParsedExpr.toIssueExpr] using valid
@@ -1383,11 +1419,12 @@ theorem plusOne_issue_legal : LegalParsedLine [plusOneParsed] := by
     ParsedOperand.matrixUseCount ParsedExpr.hasTurnaround
     ParsedExpr.maskApplications ParsedOperand.writeMask?
     ParsedExpr.maskRegisterWrites ParsedOperand.maskRegisterWrite?
+    ParsedExpr.barWrites ParsedOperand.barWriteBank?
     ParsedExpr.writesLbf ParsedExpr.nowriteOutputValid
     plusOneParsed plusOneRead plusOneWrite
   simp [Legal, idsUnique, groupsUnique, mauCountBounded, mauExpressions,
     mauPrecisionsAgree, matrixWritePairAgrees, matrixRegistersUnique,
-    writesUnique, readsAgree, localReadWriteAgree, immediateExcludesLm0,
+    writesUnique, Expr.writeBanks, barWritesExcludeReads, readsAgree, localReadWriteAgree, immediateExcludesLm0,
     zeroFlushUnique, maskWidthsAgree, maskEntriesAgree, nowriteOutputsUnique,
     lbfWritesUnique, maskRegisterWritesUnique,
     projectFrom]
