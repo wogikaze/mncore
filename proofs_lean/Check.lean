@@ -77,9 +77,11 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.ParsedOp.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.optionMaskInFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.NormalizedExpr.inFiniteEnvelope_finite
+#print axioms ProofsLean.MNCore.Issue.ParsedExpr.normalize_inFiniteEnvelope
 #print axioms ProofsLean.MNCore.Issue.NormalizedExpr.listInFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.NormalizedMv.finite
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.inFiniteEnvelope_finite
+#print axioms ProofsLean.MNCore.Issue.InstructionLine.pe_inFiniteEnvelope_of_parsed
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.costBelowEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.costBelowEnvelopeAlphabet
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.mem_costBelowEnvelopeAlphabet

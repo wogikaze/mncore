@@ -1292,6 +1292,29 @@ def NormalizedExpr.inFiniteEnvelope (expression : NormalizedExpr) : Prop :=
     (∀ operand ∈ expression.destinations, operand.inFiniteEnvelope) ∧
     optionMaskInFiniteEnvelope expression.flush
 
+/-- The exact parsed-expression facts needed to normalize into the finite
+carrier. The source bound is derived from parser opcode arity; destination
+uniqueness, numeric ranges, and flush ranges remain parser/assembler
+correspondence obligations. -/
+def ParsedExpr.inFiniteEnvelope (expression : ParsedExpr) : Prop :=
+  expression.op.inFiniteEnvelope ∧
+    expression.sourcesMatchParserArity ∧
+    (∀ operand ∈ expression.sources, operand.inFiniteEnvelope) ∧
+    expression.destinations.Nodup ∧
+    (∀ operand ∈ expression.destinations, operand.inFiniteEnvelope) ∧
+    optionMaskInFiniteEnvelope expression.flush
+
+theorem ParsedExpr.normalize_inFiniteEnvelope (expression : ParsedExpr)
+    (envelope : expression.inFiniteEnvelope) :
+    expression.normalize.inFiniteEnvelope := by
+  rcases expression with ⟨op, sources, destinations, flush, text⟩
+  rcases envelope with ⟨opBound, sourceArity, sourceBound, destinationNodup,
+    destinationBound, flushBound⟩
+  simp only [ParsedExpr.normalize, NormalizedExpr.inFiniteEnvelope]
+  exact ⟨opBound,
+    Nat.le_trans sourceArity op.parserSourceLimit_le_three,
+    sourceBound, destinationNodup, destinationBound, flushBound⟩
+
 private abbrev NormalizedExprFiniteCode :=
   {op : ParsedOp // op.inFiniteEnvelope} ×
     ParsedOperandListFiniteEnvelope 3 ×
@@ -1558,5 +1581,25 @@ theorem projectLine_expression_count_le_ten (expressions : List ParsedExpr)
     simpa [projectLine] using cardLe
   rw [← lengthEq, ← finiteCard]
   exact cardLe'
+
+/-- PE issue legality bounds the number of expressions by the ten issue groups.
+If each parsed expression has the finite payload facts, normalizing the line
+therefore puts it in the bounded PE-line carrier. -/
+theorem InstructionLine.pe_inFiniteEnvelope_of_parsed
+    (bound : Nat) (expressions : List ParsedExpr)
+    (issueLegal : LegalParsedLine expressions)
+    (payload : ∀ expression ∈ expressions, expression.inFiniteEnvelope) :
+    InstructionLine.inFiniteEnvelope bound
+      (.pe (expressions.map ParsedExpr.normalize)) := by
+  change (expressions.map ParsedExpr.normalize).length ≤ 10 ∧
+    ∀ expression ∈ expressions.map ParsedExpr.normalize,
+      expression.inFiniteEnvelope
+  constructor
+  · simpa using projectLine_expression_count_le_ten expressions issueLegal
+  · intro normalized member
+    rcases List.mem_map.mp member with ⟨expression, sourceMember, normalizedEq⟩
+    subst normalized
+    exact ParsedExpr.normalize_inFiniteEnvelope expression
+      (payload expression sourceMember)
 
 end ProofsLean.MNCore.Issue

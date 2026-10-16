@@ -177,6 +177,12 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   wait tagと各正規化式を既存envelope内に制限したline carrierの有限性を証明した。
   `NormalizedMv`全体も、有限なopcode/operand構成から有限とした。現状は有限上位集合の証明であり、
   全合法lineが各payload envelopeに入ることや、固定costからnop count boundを得る証明は未接続。
+- `ParsedExpr.inFiniteEnvelope`から正規化式のenvelopeへの写像を証明した。opcode固有source arityから
+  source長3以下を導ける一方、opcode・operand・flushの数値範囲とdestinationの重複なしを、実parser出力に
+  対して証明することは引き続きparser/assembler対応の未解決義務である。
+- `InstructionLine.pe_inFiniteEnvelope_of_parsed`は、`LegalParsedLine`がissue groupから与える式数上限10と、
+  式ごとのparsed payload envelope条件から、正規化PE行が有限carrierへ入ることを導く。
+  残る前提は、実parser/assemblerが各式のpayload条件を満たすこと。
 - `FiniteInstructionLines.lean`: `InstructionLine.costBelowEnvelope_finite`でcostがbound未満の
   envelope付きline carrierを有限とし、`legalCostBelowEnvelope_finite`で合法line全てがそのenvelopeへ
   入る条件付き有限性を証明した。さらにMathlib `Fintype`からboundごとの
