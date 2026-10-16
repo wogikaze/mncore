@@ -135,6 +135,7 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.doubleMatrixWriteRowWords_high_word
 #print axioms ProofsLean.MNCore.PEMemory.doubleMatrixWriteRowWords_low_word
 #print axioms ProofsLean.MNCore.PEMemory.doubleMatrixRead_after_transposed_write
+#print axioms ProofsLean.MNCore.PEMemory.parsedDoubleMatrixStore_write_readback
 #print axioms ProofsLean.MNCore.PEMemory.singleMatrixReadBus_physical_layout
 #print axioms ProofsLean.MNCore.PEMemory.halfMatrixReadBus_physical_layout
 #print axioms ProofsLean.MNCore.PEMemory.writeMatrixReadOutputs_semantics

@@ -40,6 +40,28 @@ structure ParsedIntegerContext where
   mab : Fin 16
   deriving DecidableEq, Repr
 
+/-- Coordinates shared by the four PEs in one MAB, with per-PE BAR/T state. -/
+structure ParsedPEGroupContext where
+  group : Fin 2
+  l2b : Fin 2
+  l1b : Fin 8
+  mab : Fin 16
+  bar0 : Fin 4 → BitVec 12
+  bar1 : Fin 4 → BitVec 12
+  tWord : Fin 4 → BitVec 32
+
+def ParsedPEGroupContext.at (groupContext : ParsedPEGroupContext)
+    (pe cycle : Fin 4) : ParsedIntegerContext where
+  pe := pe
+  cycle := cycle
+  bar0 := groupContext.bar0 pe
+  bar1 := groupContext.bar1 pe
+  tWord := groupContext.tWord pe
+  group := groupContext.group
+  l2b := groupContext.l2b
+  l1b := groupContext.l1b
+  mab := groupContext.mab
+
 def ParsedIntegerContext.linearIndex (context : ParsedIntegerContext) : Nat :=
   (((context.group.val * 2 + context.l2b.val) * 8 + context.l1b.val) * 16 +
     context.mab.val) * 4 + context.pe.val
@@ -992,6 +1014,7 @@ are logical 64-bit elements; the executor stores each element as two adjacent
 abbrev DoubleMatrixFace := Fin 4 → Fin 4 → BitVec 64
 
 abbrev DoubleMatrixPhysicalFace := Fin 16 → Fin 8 → BitVec 32
+abbrev ParsedMatrixReadStore := Fin 16 → Bool → DoubleMatrixPhysicalFace
 
 inductive ParsedMatrixReadTarget where
   | memory (access : DirectMemoryAccess) (selection : PEWordSelection)
@@ -1021,6 +1044,27 @@ def ParsedExpr.toDirectMatrixReadAccesses?
         | _ => none
       some ⟨precision, sideY, row, targets⟩
   | _, _ => none
+
+structure ParsedDoubleMatrixWriteAccesses where
+  source : ParsedIntegerInput
+  sideY : Bool
+  row : Nat
+
+/-- Lower the raw-bit D-precision matrix-write subset. Matrix-write operands
+with numerical conversion flags and fixed sources remain unresolved. -/
+def ParsedExpr.toDirectDoubleMatrixWriteAccesses?
+    (expression : ParsedExpr) (context : ParsedIntegerContext) :
+    Option ParsedDoubleMatrixWriteAccesses := do
+  match expression.op, expression.sources, expression.destinations with
+  | .matrixWrite .d, [source], [.matrix sideY _ (some row)] =>
+      match source with
+      | .mem _ false false false _ | .forward _ false false false =>
+          let source ← ParsedOperand.toParsedIntegerInput? source .long
+            context.group context.l2b context.l1b context.mab context.pe context.cycle
+            context.bar0 context.bar1 context.tWord
+          some ⟨source, sideY, row⟩
+      | _ => none
+  | _, _, _ => none
 
 def parsedMatrixReadBaseD (row : Nat) : Fin 4 :=
   ⟨row % 4, Nat.mod_lt _ (by decide)⟩
@@ -1055,6 +1099,66 @@ def writeDoubleMatrixPhysicalRow (old : DoubleMatrixPhysicalFace)
   let physicalRow := doubleMatrixPhysicalRow row
   fun targetRow => if targetRow = physicalRow then doubleMatrixWriteRowWords values
     else old targetRow
+
+def doubleMatrixWriteRowAt (base : Nat) (cycle : Fin 4) : Fin 4 :=
+  ⟨(base + cycle.val) % 4, Nat.mod_lt _ (by decide)⟩
+
+def writeParsedDoubleMatrixStoreRow (old : ParsedMatrixReadStore)
+    (mab : Fin 16) (sideY : Bool) (row : Fin 4)
+    (values : Fin 4 → BitVec 64) : ParsedMatrixReadStore :=
+  fun nextMab nextSide =>
+    if nextMab = mab ∧ nextSide = sideY then
+      writeDoubleMatrixPhysicalRow (old nextMab nextSide) row values
+    else old nextMab nextSide
+
+def parsedMatrixWritePEs : List (Fin 4) := [0, 1, 2, 3]
+
+def prepareParsedDoubleMatrixWritePEs (files : IntegerRegisterFiles)
+    (slots : ProofsLean.MNCore.Forwarding.Slots) (expression : ParsedExpr)
+    (groupContext : ParsedPEGroupContext) (cycle : Fin 4)
+    (pes : List (Fin 4)) (values : Fin 4 → BitVec 64) :
+    ProofsLean.StepResult (Fin 4 → BitVec 64) :=
+  match pes with
+  | [] => .ok values
+  | pe :: rest =>
+      let context := groupContext.at pe cycle
+      match ParsedExpr.toDirectDoubleMatrixWriteAccesses? expression context with
+      | none => .unknown
+      | some accesses =>
+          match ParsedIntegerInput.readWithForwarding files slots cycle accesses.source with
+          | .failure => .failure
+          | .unknown => .unknown
+          | .ok bus =>
+              prepareParsedDoubleMatrixWritePEs files slots expression groupContext cycle rest
+                (fun index => if index = pe then bus.high else values index)
+
+/-- D-precision matrix write over one four-PE MAB. All source reads use the
+old PE files and forwarding slots; each cycle writes row `(addr + cycle) % 4`
+to the selected matrix side. Only raw, unconverted memory/forward sources are
+currently lowered, matching `read_raw_elems` when its format is already D. -/
+def parsedDoubleMatrixWriteFourCycle (files : IntegerRegisterFiles)
+    (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (groupContext : ParsedPEGroupContext) (expression : ParsedExpr)
+    (oldStore : ParsedMatrixReadStore) :
+    ProofsLean.StepResult ParsedMatrixReadStore :=
+  let rec writeCycles (cycles : List (Fin 4)) (store : ParsedMatrixReadStore) :=
+    match cycles with
+    | [] => .ok store
+    | cycle :: rest =>
+        let context := groupContext.at 0 cycle
+        match ParsedExpr.toDirectDoubleMatrixWriteAccesses? expression context with
+        | none => .unknown
+        | some accesses =>
+            match prepareParsedDoubleMatrixWritePEs files slots expression groupContext cycle
+                parsedMatrixWritePEs (fun _ => 0) with
+            | .failure => .failure
+            | .unknown => .unknown
+            | .ok values =>
+                let row := doubleMatrixWriteRowAt accesses.row cycle
+                let nextStore := writeParsedDoubleMatrixStoreRow store groupContext.mab
+                  accesses.sideY row values
+                writeCycles rest nextStore
+  writeCycles [0, 1, 2, 3] oldStore
 
 theorem doubleMatrixWriteRowWords_high_word (values : Fin 4 → BitVec 64)
     (column : Fin 4) :
@@ -1115,6 +1219,15 @@ theorem doubleMatrixRead_after_transposed_write
   simp [doubleMatrixReadBus, doubleMatrixReadRow,
     Nat.mod_eq_of_lt sourcePE.isLt,
     doubleMatrixFaceFromPhysicalWords_after_write]
+
+theorem parsedDoubleMatrixStore_write_readback
+    (old : ParsedMatrixReadStore) (mab : Fin 16) (sideY : Bool)
+    (row sourcePE : Fin 4) (values : Fin 4 → BitVec 64) :
+    doubleMatrixReadBus
+      (doubleMatrixFaceFromPhysicalWords
+        ((writeParsedDoubleMatrixStoreRow old mab sideY row values) mab sideY))
+      sourcePE row 0 = ⟨values sourcePE, 0⟩ := by
+  simp [writeParsedDoubleMatrixStoreRow, doubleMatrixRead_after_transposed_write]
 
 def writeDoubleMatrixReadSlots (old : ProofsLean.MNCore.Forwarding.Slots)
     (face : DoubleMatrixFace) (base pe : Fin 4) (noForward : Bool) :
@@ -1189,8 +1302,6 @@ def halfMatrixReadBus (words : DoubleMatrixPhysicalFace)
   let h6 := halfMatrixPhysicalElement words row2 column1
   let h7 := halfMatrixPhysicalElement words row3 column1
   ⟨h0 ++ h1 ++ h2 ++ h3, h4 ++ h5 ++ h6 ++ h7⟩
-
-abbrev ParsedMatrixReadStore := Fin 16 → Bool → DoubleMatrixPhysicalFace
 
 def parsedMatrixReadBus (store : ParsedMatrixReadStore)
     (accesses : ParsedMatrixReadAccesses) (context : ParsedIntegerContext) :
