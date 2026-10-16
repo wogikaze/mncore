@@ -250,6 +250,8 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.t_indirect_hazard_access_uses_cycle_region
 #print axioms ProofsLean.MNCore.PEMemory.pe_hazard_constraint_uses_rule_distance
 #print axioms ProofsLean.MNCore.PEMemory.pe_hazard_violation_filter_exact
+#print axioms ProofsLean.MNCore.PEMemory.pe_hazard_no_violations_satisfies_constraints
+#print axioms ProofsLean.MNCore.PEMemory.pe_hazard_checked_constraint_matches_pair_safety
 #print axioms ProofsLean.MNCore.PEMemory.pe_hazard_constraints_between_complete
 #print axioms ProofsLean.MNCore.PEMemory.pe_hazard_constraint_violation_matches_pair_safety
 

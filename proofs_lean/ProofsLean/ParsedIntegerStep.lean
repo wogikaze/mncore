@@ -2528,6 +2528,23 @@ theorem pe_hazard_violation_filter_exact
       constraint ∈ constraints ∧ constraint.distance < constraint.required := by
   simp [violatingPEHazardConstraints, PEHazardConstraint.violated]
 
+/-- An empty violation report certifies every emitted distance constraint. -/
+theorem pe_hazard_no_violations_satisfies_constraints
+    (constraints : List PEHazardConstraint)
+    (noViolations : violatingPEHazardConstraints constraints = []) :
+    ∀ constraint ∈ constraints, constraint.required ≤ constraint.distance := by
+  intro constraint member
+  have notViolated : constraint.violated = false := by
+    cases value : constraint.violated with
+    | false => rfl
+    | true =>
+        have present : constraint ∈ violatingPEHazardConstraints constraints := by
+          simp [violatingPEHazardConstraints, member, value]
+        rw [noViolations] at present
+        simp at present
+  simp [PEHazardConstraint.violated] at notViolated
+  omega
+
 def makePEHazardConstraint? (earlier later : TimedPEAccess) :
     Option PEHazardConstraint :=
   if earlier.startWord < later.startWord then
@@ -2623,10 +2640,30 @@ theorem pe_hazard_constraint_violation_matches_pair_safety
       rcases distanceFields with ⟨hdistance, hrequired⟩
       simp [PEHazardConstraint.violated, peHazardSatisfied, requirement,
         hdistance, hrequired, timeOrder]
+
   | cycles count =>
       rcases distanceFields with ⟨hdistance, hrequired⟩
       simp [PEHazardConstraint.violated, peHazardSatisfied, requirement,
         hdistance, hrequired, timeOrder]
+
+/-- Passing the list-level check implies each modeled write/read pair meets its
+rule-specific distance whenever that pair emitted a constraint. -/
+theorem pe_hazard_checked_constraint_matches_pair_safety
+    (constraints : List PEHazardConstraint) (earlier later : TimedPEAccess)
+    (constraint : PEHazardConstraint)
+    (member : constraint ∈ constraints)
+    (made : makePEHazardConstraint? earlier later = some constraint)
+    (noViolations : violatingPEHazardConstraints constraints = []) :
+    peHazardSatisfied earlier later := by
+  have safeDistance := pe_hazard_no_violations_satisfies_constraints
+    constraints noViolations constraint member
+  have pairRelation := pe_hazard_constraint_violation_matches_pair_safety
+    earlier later constraint made
+  by_cases safe : peHazardSatisfied earlier later
+  · exact safe
+  · have violated := pairRelation.mpr safe
+    simp [PEHazardConstraint.violated] at safeDistance violated
+    omega
 
 theorem lm_pe_hazard_requires_three_issue_words
     (earlier later : TimedPEAccess)
