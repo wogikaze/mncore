@@ -93,6 +93,16 @@ theorem readWordsMasked_after_allOnes (bank : Bank) (width : Width)
   rw [writeWordsMasked_allOnes]
   exact read_after_write bank width memory start data index within
 
+theorem readWordsMasked_after_mask (bank : Bank) (width : Width)
+    (memory : Memory bank) (start : Fin bank.capacity) (data : WordBus)
+    (flags : BitVec 4) (longLong : Bool) (index : Fin 4)
+    (within : index.val < count bank width) :
+    readWords bank width (writeWordsMasked bank width memory start data flags longLong)
+      start index =
+        mergeSelectedWord (memory (advance bank start index.val)) (data index)
+          (selectedWordMask flags longLong index) := by
+  simp [readWords, within, writeWordsMasked, distance_advance]
+
 theorem zeroLongMask_on_double_access (bank : Bank) (memory : Memory bank)
     (start : Fin bank.capacity) (data : WordBus) (index : Fin 4) :
     writeWordsMasked bank .double memory start data 0 false

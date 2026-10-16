@@ -2,11 +2,12 @@ import ProofsLean.BusLayout
 import ProofsLean.Issue
 import ProofsLean.PlusOne
 import ProofsLean.Masks
+import ProofsLean.MaskedPEMemory
 
-/-! A deliberately partial instruction fragment: two unmasked memory reads,
-the parsed integer ALU request, and one unmasked memory write. This composes
-existing datapath pieces without claiming timing, masks, hazards, or ISA-wide
-operand legality. -/
+/-! A deliberately partial instruction fragment: direct PE-memory reads,
+the parsed integer ALU request, and masked or unmasked memory writes. This
+composes existing datapath pieces without claiming timing, hazards, or
+ISA-wide operand legality. -/
 namespace ProofsLean.MNCore.PEMemory
 
 open ProofsLean.MNCore.Issue
@@ -50,12 +51,13 @@ def parsedWidth? (encoded : Nat) : Option Width :=
 /-- Resolve the memory address fields of a parsed operand for one PE and cycle.
 This intentionally rejects rounded inputs and banks outside the PE memories.
 The surrounding caller still supplies current BAR and T values. -/
-def ParsedOperand.toDirectMemoryAccess? (operand : ParsedOperand)
+def ParsedOperand.toDirectMemoryAccessMode? (operand : ParsedOperand)
+    (allowDestinationMask : Bool)
     (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
     Option DirectMemoryAccess :=
   match operand with
   | .mem access negated extended rounded mask =>
-      if negated || extended || rounded || mask.isSome then none else
+      if negated || extended || rounded || (!allowDestinationMask && mask.isSome) then none else
       match issueBankToRegisterBank access.bank, parsedWidth? access.region.width with
       | some bank, some width =>
           if (access.region.tIndirect && bank != .lm0) ||
@@ -81,6 +83,16 @@ def ParsedOperand.toDirectMemoryAccess? (operand : ParsedOperand)
                 exact Nat.mod_lt _ (Bank.capacity_positive bank)⟩⟩
       | none, _ | _, none => none
   | _ => none
+
+def ParsedOperand.toDirectMemoryAccess? (operand : ParsedOperand)
+    (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
+    Option DirectMemoryAccess :=
+  ParsedOperand.toDirectMemoryAccessMode? operand false pe cycle bar0 bar1 tWord
+
+def ParsedOperand.toDirectMemoryDestination? (operand : ParsedOperand)
+    (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
+    Option DirectMemoryAccess :=
+  ParsedOperand.toDirectMemoryAccessMode? operand true pe cycle bar0 bar1 tWord
 
 def ParsedOperand.toUnmaskedDirectDestination? (operand : ParsedOperand)
     (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
@@ -115,12 +127,41 @@ def resolveParsedMaskFlags? (mask : ParsedMask)
           ⟨index % 32, by omega⟩ cycle)
       else none
 
+structure PEWordSelection where
+  flags : BitVec 4
+  longLong : Bool
+  deriving DecidableEq, Repr
+
+def parsedMaskLongLong : ParsedMask → Bool
+  | .pattern ll _ | .entry ll _ => ll
+
+def resolveParsedMaskSelection? (mask : ParsedMask)
+    (registers : ProofsLean.MNCore.Masks.RegisterFile) (cycle : Fin 4) :
+    Option PEWordSelection :=
+  (resolveParsedMaskFlags? mask registers cycle).map fun flags =>
+    ⟨flags, parsedMaskLongLong mask⟩
+
 /-- OMR flag selection is independent of the directive's word width. -/
 def resolveOmrDirectiveSelection? (directive : ParsedMaskDirective)
     (registers : ProofsLean.MNCore.Masks.RegisterFile) (cycle : Fin 4) :
     Option (BitVec 4) :=
   if directive.targets.maskRegister && directive.entry != 0 then
     resolveParsedMaskFlags? (.entry (directive.widthWords == 4) directive.entry)
+      registers cycle
+  else none
+
+def directiveTargetsBank (targets : ParsedMaskTargets) : Bank → Bool
+  | .lm0 => targets.lm0
+  | .lm1 => targets.lm1
+  | .grf0 => targets.grf0
+  | .grf1 => targets.grf1
+  | .t => targets.t
+
+def resolveMemoryDirectiveSelection? (directive : ParsedMaskDirective) (bank : Bank)
+    (registers : ProofsLean.MNCore.Masks.RegisterFile) (cycle : Fin 4) :
+    Option PEWordSelection :=
+  if directiveTargetsBank directive.targets bank && directive.entry != 0 then
+    resolveParsedMaskSelection? (.entry (directive.widthWords == 4) directive.entry)
       registers cycle
   else none
 
@@ -145,6 +186,25 @@ def ParsedOperand.resolveOmrWriteSelection? (operand : ParsedOperand)
       else some ((resolveOmrDirectiveSelection? directive registers cycle).getD
         (BitVec.allOnes 4))
   | _ => none
+
+def ParsedOperand.resolveMemoryWriteSelection? (operand : ParsedOperand) (bank : Bank)
+    (registers : ProofsLean.MNCore.Masks.RegisterFile) (cycle : Fin 4)
+    (directive : ParsedMaskDirective) (hasSingleLineMask : Bool) :
+    Option PEWordSelection :=
+  match operand with
+  | .mem _ _ _ _ (some mask) => resolveParsedMaskSelection? mask registers cycle
+  | .mem _ _ _ _ none =>
+      if hasSingleLineMask then some ⟨BitVec.allOnes 4, true⟩
+      else some ((resolveMemoryDirectiveSelection? directive bank registers cycle).getD
+        ⟨BitVec.allOnes 4, true⟩)
+  | _ => none
+
+def resolveFlushSelection? (flush : Option ParsedMask)
+    (registers : ProofsLean.MNCore.Masks.RegisterFile) (cycle : Fin 4) :
+    Option (Option PEWordSelection) :=
+  match flush with
+  | none => some none
+  | some mask => (resolveParsedMaskSelection? mask registers cycle).map some
 
 def parsedExprHasSingleLineWriteMask (expression : ParsedExpr) : Bool :=
   expression.destinations.any parsedOperandHasSingleLineWriteMask
@@ -179,6 +239,16 @@ structure ParsedIntegerAccesses where
   sourceX : DirectMemoryAccess
   sourceY : DirectMemoryAccess
   destination : DirectMemoryAccess
+  hasIntegerRequest : ∃ precision aluOp,
+    op.integerRequest = .ok (.integer precision aluOp)
+
+structure ParsedMaskedIntegerAccesses where
+  op : ParsedOp
+  sourceX : DirectMemoryAccess
+  sourceY : DirectMemoryAccess
+  destination : DirectMemoryAccess
+  writeSelection : PEWordSelection
+  flushSelection : Option PEWordSelection
   hasIntegerRequest : ∃ precision aluOp,
     op.integerRequest = .ok (.integer precision aluOp)
 
@@ -226,6 +296,55 @@ def ParsedExpr.toDirectIntegerAccesses? (expression : ParsedExpr)
                   some ⟨expression.op, xAccess, yAccess, destinationAccess,
                     ⟨precision, aluOp, hRequest⟩⟩
               | _, _, _ => none
+          | _, _ => none
+      | _ => none
+  | _ => none
+
+/-- Lower an integer ALU expression with a direct PE-memory destination,
+resolving its explicit or multiline write mask and output flush for this cycle. -/
+def ParsedExpr.toDirectMaskedIntegerAccesses? (expression : ParsedExpr)
+    (registers : ProofsLean.MNCore.Masks.RegisterFile)
+    (directive : ParsedMaskDirective)
+    (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
+    Option ParsedMaskedIntegerAccesses :=
+  match expression.op with
+  | .alu name (some _) _ _ =>
+      match hRequest : expression.op.integerRequest with
+      | .ok (.integer precision aluOp) =>
+          match expression.sources, expression.destinations with
+          | [source], [destination] =>
+              if ParsedAluName.integerInputCount name != 1 then none else
+              match ParsedOperand.toDirectMemoryAccess? source pe cycle bar0 bar1 tWord with
+              | none => none
+              | some sourceAccess =>
+                  match ParsedOperand.toDirectMemoryDestination? destination pe cycle bar0 bar1 tWord with
+                  | none => none
+                  | some destinationAccess =>
+                      match ParsedOperand.resolveMemoryWriteSelection? destination
+                          destinationAccess.bank registers cycle directive
+                          (parsedExprHasSingleLineWriteMask expression),
+                          resolveFlushSelection? expression.flush registers cycle with
+                      | some writeSelection, some flushSelection =>
+                          some ⟨expression.op, sourceAccess, sourceAccess, destinationAccess,
+                            writeSelection, flushSelection, ⟨precision, aluOp, hRequest⟩⟩
+                      | _, _ => none
+          | [sourceX, sourceY], [destination] =>
+              if ParsedAluName.integerInputCount name != 2 then none else
+              match ParsedOperand.toDirectMemoryAccess? sourceX pe cycle bar0 bar1 tWord,
+                    ParsedOperand.toDirectMemoryAccess? sourceY pe cycle bar0 bar1 tWord with
+              | some xAccess, some yAccess =>
+                  match ParsedOperand.toDirectMemoryDestination? destination pe cycle bar0 bar1 tWord with
+                  | none => none
+                  | some destinationAccess =>
+                      match ParsedOperand.resolveMemoryWriteSelection? destination
+                          destinationAccess.bank registers cycle directive
+                          (parsedExprHasSingleLineWriteMask expression),
+                          resolveFlushSelection? expression.flush registers cycle with
+                      | some writeSelection, some flushSelection =>
+                          some ⟨expression.op, xAccess, yAccess, destinationAccess,
+                            writeSelection, flushSelection, ⟨precision, aluOp, hRequest⟩⟩
+                      | _, _ => none
+              | _, _ => none
           | _, _ => none
       | _ => none
   | _ => none
@@ -281,12 +400,31 @@ def writeRegisterBank (files : IntegerRegisterFiles) (bank : Bank) (width : Widt
   | .grf1 => { files with grf1 := writeWords .grf1 width files.grf1 address data }
   | .t => { files with t := writeWords .t width files.t address data }
 
+def writeRegisterBankMasked (files : IntegerRegisterFiles) (bank : Bank) (width : Width)
+    (address : Fin bank.capacity) (data : WordBus) (selection : PEWordSelection) :
+    IntegerRegisterFiles :=
+  match bank with
+  | .lm0 => { files with lm0 :=
+      (writeWordsMasked .lm0 width files.lm0 address data selection.flags selection.longLong) }
+  | .lm1 => { files with lm1 :=
+      (writeWordsMasked .lm1 width files.lm1 address data selection.flags selection.longLong) }
+  | .grf0 => { files with grf0 :=
+      (writeWordsMasked .grf0 width files.grf0 address data selection.flags selection.longLong) }
+  | .grf1 => { files with grf1 :=
+      (writeWordsMasked .grf1 width files.grf1 address data selection.flags selection.longLong) }
+  | .t => { files with t :=
+      (writeWordsMasked .t width files.t address data selection.flags selection.longLong) }
+
 def readDirectAccess (files : IntegerRegisterFiles) (access : DirectMemoryAccess) : WordBus :=
   readRegisterBank files access.bank access.width access.address
 
 def writeDirectAccess (files : IntegerRegisterFiles) (access : DirectMemoryAccess)
     (data : WordBus) : IntegerRegisterFiles :=
   writeRegisterBank files access.bank access.width access.address data
+
+def writeDirectAccessMasked (files : IntegerRegisterFiles) (access : DirectMemoryAccess)
+    (data : WordBus) (selection : PEWordSelection) : IntegerRegisterFiles :=
+  writeRegisterBankMasked files access.bank access.width access.address data selection
 
 theorem readRegisterBank_after_write (files : IntegerRegisterFiles)
     (bank : Bank) (width : Width) (address : Fin bank.capacity)
@@ -295,6 +433,72 @@ theorem readRegisterBank_after_write (files : IntegerRegisterFiles)
       data index := by
   cases bank <;> exact read_after_write _ _ _ _ _ _ within
 
+theorem readDirectAccessMasked_after_write (files : IntegerRegisterFiles)
+    (access : DirectMemoryAccess) (data : WordBus) (selection : PEWordSelection)
+    (index : Fin 4) (within : index.val < count access.bank access.width) :
+    readDirectAccess (writeDirectAccessMasked files access data selection) access index =
+      mergeSelectedWord (readDirectAccess files access index) (data index)
+        (selectedWordMask selection.flags selection.longLong index) := by
+  cases access with
+  | mk bank width address =>
+    cases bank with
+    | lm0 =>
+        simp only [readDirectAccess, readRegisterBank, writeDirectAccessMasked,
+          writeRegisterBankMasked]
+        rw [readWordsMasked_after_mask .lm0 width files.lm0 address data
+          selection.flags selection.longLong index within]
+        simp [readWords, within]
+    | lm1 =>
+        simp only [readDirectAccess, readRegisterBank, writeDirectAccessMasked,
+          writeRegisterBankMasked]
+        rw [readWordsMasked_after_mask .lm1 width files.lm1 address data
+          selection.flags selection.longLong index within]
+        simp [readWords, within]
+    | grf0 =>
+        simp only [readDirectAccess, readRegisterBank, writeDirectAccessMasked,
+          writeRegisterBankMasked]
+        rw [readWordsMasked_after_mask .grf0 width files.grf0 address data
+          selection.flags selection.longLong index within]
+        simp [readWords, within]
+    | grf1 =>
+        simp only [readDirectAccess, readRegisterBank, writeDirectAccessMasked,
+          writeRegisterBankMasked]
+        rw [readWordsMasked_after_mask .grf1 width files.grf1 address data
+          selection.flags selection.longLong index within]
+        simp [readWords, within]
+    | t =>
+        simp only [readDirectAccess, readRegisterBank, writeDirectAccessMasked,
+          writeRegisterBankMasked]
+        rw [readWordsMasked_after_mask .t width files.t address data
+          selection.flags selection.longLong index within]
+        simp [readWords, within]
+
+
+def parsedIntegerMaskedRegisterStep (files : IntegerRegisterFiles)
+    (accesses : ParsedMaskedIntegerAccesses) (reduced : Bool) :
+    ProofsLean.StepResult IntegerRegisterFiles :=
+  let x := pack (readDirectAccess files accesses.sourceX)
+  let y := pack (readDirectAccess files accesses.sourceY)
+  match evaluateParsedIntegerAlu accesses.op x y reduced with
+  | .ok output =>
+      let outputValue := match accesses.flushSelection with
+        | none => output.value
+        | some selection => ProofsLean.MNCore.Masks.flushBus
+            (if selection.longLong then .double else .long)
+            selection.flags output.value
+      .ok (writeDirectAccessMasked files accesses.destination
+        (unpackALUBus outputValue) accesses.writeSelection)
+  | .failure => .failure
+  | .unknown => .unknown
+
+def executeParsedMaskedIntegerExpr? (files : IntegerRegisterFiles)
+    (expression : ParsedExpr) (directive : ParsedMaskDirective)
+    (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
+    Option (ProofsLean.StepResult IntegerRegisterFiles) :=
+  match ParsedExpr.toDirectMaskedIntegerAccesses? expression files.maskRegisters
+      directive pe cycle bar0 bar1 tWord with
+  | some accesses => some (parsedIntegerMaskedRegisterStep files accesses false)
+  | none => none
 
 def parsedIntegerRegisterStep (files : IntegerRegisterFiles)
     (sourceX sourceY destination : DirectMemoryAccess) (op : ParsedOp)

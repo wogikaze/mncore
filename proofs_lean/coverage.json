@@ -69,7 +69,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/MaskedPEMemory.lean",
-      "sha256": "2ec434ea8e36ddbf57cc9fb915cc67cb2c32a6714e598e844eee7356d4ea1fea",
+      "sha256": "e867a162a0ea93f5b4c354e240ce9a2360bbbb1d2dd931aa6fc97897444c4e82",
       "implemented": "Per-word PE-memory mask application for ll and half-word modes; all-ones equivalence and masked write readback proofs",
       "scope": "Immediate memory primitive with caller-supplied flags and selector width; not connected to a complete instruction step",
       "missing": "Directive resolution for memory targets, mask-state timing, hazards, parallel ports and universal reference conformance",
