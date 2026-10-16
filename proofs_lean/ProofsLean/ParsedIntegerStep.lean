@@ -231,6 +231,68 @@ def roundSingleWordBusToHalf (words : WordBus) : WordBus := fun index =>
 def roundSingleInputBusToHalf (bus : IntegerALU.Bus) : IntegerALU.Bus :=
   pack (roundSingleWordBusToHalf (unpackALUBus bus))
 
+theorem roundSingleWordBusToHalf_lane0 (words : WordBus) :
+    IntegerALU.lane .half (pack (roundSingleWordBusToHalf words)) 0 =
+      roundSingleWordToHalf (words 3) := by
+  simp only [IntegerALU.lane, IntegerALU.Precision.width,
+    roundSingleWordBusToHalf, pack, Fin.val_zero, Fin.val_one]
+  simp only [Nat.reduceMul]
+  rw [BitVec.extractLsb'_append_eq_of_add_le (by decide)]
+  exact BitVec.extractLsb'_append_eq_right
+
+theorem roundSingleWordBusToHalf_lane1 (words : WordBus) :
+    IntegerALU.lane .half (pack (roundSingleWordBusToHalf words)) 1 =
+      roundSingleWordToHalf (words 2) := by
+  simp only [IntegerALU.lane, IntegerALU.Precision.width,
+    roundSingleWordBusToHalf, pack, Fin.val_zero, Fin.val_one]
+  simp only [Nat.reduceMul]
+  rw [BitVec.extractLsb'_append_eq_of_add_le (by decide)]
+  rw [BitVec.extractLsb'_append_eq_of_le (by decide)]
+  simp
+
+theorem roundSingleWordBusToHalf_lane2 (words : WordBus) :
+    IntegerALU.lane .half (pack (roundSingleWordBusToHalf words)) 2 =
+      roundSingleWordToHalf (words 1) := by
+  simp only [IntegerALU.lane, IntegerALU.Precision.width,
+    roundSingleWordBusToHalf, pack, Fin.val_zero, Fin.val_one]
+  simp only [Nat.reduceMul]
+  rw [BitVec.extractLsb'_append_eq_of_le (by decide)]
+  exact BitVec.extractLsb'_append_eq_right
+
+theorem roundSingleWordBusToHalf_lane3 (words : WordBus) :
+    IntegerALU.lane .half (pack (roundSingleWordBusToHalf words)) 3 =
+      roundSingleWordToHalf (words 0) := by
+  simp only [IntegerALU.lane, IntegerALU.Precision.width,
+    roundSingleWordBusToHalf, pack, Fin.val_zero, Fin.val_one]
+  simp only [Nat.reduceMul]
+  rw [BitVec.extractLsb'_append_eq_of_le (by decide)]
+  rw [BitVec.extractLsb'_append_eq_of_le (by decide)]
+  simp
+
+theorem roundSingleInputBusToHalf_lane0 (bus : IntegerALU.Bus) :
+    IntegerALU.lane .half (roundSingleInputBusToHalf bus) 0 =
+      roundSingleWordToHalf (unpackALUBus bus 3) := by
+  simpa [roundSingleInputBusToHalf] using
+    roundSingleWordBusToHalf_lane0 (unpackALUBus bus)
+
+theorem roundSingleInputBusToHalf_lane1 (bus : IntegerALU.Bus) :
+    IntegerALU.lane .half (roundSingleInputBusToHalf bus) 1 =
+      roundSingleWordToHalf (unpackALUBus bus 2) := by
+  simpa [roundSingleInputBusToHalf] using
+    roundSingleWordBusToHalf_lane1 (unpackALUBus bus)
+
+theorem roundSingleInputBusToHalf_lane2 (bus : IntegerALU.Bus) :
+    IntegerALU.lane .half (roundSingleInputBusToHalf bus) 2 =
+      roundSingleWordToHalf (unpackALUBus bus 1) := by
+  simpa [roundSingleInputBusToHalf] using
+    roundSingleWordBusToHalf_lane2 (unpackALUBus bus)
+
+theorem roundSingleInputBusToHalf_lane3 (bus : IntegerALU.Bus) :
+    IntegerALU.lane .half (roundSingleInputBusToHalf bus) 3 =
+      roundSingleWordToHalf (unpackALUBus bus 0) := by
+  simpa [roundSingleInputBusToHalf] using
+    roundSingleWordBusToHalf_lane3 (unpackALUBus bus)
+
 example : roundSingleWordToHalf 0x3f800000 = 0x3e00 := by decide
 example : roundSingleWordToHalf 0x3f802000 = 0x3e00 := by decide
 example : roundSingleWordToHalf 0x3f806000 = 0x3e02 := by decide

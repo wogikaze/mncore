@@ -111,6 +111,10 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.readRegisterBank_t_independent_of_width
 #print axioms ProofsLean.MNCore.PEMemory.roundNearestEven_tie_even
 #print axioms ProofsLean.MNCore.PEMemory.roundNearestEven_tie_odd
+#print axioms ProofsLean.MNCore.PEMemory.roundSingleInputBusToHalf_lane0
+#print axioms ProofsLean.MNCore.PEMemory.roundSingleInputBusToHalf_lane1
+#print axioms ProofsLean.MNCore.PEMemory.roundSingleInputBusToHalf_lane2
+#print axioms ProofsLean.MNCore.PEMemory.roundSingleInputBusToHalf_lane3
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerInput_read_rounded
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerInput_read_unrounded
 #print axioms ProofsLean.MNCore.PEMemory.parsed_issue_advances_elapsed_word
