@@ -748,9 +748,9 @@ theorem ParsedOperand.inFiniteEnvelope_finite :
   Finite.of_injective ParsedOperand.finiteCode ParsedOperand.finiteCode_injective
 
 /-- A parser-bounded source tuple whose operands lie in the recorded finite
-operand envelope ranges over a finite type. Destinations are deliberately not
-included: Rust assigns the remaining token suffix to destinations without a
-parser-side length bound. -/
+operand envelope ranges over a finite type. Destination lists use a separate
+bound because Rust assigns the remaining token suffix to destinations without
+a parser-side length bound. -/
 def ParsedExpr.sourcesInFiniteEnvelope (expression : ParsedExpr) : Prop :=
   expression.sources.length ≤ 3 ∧
     ∀ operand ∈ expression.sources, operand.inFiniteEnvelope
@@ -762,32 +762,51 @@ theorem ParsedExpr.sourcesInFiniteEnvelope_of_parserArity
     expression.sourcesInFiniteEnvelope :=
   ⟨expression.sources_length_le_three arity, operands⟩
 
-private def ParsedExpr.sourceCode
-    (sources : {sources : List ParsedOperand //
-      sources.length ≤ 3 ∧ ∀ operand ∈ sources, operand.inFiniteEnvelope}) :
+private def ParsedOperand.listFiniteCode (bound : Nat)
+    (operands : {operands : List ParsedOperand //
+      operands.length ≤ bound ∧ ∀ operand ∈ operands, operand.inFiniteEnvelope}) :
     {values : List {operand : ParsedOperand // operand.inFiniteEnvelope} //
-      values.length ≤ 3} := by
-  let values := sources.1.attach.map fun operand =>
-    (⟨operand.1, sources.2.2 operand.1 operand.2⟩ :
+      values.length ≤ bound} := by
+  let values := operands.1.attach.map fun operand =>
+    (⟨operand.1, operands.2.2 operand.1 operand.2⟩ :
       {operand : ParsedOperand // operand.inFiniteEnvelope})
   refine ⟨values, ?_⟩
-  simpa [values] using sources.2.1
+  simpa [values] using operands.2.1
 
-private theorem ParsedExpr.sourceCode_injective :
-    Function.Injective ParsedExpr.sourceCode := by
+private theorem ParsedOperand.listFiniteCode_injective (bound : Nat) :
+    Function.Injective (ParsedOperand.listFiniteCode bound) := by
   intro a b equal
   apply Subtype.ext
   have valueEqual := congrArg (fun values => values.1.map Subtype.val) equal
-  simpa [ParsedExpr.sourceCode, List.attach_map_val] using valueEqual
+  simpa [ParsedOperand.listFiniteCode, List.attach_map_val] using valueEqual
+
+theorem ParsedOperand.listInFiniteEnvelope_finite (bound : Nat) :
+    Finite {operands : List ParsedOperand //
+      operands.length ≤ bound ∧ ∀ operand ∈ operands, operand.inFiniteEnvelope} := by
+  let Operand := {operand : ParsedOperand // operand.inFiniteEnvelope}
+  letI : Finite Operand := ParsedOperand.inFiniteEnvelope_finite
+  letI : Finite {values : List Operand // values.length ≤ bound} :=
+    listLengthLE_finite Operand bound
+  exact Finite.of_injective (ParsedOperand.listFiniteCode bound)
+    (ParsedOperand.listFiniteCode_injective bound)
 
 theorem ParsedExpr.sourcesInFiniteEnvelope_finite :
     Finite {sources : List ParsedOperand //
-      sources.length ≤ 3 ∧ ∀ operand ∈ sources, operand.inFiniteEnvelope} := by
-  let Operand := {operand : ParsedOperand // operand.inFiniteEnvelope}
-  letI : Finite Operand := ParsedOperand.inFiniteEnvelope_finite
-  letI : Finite {values : List Operand // values.length ≤ 3} :=
-    listLengthLE_finite Operand 3
-  exact Finite.of_injective ParsedExpr.sourceCode ParsedExpr.sourceCode_injective
+      sources.length ≤ 3 ∧ ∀ operand ∈ sources, operand.inFiniteEnvelope} :=
+  ParsedOperand.listInFiniteEnvelope_finite 3
+
+/-- Candidate destination carrier under the six-category output envelope
+observed in assemble3 probes. The evidence is not a universal proof that every
+accepted opcode/parser combination obeys this bound. -/
+def ParsedExpr.destinationsInFiniteEnvelope (expression : ParsedExpr) : Prop :=
+  expression.destinations.length ≤ 6 ∧
+    ∀ operand ∈ expression.destinations, operand.inFiniteEnvelope
+
+theorem ParsedExpr.destinationsInFiniteEnvelope_finite :
+    Finite {destinations : List ParsedOperand //
+      destinations.length ≤ 6 ∧
+        ∀ operand ∈ destinations, operand.inFiniteEnvelope} :=
+  ParsedOperand.listInFiniteEnvelope_finite 6
 
 def ParsedL1bSet.inFiniteEnvelope (set : ParsedL1bSet) : Prop :=
   set.mask < 8 ∧ set.immode < 8
