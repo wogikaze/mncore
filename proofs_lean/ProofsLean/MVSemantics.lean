@@ -1,4 +1,5 @@
 import ProofsLean.Issue
+import ProofsLean.RRN
 
 /- MV transfer memory semantics. The Rust executor first collects all writes
 from the old memory, then commits them in order. This models that snapshot
@@ -531,6 +532,35 @@ def parsedMvR2Plan? (transfer : ParsedMv) : Option (List ReductionPair) := do
       let count := (transfer.size.val / 64) * 64
       pure (r2Plan source destination groups count)
 
+def parsedMvReducer? (rrn : ParsedRrn) :
+    Option (List (BitVec 64) → BitVec 64) :=
+  match rrn.precision, rrn.op with
+  | 'd', .fadd => some (RRN.reduceLongFloatAddFormat .double)
+  | 'f', .fadd => some (RRN.reduceLongFloatAddFormat .single)
+  | 'h', .fadd => some (RRN.reduceLongFloatAddFormat .half)
+  | 'd', .max => some (RRN.reduceLongInteger .maximum .long)
+  | 'f', .max => some (RRN.reduceLongInteger .maximum .word)
+  | 'h', .max => some (RRN.reduceLongInteger .maximum .half)
+  | 'd', .min => some (RRN.reduceLongInteger .minimum .long)
+  | 'f', .min => some (RRN.reduceLongInteger .minimum .word)
+  | 'h', .min => some (RRN.reduceLongInteger .minimum .half)
+  | 'l', .iadd => some (RRN.reduceLongInteger .add .long)
+  | 'i', .iadd => some (RRN.reduceLongInteger .add .word)
+  | 's', .iadd => some (RRN.reduceLongInteger .add .half)
+  | 'l', .band => some (RRN.reduceLongInteger .bitAnd .long)
+  | 'i', .band => some (RRN.reduceLongInteger .bitAnd .word)
+  | 's', .band => some (RRN.reduceLongInteger .bitAnd .half)
+  | 'l', .and => some (RRN.reduceLongInteger .allNonzero .long)
+  | 'i', .and => some (RRN.reduceLongInteger .allNonzero .word)
+  | 's', .and => some (RRN.reduceLongInteger .allNonzero .half)
+  | 'l', .bor => some (RRN.reduceLongInteger .bitOr .long)
+  | 'i', .bor => some (RRN.reduceLongInteger .bitOr .word)
+  | 's', .bor => some (RRN.reduceLongInteger .bitOr .half)
+  | 'l', .or => some (RRN.reduceLongInteger .anyNonzero .long)
+  | 'i', .or => some (RRN.reduceLongInteger .anyNonzero .word)
+  | 's', .or => some (RRN.reduceLongInteger .anyNonzero .half)
+  | _, _ => none
+
 def stageReductions (memory : Memory) (reduce : List (BitVec 64) → BitVec 64)
     : List ReductionPair → List (Cell × BitVec 64)
   | [] => []
@@ -541,8 +571,9 @@ def executeReductions (memory : Memory) (reduce : List (BitVec 64) → BitVec 64
     (reductions : List ReductionPair) : Memory :=
   commitWrites memory (stageReductions memory reduce reductions)
 
-def executeParsedMvR2? (memory : Memory) (transfer : ParsedMv)
-    (reduce : List (BitVec 64) → BitVec 64) : Option Memory := do
+def executeParsedMvR2? (memory : Memory) (transfer : ParsedMv) : Option Memory := do
+  let .reduce2 rrn := transfer.kind | none
+  let reduce ← parsedMvReducer? rrn
   let plan ← parsedMvR2Plan? transfer
   pure (executeReductions memory reduce plan)
 
@@ -796,12 +827,19 @@ theorem executeReductions_read (memory : Memory)
       | none => memory cell := rfl
 
 theorem executeParsedMvR2_read (memory : Memory) (transfer : ParsedMv)
-    (reduce : List (BitVec 64) → BitVec 64)
     (plan : List ReductionPair) (cell : Cell)
     (hplan : parsedMvR2Plan? transfer = some plan) :
-    (executeParsedMvR2? memory transfer reduce).map (fun result => result cell) =
-      some (executeReductions memory reduce plan cell) := by
-  simp [executeParsedMvR2?, hplan]
+    (executeParsedMvR2? memory transfer).map (fun result => result cell) =
+      match transfer.kind with
+      | .reduce2 rrn => (parsedMvReducer? rrn).map fun reduce =>
+          executeReductions memory reduce plan cell
+      | _ => none := by
+  cases hk : transfer.kind with
+  | reduce2 rrn =>
+      cases hreduce : parsedMvReducer? rrn <;>
+        simp [executeParsedMvR2?, hplan, hk, hreduce]
+  | nop | copy | broadcast | broadcast2 | broadcast4 | distribute | reduce _ | reduce4 _ =>
+      simp [executeParsedMvR2?, hk]
 
 /-- An overlapping left-to-right copy reads every source from the old state:
 writing cell 1 cannot change the value subsequently copied from cell 1 to cell 2. -/

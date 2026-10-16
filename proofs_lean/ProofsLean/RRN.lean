@@ -141,16 +141,22 @@ def extendFloatBits (input output : FloatPrecision) (bits : Nat) : Nat :=
       Int.ofNat input.mantissaBits
     roundPack output negative significand binaryExponent
 
+/-- Reduce each native floating lane independently, including direct half
+precision RRN operations used by MV. -/
+def reduceLongFloatAddFormat (format : FloatPrecision)
+    (values : List (BitVec 64)) : BitVec 64 :=
+  let width := format.width
+  let laneValues := (List.range (64 / width)).map fun lane =>
+    let shift := 64 - width * (lane + 1)
+    let inputs := values.map fun value =>
+      (value.extractLsb' shift width).toNat
+    reduceFloatAdd format format inputs * 2 ^ shift
+  BitVec.ofNat 64 (laneValues.foldl (· + ·) 0)
+
 /-- Reduce each native single/double lane independently across L1BM words. -/
 def reduceLongFloatAdd (precision : NativeFloatPrecision)
     (values : List (BitVec 64)) : BitVec 64 :=
-  let format := precision.format
-  let width := format.width
-  let laneValues := (List.range (64 / width)).map fun lane =>
-    let inputs := values.map fun value =>
-      (value.extractLsb' (lane * width) width).toNat
-    reduceFloatAdd format format inputs * 2 ^ (lane * width)
-  BitVec.ofNat 64 (laneValues.foldl (· + ·) 0)
+  reduceLongFloatAddFormat precision.format values
 
 /-- Half alias path: widen each half lane to single, reduce in the single
 network, round each result to half, and pack four halves. The 16-MAB case
@@ -229,8 +235,9 @@ def reduceLongInteger (op : IntegerOp) (precision : IntegerPrecision)
     (values : List (BitVec 64)) : BitVec 64 :=
   let width := precision.width
   let laneValues := (List.range precision.lanes).map fun lane =>
-    let inputs := values.map fun value => value.extractLsb' (lane * width) width
-    (reduceInteger op inputs).toNat * 2 ^ (lane * width)
+    let shift := 64 - width * (lane + 1)
+    let inputs := values.map fun value => value.extractLsb' shift width
+    (reduceInteger op inputs).toNat * 2 ^ shift
   BitVec.ofNat 64 (laneValues.foldl (· + ·) 0)
 
 theorem add_wraps_8bit :
