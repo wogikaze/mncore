@@ -54,4 +54,26 @@ def l1ExprHazardEvents (expr : ParsedExpr) (startWord : Nat) :
       | some (_, none) => []
   | _ => []
 
+def l1LineHazardEvents
+    (line : ProofsLean.MNCore.PEMemory.ParsedMaskedIssueLine) (startWord : Nat) :
+    List ProofsLean.MNCore.PEMemory.TimedBlockAccess :=
+  match line with
+  | ProofsLean.MNCore.PEMemory.ParsedMaskedIssueLine.nop => []
+  | ProofsLean.MNCore.PEMemory.ParsedMaskedIssueLine.pe expressions => expressions.flatMap fun expression =>
+      l1ExprHazardEvents expression startWord
+
+/-- Gather parsed L1BM events over a source stream. Directives have zero issue
+cost; each issue word advances the event clock by one word. -/
+def l1SourceHazardEvents :
+    List (ProofsLean.ControlNormalization.Statement
+      ParsedMaskDirective
+      ProofsLean.MNCore.PEMemory.ParsedMaskedIssueLine) → Nat →
+    List ProofsLean.MNCore.PEMemory.TimedBlockAccess
+  | [], _ => []
+  | ProofsLean.ControlNormalization.Statement.directive _ :: rest, startWord =>
+      l1SourceHazardEvents rest startWord
+  | ProofsLean.ControlNormalization.Statement.issue line :: rest, startWord =>
+      l1LineHazardEvents line startWord ++
+        l1SourceHazardEvents rest (startWord + 1)
+
 end ProofsLean.MNCore.HazardTrace

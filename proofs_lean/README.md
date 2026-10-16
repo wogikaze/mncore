@@ -145,7 +145,8 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   write→readのport conflict、および3 issue-word境界での12-cycle constraint生成を証明した。
   さらにRust `l1_cycle_span`の全L1 opcode表をLeanへ移し、opcode別のspanをevent化する共通関数を追加した。
   HazardTrace.leanでL1 `ParsedExpr`のsource/destinationから方向・base・width・拡張/丸め情報を読み、
-  8 bank×4 cycleの32 eventへloweringする関数を追加した。source文列のclock追跡と統合し、L2/MV側の
+  8 bank×4 cycleの32 eventへloweringする関数を追加した。source文列を走査しdirectiveを0 costとして
+  issue wordごとのclockも進めてevent streamを作る。L2/MV側の
   event生成、PE operand accessとの合流、hazard reportの再現は未完了。
   これは対象PEメモリ規則の条件モデルであり、Rust analyzerの全Access生成、mask directiveの実効状態、
   BARによる静的range照合、reportのsort/dedupを含む出力一致証明ではない。
