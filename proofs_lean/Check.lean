@@ -175,3 +175,4 @@ run_cmd do
   if checked < 11 then
     throwError "incomplete project environment: only {checked} declarations"
   logInfo m!"AUDIT_DECLARATIONS: {checked}"
+#print axioms ProofsLean.MNCore.PEMemory.parsedDoubleMatrixWriteCycle_readback

@@ -1132,6 +1132,23 @@ def prepareParsedDoubleMatrixWritePEs (files : IntegerRegisterFiles)
               prepareParsedDoubleMatrixWritePEs files slots expression groupContext cycle rest
                 (fun index => if index = pe then bus.high else values index)
 
+def parsedDoubleMatrixWriteCycle (files : IntegerRegisterFiles)
+    (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (groupContext : ParsedPEGroupContext) (expression : ParsedExpr)
+    (oldStore : ParsedMatrixReadStore) (cycle : Fin 4) :
+    ProofsLean.StepResult ParsedMatrixReadStore :=
+  let context := groupContext.at 0 cycle
+  match ParsedExpr.toDirectDoubleMatrixWriteAccesses? expression context with
+  | none => .unknown
+  | some accesses =>
+      match prepareParsedDoubleMatrixWritePEs files slots expression groupContext cycle
+          parsedMatrixWritePEs (fun _ => 0) with
+      | .failure => .failure
+      | .unknown => .unknown
+      | .ok values =>
+          .ok (writeParsedDoubleMatrixStoreRow oldStore groupContext.mab accesses.sideY
+            (doubleMatrixWriteRowAt accesses.row cycle) values)
+
 /-- D-precision matrix write over one four-PE MAB. All source reads use the
 old PE files and forwarding slots; each cycle writes row `(addr + cycle) % 4`
 to the selected matrix side. Only raw, unconverted memory/forward sources are
@@ -1145,19 +1162,10 @@ def parsedDoubleMatrixWriteFourCycle (files : IntegerRegisterFiles)
     match cycles with
     | [] => .ok store
     | cycle :: rest =>
-        let context := groupContext.at 0 cycle
-        match ParsedExpr.toDirectDoubleMatrixWriteAccesses? expression context with
-        | none => .unknown
-        | some accesses =>
-            match prepareParsedDoubleMatrixWritePEs files slots expression groupContext cycle
-                parsedMatrixWritePEs (fun _ => 0) with
-            | .failure => .failure
-            | .unknown => .unknown
-            | .ok values =>
-                let row := doubleMatrixWriteRowAt accesses.row cycle
-                let nextStore := writeParsedDoubleMatrixStoreRow store groupContext.mab
-                  accesses.sideY row values
-                writeCycles rest nextStore
+        match parsedDoubleMatrixWriteCycle files slots groupContext expression store cycle with
+        | .failure => .failure
+        | .unknown => .unknown
+        | .ok nextStore => writeCycles rest nextStore
   writeCycles [0, 1, 2, 3] oldStore
 
 theorem doubleMatrixWriteRowWords_high_word (values : Fin 4 → BitVec 64)
@@ -1228,6 +1236,26 @@ theorem parsedDoubleMatrixStore_write_readback
         ((writeParsedDoubleMatrixStoreRow old mab sideY row values) mab sideY))
       sourcePE row 0 = ⟨values sourcePE, 0⟩ := by
   simp [writeParsedDoubleMatrixStoreRow, doubleMatrixRead_after_transposed_write]
+
+theorem parsedDoubleMatrixWriteCycle_readback
+    (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (groupContext : ParsedPEGroupContext) (expression : ParsedExpr)
+    (oldStore : ParsedMatrixReadStore) (cycle sourcePE : Fin 4)
+    (accesses : ParsedDoubleMatrixWriteAccesses) (values : Fin 4 → BitVec 64)
+    (lowered : ParsedExpr.toDirectDoubleMatrixWriteAccesses? expression
+      (groupContext.at 0 cycle) = some accesses)
+    (prepared : prepareParsedDoubleMatrixWritePEs files slots expression groupContext cycle
+      parsedMatrixWritePEs (fun _ => 0) = .ok values) :
+    ∃ newStore, parsedDoubleMatrixWriteCycle files slots groupContext expression oldStore cycle =
+        .ok newStore ∧
+      doubleMatrixReadBus
+        (doubleMatrixFaceFromPhysicalWords (newStore groupContext.mab accesses.sideY))
+        sourcePE (doubleMatrixWriteRowAt accesses.row cycle) 0 = ⟨values sourcePE, 0⟩ := by
+  refine ⟨writeParsedDoubleMatrixStoreRow oldStore groupContext.mab accesses.sideY
+    (doubleMatrixWriteRowAt accesses.row cycle) values, ?_, ?_⟩
+  · simp only [parsedDoubleMatrixWriteCycle, lowered, prepared]
+  · exact parsedDoubleMatrixStore_write_readback oldStore groupContext.mab accesses.sideY
+      (doubleMatrixWriteRowAt accesses.row cycle) sourcePE values
 
 def writeDoubleMatrixReadSlots (old : ProofsLean.MNCore.Forwarding.Slots)
     (face : DoubleMatrixFace) (base pe : Fin 4) (noForward : Bool) :
