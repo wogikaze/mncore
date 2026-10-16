@@ -12,12 +12,17 @@ inductive Group where
   deriving DecidableEq, Repr
 
 inductive Bank where
-  | grf0 | grf1 | lm0 | lm1 | t | other
+  | grf0 | grf1 | lm0 | lm1 | t | l1bm | l2bm | pdm | dram | omr
   deriving DecidableEq, Repr
 
 structure Region where
   width : Nat
-  address : Nat
+  address0 : Nat
+  address1 : Nat
+  address2 : Nat
+  address3 : Nat
+  tIndirect : Bool
+  madpe : Option Nat
   deriving DecidableEq, Repr
 
 structure Access where
@@ -40,14 +45,42 @@ structure Mau where
   kind : MauKind
   deriving DecidableEq, Repr
 
+inductive ParsedForward where
+  | aluf | mauf | lbf | mreadf
+  deriving DecidableEq, Repr
+
+inductive ParsedFixed where
+  | l2bid | l1bid | mabid | peid | subpeid | msb1
+  deriving DecidableEq, Repr
+
+inductive ParsedMask where
+  | pattern (longLong : Bool) (bits : BitVec 4)
+  | entry (longLong : Bool) (index : Nat)
+  deriving DecidableEq, Repr
+
+/-- Structural mirror of operand variants in `viz/core/src/vsm.rs`. -/
+inductive ParsedOperand where
+  | mem (access : Access) (neg ext rnd : Bool) (mask : Option ParsedMask)
+  | bar (lm1 : Bool) (width : Nat) (mask : Option ParsedMask)
+  | forward (kind : ParsedForward) (neg ext rnd : Bool)
+  | fixed (kind : ParsedFixed)
+  | omr (entry : Nat) (mask : Option ParsedMask)
+  | matrix (y : Bool) (width : Nat) (row : Option Nat)
+  | nowrite
+  | l1bm (width : Nat) (address : Option Nat)
+  | l2bm (address : Nat) (l2b : Option Nat)
+  | dar (address : Nat)
+  | raw (text : String)
+  deriving DecidableEq, Repr
+
 structure Expr where
   id : Nat
   group : Option Group
   mau : Option Mau
   /-- Operand identity at source position 1, when this is a calculation. -/
-  secondSource : Option Nat
+  secondSource : Option ParsedOperand
   /-- Operand identity at source position 0, when this writes a matrix row. -/
-  matrixWriteSource : Option Nat
+  matrixWriteSource : Option ParsedOperand
   reads : List Access
   writes : List Access
   matrixXUses : Nat
@@ -188,15 +221,6 @@ end ProofsLean.MNCore.Issue
 
 namespace ProofsLean.MNCore.Issue
 
-/-- Operand properties observed by `issue.rs`. The token preserves parsed
-operand equality where the checker compares MAU/mwrite source operands. -/
-structure ParsedOperand where
-  token : Nat
-  memory : Option Access
-  matrixSide : Option Bool
-  l1bmTurnaround : Bool
-  deriving DecidableEq, Repr
-
 inductive ParsedOp where
   | alu | immediate | zero
   | mau (precision : Nat) (kind : CalcKind) (matrix : Bool)
@@ -215,7 +239,10 @@ structure ParsedExpr where
   deriving DecidableEq, Repr
 
 def ParsedExpr.hasTurnaround (e : ParsedExpr) : Bool :=
-  (e.sources ++ e.destinations).any ParsedOperand.l1bmTurnaround
+  (e.sources ++ e.destinations).any fun operand =>
+    match operand with
+    | .l1bm _ none => true
+    | _ => false
 
 def ParsedExpr.issueGroup (e : ParsedExpr) : Option Group :=
   match e.op with
@@ -238,17 +265,23 @@ def ParsedExpr.issueMau (e : ParsedExpr) : Option Mau :=
   | _ => none
 
 def ParsedOperand.accesses (xs : List ParsedOperand) : List Access :=
-  xs.filterMap ParsedOperand.memory
+  xs.filterMap fun operand =>
+    match operand with
+    | .mem access .. => some access
+    | _ => none
 
 def ParsedOperand.matrixUseCount (xs : List ParsedOperand) (side : Bool) : Nat :=
-  xs.filter (fun operand => operand.matrixSide == some side) |>.length
+  xs.filter (fun operand =>
+    match operand with
+    | .matrix y .. => y == side
+    | _ => false) |>.length
 
 def ParsedExpr.toIssueExpr (id : Nat) (e : ParsedExpr) : Expr where
   id := id
   group := e.issueGroup
   mau := e.issueMau
-  secondSource := (e.sources[1]?).map ParsedOperand.token
-  matrixWriteSource := (e.sources[0]?).map ParsedOperand.token
+  secondSource := e.sources.drop 1 |>.head?
+  matrixWriteSource := e.sources.head?
   reads := ParsedOperand.accesses e.sources
   writes := ParsedOperand.accesses e.destinations
   matrixXUses := ParsedOperand.matrixUseCount e.sources false +
@@ -317,22 +350,28 @@ theorem parsed_check_complete (expressions : List ParsedExpr)
     (legal : LegalParsedLine expressions) : checkParsedLine expressions = true := by
   exact check_complete (projectLine expressions) legal
 
-def plusOneRead : ParsedOperand where
-  token := 1
-  memory := some ⟨.lm0, ⟨2, 0⟩⟩
-  matrixSide := none
-  l1bmTurnaround := false
+def plusOneRead : ParsedOperand :=
+  .mem ⟨.lm0, ⟨2, 0, 0, 0, 0, false, none⟩⟩ false false false none
 
-def plusOneWrite : ParsedOperand where
-  token := 2
-  memory := some ⟨.lm1, ⟨2, 0⟩⟩
-  matrixSide := none
-  l1bmTurnaround := false
+def plusOneWrite : ParsedOperand :=
+  .mem ⟨.lm1, ⟨2, 0, 0, 0, 0, false, none⟩⟩ false false false none
 
 def plusOneParsed : ParsedExpr where
   op := .alu
   sources := [plusOneRead]
   destinations := [plusOneWrite]
+  zeroFlush := false
+
+def parsedVectorFma : ParsedExpr where
+  op := .mau 32 .fma false
+  sources := [.fixed .msb1, .fixed .peid]
+  destinations := [.nowrite]
+  zeroFlush := false
+
+def parsedMatrixWrite : ParsedExpr where
+  op := .matrixWrite 32
+  sources := [.fixed .l1bid]
+  destinations := [.matrix false 2 none]
   zeroFlush := false
 
 theorem plusOne_issue_legal : LegalParsedLine [plusOneParsed] := by
@@ -347,5 +386,25 @@ theorem plusOne_issue_legal : LegalParsedLine [plusOneParsed] := by
 
 theorem plusOne_issue_accepts : checkParsedLine [plusOneParsed] = true :=
   parsed_check_complete [plusOneParsed] plusOne_issue_legal
+
+theorem mismatched_fma_matrix_write_rejected :
+    checkParsedLine [parsedVectorFma, parsedMatrixWrite] = false := by
+  classical
+  unfold checkParsedLine check
+  apply decide_eq_false_iff_not.mpr
+  intro legal
+  have pairRule := legal.2.2.2.2.1
+  simp [matrixWritePairAgrees, mauExpressions, ParsedExpr.toIssueExpr,
+    ParsedExpr.issueGroup, ParsedExpr.issueMau, ParsedOperand.accesses,
+    ParsedOperand.matrixUseCount, parsedVectorFma,
+    parsedMatrixWrite, projectLine, projectFrom, vectorFmaOrMul,
+    matrixWriteKind] at pairRule
+
+theorem l1bm_turnaround_group :
+    ({ op := ParsedOp.l1bm, sources := [.l1bm 2 none], destinations := [],
+       zeroFlush := false } : ParsedExpr).issueGroup = some .l1bmTurnaround := rfl
+
+theorem other_memory_banks_remain_distinct :
+    Bank.l1bm ≠ Bank.l2bm ∧ Bank.pdm ≠ Bank.dram := by decide
 
 end ProofsLean.MNCore.Issue
