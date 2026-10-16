@@ -6,6 +6,36 @@ cost-bounded enumeration interface. Parser, assembler and hazard completeness
 are intentionally separate obligations. -/
 namespace ProofsLean.MNCore.Issue
 
+/-- Recover the parsed view used by the local issue checker. This carrier
+contains executable words only; mask control directives are represented in
+the separate control trace. -/
+def InstructionLine.toParsed : InstructionLine → ParsedLine
+  | .pe expressions => .pe (expressions.map NormalizedExpr.toParsed)
+  | .nop count wait => .nop count.val wait
+  | .mv transfer => .mv transfer.toParsed
+
+/-- Local line admissibility: issue-group legality plus the finite operand
+envelope at a bound just above this line's own cost. Cross-line hazards,
+parser completeness, and assembler correspondence remain separate. -/
+def InstructionLine.localIssueLegal (line : InstructionLine) : Prop :=
+  line.toParsed.issueLegal ∧
+    line.inFiniteEnvelope (line.cost + 1)
+
+/-- A locally admissible line below a cost bound lies in that bound's finite
+payload envelope. Only nop count depends on the bound; its cost is its count. -/
+theorem InstructionLine.localIssueLegal_inFiniteEnvelope
+    (bound : Nat) (line : InstructionLine)
+    (legal : line.localIssueLegal) (cost : line.cost < bound) :
+    line.inFiniteEnvelope bound := by
+  cases line with
+  | pe expressions => exact legal.2
+  | mv transfer => exact legal.2
+  | nop count wait =>
+      change count.val < bound ∧ InstructionLineWaitFiniteEnvelope wait
+      have cost' : count.val < bound := by
+        simpa [InstructionLine.cost] using cost
+      exact ⟨cost', legal.2.2⟩
+
 /-- Fixed-cost-bounded instruction lines satisfying the proved payload
     envelopes form a finite subtype. The envelope condition is what remains to
     be established for every genuinely legal line. -/
@@ -102,6 +132,18 @@ noncomputable def InstructionLine.legalCostBelowFintype
     InstructionLine.legalCostBelowEnvelope_finite bound legal covered
   exact Fintype.ofFinite _
 
+/-- Locally issue-legal lines below a fixed cost bound form a Mathlib
+`Fintype`. This is a concrete single-line result; it does not include
+cross-line hazard state or parser/assembler completeness. -/
+noncomputable def InstructionLine.localIssueLegalCostBelowFintype
+    (bound : Nat) :
+    Fintype {line : InstructionLine //
+      line.localIssueLegal ∧ line.cost < bound} :=
+  InstructionLine.legalCostBelowFintype bound
+    InstructionLine.localIssueLegal
+    (fun line legal cost =>
+      InstructionLine.localIssueLegal_inFiniteEnvelope bound line legal cost)
+
 /-- Finite-set form of the bound-specific legal alphabet, directly consumable
 by `ProofsLean.finiteAlphabetCertificate` when the machine's line type is
 `InstructionLine`. -/
@@ -150,5 +192,29 @@ theorem InstructionLine.mem_legalCostBelowAlphabet
   rw [InstructionLine.legalCostBelowAlphabet, Finset.mem_toList]
   exact (InstructionLine.mem_legalCostBelowFinset bound legal covered line).mpr
     ⟨isLegal, cost⟩
+
+/-- Explicit alphabet of locally issue-legal lines below a fixed cost bound. -/
+noncomputable def InstructionLine.localIssueLegalCostBelowAlphabet
+    (bound : Nat) : List InstructionLine :=
+  InstructionLine.legalCostBelowAlphabet bound
+    InstructionLine.localIssueLegal
+    (fun line legal cost =>
+      InstructionLine.localIssueLegal_inFiniteEnvelope bound line legal cost)
+
+theorem InstructionLine.mem_localIssueLegalCostBelowAlphabet
+    (bound : Nat) (line : InstructionLine) :
+    line ∈ InstructionLine.localIssueLegalCostBelowAlphabet bound ↔
+      line.localIssueLegal ∧ line.cost < bound := by
+  classical
+  change line ∈ InstructionLine.legalCostBelowAlphabet bound
+    InstructionLine.localIssueLegal
+    (fun candidate legal cost =>
+      InstructionLine.localIssueLegal_inFiniteEnvelope bound candidate legal cost) ↔ _
+  rw [InstructionLine.legalCostBelowAlphabet, Finset.mem_toList]
+  exact InstructionLine.mem_legalCostBelowFinset bound
+    InstructionLine.localIssueLegal
+    (fun candidate legal cost =>
+      InstructionLine.localIssueLegal_inFiniteEnvelope bound candidate legal cost)
+    line
 
 end ProofsLean.MNCore.Issue
