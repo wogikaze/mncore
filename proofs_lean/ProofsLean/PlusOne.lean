@@ -97,6 +97,94 @@ theorem bus_word_eq_increment (state : State) (address : Fin 16) :
     simp [busWord, even, increment_pair_spec, same]
     exact BitVec.extractLsb'_append_eq_right
 
+def cycleHigh (line : Line) (cycle : Fin 4) : Fin 16 :=
+  ⟨8 * line.val + 2 * cycle.val, by
+    have hl := line.isLt
+    have hc := cycle.isLt
+    omega⟩
+
+def cycleLow (line : Line) (cycle : Fin 4) : Fin 16 :=
+  ⟨8 * line.val + 2 * cycle.val + 1, by
+    have hl := line.isLt
+    have hc := cycle.isLt
+    omega⟩
+
+theorem cycle_high_address (line : Line) (cycle : Fin 4) :
+    (PEMemory.address .lm0 .long (schedule line) 0 .direct 0 cycle).val =
+      (cycleHigh line cycle).val := by
+  simpa [cycleHigh] using address_at line .lm0 (Or.inl rfl) cycle
+
+def sourceMemory (state : State) : PEMemory.Memory .lm0 := fun address =>
+  if h : address.val < 16 then state.lm0 ⟨address.val, h⟩ else 0
+
+theorem cycle_read_high (state : State) (line : Line) (cycle : Fin 4) :
+    PEMemory.readWords .lm0 .long (sourceMemory state)
+      (PEMemory.address .lm0 .long (schedule line) 0 .direct 0 cycle) 0 =
+      state.lm0 (cycleHigh line cycle) := by
+  change sourceMemory state
+    (PEMemory.advance .lm0
+      (PEMemory.address .lm0 .long (schedule line) 0 .direct 0 cycle) 0) = _
+  have same : PEMemory.advance .lm0
+      (PEMemory.address .lm0 .long (schedule line) 0 .direct 0 cycle) 0 =
+      ⟨(cycleHigh line cycle).val, Nat.lt_trans (cycleHigh line cycle).isLt (by decide)⟩ := by
+    apply Fin.ext
+    change ((PEMemory.address .lm0 .long (schedule line) 0 .direct 0 cycle).val + 0) %
+      4096 = (cycleHigh line cycle).val
+    rw [cycle_high_address]
+    have h := (cycleHigh line cycle).isLt
+    omega
+  rw [same]
+  simp [sourceMemory]
+
+theorem cycle_read_low (state : State) (line : Line) (cycle : Fin 4) :
+    PEMemory.readWords .lm0 .long (sourceMemory state)
+      (PEMemory.address .lm0 .long (schedule line) 0 .direct 0 cycle) 1 =
+      state.lm0 (cycleLow line cycle) := by
+  change sourceMemory state
+    (PEMemory.advance .lm0
+      (PEMemory.address .lm0 .long (schedule line) 0 .direct 0 cycle) 1) = _
+  have same : PEMemory.advance .lm0
+      (PEMemory.address .lm0 .long (schedule line) 0 .direct 0 cycle) 1 =
+      ⟨(cycleLow line cycle).val, Nat.lt_trans (cycleLow line cycle).isLt (by decide)⟩ := by
+    apply Fin.ext
+    change ((PEMemory.address .lm0 .long (schedule line) 0 .direct 0 cycle).val + 1) %
+      4096 = (cycleLow line cycle).val
+    rw [cycle_high_address]
+    have h := (cycleLow line cycle).isLt
+    simp only [cycleHigh, cycleLow, Fin.val_mk] at *
+    omega
+  rw [same]
+  simp [sourceMemory]
+
+def cycleInput (state : State) (line : Line) (cycle : Fin 4) : IntegerALU.Bus :=
+  PEMemory.pack (PEMemory.readWords .lm0 .long (sourceMemory state)
+    (PEMemory.address .lm0 .long (schedule line) 0 .direct 0 cycle))
+
+theorem cycle_input_high (state : State) (line : Line) (cycle : Fin 4) :
+    (cycleInput state line cycle).high =
+      state.lm0 (cycleHigh line cycle) ++ state.lm0 (cycleLow line cycle) := by
+  change PEMemory.readWords .lm0 .long (sourceMemory state)
+      (PEMemory.address .lm0 .long (schedule line) 0 .direct 0 cycle) 0 ++
+    PEMemory.readWords .lm0 .long (sourceMemory state)
+      (PEMemory.address .lm0 .long (schedule line) 0 .direct 0 cycle) 1 =
+    state.lm0 (cycleHigh line cycle) ++ state.lm0 (cycleLow line cycle)
+  congr 1
+  · exact cycle_read_high state line cycle
+  · exact cycle_read_low state line cycle
+
+theorem cycle_pair_bus (state : State) (line : Line) (cycle : Fin 4) :
+    incrementPair (state.lm0 (cycleHigh line cycle))
+      (state.lm0 (cycleLow line cycle)) =
+      busWord state (cycleHigh line cycle) ++ busWord state (cycleLow line cycle) := by
+  rw [increment_pair_spec, bus_word_eq_increment, bus_word_eq_increment]
+
+theorem cycle_alu_output (state : State) (line : Line) (cycle : Fin 4) :
+    (IntegerALU.evaluateBus .word (.arith .inc false)
+      ⟨(cycleInput state line cycle).high, 0⟩ ⟨0, 0⟩ false).value.high =
+      busWord state (cycleHigh line cycle) ++ busWord state (cycleLow line cycle) := by
+  rw [cycle_input_high]
+  exact cycle_pair_bus state line cycle
+
 /-- One long-word line handles four cycles, with two 32-bit lanes per cycle. -/
 def step (line : Line) (state : State) : State :=
   { state with lm1 := fun address =>
