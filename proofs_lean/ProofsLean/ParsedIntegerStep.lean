@@ -177,6 +177,31 @@ def ParsedOperand.toDirectMemoryAccess? (operand : ParsedOperand)
     Option DirectMemoryAccess :=
   ParsedOperand.toDirectMemoryAccessMode? operand false pe cycle bar0 bar1 tWord
 
+/-- Integer ALU reads ignore memory source sign, extension, and mask selectors.
+Rounded sources are kept out of this raw-access lowering. -/
+def ParsedOperand.toUnroundedIntegerSourceAccess? (operand : ParsedOperand)
+    (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
+    Option DirectMemoryAccess :=
+  match operand with
+  | .mem access _ _ false _ =>
+      ParsedOperand.toDirectMemoryAccess? (.mem access false false false none)
+        pe cycle bar0 bar1 tWord
+  | _ => none
+
+theorem parsedIntegerUnroundedSourceAccess_ignores_attributes
+    (access : Access) (negated extended : Bool) (mask : Option ParsedMask)
+    (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
+    ParsedOperand.toUnroundedIntegerSourceAccess?
+      (.mem access negated extended false mask) pe cycle bar0 bar1 tWord =
+      ParsedOperand.toDirectMemoryAccess? (.mem access false false false none)
+        pe cycle bar0 bar1 tWord := rfl
+
+theorem parsedIntegerRoundedSourceAccess_is_rejected
+    (access : Access) (mask : Option ParsedMask)
+    (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
+    ParsedOperand.toUnroundedIntegerSourceAccess?
+      (.mem access false false true mask) pe cycle bar0 bar1 tWord = none := rfl
+
 def ParsedFixed.integerValue (fixed : ParsedFixed) (precision : IntegerALU.Precision)
     (group : Fin 2) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16) (pe : Fin 4) : Nat :=
   match fixed with
@@ -808,7 +833,7 @@ def ParsedExpr.toDirectIntegerAccesses? (expression : ParsedExpr)
           match expression.sources, expression.destinations with
           | [source], [destination] =>
               if ParsedAluName.integerInputCount name != 1 then none else
-              match ParsedOperand.toDirectMemoryAccess? source pe cycle bar0 bar1 tWord,
+              match ParsedOperand.toUnroundedIntegerSourceAccess? source pe cycle bar0 bar1 tWord,
                     ParsedOperand.toUnmaskedDirectDestination? destination pe cycle bar0 bar1 tWord with
               | some sourceAccess, some destinationAccess =>
                   some ⟨expression.op, sourceAccess, sourceAccess, destinationAccess,
@@ -816,8 +841,8 @@ def ParsedExpr.toDirectIntegerAccesses? (expression : ParsedExpr)
               | _, _ => none
           | [sourceX, sourceY], [destination] =>
               if ParsedAluName.integerInputCount name != 2 then none else
-              match ParsedOperand.toDirectMemoryAccess? sourceX pe cycle bar0 bar1 tWord,
-                    ParsedOperand.toDirectMemoryAccess? sourceY pe cycle bar0 bar1 tWord,
+              match ParsedOperand.toUnroundedIntegerSourceAccess? sourceX pe cycle bar0 bar1 tWord,
+                    ParsedOperand.toUnroundedIntegerSourceAccess? sourceY pe cycle bar0 bar1 tWord,
                     ParsedOperand.toUnmaskedDirectDestination? destination pe cycle bar0 bar1 tWord with
               | some xAccess, some yAccess, some destinationAccess =>
                   some ⟨expression.op, xAccess, yAccess, destinationAccess,
@@ -3519,7 +3544,7 @@ def parsedIntegerMaskExprAccessesInLine? (expression : ParsedExpr)
           match expression.sources, expression.destinations with
           | [source], [destination] =>
               if ParsedAluName.integerInputCount name != 1 then none else
-              match ParsedOperand.toDirectMemoryAccess? source pe cycle bar0 bar1 tWord,
+              match ParsedOperand.toUnroundedIntegerSourceAccess? source pe cycle bar0 bar1 tWord,
                     ParsedOperand.toMaskRegisterEntry? destination,
                     ParsedOperand.resolveOmrWriteSelection? destination registers cycle directive
                       hasSingleLineMask with
@@ -3529,8 +3554,8 @@ def parsedIntegerMaskExprAccessesInLine? (expression : ParsedExpr)
               | _, _, _ => none
           | [sourceX, sourceY], [destination] =>
               if ParsedAluName.integerInputCount name != 2 then none else
-              match ParsedOperand.toDirectMemoryAccess? sourceX pe cycle bar0 bar1 tWord,
-                    ParsedOperand.toDirectMemoryAccess? sourceY pe cycle bar0 bar1 tWord,
+              match ParsedOperand.toUnroundedIntegerSourceAccess? sourceX pe cycle bar0 bar1 tWord,
+                    ParsedOperand.toUnroundedIntegerSourceAccess? sourceY pe cycle bar0 bar1 tWord,
                     ParsedOperand.toMaskRegisterEntry? destination,
                     ParsedOperand.resolveOmrWriteSelection? destination registers cycle directive
                       hasSingleLineMask with
@@ -4615,6 +4640,14 @@ example : (parsedIntegerMaskExprAccesses?
        destinations := [.omr 1 none], flush := none, text := "iinc $lm0v $omr1" } : ParsedExpr)
     (fun _ _ => 0) {} 0 0 0 0 0).map ParsedIntegerMaskAccesses.selection =
       some (BitVec.allOnes 4) := by decide
+
+example : (parsedIntegerMaskExprAccesses?
+    ({ op := .alu .inc (some .i) false none,
+       sources := [.mem ⟨.lm0, ⟨2, 0, 0, 0, 0, false, none⟩⟩ false false false
+         (some (.pattern false 0))],
+       destinations := [.omr 1 none], flush := none,
+       text := "iinc $lm0v$0000 $omr1" } : ParsedExpr)
+    (fun _ _ => 0) {} 0 0 0 0 0).isSome = true := by decide
 
 def executeParsedIntegerMaskExpr? (files : IntegerRegisterFiles)
     (expression : ParsedExpr) (pe cycle : Fin 4) (bar0 bar1 : BitVec 12)

@@ -269,6 +269,8 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerInput_read_unrounded
 #print axioms ProofsLean.MNCore.PEMemory.parsed_forward_integer_input
 #print axioms ProofsLean.MNCore.PEMemory.parsed_integer_memory_input_preserves_rounding_and_ignores_mask
+#print axioms ProofsLean.MNCore.PEMemory.parsedIntegerUnroundedSourceAccess_ignores_attributes
+#print axioms ProofsLean.MNCore.PEMemory.parsedIntegerRoundedSourceAccess_is_rejected
 #print axioms ProofsLean.MNCore.PEMemory.parsed_forward_expr_lowering
 #print axioms ProofsLean.MNCore.PEMemory.executeParsedMaskedIntegerExprWithForwarding?_uses_lowering
 #print axioms ProofsLean.MNCore.PEMemory.parsed_integer_multiple_destinations_lower_in_order
