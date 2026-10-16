@@ -49,6 +49,9 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.parsedMaskedSource_execution
 #print axioms ProofsLean.MNCore.PEMemory.parsedMaskedSource_score
 #print axioms ProofsLean.MNCore.PEMemory.mask_directive_has_zero_issue_cost
+#print axioms ProofsLean.MNCore.PEMemory.parsed_nop_preserves_register_state
+#print axioms ProofsLean.MNCore.PEMemory.parsed_nop_count_has_matching_issue_cost
+#print axioms ProofsLean.MNCore.PEMemory.parsed_nop_line_lowers_to_count_issue_words
 #print axioms ProofsLean.MNCore.PEMemory.lowered_parsed_masked_source_executes_as_normalized
 #print axioms ProofsLean.MNCore.PEMemory.direct_access_write_readback
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerRegisterStep_succeeds

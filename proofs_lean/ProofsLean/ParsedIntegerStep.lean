@@ -562,8 +562,13 @@ structure ParsedMaskExecutionControl where
   context : ParsedIntegerContext
   deriving DecidableEq, Repr
 
+inductive ParsedMaskedIssueLine where
+  | pe (expressions : List ParsedExpr)
+  | nop
+  deriving DecidableEq, Repr
+
 abbrev ParsedMaskedSourceStatement :=
-  ProofsLean.ControlNormalization.Statement ParsedMaskDirective (List ParsedExpr)
+  ProofsLean.ControlNormalization.Statement ParsedMaskDirective ParsedMaskedIssueLine
 
 def updateParsedMaskDirective (next : ParsedMaskDirective)
     (current : ParsedMaskExecutionControl) : ParsedMaskExecutionControl :=
@@ -638,21 +643,27 @@ theorem parsedIntegerMaskedLineStep_prepares_then_commits
 
 
 def parsedMaskedExpressionStep (control : ParsedMaskExecutionControl)
-    (expressions : List ParsedExpr) (files : IntegerRegisterFiles) :
+    (line : ParsedMaskedIssueLine) (files : IntegerRegisterFiles) :
     Option IntegerRegisterFiles :=
-  match parsedIntegerMaskedLineStep files expressions control with
-  | .ok next => some next
-  | .failure | .unknown => none
+  match line with
+  | .pe expressions =>
+      match parsedIntegerMaskedLineStep files expressions control with
+      | .ok next => some next
+      | .failure | .unknown => none
+  | .nop => some files
 
-def ParsedLine.toParsedMaskedStatement? : ParsedLine → Option ParsedMaskedSourceStatement
+def ParsedLine.toParsedMaskedStatements? :
+    ParsedLine → Option (List ParsedMaskedSourceStatement)
   | .maskDirective widthWords targets entry =>
-      some (.directive ⟨widthWords, targets, entry⟩)
-  | .pe expressions => some (.issue expressions)
+      some [.directive ⟨widthWords, targets, entry⟩]
+  | .pe expressions => some [.issue (.pe expressions)]
+  | .nop count _ => some (List.replicate count (.issue .nop))
   | _ => none
 
 def lowerParsedMaskedSource (lines : List ParsedLine) :
-    Option (List ParsedMaskedSourceStatement) :=
-  lines.mapM ParsedLine.toParsedMaskedStatement?
+    Option (List ParsedMaskedSourceStatement) := do
+  let lowered ← lines.mapM ParsedLine.toParsedMaskedStatements?
+  pure lowered.flatten
 
 def runParsedMaskedSource (source : List ParsedMaskedSourceStatement)
     (control : ParsedMaskExecutionControl) (files : IntegerRegisterFiles) :
@@ -660,11 +671,15 @@ def runParsedMaskedSource (source : List ParsedMaskedSourceStatement)
   ProofsLean.ControlNormalization.runSource updateParsedMaskDirective
     parsedMaskedExpressionStep source control files
 
-def parsedMaskedIssueLegal : List (ParsedMaskExecutionControl × List ParsedExpr) → Prop :=
-  fun lines => ∀ line ∈ lines, LegalParsedLine line.2
+def parsedMaskedIssueLineLegal : ParsedMaskedIssueLine → Prop
+  | .pe expressions => LegalParsedLine expressions
+  | .nop => True
+
+def parsedMaskedIssueLegal : List (ParsedMaskExecutionControl × ParsedMaskedIssueLine) → Prop :=
+  fun lines => ∀ line ∈ lines, parsedMaskedIssueLineLegal line.2
 
 def parsedMaskedNormalizedMachine : ProofsLean.Machine where
-  Line := ParsedMaskExecutionControl × List ParsedExpr
+  Line := ParsedMaskExecutionControl × ParsedMaskedIssueLine
   State := IntegerRegisterFiles
   Input := Unit
   step := fun pair files => parsedMaskedExpressionStep pair.1 pair.2 files
@@ -690,6 +705,23 @@ theorem parsedMaskedSource_execution (source : List ParsedMaskedSourceStatement)
 theorem mask_directive_has_zero_issue_cost (directive : ParsedMaskDirective) :
     ProofsLean.ControlNormalization.cost
       ([.directive directive] : List ParsedMaskedSourceStatement) = 0 := rfl
+
+theorem parsed_nop_preserves_register_state
+    (control : ParsedMaskExecutionControl) (files : IntegerRegisterFiles) :
+    parsedMaskedExpressionStep control .nop files = some files := rfl
+
+theorem parsed_nop_count_has_matching_issue_cost (count : Nat) :
+    ProofsLean.ControlNormalization.cost
+      (List.replicate count (.issue ParsedMaskedIssueLine.nop) :
+        List ParsedMaskedSourceStatement) = count := by
+  induction count with
+  | zero => rfl
+  | succ count ih => simp [List.replicate_succ, ProofsLean.ControlNormalization.cost, ih]; omega
+
+theorem parsed_nop_line_lowers_to_count_issue_words (count : Nat) (wait : Option Nat) :
+    lowerParsedMaskedSource [.nop count wait] =
+      some (List.replicate count (.issue ParsedMaskedIssueLine.nop)) := by
+  simp [lowerParsedMaskedSource, ParsedLine.toParsedMaskedStatements?]
 
 theorem parsedMaskedSource_score (source : List ParsedMaskedSourceStatement)
     (control : ParsedMaskExecutionControl) :
