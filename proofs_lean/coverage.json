@@ -132,7 +132,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/Issue.lean",
-      "sha256": "b2e396defde32fe537c9bf7034ee156c90d1fd2c9c26d9f9a7e2b6a1aaf0aa8f",
+      "sha256": "345c375a6138a272475906b31d4a445a02b5cf27fd69286d2548bfc338a6d95d",
       "implemented": "Full structural PE Op/Operand payload mirror, issue projection, abstract PE-line rules, and a partial parsed-op to integer-ALU bridge for supported L/I/S integer operations and packbit",
       "scope": "The Rust enum inventory is checked against Lean constructors; parser correspondence, operand reads/reduction, masks, timing, writes, floating operations and full ISA semantics are not proved",
       "source_basis": [

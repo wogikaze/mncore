@@ -599,6 +599,91 @@ inductive ParsedMvOperand where
   | l2bm (address : Fin (2 ^ 64)) (group : Option (Fin 256)) (l2b : Option (Fin 256))
   deriving DecidableEq, Repr
 
+def parsedNatToFin? (n bound : Nat) : Option (Fin bound) :=
+  if h : n < bound then some ⟨n, h⟩ else none
+
+def parsedMvDigit? (base : Nat) (c : Char) : Option Nat :=
+  let code := c.toNat
+  if 48 ≤ code && code ≤ 57 then some (code - 48)
+  else if base == 16 && 65 ≤ code && code ≤ 70 then some (code - 55)
+  else if base == 16 && 97 ≤ code && code ≤ 102 then some (code - 87)
+  else none
+
+def parsedMvDigitsPrefix (base : Nat) : List Char → Nat → Option (Nat × List Char)
+  | [], value => some (value, [])
+  | char :: rest, value =>
+      match parsedMvDigit? base char with
+      | none => some (value, char :: rest)
+      | some digit => parsedMvDigitsPrefix base rest (value * base + digit)
+
+def parsedMvNumberPrefix (chars : List Char) : Option (Nat × List Char) :=
+  match chars with
+  | '0' :: 'x' :: digits =>
+      match digits with
+      | first :: _ =>
+          if (parsedMvDigit? 16 first).isSome then parsedMvDigitsPrefix 16 digits 0
+          else none
+      | [] => none
+  | first :: _ =>
+      if (parsedMvDigit? 10 first).isSome then parsedMvDigitsPrefix 10 chars 0
+      else none
+  | [] => none
+
+def parsedMvDecimal? (chars : List Char) : Option Nat := do
+  if chars.isEmpty then none else
+  let (value, rest) ← parsedMvDigitsPrefix 10 chars 0
+  if rest.isEmpty then some value else none
+
+def parsedMvOptionalU8? (chars : List Char) : Option (Option (Fin 256)) := do
+  if chars.isEmpty then some none else do
+    let value ← parsedMvDecimal? chars
+    some <$> parsedNatToFin? value 256
+
+def parseParsedL2bmOperand? (text : String) : Option ParsedMvOperand := do
+  let chars := text.toList
+  let rest ← match chars with
+    | '$' :: 'l' :: 'c' :: rest => some rest
+    | _ => none
+  let (addressValue, suffix) ← parsedMvNumberPrefix rest
+  let (groupChars, l2bChars) ← match suffix with
+    | [] => some ([], [])
+    | '@' :: selector =>
+      match selector.splitOn '.' with
+      | [group] => some (group, [])
+      | [group, l2b] => some (group, l2b)
+      | _ => none
+    | _ => none
+  let address ← parsedNatToFin? addressValue (2 ^ 64)
+  let group ← parsedMvOptionalU8? groupChars
+  let l2b ← parsedMvOptionalU8? l2bChars
+  pure (.l2bm address group l2b)
+
+theorem parseParsedL2bmOperand_decimal :
+    parseParsedL2bmOperand? "$lc42" =
+      some (.l2bm ⟨42, by decide⟩ none none) := by decide
+
+theorem parseParsedL2bmOperand_hex_and_selectors :
+    parseParsedL2bmOperand? "$lc0x2a@3.1" =
+      some (.l2bm ⟨42, by decide⟩ (some ⟨3, by decide⟩) (some ⟨1, by decide⟩)) := by decide
+
+theorem parseParsedL2bmOperand_empty_group_selector :
+    parseParsedL2bmOperand? "$lc5@.1" =
+      some (.l2bm ⟨5, by decide⟩ none (some ⟨1, by decide⟩)) := by decide
+
+theorem parseParsedL2bmOperand_matches_rust_operand_fixture :
+    parseParsedL2bmOperand? "$lc0@2.1" =
+      some (.l2bm ⟨0, by decide⟩ (some ⟨2, by decide⟩) (some ⟨1, by decide⟩)) := by decide
+
+theorem parseParsedL2bmOperand_unselected_bank_fixture :
+    parseParsedL2bmOperand? "$lc0" =
+      some (.l2bm ⟨0, by decide⟩ none none) := by decide
+
+theorem parseParsedL2bmOperand_rejects_u64_overflow :
+    parseParsedL2bmOperand? "$lc18446744073709551616" = none := by decide
+
+theorem parseParsedL2bmOperand_rejects_u8_group_overflow :
+    parseParsedL2bmOperand? "$lc1@256.0" = none := by decide
+
 structure ParsedMv where
   kind : ParsedMvKind
   size : Fin (2 ^ 64)

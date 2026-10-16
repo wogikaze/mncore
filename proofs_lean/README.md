@@ -139,8 +139,7 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   Rust hazard.rs §3.6.3.1–3.6.3.8については、L1BM/L2BM resourceとL1/L2/MV pathを持つ
   別のtyped rule tableを追加し、全11 path caseのkind/distance、およびdata raceだけが
   overlapを要求しport conflictはdisjoint addressにも適用されることを証明した。
-  block accessからstep/cycle単位のconstraintを作る関数も追加したが、L1/L2/MV source event生成と
-  既存source hazard collectorへの統合は未完了。
+  block accessからstep/cycle単位のconstraint生成とsource event collectorの部分統合を追加した。
   既存L1Transferの`mwrite`/`m4write` pending出力spanと`pbcast` L1BM read spanをtyped eventへ写し、
   write→readのport conflict、および3 issue-word境界での12-cycle constraint生成を証明した。
   さらにRust `l1_cycle_span`の全L1 opcode表をLeanへ移し、opcode別のspanをevent化する共通関数を追加した。
@@ -150,7 +149,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   in-window条件に通して制約を集める。L2BM opcodeのread/write spanとmulticast bank maskもParsedExprから
   lowerする。MVのLean top-level型にも転送kind/size/operand情報を持たせ、L2BM MV accessを生成して
   Rust hazard.rsのu64→u32 address/size castとbank selectorを反映し、ParsedLine列のword clockに接続した。
-  MVのRust parserからの構文射影、PE operand accessとの合流、
+  `$lc` L2BM operand用にdecimal/hex address、group/l2b selectorを読むLean parserを追加し、代表入力と
+  u64/u8境界拒否を証明した。Rust parser全入力との等価性、MV parserからParsedMvへの変換、
+  PE operand accessとの合流、
   Rust reportのsort/dedupおよび表示値の再現は未完了。
   これは対象PEメモリ規則の条件モデルであり、Rust analyzerの全Access生成、mask directiveの実効状態、
   BARによる静的range照合、reportのsort/dedupを含む出力一致証明ではない。
