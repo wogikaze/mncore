@@ -1050,21 +1050,53 @@ structure ParsedDoubleMatrixWriteAccesses where
   sideY : Bool
   row : Nat
 
+structure ParsedDoubleMatrixWriteShape where
+  source : ParsedOperand
+  sideY : Bool
+  row : Nat
+
+def ParsedExpr.toDirectDoubleMatrixWriteShape?
+    (expression : ParsedExpr) : Option ParsedDoubleMatrixWriteShape :=
+  match expression.op, expression.sources, expression.destinations with
+  | .matrixWrite .d, [source], [.matrix sideY _ (some row)] =>
+      match source with
+      | .mem _ false false false _ | .forward _ false false false =>
+          some ⟨source, sideY, row⟩
+      | _ => none
+  | _, _, _ => none
+
 /-- Lower the raw-bit D-precision matrix-write subset. Matrix-write operands
 with numerical conversion flags and fixed sources remain unresolved. -/
 def ParsedExpr.toDirectDoubleMatrixWriteAccesses?
     (expression : ParsedExpr) (context : ParsedIntegerContext) :
     Option ParsedDoubleMatrixWriteAccesses := do
-  match expression.op, expression.sources, expression.destinations with
-  | .matrixWrite .d, [source], [.matrix sideY _ (some row)] =>
-      match source with
-      | .mem _ false false false _ | .forward _ false false false =>
-          let source ← ParsedOperand.toParsedIntegerInput? source .long
-            context.group context.l2b context.l1b context.mab context.pe context.cycle
-            context.bar0 context.bar1 context.tWord
-          some ⟨source, sideY, row⟩
-      | _ => none
-  | _, _, _ => none
+  let shape ← ParsedExpr.toDirectDoubleMatrixWriteShape? expression
+  let source ← ParsedOperand.toParsedIntegerInput? shape.source .long
+    context.group context.l2b context.l1b context.mab context.pe context.cycle
+    context.bar0 context.bar1 context.tWord
+  some ⟨source, shape.sideY, shape.row⟩
+
+theorem ParsedExpr.toDirectDoubleMatrixWriteAccesses_destination_invariant
+    (expression : ParsedExpr) (contextA contextB : ParsedIntegerContext)
+    (accessesA accessesB : ParsedDoubleMatrixWriteAccesses)
+    (loweredA : ParsedExpr.toDirectDoubleMatrixWriteAccesses? expression contextA = some accessesA)
+    (loweredB : ParsedExpr.toDirectDoubleMatrixWriteAccesses? expression contextB = some accessesB) :
+    accessesA.sideY = accessesB.sideY ∧ accessesA.row = accessesB.row := by
+  cases hShape : ParsedExpr.toDirectDoubleMatrixWriteShape? expression with
+  | none => simp [ParsedExpr.toDirectDoubleMatrixWriteAccesses?, hShape] at loweredA
+  | some shape =>
+      simp only [ParsedExpr.toDirectDoubleMatrixWriteAccesses?, hShape] at loweredA loweredB
+      cases hSourceA : ParsedOperand.toParsedIntegerInput? shape.source .long
+        contextA.group contextA.l2b contextA.l1b contextA.mab contextA.pe contextA.cycle
+        contextA.bar0 contextA.bar1 contextA.tWord <;>
+        simp [hSourceA] at loweredA
+      cases hSourceB : ParsedOperand.toParsedIntegerInput? shape.source .long
+        contextB.group contextB.l2b contextB.l1b contextB.mab contextB.pe contextB.cycle
+        contextB.bar0 contextB.bar1 contextB.tWord <;>
+        simp [hSourceB] at loweredB
+      cases loweredA
+      cases loweredB
+      exact ⟨rfl, rfl⟩
 
 def parsedMatrixReadBaseD (row : Nat) : Fin 4 :=
   ⟨row % 4, Nat.mod_lt _ (by decide)⟩
@@ -1299,27 +1331,29 @@ theorem parsedDoubleMatrixWriteFourCycle_store
     (groupContext : ParsedPEGroupContext) (expression : ParsedExpr)
     (oldStore : ParsedMatrixReadStore)
     (accesses : Fin 4 → Fin 4 → ParsedDoubleMatrixWriteAccesses)
-    (buses : Fin 4 → Fin 4 → IntegerALU.Bus) (sideY : Bool) (base : Fin 4)
+    (buses : Fin 4 → Fin 4 → IntegerALU.Bus)
     (lowered : ∀ cycle pe, ParsedExpr.toDirectDoubleMatrixWriteAccesses? expression
       (groupContext.at pe cycle) = some (accesses cycle pe))
     (read : ∀ cycle pe, ParsedIntegerInput.readWithForwarding files slots cycle
-      (accesses cycle pe).source = .ok (buses cycle pe))
-    (sameSide : ∀ cycle pe, (accesses cycle pe).sideY = sideY)
-    (sameBase : ∀ cycle pe, (accesses cycle pe).row = base.val) :
+      (accesses cycle pe).source = .ok (buses cycle pe)) :
     parsedDoubleMatrixWriteFourCycle files slots groupContext expression oldStore =
-      .ok (writeParsedDoubleMatrixStoreFourRows oldStore groupContext.mab sideY base.val
+      .ok (writeParsedDoubleMatrixStoreFourRows oldStore groupContext.mab
+        (accesses 0 0).sideY (accesses 0 0).row
         (fun cycle pe => (buses cycle pe).high)) := by
+  have sameDestination (cycle pe : Fin 4) :=
+    ParsedExpr.toDirectDoubleMatrixWriteAccesses_destination_invariant expression
+      (groupContext.at pe cycle) (groupContext.at 0 0) (accesses cycle pe) (accesses 0 0)
+      (lowered cycle pe) (lowered 0 0)
   have cycleStep (cycle : Fin 4) (store : ParsedMatrixReadStore) :
       parsedDoubleMatrixWriteCycle files slots groupContext expression store cycle =
-        .ok (writeParsedDoubleMatrixStoreRow store groupContext.mab sideY
-          (doubleMatrixWriteRowAt base.val cycle)
+        .ok (writeParsedDoubleMatrixStoreRow store groupContext.mab (accesses 0 0).sideY
+          (doubleMatrixWriteRowAt (accesses 0 0).row cycle)
           (fun pe => (buses cycle pe).high)) := by
     have prepared := prepareParsedDoubleMatrixWritePEs_all files slots expression
       groupContext cycle (accesses cycle) (buses cycle) (lowered cycle) (read cycle)
     have hLower := lowered cycle 0
-    have hSide := sameSide cycle 0
-    have hBase := sameBase cycle 0
-    simp only [parsedDoubleMatrixWriteCycle, hLower, prepared, hSide, hBase]
+    have hDestination := sameDestination cycle 0
+    simp only [parsedDoubleMatrixWriteCycle, hLower, prepared, hDestination.1, hDestination.2]
   simp [parsedDoubleMatrixWriteFourCycle, parsedDoubleMatrixWriteCycles, cycleStep,
     writeParsedDoubleMatrixStoreFourRows]
 
@@ -1387,25 +1421,26 @@ theorem parsedDoubleMatrixWriteFourCycle_readback
     (groupContext : ParsedPEGroupContext) (expression : ParsedExpr)
     (oldStore : ParsedMatrixReadStore)
     (accesses : Fin 4 → Fin 4 → ParsedDoubleMatrixWriteAccesses)
-    (buses : Fin 4 → Fin 4 → IntegerALU.Bus) (sideY : Bool) (base : Fin 4)
+    (buses : Fin 4 → Fin 4 → IntegerALU.Bus)
     (lowered : ∀ cycle pe, ParsedExpr.toDirectDoubleMatrixWriteAccesses? expression
       (groupContext.at pe cycle) = some (accesses cycle pe))
     (read : ∀ cycle pe, ParsedIntegerInput.readWithForwarding files slots cycle
       (accesses cycle pe).source = .ok (buses cycle pe))
-    (sameSide : ∀ cycle pe, (accesses cycle pe).sideY = sideY)
-    (sameBase : ∀ cycle pe, (accesses cycle pe).row = base.val)
     (cycle sourcePE : Fin 4) :
     ∃ newStore, parsedDoubleMatrixWriteFourCycle files slots groupContext expression oldStore =
         .ok newStore ∧
       doubleMatrixReadBus
-        (doubleMatrixFaceFromPhysicalWords (newStore groupContext.mab sideY))
-        sourcePE (doubleMatrixWriteRowAt base.val cycle) 0 =
+        (doubleMatrixFaceFromPhysicalWords
+          (newStore groupContext.mab (accesses 0 0).sideY))
+        sourcePE (doubleMatrixWriteRowAt (accesses 0 0).row cycle) 0 =
           ⟨(buses cycle sourcePE).high, 0⟩ := by
-  refine ⟨writeParsedDoubleMatrixStoreFourRows oldStore groupContext.mab sideY base.val
+  refine ⟨writeParsedDoubleMatrixStoreFourRows oldStore groupContext.mab
+    (accesses 0 0).sideY (accesses 0 0).row
     (fun writtenCycle pe => (buses writtenCycle pe).high), ?_, ?_⟩
   · exact parsedDoubleMatrixWriteFourCycle_store files slots groupContext expression oldStore
-      accesses buses sideY base lowered read sameSide sameBase
-  · exact parsedDoubleMatrixStore_four_rows_readback oldStore groupContext.mab sideY base.val
+      accesses buses lowered read
+  · exact parsedDoubleMatrixStore_four_rows_readback oldStore groupContext.mab
+      (accesses 0 0).sideY (accesses 0 0).row
       (fun writtenCycle pe => (buses writtenCycle pe).high) cycle sourcePE
 
 
