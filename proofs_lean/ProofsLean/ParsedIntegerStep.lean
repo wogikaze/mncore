@@ -419,23 +419,33 @@ def ParsedExpr.toDirectMaskedIntegerAccesses? (expression : ParsedExpr)
   ParsedExpr.toDirectMaskedIntegerAccessesInLine? expression registers directive
     (parsedExprHasSingleLineWriteMask expression) pe cycle bar0 bar1 tWord
 
+inductive ParsedConstantDestination where
+  | memory (accesses : ParsedMaskedIntegerAccesses)
+  | maskRegister (entry : Fin 15)
+  | noWrite
+
 /-- Lower each destination of zero/imm/immu independently, as the Rust executor
 writes the same computed bus to every destination in source order. -/
 def ParsedExpr.toDirectMaskedConstantWrites? (expression : ParsedExpr)
     (registers : ProofsLean.MNCore.Masks.RegisterFile)
     (directive : ParsedMaskDirective) (hasSingleLineMask : Bool)
     (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
-    Option (List ParsedMaskedIntegerAccesses) :=
+    Option (List ParsedConstantDestination) :=
   match expression.op with
   | .zero | .immediate .. => do
-      let perDestination ← expression.destinations.mapM fun destination =>
+      expression.destinations.mapM fun destination =>
         match destination with
-        | .nowrite => some []
-        | _ =>
+        | .nowrite => some .noWrite
+        | .omr _ _ => do
+            let entry ← ParsedOperand.toMaskRegisterEntry? destination
+            let _ ← ParsedOperand.resolveOmrWriteSelection? destination registers cycle
+              directive hasSingleLineMask
+            some (.maskRegister entry)
+        | _ => do
             let oneDestination := { expression with destinations := [destination] }
-            (ParsedExpr.toDirectMaskedIntegerAccessesInLine? oneDestination registers directive
-              hasSingleLineMask pe cycle bar0 bar1 tWord).map fun lowered => [lowered]
-      pure perDestination.flatten
+            let lowered ← ParsedExpr.toDirectMaskedIntegerAccessesInLine? oneDestination
+              registers directive hasSingleLineMask pe cycle bar0 bar1 tWord
+            some (.memory lowered)
   | _ => none
 
 
@@ -466,6 +476,13 @@ example :
     (ParsedExpr.toDirectMaskedConstantWrites? parsedImmediateMultiDestinationExpr
       (fun _ _ => 0) {} false 0 0 0 0 0).isSome = true := by decide
 
+def parsedZeroOmrExpr : ParsedExpr where
+  op := .zero
+  sources := []
+  destinations := [.omr 1 none]
+  flush := none
+  text := "zero $omr1"
+
 def parsedZeroNowriteExpr : ParsedExpr where
   op := .zero
   sources := []
@@ -474,8 +491,12 @@ def parsedZeroNowriteExpr : ParsedExpr where
   text := "zero $nowrite"
 
 example :
+    (ParsedExpr.toDirectMaskedConstantWrites? parsedZeroOmrExpr
+      (fun _ _ => 0) {} false 0 0 0 0 0).isSome = true := by decide
+
+example :
     (ParsedExpr.toDirectMaskedConstantWrites? parsedZeroNowriteExpr
-      (fun _ _ => 0) {} false 0 0 0 0 0).map List.length = some 0 := by decide
+      (fun _ _ => 0) {} false 0 0 0 0 0).isSome = true := by decide
 
 example :
     (ParsedExpr.toDirectMaskedIntegerAccesses? parsedZeroMaskedExpr (fun _ _ => 0) {}
@@ -1029,7 +1050,8 @@ theorem mask_directive_replaces_selection_preserves_context
   constructor <;> rfl
 
 structure PreparedParsedMaskedWrite where
-  destination : DirectMemoryAccess
+  destination : Option DirectMemoryAccess
+  maskUpdate : Option (Fin 15 × Fin 4)
   data : WordBus
   selection : PEWordSelection
 
@@ -1041,34 +1063,42 @@ def prepareParsedMaskedWrite (files : IntegerRegisterFiles)
   match evaluateParsedIntegerAlu accesses.op x y reduced with
   | .ok output =>
       let bus := parsedOutputAfterFlush accesses.flushSelection output.value
-      .ok ⟨accesses.destination, unpackALUBus bus, accesses.writeSelection⟩
+      .ok ⟨some accesses.destination, none, unpackALUBus bus, accesses.writeSelection⟩
   | .failure => .failure
   | .unknown => .unknown
 
 
-def prepareParsedMaskedWrites (files : IntegerRegisterFiles)
-    (accesses : List ParsedMaskedIntegerAccesses) :
+def prepareParsedConstantTarget (files : IntegerRegisterFiles) (cycle : Fin 4)
+    (target : ParsedConstantDestination) : ProofsLean.StepResult PreparedParsedMaskedWrite :=
+  match target with
+  | .memory accesses => prepareParsedMaskedWrite files accesses false
+  | .maskRegister entry =>
+      .ok ⟨none, some (entry, cycle), (fun _ => 0), ⟨BitVec.allOnes 4, true⟩⟩
+  | .noWrite => .ok ⟨none, none, (fun _ => 0), ⟨BitVec.allOnes 4, true⟩⟩
+
+def prepareParsedMaskedConstantWrites (files : IntegerRegisterFiles) (cycle : Fin 4)
+    (targets : List ParsedConstantDestination) :
     ProofsLean.StepResult (List PreparedParsedMaskedWrite) :=
-  match accesses with
+  match targets with
   | [] => .ok []
-  | access :: rest =>
-      match prepareParsedMaskedWrite files access false with
+  | target :: rest =>
+      match prepareParsedConstantTarget files cycle target with
       | .failure => .failure
       | .unknown => .unknown
       | .ok write =>
-          match prepareParsedMaskedWrites files rest with
+          match prepareParsedMaskedConstantWrites files cycle rest with
           | .ok writes => .ok (write :: writes)
           | .failure => .failure
           | .unknown => .unknown
 
-theorem prepareParsedMaskedWrites_preserves_order
-    (files : IntegerRegisterFiles) (access : ParsedMaskedIntegerAccesses)
-    (rest : List ParsedMaskedIntegerAccesses) (write : PreparedParsedMaskedWrite)
-    (writes : List PreparedParsedMaskedWrite)
-    (headReady : prepareParsedMaskedWrite files access false = .ok write)
-    (tailReady : prepareParsedMaskedWrites files rest = .ok writes) :
-    prepareParsedMaskedWrites files (access :: rest) = .ok (write :: writes) := by
-  simp [prepareParsedMaskedWrites, headReady, tailReady]
+theorem prepareParsedMaskedConstantWrites_preserves_order
+    (files : IntegerRegisterFiles) (cycle : Fin 4)
+    (target : ParsedConstantDestination) (rest : List ParsedConstantDestination)
+    (write : PreparedParsedMaskedWrite) (writes : List PreparedParsedMaskedWrite)
+    (headReady : prepareParsedConstantTarget files cycle target = .ok write)
+    (tailReady : prepareParsedMaskedConstantWrites files cycle rest = .ok writes) :
+    prepareParsedMaskedConstantWrites files cycle (target :: rest) = .ok (write :: writes) := by
+  simp [prepareParsedMaskedConstantWrites, headReady, tailReady]
 
 def prepareParsedMaskedLine (files : IntegerRegisterFiles)
     (expressions : List ParsedExpr) (control : ParsedMaskExecutionControl) :
@@ -1085,7 +1115,7 @@ def prepareParsedMaskedLine (files : IntegerRegisterFiles)
               control.context.bar0 control.context.bar1 control.context.tWord with
           | none => .unknown
           | some accesses =>
-              match prepareParsedMaskedWrites files accesses with
+              match prepareParsedMaskedConstantWrites files control.context.cycle accesses with
               | .failure => .failure
               | .unknown => .unknown
               | .ok lineWrites =>
@@ -1112,7 +1142,23 @@ def prepareParsedMaskedLine (files : IntegerRegisterFiles)
 def commitParsedMaskedWrites (files : IntegerRegisterFiles)
     (writes : List PreparedParsedMaskedWrite) : IntegerRegisterFiles :=
   writes.foldl (fun current write =>
-    writeDirectAccessMasked current write.destination write.data write.selection) files
+    match write.maskUpdate with
+    | some (entry, cycle) =>
+        { current with maskRegisters :=
+            (ProofsLean.MNCore.Masks.writeRegister current.maskRegisters entry cycle
+              (0 : BitVec 4) (BitVec.allOnes 4)) }
+    | none =>
+        match write.destination with
+        | some destination =>
+            writeDirectAccessMasked current destination write.data write.selection
+        | none => current) files
+
+theorem commit_constant_omr_destination_writes_zero
+    (files : IntegerRegisterFiles) (entry : Fin 15) (cycle : Fin 4) :
+    (commitParsedMaskedWrites files
+      [⟨none, some (entry, cycle), (fun _ => 0), ⟨BitVec.allOnes 4, true⟩⟩]).maskRegisters
+      entry cycle = 0 := by
+  simp [commitParsedMaskedWrites, ProofsLean.MNCore.Masks.writeRegister]
 
 def parsedIntegerMaskedLineStep (files : IntegerRegisterFiles)
     (expressions : List ParsedExpr) (control : ParsedMaskExecutionControl) :
