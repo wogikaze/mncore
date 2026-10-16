@@ -1111,12 +1111,27 @@ structure ParsedSingleMatrixWriteShape where
 def ParsedExpr.toDirectSingleMatrixWriteShape?
     (expression : ParsedExpr) : Option ParsedSingleMatrixWriteShape :=
   match expression.op, expression.sources, expression.destinations with
+  -- F and G share the 32-bit physical row layout.  Keep G values raw: in
+  -- particular, block-float encodings must not be normalized here.
   | .matrixWrite .f, [source], [.matrix sideY _ (some row)] =>
       match source with
       | .mem _ false false false _ | .forward _ false false false =>
           some ⟨source, sideY, row⟩
       | _ => none
+  | .matrixWrite .g, [source], [.matrix sideY _ (some row)] =>
+      match source with
+      | .mem _ false false false _ | .forward _ false false false =>
+          some ⟨source, sideY, row⟩
+      | _ => none
   | _, _, _ => none
+
+theorem ParsedExpr.toDirectSingleMatrixWriteShape?_g
+    (access : Access) (sideY : Bool) (row : Nat) (mask : Option ParsedMask) :
+    ParsedExpr.toDirectSingleMatrixWriteShape?
+      ⟨.matrixWrite .g, [.mem access false false false mask],
+        [.matrix sideY 0 (some row)], none, "g-mwrite"⟩ =
+      some ⟨.mem access false false false mask, sideY, row⟩ := by
+  simp [ParsedExpr.toDirectSingleMatrixWriteShape?]
 
 def ParsedExpr.toDirectSingleMatrixWriteAccesses?
     (expression : ParsedExpr) (context : ParsedIntegerContext) :

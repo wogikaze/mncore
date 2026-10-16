@@ -185,6 +185,7 @@ run_cmd do
 #print axioms ProofsLean.MNCore.PEMemory.parsedDoubleMatrixWriteFourCycle_readback
 #print axioms ProofsLean.MNCore.PEMemory.ParsedExpr.toDirectDoubleMatrixWriteAccesses_destination_invariant
 #print axioms ProofsLean.MNCore.PEMemory.ParsedExpr.toDirectSingleMatrixWriteAccesses_destination_invariant
+#print axioms ProofsLean.MNCore.PEMemory.ParsedExpr.toDirectSingleMatrixWriteShape?_g
 #print axioms ProofsLean.MNCore.PEMemory.prepareParsedSingleMatrixWritePEs_all
 #print axioms ProofsLean.MNCore.PEMemory.singleMatrixPhysicalRow_injective
 #print axioms ProofsLean.MNCore.PEMemory.singleMatrixWriteValues_high_word
