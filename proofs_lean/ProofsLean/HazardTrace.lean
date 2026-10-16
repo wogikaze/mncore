@@ -76,4 +76,29 @@ def l1SourceHazardEvents :
       l1LineHazardEvents line startWord ++
         l1SourceHazardEvents rest (startWord + 1)
 
+def blockHazardConstraintsBetween
+    (earlier later : List ProofsLean.MNCore.PEMemory.TimedBlockAccess) :
+    List ProofsLean.MNCore.PEMemory.TimedBlockHazardConstraint :=
+  earlier.flatMap fun write => later.filterMap fun access =>
+    ProofsLean.MNCore.PEMemory.makeTimedBlockHazardConstraint? write access
+
+def collectBlockHazardConstraintsAux
+    (events : List ProofsLean.MNCore.PEMemory.TimedBlockAccess) :
+    List ProofsLean.MNCore.PEMemory.TimedBlockHazardConstraint :=
+  match events with
+  | [] => []
+  | event :: rest =>
+      blockHazardConstraintsBetween [event] rest ++
+        collectBlockHazardConstraintsAux rest
+
+def collectBlockHazardConstraints
+    (events : List ProofsLean.MNCore.PEMemory.TimedBlockAccess) :=
+  collectBlockHazardConstraintsAux events
+
+def l1SourceHazardConstraints
+    (source : List (ProofsLean.ControlNormalization.Statement
+      ParsedMaskDirective ProofsLean.MNCore.PEMemory.ParsedMaskedIssueLine))
+    (startWord : Nat) :=
+  collectBlockHazardConstraints (l1SourceHazardEvents source startWord)
+
 end ProofsLean.MNCore.HazardTrace
