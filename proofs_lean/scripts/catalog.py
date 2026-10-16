@@ -350,7 +350,7 @@ def isa_bounds_experiment() -> dict:
             raise ValueError(f"stale ISA boundary experiment: {item['path']}")
     if not all(row["matches_expected"] for row in record["observations"]):
         raise ValueError("ISA boundary experiment contains an unexpected assembler result")
-    if len(record["observations"]) != 1108:
+    if len(record["observations"]) != 1111:
         raise ValueError("ISA boundary experiment case count changed")
     return {
         "source": reference.relative_to(REPO).as_posix(),
@@ -493,6 +493,9 @@ def parallel_issue_boundary_experiment() -> dict:
         "mask_flush_conflicting_entry": (False, None),
         "omr_cross_group_same_entry": (False, None),
         "omr_cross_group_different_entries": (False, None),
+        "l1bm_forward_source": (True, 1),
+        "l1bm_turnaround_forward_source": (True, 2),
+        "l1bm_duplicate_lbf_write": (False, None),
         "l2bmdars_parallel_l2bm_exception": (False, None),
     }
     for case, (accepted, words) in expected.items():
@@ -502,7 +505,7 @@ def parallel_issue_boundary_experiment() -> dict:
     return {
         "source": reference.relative_to(REPO).as_posix(),
         "sha256": digest(reference),
-        "manual_sections": ["SDM 3.6.2.1", "SDM 3.6.4"],
+        "manual_sections": ["SDM 3.6.1.15", "SDM 3.6.1.17", "SDM 3.6.2.1", "SDM 3.6.4"],
         "observations": [
             {"case": case, "accepted": observations[case]["accepted"],
              "assembler_output_lines": observations[case]["assembler_output_lines"]}
@@ -515,8 +518,11 @@ def parallel_issue_boundary_experiment() -> dict:
             "ProofsLean.MNCore.Issue.conflicting_mask_widths_rejected",
             "ProofsLean.MNCore.Issue.conflicting_mask_entries_rejected",
             "ProofsLean.MNCore.Issue.duplicate_mask_register_writes_rejected",
+            "ProofsLean.MNCore.Issue.lbfWritesUnique",
+            "ProofsLean.MNCore.Issue.projected_lbf_writes_match_transfer_sources",
+            "ProofsLean.MNCore.Issue.duplicate_lbf_writes_rejected",
         ],
-        "limitations": "These probes cover mask agreement and OMR write-port conflicts; they do not establish complete parser, assembler, or hazard legality correspondence.",
+        "limitations": "These probes cover mask agreement, OMR writes, and the shared L1BM forwarding output; they do not establish complete parser, assembler, or hazard legality correspondence.",
     }
 
 

@@ -149,6 +149,16 @@ pub fn check(exprs: &[Expr]) -> Result<(), String> {
     if mask_writes > 1 {
         return Err("multiple expressions write mask registers in one step".into());
     }
+    // Every L1BM-to-PE expression updates the shared $lbf forwarding operand.
+    // The normal and turnaround L1BM groups are distinct, so group uniqueness
+    // alone does not prevent two such writes.
+    let lbf_writes = exprs.iter().filter(|e| {
+        matches!(e.op, Op::L1(_))
+            && e.srcs.iter().any(|operand| matches!(operand, Operand::L1bm { .. }))
+    }).count();
+    if lbf_writes > 1 {
+        return Err("multiple expressions write the L1BM forwarding register in one step".into());
+    }
     for (i, (m, r, e)) in reads.iter().enumerate() {
         if let Some((_, _, f)) = reads[..i].iter().find(|(n, s, _)| n == m && s != r) {
             return Err(format!("{} is read at two different addresses (`{}` and `{}`)", mem_name(*m), f.text, e.text));
@@ -209,6 +219,7 @@ mod tests {
             "lpassa $lt $omr1",
             "lpassa $lm0v $lr0v/$imr1; gmfma $ly $ls0v $lr0v $ln0v $omr1",
             "lpassa $lm0v $lr0v/$imr1; gmfma $ly $ls0v $lr0v $ln0v $omr2",
+            "l1bmm $lb0 $lr0v",
         ] {
             assert_eq!(issue(ok), Ok(()), "{ok}");
         }
@@ -223,6 +234,7 @@ mod tests {
             "lpassa/$imr1 $lm0v $lr0v/$imr2",
             "gmfma $ly $ls0v $lr0v $ln0v $omr1; lpassa $lt $omr1",
             "gmfma $ly $ls0v $lr0v $ln0v $omr1; lpassa $lt $omr2",
+            "l1bmm $lb0 $lr8v; l1bmm $lbi $lm0v",
         ] {
             assert!(issue(bad).is_err(), "{bad}");
         }

@@ -122,6 +122,9 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.projected_mask_register_writes_are_destinations
 #print axioms ProofsLean.MNCore.Issue.duplicate_mask_register_writes_are_illegal
 #print axioms ProofsLean.MNCore.Issue.duplicate_mask_register_writes_rejected
+#print axioms ProofsLean.MNCore.Issue.projected_lbf_writes_match_transfer_sources
+#print axioms ProofsLean.MNCore.Issue.duplicate_lbf_writes_are_illegal
+#print axioms ProofsLean.MNCore.Issue.duplicate_lbf_writes_rejected
 #print axioms ProofsLean.MNCore.Issue.projected_group_is_parser_group
 #print axioms ProofsLean.MNCore.Issue.projected_mau_is_parser_mau
 #print axioms ProofsLean.MNCore.Issue.normalized_expr_issue_projection

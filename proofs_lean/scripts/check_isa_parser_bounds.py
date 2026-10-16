@@ -96,6 +96,11 @@ CASES = {
         "lpassa $lm0v $lr0v/$imr1; gmfma $ly $ls0v $lr0v $ln0v $omr1\n", True, 1),
     "mask_flag_read_with_omr_write_different_entry": (
         "lpassa $lm0v $lr0v/$imr1; gmfma $ly $ls0v $lr0v $ln0v $omr2\n", True, 1),
+    "l1bm_forward_source": ("l1bmm $lb0 $lr0v\n", True, 1),
+    "l1bm_turnaround_forward_source": (
+        "l1bmm@2 $lr0v $lb0\nl1bmm $lbi $lm0v\n", True, 2),
+    "l1bm_duplicate_lbf_write": (
+        "l1bmm@2 $lr0v $lb0\nl1bmm $lb16 $lr8v; l1bmm $lbi $lm0v\n", False, None),
     "l2bmdars_parallel_l2bm_exception": (
         "l2bmdars $lc0@.0 $dar0; l2bmb $lc256 $lb0\n", False, None),
     "debug_set_record": ("d set $lm0n0c0b0m0p0 1 0000000000000000\n", True, 1),
@@ -259,6 +264,7 @@ def main() -> None:
             "SDM 3.6.4 requires simultaneous mask applications to use the same width; Section 3.6.2.1 also requires matching variable entry addresses. The same-width pair is accepted, while mixed widths, mixed entries, and a write-mask/zero-flush entry mismatch are rejected.",
             "Mask-flag reads and OMR writes use distinct issue ports: a masked lpassa can issue with gmfma writing either the same or a different OMR entry. Multiple variable mask reads still require one shared entry, as shown by the accepted and rejected mask-application pair probes.",
             "SDM 3.6.4 treats mask registers as PE operands and disallows multiple writes to that operand in one step. Two otherwise accepted operations that write OMR are rejected together, both for the same entry and for different entries.",
+            "After seeding the turnaround buffer with a valid PE-to-L1BM transfer, an ordinary L1BM source and the turnaround source $lbi are each accepted alone. Issuing both to PE destinations together is rejected with an l1bm_emit conflict, an implicit $lbf write conflict across the distinct L1BM issue groups.",
             "The June 2026 manual's Section 3.6.4 describes an l2bmdars exception for simultaneous issue with another L2BM operation, but the bundled assemble3 rejects the focused l2bmdars+l2bmb line. The local encoder/model agreement is unresolved against the newer manual.",
             "Matrix rows 0 through 15 are accepted; row 16 is rejected.",
             "PE destination lists are not sized by source arity: lpassa accepts three outputs across LM1/GRF0/GRF1, and zero accepts LM0/LM1/GRF0/GRF1 plus OMR. The sampled duplicate-bank and nowrite combinations are rejected; this is not an exhaustive output grammar proof.",

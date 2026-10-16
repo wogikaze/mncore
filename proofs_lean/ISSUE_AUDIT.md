@@ -14,7 +14,7 @@ proof that `assemble3` accepts every modeled line.
 | At most two MAU groups, same precision | Rust and Lean count calculation, matrix-write, and matrix-read groups and compare precision | Mirrored for represented expression records. |
 | Vector FMA/MUL plus matrix write input agreement | Rust and Lean compare the structured operand at source 2 against the matrix-write source | Mirrored for structured operands; parser correspondence is still open. |
 | Each matrix register side appears at most once | Rust and Lean count X/Y matrix operands in sources and destinations | Mirrored for represented matrix operands. |
-| No two expressions write the same PE operand | PE-memory ports are checked by memory bank; OMR writes have a separate single-write-port rule | OMR write conflicts are mirrored and checked against the assembler for same and different entries. Other fixed/forwarding destination conflicts remain incomplete. |
+| No two expressions write the same PE operand | PE-memory ports, OMR writes, and implicit `$lbf` writes have separate uniqueness checks | `$lbf` writes from normal and turnaround L1BM groups are now mirrored; broader assembler/parser correspondence remains open. |
 | Reads from one PE operand use one region, including mask-flag reads | Ordinary PE-memory reads compare bank and region; mask reads separately require one width and one variable OMR entry | Mask-flag read constraints are mirrored and assembler checked. Forwarding reads are not yet explicitly represented. |
 | LM0/LM1 read/write regions agree | Rust and Lean compare projected `.mem` accesses | Mirrored for projected accesses only. |
 | Immediate excludes LM0 access | Rust and Lean check projected `.mem` accesses | Mirrored for projected accesses only. |
@@ -49,15 +49,17 @@ at most one OMR destination per PE issue line. Mask-selector reads are modeled
 separately by requiring a common width and variable entry across the line. The
 assembler accepts `lpassa .../$imr1` alongside a `gmfma` OMR write to either
 entry 1 or entry 2, confirming that the OMR read and write ports are distinct.
-Forwarding-register reads and implicit forwarding writes remain outside the
-general port projection.
+Forwarding-register reads use a fixed temporal region and can be repeated, as
+documented for `$mauf`. Implicit forwarding writes are checked for `$lbf`;
+other output forwarding registers are separated by their producer issue groups.
 
 ## Next formalization work
 
 1. Model the `l2bmdars` simultaneous-issue exception explicitly, or establish
    from the challenge submission contract that it cannot occur in candidate source.
-2. Project every PE-operand read and write class required by the manual,
-   including masks and fixed destinations, then add cross-expression port checks.
+2. Finish the forwarding-port audit: confirm the implicit `$lbf` projection,
+   verify the `$aluf`, `$mauf`, and `$mreadf` producer mapping, and compare
+   remaining PE-operand reads and writes with `assemble3`.
 3. Connect top-level line parsing, nop/wait combinations, and PE expression
    checking; compare boundary combinations with `assemble3`.
 4. Prove parser-to-projection correspondence before using the predicate in

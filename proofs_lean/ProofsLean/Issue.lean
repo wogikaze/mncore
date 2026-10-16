@@ -110,6 +110,7 @@ structure Expr where
   reads : List Access
   writes : List Access
   omrWrites : List Nat
+  lbfWrites : Nat
   matrixXUses : Nat
   matrixYUses : Nat
   maskApplications : List ParsedMask
@@ -194,6 +195,9 @@ def maskEntriesAgree (xs : List Expr) : Prop :=
 def maskRegisterWritesUnique (xs : List Expr) : Prop :=
   (xs.flatMap Expr.omrWrites).length ≤ 1
 
+def lbfWritesUnique (xs : List Expr) : Prop :=
+  (xs.map Expr.lbfWrites).sum ≤ 1
+
 /-- The explicit constraints enforced in the local PE issue checker. -/
 def Legal (xs : List Expr) : Prop :=
   idsUnique xs ∧
@@ -209,6 +213,7 @@ def Legal (xs : List Expr) : Prop :=
   zeroFlushUnique xs ∧
   maskWidthsAgree xs ∧
   maskEntriesAgree xs ∧
+  lbfWritesUnique xs ∧
   maskRegisterWritesUnique xs
 
 /-- Classical decision specification for the abstract rule set. This is not
@@ -242,6 +247,7 @@ def emptyExpr : Expr where
   reads := []
   writes := []
   omrWrites := []
+  lbfWrites := 0
   matrixXUses := 0
   matrixYUses := 0
   maskApplications := []
@@ -252,7 +258,8 @@ theorem empty_is_legal : Legal [] := by
   simp [Legal, idsUnique, groupsUnique, mauCountBounded, mauExpressions,
     mauPrecisionsAgree, matrixWritePairAgrees, matrixRegistersUnique,
     writesUnique, readsAgree, localReadWriteAgree, immediateExcludesLm0,
-    zeroFlushUnique, maskWidthsAgree, maskEntriesAgree, maskRegisterWritesUnique]
+    zeroFlushUnique, maskWidthsAgree, maskEntriesAgree, lbfWritesUnique,
+    maskRegisterWritesUnique]
 
 theorem empty_check_accepts : check [] = true := check_complete [] empty_is_legal
 
@@ -291,6 +298,21 @@ theorem conflicting_mask_entries_rejected :
 
 def maskWriteIssueExpr (id : Nat) (group : Group) (entry : Nat) : Expr :=
   { emptyExpr with id := id, group := some group, omrWrites := [entry] }
+
+def lbfWriteIssueExpr (id : Nat) (group : Group) : Expr :=
+  { emptyExpr with id := id, group := some group, lbfWrites := 1 }
+
+theorem duplicate_lbf_writes_are_illegal :
+    ¬ Legal [lbfWriteIssueExpr 0 .l1bm, lbfWriteIssueExpr 1 .l1bmTurnaround] := by
+  intro legal
+  rcases legal with ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, writes, _⟩
+  simp [lbfWritesUnique, lbfWriteIssueExpr, emptyExpr] at writes
+
+theorem duplicate_lbf_writes_rejected :
+    check [lbfWriteIssueExpr 0 .l1bm, lbfWriteIssueExpr 1 .l1bmTurnaround] = false := by
+  classical
+  apply decide_eq_false_iff_not.mpr
+  exact duplicate_lbf_writes_are_illegal
 
 theorem duplicate_mask_register_writes_are_illegal :
     ¬ Legal [maskWriteIssueExpr 0 .mauCalc 1, maskWriteIssueExpr 1 .alu 1] := by
@@ -492,6 +514,14 @@ def ParsedExpr.maskApplications (expression : ParsedExpr) : List ParsedMask :=
 def ParsedExpr.maskRegisterWrites (expression : ParsedExpr) : List Nat :=
   expression.destinations.filterMap ParsedOperand.maskRegisterWrite?
 
+def ParsedExpr.writesLbf (expression : ParsedExpr) : Bool :=
+  match expression.op with
+  | .l1bm _ => expression.sources.any fun operand =>
+      match operand with
+      | .l1bm .. => true
+      | _ => false
+  | _ => false
+
 /-- Source-count condition imposed by the Rust parser's fixed source prefix. -/
 def ParsedExpr.sourcesMatchParserArity (expression : ParsedExpr) : Prop :=
   expression.sources.length ≤ expression.op.parserSourceLimit
@@ -673,6 +703,7 @@ def ParsedExpr.toIssueExpr (id : Nat) (e : ParsedExpr) : Expr where
   reads := ParsedOperand.accesses e.sources
   writes := ParsedOperand.accesses e.destinations
   omrWrites := e.maskRegisterWrites
+  lbfWrites := if e.writesLbf then 1 else 0
   matrixXUses := ParsedOperand.matrixUseCount e.sources false +
     ParsedOperand.matrixUseCount e.destinations false
   matrixYUses := ParsedOperand.matrixUseCount e.sources true +
@@ -690,6 +721,9 @@ theorem projected_writes_are_mem_operands (id : Nat) (e : ParsedExpr) :
 theorem projected_mask_register_writes_are_destinations (id : Nat) (e : ParsedExpr) :
     (e.toIssueExpr id).omrWrites =
       e.destinations.filterMap ParsedOperand.maskRegisterWrite? := rfl
+
+theorem projected_lbf_writes_match_transfer_sources (id : Nat) (e : ParsedExpr) :
+    (e.toIssueExpr id).lbfWrites = if e.writesLbf then 1 else 0 := rfl
 
 theorem projected_group_is_parser_group (id : Nat) (e : ParsedExpr) :
     (e.toIssueExpr id).group = e.issueGroup := rfl
@@ -1282,11 +1316,13 @@ theorem plusOne_issue_legal : LegalParsedLine [plusOneParsed] := by
     ParsedOperand.matrixUseCount ParsedExpr.hasTurnaround
     ParsedExpr.maskApplications ParsedOperand.writeMask?
     ParsedExpr.maskRegisterWrites ParsedOperand.maskRegisterWrite?
+    ParsedExpr.writesLbf
     plusOneParsed plusOneRead plusOneWrite
   simp [Legal, idsUnique, groupsUnique, mauCountBounded, mauExpressions,
     mauPrecisionsAgree, matrixWritePairAgrees, matrixRegistersUnique,
     writesUnique, readsAgree, localReadWriteAgree, immediateExcludesLm0,
-    zeroFlushUnique, maskWidthsAgree, maskEntriesAgree, maskRegisterWritesUnique,
+    zeroFlushUnique, maskWidthsAgree, maskEntriesAgree, lbfWritesUnique,
+    maskRegisterWritesUnique,
     projectFrom]
 
 theorem plusOne_issue_accepts : checkParsedLine [plusOneParsed] = true :=
