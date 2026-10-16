@@ -15,6 +15,7 @@ ASSEMBLER = REPO / "judge/judge-py/mncore2_emuenv/assemble3"
 CASES = {
     "nop_zero": ("nop/0\n", True, 0),
     "nop_one": ("nop/1\n", True, 1),
+    "nop_zero_with_wait": ("nop/0; wait i01\n", False, None),
     "wait_zero_tag": ("nop; wait i00\n", False, None),
     "wait_tag_1": ("nop; wait i01\n", True, 1),
     "wait_tag_255": ("nop; wait iFF\n", True, 1),
@@ -85,7 +86,7 @@ def main() -> None:
         "tool_hashes": [{"path": p.relative_to(REPO).as_posix(), "sha256": sha(p)} for p in sources],
         "observations": observations,
         "findings": [
-            "nop/0 is accepted and emits zero instruction words; the current positive-cost Machine interface cannot represent it directly as a line.",
+            "nop/0 is accepted and emits zero instruction words; nop/0 with a wait is rejected, so the zero-count no-wait form can be erased during normalization.",
             "wait i00 is rejected; i01 and iFF are accepted; i100 is rejected.",
             "$omr0 and $omr16 are rejected; $omr1 and $omr15 are accepted.",
             "$imr0, $imr31 are accepted while $imr32 and $imr255 fail encoding. Active mask directives `maskn 0` and `maskn 31` are accepted, while `maskn 32` fails. This conflicts with the Rust MaskSource comment claiming entries 1 through 15.",

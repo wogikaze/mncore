@@ -7,14 +7,14 @@
   "inventory_scope": "Compiler-generated ALU/MAU spelling candidates plus separately scoped source-derived records; not an authoritative complete ISA or legality model.",
   "selected_parser_boundary_experiment": {
     "source": "proofs_lean/evidence/isa-bounds/reference.json",
-    "sha256": "6374e3029d0cc44583c513f378d618a7cb2685be36bfdd98ccbc5c74c464cba2",
+    "sha256": "7ab742b02ce203c054e599ecb9d63b7beee7409d0b840813e381a87fce8c459a",
     "generator": "proofs_lean/scripts/check_isa_parser_bounds.py",
-    "generator_sha256": "2377c762ce282ed44da4f935234848a5121c24d387cef281ea85422d6155f873",
-    "probes": 97,
+    "generator_sha256": "0dea77a6633386bdc9c01608402ea83b592ad1ad702c9d4448b766bb88af1a68",
+    "probes": 98,
     "accepted": 88,
-    "rejected": 9,
+    "rejected": 10,
     "findings": [
-      "nop/0 is accepted and emits zero instruction words; the current positive-cost Machine interface cannot represent it directly as a line.",
+      "nop/0 is accepted and emits zero instruction words; nop/0 with a wait is rejected, so the zero-count no-wait form can be erased during normalization.",
       "wait i00 is rejected; i01 and iFF are accepted; i100 is rejected.",
       "$omr0 and $omr16 are rejected; $omr1 and $omr15 are accepted.",
       "$imr0, $imr31 are accepted while $imr32 and $imr255 fail encoding. Active mask directives `maskn 0` and `maskn 31` are accepted, while `maskn 32` fails. This conflicts with the Rust MaskSource comment claiming entries 1 through 15.",
@@ -153,7 +153,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/Issue.lean",
-      "sha256": "6f8cdf9aa8aff3d404e800aa5c58f0fc96967e9e263ec2976d7589604a795873",
+      "sha256": "ec4f90a2c84fe8b38bd3ea2635154258ff3df02d7c7716d1fc976841325502a8",
       "implemented": "Full structural PE Op/Operand payload mirror, issue projection, abstract PE-line rules, and a partial parsed-op to integer-ALU bridge for supported L/I/S integer operations and packbit",
       "scope": "The Rust enum inventory is checked against Lean constructors. A separate partial executor covers supported integer ALU/zero/immediate expressions with direct PE-memory destinations, masks/flush and ordered multiple destinations; this is not full ISA semantics",
       "source_basis": [

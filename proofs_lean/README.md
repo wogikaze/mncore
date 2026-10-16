@@ -56,12 +56,16 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   抽象的な`nop/n`モデルでは全上限について有限性を証明した。MN-Coreの
   実際の行型については、アドレス・即値・全オペランド範囲、同時発行と
   ハザードに基づく有限性が未証明。
-- `evidence/isa-bounds/reference.json`: 公式`assemble3`の97個の境界プローブ。
+- `evidence/isa-bounds/reference.json`: 公式`assemble3`の98個の境界プローブ。
   `nop/0`は受理され0語を出力するため正コストの行からは正規化で除外する。
   `$omr`は1〜15が受理、`$imr`と有効なマスク指令のselectorは0〜31が受理され、
   32は拒否された。後者はRustコメントの「1〜15」と不一致。challenge judgeは
   既定で解答から`d get`/`d set`/`r`記録を実行列から除外する。実験範囲外の
   構文・意味や完全網羅を証明するものではない。
+- `Issue.lean`の`NormalizedExpr`/`NormalizedMv`/`NormalizedLine`は、表示用の
+  `text`を候補同一性から除き、PE式の順序を維持する。PEのissue投影と検査が
+  正規化で変わらないことを証明した。Raw/Otherなどネストした文字列や未制限の
+  数値フィールドはまだ残り、実機命令型の有限性には至っていない。
 - `FiniteExample.lean`: 3命令・4入力の小さな機械で、全候補の反証、2行の最適性、
   限定入力では1行解が存在することを証明する回帰例。**MN-Coreではない。**
 - `PlusOne.lean`: Welcome（`challenge/1.plus-one`）の2行の `iinc` 解について、

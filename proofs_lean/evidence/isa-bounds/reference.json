@@ -25,7 +25,7 @@
     },
     {
       "path": "proofs_lean/scripts/check_isa_parser_bounds.py",
-      "sha256": "2377c762ce282ed44da4f935234848a5121c24d387cef281ea85422d6155f873"
+      "sha256": "0dea77a6633386bdc9c01608402ea83b592ad1ad702c9d4448b766bb88af1a68"
     }
   ],
   "observations": [
@@ -43,6 +43,14 @@
       "accepted": true,
       "assembler_output_lines": 1,
       "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "nop_zero_with_wait",
+      "source": "nop/0; wait i01",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Unexpected token after pseudo op.",
       "matches_expected": true
     },
     {
@@ -807,7 +815,7 @@
     }
   ],
   "findings": [
-    "nop/0 is accepted and emits zero instruction words; the current positive-cost Machine interface cannot represent it directly as a line.",
+    "nop/0 is accepted and emits zero instruction words; nop/0 with a wait is rejected, so the zero-count no-wait form can be erased during normalization.",
     "wait i00 is rejected; i01 and iFF are accepted; i100 is rejected.",
     "$omr0 and $omr16 are rejected; $omr1 and $omr15 are accepted.",
     "$imr0, $imr31 are accepted while $imr32 and $imr255 fail encoding. Active mask directives `maskn 0` and `maskn 31` are accepted, while `maskn 32` fails. This conflicts with the Rust MaskSource comment claiming entries 1 through 15.",

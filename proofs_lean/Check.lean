@@ -51,6 +51,10 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.projected_writes_are_mem_operands
 #print axioms ProofsLean.MNCore.Issue.projected_group_is_parser_group
 #print axioms ProofsLean.MNCore.Issue.projected_mau_is_parser_mau
+#print axioms ProofsLean.MNCore.Issue.normalized_expr_issue_projection
+#print axioms ProofsLean.MNCore.Issue.normalized_expr_group
+#print axioms ProofsLean.MNCore.Issue.projectLine_normalized
+#print axioms ProofsLean.MNCore.Issue.parsed_check_unchanged_by_normalization
 #print axioms ProofsLean.MNCore.Issue.ParsedPrecision.code_injective
 #print axioms ProofsLean.MNCore.Issue.unsupported_parsed_integer_is_unknown
 #print axioms ProofsLean.MNCore.Issue.iinc_integer_request

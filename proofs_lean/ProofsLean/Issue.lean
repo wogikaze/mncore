@@ -352,6 +352,21 @@ structure ParsedExpr where
   text : String
   deriving DecidableEq, Repr
 
+/-- Canonical PE expression syntax. Display text is intentionally absent;
+source and destination order remains explicit. -/
+structure NormalizedExpr where
+  op : ParsedOp
+  sources : List ParsedOperand
+  destinations : List ParsedOperand
+  flush : Option ParsedMask
+  deriving DecidableEq, Repr
+
+def ParsedExpr.normalize (expression : ParsedExpr) : NormalizedExpr :=
+  ⟨expression.op, expression.sources, expression.destinations, expression.flush⟩
+
+def NormalizedExpr.toParsed (expression : NormalizedExpr) : ParsedExpr :=
+  ⟨expression.op, expression.sources, expression.destinations, expression.flush, ""⟩
+
 /-- Map only the integer ALU subset whose parsed precision is established.
 Floating and otherwise unsupported encodings stay unknown. -/
 def ParsedOp.integerRequest : ParsedOp → StepResult IntegerALU.Request
@@ -512,6 +527,16 @@ theorem projected_group_is_parser_group (id : Nat) (e : ParsedExpr) :
 theorem projected_mau_is_parser_mau (id : Nat) (e : ParsedExpr) :
     (e.toIssueExpr id).mau = e.issueMau := rfl
 
+theorem normalized_expr_issue_projection (id : Nat) (e : ParsedExpr) :
+    (e.normalize.toParsed.toIssueExpr id) = e.toIssueExpr id := by
+  cases e
+  rfl
+
+theorem normalized_expr_group (e : ParsedExpr) :
+    e.normalize.toParsed.issueGroup = e.issueGroup := by
+  cases e
+  rfl
+
 /-- Preserve parser order and assign the unique list-position identity used by
 the abstract issue record. -/
 def projectFrom (nextId : Nat) : List ParsedExpr → List Expr
@@ -558,6 +583,21 @@ theorem projectFrom_idsUnique (nextId : Nat) (expressions : List ParsedExpr) :
 theorem projectLine_idsUnique (expressions : List ParsedExpr) :
     idsUnique (projectLine expressions) := projectFrom_idsUnique 0 expressions
 
+theorem projectFrom_normalized (nextId : Nat) (expressions : List ParsedExpr) :
+    projectFrom nextId (expressions.map (fun e => e.normalize.toParsed)) =
+      projectFrom nextId expressions := by
+  induction expressions generalizing nextId with
+  | nil => rfl
+  | cons expression rest inductionHypothesis =>
+      simp only [List.map_cons, projectFrom]
+      rw [normalized_expr_issue_projection]
+      rw [inductionHypothesis]
+
+theorem projectLine_normalized (expressions : List ParsedExpr) :
+    projectLine (expressions.map (fun e => e.normalize.toParsed)) =
+      projectLine expressions :=
+  projectFrom_normalized 0 expressions
+
 def LegalParsedLine (expressions : List ParsedExpr) : Prop := Legal (projectLine expressions)
 
 noncomputable def checkParsedLine (expressions : List ParsedExpr) : Bool :=
@@ -570,6 +610,11 @@ theorem parsed_check_sound (expressions : List ParsedExpr)
 theorem parsed_check_complete (expressions : List ParsedExpr)
     (legal : LegalParsedLine expressions) : checkParsedLine expressions = true := by
   exact check_complete (projectLine expressions) legal
+
+theorem parsed_check_unchanged_by_normalization (expressions : List ParsedExpr) :
+    checkParsedLine (expressions.map (fun e => e.normalize.toParsed)) =
+      checkParsedLine expressions := by
+  rw [checkParsedLine, checkParsedLine, projectLine_normalized]
 
 /-- Line constructors corresponding to the categories in the VSM parser's
 top-level `Line` enum. Only `pe` lines enter the PE issue checker. -/
@@ -809,6 +854,25 @@ structure ParsedMv where
   text : String
   deriving DecidableEq, Repr
 
+/-- Canonical MV syntax without source spelling or whitespace. -/
+structure NormalizedMv where
+  kind : ParsedMvKind
+  size : Fin (2 ^ 64)
+  tag : Option (Fin 256)
+  nd : Option (Fin (2 ^ 32))
+  priority : Fin 256
+  source : Option ParsedMvOperand
+  destination : Option ParsedMvOperand
+  deriving DecidableEq, Repr
+
+def ParsedMv.normalize (transfer : ParsedMv) : NormalizedMv :=
+  ⟨transfer.kind, transfer.size, transfer.tag, transfer.nd, transfer.priority,
+    transfer.source, transfer.destination⟩
+
+def NormalizedMv.toParsed (transfer : NormalizedMv) : ParsedMv :=
+  ⟨transfer.kind, transfer.size, transfer.tag, transfer.nd, transfer.priority,
+    transfer.source, transfer.destination, ""⟩
+
 /-- Construct the parsed MV payload from an already tokenized opcode and its
 two operand tokens, matching the Rust `Mv` fields and numeric casts. -/
 def parsedMvSplitSlashAux : List Char → List Char → Option (List Char × List Char)
@@ -900,6 +964,35 @@ inductive ParsedLine where
   | debugGet
   | dramSet
   deriving DecidableEq, Repr
+
+/-- Candidate instruction lines after removing presentation-only fields and
+judge-stripped debug/DRAM records. PE expression order is preserved. -/
+inductive NormalizedLine where
+  | pe (expressions : List NormalizedExpr)
+  | nop (count : Nat) (wait : Option Nat)
+  | mv (transfer : NormalizedMv)
+  | maskDirective (widthWords : Nat) (targets : ParsedMaskTargets) (entry : Nat)
+  deriving DecidableEq, Repr
+
+def NormalizedLine.toParsed : NormalizedLine → ParsedLine
+  | .pe expressions => .pe (expressions.map NormalizedExpr.toParsed)
+  | .nop count wait => .nop count wait
+  | .mv transfer => .mv transfer.toParsed
+  | .maskDirective widthWords targets entry =>
+      .maskDirective widthWords targets entry
+
+/-- Normalize source-only records away and erase display strings. `nop/0`
+has no emitted instruction word, while `nop/0; wait ...` is rejected by the
+assembler, so the zero-count form maps to an empty line sequence. -/
+def ParsedLine.normalizeForSubmission? : ParsedLine → Option (List NormalizedLine)
+  | .pe expressions => some [.pe (expressions.map ParsedExpr.normalize)]
+  | .nop 0 none => some []
+  | .nop 0 (some _) => none
+  | .nop count wait => some [.nop count wait]
+  | .mv transfer => some [.mv transfer.normalize]
+  | .maskDirective widthWords targets entry =>
+      some [.maskDirective widthWords targets entry]
+  | .debugSet | .debugGet | .dramSet => some []
 
 def ParsedLine.issueLegal : ParsedLine → Prop
   | .pe expressions => LegalParsedLine expressions
