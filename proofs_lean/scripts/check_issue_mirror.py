@@ -106,6 +106,36 @@ def struct_field_types_match(source: str, rust_name: str, lean_name: str,
                              f"found {lean_types[lean_field]}")
 
 
+def enum_struct_variant_matches(source: str, rust_enum: str, lean_enum: str,
+                                rust_variant: str, lean_variant: str,
+                                fields: tuple[tuple[str, str, str, str], ...]) -> None:
+    enum_match = re.search(rf"\benum\s+{re.escape(rust_enum)}\s*\{{(.*?)\n\}}", source, re.S)
+    if not enum_match:
+        raise ValueError(f"Rust enum {rust_enum} not found")
+    variant_match = re.search(rf"(?m)^\s*{re.escape(rust_variant)}\s*\{{([^}}]*)\}}", enum_match.group(1))
+    if not variant_match:
+        raise ValueError(f"Rust {rust_enum}::{rust_variant} payload not found")
+    rust_fields = dict(re.findall(r"([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([^,]+)", variant_match.group(1)))
+    lean_enum_match = re.search(
+        rf"inductive\s+{re.escape(lean_enum)}\s+where(.*?)(?=\n(?:inductive|structure|def|theorem|end)\b)",
+        LEAN, re.S)
+    if not lean_enum_match:
+        raise ValueError(f"Lean enum {lean_enum} not found")
+    lean_line = re.search(rf"(?m)^\s*\|\s*{re.escape(lean_variant)}\s+(.+)$", lean_enum_match.group(1))
+    if not lean_line:
+        raise ValueError(f"Lean {lean_enum}::{lean_variant} payload not found")
+    lean_payload = lean_line.group(1).strip()
+    expected_parts = []
+    for rust_field, lean_field, rust_type, lean_type in fields:
+        if rust_fields.get(rust_field, "").strip() != rust_type:
+            raise ValueError(f"Rust {rust_enum}::{rust_variant}.{rust_field} type drift")
+        expected_parts.append(f"({lean_field} : {lean_type})")
+    expected = " ".join(expected_parts)
+    if lean_payload != expected:
+        raise ValueError(f"Lean {lean_enum}::{lean_variant} payload drift: expected {expected}, "
+                         f"found {lean_payload}")
+
+
 def rust_alu_input_counts() -> dict[str, int]:
     match = re.search(r"const ALU_OPS:.*?= &\[(.*?)\n\];", VSM, re.S)
     if not match:
@@ -222,6 +252,20 @@ def validate() -> None:
     enum_matches(MV, "MvOperand", "ParsedMvOperand", {
         "Pdm": "pdm", "Dram": "dram", "L2bm": "l2bm",
     })
+    enum_struct_variant_matches(MV, "MvOperand", "ParsedMvOperand", "Pdm", "pdm", (
+        ("addr", "address", "u64", "Fin (2 ^ 64)"),
+        ("group", "group", "Option<u8>", "Option (Fin 256)"),
+    ))
+    enum_struct_variant_matches(MV, "MvOperand", "ParsedMvOperand", "Dram", "dram", (
+        ("addr", "address", "u64", "Fin (2 ^ 64)"),
+        ("group", "group", "Option<u8>", "Option (Fin 256)"),
+        ("indirect", "indirect", "bool", "Bool"),
+    ))
+    enum_struct_variant_matches(MV, "MvOperand", "ParsedMvOperand", "L2bm", "l2bm", (
+        ("addr", "address", "u64", "Fin (2 ^ 64)"),
+        ("group", "group", "Option<u8>", "Option (Fin 256)"),
+        ("l2b", "l2b", "Option<u8>", "Option (Fin 256)"),
+    ))
     struct_fields_match(MV, "Mv", "ParsedMv", {
         "kind": "kind", "size": "size", "tag": "tag", "nd": "nd",
         "priority": "priority", "src": "source", "dst": "destination", "text": "text",
