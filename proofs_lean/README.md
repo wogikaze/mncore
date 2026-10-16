@@ -101,6 +101,8 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   この実験はパーサーの全域健全性を証明せず、`ParsedL1Op`やPE行の有限carrierにも未接続。
   `ParsedRrn`のprecision文字をASCII範囲に制限した部分型と8個のRRN opcodeの組の有限性も証明したが、
   parser outputや`ParsedL1Op`全体にはまだ接続していない。
+  `ParsedL1Op.distrib/gather`からoffset付きvariantだけを取り出す射影を定義し、その結果が有限なtagged carrierに
+  入ることを証明した。これも他の`ParsedL1Op` variantや完全なPE行の有限性は含まない。
   `hbfe`/`hbfn`のmantissa length引数も、assemble3の`6..9`受理・`5,10,11`拒否を根拠に
   optional payloadの有限carrierを証明した。
   これらのpayload定理から`ParsedOp`/`ParsedLine`全体への合成、他の残存Nat/Int範囲、

@@ -493,6 +493,13 @@ def coverage_catalog() -> dict:
         }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
+            "theorem": "ProofsLean.MNCore.Issue.ParsedL1Mabdiff.inFiniteEnvelope_finite",
+            "scope": "Finite tagged carrier for the `distrib` and `gather` MAB-offset variants in the observed signed envelope.",
+            "evidence": "Shares the exhaustive signed-offset assemble3 probes recorded in `isa-bounds/reference.json`.",
+            "missing": "Only the two MAB-offset variants are represented; complete ParsedL1Op finiteness and parser-to-envelope soundness remain unproved.",
+        }, {
+            "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
+            "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
             "theorem": "ProofsLean.MNCore.Issue.waitTagInFiniteEnvelope_finite",
             "scope": "Finite carrier for positive wait tags below 256.",
             "evidence": "proofs_lean/evidence/isa-bounds/reference.json: i00 and i100 rejected; i01 and iFF accepted, with exhaustive probes for 1..255.",

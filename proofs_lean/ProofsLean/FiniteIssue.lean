@@ -91,6 +91,62 @@ theorem ParsedRrn.inFiniteEnvelope_finite :
     Finite {rrn : ParsedRrn // rrn.inFiniteEnvelope} :=
   Finite.of_injective ParsedRrn.finiteCode ParsedRrn.finiteCode_injective
 
+inductive ParsedL1Mabdiff where
+  | distrib (offset : Int) | gather (offset : Int)
+  deriving DecidableEq, Repr
+
+def ParsedL1Mabdiff.inFiniteEnvelope : ParsedL1Mabdiff → Prop
+  | .distrib offset | .gather offset => mabdiffInFiniteEnvelope offset
+
+private def ParsedL1Mabdiff.finiteCode
+    (op : {op : ParsedL1Mabdiff // op.inFiniteEnvelope}) : Fin 512 ⊕ Fin 512 :=
+  match op with
+  | ⟨.distrib offset, bound⟩ => Sum.inl (mabdiffFiniteCode ⟨offset, bound⟩)
+  | ⟨.gather offset, bound⟩ => Sum.inr (mabdiffFiniteCode ⟨offset, bound⟩)
+
+private theorem ParsedL1Mabdiff.finiteCode_injective :
+    Function.Injective ParsedL1Mabdiff.finiteCode := by
+  intro a b equal
+  cases a with
+  | mk a ha =>
+    cases b with
+    | mk b hb =>
+      apply Subtype.ext
+      cases a <;> cases b <;>
+        simp [ParsedL1Mabdiff.finiteCode] at equal ⊢
+      all_goals
+        exact congrArg Subtype.val (mabdiffFiniteCode_injective equal)
+
+theorem ParsedL1Mabdiff.inFiniteEnvelope_finite :
+    Finite {op : ParsedL1Mabdiff // op.inFiniteEnvelope} :=
+  Finite.of_injective ParsedL1Mabdiff.finiteCode ParsedL1Mabdiff.finiteCode_injective
+
+def ParsedL1Op.mabdiffInFiniteEnvelope : ParsedL1Op → Prop
+  | .distrib offset => ProofsLean.MNCore.Issue.mabdiffInFiniteEnvelope offset
+  | .gather offset => ProofsLean.MNCore.Issue.mabdiffInFiniteEnvelope offset
+  | _ => True
+
+def ParsedL1Op.mabdiffView? : ParsedL1Op → Option ParsedL1Mabdiff
+  | .distrib offset => some (.distrib offset)
+  | .gather offset => some (.gather offset)
+  | _ => none
+
+theorem ParsedL1Op.mabdiffView?_bounded
+    (op : ParsedL1Op) (bound : op.mabdiffInFiniteEnvelope) :
+    ∀ value, op.mabdiffView? = some value → value.inFiniteEnvelope := by
+  cases op with
+  | distrib offset =>
+      intro value equal
+      cases equal
+      change ProofsLean.MNCore.Issue.mabdiffInFiniteEnvelope offset at bound
+      simpa [ParsedL1Mabdiff.inFiniteEnvelope] using bound
+  | gather offset =>
+      intro value equal
+      cases equal
+      change ProofsLean.MNCore.Issue.mabdiffInFiniteEnvelope offset at bound
+      simpa [ParsedL1Mabdiff.inFiniteEnvelope] using bound
+  | _ => simp [ParsedL1Op.mabdiffView?]
+
 def optionNatInFiniteEnvelope (bound : Nat) (value : Option Nat) : Prop :=
   ∀ n, value = some n → n < bound
 
