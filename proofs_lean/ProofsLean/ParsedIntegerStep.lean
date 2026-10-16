@@ -422,7 +422,8 @@ def parseMaskSelector? (text : String) : Option ParsedMask := do
     else if chars.take 2 == "ll".toList then (true, chars.drop 2)
     else (false, chars)
   if body.take 4 == "$imr".toList then
-    let digits := body.drop 4
+    let rawDigits := body.drop 4
+    let digits := if rawDigits.head? == some '+' then rawDigits.drop 1 else rawDigits
     if digits.isEmpty then none else
     let index ← parseMaskSelectorDigits digits 0
     if index < 256 then some (.entry longLong index) else none
@@ -443,6 +444,10 @@ theorem parseMaskSelector_pattern :
 
 theorem parseMaskSelector_ll_imr :
     parseMaskSelector? "ll$imr7tp" = some (.entry true 7) := by
+  rfl
+
+theorem parseMaskSelector_positive_imr :
+    parseMaskSelector? "$imr+7" = some (.entry false 7) := by
   rfl
 
 theorem parseMaskSelector_llimr :
@@ -495,6 +500,14 @@ theorem mask_entry_255_selects_all_cycles
   have hs : 3 - cycle.val = 0 ∨ 3 - cycle.val = 1 ∨
       3 - cycle.val = 2 ∨ 3 - cycle.val = 3 := by omega
   rcases hs with h | h | h | h <;> simp [resolveParsedMaskFlags?, h]
+
+theorem parsed_mask_selector_32_resolves_as_cycle_pattern
+    (registers : ProofsLean.MNCore.Masks.RegisterFile) (cycle : Fin 4) :
+    (parseMaskSelector? "$imr32").bind
+      (fun mask => resolveParsedMaskFlags? mask registers cycle) = some 0 := by
+  have hp : parseMaskSelector? "$imr32" = some (.entry false 32) := rfl
+  rw [hp]
+  exact mask_entry_32_is_pattern_not_entry_zero registers cycle
 
 structure PEWordSelection where
   flags : BitVec 4
