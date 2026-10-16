@@ -90,6 +90,10 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   制約し、全命令のコスト正値と`nop/0`除去を証明した。mask directiveは命令行
   でなく、後続状態に畳み込む制御イベントとして残す。未制限の数値フィールドは
   まだ残り、実機命令型の有限性には至っていない。
+- 同時発行条件は [`ISSUE_AUDIT.md`](ISSUE_AUDIT.md) でSDM 3.6.4と照合した。
+  現行checkerは`l2bmdars`の合法な例外を拒否する一方、PEメモリ以外の宛先衝突や
+  マスク読み出しをポート検査へ投影していない。下限列挙に使える完全な合法性述語ではなく、
+  coverageは`partial_datapath_only`のままとする。
 - `FiniteRegion.lean`: assemble3境界プローブを根拠に、width `< 5`、4つのアドレス`< 4096`、
   `madpe < 4`の`Region` envelopeを有限型へ埋め込み、`Region.inFiniteEnvelope_finite`を証明した。
   プローブは`evidence/isa-bounds/reference.json`にある。bank別の合法範囲/alignmentや、
