@@ -119,9 +119,9 @@
     },
     {
       "source": "proofs_lean/ProofsLean/Issue.lean",
-      "sha256": "19a6e610f53d6f2f9f7844e0da2c2ae19ce8bce59e7708f497c8116cf7378350",
-      "implemented": "Full structural PE Op/Operand payload mirror, issue projection, and abstract PE-line rules; includes group uniqueness, MAU compatibility, matrix register use, PE memory ports, immediate/LM0 conflict and zero-flush uniqueness",
-      "scope": "The Rust enum inventory is checked against Lean constructors; the Rust parser-to-Lean value mapping and assembler/hardware completeness are not proved",
+      "sha256": "6fbabcaa03a0d71342fc9afec7056c56e08d5f5ada39cb7f0ca3e55ee9df8b8e",
+      "implemented": "Full structural PE Op/Operand payload mirror, issue projection, abstract PE-line rules, and a partial parsed-op to integer-ALU bridge for supported L/I/S integer operations and packbit",
+      "scope": "The Rust enum inventory is checked against Lean constructors; parser correspondence, operand reads/reduction, masks, timing, writes, floating operations and full ISA semantics are not proved",
       "source_basis": [
         {
           "source": "viz/core/src/vsm.rs",
