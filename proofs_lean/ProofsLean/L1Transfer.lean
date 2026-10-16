@@ -219,12 +219,41 @@ theorem mwriteWrites_count (memoryBase : Fin l1bmLongWords)
       if twoLongWords then 8 else 4 := by
   cases twoLongWords <;> simp [mwriteWrites, List.finRange]
 
+theorem mwriteWrites_contains_high (memoryBase : Fin l1bmLongWords)
+    (twoLongWords : Bool) (cycle pe : Fin 4) (buses : Fin 4 → Bus) :
+    (addressAt memoryBase
+        (cycle.val * (if twoLongWords then 8 else 4) + pe.val), (buses pe).high) ∈
+      mwriteWrites memoryBase twoLongWords cycle buses := by
+  apply List.mem_flatMap.mpr
+  refine ⟨pe, List.mem_finRange pe, ?_⟩
+  simp [mwriteWrites]
+
+theorem mwriteWrites_contains_low (memoryBase : Fin l1bmLongWords)
+    (cycle pe : Fin 4) (buses : Fin 4 → Bus) :
+    (addressAt memoryBase (cycle.val * 8 + pe.val + 4), (buses pe).low) ∈
+      mwriteWrites memoryBase true cycle buses := by
+  apply List.mem_flatMap.mpr
+  refine ⟨pe, List.mem_finRange pe, ?_⟩
+  simp [mwriteWrites]
+
 theorem m4writeWrites_count (memoryBase : Fin l1bmLongWords)
     (twoLongWords : Bool) (cycle mabGroup : Fin 4)
     (buses : Fin 4 → Fin 4 → Fin 4 → Bus) :
     (m4writeWrites memoryBase twoLongWords cycle mabGroup buses).length =
       if twoLongWords then 32 else 16 := by
   cases twoLongWords <;> simp [m4writeWrites, List.length_flatMap, List.finRange]
+
+theorem m4writeWrites_contains_high (memoryBase : Fin l1bmLongWords)
+    (cycle mabGroup group pe : Fin 4) (buses : Fin 4 → Fin 4 → Fin 4 → Bus) :
+    (addressAt memoryBase
+        (cycle.val * 16 + group.val * 4 + pe.val),
+      (buses group mabGroup pe).high) ∈
+      m4writeWrites memoryBase false cycle mabGroup buses := by
+  apply List.mem_flatMap.mpr
+  refine ⟨group, List.mem_finRange group, ?_⟩
+  apply List.mem_flatMap.mpr
+  refine ⟨pe, List.mem_finRange pe, ?_⟩
+  simp [m4writeWrites]
 
 def updateBroadcastForwarding (old : ProofsLean.MNCore.Forwarding.Slots)
     (outputs : Fin 4 → Bus) (noForward : Bool) :

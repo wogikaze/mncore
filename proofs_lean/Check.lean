@@ -65,6 +65,9 @@ import Lean
 #print axioms ProofsLean.MNCore.L1Transfer.commitL1Writes_last_readback
 #print axioms ProofsLean.MNCore.L1Transfer.mwriteWrites_count
 #print axioms ProofsLean.MNCore.L1Transfer.m4writeWrites_count
+#print axioms ProofsLean.MNCore.L1Transfer.mwriteWrites_contains_high
+#print axioms ProofsLean.MNCore.L1Transfer.mwriteWrites_contains_low
+#print axioms ProofsLean.MNCore.L1Transfer.m4writeWrites_contains_high
 #print axioms ProofsLean.MNCore.PEMemory.mask_directive_replaces_selection_preserves_context
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerMaskedLineStep_prepares_then_commits
 #print axioms ProofsLean.MNCore.PEMemory.parsedMaskedSource_execution
