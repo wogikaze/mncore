@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "experiment": "assemble3 output-role and duplicate-destination validation",
-  "scope": "Focused zero-op probes for T, OMR, nowrite, and fixed operands; not an exhaustive per-opcode destination grammar.",
+  "scope": "Focused zero-op probes across destination operand classes and duplicate outputs; not an exhaustive per-opcode destination grammar.",
   "tool_hashes": [
     {
       "path": "judge/judge-py/mncore2_emuenv/assemble3",
@@ -9,10 +9,46 @@
     },
     {
       "path": "proofs_lean/scripts/check_output_roles_reference.py",
-      "sha256": "b0002c01ba8de0e32f7801180fd8f5c6a4f26524964f41e6bd5e7fe19abe92e4"
+      "sha256": "8a6f13f9f1a21ac0177c316c62538abf0d55b2c3d6398fb53eb25e4bf9aa5185"
     }
   ],
   "observations": [
+    {
+      "case": "lm0_output",
+      "source": "zero $m0",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
+    },
+    {
+      "case": "lm1_output",
+      "source": "zero $n0",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
+    },
+    {
+      "case": "grf0_output",
+      "source": "zero $r0",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
+    },
+    {
+      "case": "grf1_output",
+      "source": "zero $s0",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
+    },
     {
       "case": "t_single_output",
       "source": "zero $t",
@@ -30,6 +66,24 @@
       "returncode": -6,
       "words": null,
       "diagnostic": "T register used twice as output."
+    },
+    {
+      "case": "lm0_duplicate_output",
+      "source": "zero $m0 $m0",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "LM0 used twice as output."
+    },
+    {
+      "case": "omr_multiple_outputs",
+      "source": "zero $omr1 $omr2",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "Mask register used twice as output."
     },
     {
       "case": "omr_single_output",
@@ -59,6 +113,132 @@
       "diagnostic": "nowrite used twice as output"
     },
     {
+      "case": "bar_lm0_output",
+      "source": "zero $mb",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
+    },
+    {
+      "case": "bar_lm1_output",
+      "source": "zero $nb",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
+    },
+    {
+      "case": "forward_aluf_output",
+      "source": "zero $aluf",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "Invalid location as an output."
+    },
+    {
+      "case": "forward_mauf_output",
+      "source": "zero $mauf",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "Invalid location as an output."
+    },
+    {
+      "case": "forward_lbf_output",
+      "source": "zero $lbf",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "Invalid location as an output."
+    },
+    {
+      "case": "forward_mreadf_output",
+      "source": "zero $mreadf",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "Invalid location as an output."
+    },
+    {
+      "case": "matrix_x_output",
+      "source": "zero $lx0",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "Invalid location as an output."
+    },
+    {
+      "case": "matrix_y_output",
+      "source": "zero $ly0",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "Invalid location as an output."
+    },
+    {
+      "case": "l1bm_output",
+      "source": "zero $lb0",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "Invalid location as an output."
+    },
+    {
+      "case": "l2bm_output",
+      "source": "zero $lc0",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "Invalid location as an output."
+    },
+    {
+      "case": "dar_output",
+      "source": "zero $dar0",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "Invalid location as an output."
+    },
+    {
+      "case": "fixed_l2bid_output",
+      "source": "zero $l2bid",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "Invalid location as an output."
+    },
+    {
+      "case": "fixed_l1bid_output",
+      "source": "zero $l1bid",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "Invalid location as an output."
+    },
+    {
+      "case": "fixed_mabid_output",
+      "source": "zero $mabid",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "Invalid location as an output."
+    },
+    {
       "case": "peid_output",
       "source": "zero $peid",
       "expected_accepted": false,
@@ -68,8 +248,8 @@
       "diagnostic": "Invalid location as an output."
     },
     {
-      "case": "l2bid_output",
-      "source": "zero $l2bid",
+      "case": "fixed_subpeid_output",
+      "source": "zero $subpeid",
       "expected_accepted": false,
       "accepted": false,
       "returncode": -6,
@@ -77,8 +257,8 @@
       "diagnostic": "Invalid location as an output."
     },
     {
-      "case": "mabid_output",
-      "source": "zero $mabid",
+      "case": "fixed_msb1_output",
+      "source": "zero $msb1",
       "expected_accepted": false,
       "accepted": false,
       "returncode": -6,
