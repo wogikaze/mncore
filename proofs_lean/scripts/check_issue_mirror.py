@@ -71,6 +71,13 @@ def validate() -> None:
     enum_matches(VSM, "MauKind", "CalcKind", {
         "Fma": "fma", "Mul": "mul", "Add": "add", "Passa": "passa",
     })
+    enum_matches(VSM, "Prec", "ParsedPrecision", {
+        "D": "d", "F": "f", "G": "g", "H": "h", "L": "l", "I": "i", "S": "s",
+    })
+    enum_matches(BLOCK, "RrnOp", "ParsedRrnOp", {
+        "Fadd": "fadd", "Max": "max", "Min": "min", "Iadd": "iadd",
+        "Band": "band", "And": "and", "Bor": "bor", "Or": "or",
+    })
     enum_matches(VSM, "AluOp", "ParsedOp", {
         name: "alu" for name in (
             "Msl", "Msr", "Passa", "Inc", "Dec", "Not", "Lnot", "Rsqrt", "Floor",
@@ -79,8 +86,26 @@ def validate() -> None:
             "Relu2", "Relu3", "Lrelud", "Lreluo", "Ilrelud",
         )
     })
+    enum_matches(VSM, "AluOp", "ParsedAluName", {
+        name: name[0].lower() + name[1:] for name in (
+            "Msl", "Msr", "Passa", "Inc", "Dec", "Not", "Lnot", "Rsqrt", "Floor",
+            "Ftoi", "Bfe", "Bfn", "Max", "Min", "Packbit", "And", "Or", "Xor",
+            "Add", "Sub", "Lsl", "Lsr", "Bsl", "Bsr", "Relu", "Relu0", "Relu1",
+            "Relu2", "Relu3", "Lrelud", "Lreluo", "Ilrelud",
+        )
+    })
     enum_matches(VSM, "MaskSource", "ParsedMask", {
         "Pattern": "pattern", "Entry": "entry",
+    })
+    enum_matches(BLOCK, "L1Op", "ParsedL1Op", {
+        "Pbcast": "pbcast", "Mbcast": "mbcast", "Mwrite": "mwrite",
+        "M4bcast": "m4bcast", "M4write": "m4write", "Reduce": "reduce",
+        "Reduce4": "reduce4", "Distrib": "distrib", "Gather": "gather",
+    })
+    enum_matches(BLOCK, "L2Op", "ParsedL2Op", {
+        "Bcast": "bcast", "Bcast2": "bcast2", "Distrib": "distrib",
+        "FromL1b": "fromL1b", "Reduce": "reduce", "Reduce2": "reduce2",
+        "Gather": "gather", "Imcast": "imcast", "Dars": "dars", "Darw": "darw",
     })
     enum_matches(BLOCK, "L1Op", "ParsedOp", {
         "Pbcast": "l1bm", "Mbcast": "l1bm", "Mwrite": "l1bm", "M4bcast": "l1bm",

@@ -416,8 +416,8 @@ def coverage_catalog() -> dict:
             "reference_experiment": encoded_lbf_experiment(),
         }, {
             "source": issue_source.relative_to(REPO).as_posix(), "sha256": digest(issue_source),
-            "implemented": "Abstract PE-line issue predicates and a structural projection for parsed operands and top-level line kinds; includes group uniqueness, MAU compatibility, matrix register use, PE memory ports, immediate/LM0 conflict and zero-flush uniqueness",
-            "scope": "Rule layer mirrors the local issue checker; the Rust parser-to-Lean mapping and assembler/hardware completeness are not proved",
+            "implemented": "Full structural PE Op/Operand payload mirror, issue projection, and abstract PE-line rules; includes group uniqueness, MAU compatibility, matrix register use, PE memory ports, immediate/LM0 conflict and zero-flush uniqueness",
+            "scope": "The Rust enum inventory is checked against Lean constructors; the Rust parser-to-Lean value mapping and assembler/hardware completeness are not proved",
             "source_basis": [{
                 "source": "viz/core/src/vsm.rs", "sha256": digest(REPO / "viz/core/src/vsm.rs"),
             }, {

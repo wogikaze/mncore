@@ -221,21 +221,83 @@ end ProofsLean.MNCore.Issue
 
 namespace ProofsLean.MNCore.Issue
 
-inductive ParsedOp where
-  | alu | immediate | zero
-  | mau (precision : Nat) (kind : CalcKind) (matrix : Bool)
-  | matrixWrite (precision : Nat)
-  | matrixRead (precision : Nat)
-  | l1bm | l2bm (darw : Bool) | wait | noforward | other
+inductive ParsedPrecision where
+  | d | f | g | h | l | i | s
   deriving DecidableEq, Repr
 
-/-- Issue-relevant projection of a parser expression. The complete data
-operand and instruction semantics are intentionally carried elsewhere. -/
+def ParsedPrecision.code : ParsedPrecision → Nat
+  | .d => 0
+  | .f => 1
+  | .g => 2
+  | .h => 3
+  | .l => 4
+  | .i => 5
+  | .s => 6
+
+theorem ParsedPrecision.code_injective : Function.Injective ParsedPrecision.code := by
+  intro a b equal
+  cases a <;> cases b <;> simp [ParsedPrecision.code] at equal ⊢
+
+inductive ParsedAluName where
+  | msl | msr | passa | inc | dec | not | lnot | rsqrt | floor | ftoi
+  | bfe | bfn | max | min | packbit | and | or | xor | add | sub
+  | lsl | lsr | bsl | bsr | relu | relu0 | relu1 | relu2 | relu3
+  | lrelud | lreluo | ilrelud
+  deriving DecidableEq, Repr
+
+inductive ParsedRrnOp where
+  | fadd | max | min | iadd | band | and | bor | or
+  deriving DecidableEq, Repr
+
+structure ParsedRrn where
+  precision : Char
+  op : ParsedRrnOp
+  deriving DecidableEq, Repr
+
+structure ParsedL1bSet where
+  mask : Nat
+  immode : Nat
+  deriving DecidableEq, Repr
+
+inductive ParsedL1Op where
+  | pbcast | mbcast | mwrite (mab : Nat) | m4bcast | m4write (mab : Nat)
+  | reduce (rrn : ParsedRrn) (round : Bool)
+  | reduce4 (rrn : ParsedRrn) (round : Bool)
+  | distrib (mabdiff : Int) | gather (mabdiff : Int)
+  deriving DecidableEq, Repr
+
+inductive ParsedL2Op where
+  | bcast (set : ParsedL1bSet) | bcast2 (set : ParsedL1bSet)
+  | distrib (set : ParsedL1bSet) | fromL1b (l1b : Nat)
+  | reduce (rrn : ParsedRrn) (set : ParsedL1bSet)
+  | reduce2 (rrn : ParsedRrn) | gather | imcast (set : ParsedL1bSet)
+  | dars | darw
+  deriving DecidableEq, Repr
+
+inductive ParsedOp where
+  | alu (name : ParsedAluName) (precision : Option ParsedPrecision)
+      (unsigned : Bool) (arg : Option Nat)
+  | immediate (value : BitVec 32) (unsigned : Bool)
+  | zero
+  | mau (precision : ParsedPrecision) (matrix : Bool) (kind : CalcKind)
+      (half : Option Char) (round : Bool)
+  | matrixWrite (precision : ParsedPrecision)
+  | matrixRead (precision : ParsedPrecision)
+  | wait (tag : Nat)
+  | noforward
+  | l1bm (op : ParsedL1Op)
+  | l2bm (op : ParsedL2Op)
+  | other (text : String)
+  deriving DecidableEq, Repr
+
+/-- Structural PE-expression AST mirror. Issue and execution interpretations
+are separate functions over this syntax. -/
 structure ParsedExpr where
   op : ParsedOp
   sources : List ParsedOperand
   destinations : List ParsedOperand
-  zeroFlush : Bool
+  flush : Option ParsedMask
+  text : String
   deriving DecidableEq, Repr
 
 def ParsedExpr.hasTurnaround (e : ParsedExpr) : Bool :=
@@ -246,22 +308,22 @@ def ParsedExpr.hasTurnaround (e : ParsedExpr) : Bool :=
 
 def ParsedExpr.issueGroup (e : ParsedExpr) : Option Group :=
   match e.op with
-  | .alu | .immediate | .zero => some .alu
+  | .alu .. | .immediate .. | .zero => some .alu
   | .mau .. => some .mauCalc
   | .matrixWrite .. => some .mauWrite
   | .matrixRead .. => some .mauRead
-  | .l1bm => if e.hasTurnaround then some .l1bmTurnaround else some .l1bm
-  | .l2bm true => some .l2bmDarw
-  | .l2bm false => some .l2bm
-  | .wait => some .wait
+  | .l1bm _ => if e.hasTurnaround then some .l1bmTurnaround else some .l1bm
+  | .l2bm .darw => some .l2bmDarw
+  | .l2bm _ => some .l2bm
+  | .wait _ => some .wait
   | .noforward => some .noforward
-  | .other => none
+  | .other _ => none
 
 def ParsedExpr.issueMau (e : ParsedExpr) : Option Mau :=
   match e.op with
-  | .mau precision kind matrix => some ⟨precision, .calc kind matrix⟩
-  | .matrixWrite precision => some ⟨precision, .matrixWrite⟩
-  | .matrixRead precision => some ⟨precision, .matrixRead⟩
+  | .mau precision matrix kind .. => some ⟨precision.code, .calc kind matrix⟩
+  | .matrixWrite precision => some ⟨precision.code, .matrixWrite⟩
+  | .matrixRead precision => some ⟨precision.code, .matrixRead⟩
   | _ => none
 
 def ParsedOperand.accesses (xs : List ParsedOperand) : List Access :=
@@ -288,8 +350,8 @@ def ParsedExpr.toIssueExpr (id : Nat) (e : ParsedExpr) : Expr where
     ParsedOperand.matrixUseCount e.destinations false
   matrixYUses := ParsedOperand.matrixUseCount e.sources true +
     ParsedOperand.matrixUseCount e.destinations true
-  immediate := e.op matches .immediate
-  zeroFlush := e.zeroFlush
+  immediate := e.op matches .immediate ..
+  zeroFlush := e.flush.isSome
 
 theorem projected_reads_are_mem_operands (id : Nat) (e : ParsedExpr) :
     (e.toIssueExpr id).reads = ParsedOperand.accesses e.sources := rfl
@@ -299,6 +361,9 @@ theorem projected_writes_are_mem_operands (id : Nat) (e : ParsedExpr) :
 
 theorem projected_group_is_parser_group (id : Nat) (e : ParsedExpr) :
     (e.toIssueExpr id).group = e.issueGroup := rfl
+
+theorem projected_mau_is_parser_mau (id : Nat) (e : ParsedExpr) :
+    (e.toIssueExpr id).mau = e.issueMau := rfl
 
 /-- Preserve parser order and assign the unique list-position identity used by
 the abstract issue record. -/
@@ -398,22 +463,25 @@ def plusOneWrite : ParsedOperand :=
   .mem ⟨.lm1, ⟨2, 0, 0, 0, 0, false, none⟩⟩ false false false none
 
 def plusOneParsed : ParsedExpr where
-  op := .alu
+  op := .alu .inc (some .i) false none
   sources := [plusOneRead]
   destinations := [plusOneWrite]
-  zeroFlush := false
+  flush := none
+  text := "iinc $lm0v $ln0v"
 
 def parsedVectorFma : ParsedExpr where
-  op := .mau 32 .fma false
+  op := .mau .f false .fma none false
   sources := [.fixed .msb1, .fixed .peid]
   destinations := [.nowrite]
-  zeroFlush := false
+  flush := none
+  text := "fvfma ..."
 
 def parsedMatrixWrite : ParsedExpr where
-  op := .matrixWrite 32
+  op := .matrixWrite .f
   sources := [.fixed .l1bid]
   destinations := [.matrix false 2 none]
-  zeroFlush := false
+  flush := none
+  text := "fmwrite ..."
 
 theorem plusOne_issue_legal : LegalParsedLine [plusOneParsed] := by
   unfold LegalParsedLine projectLine projectFrom ParsedExpr.toIssueExpr
@@ -442,8 +510,8 @@ theorem mismatched_fma_matrix_write_rejected :
     matrixWriteKind] at pairRule
 
 theorem l1bm_turnaround_group :
-    ({ op := ParsedOp.l1bm, sources := [.l1bm 2 none], destinations := [],
-       zeroFlush := false } : ParsedExpr).issueGroup = some .l1bmTurnaround := rfl
+    ({ op := ParsedOp.l1bm .pbcast, sources := [.l1bm 2 none], destinations := [],
+       flush := none, text := "" } : ParsedExpr).issueGroup = some .l1bmTurnaround := rfl
 
 theorem other_memory_banks_remain_distinct :
     Bank.l1bm ≠ Bank.l2bm ∧ Bank.pdm ≠ Bank.dram := by decide

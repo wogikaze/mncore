@@ -32,6 +32,8 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.projected_reads_are_mem_operands
 #print axioms ProofsLean.MNCore.Issue.projected_writes_are_mem_operands
 #print axioms ProofsLean.MNCore.Issue.projected_group_is_parser_group
+#print axioms ProofsLean.MNCore.Issue.projected_mau_is_parser_mau
+#print axioms ProofsLean.MNCore.Issue.ParsedPrecision.code_injective
 #print axioms ProofsLean.MNCore.Issue.parsed_topline_check_sound
 #print axioms ProofsLean.MNCore.Issue.parsed_topline_check_complete
 #print axioms ProofsLean.ControlNormalization.compile_length
