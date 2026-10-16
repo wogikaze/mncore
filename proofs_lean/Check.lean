@@ -209,6 +209,9 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.own_memory_mask_precedes_multiline_directive
 #print axioms ProofsLean.MNCore.PEMemory.single_line_mask_cancels_memory_directive
 #print axioms ProofsLean.MNCore.PEMemory.untargeted_memory_uses_unmasked_selection
+#print axioms ProofsLean.MNCore.PEMemory.mask_entry_zero_selects_all_cycles
+#print axioms ProofsLean.MNCore.PEMemory.mask_entry_32_is_pattern_not_entry_zero
+#print axioms ProofsLean.MNCore.PEMemory.mask_entry_255_selects_all_cycles
 #print axioms ProofsLean.MNCore.Issue.zero_has_execution_request
 #print axioms ProofsLean.MNCore.Issue.immediate_has_execution_request
 #print axioms ProofsLean.MNCore.Issue.zero_execution_ignores_inputs

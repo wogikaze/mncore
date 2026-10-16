@@ -415,10 +415,34 @@ def resolveParsedMaskFlags? (mask : ParsedMask)
   | .pattern _ bits =>
       some (if bits.getLsbD (3 - cycle.val) then BitVec.allOnes 4 else 0)
   | .entry _ index =>
-      if h : index < 256 then
-        some (ProofsLean.MNCore.Masks.readEntry registers
-          ⟨index % 32, by omega⟩ cycle)
+      if index == 0 then some (BitVec.allOnes 4)
+      else if h : index < 16 then
+        some (registers ⟨index - 1, by omega⟩ cycle)
+      else if h : index < 256 then
+        some (if (index / 2 ^ (3 - cycle.val)) % 2 == 1
+          then BitVec.allOnes 4 else 0)
       else none
+
+theorem mask_entry_zero_selects_all_cycles
+    (registers : ProofsLean.MNCore.Masks.RegisterFile) (cycle : Fin 4) :
+    resolveParsedMaskFlags? (.entry false 0) registers cycle =
+      some (BitVec.allOnes 4) := by
+  simp [resolveParsedMaskFlags?]
+
+theorem mask_entry_32_is_pattern_not_entry_zero
+    (registers : ProofsLean.MNCore.Masks.RegisterFile) (cycle : Fin 4) :
+    resolveParsedMaskFlags? (.entry false 32) registers cycle = some 0 := by
+  have hs : 3 - cycle.val = 0 ∨ 3 - cycle.val = 1 ∨
+      3 - cycle.val = 2 ∨ 3 - cycle.val = 3 := by omega
+  rcases hs with h | h | h | h <;> simp [resolveParsedMaskFlags?, h]
+
+theorem mask_entry_255_selects_all_cycles
+    (registers : ProofsLean.MNCore.Masks.RegisterFile) (cycle : Fin 4) :
+    resolveParsedMaskFlags? (.entry false 255) registers cycle =
+      some (BitVec.allOnes 4) := by
+  have hs : 3 - cycle.val = 0 ∨ 3 - cycle.val = 1 ∨
+      3 - cycle.val = 2 ∨ 3 - cycle.val = 3 := by omega
+  rcases hs with h | h | h | h <;> simp [resolveParsedMaskFlags?, h]
 
 structure PEWordSelection where
   flags : BitVec 4
