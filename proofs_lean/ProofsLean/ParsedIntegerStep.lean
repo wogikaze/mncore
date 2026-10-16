@@ -542,16 +542,37 @@ def executeParsedMaskedIntegerExpr? (files : IntegerRegisterFiles)
   | some accesses => some (parsedIntegerMaskedRegisterStep files accesses false)
   | none => none
 
+structure ParsedIntegerContext where
+  pe : Fin 4
+  cycle : Fin 4
+  (bar0 bar1 : BitVec 12)
+  tWord : BitVec 32
+  deriving DecidableEq, Repr
+
+structure ParsedMaskExecutionControl where
+  directive : ParsedMaskDirective
+  context : ParsedIntegerContext
+  deriving DecidableEq, Repr
+
 abbrev ParsedMaskedSourceStatement :=
   ProofsLean.ControlNormalization.Statement ParsedMaskDirective ParsedExpr
 
 def updateParsedMaskDirective (next : ParsedMaskDirective)
-    (_current : ParsedMaskDirective) : ParsedMaskDirective := next
+    (current : ParsedMaskExecutionControl) : ParsedMaskExecutionControl :=
+  { current with directive := next }
 
-def parsedMaskedExpressionStep (directive : ParsedMaskDirective)
+theorem mask_directive_replaces_selection_preserves_context
+    (next : ParsedMaskDirective) (current : ParsedMaskExecutionControl) :
+    (updateParsedMaskDirective next current).directive = next ∧
+      (updateParsedMaskDirective next current).context = current.context := by
+  constructor <;> rfl
+
+def parsedMaskedExpressionStep (control : ParsedMaskExecutionControl)
     (expression : ParsedExpr) (files : IntegerRegisterFiles) :
     Option IntegerRegisterFiles :=
-  match executeParsedMaskedIntegerExpr? files expression directive 0 0 0 0 0 with
+  let context := control.context
+  match executeParsedMaskedIntegerExpr? files expression control.directive
+      context.pe context.cycle context.bar0 context.bar1 context.tWord with
   | some (.ok next) => some next
   | some .failure | some .unknown | none => none
 
@@ -566,13 +587,13 @@ def lowerParsedMaskedSource (lines : List ParsedLine) :
   lines.mapM ParsedLine.toParsedMaskedStatement?
 
 def runParsedMaskedSource (source : List ParsedMaskedSourceStatement)
-    (directive : ParsedMaskDirective) (files : IntegerRegisterFiles) :
+    (control : ParsedMaskExecutionControl) (files : IntegerRegisterFiles) :
     Option IntegerRegisterFiles :=
   ProofsLean.ControlNormalization.runSource updateParsedMaskDirective
-    parsedMaskedExpressionStep source directive files
+    parsedMaskedExpressionStep source control files
 
 def parsedMaskedNormalizedMachine : ProofsLean.Machine where
-  Line := ParsedMaskDirective × ParsedExpr
+  Line := ParsedMaskExecutionControl × ParsedExpr
   State := IntegerRegisterFiles
   Input := Unit
   step := fun pair files => parsedMaskedExpressionStep pair.1 pair.2 files
@@ -581,45 +602,45 @@ def parsedMaskedNormalizedMachine : ProofsLean.Machine where
   positiveCost := fun _ => by decide
 
 def runParsedMaskedCompiled (source : List ParsedMaskedSourceStatement)
-    (directive : ParsedMaskDirective) (files : IntegerRegisterFiles) :
+    (control : ParsedMaskExecutionControl) (files : IntegerRegisterFiles) :
     Option IntegerRegisterFiles :=
   let compiled := ProofsLean.ControlNormalization.compile
-    updateParsedMaskDirective source directive
+    updateParsedMaskDirective source control
   ProofsLean.execute parsedMaskedNormalizedMachine compiled files
 
 theorem parsedMaskedSource_execution (source : List ParsedMaskedSourceStatement)
-    (directive : ParsedMaskDirective) (files : IntegerRegisterFiles) :
-    runParsedMaskedSource source directive files =
-      runParsedMaskedCompiled source directive files := by
+    (control : ParsedMaskExecutionControl) (files : IntegerRegisterFiles) :
+    runParsedMaskedSource source control files =
+      runParsedMaskedCompiled source control files := by
   exact ProofsLean.ControlNormalization.source_execution
     updateParsedMaskDirective parsedMaskedExpressionStep (fun _ => True) Unit
-    source directive files
+    source control files
 
 theorem mask_directive_has_zero_issue_cost (directive : ParsedMaskDirective) :
     ProofsLean.ControlNormalization.cost
       ([.directive directive] : List ParsedMaskedSourceStatement) = 0 := rfl
 
 theorem parsedMaskedSource_score (source : List ParsedMaskedSourceStatement)
-    (directive : ParsedMaskDirective) :
+    (control : ParsedMaskExecutionControl) :
     ProofsLean.score parsedMaskedNormalizedMachine
-      (ProofsLean.ControlNormalization.compile updateParsedMaskDirective source directive) =
+      (ProofsLean.ControlNormalization.compile updateParsedMaskDirective source control) =
       ProofsLean.ControlNormalization.cost source :=
   ProofsLean.ControlNormalization.source_score updateParsedMaskDirective
-    parsedMaskedExpressionStep (fun _ => True) Unit source directive
+    parsedMaskedExpressionStep (fun _ => True) Unit source control
 
 theorem lowered_parsed_masked_source_executes_as_normalized
     (lines : List ParsedLine) (source : List ParsedMaskedSourceStatement)
     (lowered : lowerParsedMaskedSource lines = some source)
-    (directive : ParsedMaskDirective) (files : IntegerRegisterFiles) :
+    (control : ParsedMaskExecutionControl) (files : IntegerRegisterFiles) :
     (lowerParsedMaskedSource lines).map
-      (fun loweredSource => runParsedMaskedSource loweredSource directive files) =
+      (fun loweredSource => runParsedMaskedSource loweredSource control files) =
       some (ProofsLean.execute parsedMaskedNormalizedMachine
-        (ProofsLean.ControlNormalization.compile updateParsedMaskDirective source directive)
+        (ProofsLean.ControlNormalization.compile updateParsedMaskDirective source control)
         files) := by
   rw [lowered]
   simp only [Option.map_some]
   rw [parsedMaskedSource_execution]
-  rfl
+  constructor <;> rfl
 
 def parsedIntegerRegisterStep (files : IntegerRegisterFiles)
     (sourceX sourceY destination : DirectMemoryAccess) (op : ParsedOp)
@@ -788,7 +809,7 @@ theorem parsedIntegerMaskStep_readback (files : IntegerRegisterFiles)
         (integerFlagsVector output) selection) }, ?_, ?_⟩
   · simp [parsedIntegerMaskRegisterStep, evaluateParsedIntegerAlu, selected,
       output, IntegerALU.partialEvaluate]
-    rfl
+    constructor <;> rfl
   · exact mask_read_after_selected_write files.maskRegisters entry cycle
       (integerFlagsVector output) selection
 
@@ -901,7 +922,7 @@ theorem executeParsedIntegerMaskExpr_readback (files : IntegerRegisterFiles)
         (integerFlagsVector output) accesses.selection) }, selected, ?_, ?_⟩
   · simp [executeParsedIntegerMaskExpr?, lowered, parsedIntegerMaskRegisterStep,
       evaluateParsedIntegerAlu, selected, output, IntegerALU.partialEvaluate]
-    rfl
+    constructor <;> rfl
   · exact mask_read_after_selected_write files.maskRegisters accesses.destination cycle
       (integerFlagsVector output) accesses.selection
 
