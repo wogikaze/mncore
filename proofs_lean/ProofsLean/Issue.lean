@@ -607,6 +607,7 @@ structure ParsedMv where
   priority : Nat
   source : Option ParsedMvOperand
   destination : Option ParsedMvOperand
+  text : String
   deriving DecidableEq, Repr
 
 inductive ParsedLine where

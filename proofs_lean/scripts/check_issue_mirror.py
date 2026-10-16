@@ -33,6 +33,21 @@ def lean_constructors(name: str) -> set[str]:
     return set(re.findall(r"\|\s*([A-Za-z][A-Za-z0-9_]*)", match.group(1)))
 
 
+def rust_struct_fields(source: str, name: str) -> set[str]:
+    match = re.search(rf"\bstruct\s+{re.escape(name)}\s*\{{(.*?)\n\}}", source, re.S)
+    if not match:
+        raise ValueError(f"Rust struct {name} not found")
+    body = re.sub(r"(?m)^\s*///.*$", "", match.group(1))
+    return set(re.findall(r"(?m)^\s*pub\s+([A-Za-z_][A-Za-z0-9_]*)\s*:", body))
+
+
+def lean_struct_fields(name: str) -> set[str]:
+    match = re.search(rf"structure\s+{re.escape(name)}\s+where(.*?)(?=\n(?:inductive|structure|def|theorem|end)\b)", LEAN, re.S)
+    if not match:
+        raise ValueError(f"Lean structure {name} not found")
+    return set(re.findall(r"(?m)^\s*([A-Za-z_][A-Za-z0-9_]*)\s*:", match.group(1)))
+
+
 def enum_matches(source: str, rust_name: str, lean_name: str, mapping: dict[str, str]) -> None:
     actual = rust_variants(source, rust_name)
     expected = set(mapping)
@@ -45,6 +60,18 @@ def enum_matches(source: str, rust_name: str, lean_name: str, mapping: dict[str,
     missing = set(mapping.values()) - constructors
     if missing:
         raise ValueError(f"{lean_name} lacks mapped constructors: {sorted(missing)}")
+
+
+def struct_fields_match(source: str, rust_name: str, lean_name: str,
+                        mapping: dict[str, str]) -> None:
+    actual = rust_struct_fields(source, rust_name)
+    if actual != set(mapping):
+        raise ValueError(f"{rust_name} field drift: missing mapping={sorted(actual - set(mapping))}, "
+                         f"stale mapping={sorted(set(mapping) - actual)}")
+    lean = lean_struct_fields(lean_name)
+    missing = set(mapping.values()) - lean
+    if missing:
+        raise ValueError(f"{lean_name} lacks mapped fields: {sorted(missing)}")
 
 
 def rust_alu_input_counts() -> dict[str, int]:
@@ -162,6 +189,10 @@ def validate() -> None:
     })
     enum_matches(MV, "MvOperand", "ParsedMvOperand", {
         "Pdm": "pdm", "Dram": "dram", "L2bm": "l2bm",
+    })
+    struct_fields_match(MV, "Mv", "ParsedMv", {
+        "kind": "kind", "size": "size", "tag": "tag", "nd": "nd",
+        "priority": "priority", "src": "source", "dst": "destination", "text": "text",
     })
     for variant in ("Alu", "Imm", "Zero", "Mau", "MatWrite", "MatRead", "Wait",
                     "Noforward", "L1", "L2", "Other"):
