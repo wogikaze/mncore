@@ -39,6 +39,13 @@ CASES = {
     "hbfn_6": ("hbfn/6 $lm0 $ln0\n", True, 1),
     "hbfn_9": ("hbfn/9 $lm0 $ln0\n", True, 1),
     "hbfn_10": ("hbfn/10 $lm0 $ln0\n", False, None),
+    "hbfe_6": ("hbfe/6 $lm0 $ln0\n", True, 1),
+    "hbfe_9": ("hbfe/9 $lm0 $ln0\n", True, 1),
+    "hbfe_10": ("hbfe/10 $lm0 $ln0\n", False, None),
+    "hbfe_5": ("hbfe/5 $lm0 $ln0\n", False, None),
+    "hbfe_11": ("hbfe/11 $lm0 $ln0\n", False, None),
+    "hbfn_5": ("hbfn/5 $lm0 $ln0\n", False, None),
+    "hbfn_11": ("hbfn/11 $lm0 $ln0\n", False, None),
     "imr_selector_0": ("lpassa $lm0 $ln0/$imr0\n", True, 1),
     "imr_selector_31": ("lpassa $lm0 $ln0/$imr31\n", True, 1),
     "imr_selector_32": ("lpassa $lm0 $ln0/$imr32\n", False, None),
@@ -105,6 +112,8 @@ for index in range(16):
     CASES[f"matrix_row_{index}"] = (f"gmread $lx{index} $nowrite\n", True, 1)
 for index in range(6, 10):
     CASES[f"hbfn_{index}"] = (f"hbfn/{index} $lm0 $ln0\n", True, 1)
+    if index not in {6, 9}:
+        CASES[f"hbfe_{index}"] = (f"hbfe/{index} $lm0 $ln0\n", True, 1)
 for tag in range(1, 257):
     CASES[f"wait_tag_{tag}"] = (
         f"nop; wait i{tag:02X}\n", tag < 256, 1 if tag < 256 else None)
@@ -177,7 +186,7 @@ def main() -> None:
             "$imr0, $imr31 are accepted while $imr32 and $imr255 fail encoding. Active mask directives `maskn 0` and `maskn 31` are accepted, while `maskn 32` fails. This conflicts with the Rust MaskSource comment claiming entries 1 through 15.",
             "Matrix rows 0 through 15 are accepted; row 16 is rejected.",
             "PE destination lists are not sized by source arity: lpassa accepts three outputs across LM1/GRF0/GRF1, and zero accepts LM0/LM1/GRF0/GRF1 plus OMR. The sampled duplicate-bank and nowrite combinations are rejected; this is not an exhaustive output grammar proof.",
-            "hbfn/6 through hbfn/9 are accepted; hbfn/10 is rejected.",
+            "hbfe and hbfn accept /6 through /9 and reject /10 in the selected boundary probes.",
             "LM0/LM1 and GRF0/GRF1 accept aligned final addresses at widths 1, 2, and 4; their single-word capacities are respectively 4096 and 512, and the capacity address is rejected.",
             "Each of the four explicit LM0 cycle addresses accepts 4095 and rejects 4096; madpe values 0 through 3 are accepted and 4 is rejected.",
             "All 64 L1B set address/immode pairs in 0..7 are accepted, and address 8 and immode 8 are rejected; `l2bm@<l1b>` accepts 0..7 and rejects 8. Base-address register writes accept widths 1 and 2 but reject width 4.",

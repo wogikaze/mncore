@@ -25,7 +25,7 @@
     },
     {
       "path": "proofs_lean/scripts/check_isa_parser_bounds.py",
-      "sha256": "2f725252d080b34c3e3dbe948e4b96dbe9261063dab2c55f70f340bd8a19ed8d"
+      "sha256": "e3e485e5fe68395f6aff6a4dd5729614a74eed6f491923d0ae385452f3ebbf33"
     }
   ],
   "observations": [
@@ -192,6 +192,62 @@
     {
       "case": "hbfn_10",
       "source": "hbfn/10 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_6",
+      "source": "hbfe/6 $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_9",
+      "source": "hbfe/9 $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_10",
+      "source": "hbfe/10 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_5",
+      "source": "hbfe/5 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `bf_nbits >= 6' failed!  in to_bf_field at aluop.cc:42 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_11",
+      "source": "hbfe/11 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_5",
+      "source": "hbfn/5 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `bf_nbits >= 6' failed!  in to_bf_field at aluop.cc:42 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_11",
+      "source": "hbfn/11 $lm0 $ln0",
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
@@ -1342,8 +1398,24 @@
       "matches_expected": true
     },
     {
+      "case": "hbfe_7",
+      "source": "hbfe/7 $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
       "case": "hbfn_8",
       "source": "hbfn/8 $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_8",
+      "source": "hbfe/8 $lm0 $ln0",
       "accepted": true,
       "assembler_output_lines": 1,
       "diagnostic": "",
@@ -4181,7 +4253,7 @@
     "$imr0, $imr31 are accepted while $imr32 and $imr255 fail encoding. Active mask directives `maskn 0` and `maskn 31` are accepted, while `maskn 32` fails. This conflicts with the Rust MaskSource comment claiming entries 1 through 15.",
     "Matrix rows 0 through 15 are accepted; row 16 is rejected.",
     "PE destination lists are not sized by source arity: lpassa accepts three outputs across LM1/GRF0/GRF1, and zero accepts LM0/LM1/GRF0/GRF1 plus OMR. The sampled duplicate-bank and nowrite combinations are rejected; this is not an exhaustive output grammar proof.",
-    "hbfn/6 through hbfn/9 are accepted; hbfn/10 is rejected.",
+    "hbfe and hbfn accept /6 through /9 and reject /10 in the selected boundary probes.",
     "LM0/LM1 and GRF0/GRF1 accept aligned final addresses at widths 1, 2, and 4; their single-word capacities are respectively 4096 and 512, and the capacity address is rejected.",
     "Each of the four explicit LM0 cycle addresses accepts 4095 and rejects 4096; madpe values 0 through 3 are accepted and 4 is rejected.",
     "All 64 L1B set address/immode pairs in 0..7 are accepted, and address 8 and immode 8 are rejected; `l2bm@<l1b>` accepts 0..7 and rejects 8. Base-address register writes accept widths 1 and 2 but reject width 4.",

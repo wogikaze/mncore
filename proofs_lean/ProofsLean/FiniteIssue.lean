@@ -94,6 +94,31 @@ theorem optionWaitTagInFiniteEnvelope_finite :
     Finite {tag : Option Nat // optionWaitTagInFiniteEnvelope tag} :=
   Finite.of_injective optionWaitTagFiniteCode optionWaitTagFiniteCode_injective
 
+def parsedBfArgInFiniteEnvelope (arg : Option Nat) : Prop :=
+  ∀ value, arg = some value → 6 ≤ value ∧ value < 10
+
+private def parsedBfArgFiniteCode
+    (arg : {arg : Option Nat // parsedBfArgInFiniteEnvelope arg}) : Option (Fin 10) :=
+  optionNatFiniteCode 10 ⟨arg.1, fun value equal => (arg.2 value equal).2⟩
+
+private theorem parsedBfArgFiniteCode_injective :
+    Function.Injective parsedBfArgFiniteCode := by
+  intro a b equal
+  apply Subtype.ext
+  let a' : {value : Option Nat // optionNatInFiniteEnvelope 10 value} :=
+    ⟨a.1, fun value h => (a.2 value h).2⟩
+  let b' : {value : Option Nat // optionNatInFiniteEnvelope 10 value} :=
+    ⟨b.1, fun value h => (b.2 value h).2⟩
+  have codeEq : optionNatFiniteCode 10 a' = optionNatFiniteCode 10 b' := equal
+  have valueEq : a'.1 = b'.1 :=
+    congrArg (fun value : {value : Option Nat // optionNatInFiniteEnvelope 10 value} => value.1)
+      (optionNatFiniteCode_injective 10 codeEq)
+  exact valueEq
+
+theorem parsedBfArgInFiniteEnvelope_finite :
+    Finite {arg : Option Nat // parsedBfArgInFiniteEnvelope arg} :=
+  Finite.of_injective parsedBfArgFiniteCode parsedBfArgFiniteCode_injective
+
 def ParsedMask.inFiniteEnvelope : ParsedMask → Prop
   | .pattern .. => True
   | .entry _ index => index < 32

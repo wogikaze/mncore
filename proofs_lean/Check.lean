@@ -47,6 +47,7 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.ParsedL1bSet.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.waitTagInFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.optionWaitTagInFiniteEnvelope_finite
+#print axioms ProofsLean.MNCore.Issue.parsedBfArgInFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.projectLine_expression_count_le_ten
 #print axioms ProofsLean.MNCore.Issue.ParsedMask.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.omrEntryInFiniteEnvelope_finite
