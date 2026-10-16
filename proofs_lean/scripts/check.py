@@ -9,6 +9,7 @@ import subprocess
 from pathlib import Path
 
 import catalog
+import check_issue_mirror
 
 ROOT = catalog.ROOT
 BANNED = {"sorry", "admit", "axiom", "unsafe", "native_decide", "implemented_by"}
@@ -75,7 +76,7 @@ def validate_source(text: str, filename: str) -> None:
 def validate_axioms(output: str) -> None:
     records = re.findall(r"depends on axioms:\s*\[([^]]*)\]", output)
     no_axioms = re.findall(r"does not depend on any axioms", output)
-    if len(records) + len(no_axioms) != 32:
+    if len(records) + len(no_axioms) != 37:
         raise ValueError(f"missing kernel dependency reports: {output}")
     for record in records:
         names = {x.strip() for x in record.split(",") if x.strip()}
@@ -101,6 +102,7 @@ def validate_import_closure() -> None:
 
 def main() -> None:
     catalog.archive_valid()
+    check_issue_mirror.validate()
     for name, data in (("audit.json", catalog.problem_catalog()), ("coverage.json", catalog.coverage_catalog())):
         if (ROOT / name).read_text() != catalog.render(data):
             raise SystemExit(f"{name} is stale or contains unsupported claims; regenerate it")

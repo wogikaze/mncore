@@ -29,6 +29,11 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.parsed_check_sound
 #print axioms ProofsLean.MNCore.Issue.plusOne_issue_accepts
 #print axioms ProofsLean.MNCore.Issue.mismatched_fma_matrix_write_rejected
+#print axioms ProofsLean.MNCore.Issue.projected_reads_are_mem_operands
+#print axioms ProofsLean.MNCore.Issue.projected_writes_are_mem_operands
+#print axioms ProofsLean.MNCore.Issue.projected_group_is_parser_group
+#print axioms ProofsLean.MNCore.Issue.parsed_topline_check_sound
+#print axioms ProofsLean.MNCore.Issue.parsed_topline_check_complete
 #print axioms ProofsLean.ControlNormalization.compile_length
 #print axioms ProofsLean.ControlNormalization.run_compiles
 #print axioms ProofsLean.ControlNormalization.source_execution

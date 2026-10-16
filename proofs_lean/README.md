@@ -81,7 +81,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   Rust側の`issue.rs`で参照されるメモリ種別・4サイクルアドレス修飾・全オペランド形を
   保つ構文投影も定義した。plus-oneのLM0長語読み出し・LM1長語書き込みの合法性と、
   ソースが不一致のベクトルFMA＋行列書き込みの拒否を証明した。
-  Rust VSMパーサからこの投影への対応、`issue.rs`以外のアセンブラ合法性規則、
+  Rust VSMパーサが使うPE式と非PE行の区別に沿った型と、投影が読み書きバンク・issue群を
+  保存することも定義・証明した。Rust VSMパーサの各分岐がこのLean型を生成する対応、
+  `issue.rs`以外のアセンブラ合法性規則、
   ハードウェア対応は未証明。
 - `AddressProperties.lean`: T間接値の4096を法とする同値性がアドレス計算を保存することと、
   MADPE閾値を超えるPEではアドレスが変わらないことを証明。
@@ -116,6 +118,8 @@ python3 -m unittest discover -s proofs_lean/tests -v
 ```
 
 `check.py` は旧 `.olean` 混入を避けるためクリーンビルドする。
+RustのVSM/issue列挙型とLean投影型の列挙子の対応も照合する。
+この照合は型の列挙漏れを検出するが、Rustパーサの動作とLean投影の意味対応は証明しない。
 旧モジュールのimport、証拠のない `optimalProven`、`sorry`、独自axiom、
 `unsafe`、`native_decide`、カーネル検査の回避を拒否する。
 カーネル依存は標準の `propext`、`Quot.sound`、`Classical.choice` に限定して検査する。

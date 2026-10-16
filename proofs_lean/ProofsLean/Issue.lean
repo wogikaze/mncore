@@ -291,6 +291,15 @@ def ParsedExpr.toIssueExpr (id : Nat) (e : ParsedExpr) : Expr where
   immediate := e.op matches .immediate
   zeroFlush := e.zeroFlush
 
+theorem projected_reads_are_mem_operands (id : Nat) (e : ParsedExpr) :
+    (e.toIssueExpr id).reads = ParsedOperand.accesses e.sources := rfl
+
+theorem projected_writes_are_mem_operands (id : Nat) (e : ParsedExpr) :
+    (e.toIssueExpr id).writes = ParsedOperand.accesses e.destinations := rfl
+
+theorem projected_group_is_parser_group (id : Nat) (e : ParsedExpr) :
+    (e.toIssueExpr id).group = e.issueGroup := rfl
+
 /-- Preserve parser order and assign the unique list-position identity used by
 the abstract issue record. -/
 def projectFrom (nextId : Nat) : List ParsedExpr → List Expr
@@ -349,6 +358,38 @@ theorem parsed_check_sound (expressions : List ParsedExpr)
 theorem parsed_check_complete (expressions : List ParsedExpr)
     (legal : LegalParsedLine expressions) : checkParsedLine expressions = true := by
   exact check_complete (projectLine expressions) legal
+
+/-- Line constructors corresponding to the categories in the VSM parser's
+top-level `Line` enum. Only `pe` lines enter the PE issue checker. -/
+inductive ParsedLine where
+  | pe (expressions : List ParsedExpr)
+  | nop (count : Nat) (wait : Option Nat)
+  | mv
+  | maskDirective
+  | debugSet
+  | debugGet
+  | dramSet
+  deriving DecidableEq, Repr
+
+def ParsedLine.issueLegal : ParsedLine → Prop
+  | .pe expressions => LegalParsedLine expressions
+  | .nop _ _ | .mv | .maskDirective | .debugSet | .debugGet | .dramSet => True
+
+noncomputable def checkParsedTopLine : ParsedLine → Bool
+  | .pe expressions => checkParsedLine expressions
+  | .nop _ _ | .mv | .maskDirective | .debugSet | .debugGet | .dramSet => true
+
+theorem parsed_topline_check_sound (line : ParsedLine)
+    (accepted : checkParsedTopLine line = true) : line.issueLegal := by
+  cases line with
+  | pe expressions => exact parsed_check_sound expressions accepted
+  | nop _ _ | mv | maskDirective | debugSet | debugGet | dramSet => trivial
+
+theorem parsed_topline_check_complete (line : ParsedLine) (legal : line.issueLegal) :
+    checkParsedTopLine line = true := by
+  cases line with
+  | pe expressions => exact parsed_check_complete expressions legal
+  | nop _ _ | mv | maskDirective | debugSet | debugGet | dramSet => rfl
 
 def plusOneRead : ParsedOperand :=
   .mem ⟨.lm0, ⟨2, 0, 0, 0, 0, false, none⟩⟩ false false false none

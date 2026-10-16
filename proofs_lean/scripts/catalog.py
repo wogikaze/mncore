@@ -416,8 +416,13 @@ def coverage_catalog() -> dict:
             "reference_experiment": encoded_lbf_experiment(),
         }, {
             "source": issue_source.relative_to(REPO).as_posix(), "sha256": digest(issue_source),
-            "implemented": "Abstract PE-line issue predicates: group uniqueness, MAU compatibility, matrix register use, PE memory ports, immediate/LM0 conflict and zero-flush uniqueness",
-            "scope": "Formal rule layer corresponding to the local issue checker; Expr construction from parsed VSM and proof of assembler/hardware completeness are absent",
+            "implemented": "Abstract PE-line issue predicates and a structural projection for parsed operands and top-level line kinds; includes group uniqueness, MAU compatibility, matrix register use, PE memory ports, immediate/LM0 conflict and zero-flush uniqueness",
+            "scope": "Rule layer mirrors the local issue checker; the Rust parser-to-Lean mapping and assembler/hardware completeness are not proved",
+            "source_basis": [{
+                "source": "viz/core/src/vsm.rs", "sha256": digest(REPO / "viz/core/src/vsm.rs"),
+            }, {
+                "source": "viz/core/src/issue.rs", "sha256": digest(REPO / "viz/core/src/issue.rs"),
+            }],
             "missing": "VSM parser correspondence, all assembler legality checks outside issue.rs, hardware correspondence and integration with the total instruction transition",
             "reference_experiment": None,
         }],
