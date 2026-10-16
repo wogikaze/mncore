@@ -1429,6 +1429,7 @@ def NormalizedExpr.inFiniteEnvelope (expression : NormalizedExpr) : Prop :=
     expression.sources.length ≤ 3 ∧
     (∀ operand ∈ expression.sources, operand.inFiniteEnvelope) ∧
     expression.destinations.Nodup ∧
+    ParsedOperand.destinationsAvoidKnownSourceOnly expression.destinations ∧
     (∀ operand ∈ expression.destinations, operand.inFiniteEnvelope) ∧
     optionMaskInFiniteEnvelope expression.flush
 
@@ -1441,6 +1442,7 @@ def ParsedExpr.inFiniteEnvelope (expression : ParsedExpr) : Prop :=
     expression.parserSourceArityValid ∧
     (∀ operand ∈ expression.sources, operand.inFiniteEnvelope) ∧
     expression.destinations.Nodup ∧
+    ParsedOperand.destinationsAvoidKnownSourceOnly expression.destinations ∧
     (∀ operand ∈ expression.destinations, operand.inFiniteEnvelope) ∧
     optionMaskInFiniteEnvelope expression.flush
 
@@ -1449,7 +1451,7 @@ theorem ParsedExpr.normalize_inFiniteEnvelope (expression : ParsedExpr)
     expression.normalize.inFiniteEnvelope := by
   rcases expression with ⟨op, sources, destinations, flush, text⟩
   rcases envelope with ⟨opBound, sourceArity, sourceBound, destinationNodup,
-    destinationBound, flushBound⟩
+    destinationRoles, destinationBound, flushBound⟩
   have normalizedArity :
       (NormalizedExpr.mk op sources destinations flush).parserSourceArityValid :=
     sourceArity
@@ -1457,7 +1459,7 @@ theorem ParsedExpr.normalize_inFiniteEnvelope (expression : ParsedExpr)
   exact ⟨opBound,
     sourceArity,
     NormalizedExpr.parserSourceArityValid_length_le_three _ normalizedArity,
-    sourceBound, destinationNodup, destinationBound, flushBound⟩
+    sourceBound, destinationNodup, destinationRoles, destinationBound, flushBound⟩
 
 private abbrev NormalizedExprFiniteCode :=
   {op : ParsedOp // op.inFiniteEnvelope} ×
@@ -1471,7 +1473,7 @@ private def NormalizedExpr.finiteCode
   rcases expression with ⟨expression, bounds⟩
   rcases expression with ⟨op, sources, destinations, flush⟩
   rcases bounds with ⟨opBound, sourceArity, sourceLength, sourceBound,
-    destinationNodup, destinationBound, flushBound⟩
+    destinationNodup, destinationRoles, destinationBound, flushBound⟩
   exact (⟨op, opBound⟩,
     ⟨sources, sourceLength, sourceBound⟩,
     ⟨destinations, destinationNodup, destinationBound⟩,

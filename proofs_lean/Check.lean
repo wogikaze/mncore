@@ -51,6 +51,8 @@ import Lean
 #print axioms ProofsLean.MNCore.PlusOne.step_writes_cycle_output_low
 #print axioms ProofsLean.MNCore.PlusOne.increment_numerical
 #print axioms ProofsLean.MNCore.Issue.check_sound
+#print axioms ProofsLean.MNCore.Issue.ParsedOperand.fixed_notKnownSourceOnly
+#print axioms ProofsLean.MNCore.Issue.ParsedOperand.forward_notKnownSourceOnly
 #print axioms ProofsLean.MNCore.Issue.ParsedOp.parserSourceLimit_le_three
 #print axioms ProofsLean.MNCore.Issue.NormalizedExpr.parserSourceArityValid_length_le_three
 #print axioms ProofsLean.MNCore.Issue.ParsedExpr.parserSourceArityValid_length_le_three

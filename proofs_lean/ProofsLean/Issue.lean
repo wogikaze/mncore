@@ -92,6 +92,23 @@ inductive ParsedOperand where
   | dar (address : Nat)
   deriving DecidableEq, Repr
 
+/-- Fixed identifiers and forwarding values are source-only operand roles.
+This coarse screen is necessary, but not sufficient, for destination validity. -/
+def ParsedOperand.notKnownSourceOnly : ParsedOperand → Prop
+  | .fixed .. | .forward .. => False
+  | _ => True
+
+theorem ParsedOperand.fixed_notKnownSourceOnly (kind : ParsedFixed) :
+    ¬ ParsedOperand.notKnownSourceOnly (.fixed kind) := by
+  simp [notKnownSourceOnly]
+
+theorem ParsedOperand.forward_notKnownSourceOnly (kind : ParsedForward) (neg ext rnd : Bool) :
+    ¬ ParsedOperand.notKnownSourceOnly (.forward kind neg ext rnd) := by
+  simp [notKnownSourceOnly]
+
+def ParsedOperand.destinationsAvoidKnownSourceOnly (operands : List ParsedOperand) : Prop :=
+  ∀ operand ∈ operands, operand.notKnownSourceOnly
+
 def ParsedOperand.writeMask? : ParsedOperand → Option ParsedMask
   | .mem _ _ _ _ mask | .bar _ _ mask | .omr _ mask => mask
   | _ => none

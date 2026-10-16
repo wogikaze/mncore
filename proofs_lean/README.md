@@ -212,6 +212,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
 - `evidence/output-roles/reference.json`にassemble3の42件のoperand-role probeを記録した。zero、ALU、
   MAU、matrix、L1BM、L2BMで代表的な入力/出力位置と重複出力を照合している。opcodeごとの全構文や
   Lean issue checkerとの対応証明ではなく、finite envelopeのdestination-list条件は引き続き未証明である。
+- 有限envelopeに`destinationsAvoidKnownSourceOnly`を追加し、source-onlyのfixed identifierとforwarding
+  operandをdestination列から除外した。assemble3のzero/ALU代表probeとRust operand型に沿う必要条件で、
+  opcode別の十分なdestination role checkerではない。matrix/block operandや重複・値域の対応は未完了。
 - `ParsedExpr.parserSourceArityValid`を追加し、Rust `parse_expr` の通常経路を使うALU/MAU/matrix命令は
   source数がopcodeの固定入力数に一致すること、zero-input/block-memory経路はparser上限以下であることを
   構文述語に反映した。parser上限が3以下であることを証明し、finite envelopeにもこの形状条件を含めた。
