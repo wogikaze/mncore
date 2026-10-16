@@ -72,7 +72,7 @@ theorem ParsedIntegerContext.linearIndex_lt (context : ParsedIntegerContext) :
   omega
 
 inductive ParsedIntegerInput where
-  | memory (access : DirectMemoryAccess)
+  | memory (access : DirectMemoryAccess) (rounded : Bool)
   | fixed (value : IntegerALU.Bus)
   deriving DecidableEq, Repr
 
@@ -186,6 +186,51 @@ example : ParsedFixed.integerValue .l1bid .long 0 0 7 0 0 = 7 := by decide
 example : ParsedFixed.integerValue .mabid .long 0 0 0 15 0 = 15 := by decide
 example : ParsedFixed.integerValue .peid .long 0 0 0 15 3 = 63 := by decide
 
+/-- Rust `read_alu_input` converts each rounded single word through the MN-Core
+half format: 1/6/9 sign/exponent/mantissa bits, round-to-nearest-even, no subnormals. -/
+def roundSingleWordToHalf (word : BitVec 32) : BitVec 16 :=
+  let raw := word.toNat
+  let sign := raw / 2 ^ 31
+  let exponent := raw / 2 ^ 23 % 256
+  let mantissa := raw % 2 ^ 23
+  let signBit := sign * 2 ^ 15
+  if exponent == 0 then 0
+  else if exponent == 255 then BitVec.ofNat 16 (signBit + 63 * 2 ^ 9)
+  else
+    let significand := 2 ^ 23 + mantissa
+    let kept := significand / 2 ^ 14
+    let remainder := significand % 2 ^ 14
+    let roundUp := remainder > 2 ^ 13 ||
+      (remainder == 2 ^ 13 && kept % 2 == 1)
+    let rounded := kept + if roundUp then 1 else 0
+    let carried := rounded == 2 ^ 10
+    let halfExponent : Int := Int.ofNat exponent - 96 + if carried then 1 else 0
+    if halfExponent >= 63 then BitVec.ofNat 16 (signBit + 63 * 2 ^ 9)
+    else if halfExponent <= 0 then 0
+    else BitVec.ofNat 16 (signBit + halfExponent.toNat * 2 ^ 9 +
+      if carried then 0 else rounded % 2 ^ 9)
+
+def roundSingleWordBusToHalf (words : WordBus) : WordBus := fun index =>
+  match index.val with
+  | 0 => roundSingleWordToHalf (words 0) ++ roundSingleWordToHalf (words 1)
+  | 1 => roundSingleWordToHalf (words 2) ++ roundSingleWordToHalf (words 3)
+  | _ => 0
+
+def roundSingleInputBusToHalf (bus : IntegerALU.Bus) : IntegerALU.Bus :=
+  pack (roundSingleWordBusToHalf (unpackALUBus bus))
+
+example : roundSingleWordToHalf 0x3f800000 = 0x3e00 := by decide
+example : roundSingleWordToHalf 0x3f802000 = 0x3e00 := by decide
+example : roundSingleWordToHalf 0x3f806000 = 0x3e02 := by decide
+example : roundSingleWordToHalf 0x3f807fff = 0x3e02 := by decide
+example : roundSingleWordToHalf 0x3f804000 = 0x3e01 := by decide
+example : roundSingleWordToHalf 0x00000001 = 0 := by decide
+example : roundSingleWordToHalf 0x30000000 = 0 := by decide
+example : roundSingleWordToHalf 0x30800000 = 0x0200 := by decide
+example : roundSingleWordToHalf 0x4f7fffff = 0x7e00 := by decide
+example : roundSingleWordToHalf 0x7f800000 = 0x7e00 := by decide
+example : roundSingleWordToHalf 0xff800000 = 0xfe00 := by decide
+
 def ParsedOperand.toParsedIntegerInput? (operand : ParsedOperand)
     (precision : IntegerALU.Precision)
     (group : Fin 2) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16) (pe cycle : Fin 4)
@@ -194,10 +239,12 @@ def ParsedOperand.toParsedIntegerInput? (operand : ParsedOperand)
   | .fixed fixed =>
       some (.fixed (replicateIntegerLane precision
         (ParsedFixed.integerValue fixed precision group l2b l1b mab pe)))
-  | .mem access _ _ false none =>
+  | .mem access _ _ rounded none =>
       (ParsedOperand.toDirectMemoryAccess? (.mem access false false false none)
-        pe cycle bar0 bar1 tWord).map .memory
-  | _ => (ParsedOperand.toDirectMemoryAccess? operand pe cycle bar0 bar1 tWord).map .memory
+        pe cycle bar0 bar1 tWord).map (fun resolved => .memory resolved rounded)
+  | _ =>
+      (ParsedOperand.toDirectMemoryAccess? operand pe cycle bar0 bar1 tWord).map
+        (fun resolved => .memory resolved false)
 
 theorem parsed_fixed_integer_input
     (fixed : ParsedFixed) (precision : IntegerALU.Precision)
@@ -216,7 +263,18 @@ theorem parsed_integer_memory_input_ignores_negation_extension
       (.mem access negated extended false none) precision group l2b l1b mab pe cycle
       bar0 bar1 tWord =
     (ParsedOperand.toDirectMemoryAccess? (.mem access false false false none)
-      pe cycle bar0 bar1 tWord).map .memory := rfl
+      pe cycle bar0 bar1 tWord).map (fun resolved => .memory resolved false) := rfl
+
+theorem parsed_integer_memory_input_preserves_rounding
+    (access : Access) (precision : IntegerALU.Precision)
+    (group : Fin 2) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
+    (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
+    (rounded : Bool) :
+    ParsedOperand.toParsedIntegerInput?
+      (.mem access false false rounded none) precision group l2b l1b mab pe cycle
+      bar0 bar1 tWord =
+    (ParsedOperand.toDirectMemoryAccess? (.mem access false false false none)
+      pe cycle bar0 bar1 tWord).map (fun resolved => .memory resolved rounded) := rfl
 
 def ParsedOperand.toDirectMemoryDestination? (operand : ParsedOperand)
     (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
@@ -532,7 +590,7 @@ def ParsedExpr.toDirectMaskedIntegerAccessesInLine? (expression : ParsedExpr)
                       destinationAccess.bank registers cycle directive hasSingleLineMask,
                       resolveFlushSelection? expression.flush registers cycle with
                   | some writeSelection, some flushSelection =>
-                      some ⟨expression.op, .memory destinationAccess, .memory destinationAccess,
+                      some ⟨expression.op, .memory destinationAccess false, .memory destinationAccess false,
                         destinationAccess, writeSelection, flushSelection, ⟨request, hRequest⟩⟩
                   | _, _ => none
           | _, _ => none
@@ -743,8 +801,20 @@ def readDirectAccess (files : IntegerRegisterFiles) (access : DirectMemoryAccess
 def ParsedIntegerInput.read (files : IntegerRegisterFiles) (input : ParsedIntegerInput) :
     IntegerALU.Bus :=
   match input with
-  | .memory access => pack (readDirectAccess files access)
+  | .memory access rounded =>
+      let raw := pack (readDirectAccess files access)
+      if rounded then roundSingleInputBusToHalf raw else raw
   | .fixed value => value
+
+theorem parsedIntegerInput_read_rounded (files : IntegerRegisterFiles)
+    (access : DirectMemoryAccess) :
+    ParsedIntegerInput.read files (.memory access true) =
+      roundSingleInputBusToHalf (pack (readDirectAccess files access)) := rfl
+
+theorem parsedIntegerInput_read_unrounded (files : IntegerRegisterFiles)
+    (access : DirectMemoryAccess) :
+    ParsedIntegerInput.read files (.memory access false) =
+      pack (readDirectAccess files access) := rfl
 
 def writeDirectAccess (files : IntegerRegisterFiles) (access : DirectMemoryAccess)
     (data : WordBus) : IntegerRegisterFiles :=

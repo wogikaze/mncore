@@ -143,7 +143,7 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   multiline directiveを打ち消すことを証明した。OMR対象directiveから選択フラグを解決する。
   Rust parserがこのParsedLineを生成する対応と、
   ソース全体を通したdirective適用は未接続。
-  整数ALUのRust入力処理に合わせ、sourceの符号反転・精度拡張属性を無視するloweringを接続して証明した。丸め付き入力、mask付き入力、非PEメモリは引き続きlowering対象外。
+  整数ALUのRust入力処理に合わせ、sourceの符号反転・精度拡張属性を無視するloweringを接続して証明した。memory sourceの丸め属性はRustと同じsingle→half変換（最近接偶数、非正規数なし）を入力readへ接続し、tie-even・境界・特殊値を計算で証明した。mask付き入力、forward source、非PEメモリは引き続きlowering対象外。
 - `Issue.lean`: Rust `AluOp::inputs()` と全32 opcodeのsource数をLeanで定義し、issue mirror監査でも両表の一致を確認する。PE式の同時発行判定について、グループ重複、MAU組み合わせ、
   行列レジスタ使用、PEメモリの読み書きポート、即値とLM0、zero-flush重複を
   抽象レコード上の述語として定義し、判定と合法性の同値を証明した。
