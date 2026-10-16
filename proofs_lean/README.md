@@ -79,6 +79,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   制約し、全命令のコスト正値と`nop/0`除去を証明した。mask directiveは命令行
   でなく、後続状態に畳み込む制御イベントとして残す。未制限の数値フィールドは
   まだ残り、実機命令型の有限性には至っていない。
+- `FiniteRegion.lean`: width/address/madpeに有限上限を置いた`Region` envelopeを有限型へ
+  埋め込み、`Region.inFiniteEnvelope_finite`を証明した。これはbank別の合法範囲や
+  alignment条件を定義する定理ではなく、PE line alphabet全体の有限性にも未接続。
 - `FiniteExample.lean`: 3命令・4入力の小さな機械で、全候補の反証、2行の最適性、
   限定入力では1行解が存在することを証明する回帰例。**MN-Coreではない。**
 - `PlusOne.lean`: Welcome（`challenge/1.plus-one`）の2行の `iinc` 解について、

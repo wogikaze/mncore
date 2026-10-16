@@ -10,6 +10,7 @@ import ProofsLean.MaskedPEMemory
 import ProofsLean.BusLayout
 import ProofsLean.ParsedIntegerStep
 import ProofsLean.Issue
+import ProofsLean.FiniteRegion
 import ProofsLean.AddressProperties
 import ProofsLean.Masks
 import ProofsLean.Forwarding

@@ -52,6 +52,15 @@
     "parse_errors": 0,
     "scope": "Checked-in problems/**/answer.vsm files only; not a complete ISA spelling inventory."
   },
+  "finite_carrier_proofs": [
+    {
+      "source": "proofs_lean/ProofsLean/FiniteRegion.lean",
+      "sha256": "e7d8fe7c617762adba15b3d8adcc0debe6ce021fd4a351eb4633bb8724a1c9d0",
+      "theorem": "ProofsLean.MNCore.Issue.Region.inFiniteEnvelope_finite",
+      "scope": "Finite subtype for a generous bounded envelope on width, four cycle addresses, and madpe.",
+      "missing": "Bank-specific legality, address alignment, all operand fields, bounded line lists, and machine-level coverage."
+    }
+  ],
   "datapath_fragments": [
     {
       "source": "proofs_lean/ProofsLean/IntegerALU.lean",
@@ -179,7 +188,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/Issue.lean",
-      "sha256": "33dc5d70fc976b44d116b1b21cb9faa4b67d1bc066c236e8eb3d9d2cfb8d5afc",
+      "sha256": "0fdc2116b9feef1e2649987b8eee58ccbdafd7c667b14090aa82c73b2f820dcc",
       "implemented": "Full structural PE Op/Operand payload mirror, issue projection, abstract PE-line rules, and a partial parsed-op to integer-ALU bridge for supported L/I/S integer operations and packbit",
       "scope": "The Rust enum inventory is checked against Lean constructors. A separate partial executor covers supported integer ALU/zero/immediate expressions with direct PE-memory destinations, masks/flush and ordered multiple destinations; this is not full ISA semantics",
       "source_basis": [

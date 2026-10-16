@@ -448,6 +448,13 @@ def coverage_catalog() -> dict:
         "inventory_scope": "Compiler-generated ALU/MAU spelling candidates plus separately scoped source-derived records; not an authoritative complete ISA or legality model.",
         "selected_parser_boundary_experiment": isa_bounds_experiment(),
         "answer_parser_gap_audit": answer_parser_gap_audit(),
+        "finite_carrier_proofs": [{
+            "source": "proofs_lean/ProofsLean/FiniteRegion.lean",
+            "sha256": digest(ROOT / "ProofsLean/FiniteRegion.lean"),
+            "theorem": "ProofsLean.MNCore.Issue.Region.inFiniteEnvelope_finite",
+            "scope": "Finite subtype for a generous bounded envelope on width, four cycle addresses, and madpe.",
+            "missing": "Bank-specific legality, address alignment, all operand fields, bounded line lists, and machine-level coverage.",
+        }],
         "datapath_fragments": [{
             "source": fragment_source.relative_to(REPO).as_posix(), "sha256": digest(fragment_source),
             "implemented": "16/32/64-bit inc/dec/add/sub/not/lnot/and/or/xor/integer max/min/passa/lsl/lsr/bsl/bsr/packbit; lane packing, replicated flags and LSB bypass",

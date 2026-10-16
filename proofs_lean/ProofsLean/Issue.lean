@@ -26,6 +26,14 @@ structure Region where
   madpe : Option Nat
   deriving DecidableEq, Repr
 
+/-- A deliberately generous finite envelope for parsed PE address regions.
+The bank-specific limits and alignment rules are imposed separately by
+instruction legality; this predicate is only the finite carrier bound. -/
+def Region.inFiniteEnvelope (r : Region) : Prop :=
+  r.width < 5 ∧ r.address0 < 32768 ∧ r.address1 < 32768 ∧
+  r.address2 < 32768 ∧ r.address3 < 32768 ∧
+  ∀ n, r.madpe = some n → n < 4
+
 structure Access where
   bank : Bank
   region : Region
