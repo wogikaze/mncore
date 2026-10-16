@@ -107,6 +107,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   合成した`ParsedOp.inFiniteEnvelope`を定義し、全opcode constructorを有限なタグ付きcarrierへ
   単射で写して`ParsedOp.inFiniteEnvelope_finite`を証明した。parser出力がこの範囲に必ず入る
   ことの証明は別途必要であり、ここでは無制限な`ParsedOp`全体の有限性を主張しない。
+  これをbounded source/destination列とflush maskと組み合わせ、`NormalizedExpr`の有限carrierも
+  証明した。現時点の上限はRust parserのsource arity上限3とassemble3出力カテゴリ実験の6であり、
+  destination上限の全命令への一般化およびparserからenvelopeへの網羅証明は残る。
   全ての構造化`ParsedOperand` constructorを有限コードへ写して
   `ParsedOperand.inFiniteEnvelope_finite`を証明した。
   同ファイルで`ParsedMask.entry < 32`の有限部分型も証明した。assemble3では`$imr0..31`が受理され

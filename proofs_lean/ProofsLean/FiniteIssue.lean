@@ -592,6 +592,10 @@ theorem optionMaskFiniteCode_injective : Function.Injective optionMaskFiniteCode
           have maskEq := ParsedMask.finiteCode_injective equal
           exact congrArg some (congrArg Subtype.val maskEq)
 
+theorem optionMaskInFiniteEnvelope_finite :
+    Finite {mask : Option ParsedMask // optionMaskInFiniteEnvelope mask} :=
+  Finite.of_injective optionMaskFiniteCode optionMaskFiniteCode_injective
+
 def ParsedOperand.inFiniteEnvelope : ParsedOperand → Prop
   | .mem access _ _ _ mask => access.inFiniteEnvelope ∧ optionMaskInFiniteEnvelope mask
   | .bar _ width mask => width < 5 ∧ optionMaskInFiniteEnvelope mask
@@ -1130,6 +1134,78 @@ theorem ParsedOp.inFiniteEnvelope_finite :
   letI : Finite {op : ParsedL2Op // op.inFiniteEnvelope} :=
     ParsedL2Op.inFiniteEnvelope_finite
   exact Finite.of_injective ParsedOp.finiteCode ParsedOp.finiteCode_injective
+
+abbrev ParsedOperandListFiniteEnvelope (bound : Nat) :=
+  {operands : List ParsedOperand //
+    operands.length ≤ bound ∧ ∀ operand ∈ operands, operand.inFiniteEnvelope}
+
+def NormalizedExpr.inFiniteEnvelope (expression : NormalizedExpr) : Prop :=
+  expression.op.inFiniteEnvelope ∧
+    expression.sources.length ≤ 3 ∧
+    (∀ operand ∈ expression.sources, operand.inFiniteEnvelope) ∧
+    expression.destinations.length ≤ 6 ∧
+    (∀ operand ∈ expression.destinations, operand.inFiniteEnvelope) ∧
+    optionMaskInFiniteEnvelope expression.flush
+
+private abbrev NormalizedExprFiniteCode :=
+  {op : ParsedOp // op.inFiniteEnvelope} ×
+    ParsedOperandListFiniteEnvelope 3 ×
+    ParsedOperandListFiniteEnvelope 6 ×
+    {flush : Option ParsedMask // optionMaskInFiniteEnvelope flush}
+
+private def NormalizedExpr.finiteCode
+    (expression : {expression : NormalizedExpr // expression.inFiniteEnvelope}) :
+    NormalizedExprFiniteCode := by
+  rcases expression with ⟨expression, bounds⟩
+  rcases expression with ⟨op, sources, destinations, flush⟩
+  rcases bounds with ⟨opBound, sourceLength, sourceBound,
+    destinationLength, destinationBound, flushBound⟩
+  exact (⟨op, opBound⟩,
+    ⟨sources, sourceLength, sourceBound⟩,
+    ⟨destinations, destinationLength, destinationBound⟩,
+    ⟨flush, flushBound⟩)
+
+private theorem NormalizedExpr.finiteCode_injective :
+    Function.Injective NormalizedExpr.finiteCode := by
+  intro a b equal
+  rcases a with ⟨a, ha⟩
+  rcases b with ⟨b, hb⟩
+  apply Subtype.ext
+  cases a with
+  | mk aop asources adestinations aflush =>
+    cases b with
+    | mk bop bsources bdestinations bflush =>
+      simp only [NormalizedExpr.finiteCode, Prod.mk.injEq] at equal
+      rcases equal with ⟨opEqual, sourceEqual, destinationEqual, flushEqual⟩
+      have opValueEqual := congrArg Subtype.val opEqual
+      have sourceValueEqual := congrArg Subtype.val sourceEqual
+      have destinationValueEqual := congrArg Subtype.val destinationEqual
+      have flushValueEqual := congrArg Subtype.val flushEqual
+      cases opValueEqual
+      cases sourceValueEqual
+      cases destinationValueEqual
+      cases flushValueEqual
+      rfl
+
+theorem NormalizedExpr.inFiniteEnvelope_finite :
+    Finite {expression : NormalizedExpr // expression.inFiniteEnvelope} := by
+  classical
+  letI : Finite {op : ParsedOp // op.inFiniteEnvelope} :=
+    ParsedOp.inFiniteEnvelope_finite
+  letI : Finite (ParsedOperandListFiniteEnvelope 3) :=
+    ParsedOperand.listInFiniteEnvelope_finite 3
+  letI : Finite (ParsedOperandListFiniteEnvelope 6) :=
+    ParsedOperand.listInFiniteEnvelope_finite 6
+  letI : Finite {flush : Option ParsedMask // optionMaskInFiniteEnvelope flush} :=
+    optionMaskInFiniteEnvelope_finite
+  letI : Fintype {op : ParsedOp // op.inFiniteEnvelope} := Fintype.ofFinite _
+  letI : Fintype (ParsedOperandListFiniteEnvelope 3) := Fintype.ofFinite _
+  letI : Fintype (ParsedOperandListFiniteEnvelope 6) := Fintype.ofFinite _
+  letI : Fintype {flush : Option ParsedMask // optionMaskInFiniteEnvelope flush} :=
+    Fintype.ofFinite _
+  letI : Fintype NormalizedExprFiniteCode := inferInstance
+  exact Finite.of_injective NormalizedExpr.finiteCode
+    NormalizedExpr.finiteCode_injective
 
 def omrEntryInFiniteEnvelope (entry : Nat) : Prop := entry < 16
 
