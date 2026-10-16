@@ -248,6 +248,9 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.parsed_mask_pattern_controls_hazard_write_cycle
 #print axioms ProofsLean.MNCore.PEMemory.parsed_mask_entry_keeps_all_hazard_write_cycles
 #print axioms ProofsLean.MNCore.PEMemory.t_indirect_hazard_access_uses_cycle_region
+#print axioms ProofsLean.MNCore.PEMemory.ParsedOperand.toTimedPEHazardEvents?_directive_irrelevant
+#print axioms ProofsLean.MNCore.PEMemory.ParsedExpr.toTimedPEHazardEvents?_directive_irrelevant
+#print axioms ProofsLean.MNCore.PEMemory.ParsedMaskedIssueLine.toTimedPEHazardEvents?_directive_irrelevant
 #print axioms ProofsLean.MNCore.PEMemory.pe_hazard_constraint_uses_rule_distance
 #print axioms ProofsLean.MNCore.PEMemory.pe_hazard_violation_filter_exact
 #print axioms ProofsLean.MNCore.PEMemory.pe_hazard_no_violations_satisfies_constraints

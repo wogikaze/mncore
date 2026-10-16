@@ -2471,6 +2471,16 @@ def ParsedOperand.toTimedPEHazardEvents? (operand : ParsedOperand) (write : Bool
               primary ++ indirect
   | _ => some []
 
+/-- The static PE hazard analyzer ignores the multiline mask directive; only a
+single-line mask attached to the memory operand affects written cycles. -/
+theorem ParsedOperand.toTimedPEHazardEvents?_directive_irrelevant
+    (operand : ParsedOperand) (write : Bool) (control : ParsedMaskExecutionControl)
+    (directive : ParsedMaskDirective) :
+    ParsedOperand.toTimedPEHazardEvents? operand write
+        { control with directive := directive } =
+      ParsedOperand.toTimedPEHazardEvents? operand write control := by
+  cases operand <;> rfl
+
 def ParsedExpr.toTimedPEHazardEvents? (expression : ParsedExpr)
     (control : ParsedMaskExecutionControl) : Option (List TimedPEAccess) := do
   let reads ← expression.sources.mapM fun operand =>
@@ -2478,6 +2488,15 @@ def ParsedExpr.toTimedPEHazardEvents? (expression : ParsedExpr)
   let writes ← expression.destinations.mapM fun operand =>
     ParsedOperand.toTimedPEHazardEvents? operand true control
   pure (reads.flatten ++ writes.flatten)
+
+theorem ParsedExpr.toTimedPEHazardEvents?_directive_irrelevant
+    (expression : ParsedExpr) (control : ParsedMaskExecutionControl)
+    (directive : ParsedMaskDirective) :
+    ParsedExpr.toTimedPEHazardEvents? expression
+        { control with directive := directive } =
+      ParsedExpr.toTimedPEHazardEvents? expression control := by
+  simp [ParsedExpr.toTimedPEHazardEvents?,
+    ParsedOperand.toTimedPEHazardEvents?_directive_irrelevant]
 
 def ParsedMaskedIssueLine.toTimedPEHazardEvents?
     (line : ParsedMaskedIssueLine) (control : ParsedMaskExecutionControl) :
@@ -2488,6 +2507,18 @@ def ParsedMaskedIssueLine.toTimedPEHazardEvents?
       let perExpression ← expressions.mapM fun expression =>
         ParsedExpr.toTimedPEHazardEvents? expression control
       pure perExpression.flatten
+
+theorem ParsedMaskedIssueLine.toTimedPEHazardEvents?_directive_irrelevant
+    (line : ParsedMaskedIssueLine) (control : ParsedMaskExecutionControl)
+    (directive : ParsedMaskDirective) :
+    ParsedMaskedIssueLine.toTimedPEHazardEvents? line
+        { control with directive := directive } =
+      ParsedMaskedIssueLine.toTimedPEHazardEvents? line control := by
+  cases line with
+  | nop => rfl
+  | pe expressions =>
+      simp [ParsedMaskedIssueLine.toTimedPEHazardEvents?,
+        ParsedExpr.toTimedPEHazardEvents?_directive_irrelevant]
 
 theorem parsed_mask_pattern_controls_hazard_write_cycle
     (cycle : Fin 4) (bits : BitVec 4) :
