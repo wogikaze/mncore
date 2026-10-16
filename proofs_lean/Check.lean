@@ -108,6 +108,15 @@ import Lean
 #print axioms ProofsLean.MNCore.RRN.rounded_single_word_keeps_msb_lanes_first
 #print axioms ProofsLean.MNCore.L1Transfer.reduceRoundedFloatL1Writes_count
 #print axioms ProofsLean.MNCore.L1Transfer.reduceRoundedFloatL1Writes_contains_result
+#print axioms ProofsLean.MNCore.L1Transfer.commitL1TurnaroundWrites_last_readback
+#print axioms ProofsLean.MNCore.L1Transfer.commitL1Transfer_updates_both_targets
+#print axioms ProofsLean.MNCore.L1Transfer.reduceL1TurnaroundWrites_count
+#print axioms ProofsLean.MNCore.L1Transfer.reduceL1TurnaroundWrites_contains_first
+#print axioms ProofsLean.MNCore.L1Transfer.reduceHalfAliasTurnaroundWrites_count
+#print axioms ProofsLean.MNCore.L1Transfer.reduceHalfAliasTurnaroundWrites_contains_result
+#print axioms ProofsLean.MNCore.L1Transfer.reduceRoundedFloatTurnaroundWrites_count
+#print axioms ProofsLean.MNCore.L1Transfer.executeHalfAliasL1Cycle_updates_memory_and_turnaround
+#print axioms ProofsLean.MNCore.L1Transfer.executeRoundedFloatL1Cycle_updates_memory_and_turnaround
 #print axioms ProofsLean.MNCore.L1Transfer.mwriteWrites_contains_high
 #print axioms ProofsLean.MNCore.L1Transfer.mwriteWrites_contains_low
 #print axioms ProofsLean.MNCore.L1Transfer.m4writeWrites_contains_high

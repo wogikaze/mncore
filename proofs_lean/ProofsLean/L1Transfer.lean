@@ -2,10 +2,9 @@ import ProofsLean.IntegerALU
 import ProofsLean.ParsedIntegerStep
 import ProofsLean.RRN
 
-/- Raw L1BM-to-PE broadcast transfer, mirroring `Blocks::l1_to_pe`
-(`viz/core/src/blocks.rs`). This models one L1B bank; PE destination writes,
-other transfer opcodes, turnaround updates, masks, and issue timing remain
-separate obligations. -/
+/- L1BM transfer semantics mirroring `viz/core/src/blocks.rs`. This models one
+L1B bank and the paired turnaround updates for modeled transfers; PE destination
+writes, masks, multi-bank issue, and issue timing remain separate obligations. -/
 namespace ProofsLean.MNCore.L1Transfer
 
 open ProofsLean.MNCore.IntegerALU
@@ -184,6 +183,27 @@ def writeL1Word (memory : L1Bank) (address : Fin l1bmLongWords)
 def commitL1Writes (memory : L1Bank) (writes : List L1Write) : L1Bank :=
   writes.foldl (fun current write => writeL1Word current write.1 write.2) memory
 
+abbrev L1TurnWrite := Fin 64 × BitVec 64
+
+def writeL1Turnaround (turnaround : L1Turnaround) (cycle : Fin 4)
+    (offset : Fin 64) (value : BitVec 64) : L1Turnaround :=
+  fun targetCycle targetOffset =>
+    if targetCycle = cycle && targetOffset = offset then value
+    else turnaround targetCycle targetOffset
+
+def commitL1TurnaroundWrites (turnaround : L1Turnaround) (cycle : Fin 4)
+    (writes : List L1TurnWrite) : L1Turnaround :=
+  writes.foldl (fun current write =>
+    writeL1Turnaround current cycle write.1 write.2) turnaround
+
+/-- A PE-to-L1BM cycle updates the addressed bank and the cycle's local
+turnaround window from the same pending result vector. -/
+def commitL1Transfer (memory : L1Bank) (turnaround : L1Turnaround)
+    (cycle : Fin 4) (memoryWrites : List L1Write)
+    (turnaroundWrites : List L1TurnWrite) : L1Bank × L1Turnaround :=
+  (commitL1Writes memory memoryWrites,
+    commitL1TurnaroundWrites turnaround cycle turnaroundWrites)
+
 theorem writeL1Word_readback (memory : L1Bank) (address : Fin l1bmLongWords)
     (value : BitVec 64) : writeL1Word memory address value address = value := by
   simp [writeL1Word]
@@ -192,6 +212,22 @@ theorem commitL1Writes_last_readback (memory : L1Bank) (writesBefore : List L1Wr
     (address : Fin l1bmLongWords) (value : BitVec 64) :
     commitL1Writes memory (writesBefore ++ [(address, value)]) address = value := by
   simp [commitL1Writes, List.foldl_append, writeL1Word]
+
+theorem commitL1TurnaroundWrites_last_readback (turnaround : L1Turnaround)
+    (cycle : Fin 4) (writesBefore : List L1TurnWrite)
+    (offset : Fin 64) (value : BitVec 64) :
+    commitL1TurnaroundWrites turnaround cycle (writesBefore ++ [(offset, value)])
+      cycle offset = value := by
+  simp [commitL1TurnaroundWrites, List.foldl_append, writeL1Turnaround]
+
+theorem commitL1Transfer_updates_both_targets (memory : L1Bank)
+    (turnaround : L1Turnaround) (cycle : Fin 4)
+    (memoryWrites : List L1Write) (turnaroundWrites : List L1TurnWrite) :
+    (commitL1Transfer memory turnaround cycle memoryWrites turnaroundWrites).1 =
+        commitL1Writes memory memoryWrites ∧
+      (commitL1Transfer memory turnaround cycle memoryWrites turnaroundWrites).2 =
+        commitL1TurnaroundWrites turnaround cycle turnaroundWrites := by
+  exact ⟨rfl, rfl⟩
 
 def mwriteWrites (memoryBase : Fin l1bmLongWords) (twoLongWords : Bool)
     (cycle : Fin 4) (buses : Fin 4 → Bus) : List L1Write :=
@@ -246,6 +282,47 @@ def reduceL1Writes (memoryBase : Fin l1bmLongWords) (fourGroups rounded twoLongW
           [(addressAt memoryBase (cycle.val * stride + offset + 4), results group pe 1)]
         else []
       else []
+
+def reduceL1TurnaroundWrites (fourGroups rounded twoLongWords : Bool)
+    (results : Fin 4 → Fin 4 → Fin 2 → BitVec 64) : List L1TurnWrite :=
+  (List.finRange 4).flatMap fun group =>
+    (List.finRange 4).flatMap fun pe =>
+      if fourGroups || group.val == 0 then
+        let offset := if rounded then group.val * 4 + pe.val
+          else group.val * (if twoLongWords then 8 else 4) + pe.val
+        let first : L1TurnWrite :=
+          (⟨offset % 64, Nat.mod_lt _ (by decide)⟩, results group pe 0)
+        if rounded then [first]
+        else [first] ++ if twoLongWords then
+          [(⟨(offset + 4) % 64, Nat.mod_lt _ (by decide)⟩, results group pe 1)]
+        else []
+      else []
+
+theorem reduceL1TurnaroundWrites_count (fourGroups rounded twoLongWords : Bool)
+    (results : Fin 4 → Fin 4 → Fin 2 → BitVec 64) :
+    (reduceL1TurnaroundWrites fourGroups rounded twoLongWords results).length =
+      if fourGroups then (if rounded then 16 else if twoLongWords then 32 else 16)
+      else if rounded then 4 else if twoLongWords then 8 else 4 := by
+  cases fourGroups <;> cases rounded <;> cases twoLongWords <;>
+    simp [reduceL1TurnaroundWrites, List.finRange]
+
+theorem reduceL1TurnaroundWrites_contains_first (fourGroups rounded twoLongWords : Bool)
+    (group pe : Fin 4) (results : Fin 4 → Fin 4 → Fin 2 → BitVec 64)
+    (hgroup : fourGroups = true ∨ group.val = 0) :
+    (⟨(if rounded then group.val * 4 + pe.val
+        else group.val * (if twoLongWords then 8 else 4) + pe.val) % 64,
+      Nat.mod_lt _ (by decide)⟩, results group pe 0) ∈
+      reduceL1TurnaroundWrites fourGroups rounded twoLongWords results := by
+  apply List.mem_flatMap.mpr
+  refine ⟨group, List.mem_finRange group, ?_⟩
+  apply List.mem_flatMap.mpr
+  refine ⟨pe, List.mem_finRange pe, ?_⟩
+  have hkeep : (fourGroups || group.val == 0) = true := by
+    rcases hgroup with hfour | hzero
+    · simp [hfour]
+    · simp [hzero]
+  cases rounded <;> cases twoLongWords <;>
+    simp [reduceL1TurnaroundWrites, hkeep]
 
 /-- Compute integer RRN results from the selected MAB inputs and route them
 through the same `reduce`/`reduce4` output layout as the Rust block model. -/
@@ -411,6 +488,46 @@ def reduceHalfAliasL1Writes (memoryBase : Fin l1bmLongWords)
         !fourGroups || mab.val / 4 == group.val).map fun mab => inputs group pe 0 mab
   reduceL1Writes memoryBase fourGroups true false cycle results
 
+def reduceHalfAliasTurnaroundWrites (fourGroups : Bool)
+    (inputs : Fin 4 → Fin 4 → Fin 2 → Fin 16 → BitVec 64) : List L1TurnWrite :=
+  let results := fun group pe _part =>
+    RRN.reduceHalfAliasLongWord fourGroups <|
+      ((List.finRange 16).filter fun mab =>
+        !fourGroups || mab.val / 4 == group.val).map fun mab => inputs group pe 0 mab
+  reduceL1TurnaroundWrites fourGroups true false results
+
+def executeHalfAliasL1Cycle (memory : L1Bank) (turnaround : L1Turnaround)
+    (memoryBase : Fin l1bmLongWords) (fourGroups : Bool) (cycle : Fin 4)
+    (inputs : Fin 4 → Fin 4 → Fin 2 → Fin 16 → BitVec 64) :
+    L1Bank × L1Turnaround :=
+  commitL1Transfer memory turnaround cycle
+    (reduceHalfAliasL1Writes memoryBase fourGroups cycle inputs)
+    (reduceHalfAliasTurnaroundWrites fourGroups inputs)
+
+theorem reduceHalfAliasTurnaroundWrites_count (fourGroups : Bool)
+    (inputs : Fin 4 → Fin 4 → Fin 2 → Fin 16 → BitVec 64) :
+    (reduceHalfAliasTurnaroundWrites fourGroups inputs).length =
+      if fourGroups then 16 else 4 := by
+  simpa [reduceHalfAliasTurnaroundWrites] using
+    reduceL1TurnaroundWrites_count fourGroups true false
+      (fun group pe _part => RRN.reduceHalfAliasLongWord fourGroups
+        (((List.finRange 16).filter fun mab =>
+          !fourGroups || mab.val / 4 == group.val).map fun mab => inputs group pe 0 mab))
+
+theorem reduceHalfAliasTurnaroundWrites_contains_result (fourGroups : Bool)
+    (group pe : Fin 4) (inputs : Fin 4 → Fin 4 → Fin 2 → Fin 16 → BitVec 64)
+    (hgroup : fourGroups = true ∨ group.val = 0) :
+    (⟨(group.val * 4 + pe.val) % 64, Nat.mod_lt _ (by decide)⟩,
+      RRN.reduceHalfAliasLongWord fourGroups
+        (((List.finRange 16).filter fun mab =>
+          !fourGroups || mab.val / 4 == group.val).map fun mab => inputs group pe 0 mab)) ∈
+      reduceHalfAliasTurnaroundWrites fourGroups inputs := by
+  simpa [reduceHalfAliasTurnaroundWrites] using
+    reduceL1TurnaroundWrites_contains_first fourGroups true false group pe
+      (fun g p _part => RRN.reduceHalfAliasLongWord fourGroups
+        (((List.finRange 16).filter fun mab =>
+          !fourGroups || mab.val / 4 == g.val).map fun mab => inputs g p 0 mab)) hgroup
+
 theorem reduceHalfAliasL1Writes_count (memoryBase : Fin l1bmLongWords)
     (fourGroups : Bool) (cycle : Fin 4)
     (inputs : Fin 4 → Fin 4 → Fin 2 → Fin 16 → BitVec 64) :
@@ -487,6 +604,63 @@ theorem reduceRoundedFloatL1Writes_contains_result (memoryBase : Fin l1bmLongWor
         ((List.finRange 16).filter fun mab =>
           !fourGroups || mab.val / 4 == g.val).map fun mab =>
             (inputs g p 0 mab, inputs g p 1 mab)) hgroup
+
+def reduceRoundedFloatTurnaroundWrites (fourGroups twoLongWords sourceTwoWords : Bool)
+    (precision : RRN.NativeFloatPrecision)
+    (inputs : Fin 4 → Fin 4 → Fin 2 → Fin 16 → BitVec 64) : List L1TurnWrite :=
+  let results := fun group pe _part =>
+    RRN.reduceRoundedLongFloat fourGroups (twoLongWords || sourceTwoWords) precision <|
+      ((List.finRange 16).filter fun mab =>
+        !fourGroups || mab.val / 4 == group.val).map fun mab =>
+          (inputs group pe 0 mab, inputs group pe 1 mab)
+  reduceL1TurnaroundWrites fourGroups true twoLongWords results
+
+theorem reduceRoundedFloatTurnaroundWrites_count (fourGroups twoLongWords sourceTwoWords : Bool)
+    (precision : RRN.NativeFloatPrecision)
+    (inputs : Fin 4 → Fin 4 → Fin 2 → Fin 16 → BitVec 64) :
+    (reduceRoundedFloatTurnaroundWrites fourGroups twoLongWords sourceTwoWords
+      precision inputs).length = if fourGroups then 16 else 4 := by
+  simpa [reduceRoundedFloatTurnaroundWrites] using
+    reduceL1TurnaroundWrites_count fourGroups true twoLongWords
+      (fun group pe _part => RRN.reduceRoundedLongFloat fourGroups
+        (twoLongWords || sourceTwoWords) precision <|
+        ((List.finRange 16).filter fun mab =>
+          !fourGroups || mab.val / 4 == group.val).map fun mab =>
+            (inputs group pe 0 mab, inputs group pe 1 mab))
+
+def executeRoundedFloatL1Cycle (memory : L1Bank) (turnaround : L1Turnaround)
+    (memoryBase : Fin l1bmLongWords) (fourGroups twoLongWords sourceTwoWords : Bool)
+    (precision : RRN.NativeFloatPrecision) (cycle : Fin 4)
+    (inputs : Fin 4 → Fin 4 → Fin 2 → Fin 16 → BitVec 64) :
+    L1Bank × L1Turnaround :=
+  commitL1Transfer memory turnaround cycle
+    (reduceRoundedFloatL1Writes memoryBase fourGroups twoLongWords sourceTwoWords
+      precision cycle inputs)
+    (reduceRoundedFloatTurnaroundWrites fourGroups twoLongWords sourceTwoWords precision inputs)
+
+theorem executeHalfAliasL1Cycle_updates_memory_and_turnaround
+    (memory : L1Bank) (turnaround : L1Turnaround)
+    (memoryBase : Fin l1bmLongWords) (fourGroups : Bool) (cycle : Fin 4)
+    (inputs : Fin 4 → Fin 4 → Fin 2 → Fin 16 → BitVec 64) :
+    let next := executeHalfAliasL1Cycle memory turnaround memoryBase fourGroups cycle inputs
+    next.1 = commitL1Writes memory (reduceHalfAliasL1Writes memoryBase fourGroups cycle inputs) ∧
+      next.2 = commitL1TurnaroundWrites turnaround cycle
+        (reduceHalfAliasTurnaroundWrites fourGroups inputs) := by
+  exact ⟨rfl, rfl⟩
+
+theorem executeRoundedFloatL1Cycle_updates_memory_and_turnaround
+    (memory : L1Bank) (turnaround : L1Turnaround)
+    (memoryBase : Fin l1bmLongWords) (fourGroups twoLongWords sourceTwoWords : Bool)
+    (precision : RRN.NativeFloatPrecision) (cycle : Fin 4)
+    (inputs : Fin 4 → Fin 4 → Fin 2 → Fin 16 → BitVec 64) :
+    let next := executeRoundedFloatL1Cycle memory turnaround memoryBase fourGroups
+      twoLongWords sourceTwoWords precision cycle inputs
+    next.1 = commitL1Writes memory
+        (reduceRoundedFloatL1Writes memoryBase fourGroups twoLongWords sourceTwoWords
+          precision cycle inputs) ∧
+      next.2 = commitL1TurnaroundWrites turnaround cycle
+        (reduceRoundedFloatTurnaroundWrites fourGroups twoLongWords sourceTwoWords precision inputs) := by
+  exact ⟨rfl, rfl⟩
 
 theorem mwriteWrites_count (memoryBase : Fin l1bmLongWords)
     (twoLongWords : Bool) (cycle : Fin 4) (buses : Fin 4 → Bus) :
@@ -635,8 +809,6 @@ theorem committedM4writeCycle_last_readback (memory : L1Bank)
   cases twoLongWords <;>
     simp [m4writeWrites, commitL1Writes, writeL1Word, List.finRange]
 
-abbrev L1TurnWrite := Fin 64 × BitVec 64
-
 def gatherDestinationMab (mab : Fin 16) (mabDiff : Int) : Fin 16 :=
   distribSourceMab mab (-mabDiff)
 
@@ -659,14 +831,7 @@ def gatherTurnaroundWrites (mabDiff : Int) (buses : Fin 16 → Fin 4 → Bus) :
 
 def writeL1TurnaroundWord (turnaround : L1Turnaround) (cycle : Fin 4)
     (address : Fin 64) (value : BitVec 64) : L1Turnaround :=
-  fun targetCycle targetAddress =>
-    if targetCycle = cycle ∧ targetAddress = address then value
-    else turnaround targetCycle targetAddress
-
-def commitL1TurnaroundWrites (turnaround : L1Turnaround) (cycle : Fin 4)
-    (writes : List L1TurnWrite) : L1Turnaround :=
-  writes.foldl (fun current write =>
-    writeL1TurnaroundWord current cycle write.1 write.2) turnaround
+  writeL1Turnaround turnaround cycle address value
 
 theorem gatherDestinationMab_euclidean (mab : Fin 16) (mabDiff : Int) :
     (gatherDestinationMab mab mabDiff).val =
@@ -715,7 +880,7 @@ theorem committedGatherTurnaround_last_readback (turnaround : L1Turnaround)
       cycle ⟨(15 : Fin 16).val * 4 + (3 : Fin 4).val, by decide⟩ =
       (buses 15 3).high := by
   simp [commitL1TurnaroundWrites, gatherTurnaroundWrites,
-    writeL1TurnaroundWord, List.finRange]
+    writeL1Turnaround, List.finRange]
 
 def updateBroadcastForwarding (old : ProofsLean.MNCore.Forwarding.Slots)
     (outputs : Fin 4 → Bus) (noForward : Bool) :

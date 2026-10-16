@@ -221,7 +221,8 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   half aliasでは4 half laneをsingleへ拡張し、16 MAB時の二段縮約、halfへのround-pack、
   packed outputとL1 pending列への配置を定義・証明した。native single/doubleの明示的なhalf
   output roundingもsource/destination幅に応じたlane数・packed layoutとL1 pending列へ接続した。
-  PE/L1 turnaroundへのcommitは未接続。
+  reduceのL1BM pending列とturnaround pending列を同じ状態遷移でcommitする関数を定義し、
+  両出力のcommit先とturnaround列の件数・結果対応、および末尾writeのreadbackを証明した。
 
 `Machine.positiveCost` はスコアが正の行へ正規化済みであるという条件。
 MN-Coreにはゼロコストの制御文があるので、その正規化の意味保存と完全性を証明するまでは
