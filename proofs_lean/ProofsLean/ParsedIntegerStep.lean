@@ -1634,6 +1634,36 @@ def commitParsedMaskedWrites (files : IntegerRegisterFiles)
             writeDirectAccessMasked current destination write.data write.selection
         | none => current) files
 
+/-- Update the ALU forwarding value for one cycle from an already prepared
+integer ALU result. `data` is the post-flush four-word bus; the flag controls
+the architectural noforward behavior for this producer. This primitive does
+not summarize other producers or execute the other three cycles. -/
+def updateParsedIntegerALUForwardingCycle
+    (old : ProofsLean.MNCore.Forwarding.Slots) (cycle : Fin 4)
+    (prepared : ProofsLean.StepResult PreparedParsedMaskedWrite) (noForward : Bool) :
+    ProofsLean.StepResult ProofsLean.MNCore.Forwarding.Slots :=
+  match prepared with
+  | .failure => .failure
+  | .unknown => .unknown
+  | .ok write =>
+      if noForward then .ok old
+      else .ok (fun unit slotCycle =>
+        if unit = .alu ∧ slotCycle = cycle then
+          .known (pack write.data)
+        else old unit slotCycle)
+
+theorem updateParsedIntegerALUForwardingCycle_reads_back
+    (files : IntegerRegisterFiles) (old : ProofsLean.MNCore.Forwarding.Slots)
+    (cycle : Fin 4) (write : PreparedParsedMaskedWrite) :
+    ParsedIntegerInput.readWithForwarding files
+      (fun unit slotCycle =>
+        if unit = .alu ∧ slotCycle = cycle then
+          .known (pack write.data)
+        else old unit slotCycle)
+      cycle (.forward .aluf false) = .ok (pack write.data) := by
+  simp [ParsedIntegerInput.readWithForwarding, ParsedIntegerInput.forwardUnit,
+    ParsedIntegerInput.applyRounding]
+
 def parsedIntegerMaskedLineStepWithForwarding (files : IntegerRegisterFiles)
     (slots : ProofsLean.MNCore.Forwarding.Slots)
     (expressions : List ParsedExpr) (control : ParsedMaskExecutionControl) :
