@@ -337,7 +337,7 @@ def ParsedOperand.toParsedIntegerInput? (operand : ParsedOperand)
       some (.fixed (replicateIntegerLane precision
         (ParsedFixed.integerValue fixed precision group l2b l1b mab pe)))
   | .forward kind _ _ rounded => some (.forward kind rounded)
-  | .mem access _ _ rounded none =>
+  | .mem access _ _ rounded _ =>
       (ParsedOperand.toDirectMemoryAccess? (.mem access false false false none)
         pe cycle bar0 bar1 tWord).map (fun resolved => .memory resolved rounded)
   | _ =>
@@ -371,13 +371,13 @@ theorem parsed_forward_integer_input (kind : ParsedForward) (negated extended ro
       (.forward kind negated extended rounded) precision group l2b l1b mab pe cycle
       bar0 bar1 tWord = some (.forward kind rounded) := rfl
 
-theorem parsed_integer_memory_input_preserves_rounding
-    (access : Access) (precision : IntegerALU.Precision)
+theorem parsed_integer_memory_input_preserves_rounding_and_ignores_mask
+    (access : Access) (negated extended rounded : Bool) (mask : Option ParsedMask)
+    (precision : IntegerALU.Precision)
     (group : Fin 2) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
-    (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
-    (rounded : Bool) :
+    (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
     ParsedOperand.toParsedIntegerInput?
-      (.mem access false false rounded none) precision group l2b l1b mab pe cycle
+      (.mem access negated extended rounded mask) precision group l2b l1b mab pe cycle
       bar0 bar1 tWord =
     (ParsedOperand.toDirectMemoryAccess? (.mem access false false false none)
       pe cycle bar0 bar1 tWord).map (fun resolved => .memory resolved rounded) := rfl
@@ -1004,6 +1004,17 @@ example : (ParsedExpr.toDirectMaskedIntegerAccesses? parsedSubpeidMaskedExpr
 
 example : (ParsedExpr.toDirectMaskedIntegerAccesses? parsedMsb1MaskedExpr
     (fun _ _ => 0) {} 0 0 0 0 0 2 0 0 0).isSome = true := by decide
+
+def parsedMaskedSourceIntegerExpr : ParsedExpr where
+  op := .alu .inc (some .i) false none
+  sources := [.mem ⟨.lm0, ⟨1, 0, 0, 0, 0, false, none⟩⟩ false false false
+    (some (.pattern false 0))]
+  destinations := [plusOneWrite]
+  flush := none
+  text := "iinc $lm0v$0000 $ln0v"
+
+example : (ParsedExpr.toDirectMaskedIntegerAccesses? parsedMaskedSourceIntegerExpr
+    (fun _ _ => 0) {} 0 0 0 0 0 0 0 0 0).isSome = true := by decide
 
 def parsedImmediateMultiDestinationExpr : ParsedExpr where
   op := .immediate 0x12345678 false
