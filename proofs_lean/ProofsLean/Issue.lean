@@ -669,6 +669,41 @@ def parsedMvDecimal? (chars : List Char) : Option Nat := do
   let (value, rest) ← parsedMvDigitsPrefix 10 chars 0
   if rest.isEmpty then some value else none
 
+structure ParsedMvParams where
+  size : Option (Fin (2 ^ 64)) := none
+  tag : Option (Fin 256) := none
+  nd : Option (Fin (2 ^ 32)) := none
+  priority : Fin 256 := ⟨0, by decide⟩
+  deriving DecidableEq, Repr
+
+/-- Parse MV's concatenated `nd`, `n`, `i`, and `p` parameters. Integer casts
+for `nd` and priority intentionally wrap, matching Rust's `as u32`/`as u8`. -/
+def parseParsedMvParamsAux : Nat → List Char → ParsedMvParams → Option ParsedMvParams
+  | 0, _, _ => none
+  | _ + 1, [], params => some params
+  | fuel + 1, 'n' :: 'd' :: rest, params => do
+      let (value, tail) ← parsedMvNumberPrefix rest
+      if value ≥ 2 ^ 64 then none else
+        parseParsedMvParamsAux fuel tail { params with nd := some ⟨value % (2 ^ 32), by omega⟩ }
+  | fuel + 1, 'n' :: rest, params => do
+      let (value, tail) ← parsedMvNumberPrefix rest
+      if value ≥ 2 ^ 64 then none else
+        parseParsedMvParamsAux fuel tail { params with size := parsedNatToFin? value (2 ^ 64) }
+  | fuel + 1, 'p' :: rest, params => do
+      let (value, tail) ← parsedMvNumberPrefix rest
+      if value ≥ 2 ^ 64 then none else
+        parseParsedMvParamsAux fuel tail { params with priority := ⟨value % 256, by omega⟩ }
+  | fuel + 1, 'i' :: h1 :: h2 :: rest, params => do
+      let d1 ← parsedMvDigit? 16 h1
+      let d2 ← parsedMvDigit? 16 h2
+      if d1 < 16 && d2 < 16 then
+        parseParsedMvParamsAux fuel rest { params with tag := some ⟨(d1 * 16 + d2) % 256, Nat.mod_lt _ (by decide)⟩ }
+      else none
+  | _ + 1, _, _ => none
+
+def parseParsedMvParams? (text : String) : Option ParsedMvParams :=
+  parseParsedMvParamsAux (text.length + 1) text.toList {}
+
 def parsedMvOptionalU8? (chars : List Char) : Option (Option (Fin 256)) := do
   if chars.isEmpty then some none else do
     let value ← parsedMvDecimal? chars
@@ -769,6 +804,56 @@ structure ParsedMv where
   destination : Option ParsedMvOperand
   text : String
   deriving DecidableEq, Repr
+
+/-- Construct the parsed MV payload from an already tokenized opcode and its
+two operand tokens, matching the Rust `Mv` fields and numeric casts. -/
+def parseParsedMvTokens? (text opcode : String) (operands : List String) : Option ParsedMv := do
+  if opcode == "mvnop" then
+    some ⟨.nop, ⟨0, by decide⟩, none, none, ⟨0, by decide⟩, none, none, text⟩
+  else do
+    let pieces := opcode.splitOn "/"
+    let (mode, parameterText) ← match pieces with
+      | [mode, params] => some (mode, params)
+      | _ => none
+    if !mode.startsWith "mv" then none else
+      let kind ← parseParsedMvKind? ((mode.drop 2).toString)
+      let params ← parseParsedMvParams? parameterText
+      let size ← params.size
+      let (sourceText, destinationText) ← match operands with
+        | [source, destination] => some (source, destination)
+        | _ => none
+      let source ← parseParsedMvOperand? sourceText
+      let destination ← parseParsedMvOperand? destinationText
+      some ⟨kind, size, params.tag, params.nd, params.priority,
+        some source, some destination, text⟩
+
+def parsedMvWhitespace (char : Char) : Bool :=
+  char.toNat == 9 || char.toNat == 10 || char.toNat == 11 ||
+    char.toNat == 12 || char.toNat == 13 || char.toNat == 32
+
+def parsedMvSplitWhitespaceAux : List Char → List Char → List String → List String
+  | [], current, words =>
+      if current.isEmpty then words.reverse
+      else (String.ofList current.reverse :: words).reverse
+  | char :: rest, current, words =>
+      if parsedMvWhitespace char then
+        let nextWords := if current.isEmpty then words else String.ofList current.reverse :: words
+        parsedMvSplitWhitespaceAux rest [] nextWords
+      else parsedMvSplitWhitespaceAux rest (char :: current) words
+
+def parsedMvSplitWhitespace (text : String) : List String :=
+  parsedMvSplitWhitespaceAux text.toList [] []
+
+/-- Parse a complete MV line, using Rust-compatible ASCII whitespace tokenization. -/
+def parseParsedMvLine? (text : String) : Option ParsedMv := do
+  match parsedMvSplitWhitespace text with
+  | [] => none
+  | opcode :: operands => parseParsedMvTokens? text opcode operands
+
+theorem parseParsedMvParams_cast_fixture :
+    (parseParsedMvParams? "nd0x100000001n0x20i0Ap257") =
+      some ⟨some ⟨32, by decide⟩, some ⟨10, by decide⟩,
+        some ⟨1, by decide⟩, ⟨1, by decide⟩⟩ := by decide
 
 inductive ParsedLine where
   | pe (expressions : List ParsedExpr)
