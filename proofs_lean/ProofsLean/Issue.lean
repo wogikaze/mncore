@@ -665,8 +665,9 @@ def parsedMvNumberPrefix (chars : List Char) : Option (Nat × List Char) :=
   | [] => none
 
 def parsedMvDecimal? (chars : List Char) : Option Nat := do
-  if chars.isEmpty then none else
-  let (value, rest) ← parsedMvDigitsPrefix 10 chars 0
+  let digits := if chars.head? == some '+' then chars.drop 1 else chars
+  if digits.isEmpty then none else
+  let (value, rest) ← parsedMvDigitsPrefix 10 digits 0
   if rest.isEmpty then some value else none
 
 structure ParsedMvParams where
@@ -693,6 +694,9 @@ def parseParsedMvParamsAux : Nat → List Char → ParsedMvParams → Option Par
       let (value, tail) ← parsedMvNumberPrefix rest
       if value ≥ 2 ^ 64 then none else
         parseParsedMvParamsAux fuel tail { params with priority := ⟨value % 256, by omega⟩ }
+  | fuel + 1, 'i' :: '+' :: digit :: rest, params => do
+      let value ← parsedMvDigit? 16 digit
+      parseParsedMvParamsAux fuel rest { params with tag := some ⟨value % 256, Nat.mod_lt _ (by decide)⟩ }
   | fuel + 1, 'i' :: h1 :: h2 :: rest, params => do
       let d1 ← parsedMvDigit? 16 h1
       let d2 ← parsedMvDigit? 16 h2
@@ -807,17 +811,21 @@ structure ParsedMv where
 
 /-- Construct the parsed MV payload from an already tokenized opcode and its
 two operand tokens, matching the Rust `Mv` fields and numeric casts. -/
+def parsedMvSplitSlashAux : List Char → List Char → Option (List Char × List Char)
+  | [], _ => none
+  | '/' :: rest, acc => some (acc.reverse, rest)
+  | char :: rest, acc => parsedMvSplitSlashAux rest (char :: acc)
+
 def parseParsedMvTokens? (text opcode : String) (operands : List String) : Option ParsedMv := do
   if opcode == "mvnop" then
     some ⟨.nop, ⟨0, by decide⟩, none, none, ⟨0, by decide⟩, none, none, text⟩
   else do
-    let pieces := opcode.splitOn "/"
-    let (mode, parameterText) ← match pieces with
-      | [mode, params] => some (mode, params)
+    let (modeChars, parameterChars) ← parsedMvSplitSlashAux opcode.toList []
+    let (modeTail, _) ← match modeChars with
+      | 'm' :: 'v' :: tail => some (tail, ())
       | _ => none
-    if !mode.startsWith "mv" then none else
-      let kind ← parseParsedMvKind? ((mode.drop 2).toString)
-      let params ← parseParsedMvParams? parameterText
+    let kind ← parseParsedMvKind? (String.ofList modeTail)
+    let params ← parseParsedMvParams? (String.ofList parameterChars)
       let size ← params.size
       let (sourceText, destinationText) ← match operands with
         | [source, destination] => some (source, destination)
@@ -854,6 +862,18 @@ theorem parseParsedMvParams_cast_fixture :
     (parseParsedMvParams? "nd0x100000001n0x20i0Ap257") =
       some ⟨some ⟨32, by decide⟩, some ⟨10, by decide⟩,
         some ⟨1, by decide⟩, ⟨1, by decide⟩⟩ := by decide
+
+theorem parseParsedMvLine_copy_fixture :
+    parseParsedMvLine? "  mvp/n2  $p0\t$d1 " =
+      some ⟨.copy, ⟨2, by decide⟩, none, none, ⟨0, by decide⟩,
+        some (.pdm ⟨0, by decide⟩ none),
+        some (.dram ⟨1, by decide⟩ none false), "  mvp/n2  $p0\t$d1 "⟩ := by decide
+
+theorem parseParsedMvParams_rejects_size_overflow :
+    parseParsedMvParams? "n18446744073709551616" = none := by decide
+
+theorem parseParsedMvParams_selector_accepts_explicit_plus :
+    parsedMvOptionalU8? ['+', '2', '5', '5'] = some (some ⟨255, by decide⟩) := by decide
 
 inductive ParsedLine where
   | pe (expressions : List ParsedExpr)
