@@ -176,12 +176,15 @@ def immediateExcludesLm0 (xs : List Expr) : Prop :=
 def zeroFlushUnique (xs : List Expr) : Prop :=
   (xs.filter Expr.zeroFlush).length ≤ 1
 
+/-- Mask-flag reads in one issue step use the same PE read width. -/
 def maskWidthsAgree (xs : List Expr) : Prop :=
   let widths := (xs.flatMap Expr.maskApplications).map ParsedMask.isDoubleLong
   match widths with
   | [] => True
   | first :: rest => ∀ width ∈ rest, width = first
 
+/-- Variable mask-flag reads in one issue step use the same OMR entry.
+This is the mask-register part of SDM 3.6.4's shared-read-region rule. -/
 def maskEntriesAgree (xs : List Expr) : Prop :=
   let entries := (xs.flatMap Expr.maskApplications).filterMap ParsedMask.variableEntry?
   match entries with

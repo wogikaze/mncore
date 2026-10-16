@@ -51,6 +51,8 @@ fn prec_of(e: &Expr) -> Option<Prec> {
 }
 
 fn mask_applications_agree(exprs: &[Expr]) -> bool {
+    // Mask selectors read the mask-register file. Keep those reads on one
+    // width and, for variable selectors, one OMR entry across the issue line.
     let mut width = None;
     let mut entry = None;
     for expression in exprs {
@@ -205,6 +207,8 @@ mod tests {
             "lpassa $lm0v $lr0v/$imr1; l1bmm $lb0 $ls0v/$imr1",
             "gmfma $ly $ls0v $lr0v $ln0v $omr1",
             "lpassa $lt $omr1",
+            "lpassa $lm0v $lr0v/$imr1; gmfma $ly $ls0v $lr0v $ln0v $omr1",
+            "lpassa $lm0v $lr0v/$imr1; gmfma $ly $ls0v $lr0v $ln0v $omr2",
         ] {
             assert_eq!(issue(ok), Ok(()), "{ok}");
         }
