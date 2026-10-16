@@ -15,6 +15,8 @@ ASSEMBLER = REPO / "judge/judge-py/mncore2_emuenv/assemble3"
 CASES = {
     "nop_zero": ("nop/0\n", True, 0),
     "nop_one": ("nop/1\n", True, 1),
+    "nop_with_wait": ("nop; wait i01\n", True, 1),
+    "nop_with_alu": ("nop; iadd $lm0 $ln0\n", False, None),
     "nop_zero_with_wait": ("nop/0; wait i01\n", False, None),
     "wait_zero_tag": ("nop; wait i00\n", False, None),
     "wait_tag_1": ("nop; wait i01\n", True, 1),
@@ -113,6 +115,10 @@ CASES = {
     "mv_size_32704": ("mvp/n32704 $d0 $lc0@.0\n", True, 1),
     "mv_size_32768": ("mvp/n32768 $d0 $lc0@.0\n", False, None),
     "mv_size_65536": ("mvp/n65536 $d0 $lc0@.0\n", False, None),
+    "mv_then_pe_same_line": (
+        "mvp/n64 $d0 $lc0@.0; iadd $lm0 $ln0\n", False, None),
+    "pe_then_mv_same_line": (
+        "iadd $lm0 $ln0; mvp/n64 $d0 $lc0@.0\n", False, None),
     "l1bm_width2_max": ("l1bmm $lb8188 $nowrite\n", True, 1),
     "l1bm_width2_unaligned": ("l1bmm $lb8190 $nowrite\n", False, None),
     "l1bm_width2_capacity": ("l1bmm $lb8192 $nowrite\n", False, None),
@@ -237,6 +243,7 @@ def main() -> None:
             "Same-expression destination checks reject duplicate output classes even when the operand values differ (LM0 at two addresses, two OMR entries), reject repeated nowrite, and reject multiple matrix-write destinations. A single nowrite destination is accepted. These checks support finite destination arity for the sampled opcodes but do not establish a bound for every opcode spelling.",
             "Judge flags can preserve d get/d set, but the normal challenge invocation does not set them; the d-set invalidation applies only when such a record is retained.",
             "Selected valid-operand combinations of l2bmdars with l2bmb, l2bmb2, l2bmd, l2bm@, l2bmr*, l2bmr2* and l2bmi were rejected. This does not cover the manual's unspecified special l2bmdars issue condition.",
+            "The assembler accepts `nop; wait i01` and rejects nop with an ALU expression; the zero-count nop/wait pair is also rejected. MV and PE expressions cannot be combined on one source line in either order in the tested forms.",
         ],
         "submission_normalization": {
             "source": "judge/judge-py/judge.py",

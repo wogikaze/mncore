@@ -25,7 +25,7 @@
     },
     {
       "path": "proofs_lean/scripts/check_isa_parser_bounds.py",
-      "sha256": "299b04f00cfb803ee4d1e94c69d6760b7a8346420c5e44aba5b486f0978a9298"
+      "sha256": "5c987a5ff64ef20bc9dc1731f7d89d82d72c905a4922b785f5f763ee7206f19f"
     }
   ],
   "observations": [
@@ -43,6 +43,22 @@
       "accepted": true,
       "assembler_output_lines": 1,
       "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "nop_with_wait",
+      "source": "nop; wait i01",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "nop_with_alu",
+      "source": "nop; iadd $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "No output location.",
       "matches_expected": true
     },
     {
@@ -699,6 +715,22 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 2 vs 0 4096 >= 2^11",
+      "matches_expected": true
+    },
+    {
+      "case": "mv_then_pe_same_line",
+      "source": "mvp/n64 $d0 $lc0@.0; iadd $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Too many operand given to mv instruction.",
+      "matches_expected": true
+    },
+    {
+      "case": "pe_then_mv_same_line",
+      "source": "iadd $lm0 $ln0; mvp/n64 $d0 $lc0@.0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "No output location.",
       "matches_expected": true
     },
     {
@@ -8740,7 +8772,8 @@
     "A zero instruction with one destination in each of LM0, LM1, GRF0, GRF1, T and OMR is accepted; duplicate destinations within each of those six categories are rejected. This bounds observed destination categories for these probes, but Rust's VSM parser itself still stores all tokens after the fixed source prefix as destinations, and the assembler probes are not a universal parser-to-encoding theorem.",
     "Same-expression destination checks reject duplicate output classes even when the operand values differ (LM0 at two addresses, two OMR entries), reject repeated nowrite, and reject multiple matrix-write destinations. A single nowrite destination is accepted. These checks support finite destination arity for the sampled opcodes but do not establish a bound for every opcode spelling.",
     "Judge flags can preserve d get/d set, but the normal challenge invocation does not set them; the d-set invalidation applies only when such a record is retained.",
-    "Selected valid-operand combinations of l2bmdars with l2bmb, l2bmb2, l2bmd, l2bm@, l2bmr*, l2bmr2* and l2bmi were rejected. This does not cover the manual's unspecified special l2bmdars issue condition."
+    "Selected valid-operand combinations of l2bmdars with l2bmb, l2bmb2, l2bmd, l2bm@, l2bmr*, l2bmr2* and l2bmi were rejected. This does not cover the manual's unspecified special l2bmdars issue condition.",
+    "The assembler accepts `nop; wait i01` and rejects nop with an ALU expression; the zero-count nop/wait pair is also rejected. MV and PE expressions cannot be combined on one source line in either order in the tested forms."
   ],
   "submission_normalization": {
     "source": "judge/judge-py/judge.py",

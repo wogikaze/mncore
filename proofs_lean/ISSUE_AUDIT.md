@@ -34,6 +34,13 @@ seven were rejected by `assemble3`. This does not identify the manual's special
 condition, so it does not justify removing the completeness gap. The
 `l2bmdars; l2bmdarw` pair remains accepted and is separately recorded.
 
+For the other line-level cases, the assembler accepts `nop; wait i01`, rejects
+`nop; iadd ...`, and rejects `mvp/...; iadd ...` and `iadd ...; mvp/...` in
+the sampled valid forms. The zero-count nop/wait form is rejected as well.
+This supports modeling nop-with-wait as a dedicated line constructor and MV
+as a separate line form, while parser-to-assembler correspondence remains to
+be proved.
+
 ## Next formalization work
 
 1. Model the `l2bmdars` simultaneous-issue exception explicitly, or establish
