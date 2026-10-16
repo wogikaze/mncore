@@ -59,7 +59,9 @@ inductive ParsedMask where
   | entry (longLong : Bool) (index : Nat)
   deriving DecidableEq, Repr
 
-/-- Structural mirror of operand variants in `viz/core/src/vsm.rs`. -/
+/-- Structured PE operand syntax. Rust's `Operand::Raw` is a diagnostic parser
+fallback for tokens outside the SDM operand productions and is not a candidate
+in this legal-instruction syntax. -/
 inductive ParsedOperand where
   | mem (access : Access) (neg ext rnd : Bool) (mask : Option ParsedMask)
   | bar (lm1 : Bool) (width : Nat) (mask : Option ParsedMask)
@@ -71,7 +73,6 @@ inductive ParsedOperand where
   | l1bm (width : Nat) (address : Option Nat)
   | l2bm (address : Nat) (l2b : Option Nat)
   | dar (address : Nat)
-  | raw (text : String)
   deriving DecidableEq, Repr
 
 structure Expr where

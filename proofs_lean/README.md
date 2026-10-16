@@ -70,11 +70,15 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
 - `Issue.lean`の`NormalizedExpr`/`NormalizedMv`/`NormalizedLine`は、表示用の
   `text`を候補同一性から除き、PE式の順序を維持する。未知opcodeはRust parserで
   拒否されるため、Leanの到達可能な`ParsedOp`から文字列付き`other`を除いた。
+  SDM 3.6.1.1〜3.6.1.20のPE operand productionsを構造化variantに写し、
+  Rustのdiagnostic fallback `Operand::Raw(String)`もLean候補型から外した。
+  これはマニュアル文法を閉じた信頼境界とし、公式assemblerの全PE operand受理集合を
+  形式証明した主張ではない。
   PEのissue投影と検査が
   正規化で変わらないことを証明した。正規化後の実行命令型ではnop countを正に
   制約し、全命令のコスト正値と`nop/0`除去を証明した。mask directiveは命令行
-  でなく、後続状態に畳み込む制御イベントとして残す。`ParsedOperand.raw`や未制限の
-  数値フィールドはまだ残り、実機命令型の有限性には至っていない。
+  でなく、後続状態に畳み込む制御イベントとして残す。未制限の数値フィールドは
+  まだ残り、実機命令型の有限性には至っていない。
 - `FiniteExample.lean`: 3命令・4入力の小さな機械で、全候補の反証、2行の最適性、
   限定入力では1行解が存在することを証明する回帰例。**MN-Coreではない。**
 - `PlusOne.lean`: Welcome（`challenge/1.plus-one`）の2行の `iinc` 解について、

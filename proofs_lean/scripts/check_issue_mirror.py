@@ -185,8 +185,10 @@ def validate() -> None:
     enum_matches(VSM, "Operand", "ParsedOperand", {
         "Mem": "mem", "Bar": "bar", "Forward": "forward", "Fixed": "fixed",
         "Omr": "omr", "Mat": "matrix", "Nowrite": "nowrite", "L1bm": "l1bm",
-        "L2bm": "l2bm", "Dar": "dar", "Raw": "raw",
+        "L2bm": "l2bm", "Dar": "dar", "Raw": None,
     })
+    if "Operand::Raw(tok.to_string())" not in VSM:
+        raise ValueError("Rust Raw operand fallback changed; reassess the legal-operand boundary")
     enum_matches(VSM, "MemKind", "Bank", {
         "Lm0": "lm0", "Lm1": "lm1", "Grf0": "grf0", "Grf1": "grf1", "T": "t",
         "L1bm": "l1bm", "L2bm": "l2bm", "Pdm": "pdm", "Dram": "dram", "Omr": "omr",
