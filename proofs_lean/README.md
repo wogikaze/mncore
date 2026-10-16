@@ -121,7 +121,10 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   さらにDirectMemoryAccessイベントに対するRust hazard.rs §3.6.3.9の距離条件を形式化した。
   同一bankのLM write→PE readには3 issue word、GRF/Tの重複rangeには7 cycleを要求し、
   各境界以上で条件を満たす定理を追加した。Tのhazard address範囲はcycle番号・長さ1で扱う。
-  これは対象PEメモリ規則の条件モデルであり、Rust analyzerの全Access生成、mask別write有無、
+  さらに対応するParsedOperand/ParsedExpr/PE issue lineからread/write event列を生成し、
+  T indirect readのcycle別Tイベントも追加する。固定patternはRust `written_cycles`と同じcycle
+  bitでwrite eventを除外し、entry maskは同解析器と同じく全cycleを候補にする。
+  これは対象PEメモリ規則の条件モデルであり、Rust analyzerの全Access生成、mask directiveの実効状態、
   BARによる静的range照合、lookback/dedupを含むhazard report対応証明ではない。
   mv、debug、DRAM初期化
   など他のtop-level行はlowering対象外。精度縮減、hazard/port legalityは未接続で、

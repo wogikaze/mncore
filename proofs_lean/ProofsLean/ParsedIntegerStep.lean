@@ -664,6 +664,74 @@ def peHazardSatisfied (earlier later : TimedPEAccess) : Prop :=
     | some (.cycles count) =>
         count ≤ later.absoluteCycle - earlier.absoluteCycle
 
+def parsedHazardCycles : List (Fin 4) := [0, 1, 2, 3]
+
+def parsedHazardPatternEnables (mask : Option ParsedMask) (cycle : Fin 4) : Bool :=
+  match mask with
+  | some (.pattern _ bits) => bits.getLsbD (3 - cycle.val)
+  | _ => true
+
+def tIndirectHazardAccess (cycle : Fin 4) : DirectMemoryAccess :=
+  ⟨.t, .word, ⟨cycle.val, by have h := cycle.isLt; simp [Bank.capacity]; omega⟩⟩
+
+def ParsedOperand.toTimedPEHazardEvents? (operand : ParsedOperand) (write : Bool)
+    (control : ParsedMaskExecutionControl) : Option (List TimedPEAccess) :=
+  match operand with
+  | .mem access _ _ _ ownMask =>
+      match issueBankToRegisterBank access.bank with
+      | none => some []
+      | some _ => do
+          let resolved ← parsedHazardCycles.mapM fun cycle =>
+            ParsedOperand.toDirectMemoryAccessMode? operand true
+              control.context.pe cycle control.context.bar0 control.context.bar1
+              control.context.tWord
+          pure <| (parsedHazardCycles.zip resolved).flatMap fun (cycle, direct) =>
+            if write && !parsedHazardPatternEnables ownMask cycle then []
+            else
+              let primary := [TimedPEAccess.ofControl control direct write cycle]
+              let indirect := if !write && access.region.tIndirect then
+                [TimedPEAccess.ofControl control (tIndirectHazardAccess cycle) false cycle]
+                else []
+              primary ++ indirect
+  | _ => some []
+
+def ParsedExpr.toTimedPEHazardEvents? (expression : ParsedExpr)
+    (control : ParsedMaskExecutionControl) : Option (List TimedPEAccess) := do
+  let reads ← expression.sources.mapM fun operand =>
+    ParsedOperand.toTimedPEHazardEvents? operand false control
+  let writes ← expression.destinations.mapM fun operand =>
+    ParsedOperand.toTimedPEHazardEvents? operand true control
+  pure (reads.flatten ++ writes.flatten)
+
+def ParsedMaskedIssueLine.toTimedPEHazardEvents?
+    (line : ParsedMaskedIssueLine) (control : ParsedMaskExecutionControl) :
+    Option (List TimedPEAccess) :=
+  match line with
+  | .nop => some []
+  | .pe expressions => do
+      let perExpression ← expressions.mapM fun expression =>
+        ParsedExpr.toTimedPEHazardEvents? expression control
+      pure perExpression.flatten
+
+theorem parsed_mask_pattern_controls_hazard_write_cycle
+    (cycle : Fin 4) (bits : BitVec 4) :
+    parsedHazardPatternEnables (some (.pattern false bits)) cycle =
+      bits.getLsbD (3 - cycle.val) := rfl
+
+theorem parsed_mask_entry_keeps_all_hazard_write_cycles
+    (cycle : Fin 4) (longLong : Bool) (entry : Nat) :
+    parsedHazardPatternEnables (some (.entry longLong entry)) cycle = true := rfl
+
+theorem t_indirect_hazard_access_uses_cycle_region (cycle : Fin 4) :
+    (tIndirectHazardAccess cycle).bank = .t ∧
+      TimedPEAccess.rangeStart
+        (TimedPEAccess.ofControl
+          ⟨{}, ⟨0, cycle, 0, 0, 0⟩, 0⟩
+          (tIndirectHazardAccess cycle) false cycle) = cycle.val := by
+  constructor
+  · rfl
+  · simp [TimedPEAccess.rangeStart, TimedPEAccess.ofControl, tIndirectHazardAccess]
+
 theorem lm_pe_hazard_requires_three_issue_words
     (earlier later : TimedPEAccess)
     (write : earlier.write = true) (read : later.write = false)

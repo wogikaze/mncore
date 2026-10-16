@@ -102,6 +102,9 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.grf_t_pe_hazard_requires_seven_cycles
 #print axioms ProofsLean.MNCore.PEMemory.lm_pe_hazard_satisfied_after_three_words
 #print axioms ProofsLean.MNCore.PEMemory.grf_t_pe_hazard_satisfied_after_seven_cycles
+#print axioms ProofsLean.MNCore.PEMemory.parsed_mask_pattern_controls_hazard_write_cycle
+#print axioms ProofsLean.MNCore.PEMemory.parsed_mask_entry_keeps_all_hazard_write_cycles
+#print axioms ProofsLean.MNCore.PEMemory.t_indirect_hazard_access_uses_cycle_region
 
 open Lean Elab Command in
 run_cmd do
