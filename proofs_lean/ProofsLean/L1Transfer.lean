@@ -1,5 +1,6 @@
 import ProofsLean.IntegerALU
 import ProofsLean.ParsedIntegerStep
+import ProofsLean.RRN
 
 /- Raw L1BM-to-PE broadcast transfer, mirroring `Blocks::l1_to_pe`
 (`viz/core/src/blocks.rs`). This models one L1B bank; PE destination writes,
@@ -246,6 +247,18 @@ def reduceL1Writes (memoryBase : Fin l1bmLongWords) (fourGroups rounded twoLongW
         else []
       else []
 
+/-- Compute integer RRN results from the selected MAB inputs and route them
+through the same `reduce`/`reduce4` output layout as the Rust block model. -/
+def reduceIntegerL1Writes (memoryBase : Fin l1bmLongWords)
+    (fourGroups twoLongWords : Bool) (precision : RRN.IntegerPrecision)
+    (op : RRN.IntegerOp) (cycle : Fin 4)
+    (inputs : Fin 4 → Fin 4 → Fin 2 → Fin 16 → BitVec 64) : List L1Write :=
+  let results := fun group pe part =>
+    RRN.reduceLongInteger op precision <|
+      ((List.finRange 16).filter fun mab =>
+        !fourGroups || mab.val / 4 == group.val).map fun mab => inputs group pe part mab
+  reduceL1Writes memoryBase fourGroups false twoLongWords cycle results
+
 theorem reduceL1Writes_count (memoryBase : Fin l1bmLongWords)
     (fourGroups rounded twoLongWords : Bool) (cycle : Fin 4)
     (results : Fin 4 → Fin 4 → Fin 2 → BitVec 64) :
@@ -254,6 +267,19 @@ theorem reduceL1Writes_count (memoryBase : Fin l1bmLongWords)
       else if rounded then 4 else if twoLongWords then 8 else 4 := by
   cases fourGroups <;> cases rounded <;> cases twoLongWords <;>
     simp [reduceL1Writes, List.length_flatMap, List.finRange]
+
+theorem reduceIntegerL1Writes_count (memoryBase : Fin l1bmLongWords)
+    (fourGroups twoLongWords : Bool) (precision : RRN.IntegerPrecision)
+    (op : RRN.IntegerOp) (cycle : Fin 4)
+    (inputs : Fin 4 → Fin 4 → Fin 2 → Fin 16 → BitVec 64) :
+    (reduceIntegerL1Writes memoryBase fourGroups twoLongWords precision op cycle inputs).length =
+      if fourGroups then (if twoLongWords then 32 else 16)
+      else if twoLongWords then 8 else 4 := by
+  simpa [reduceIntegerL1Writes, Nat.add_assoc] using
+    reduceL1Writes_count memoryBase fourGroups false twoLongWords cycle
+      (fun group pe part => RRN.reduceLongInteger op precision
+        (((List.finRange 16).filter fun mab =>
+          !fourGroups || mab.val / 4 == group.val).map fun mab => inputs group pe part mab))
 
 theorem reduceL1Writes_contains_first (memoryBase : Fin l1bmLongWords)
     (fourGroups rounded twoLongWords : Bool) (cycle group pe : Fin 4)
@@ -276,6 +302,25 @@ theorem reduceL1Writes_contains_first (memoryBase : Fin l1bmLongWords)
     · simp [hfour]
     · simp [hzero]
   cases rounded <;> cases twoLongWords <;> simp [reduceL1Writes, hkeep]
+
+theorem reduceIntegerL1Writes_contains_result (memoryBase : Fin l1bmLongWords)
+    (fourGroups twoLongWords : Bool) (precision : RRN.IntegerPrecision)
+    (op : RRN.IntegerOp) (cycle group pe : Fin 4)
+    (inputs : Fin 4 → Fin 4 → Fin 2 → Fin 16 → BitVec 64)
+    (hgroup : fourGroups = true ∨ group.val = 0) :
+    (addressAt memoryBase
+      (cycle.val * (if fourGroups then (if twoLongWords then 32 else 16)
+        else if twoLongWords then 8 else 4) +
+        group.val * (if twoLongWords then 8 else 4) + pe.val),
+      RRN.reduceLongInteger op precision
+        (((List.finRange 16).filter fun mab =>
+          !fourGroups || mab.val / 4 == group.val).map fun mab => inputs group pe 0 mab)) ∈
+      reduceIntegerL1Writes memoryBase fourGroups twoLongWords precision op cycle inputs := by
+  simpa [reduceIntegerL1Writes, Nat.add_assoc] using
+    reduceL1Writes_contains_first memoryBase fourGroups false twoLongWords cycle group pe
+      (fun g p k => RRN.reduceLongInteger op precision
+        (((List.finRange 16).filter fun mab =>
+          !fourGroups || mab.val / 4 == g.val).map fun mab => inputs g p k mab)) hgroup
 
 theorem mwriteWrites_count (memoryBase : Fin l1bmLongWords)
     (twoLongWords : Bool) (cycle : Fin 4) (buses : Fin 4 → Bus) :

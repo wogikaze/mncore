@@ -72,6 +72,17 @@ import Lean
 #print axioms ProofsLean.MNCore.L1Transfer.m4writeFourCycleWrites_contains_high
 #print axioms ProofsLean.MNCore.L1Transfer.reduceL1Writes_count
 #print axioms ProofsLean.MNCore.L1Transfer.reduceL1Writes_contains_first
+#print axioms ProofsLean.MNCore.L1Transfer.reduceIntegerL1Writes_count
+#print axioms ProofsLean.MNCore.L1Transfer.reduceIntegerL1Writes_contains_result
+#print axioms ProofsLean.MNCore.RRN.add_wraps_8bit
+#print axioms ProofsLean.MNCore.RRN.bitwise_and_8bit
+#print axioms ProofsLean.MNCore.RRN.bitwise_or_8bit
+#print axioms ProofsLean.MNCore.RRN.sign_magnitude_max_orders_negative_below_positive
+#print axioms ProofsLean.MNCore.RRN.max_prefers_positive_zero_over_negative_zero
+#print axioms ProofsLean.MNCore.RRN.min_prefers_negative_zero_over_positive_zero
+#print axioms ProofsLean.MNCore.RRN.all_nonzero_is_logical
+#print axioms ProofsLean.MNCore.RRN.any_nonzero_is_logical
+#print axioms ProofsLean.MNCore.RRN.half_precision_reduction_is_lane_wise
 #print axioms ProofsLean.MNCore.L1Transfer.mwriteWrites_contains_high
 #print axioms ProofsLean.MNCore.L1Transfer.mwriteWrites_contains_low
 #print axioms ProofsLean.MNCore.L1Transfer.m4writeWrites_contains_high
