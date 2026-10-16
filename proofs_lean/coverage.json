@@ -141,14 +141,14 @@
       "error": "Legacy local simulator suppressed LSB write for all-zero long mask; official binary writes it",
       "evidence": "proofs_lean/evidence/masks/initial-simulator-assumption/reference.json",
       "snapshot_manifest_sha256": "a44cf4d978462cf8332519f981210946ed85a3a476ec89160796bd355729f106",
-      "corrected_simulator_source_sha256": "b76d164e5178244f18d91ddd1a29ba4b75fa4cf4cc1e1814e3209e26e028138c"
+      "corrected_simulator_source_sha256": "cc62a4f9752f070b5d4e22887770f187f30c90763e15b746c245d9d7624c5378"
     }
   ],
   "forwarding_findings": {
     "evidence": "proofs_lean/evidence/forwarding/initial-uniform-assumption/reference.json",
     "snapshot_manifest_sha256": "951676c2b4bf40675ac77554617ac1fa735c1fc7bc6031caecfc627031914aca",
     "withdrawn_retention_hypothesis_manifest_sha256": "35f72f4988c790423e65ebb6a5bee42189e59b4b0093ca64845f8c9f0007b986",
-    "corrected_simulator_source_sha256": "b76d164e5178244f18d91ddd1a29ba4b75fa4cf4cc1e1814e3209e26e028138c",
+    "corrected_simulator_source_sha256": "cc62a4f9752f070b5d4e22887770f187f30c90763e15b746c245d9d7624c5378",
     "corrected_model_error": "Flags-only mask-register writes do not force invalid forwarding data",
     "open_manual_reference_difference": "Absent matrix-read output observed as zero, not a disabled-producer error",
     "unresolved_encoding_cases": "Five whole VSM cases rejected by type inference; encoded-fragment behavior observed separately, but whole-program legality/decoding correspondence remains unproven"

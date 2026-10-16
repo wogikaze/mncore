@@ -75,7 +75,7 @@ def validate_source(text: str, filename: str) -> None:
 def validate_axioms(output: str) -> None:
     records = re.findall(r"depends on axioms:\s*\[([^]]*)\]", output)
     no_axioms = re.findall(r"does not depend on any axioms", output)
-    if len(records) + len(no_axioms) != 11:
+    if len(records) + len(no_axioms) != 19:
         raise ValueError(f"missing kernel dependency reports: {output}")
     for record in records:
         names = {x.strip() for x in record.split(",") if x.strip()}
@@ -118,7 +118,7 @@ def main() -> None:
             if not re.search(r"AUDIT_DECLARATIONS: [1-9][0-9]*", result.stdout + result.stderr):
                 raise SystemExit("missing audit of all project declarations")
         print(result.stdout.strip())
-    print("PASS: semantic certificate framework and finite-example proofs. MN-Core full-ISA proofs: 0/73.")
+    print("PASS: semantic framework and restricted-model proofs. MN-Core full-ISA proofs: 0/73.")
 
 
 if __name__ == "__main__":

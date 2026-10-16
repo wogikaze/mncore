@@ -12,6 +12,14 @@ import Lean
 #print axioms ProofsLean.FiniteExample.two_lines_optimal
 #print axioms ProofsLean.FiniteExample.testcase_correct_does_not_imply_general_correct
 #print axioms ProofsLean.FiniteExample.one_case_has_no_two_line_lower_bound
+#print axioms ProofsLean.MNCore.PlusOne.answer_correct
+#print axioms ProofsLean.MNCore.PlusOne.answer_optimal_in_restricted_model
+#print axioms ProofsLean.MNCore.PlusOne.increment_pair_spec
+#print axioms ProofsLean.MNCore.PlusOne.increment_numerical
+#print axioms ProofsLean.ControlNormalization.compile_length
+#print axioms ProofsLean.ControlNormalization.run_compiles
+#print axioms ProofsLean.ControlNormalization.source_execution
+#print axioms ProofsLean.ControlNormalization.source_score
 
 open Lean Elab Command in
 run_cmd do

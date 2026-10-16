@@ -10,3 +10,5 @@ import ProofsLean.AddressProperties
 import ProofsLean.Masks
 import ProofsLean.Forwarding
 import ProofsLean.EncodedForwarding
+import ProofsLean.ControlNormalization
+import ProofsLean.PlusOne
