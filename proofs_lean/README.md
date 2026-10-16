@@ -87,7 +87,8 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   整数requestの存在証拠をlowering結果に保持し、その証拠だけから宛先読み戻しを導いた。
   Welcomeのplus-one ParsedExprがLM0→LM1の
   longアクセスへloweringされ、そのALU出力が既存の2語iincモデルと一致することも証明した。
-  丸め入力や非PEメモリはlowering対象外。
+  OMR宛先についても、1〜15番のlowering、ALUフラグの4ビット順序、サイクル別マスク状態更新と
+  書き込んだフラグの読み戻しを接続した。丸め入力や非PEメモリ、選択マスク付きOMRはlowering対象外。
 - `Issue.lean`: PE式の同時発行判定について、グループ重複、MAU組み合わせ、
   行列レジスタ使用、PEメモリの読み書きポート、即値とLM0、zero-flush重複を
   抽象レコード上の述語として定義し、判定と合法性の同値を証明した。
