@@ -4133,6 +4133,20 @@ theorem parsed_mask_directive_text_lowers_to_zero_cost :
         some 0 := by
   rfl
 
+theorem parsed_mask_directive_text_controls_following_issue
+    (control : ParsedMaskExecutionControl) :
+    (parseMaskDirective? "maskllm 258").bind (fun line =>
+      (lowerParsedMaskedSource [line, .pe []]).map (fun source =>
+        advanceParsedControlThroughSource source control =
+          { control with
+            directive := ⟨4, ⟨false, false, false, true, false, false⟩, 2⟩,
+            elapsedWords := control.elapsedWords + 1 })) = some true := by
+  rw [show parseMaskDirective? "maskllm 258" =
+    some (.maskDirective 4 ⟨false, false, false, true, false, false⟩ 2) by rfl]
+  simp [lowerParsedMaskedSource, ParsedLine.toParsedMaskedStatements?,
+    advanceParsedControlThroughSource, updateParsedMaskDirective,
+    advanceParsedMaskControl]
+
 theorem parsedMaskedSource_score (source : List ParsedMaskedSourceStatement)
     (control : ParsedMaskExecutionControl) :
     ProofsLean.score parsedMaskedNormalizedMachine

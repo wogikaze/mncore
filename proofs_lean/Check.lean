@@ -182,6 +182,7 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.parsed_nop_count_has_matching_issue_cost
 #print axioms ProofsLean.MNCore.PEMemory.parsed_nop_line_lowers_to_count_issue_words
 #print axioms ProofsLean.MNCore.PEMemory.parsed_mask_directive_text_lowers_to_zero_cost
+#print axioms ProofsLean.MNCore.PEMemory.parsed_mask_directive_text_controls_following_issue
 #print axioms ProofsLean.MNCore.PEMemory.parsed_line_lowering_preserves_issue_words
 #print axioms ProofsLean.MNCore.PEMemory.lowered_parsed_masked_source_executes_as_normalized
 #print axioms ProofsLean.MNCore.PEMemory.direct_access_write_readback
