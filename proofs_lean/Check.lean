@@ -54,6 +54,10 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.normalized_expr_issue_projection
 #print axioms ProofsLean.MNCore.Issue.normalized_expr_group
 #print axioms ProofsLean.MNCore.Issue.projectLine_normalized
+#print axioms ProofsLean.MNCore.Issue.InstructionLine.cost_positive
+#print axioms ProofsLean.MNCore.Issue.nop_zero_not_instruction
+#print axioms ProofsLean.MNCore.Issue.normalized_positive_nop_cost
+#print axioms ProofsLean.MNCore.Issue.nop_zero_normalizes_empty
 #print axioms ProofsLean.MNCore.Issue.parsed_check_unchanged_by_normalization
 #print axioms ProofsLean.MNCore.Issue.ParsedPrecision.code_injective
 #print axioms ProofsLean.MNCore.Issue.unsupported_parsed_integer_is_unknown

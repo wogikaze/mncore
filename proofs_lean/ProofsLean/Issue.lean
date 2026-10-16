@@ -974,6 +974,41 @@ inductive NormalizedLine where
   | maskDirective (widthWords : Nat) (targets : ParsedMaskTargets) (entry : Nat)
   deriving DecidableEq, Repr
 
+/-- Executable issue words after zero-cost directives are folded into control
+state. Nop counts are strictly positive by construction. -/
+inductive InstructionLine where
+  | pe (expressions : List NormalizedExpr)
+  | nop (count : {n : Nat // 0 < n}) (wait : Option Nat)
+  | mv (transfer : NormalizedMv)
+  deriving DecidableEq, Repr
+
+def InstructionLine.cost : InstructionLine → Nat
+  | .pe _ | .mv _ => 1
+  | .nop count _ => count.val
+
+theorem InstructionLine.cost_positive (line : InstructionLine) :
+    0 < line.cost := by
+  cases line with
+  | pe _ => change 0 < 1; decide
+  | mv _ => change 0 < 1; decide
+  | nop count _ => change 0 < count.val; exact count.property
+
+
+def NormalizedLine.toInstruction? : NormalizedLine → Option InstructionLine
+  | .pe expressions => some (.pe expressions)
+  | .nop 0 _ => none
+  | .nop (count + 1) wait =>
+      some (.nop ⟨count + 1, by omega⟩ wait)
+  | .mv transfer => some (.mv transfer)
+  | .maskDirective .. => none
+
+theorem nop_zero_not_instruction :
+    NormalizedLine.toInstruction? (.nop 0 none) = none := rfl
+
+theorem normalized_positive_nop_cost (count : Nat) (wait : Option Nat) :
+    (NormalizedLine.toInstruction? (.nop (count + 1) wait)).map
+      InstructionLine.cost = some (count + 1) := rfl
+
 def NormalizedLine.toParsed : NormalizedLine → ParsedLine
   | .pe expressions => .pe (expressions.map NormalizedExpr.toParsed)
   | .nop count wait => .nop count wait
@@ -993,6 +1028,9 @@ def ParsedLine.normalizeForSubmission? : ParsedLine → Option (List NormalizedL
   | .maskDirective widthWords targets entry =>
       some [.maskDirective widthWords targets entry]
   | .debugSet | .debugGet | .dramSet => some []
+
+theorem nop_zero_normalizes_empty :
+    ParsedLine.normalizeForSubmission? (.nop 0 none) = some [] := rfl
 
 def ParsedLine.issueLegal : ParsedLine → Prop
   | .pe expressions => LegalParsedLine expressions
