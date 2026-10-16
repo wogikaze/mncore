@@ -312,6 +312,152 @@ theorem dPdmDramCoordinates_flatten (block : Nat) (group : Fin 4)
       16 * block + word.val := by
   exact bDramSourceCoordinate_flatten block group word
 
+def dL2bmPositionGroup (position : Nat) : Fin 4 :=
+  ⟨(position % 128) / 32, by
+    have hmod : position % 128 < 128 := Nat.mod_lt _ (by decide)
+    omega⟩
+
+def dL2bmPositionBank (position : Nat) : Fin 2 :=
+  ⟨(position % 32) / 16, by
+    have hmod : position % 32 < 32 := Nat.mod_lt _ (by decide)
+    omega⟩
+
+def dL2bmPositionJ (position : Nat) : Nat := (position % 512) / 128
+
+def dL2bmPositionWord (position : Nat) : Nat := position % 16
+
+def dPdmL2bmSourceOffset (position : Nat) : Nat :=
+  512 * (position / 512) +
+    (dL2bmPositionJ position * 8 + (dL2bmPositionGroup position).val * 2 +
+      (dL2bmPositionBank position).val) * 16 + dL2bmPositionWord position
+
+def dL2bmPdmDestinationOffset (position : Nat) : Nat :=
+  512 * (position / 512) +
+    (dL2bmPositionJ position * 8 + (dL2bmPositionGroup position).val * 2 +
+      (dL2bmPositionBank position).val) * 16 + dL2bmPositionWord position
+
+def dL2bmDestinationOffset (position : Nat) : Nat :=
+  64 * (position / 512) + dL2bmPositionJ position * 16 +
+    dL2bmPositionWord position
+
+theorem dL2bmCoordinates_flatten (block : Nat) (j : Fin 4) (group : Fin 4)
+    (bank : Fin 2) (word : Fin 16) :
+    dL2bmPositionJ (512 * block + 128 * j.val + 32 * group.val +
+      16 * bank.val + word.val) = j.val ∧
+    dL2bmPositionGroup (512 * block + 128 * j.val + 32 * group.val +
+      16 * bank.val + word.val) = group ∧
+    dL2bmPositionBank (512 * block + 128 * j.val + 32 * group.val +
+      16 * bank.val + word.val) = bank ∧
+    dL2bmPositionWord (512 * block + 128 * j.val + 32 * group.val +
+      16 * bank.val + word.val) = word.val ∧
+    dPdmL2bmSourceOffset (512 * block + 128 * j.val + 32 * group.val +
+      16 * bank.val + word.val) =
+      512 * block + (j.val * 8 + group.val * 2 + bank.val) * 16 + word.val ∧
+    dL2bmDestinationOffset (512 * block + 128 * j.val + 32 * group.val +
+      16 * bank.val + word.val) = 64 * block + j.val * 16 + word.val := by
+  have hj := j.isLt
+  have hg := group.isLt
+  have hb := bank.isLt
+  have hw := word.isLt
+  have htail : 128 * j.val + 32 * group.val + 16 * bank.val + word.val < 512 := by omega
+  have hmod512 :
+      (512 * block + (128 * j.val + 32 * group.val + 16 * bank.val + word.val)) % 512 =
+        128 * j.val + 32 * group.val + 16 * bank.val + word.val := by omega
+  have hposmod512 :
+      (512 * block + 128 * j.val + 32 * group.val + 16 * bank.val + word.val) % 512 =
+        128 * j.val + 32 * group.val + 16 * bank.val + word.val := by omega
+  have hdiv512 :
+      (512 * block + (128 * j.val + 32 * group.val + 16 * bank.val + word.val)) / 512 =
+        block := by omega
+  have hposdiv512 :
+      (512 * block + 128 * j.val + 32 * group.val + 16 * bank.val + word.val) / 512 =
+        block := by omega
+  have hmod128 :
+      (128 * j.val + 32 * group.val + 16 * bank.val + word.val) % 128 =
+        32 * group.val + 16 * bank.val + word.val := by omega
+  have hposmod128 :
+      (512 * block + 128 * j.val + 32 * group.val + 16 * bank.val + word.val) % 128 =
+        32 * group.val + 16 * bank.val + word.val := by omega
+  have hmod32 :
+      (32 * group.val + 16 * bank.val + word.val) % 32 =
+        16 * bank.val + word.val := by omega
+  have hposmod32 :
+      (512 * block + 128 * j.val + 32 * group.val + 16 * bank.val + word.val) % 32 =
+        16 * bank.val + word.val := by omega
+  have hmod16 : (16 * bank.val + word.val) % 16 = word.val := by omega
+  have hposmod16 :
+      (512 * block + 128 * j.val + 32 * group.val + 16 * bank.val + word.val) % 16 =
+        word.val := by omega
+  have hjdiv :
+      (128 * j.val + 32 * group.val + 16 * bank.val + word.val) / 128 = j.val := by
+    have htail128 : 32 * group.val + 16 * bank.val + word.val < 128 := by omega
+    omega
+  have hgdiv : (32 * group.val + 16 * bank.val + word.val) / 32 = group.val := by
+    have htail32 : 16 * bank.val + word.val < 32 := by omega
+    omega
+  have hbdiv : (16 * bank.val + word.val) / 16 = bank.val := by omega
+  have hJ : dL2bmPositionJ
+      (512 * block + 128 * j.val + 32 * group.val + 16 * bank.val + word.val) = j.val := by
+    change ((512 * block + 128 * j.val + 32 * group.val +
+      16 * bank.val + word.val) % 512) / 128 = j.val
+    rw [hposmod512]
+    exact hjdiv
+  have hG : dL2bmPositionGroup
+      (512 * block + 128 * j.val + 32 * group.val + 16 * bank.val + word.val) = group := by
+    apply Fin.ext
+    change ((512 * block + 128 * j.val + 32 * group.val +
+      16 * bank.val + word.val) % 128) / 32 = group.val
+    rw [hposmod128]
+    exact hgdiv
+  have hC : dL2bmPositionBank
+      (512 * block + 128 * j.val + 32 * group.val + 16 * bank.val + word.val) = bank := by
+    apply Fin.ext
+    change ((512 * block + 128 * j.val + 32 * group.val +
+      16 * bank.val + word.val) % 32) / 16 = bank.val
+    rw [hposmod32]
+    exact hbdiv
+  have hK : dL2bmPositionWord
+      (512 * block + 128 * j.val + 32 * group.val + 16 * bank.val + word.val) = word.val := by
+    change (512 * block + 128 * j.val + 32 * group.val +
+      16 * bank.val + word.val) % 16 = word.val
+    rw [hposmod16]
+  constructor
+  · exact hJ
+  constructor
+  · exact hG
+  constructor
+  · exact hC
+  constructor
+  · exact hK
+  constructor
+  · simp [dPdmL2bmSourceOffset, hposdiv512, hJ, hG, hC, hK]
+  · simp [dL2bmDestinationOffset, hposdiv512, hJ, hK]
+
+def dPdmL2bmCopyPlan (source destination : ParsedMvOperand)
+    (sourceGroup : Fin 4) (count : Nat) : List CopyPair :=
+  indexedCopies
+    (fun position => cellFor source sourceGroup 0 (dPdmL2bmSourceOffset position))
+    (fun position => cellFor destination (dL2bmPositionGroup position)
+      (dL2bmPositionBank position) (dL2bmDestinationOffset position)) count
+
+def dL2bmPdmCopyPlan (source destination : ParsedMvOperand)
+    (destinationGroup : Fin 4) (count : Nat) : List CopyPair :=
+  indexedCopies
+    (fun position => cellFor source (dL2bmPositionGroup position)
+      (dL2bmPositionBank position) (dL2bmDestinationOffset position))
+    (fun position => cellFor destination destinationGroup 0
+      (dL2bmPdmDestinationOffset position)) count
+
+theorem dPdmL2bmCopyPlan_length (source destination : ParsedMvOperand)
+    (sourceGroup : Fin 4) (count : Nat) :
+    (dPdmL2bmCopyPlan source destination sourceGroup count).length = count := by
+  exact indexedCopies_length _ _ _
+
+theorem dL2bmPdmCopyPlan_length (source destination : ParsedMvOperand)
+    (destinationGroup : Fin 4) (count : Nat) :
+    (dL2bmPdmCopyPlan source destination destinationGroup count).length = count := by
+  exact indexedCopies_length _ _ _
+
 def mvFirstOperandGroup? (operand : ParsedMvOperand) : Option (Fin 4) := do
   let groups ← mvOperandGroups? operand
   groups.head?
@@ -331,6 +477,14 @@ def parsedMvDPlan? (transfer : ParsedMv) : Option (List CopyPair) := do
       | .dram _ _ false, .pdm _ _ => do
           let destinationGroup ← mvFirstOperandGroup? destination
           pure (dDramPdmCopyPlan source destination destinationGroup count)
+      | .pdm _ _, .l2bm _ _ _ => do
+          let sourceGroup ← mvFirstOperandGroup? source
+          pure (dPdmL2bmCopyPlan source destination sourceGroup
+            ((transfer.size.val / 64) * 512))
+      | .l2bm _ _ _, .pdm _ _ => do
+          let destinationGroup ← mvFirstOperandGroup? destination
+          pure (dL2bmPdmCopyPlan source destination destinationGroup
+            ((transfer.size.val / 64) * 512))
       | _, _ => none
 
 def executeParsedMvD? (memory : Memory) (transfer : ParsedMv) : Option Memory := do

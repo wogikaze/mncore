@@ -384,4 +384,7 @@ run_cmd do
 #print axioms ProofsLean.MNCore.MVSemantics.dPdmDramCopyPlan_length
 #print axioms ProofsLean.MNCore.MVSemantics.dDramPdmCopyPlan_length
 #print axioms ProofsLean.MNCore.MVSemantics.dPdmDramCoordinates_flatten
+#print axioms ProofsLean.MNCore.MVSemantics.dL2bmCoordinates_flatten
+#print axioms ProofsLean.MNCore.MVSemantics.dPdmL2bmCopyPlan_length
+#print axioms ProofsLean.MNCore.MVSemantics.dL2bmPdmCopyPlan_length
 #print axioms ProofsLean.MNCore.MVSemantics.executeParsedMvD_read
