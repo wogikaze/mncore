@@ -1694,6 +1694,60 @@ theorem parsedIntegerMaskedALUAndForwardingCycleStep_prepares_once
           | .ok nextSlots =>
               .ok (commitParsedMaskedWrites files [write], nextSlots) := rfl
 
+def parsedIntegerALUCycles : List (Fin 4) := [0, 1, 2, 3]
+
+/-- Prepare one parsed integer ALU expression for all four PE cycles. Each
+cycle reads the same pre-issue register files and forwarding slots; only the
+accumulated output slots change. This preserves issue-line read-before-write. -/
+def prepareParsedIntegerALUExprCycles (files : IntegerRegisterFiles)
+    (oldSlots : ProofsLean.MNCore.Forwarding.Slots)
+    (expression : ParsedExpr) (control : ParsedMaskExecutionControl)
+    (hasSingleLineMask noForward reduced : Bool) :
+    ProofsLean.StepResult
+      (List PreparedParsedMaskedWrite × ProofsLean.MNCore.Forwarding.Slots) :=
+  let rec prepare (cycles : List (Fin 4))
+      (writes : List PreparedParsedMaskedWrite)
+      (nextSlots : ProofsLean.MNCore.Forwarding.Slots) :=
+    match cycles with
+    | [] => ProofsLean.StepResult.ok (writes, nextSlots)
+    | cycle :: rest =>
+        let cycleControl := { control with context := { control.context with cycle := cycle } }
+        match ParsedExpr.toDirectMaskedIntegerAccessesInLine? expression
+            files.maskRegisters cycleControl.directive hasSingleLineMask
+            cycleControl.context.group cycleControl.context.l2b cycleControl.context.l1b
+            cycleControl.context.mab cycleControl.context.pe cycle
+            cycleControl.context.bar0 cycleControl.context.bar1 cycleControl.context.tWord with
+        | none => ProofsLean.StepResult.unknown
+        | some accesses =>
+            match prepareParsedMaskedWriteWithForwarding files oldSlots cycle accesses reduced with
+            | .failure => ProofsLean.StepResult.failure
+            | .unknown => ProofsLean.StepResult.unknown
+            | .ok write =>
+                match updateParsedIntegerALUForwardingCycle nextSlots cycle
+                    (.ok write) noForward with
+                | .failure => ProofsLean.StepResult.failure
+                | .unknown => ProofsLean.StepResult.unknown
+                | .ok updatedSlots => prepare rest (writes ++ [write]) updatedSlots
+  prepare parsedIntegerALUCycles [] oldSlots
+
+/-- Four-cycle execution of one integer ALU expression, including its
+cycle-indexed `aluf` outputs. Other expressions and producer units remain
+outside this transition. -/
+def parsedIntegerALUExprFourCycleStep (files : IntegerRegisterFiles)
+    (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (expression : ParsedExpr) (control : ParsedMaskExecutionControl)
+    (hasSingleLineMask noForward reduced : Bool) :
+    ProofsLean.StepResult (IntegerRegisterFiles × ProofsLean.MNCore.Forwarding.Slots) :=
+  match prepareParsedIntegerALUExprCycles files slots expression control
+      hasSingleLineMask noForward reduced with
+  | .failure => .failure
+  | .unknown => .unknown
+  | .ok (writes, nextSlots) =>
+      .ok (commitParsedMaskedWrites files writes, nextSlots)
+
+theorem parsedIntegerALUCycles_complete :
+    parsedIntegerALUCycles = [0, 1, 2, 3] := rfl
+
 def parsedIntegerMaskedLineStepWithForwarding (files : IntegerRegisterFiles)
     (slots : ProofsLean.MNCore.Forwarding.Slots)
     (expressions : List ParsedExpr) (control : ParsedMaskExecutionControl) :
