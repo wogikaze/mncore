@@ -1,0 +1,833 @@
+{
+  "schema_version": 1,
+  "experiment": "selected assembler parsing and encoding boundaries",
+  "scope": "Only listed probes. Acceptance/encoding evidence is not proof of complete ISA ranges or semantics.",
+  "tool_hashes": [
+    {
+      "path": "judge/judge-py/mncore2_emuenv/assemble3",
+      "sha256": "5baabcd47a137fbc4c8ec11fd02e23cb79818bbded9d0cb4c02291aaf738b955"
+    },
+    {
+      "path": "viz/core/src/vsm.rs",
+      "sha256": "cf5a6a7e4d3e393c78181318a8dd800b55dd3e68fe40edcee09c9e094b80413e"
+    },
+    {
+      "path": "viz/core/src/mv.rs",
+      "sha256": "77f8cb7ad4ae4c45ac21cc244b64481869950a4090c791a073b19b7b40360827"
+    },
+    {
+      "path": "viz/core/src/blockop.rs",
+      "sha256": "5b7833db1b9a125651a4db8b51ef4ab476c1df7e65f33a710abe80c00f5f2510"
+    },
+    {
+      "path": "judge/judge-py/judge.py",
+      "sha256": "4dfe730de218edbe806caec1bf276f8e574e61d72123f368dedc09494ac0088a"
+    },
+    {
+      "path": "proofs_lean/scripts/check_isa_parser_bounds.py",
+      "sha256": "2377c762ce282ed44da4f935234848a5121c24d387cef281ea85422d6155f873"
+    }
+  ],
+  "observations": [
+    {
+      "case": "nop_zero",
+      "source": "nop/0",
+      "accepted": true,
+      "assembler_output_lines": 0,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "nop_one",
+      "source": "nop/1",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "wait_zero_tag",
+      "source": "nop; wait i00",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Wait tag must be non-zero.",
+      "matches_expected": true
+    },
+    {
+      "case": "wait_tag_1",
+      "source": "nop; wait i01",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "wait_tag_255",
+      "source": "nop; wait iFF",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "wait_tag_256",
+      "source": "nop; wait i100",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Tag must consists of 3 letters and starts with 'i'.",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_0",
+      "source": "zero $omr0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Address of $omr must be positive.",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_1",
+      "source": "zero $omr1",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_15",
+      "source": "zero $omr15",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_16",
+      "source": "zero $omr16",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 16 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "matrix_row_15",
+      "source": "gmread $lx15 $nowrite",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "matrix_row_16",
+      "source": "gmread $lx16 $nowrite",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Matrix register address must be less than  16.",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_6",
+      "source": "hbfn/6 $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_9",
+      "source": "hbfn/9 $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_10",
+      "source": "hbfn/10 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "imr_selector_0",
+      "source": "lpassa $lm0 $ln0/$imr0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "imr_selector_31",
+      "source": "lpassa $lm0 $ln0/$imr31",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "imr_selector_32",
+      "source": "lpassa $lm0 $ln0/$imr32",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 32 >= 2^5",
+      "matches_expected": true
+    },
+    {
+      "case": "imr_selector_255",
+      "source": "lpassa $lm0 $ln0/$imr255",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 7 vs 0 255 >= 2^5",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_n_0",
+      "source": "maskn 0\nlpassa $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_n_1",
+      "source": "maskn 1\nlpassa $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_n_31",
+      "source": "maskn 31\nlpassa $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_n_32",
+      "source": "maskn 32\nlpassa $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 32 >= 2^5",
+      "matches_expected": true
+    },
+    {
+      "case": "debug_set_record",
+      "source": "d set $lm0n0c0b0m0p0 1 0000000000000000",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "debug_get_record",
+      "source": "d get $lm0n0c0b0m0p0 1",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "dram_set_record",
+      "source": "r 0 000000000 000001 0000000000000000",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "imr_selector_2",
+      "source": "lpassa $lm0 $ln0/$imr2",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_n_2",
+      "source": "maskn 2\nlpassa $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "imr_selector_3",
+      "source": "lpassa $lm0 $ln0/$imr3",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_n_3",
+      "source": "maskn 3\nlpassa $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "imr_selector_4",
+      "source": "lpassa $lm0 $ln0/$imr4",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_n_4",
+      "source": "maskn 4\nlpassa $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "imr_selector_5",
+      "source": "lpassa $lm0 $ln0/$imr5",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_n_5",
+      "source": "maskn 5\nlpassa $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "imr_selector_6",
+      "source": "lpassa $lm0 $ln0/$imr6",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_n_6",
+      "source": "maskn 6\nlpassa $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "imr_selector_7",
+      "source": "lpassa $lm0 $ln0/$imr7",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_n_7",
+      "source": "maskn 7\nlpassa $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "imr_selector_8",
+      "source": "lpassa $lm0 $ln0/$imr8",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_n_8",
+      "source": "maskn 8\nlpassa $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "imr_selector_9",
+      "source": "lpassa $lm0 $ln0/$imr9",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_n_9",
+      "source": "maskn 9\nlpassa $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "imr_selector_10",
+      "source": "lpassa $lm0 $ln0/$imr10",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_n_10",
+      "source": "maskn 10\nlpassa $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "imr_selector_11",
+      "source": "lpassa $lm0 $ln0/$imr11",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_n_11",
+      "source": "maskn 11\nlpassa $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "imr_selector_12",
+      "source": "lpassa $lm0 $ln0/$imr12",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_n_12",
+      "source": "maskn 12\nlpassa $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "imr_selector_13",
+      "source": "lpassa $lm0 $ln0/$imr13",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_n_13",
+      "source": "maskn 13\nlpassa $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "imr_selector_14",
+      "source": "lpassa $lm0 $ln0/$imr14",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_n_14",
+      "source": "maskn 14\nlpassa $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "imr_selector_15",
+      "source": "lpassa $lm0 $ln0/$imr15",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_n_15",
+      "source": "maskn 15\nlpassa $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "imr_selector_16",
+      "source": "lpassa $lm0 $ln0/$imr16",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_n_16",
+      "source": "maskn 16\nlpassa $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "imr_selector_17",
+      "source": "lpassa $lm0 $ln0/$imr17",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_n_17",
+      "source": "maskn 17\nlpassa $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "imr_selector_18",
+      "source": "lpassa $lm0 $ln0/$imr18",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_n_18",
+      "source": "maskn 18\nlpassa $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "imr_selector_19",
+      "source": "lpassa $lm0 $ln0/$imr19",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_n_19",
+      "source": "maskn 19\nlpassa $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "imr_selector_20",
+      "source": "lpassa $lm0 $ln0/$imr20",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_n_20",
+      "source": "maskn 20\nlpassa $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "imr_selector_21",
+      "source": "lpassa $lm0 $ln0/$imr21",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_n_21",
+      "source": "maskn 21\nlpassa $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "imr_selector_22",
+      "source": "lpassa $lm0 $ln0/$imr22",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_n_22",
+      "source": "maskn 22\nlpassa $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "imr_selector_23",
+      "source": "lpassa $lm0 $ln0/$imr23",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_n_23",
+      "source": "maskn 23\nlpassa $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "imr_selector_24",
+      "source": "lpassa $lm0 $ln0/$imr24",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_n_24",
+      "source": "maskn 24\nlpassa $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "imr_selector_25",
+      "source": "lpassa $lm0 $ln0/$imr25",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_n_25",
+      "source": "maskn 25\nlpassa $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "imr_selector_26",
+      "source": "lpassa $lm0 $ln0/$imr26",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_n_26",
+      "source": "maskn 26\nlpassa $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "imr_selector_27",
+      "source": "lpassa $lm0 $ln0/$imr27",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_n_27",
+      "source": "maskn 27\nlpassa $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "imr_selector_28",
+      "source": "lpassa $lm0 $ln0/$imr28",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_n_28",
+      "source": "maskn 28\nlpassa $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "imr_selector_29",
+      "source": "lpassa $lm0 $ln0/$imr29",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_n_29",
+      "source": "maskn 29\nlpassa $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "imr_selector_30",
+      "source": "lpassa $lm0 $ln0/$imr30",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mask_directive_n_30",
+      "source": "maskn 30\nlpassa $lm0 $ln0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_2",
+      "source": "zero $omr2",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_3",
+      "source": "zero $omr3",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_4",
+      "source": "zero $omr4",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_5",
+      "source": "zero $omr5",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_6",
+      "source": "zero $omr6",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_7",
+      "source": "zero $omr7",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_8",
+      "source": "zero $omr8",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_9",
+      "source": "zero $omr9",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_10",
+      "source": "zero $omr10",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_11",
+      "source": "zero $omr11",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_12",
+      "source": "zero $omr12",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_13",
+      "source": "zero $omr13",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_14",
+      "source": "zero $omr14",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    }
+  ],
+  "findings": [
+    "nop/0 is accepted and emits zero instruction words; the current positive-cost Machine interface cannot represent it directly as a line.",
+    "wait i00 is rejected; i01 and iFF are accepted; i100 is rejected.",
+    "$omr0 and $omr16 are rejected; $omr1 and $omr15 are accepted.",
+    "$imr0, $imr31 are accepted while $imr32 and $imr255 fail encoding. Active mask directives `maskn 0` and `maskn 31` are accepted, while `maskn 32` fails. This conflicts with the Rust MaskSource comment claiming entries 1 through 15.",
+    "Matrix row 15 is accepted and row 16 is rejected.",
+    "hbfn/6 and hbfn/9 are accepted; hbfn/10 is rejected.",
+    "The assembler accepts d set, d get and r input records, but the challenge judge's default solution sanitizer retains only j/m instruction rows; these records are filtered before execution. The scored program therefore excludes debug and DRAM initialization records.",
+    "Judge flags can preserve d get/d set, but the normal challenge invocation does not set them; the d-set invalidation applies only when such a record is retained."
+  ],
+  "submission_normalization": {
+    "source": "judge/judge-py/judge.py",
+    "rule": "sanitize_asm retains j/m rows by default; optional flags retain d get/d set; score counts j+m",
+    "source_records_accepted_then_removed_from_solution_program": [
+      "d get",
+      "d set",
+      "r"
+    ]
+  },
+  "limitations": [
+    "The Rust parser/model and the official assembler are distinct; these probes do not establish parser completeness.",
+    "Some rejected probes terminate assemble3 by abort; only nonzero status and its diagnostic are recorded.",
+    "No semantic check was performed for accepted out-of-comment-range mask selector values."
+  ]
+}

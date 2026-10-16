@@ -337,6 +337,35 @@ def encoded_lbf_experiment() -> dict | None:
             "decoder_correspondence_proven": False, "formal_conformance_proof": False}
 
 
+def isa_bounds_experiment() -> dict:
+    directory = ROOT / "evidence/isa-bounds"
+    script = ROOT / "scripts/check_isa_parser_bounds.py"
+    reference = directory / "reference.json"
+    record = json.loads(reference.read_text())
+    for item in record["tool_hashes"]:
+        path = REPO / item["path"]
+        if item["path"] == "judge/judge-py/mncore2_emuenv/assemble3" and not path.exists():
+            continue  # Official proprietary binaries are not distributed in CI.
+        if digest(path) != item["sha256"]:
+            raise ValueError(f"stale ISA boundary experiment: {item['path']}")
+    if not all(row["matches_expected"] for row in record["observations"]):
+        raise ValueError("ISA boundary experiment contains an unexpected assembler result")
+    if len(record["observations"]) != 97:
+        raise ValueError("ISA boundary experiment case count changed")
+    return {
+        "source": reference.relative_to(REPO).as_posix(),
+        "sha256": digest(reference),
+        "generator": script.relative_to(REPO).as_posix(),
+        "generator_sha256": digest(script),
+        "probes": len(record["observations"]),
+        "accepted": sum(row["accepted"] for row in record["observations"]),
+        "rejected": sum(not row["accepted"] for row in record["observations"]),
+        "findings": record["findings"],
+        "scope": record["scope"],
+        "formal_isa_completeness_proof": False,
+    }
+
+
 def coverage_catalog() -> dict:
     path = REPO / "mncompile/machine.py"
     tree = ast.parse(path.read_text())
@@ -377,7 +406,8 @@ def coverage_catalog() -> dict:
         "full_semantics_implemented": False,
         "compiler_syntax_source": "mncompile/machine.py",
         "compiler_syntax_sha256": digest(path),
-        "inventory_scope": "Compiler-generated ALU/MAU spelling candidates only; not an authoritative complete ISA or legality model.",
+        "inventory_scope": "Compiler-generated ALU/MAU spelling candidates plus separately scoped source-derived records; not an authoritative complete ISA or legality model.",
+        "selected_parser_boundary_experiment": isa_bounds_experiment(),
         "datapath_fragments": [{
             "source": fragment_source.relative_to(REPO).as_posix(), "sha256": digest(fragment_source),
             "implemented": "16/32/64-bit inc/dec/add/sub/not/lnot/and/or/xor/integer max/min/passa/lsl/lsr/bsl/bsr/packbit; lane packing, replicated flags and LSB bypass",

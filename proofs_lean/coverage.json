@@ -4,7 +4,28 @@
   "full_semantics_implemented": false,
   "compiler_syntax_source": "mncompile/machine.py",
   "compiler_syntax_sha256": "306d729fbd4bf89c2eba10c6ba0b5f97039ea7c019ff660d055077cbf10a34b0",
-  "inventory_scope": "Compiler-generated ALU/MAU spelling candidates only; not an authoritative complete ISA or legality model.",
+  "inventory_scope": "Compiler-generated ALU/MAU spelling candidates plus separately scoped source-derived records; not an authoritative complete ISA or legality model.",
+  "selected_parser_boundary_experiment": {
+    "source": "proofs_lean/evidence/isa-bounds/reference.json",
+    "sha256": "6374e3029d0cc44583c513f378d618a7cb2685be36bfdd98ccbc5c74c464cba2",
+    "generator": "proofs_lean/scripts/check_isa_parser_bounds.py",
+    "generator_sha256": "2377c762ce282ed44da4f935234848a5121c24d387cef281ea85422d6155f873",
+    "probes": 97,
+    "accepted": 88,
+    "rejected": 9,
+    "findings": [
+      "nop/0 is accepted and emits zero instruction words; the current positive-cost Machine interface cannot represent it directly as a line.",
+      "wait i00 is rejected; i01 and iFF are accepted; i100 is rejected.",
+      "$omr0 and $omr16 are rejected; $omr1 and $omr15 are accepted.",
+      "$imr0, $imr31 are accepted while $imr32 and $imr255 fail encoding. Active mask directives `maskn 0` and `maskn 31` are accepted, while `maskn 32` fails. This conflicts with the Rust MaskSource comment claiming entries 1 through 15.",
+      "Matrix row 15 is accepted and row 16 is rejected.",
+      "hbfn/6 and hbfn/9 are accepted; hbfn/10 is rejected.",
+      "The assembler accepts d set, d get and r input records, but the challenge judge's default solution sanitizer retains only j/m instruction rows; these records are filtered before execution. The scored program therefore excludes debug and DRAM initialization records.",
+      "Judge flags can preserve d get/d set, but the normal challenge invocation does not set them; the d-set invalidation applies only when such a record is retained."
+    ],
+    "scope": "Only listed probes. Acceptance/encoding evidence is not proof of complete ISA ranges or semantics.",
+    "formal_isa_completeness_proof": false
+  },
   "datapath_fragments": [
     {
       "source": "proofs_lean/ProofsLean/IntegerALU.lean",
