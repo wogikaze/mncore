@@ -185,11 +185,55 @@ theorem cycle_alu_output (state : State) (line : Line) (cycle : Fin 4) :
   rw [cycle_input_high]
   exact cycle_pair_bus state line cycle
 
+def cycleOutput (state : State) (line : Line) (cycle : Fin 4) : BitVec 64 :=
+  (IntegerALU.evaluateBus .word (.arith .inc false)
+    ⟨(cycleInput state line cycle).high, 0⟩ ⟨0, 0⟩ false).value.high
+
+theorem cycle_output_high (state : State) (line : Line) (cycle : Fin 4) :
+    (cycleOutput state line cycle).extractLsb' 32 32 =
+      busWord state (cycleHigh line cycle) := by
+  change BitVec.extractLsb' 32 32
+    (IntegerALU.evaluateBus .word (.arith .inc false)
+      ⟨(cycleInput state line cycle).high, 0⟩ ⟨0, 0⟩ false).value.high = _
+  rw [cycle_alu_output]
+  exact BitVec.extractLsb'_append_eq_left
+
+theorem cycle_output_low (state : State) (line : Line) (cycle : Fin 4) :
+    (cycleOutput state line cycle).extractLsb' 0 32 =
+      busWord state (cycleLow line cycle) := by
+  change BitVec.extractLsb' 0 32
+    (IntegerALU.evaluateBus .word (.arith .inc false)
+      ⟨(cycleInput state line cycle).high, 0⟩ ⟨0, 0⟩ false).value.high = _
+  rw [cycle_alu_output]
+  exact BitVec.extractLsb'_append_eq_right
+
 /-- One long-word line handles four cycles, with two 32-bit lanes per cycle. -/
 def step (line : Line) (state : State) : State :=
   { state with lm1 := fun address =>
       if address.val / 8 = line.val then busWord state address
       else state.lm1 address }
+
+theorem step_writes_cycle_output_high (line : Line) (state : State) (cycle : Fin 4) :
+    (step line state).lm1 (cycleHigh line cycle) =
+      (cycleOutput state line cycle).extractLsb' 32 32 := by
+  have inLine : (cycleHigh line cycle).val / 8 = line.val := by
+    simp [cycleHigh]
+    have hl := line.isLt
+    have hc := cycle.isLt
+    omega
+  simp [step, inLine]
+  exact (cycle_output_high state line cycle).symm
+
+theorem step_writes_cycle_output_low (line : Line) (state : State) (cycle : Fin 4) :
+    (step line state).lm1 (cycleLow line cycle) =
+      (cycleOutput state line cycle).extractLsb' 0 32 := by
+  have inLine : (cycleLow line cycle).val / 8 = line.val := by
+    simp [cycleLow]
+    have hl := line.isLt
+    have hc := cycle.isLt
+    omega
+  simp [step, inLine]
+  exact (cycle_output_low state line cycle).symm
 
 def machine : Machine where
   Line := Line
