@@ -639,6 +639,14 @@ def parsedMvOptionalU8? (chars : List Char) : Option (Option (Fin 256)) := do
     let value ← parsedMvDecimal? chars
     some <$> parsedNatToFin? value 256
 
+def parsedMvGroupSuffix? (chars : List Char) : Option (Option (Fin 256)) := do
+  match chars with
+  | [] => some none
+  | '@' :: group => do
+      let value ← parsedMvDecimal? group
+      some <$> parsedNatToFin? value 256
+  | _ => none
+
 def parseParsedL2bmOperand? (text : String) : Option ParsedMvOperand := do
   let chars := text.toList
   let rest ← match chars with
@@ -657,6 +665,26 @@ def parseParsedL2bmOperand? (text : String) : Option ParsedMvOperand := do
   let group ← parsedMvOptionalU8? groupChars
   let l2b ← parsedMvOptionalU8? l2bChars
   pure (.l2bm address group l2b)
+
+def parseParsedMvOperand? (text : String) : Option ParsedMvOperand := do
+  match text.toList with
+  | '$' :: 'l' :: 'c' :: _ => parseParsedL2bmOperand? text
+  | '$' :: 'd' :: 'i' :: rest => do
+      let (addressValue, suffix) ← parsedMvNumberPrefix rest
+      let address ← parsedNatToFin? addressValue (2 ^ 64)
+      let group ← parsedMvGroupSuffix? suffix
+      pure (.dram address group true)
+  | '$' :: 'd' :: rest => do
+      let (addressValue, suffix) ← parsedMvNumberPrefix rest
+      let address ← parsedNatToFin? addressValue (2 ^ 64)
+      let group ← parsedMvGroupSuffix? suffix
+      pure (.dram address group false)
+  | '$' :: 'p' :: rest => do
+      let (addressValue, suffix) ← parsedMvNumberPrefix rest
+      let address ← parsedNatToFin? addressValue (2 ^ 64)
+      let group ← parsedMvGroupSuffix? suffix
+      pure (.pdm address group)
+  | _ => none
 
 theorem parseParsedL2bmOperand_decimal :
     parseParsedL2bmOperand? "$lc42" =
@@ -683,6 +711,18 @@ theorem parseParsedL2bmOperand_rejects_u64_overflow :
 
 theorem parseParsedL2bmOperand_rejects_u8_group_overflow :
     parseParsedL2bmOperand? "$lc1@256.0" = none := by decide
+
+theorem parseParsedMvOperand_pdm_fixture :
+    parseParsedMvOperand? "$p0@0" =
+      some (.pdm ⟨0, by decide⟩ (some ⟨0, by decide⟩)) := by decide
+
+theorem parseParsedMvOperand_indirect_dram_fixture :
+    parseParsedMvOperand? "$di512@2" =
+      some (.dram ⟨512, by decide⟩ (some ⟨2, by decide⟩) true) := by decide
+
+theorem parseParsedMvOperand_direct_dram_fixture :
+    parseParsedMvOperand? "$d0" =
+      some (.dram ⟨0, by decide⟩ none false) := by decide
 
 structure ParsedMv where
   kind : ParsedMvKind

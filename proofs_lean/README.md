@@ -149,8 +149,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   in-window条件に通して制約を集める。L2BM opcodeのread/write spanとmulticast bank maskもParsedExprから
   lowerする。MVのLean top-level型にも転送kind/size/operand情報を持たせ、L2BM MV accessを生成して
   Rust hazard.rsのu64→u32 address/size castとbank selectorを反映し、ParsedLine列のword clockに接続した。
-  `$lc` L2BM operand用にdecimal/hex address、group/l2b selectorを読むLean parserを追加し、代表入力と
-  u64/u8境界拒否を証明した。Rust parser全入力との等価性、MV parserからParsedMvへの変換、
+  MV operandのPDM/DRAM/L2BM用にdecimal/hex address、group/l2b selectorを読むLean parserを追加し、
+  Rust既存fixture相当の入力とu64/u8境界拒否を証明した。Rust parser全入力との等価性、
+  opcode/parameterを含むMV parserからParsedMvへの変換、
   PE operand accessとの合流、
   Rust reportのsort/dedupおよび表示値の再現は未完了。
   これは対象PEメモリ規則の条件モデルであり、Rust analyzerの全Access生成、mask directiveの実効状態、
