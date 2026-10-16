@@ -74,6 +74,7 @@ theorem ParsedIntegerContext.linearIndex_lt (context : ParsedIntegerContext) :
 inductive ParsedIntegerInput where
   | memory (access : DirectMemoryAccess) (rounded : Bool)
   | fixed (value : IntegerALU.Bus)
+  | forward (kind : ParsedForward) (rounded : Bool)
   deriving DecidableEq, Repr
 
 def replicateIntegerLane : (precision : IntegerALU.Precision) → Nat → IntegerALU.Bus
@@ -313,6 +314,7 @@ def ParsedOperand.toParsedIntegerInput? (operand : ParsedOperand)
   | .fixed fixed =>
       some (.fixed (replicateIntegerLane precision
         (ParsedFixed.integerValue fixed precision group l2b l1b mab pe)))
+  | .forward kind _ _ rounded => some (.forward kind rounded)
   | .mem access _ _ rounded none =>
       (ParsedOperand.toDirectMemoryAccess? (.mem access false false false none)
         pe cycle bar0 bar1 tWord).map (fun resolved => .memory resolved rounded)
@@ -338,6 +340,14 @@ theorem parsed_integer_memory_input_ignores_negation_extension
       bar0 bar1 tWord =
     (ParsedOperand.toDirectMemoryAccess? (.mem access false false false none)
       pe cycle bar0 bar1 tWord).map (fun resolved => .memory resolved false) := rfl
+
+theorem parsed_forward_integer_input (kind : ParsedForward) (negated extended rounded : Bool)
+    (precision : IntegerALU.Precision)
+    (group : Fin 2) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
+    (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
+    ParsedOperand.toParsedIntegerInput?
+      (.forward kind negated extended rounded) precision group l2b l1b mab pe cycle
+      bar0 bar1 tWord = some (.forward kind rounded) := rfl
 
 theorem parsed_integer_memory_input_preserves_rounding
     (access : Access) (precision : IntegerALU.Precision)
@@ -872,23 +882,97 @@ def writeRegisterBankMasked (files : IntegerRegisterFiles) (bank : Bank) (width 
 def readDirectAccess (files : IntegerRegisterFiles) (access : DirectMemoryAccess) : WordBus :=
   readRegisterBank files access.bank access.width access.address
 
+def ParsedIntegerInput.applyRounding (rounded : Bool) (bus : IntegerALU.Bus) :
+    IntegerALU.Bus := if rounded then roundSingleInputBusToHalf bus else bus
+
+def ParsedIntegerInput.forwardUnit : ParsedForward → ProofsLean.MNCore.Forwarding.Unit
+  | .aluf => .alu
+  | .mauf => .mau
+  | .lbf => .l1ToPE
+  | .mreadf => .matrixRead
+
 def ParsedIntegerInput.read (files : IntegerRegisterFiles) (input : ParsedIntegerInput) :
-    IntegerALU.Bus :=
+    ProofsLean.StepResult IntegerALU.Bus :=
   match input with
   | .memory access rounded =>
-      let raw := pack (readDirectAccess files access)
-      if rounded then roundSingleInputBusToHalf raw else raw
-  | .fixed value => value
+      .ok (applyRounding rounded (pack (readDirectAccess files access)))
+  | .fixed value => .ok value
+  | .forward _ _ => .unknown
+
+def ParsedIntegerInput.readWithForwarding (files : IntegerRegisterFiles)
+    (slots : ProofsLean.MNCore.Forwarding.Slots) (cycle : Fin 4)
+    (input : ParsedIntegerInput) : ProofsLean.StepResult IntegerALU.Bus :=
+  match input with
+  | .forward kind rounded =>
+      match slots (ParsedIntegerInput.forwardUnit kind) cycle with
+      | .known bus => .ok (applyRounding rounded bus)
+      | .poison => .failure
+      | .unknown => .unknown
+  | _ => read files input
+
+def ParsedIntegerInput.resolveForwarding? (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (cycle : Fin 4) (input : ParsedIntegerInput) : Option ParsedIntegerInput :=
+  match input with
+  | .forward kind rounded =>
+      match slots (forwardUnit kind) cycle with
+      | .known bus => some (.fixed (applyRounding rounded bus))
+      | .poison | .unknown => none
+  | _ => some input
+
+theorem ParsedIntegerInput.readWithForwarding_resolved
+    (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (cycle : Fin 4) (input resolved : ParsedIntegerInput)
+    (hResolved : resolveForwarding? slots cycle input = some resolved) :
+    readWithForwarding files slots cycle input = read files resolved := by
+  cases input with
+  | memory access rounded =>
+      simp [resolveForwarding?] at hResolved
+      cases hResolved
+      rfl
+  | fixed value =>
+      simp [resolveForwarding?] at hResolved
+      cases hResolved
+      rfl
+  | forward kind rounded =>
+      cases hSlot : slots (forwardUnit kind) cycle with
+      | known bus =>
+          simp [resolveForwarding?, hSlot] at hResolved
+          cases hResolved
+          simp [readWithForwarding, hSlot, read]
+      | poison => simp [resolveForwarding?, hSlot] at hResolved
+      | unknown => simp [resolveForwarding?, hSlot] at hResolved
 
 theorem parsedIntegerInput_read_rounded (files : IntegerRegisterFiles)
     (access : DirectMemoryAccess) :
     ParsedIntegerInput.read files (.memory access true) =
-      roundSingleInputBusToHalf (pack (readDirectAccess files access)) := rfl
+      .ok (roundSingleInputBusToHalf (pack (readDirectAccess files access))) := rfl
 
 theorem parsedIntegerInput_read_unrounded (files : IntegerRegisterFiles)
     (access : DirectMemoryAccess) :
     ParsedIntegerInput.read files (.memory access false) =
-      pack (readDirectAccess files access) := rfl
+      .ok (pack (readDirectAccess files access)) := rfl
+
+theorem parsedIntegerInput_forward_known (files : IntegerRegisterFiles)
+    (slots : ProofsLean.MNCore.Forwarding.Slots) (cycle : Fin 4)
+    (kind : ParsedForward) (rounded : Bool) (bus : IntegerALU.Bus)
+    (known : slots (ParsedIntegerInput.forwardUnit kind) cycle = .known bus) :
+    ParsedIntegerInput.readWithForwarding files slots cycle (.forward kind rounded) =
+      .ok (ParsedIntegerInput.applyRounding rounded bus) := by
+  simp [ParsedIntegerInput.readWithForwarding, known]
+
+theorem parsedIntegerInput_forward_poison_fails (files : IntegerRegisterFiles)
+    (slots : ProofsLean.MNCore.Forwarding.Slots) (cycle : Fin 4)
+    (kind : ParsedForward) (rounded : Bool)
+    (poisoned : slots (ParsedIntegerInput.forwardUnit kind) cycle = .poison) :
+    ParsedIntegerInput.readWithForwarding files slots cycle (.forward kind rounded) =
+      .failure := by simp [ParsedIntegerInput.readWithForwarding, poisoned]
+
+theorem parsedIntegerInput_forward_unknown_stays_unknown (files : IntegerRegisterFiles)
+    (slots : ProofsLean.MNCore.Forwarding.Slots) (cycle : Fin 4)
+    (kind : ParsedForward) (rounded : Bool)
+    (unresolved : slots (ParsedIntegerInput.forwardUnit kind) cycle = .unknown) :
+    ParsedIntegerInput.readWithForwarding files slots cycle (.forward kind rounded) =
+      .unknown := by simp [ParsedIntegerInput.readWithForwarding, unresolved]
 
 def writeDirectAccess (files : IntegerRegisterFiles) (access : DirectMemoryAccess)
     (data : WordBus) : IntegerRegisterFiles :=
@@ -956,27 +1040,33 @@ def parsedOutputAfterFlush (selection : Option PEWordSelection)
 def parsedIntegerMaskedRegisterStep (files : IntegerRegisterFiles)
     (accesses : ParsedMaskedIntegerAccesses) (reduced : Bool) :
     ProofsLean.StepResult IntegerRegisterFiles :=
-  let x := ParsedIntegerInput.read files accesses.sourceX
-  let y := ParsedIntegerInput.read files accesses.sourceY
-  match evaluateParsedIntegerAlu accesses.op x y reduced with
-  | .ok output =>
-      .ok (writeDirectAccessMasked files accesses.destination
-        (unpackALUBus (parsedOutputAfterFlush accesses.flushSelection output.value))
-        accesses.writeSelection)
+  match ParsedIntegerInput.read files accesses.sourceX with
   | .failure => .failure
   | .unknown => .unknown
+  | .ok x =>
+    match ParsedIntegerInput.read files accesses.sourceY with
+    | .failure => .failure
+    | .unknown => .unknown
+    | .ok y =>
+      match evaluateParsedIntegerAlu accesses.op x y reduced with
+      | .ok output =>
+          .ok (writeDirectAccessMasked files accesses.destination
+            (unpackALUBus (parsedOutputAfterFlush accesses.flushSelection output.value))
+            accesses.writeSelection)
+      | .failure => .failure
+      | .unknown => .unknown
 
 theorem parsedIntegerMaskedRegisterStep_success (files : IntegerRegisterFiles)
     (accesses : ParsedMaskedIntegerAccesses) (reduced : Bool)
-    (output : IntegerALU.BusResult)
-    (evaluated : evaluateParsedIntegerAlu accesses.op
-      (ParsedIntegerInput.read files accesses.sourceX)
-      (ParsedIntegerInput.read files accesses.sourceY) reduced = .ok output) :
+    (x y : IntegerALU.Bus) (output : IntegerALU.BusResult)
+    (sourceX : ParsedIntegerInput.read files accesses.sourceX = .ok x)
+    (sourceY : ParsedIntegerInput.read files accesses.sourceY = .ok y)
+    (evaluated : evaluateParsedIntegerAlu accesses.op x y reduced = .ok output) :
     parsedIntegerMaskedRegisterStep files accesses reduced =
       .ok (writeDirectAccessMasked files accesses.destination
         (unpackALUBus (parsedOutputAfterFlush accesses.flushSelection output.value))
         accesses.writeSelection) := by
-  simp [parsedIntegerMaskedRegisterStep, evaluated]
+  simp [parsedIntegerMaskedRegisterStep, sourceX, sourceY, evaluated]
 
 def executeParsedMaskedIntegerExpr? (files : IntegerRegisterFiles)
     (expression : ParsedExpr) (directive : ParsedMaskDirective)
@@ -1366,15 +1456,40 @@ structure PreparedParsedMaskedWrite where
 def prepareParsedMaskedWrite (files : IntegerRegisterFiles)
     (accesses : ParsedMaskedIntegerAccesses) (reduced : Bool) :
     ProofsLean.StepResult PreparedParsedMaskedWrite :=
-  let x := ParsedIntegerInput.read files accesses.sourceX
-  let y := ParsedIntegerInput.read files accesses.sourceY
-  match evaluateParsedIntegerAlu accesses.op x y reduced with
-  | .ok output =>
-      let bus := parsedOutputAfterFlush accesses.flushSelection output.value
-      .ok ⟨some accesses.destination, none, unpackALUBus bus, accesses.writeSelection⟩
+  match ParsedIntegerInput.read files accesses.sourceX with
   | .failure => .failure
   | .unknown => .unknown
+  | .ok x =>
+    match ParsedIntegerInput.read files accesses.sourceY with
+    | .failure => .failure
+    | .unknown => .unknown
+    | .ok y =>
+      match evaluateParsedIntegerAlu accesses.op x y reduced with
+      | .ok output =>
+          let bus := parsedOutputAfterFlush accesses.flushSelection output.value
+          .ok ⟨some accesses.destination, none, unpackALUBus bus, accesses.writeSelection⟩
+      | .failure => .failure
+      | .unknown => .unknown
 
+
+def prepareParsedMaskedWriteWithForwarding (files : IntegerRegisterFiles)
+    (slots : ProofsLean.MNCore.Forwarding.Slots) (cycle : Fin 4)
+    (accesses : ParsedMaskedIntegerAccesses) (reduced : Bool) :
+    ProofsLean.StepResult PreparedParsedMaskedWrite :=
+  match ParsedIntegerInput.readWithForwarding files slots cycle accesses.sourceX with
+  | .failure => .failure
+  | .unknown => .unknown
+  | .ok x =>
+    match ParsedIntegerInput.readWithForwarding files slots cycle accesses.sourceY with
+    | .failure => .failure
+    | .unknown => .unknown
+    | .ok y =>
+      match evaluateParsedIntegerAlu accesses.op x y reduced with
+      | .ok output =>
+          let bus := parsedOutputAfterFlush accesses.flushSelection output.value
+          .ok ⟨some accesses.destination, none, unpackALUBus bus, accesses.writeSelection⟩
+      | .failure => .failure
+      | .unknown => .unknown
 
 def prepareParsedConstantTarget (files : IntegerRegisterFiles) (cycle : Fin 4)
     (target : ParsedConstantDestination) : ProofsLean.StepResult PreparedParsedMaskedWrite :=
@@ -1462,6 +1577,61 @@ def commitParsedMaskedWrites (files : IntegerRegisterFiles)
         | some destination =>
             writeDirectAccessMasked current destination write.data write.selection
         | none => current) files
+
+def parsedIntegerMaskedRegisterStepWithForwarding (files : IntegerRegisterFiles)
+    (slots : ProofsLean.MNCore.Forwarding.Slots) (cycle : Fin 4)
+    (accesses : ParsedMaskedIntegerAccesses) (reduced : Bool) :
+    ProofsLean.StepResult IntegerRegisterFiles :=
+  match prepareParsedMaskedWriteWithForwarding files slots cycle accesses reduced with
+  | .ok write => .ok (commitParsedMaskedWrites files [write])
+  | .failure => .failure
+  | .unknown => .unknown
+
+theorem parsedIntegerMaskedRegisterStepWithForwarding_success
+    (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (cycle : Fin 4) (accesses : ParsedMaskedIntegerAccesses) (reduced : Bool)
+    (write : PreparedParsedMaskedWrite)
+    (prepared : prepareParsedMaskedWriteWithForwarding files slots cycle accesses reduced = .ok write) :
+    parsedIntegerMaskedRegisterStepWithForwarding files slots cycle accesses reduced =
+      .ok (commitParsedMaskedWrites files [write]) := by
+  simp [parsedIntegerMaskedRegisterStepWithForwarding, prepared]
+
+
+theorem commitParsedMaskedWrites_single_memory (files : IntegerRegisterFiles)
+    (destination : DirectMemoryAccess) (data : WordBus) (selection : PEWordSelection) :
+    commitParsedMaskedWrites files
+      [⟨some destination, none, data, selection⟩] =
+    writeDirectAccessMasked files destination data selection := by
+  cases destination with
+  | mk bank width address =>
+      cases bank <;>
+        simp [commitParsedMaskedWrites, writeDirectAccessMasked,
+          writeRegisterBankMasked]
+
+theorem parsedIntegerMaskedRegisterStepWithForwarding_resolves_to_fixed
+    (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (cycle : Fin 4) (accesses : ParsedMaskedIntegerAccesses) (reduced : Bool)
+    (sourceX sourceY : ParsedIntegerInput)
+    (resolvedX : ParsedIntegerInput.resolveForwarding? slots cycle accesses.sourceX = some sourceX)
+    (resolvedY : ParsedIntegerInput.resolveForwarding? slots cycle accesses.sourceY = some sourceY) :
+    parsedIntegerMaskedRegisterStepWithForwarding files slots cycle accesses reduced =
+      parsedIntegerMaskedRegisterStep files
+        { accesses with sourceX := sourceX, sourceY := sourceY } reduced := by
+  unfold parsedIntegerMaskedRegisterStepWithForwarding
+  simp only [prepareParsedMaskedWriteWithForwarding,
+    ParsedIntegerInput.readWithForwarding_resolved files slots cycle accesses.sourceX sourceX resolvedX,
+    ParsedIntegerInput.readWithForwarding_resolved files slots cycle accesses.sourceY sourceY resolvedY]
+  cases hx : ParsedIntegerInput.read files sourceX with
+  | failure => simp [parsedIntegerMaskedRegisterStep, hx]
+  | unknown => simp [parsedIntegerMaskedRegisterStep, hx]
+  | ok x =>
+    cases hy : ParsedIntegerInput.read files sourceY with
+    | failure => simp [parsedIntegerMaskedRegisterStep, hx, hy]
+    | unknown => simp [parsedIntegerMaskedRegisterStep, hx, hy]
+    | ok y =>
+      cases hv : evaluateParsedIntegerAlu accesses.op x y reduced <;>
+        simp [parsedIntegerMaskedRegisterStep, hx, hy, hv,
+          commitParsedMaskedWrites_single_memory]
 
 theorem commit_constant_omr_destination_writes_zero
     (files : IntegerRegisterFiles) (entry : Fin 15) (cycle : Fin 4) :

@@ -117,6 +117,14 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.roundSingleInputBusToHalf_lane3
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerInput_read_rounded
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerInput_read_unrounded
+#print axioms ProofsLean.MNCore.PEMemory.parsed_forward_integer_input
+#print axioms ProofsLean.MNCore.PEMemory.parsedIntegerInput_forward_known
+#print axioms ProofsLean.MNCore.PEMemory.parsedIntegerInput_forward_poison_fails
+#print axioms ProofsLean.MNCore.PEMemory.parsedIntegerInput_forward_unknown_stays_unknown
+#print axioms ProofsLean.MNCore.PEMemory.ParsedIntegerInput.readWithForwarding_resolved
+#print axioms ProofsLean.MNCore.PEMemory.commitParsedMaskedWrites_single_memory
+#print axioms ProofsLean.MNCore.PEMemory.parsedIntegerMaskedRegisterStepWithForwarding_resolves_to_fixed
+#print axioms ProofsLean.MNCore.PEMemory.parsedIntegerMaskedRegisterStepWithForwarding_success
 #print axioms ProofsLean.MNCore.PEMemory.parsed_issue_advances_elapsed_word
 #print axioms ProofsLean.MNCore.PEMemory.parsed_issue_line_mask_flag_iff
 #print axioms ProofsLean.MNCore.PEMemory.parsed_issue_line_mask_cancels_unmasked_memory_target
