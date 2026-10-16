@@ -875,6 +875,22 @@ theorem parseParsedMvParams_rejects_size_overflow :
 theorem parseParsedMvParams_selector_accepts_explicit_plus :
     parsedMvOptionalU8? ['+', '2', '5', '5'] = some (some ⟨255, by decide⟩) := by decide
 
+theorem parseParsedMvParams_tag_accepts_rust_radix_plus :
+    parseParsedMvParams? "i+A" =
+      some ⟨none, some ⟨10, by decide⟩, none, ⟨0, by decide⟩⟩ := by decide
+
+theorem parseParsedMvLine_accepts_plus_in_u8_operand_group :
+    parseParsedMvLine? "mvp/n1 $p0@+1 $d1@+2" =
+      some ⟨.copy, ⟨1, by decide⟩, none, none, ⟨0, by decide⟩,
+        some (.pdm ⟨0, by decide⟩ (some ⟨1, by decide⟩)),
+        some (.dram ⟨1, by decide⟩ (some ⟨2, by decide⟩) false),
+        "mvp/n1 $p0@+1 $d1@+2"⟩ := by decide
+
+theorem parseParsedMvLine_nop_ignores_operands_like_rust :
+    (parseParsedMvLine? "mvnop ignored tokens") =
+      some ⟨.nop, ⟨0, by decide⟩, none, none, ⟨0, by decide⟩,
+        none, none, "mvnop ignored tokens"⟩ := by decide
+
 inductive ParsedLine where
   | pe (expressions : List ParsedExpr)
   | nop (count : Nat) (wait : Option Nat)
