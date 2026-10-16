@@ -28,6 +28,12 @@ These gaps must be resolved against the manual and `assemble3` before
 promoting `parallel_issue_and_memory_port_legality` beyond
 `partial_datapath_only` in `coverage.json`.
 
+The boundary evidence now includes seven valid-operand pairs of `l2bmdars` with
+`l2bmb`, `l2bmb2`, `l2bmd`, `l2bm@`, `l2bmr*`, `l2bmr2*`, and `l2bmi`; all
+seven were rejected by `assemble3`. This does not identify the manual's special
+condition, so it does not justify removing the completeness gap. The
+`l2bmdars; l2bmdarw` pair remains accepted and is separately recorded.
+
 ## Next formalization work
 
 1. Model the `l2bmdars` simultaneous-issue exception explicitly, or establish

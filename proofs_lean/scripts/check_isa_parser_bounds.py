@@ -82,6 +82,20 @@ CASES = {
     "l2bm_dar_l2b_0": ("l2bmdars $lc1024@.0 $dar0; l2bmdarw\n", True, 1),
     "l2bm_dar_l2b_1": ("l2bmdars $lc1024@.1 $dar0; l2bmdarw\n", True, 1),
     "l2bm_dar_l2b_2": ("l2bmdars $lc1024@.2 $dar0; l2bmdarw\n", False, None),
+    "l2bmdars_with_l2bmb": (
+        "l2bmdars $lc0@.0 $dar0; l2bmb $lc0 $lb0\n", False, None),
+    "l2bmdars_with_l2bmb2": (
+        "l2bmdars $lc0@.0 $dar0; l2bmb2 $lc0 $lb0\n", False, None),
+    "l2bmdars_with_l2bmd": (
+        "l2bmdars $lc0@.0 $dar0; l2bmd $lc0 $lb0\n", False, None),
+    "l2bmdars_with_l2bm_from_l1b": (
+        "l2bmdars $lc0@.0 $dar0; l2bm@1 $lb0 $lc0\n", False, None),
+    "l2bmdars_with_l2bm_reduce": (
+        "l2bmdars $lc0@.0 $dar0; l2bmrdfadd $lb0 $lc0\n", False, None),
+    "l2bmdars_with_l2bm_reduce2": (
+        "l2bmdars $lc0@.0 $dar0; l2bmr2dfadd $lb0 $lc0\n", False, None),
+    "l2bmdars_with_l2bm_internal_multicast": (
+        "l2bmdars $lc0@.0 $dar0; l2bmi@0/4 $lb0 $lb0\n", False, None),
     "dar_addr_1023": ("l2bmdars $lc1024@.0 $dar1023; l2bmdarw\n", True, 1),
     "dar_addr_1024": ("l2bmdars $lc1024@.0 $dar1024; l2bmdarw\n", False, None),
     "mabdiff_minus256": ("l1bmd-256 $lm0 $lb0\n", False, None),
@@ -221,7 +235,8 @@ def main() -> None:
             "The assembler accepts d set, d get and r input records, but the challenge judge's default solution sanitizer retains only j/m instruction rows; these records are filtered before execution. The scored program therefore excludes debug and DRAM initialization records.",
             "A zero instruction with one destination in each of LM0, LM1, GRF0, GRF1, T and OMR is accepted; duplicate destinations within each of those six categories are rejected. This bounds observed destination categories for these probes, but Rust's VSM parser itself still stores all tokens after the fixed source prefix as destinations, and the assembler probes are not a universal parser-to-encoding theorem.",
             "Same-expression destination checks reject duplicate output classes even when the operand values differ (LM0 at two addresses, two OMR entries), reject repeated nowrite, and reject multiple matrix-write destinations. A single nowrite destination is accepted. These checks support finite destination arity for the sampled opcodes but do not establish a bound for every opcode spelling.",
-            "Judge flags can preserve d get/d set, but the normal challenge invocation does not set them; the d-set invalidation applies only when such a record is retained."
+            "Judge flags can preserve d get/d set, but the normal challenge invocation does not set them; the d-set invalidation applies only when such a record is retained.",
+            "Selected valid-operand combinations of l2bmdars with l2bmb, l2bmb2, l2bmd, l2bm@, l2bmr*, l2bmr2* and l2bmi were rejected. This does not cover the manual's unspecified special l2bmdars issue condition.",
         ],
         "submission_normalization": {
             "source": "judge/judge-py/judge.py",
