@@ -42,6 +42,8 @@ import Lean
 #print axioms ProofsLean.MNCore.PlusOne.increment_numerical
 #print axioms ProofsLean.MNCore.Issue.check_sound
 #print axioms ProofsLean.MNCore.Issue.Region.inFiniteEnvelope_finite
+#print axioms ProofsLean.MNCore.Issue.Access.inFiniteEnvelope_finite
+#print axioms ProofsLean.MNCore.Issue.ParsedOperand.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.projectLine_expression_count_le_ten
 #print axioms ProofsLean.MNCore.Issue.ParsedMask.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.omrEntryInFiniteEnvelope_finite

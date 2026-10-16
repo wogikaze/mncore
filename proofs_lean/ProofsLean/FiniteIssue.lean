@@ -214,7 +214,7 @@ abbrev OperandL2bmFiniteCode := Fin 32768 × Option (Fin 8)
 abbrev ParsedOperandFiniteCode :=
   OperandMemFiniteCode ⊕ OperandBarFiniteCode ⊕ OperandForwardFiniteCode ⊕
   OperandFixedFiniteCode ⊕ OperandOmrFiniteCode ⊕ OperandMatrixFiniteCode ⊕
-  PUnit ⊕ OperandL1bmFiniteCode ⊕ OperandL2bmFiniteCode ⊕ Fin 1024
+  PUnit.{1} ⊕ OperandL1bmFiniteCode ⊕ OperandL2bmFiniteCode ⊕ Fin 1024
 
 private instance : Fintype RegionFiniteCode := inferInstance
 private instance : Fintype ParsedOperandFiniteCode := inferInstance
@@ -247,11 +247,13 @@ private def ParsedForward.finiteCode : ParsedForward → Fin 4
 private def ParsedFixed.finiteCode : ParsedFixed → Fin 6
   | .l2bid => 0 | .l1bid => 1 | .mabid => 2 | .peid => 3 | .subpeid => 4 | .msb1 => 5
 
-private theorem ParsedForward.finiteCode_injective : Function.Injective ParsedForward.finiteCode := by
+private theorem ParsedForward.finiteCode_injective :
+    Function.Injective ParsedForward.finiteCode := by
   intro a b equal
   cases a <;> cases b <;> simp [ParsedForward.finiteCode] at equal ⊢
 
-private theorem ParsedFixed.finiteCode_injective : Function.Injective ParsedFixed.finiteCode := by
+private theorem ParsedFixed.finiteCode_injective :
+    Function.Injective ParsedFixed.finiteCode := by
   intro a b equal
   cases a <;> cases b <;> simp [ParsedFixed.finiteCode] at equal ⊢
 
@@ -292,6 +294,43 @@ def ParsedOperand.finiteCode
         optionNatFiniteCode 8 ⟨l2b, l2bBound⟩)
   | dar address =>
       exact operandDarCode ⟨address, bounds⟩
+
+theorem ParsedOperand.finiteCode_injective : Function.Injective ParsedOperand.finiteCode := by
+  intro a b codeEqual
+  cases a with
+  | mk a ha =>
+    cases b with
+    | mk b hb =>
+      apply Subtype.ext
+      cases a <;> cases b <;>
+        simp_all [ParsedOperand.finiteCode, operandMemCode, operandBarCode,
+          operandForwardCode, operandFixedCode, operandOmrCode, operandMatrixCode,
+          operandNowriteCode, operandL1bmCode, operandL2bmCode, operandDarCode,
+          ParsedForward.finiteCode, ParsedFixed.finiteCode,
+          Sum.inl_ne_inr, Sum.inr_ne_inl]
+      all_goals
+        solve
+        | rcases codeEqual with ⟨accessEqual, _, _, _, maskEqual⟩
+          exact ⟨congrArg Subtype.val (Access.finiteCode_injective accessEqual),
+            congrArg Subtype.val (optionMaskFiniteCode_injective maskEqual)⟩
+        | rcases codeEqual with ⟨_, _, maskEqual⟩
+          exact congrArg Subtype.val (optionMaskFiniteCode_injective maskEqual)
+        | rcases codeEqual with ⟨_, maskEqual⟩
+          exact congrArg Subtype.val (optionMaskFiniteCode_injective maskEqual)
+        | rcases codeEqual with ⟨kindEqual, _, _, _⟩
+          exact ParsedForward.finiteCode_injective kindEqual
+        | exact ParsedFixed.finiteCode_injective codeEqual
+        | rcases codeEqual with ⟨_, _, rowEqual⟩
+          exact congrArg Subtype.val (optionNatFiniteCode_injective 16 rowEqual)
+        | rcases codeEqual with ⟨_, addressEqual⟩
+          exact congrArg Subtype.val (optionNatFiniteCode_injective 8192 addressEqual)
+        | rcases codeEqual with ⟨addressEqual, l2bEqual⟩
+          exact congrArg Subtype.val (optionNatFiniteCode_injective 8 l2bEqual)
+        | exact congrArg Fin.val codeEqual
+
+theorem ParsedOperand.inFiniteEnvelope_finite :
+    Finite {operand : ParsedOperand // operand.inFiniteEnvelope} :=
+  Finite.of_injective ParsedOperand.finiteCode ParsedOperand.finiteCode_injective
 
 def omrEntryInFiniteEnvelope (entry : Nat) : Prop := entry < 16
 

@@ -84,14 +84,21 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   プローブは`evidence/isa-bounds/reference.json`にある。bank別の合法範囲/alignmentや、
   パーサーからこの上限への一般的な健全性証明は未実装で、PE line alphabet全体の有限性にも未接続。
 - `FiniteIssue.lean`: issue projectionが付ける連番IDと同時発行group一意性から、合法なPE行の式数が
-  10以下であることを証明した（`projectLine_expression_count_le_ten`）。各式のoperand列・数値payloadを
-  有限化する補題ではなく、行全体の有限性にも未接続。
+  10以下であることを証明した（`projectLine_expression_count_le_ten`）。operandの数値envelopeも定義し、
+  全ての構造化`ParsedOperand` constructorを有限コードへ写して
+  `ParsedOperand.inFiniteEnvelope_finite`を証明した。
   同ファイルで`ParsedMask.entry < 32`の有限部分型も証明した。assemble3では`$imr0..31`が受理され
   `$imr32`が拒否される一方、OMR entryは別の範囲である。parser出力からこの上限への一般証明は未実装。
   OMR indexについても`entry < 16`の有限部分型を証明し、assemble3の1..15受理・16拒否を根拠に登録した。
   envelopeは不正な0も含む上位集合で、parser/assembler受理集合との完全な一致を主張しない。
   あわせて`Nat < bound`と、各要素がその範囲内にある`Option Nat`の有限性をbound一般で証明した。
   後者は行列row、L1BM addressなどのoptionalな数値fieldをまとめる部品として使う。
+  operand envelopeはregion width `< 5`/address `< 4096`/madpe `< 4`、mask selector `< 32`、
+  OMR entry `< 16`、matrix width `< 5`/row `< 16`、L1BM width `< 5`/address `< 8192`、
+  L2BM address `< 32768`/selector `< 8`、DAR address `< 1024`を含む。
+  これは境界プローブに基づく有限な上位集合であり、bank/opcode別alignmentや、全assembler-accepted
+  operandがenvelopeに入ることの証明ではない。bounded operand carrierは有限だが、これを合法PE行や
+  `MNCore.machine`の全行有限性へ接続する作業は未完了。
 - `FiniteExample.lean`: 3命令・4入力の小さな機械で、全候補の反証、2行の最適性、
   限定入力では1行解が存在することを証明する回帰例。**MN-Coreではない。**
 - `PlusOne.lean`: Welcome（`challenge/1.plus-one`）の2行の `iinc` 解について、
