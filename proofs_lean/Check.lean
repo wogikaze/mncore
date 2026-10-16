@@ -93,6 +93,11 @@ import Lean
 #print axioms ProofsLean.MNCore.RRN.single_rrn_one_plus_two_is_three
 #print axioms ProofsLean.MNCore.RRN.single_rrn_opposites_cancel_to_positive_zero
 #print axioms ProofsLean.MNCore.RRN.single_rrn_infinity_sign_matches_all_infinities
+#print axioms ProofsLean.MNCore.RRN.single_longword_rrn_reduces_each_lane
+#print axioms ProofsLean.MNCore.L1Transfer.reduceFloatL1Writes_count
+#print axioms ProofsLean.MNCore.L1Transfer.reduceFloatL1Writes_contains_result
+#print axioms ProofsLean.MNCore.L1Transfer.reduceL1Writes_contains_second
+#print axioms ProofsLean.MNCore.L1Transfer.reduceFloatL1Writes_contains_second_result
 #print axioms ProofsLean.MNCore.L1Transfer.mwriteWrites_contains_high
 #print axioms ProofsLean.MNCore.L1Transfer.mwriteWrites_contains_low
 #print axioms ProofsLean.MNCore.L1Transfer.m4writeWrites_contains_high

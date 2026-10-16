@@ -216,8 +216,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   integer `reduce`/`reduce4`では選択MAB入力の縮約結果をpending列に接続し、出力件数を証明した。
   浮動小数点RRNではround-to-nearest-evenの右シフト、有限値の指数揃えと符号付き仮数和、
   出力形式への正規化round-pack、infinity/zero規則を定義し、singleの具体例を証明した。
-  float RRN結果とL1 pending列の接続、half precision extensionとoutput roundingの例外配置、
-  PE/L1 turnaroundへのcommitは未接続。
+  native single/doubleのlane別RRN結果をMAB選択後に`reduce`/`reduce4`のpending列へ接続し、
+  1/2 long-word時の件数と両方の出力結果のアドレス対応を証明した。
+  half precision extensionとoutput roundingの例外配置、PE/L1 turnaroundへのcommitは未接続。
 
 `Machine.positiveCost` はスコアが正の行へ正規化済みであるという条件。
 MN-Coreにはゼロコストの制御文があるので、その正規化の意味保存と完全性を証明するまでは

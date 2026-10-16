@@ -25,6 +25,16 @@ inductive FloatPrecision where
   | half | single | double
   deriving DecidableEq, Repr
 
+/-- Native floating RRN formats. Half precision is excluded because the Rust
+block model aliases half `fadd` through single-precision extension/rounding. -/
+inductive NativeFloatPrecision where
+  | single | double
+  deriving DecidableEq, Repr
+
+def NativeFloatPrecision.format : NativeFloatPrecision → FloatPrecision
+  | .single => .single
+  | .double => .double
+
 def FloatPrecision.exponentBits : FloatPrecision → Nat
   | .half => 6
   | .single => 8
@@ -120,6 +130,17 @@ def reduceFloatAdd (input output : FloatPrecision) (values : List Nat) : Nat :=
         Int.ofNat input.mantissaBits - 3
       roundPack output (sum < 0) sum.natAbs exponent
 
+/-- Reduce each native single/double lane independently across L1BM words. -/
+def reduceLongFloatAdd (precision : NativeFloatPrecision)
+    (values : List (BitVec 64)) : BitVec 64 :=
+  let format := precision.format
+  let width := format.width
+  let laneValues := (List.range (64 / width)).map fun lane =>
+    let inputs := values.map fun value =>
+      (value.extractLsb' (lane * width) width).toNat
+    reduceFloatAdd format format inputs * 2 ^ (lane * width)
+  BitVec.ofNat 64 (laneValues.foldl (· + ·) 0)
+
 def signMagnitudeKey (value : BitVec width) : Int :=
   let signPlace := 2 ^ (width - 1)
   let magnitude := value.toNat % signPlace
@@ -213,5 +234,10 @@ theorem single_rrn_opposites_cancel_to_positive_zero :
 
 theorem single_rrn_infinity_sign_matches_all_infinities :
     reduceFloatAdd .single .single [0x7f800000, 0xff800000] = 0x7f800000 := by decide
+
+theorem single_longword_rrn_reduces_each_lane :
+    reduceLongFloatAdd .single
+      [BitVec.ofNat 64 0x3f8000003f800000, BitVec.ofNat 64 0x4000000040000000] =
+      BitVec.ofNat 64 0x4040000040400000 := by decide
 
 end ProofsLean.MNCore.RRN

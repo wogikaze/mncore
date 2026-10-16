@@ -303,6 +303,24 @@ theorem reduceL1Writes_contains_first (memoryBase : Fin l1bmLongWords)
     · simp [hzero]
   cases rounded <;> cases twoLongWords <;> simp [reduceL1Writes, hkeep]
 
+theorem reduceL1Writes_contains_second (memoryBase : Fin l1bmLongWords)
+    (fourGroups : Bool) (cycle group pe : Fin 4)
+    (results : Fin 4 → Fin 4 → Fin 2 → BitVec 64)
+    (hgroup : fourGroups = true ∨ group.val = 0) :
+    (addressAt memoryBase
+      (cycle.val * (if fourGroups then 32 else 8) +
+        group.val * 8 + pe.val + 4), results group pe 1) ∈
+      reduceL1Writes memoryBase fourGroups false true cycle results := by
+  apply List.mem_flatMap.mpr
+  refine ⟨group, List.mem_finRange group, ?_⟩
+  apply List.mem_flatMap.mpr
+  refine ⟨pe, List.mem_finRange pe, ?_⟩
+  have hkeep : (fourGroups || group.val == 0) = true := by
+    rcases hgroup with hfour | hzero
+    · simp [hfour]
+    · simp [hzero]
+  simp [reduceL1Writes, hkeep, Nat.add_assoc]
+
 theorem reduceIntegerL1Writes_contains_result (memoryBase : Fin l1bmLongWords)
     (fourGroups twoLongWords : Bool) (precision : RRN.IntegerPrecision)
     (op : RRN.IntegerOp) (cycle group pe : Fin 4)
@@ -319,6 +337,65 @@ theorem reduceIntegerL1Writes_contains_result (memoryBase : Fin l1bmLongWords)
   simpa [reduceIntegerL1Writes, Nat.add_assoc] using
     reduceL1Writes_contains_first memoryBase fourGroups false twoLongWords cycle group pe
       (fun g p k => RRN.reduceLongInteger op precision
+        (((List.finRange 16).filter fun mab =>
+          !fourGroups || mab.val / 4 == g.val).map fun mab => inputs g p k mab)) hgroup
+
+/-- Native single/double `l1bmr` and `l1bmr4` results routed to L1BM.
+This covers the non-rounded, non-extended Rust path; half aliases and explicit
+output rounding have separate layouts. -/
+def reduceFloatL1Writes (memoryBase : Fin l1bmLongWords)
+    (fourGroups twoLongWords : Bool) (precision : RRN.NativeFloatPrecision)
+    (cycle : Fin 4) (inputs : Fin 4 → Fin 4 → Fin 2 → Fin 16 → BitVec 64) :
+    List L1Write :=
+  let results := fun group pe part =>
+    RRN.reduceLongFloatAdd precision <|
+      ((List.finRange 16).filter fun mab =>
+        !fourGroups || mab.val / 4 == group.val).map fun mab => inputs group pe part mab
+  reduceL1Writes memoryBase fourGroups false twoLongWords cycle results
+
+theorem reduceFloatL1Writes_count (memoryBase : Fin l1bmLongWords)
+    (fourGroups twoLongWords : Bool) (precision : RRN.NativeFloatPrecision)
+    (cycle : Fin 4) (inputs : Fin 4 → Fin 4 → Fin 2 → Fin 16 → BitVec 64) :
+    (reduceFloatL1Writes memoryBase fourGroups twoLongWords precision cycle inputs).length =
+      if fourGroups then (if twoLongWords then 32 else 16)
+      else if twoLongWords then 8 else 4 := by
+  simpa [reduceFloatL1Writes, Nat.add_assoc] using
+    reduceL1Writes_count memoryBase fourGroups false twoLongWords cycle
+      (fun group pe part => RRN.reduceLongFloatAdd precision
+        (((List.finRange 16).filter fun mab =>
+          !fourGroups || mab.val / 4 == group.val).map fun mab => inputs group pe part mab))
+
+theorem reduceFloatL1Writes_contains_result (memoryBase : Fin l1bmLongWords)
+    (fourGroups twoLongWords : Bool) (precision : RRN.NativeFloatPrecision)
+    (cycle group pe : Fin 4) (inputs : Fin 4 → Fin 4 → Fin 2 → Fin 16 → BitVec 64)
+    (hgroup : fourGroups = true ∨ group.val = 0) :
+    (addressAt memoryBase
+      (cycle.val * (if fourGroups then (if twoLongWords then 32 else 16)
+        else if twoLongWords then 8 else 4) +
+        group.val * (if twoLongWords then 8 else 4) + pe.val),
+      RRN.reduceLongFloatAdd precision
+        (((List.finRange 16).filter fun mab =>
+          !fourGroups || mab.val / 4 == group.val).map fun mab => inputs group pe 0 mab)) ∈
+      reduceFloatL1Writes memoryBase fourGroups twoLongWords precision cycle inputs := by
+  simpa [reduceFloatL1Writes, Nat.add_assoc] using
+    reduceL1Writes_contains_first memoryBase fourGroups false twoLongWords cycle group pe
+      (fun g p k => RRN.reduceLongFloatAdd precision
+        (((List.finRange 16).filter fun mab =>
+          !fourGroups || mab.val / 4 == g.val).map fun mab => inputs g p k mab)) hgroup
+
+theorem reduceFloatL1Writes_contains_second_result (memoryBase : Fin l1bmLongWords)
+    (fourGroups : Bool) (precision : RRN.NativeFloatPrecision)
+    (cycle group pe : Fin 4) (inputs : Fin 4 → Fin 4 → Fin 2 → Fin 16 → BitVec 64)
+    (hgroup : fourGroups = true ∨ group.val = 0) :
+    (addressAt memoryBase
+      (cycle.val * (if fourGroups then 32 else 8) + group.val * 8 + pe.val + 4),
+      RRN.reduceLongFloatAdd precision
+        (((List.finRange 16).filter fun mab =>
+          !fourGroups || mab.val / 4 == group.val).map fun mab => inputs group pe 1 mab)) ∈
+      reduceFloatL1Writes memoryBase fourGroups true precision cycle inputs := by
+  simpa [reduceFloatL1Writes, Nat.add_assoc] using
+    reduceL1Writes_contains_second memoryBase fourGroups cycle group pe
+      (fun g p k => RRN.reduceLongFloatAdd precision
         (((List.finRange 16).filter fun mab =>
           !fourGroups || mab.val / 4 == g.val).map fun mab => inputs g p k mab)) hgroup
 
