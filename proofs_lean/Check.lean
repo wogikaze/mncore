@@ -127,6 +127,7 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.commitParsedMaskedWrites_single_memory
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerMaskedRegisterStepWithForwarding_resolves_to_fixed
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerMaskedRegisterStepWithForwarding_success
+#print axioms ProofsLean.MNCore.PEMemory.parsedIntegerMaskedLineStepWithForwarding_prepares_then_commits
 #print axioms ProofsLean.MNCore.PEMemory.parsed_issue_advances_elapsed_word
 #print axioms ProofsLean.MNCore.PEMemory.parsed_issue_line_mask_flag_iff
 #print axioms ProofsLean.MNCore.PEMemory.parsed_issue_line_mask_cancels_unmasked_memory_target
