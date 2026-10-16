@@ -45,6 +45,7 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.readDirectAccessMasked_after_write
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerMaskedRegisterStep_success
 #print axioms ProofsLean.MNCore.PEMemory.mask_directive_replaces_selection_preserves_context
+#print axioms ProofsLean.MNCore.PEMemory.parsedIntegerMaskedLineStep_prepares_then_commits
 #print axioms ProofsLean.MNCore.PEMemory.parsedMaskedSource_execution
 #print axioms ProofsLean.MNCore.PEMemory.parsedMaskedSource_score
 #print axioms ProofsLean.MNCore.PEMemory.mask_directive_has_zero_issue_cost

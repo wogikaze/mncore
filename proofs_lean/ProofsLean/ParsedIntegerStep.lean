@@ -329,9 +329,9 @@ def ParsedExpr.toDirectIntegerAccesses? (expression : ParsedExpr)
 
 /-- Lower an integer ALU expression with a direct PE-memory destination,
 resolving its explicit or multiline write mask and output flush for this cycle. -/
-def ParsedExpr.toDirectMaskedIntegerAccesses? (expression : ParsedExpr)
+def ParsedExpr.toDirectMaskedIntegerAccessesInLine? (expression : ParsedExpr)
     (registers : ProofsLean.MNCore.Masks.RegisterFile)
-    (directive : ParsedMaskDirective)
+    (directive : ParsedMaskDirective) (hasSingleLineMask : Bool)
     (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
     Option ParsedMaskedIntegerAccesses :=
   match expression.op with
@@ -349,7 +349,7 @@ def ParsedExpr.toDirectMaskedIntegerAccesses? (expression : ParsedExpr)
                   | some destinationAccess =>
                       match ParsedOperand.resolveMemoryWriteSelection? destination
                           destinationAccess.bank registers cycle directive
-                          (parsedExprHasSingleLineWriteMask expression),
+                          hasSingleLineMask,
                           resolveFlushSelection? expression.flush registers cycle with
                       | some writeSelection, some flushSelection =>
                           some ⟨expression.op, sourceAccess, sourceAccess, destinationAccess,
@@ -365,7 +365,7 @@ def ParsedExpr.toDirectMaskedIntegerAccesses? (expression : ParsedExpr)
                   | some destinationAccess =>
                       match ParsedOperand.resolveMemoryWriteSelection? destination
                           destinationAccess.bank registers cycle directive
-                          (parsedExprHasSingleLineWriteMask expression),
+                          hasSingleLineMask,
                           resolveFlushSelection? expression.flush registers cycle with
                       | some writeSelection, some flushSelection =>
                           some ⟨expression.op, xAccess, yAccess, destinationAccess,
@@ -375,6 +375,14 @@ def ParsedExpr.toDirectMaskedIntegerAccesses? (expression : ParsedExpr)
           | _, _ => none
       | _ => none
   | _ => none
+
+def ParsedExpr.toDirectMaskedIntegerAccesses? (expression : ParsedExpr)
+    (registers : ProofsLean.MNCore.Masks.RegisterFile)
+    (directive : ParsedMaskDirective)
+    (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
+    Option ParsedMaskedIntegerAccesses :=
+  ParsedExpr.toDirectMaskedIntegerAccessesInLine? expression registers directive
+    (parsedExprHasSingleLineWriteMask expression) pe cycle bar0 bar1 tWord
 
 example : ParsedOperand.toDirectMemoryAccess?
     (.mem ⟨.grf0, ⟨1, 5, 5, 5, 5, false, none⟩⟩ false false false none)
@@ -555,7 +563,7 @@ structure ParsedMaskExecutionControl where
   deriving DecidableEq, Repr
 
 abbrev ParsedMaskedSourceStatement :=
-  ProofsLean.ControlNormalization.Statement ParsedMaskDirective ParsedExpr
+  ProofsLean.ControlNormalization.Statement ParsedMaskDirective (List ParsedExpr)
 
 def updateParsedMaskDirective (next : ParsedMaskDirective)
     (current : ParsedMaskExecutionControl) : ParsedMaskExecutionControl :=
@@ -567,19 +575,79 @@ theorem mask_directive_replaces_selection_preserves_context
       (updateParsedMaskDirective next current).context = current.context := by
   constructor <;> rfl
 
+structure PreparedParsedMaskedWrite where
+  destination : DirectMemoryAccess
+  data : WordBus
+  selection : PEWordSelection
+
+def prepareParsedMaskedWrite (files : IntegerRegisterFiles)
+    (accesses : ParsedMaskedIntegerAccesses) (reduced : Bool) :
+    ProofsLean.StepResult PreparedParsedMaskedWrite :=
+  let x := pack (readDirectAccess files accesses.sourceX)
+  let y := pack (readDirectAccess files accesses.sourceY)
+  match evaluateParsedIntegerAlu accesses.op x y reduced with
+  | .ok output =>
+      let bus := parsedOutputAfterFlush accesses.flushSelection output.value
+      .ok ⟨accesses.destination, unpackALUBus bus, accesses.writeSelection⟩
+  | .failure => .failure
+  | .unknown => .unknown
+
+def prepareParsedMaskedLine (files : IntegerRegisterFiles)
+    (expressions : List ParsedExpr) (control : ParsedMaskExecutionControl) :
+    ProofsLean.StepResult (List PreparedParsedMaskedWrite) :=
+  let hasSingleLineMask := expressions.any parsedExprHasSingleLineWriteMask
+  let rec prepare : List ParsedExpr → ProofsLean.StepResult (List PreparedParsedMaskedWrite)
+    | [] => .ok []
+    | expression :: rest =>
+        match ParsedExpr.toDirectMaskedIntegerAccessesInLine? expression files.maskRegisters
+            control.directive hasSingleLineMask control.context.pe control.context.cycle
+            control.context.bar0 control.context.bar1 control.context.tWord with
+        | none => .unknown
+        | some accesses =>
+            match prepareParsedMaskedWrite files accesses false with
+            | .failure => .failure
+            | .unknown => .unknown
+            | .ok write =>
+                match prepare rest with
+                | .ok writes => .ok (write :: writes)
+                | .failure => .failure
+                | .unknown => .unknown
+  prepare expressions
+
+def commitParsedMaskedWrites (files : IntegerRegisterFiles)
+    (writes : List PreparedParsedMaskedWrite) : IntegerRegisterFiles :=
+  writes.foldl (fun current write =>
+    writeDirectAccessMasked current write.destination write.data write.selection) files
+
+def parsedIntegerMaskedLineStep (files : IntegerRegisterFiles)
+    (expressions : List ParsedExpr) (control : ParsedMaskExecutionControl) :
+    ProofsLean.StepResult IntegerRegisterFiles :=
+  match prepareParsedMaskedLine files expressions control with
+  | .ok writes => .ok (commitParsedMaskedWrites files writes)
+  | .failure => .failure
+  | .unknown => .unknown
+
+theorem parsedIntegerMaskedLineStep_prepares_then_commits
+    (files : IntegerRegisterFiles) (expressions : List ParsedExpr)
+    (control : ParsedMaskExecutionControl) :
+    parsedIntegerMaskedLineStep files expressions control =
+      match prepareParsedMaskedLine files expressions control with
+      | .ok writes => .ok (commitParsedMaskedWrites files writes)
+      | .failure => .failure
+      | .unknown => .unknown := rfl
+
+
 def parsedMaskedExpressionStep (control : ParsedMaskExecutionControl)
-    (expression : ParsedExpr) (files : IntegerRegisterFiles) :
+    (expressions : List ParsedExpr) (files : IntegerRegisterFiles) :
     Option IntegerRegisterFiles :=
-  let context := control.context
-  match executeParsedMaskedIntegerExpr? files expression control.directive
-      context.pe context.cycle context.bar0 context.bar1 context.tWord with
-  | some (.ok next) => some next
-  | some .failure | some .unknown | none => none
+  match parsedIntegerMaskedLineStep files expressions control with
+  | .ok next => some next
+  | .failure | .unknown => none
 
 def ParsedLine.toParsedMaskedStatement? : ParsedLine → Option ParsedMaskedSourceStatement
   | .maskDirective widthWords targets entry =>
       some (.directive ⟨widthWords, targets, entry⟩)
-  | .pe [expression] => some (.issue expression)
+  | .pe expressions => some (.issue expressions)
   | _ => none
 
 def lowerParsedMaskedSource (lines : List ParsedLine) :
@@ -592,12 +660,15 @@ def runParsedMaskedSource (source : List ParsedMaskedSourceStatement)
   ProofsLean.ControlNormalization.runSource updateParsedMaskDirective
     parsedMaskedExpressionStep source control files
 
+def parsedMaskedIssueLegal : List (ParsedMaskExecutionControl × List ParsedExpr) → Prop :=
+  fun lines => ∀ line ∈ lines, LegalParsedLine line.2
+
 def parsedMaskedNormalizedMachine : ProofsLean.Machine where
-  Line := ParsedMaskExecutionControl × ParsedExpr
+  Line := ParsedMaskExecutionControl × List ParsedExpr
   State := IntegerRegisterFiles
   Input := Unit
   step := fun pair files => parsedMaskedExpressionStep pair.1 pair.2 files
-  legal := fun _ => True
+  legal := parsedMaskedIssueLegal
   lineCost := fun _ => 1
   positiveCost := fun _ => by decide
 
@@ -613,7 +684,7 @@ theorem parsedMaskedSource_execution (source : List ParsedMaskedSourceStatement)
     runParsedMaskedSource source control files =
       runParsedMaskedCompiled source control files := by
   exact ProofsLean.ControlNormalization.source_execution
-    updateParsedMaskDirective parsedMaskedExpressionStep (fun _ => True) Unit
+    updateParsedMaskDirective parsedMaskedExpressionStep parsedMaskedIssueLegal Unit
     source control files
 
 theorem mask_directive_has_zero_issue_cost (directive : ParsedMaskDirective) :
@@ -626,7 +697,7 @@ theorem parsedMaskedSource_score (source : List ParsedMaskedSourceStatement)
       (ProofsLean.ControlNormalization.compile updateParsedMaskDirective source control) =
       ProofsLean.ControlNormalization.cost source :=
   ProofsLean.ControlNormalization.source_score updateParsedMaskDirective
-    parsedMaskedExpressionStep (fun _ => True) Unit source control
+    parsedMaskedExpressionStep parsedMaskedIssueLegal Unit source control
 
 theorem lowered_parsed_masked_source_executes_as_normalized
     (lines : List ParsedLine) (source : List ParsedMaskedSourceStatement)

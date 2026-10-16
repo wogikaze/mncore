@@ -102,12 +102,14 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   OMR宛先についても、1〜15番のlowering、ALUフラグの4ビット順序、サイクル別マスク状態更新を接続した。
   OMR書き込みは明示的なpattern/IMR選択をマスクレジスタ状態から解決し、選択後のフラグを読み戻す。
   単一行マスクが同じ命令行のmultiline directiveを取り消す優先順位も証明した。
-  さらに単一式PE行とmask directive行だけからなるtop-level subsetを部分loweringし、
-  directiveの置換状態を既存ControlNormalizationに接続した。directive更新は
-  選択状態だけを置き換えてPE/cycle/BAR/Tの実行コンテキストを保持する。
-  source executionとnormalized issue executionの一致、directiveのissue costが0であること、
-  lowering成功時の実行一致を証明した。複数式PE行、nop/wait、他のtop-level行はlowering対象外。
-  精度縮減、全行の合法性、hazard/port legalityは未接続で、完全な命令実行意味論ではない。
+  さらにPE行（複数式を含む）とmask directive行からなるtop-level subsetを部分loweringし、
+  directiveの置換状態を既存ControlNormalizationに接続した。directive更新は選択状態だけを
+  置き換えてPE/cycle/BAR/Tの実行コンテキストを保持する。複数式行は全式の入力とALU出力を
+  同一の旧状態から先に準備し、その後で宛先書き込みを反映する。行全体のsingle-line mask有無も
+  すべての宛先loweringへ渡す。Issueモデルの合法性、source executionとnormalized issue
+  executionの一致、directiveのissue costが0であること、lowering成功時の実行一致を証明した。
+  nop/wait、他のtop-level行はlowering対象外。精度縮減、hazard/port legalityは未接続で、
+  完全な命令実行意味論ではない。
   multiline directiveの対象・entry・幅をParsedLineに保持し、mask stateの置換と通常行での保持を証明した。
   OMR対象directiveから選択フラグを解決する。Rust parserがこのParsedLineを生成する対応と、
   ソース全体を通したdirective適用は未接続。
