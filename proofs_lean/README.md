@@ -95,6 +95,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   後者は行列row、L1BM addressなどのoptionalな数値fieldをまとめる部品として使う。
   `ParsedL1bSet`についても、address/immodeの両方が`< 8`の有限carrierを証明した。
   全64組の`0..7`は受理され、追加したassemble3境界プローブで各フィールドの8は拒否された。
+  wait tagについては、受理範囲`1..255`とoptionalな同範囲の有限carrierを証明した。
+  これらのpayload定理から`ParsedOp`/`ParsedLine`全体への合成、他の残存Nat/Int範囲、
+  パーサー出力のenvelope健全性はまだ未完了。
   operand envelopeはregion width `< 5`/address `< 4096`/madpe `< 4`、mask selector `< 32`、
   OMR entry `< 16`、matrix width `< 5`/row `< 16`、L1BM width `< 5`/address `< 8192`、
   L2BM address `< 32768`/selector `< 8`、DAR address `< 1024`を含む。

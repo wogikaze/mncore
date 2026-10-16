@@ -54,6 +54,46 @@ theorem optionNatBelow_finite (bound : Nat) :
     Finite {value : Option Nat // optionNatInFiniteEnvelope bound value} :=
   Finite.of_injective (optionNatFiniteCode bound) (optionNatFiniteCode_injective bound)
 
+def waitTagInFiniteEnvelope (tag : Nat) : Prop := 0 < tag ∧ tag < 256
+
+private def waitTagFiniteCode
+    (tag : {tag : Nat // waitTagInFiniteEnvelope tag}) : Fin 256 :=
+  ⟨tag.1, tag.2.2⟩
+
+private theorem waitTagFiniteCode_injective : Function.Injective waitTagFiniteCode := by
+  intro a b equal
+  apply Subtype.ext
+  exact congrArg Fin.val equal
+
+theorem waitTagInFiniteEnvelope_finite :
+    Finite {tag : Nat // waitTagInFiniteEnvelope tag} :=
+  Finite.of_injective waitTagFiniteCode waitTagFiniteCode_injective
+
+def optionWaitTagInFiniteEnvelope (tag : Option Nat) : Prop :=
+  ∀ value, tag = some value → waitTagInFiniteEnvelope value
+
+private def optionWaitTagFiniteCode
+    (tag : {tag : Option Nat // optionWaitTagInFiniteEnvelope tag}) : Option (Fin 256) :=
+  optionNatFiniteCode 256 ⟨tag.1, fun value equal => (tag.2 value equal).2⟩
+
+private theorem optionWaitTagFiniteCode_injective :
+    Function.Injective optionWaitTagFiniteCode := by
+  intro a b equal
+  apply Subtype.ext
+  let a' : {value : Option Nat // optionNatInFiniteEnvelope 256 value} :=
+    ⟨a.1, fun value h => (a.2 value h).2⟩
+  let b' : {value : Option Nat // optionNatInFiniteEnvelope 256 value} :=
+    ⟨b.1, fun value h => (b.2 value h).2⟩
+  have codeEq : optionNatFiniteCode 256 a' = optionNatFiniteCode 256 b' := equal
+  have valueEq : a'.1 = b'.1 :=
+    congrArg (fun value : {value : Option Nat // optionNatInFiniteEnvelope 256 value} => value.1)
+      (optionNatFiniteCode_injective 256 codeEq)
+  exact valueEq
+
+theorem optionWaitTagInFiniteEnvelope_finite :
+    Finite {tag : Option Nat // optionWaitTagInFiniteEnvelope tag} :=
+  Finite.of_injective optionWaitTagFiniteCode optionWaitTagFiniteCode_injective
+
 def ParsedMask.inFiniteEnvelope : ParsedMask → Prop
   | .pattern .. => True
   | .entry _ index => index < 32

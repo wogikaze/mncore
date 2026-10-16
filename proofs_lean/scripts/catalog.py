@@ -479,6 +479,20 @@ def coverage_catalog() -> dict:
         }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
+            "theorem": "ProofsLean.MNCore.Issue.waitTagInFiniteEnvelope_finite",
+            "scope": "Finite carrier for positive wait tags below 256.",
+            "evidence": "proofs_lean/evidence/isa-bounds/reference.json: i00 and i100 rejected; i01 and iFF accepted, with exhaustive probes for 1..255.",
+            "missing": "Connection from every parsed wait tag to this envelope and finite carrier composition for ParsedOp/ParsedLine.",
+        }, {
+            "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
+            "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
+            "theorem": "ProofsLean.MNCore.Issue.optionWaitTagInFiniteEnvelope_finite",
+            "scope": "Finite optional wait tags whose present value lies in 1..255.",
+            "evidence": "Same assemble3 wait-tag boundaries as waitTagInFiniteEnvelope_finite.",
+            "missing": "Proof that all parsed optional nop wait tags obey this range and finite line-carrier composition.",
+        }, {
+            "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
+            "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
             "theorem": "ProofsLean.MNCore.Issue.projectLine_expression_count_le_ten",
             "scope": "Legal projected PE rows have at most ten expressions, from ten unique issue groups and projection-assigned distinct IDs.",
             "evidence": "Formal consequence of Issue.groupsUnique and ParsedExpr.issueGroup being total; issue groups are mirrored from viz/core/src/issue.rs.",
