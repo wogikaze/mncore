@@ -993,6 +993,44 @@ abbrev DoubleMatrixFace := Fin 4 → Fin 4 → BitVec 64
 
 abbrev DoubleMatrixPhysicalFace := Fin 16 → Fin 8 → BitVec 32
 
+inductive ParsedMatrixReadTarget where
+  | memory (access : DirectMemoryAccess) (selection : PEWordSelection)
+  | noWrite
+
+structure ParsedMatrixReadAccesses where
+  precision : ProofsLean.MNCore.Issue.ParsedPrecision
+  sideY : Bool
+  row : Nat
+  targets : List ParsedMatrixReadTarget
+
+def ParsedExpr.toDirectMatrixReadAccesses?
+    (expression : ParsedExpr) (registers : ProofsLean.MNCore.Masks.RegisterFile)
+    (directive : ParsedMaskDirective) (hasSingleLineMask : Bool)
+    (context : ParsedIntegerContext) : Option ParsedMatrixReadAccesses := do
+  match expression.op, expression.sources with
+  | .matrixRead precision, [.matrix sideY _ (some row)] =>
+      let targets ← expression.destinations.mapM fun target =>
+        match target with
+        | .nowrite => some .noWrite
+        | .mem .. => do
+            let access ← ParsedOperand.toDirectMemoryDestination? target context.pe
+              context.cycle context.bar0 context.bar1 context.tWord
+            let selection ← ParsedOperand.resolveMemoryWriteSelection? target access.bank
+              registers context.cycle directive hasSingleLineMask
+            some (.memory access selection)
+        | _ => none
+      some ⟨precision, sideY, row, targets⟩
+  | _, _ => none
+
+def parsedMatrixReadBaseD (row : Nat) : Fin 4 :=
+  ⟨row % 4, Nat.mod_lt _ (by decide)⟩
+
+def parsedMatrixReadBaseS (row : Nat) : Fin 8 :=
+  ⟨row % 8, Nat.mod_lt _ (by decide)⟩
+
+def parsedMatrixReadBaseH (row : Nat) : Fin 16 :=
+  ⟨row % 16, Nat.mod_lt _ (by decide)⟩
+
 def doubleMatrixPhysicalRow (row : Fin 4) : Fin 16 :=
   ⟨row.val * 4, by have h := row.isLt; omega⟩
 
@@ -1090,6 +1128,20 @@ def halfMatrixReadBus (words : DoubleMatrixPhysicalFace)
   let h6 := halfMatrixPhysicalElement words row2 column1
   let h7 := halfMatrixPhysicalElement words row3 column1
   ⟨h0 ++ h1 ++ h2 ++ h3, h4 ++ h5 ++ h6 ++ h7⟩
+
+abbrev ParsedMatrixReadStore := Fin 16 → Bool → DoubleMatrixPhysicalFace
+
+def parsedMatrixReadBus (store : ParsedMatrixReadStore)
+    (accesses : ParsedMatrixReadAccesses) (context : ParsedIntegerContext) :
+    IntegerALU.Bus :=
+  let face := store context.mab accesses.sideY
+  match accesses.precision with
+  | .d => doubleMatrixReadBus (doubleMatrixFaceFromPhysicalWords face)
+      (parsedMatrixReadBaseD accesses.row) context.pe context.cycle
+  | .h => halfMatrixReadBus face (parsedMatrixReadBaseH accesses.row)
+      context.pe context.cycle
+  | _ => singleMatrixReadBus face (parsedMatrixReadBaseS accesses.row)
+      context.pe context.cycle
 
 def writeMatrixReadOutputs (old : ProofsLean.MNCore.Forwarding.Slots)
     (outputs : Fin 4 → IntegerALU.Bus) (noForward : Bool) :
@@ -1793,6 +1845,97 @@ def commitParsedMaskedWrites (files : IntegerRegisterFiles)
         | some destination =>
             writeDirectAccessMasked current destination write.data write.selection
         | none => current) files
+
+def updateParsedMatrixReadForwardingCycle
+    (old : ProofsLean.MNCore.Forwarding.Slots) (cycle : Fin 4)
+    (output : IntegerALU.Bus) (noForward : Bool) :
+    ProofsLean.MNCore.Forwarding.Slots :=
+  if noForward then old else fun unit slotCycle =>
+    if unit = .matrixRead ∧ slotCycle = cycle then .known output else old unit slotCycle
+
+theorem updateParsedMatrixReadForwardingCycle_semantics
+    (old : ProofsLean.MNCore.Forwarding.Slots) (cycle : Fin 4)
+    (output : IntegerALU.Bus) (noForward : Bool) :
+    updateParsedMatrixReadForwardingCycle old cycle output noForward =
+      if noForward then old else fun unit slotCycle =>
+        if unit = .matrixRead ∧ slotCycle = cycle then .known output else old unit slotCycle := by
+  cases noForward <;> rfl
+
+theorem updateParsedMatrixReadForwardingCycle_reads_back
+    (files : IntegerRegisterFiles) (old : ProofsLean.MNCore.Forwarding.Slots)
+    (cycle : Fin 4) (output : IntegerALU.Bus) :
+    ParsedIntegerInput.readWithForwarding files
+      (updateParsedMatrixReadForwardingCycle old cycle output false)
+      cycle (.forward .mreadf false) = .ok output := by
+  simp [updateParsedMatrixReadForwardingCycle, ParsedIntegerInput.readWithForwarding,
+    ParsedIntegerInput.forwardUnit, ParsedIntegerInput.applyRounding]
+
+def prepareParsedMatrixReadTargets (targets : List ParsedMatrixReadTarget)
+    (output : IntegerALU.Bus) : ProofsLean.StepResult (List PreparedParsedMaskedWrite) :=
+  match targets with
+  | [] => .ok []
+  | .noWrite :: rest =>
+      match prepareParsedMatrixReadTargets rest output with
+      | .failure => .failure
+      | .unknown => .unknown
+      | .ok writes =>
+          .ok (⟨none, none, unpackALUBus output, ⟨BitVec.allOnes 4, true⟩⟩ :: writes)
+  | .memory access selection :: rest =>
+      match prepareParsedMatrixReadTargets rest output with
+      | .failure => .failure
+      | .unknown => .unknown
+      | .ok writes =>
+          .ok (⟨some access, none, unpackALUBus output, selection⟩ :: writes)
+
+/-- One cycle of a parsed matrix-read expression for the selected MAB store.
+The read bus is computed from the old matrix words, written to each supported
+PE-memory destination, and installed in that cycle's `mreadf` slot. -/
+def parsedMatrixReadCycleStep (files : IntegerRegisterFiles)
+    (slots : ProofsLean.MNCore.Forwarding.Slots) (store : ParsedMatrixReadStore)
+    (expression : ParsedExpr) (directive : ParsedMaskDirective)
+    (hasSingleLineMask noForward : Bool) (context : ParsedIntegerContext) :
+    ProofsLean.StepResult (IntegerRegisterFiles × ProofsLean.MNCore.Forwarding.Slots) :=
+  match ParsedExpr.toDirectMatrixReadAccesses? expression files.maskRegisters
+      directive hasSingleLineMask context with
+  | none => .unknown
+  | some accesses =>
+      match resolveFlushSelection? expression.flush files.maskRegisters context.cycle with
+      | none => .unknown
+      | some flushSelection =>
+          let output := parsedOutputAfterFlush flushSelection
+            (parsedMatrixReadBus store accesses context)
+          match prepareParsedMatrixReadTargets accesses.targets output with
+          | .failure => .failure
+          | .unknown => .unknown
+          | .ok writes =>
+              .ok (commitParsedMaskedWrites files writes,
+                updateParsedMatrixReadForwardingCycle slots context.cycle output noForward)
+
+theorem parsedMatrixReadCycleStep_output_forwardable
+    (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (store : ParsedMatrixReadStore) (expression : ParsedExpr)
+    (directive : ParsedMaskDirective) (hasSingleLineMask : Bool)
+    (context : ParsedIntegerContext) (accesses : ParsedMatrixReadAccesses)
+    (flushSelection : Option PEWordSelection) (writes : List PreparedParsedMaskedWrite)
+    (lowered : ParsedExpr.toDirectMatrixReadAccesses? expression files.maskRegisters
+      directive hasSingleLineMask context = some accesses)
+    (flushResolved : resolveFlushSelection? expression.flush files.maskRegisters context.cycle =
+      some flushSelection)
+    (writesReady : prepareParsedMatrixReadTargets accesses.targets
+      (parsedOutputAfterFlush flushSelection (parsedMatrixReadBus store accesses context)) =
+        .ok writes) :
+    ∃ nextFiles nextSlots,
+      parsedMatrixReadCycleStep files slots store expression directive hasSingleLineMask false
+        context = .ok (nextFiles, nextSlots) ∧
+      ParsedIntegerInput.readWithForwarding files nextSlots context.cycle
+        (.forward .mreadf false) =
+          .ok (parsedOutputAfterFlush flushSelection (parsedMatrixReadBus store accesses context)) := by
+  refine ⟨commitParsedMaskedWrites files writes,
+    updateParsedMatrixReadForwardingCycle slots context.cycle
+      (parsedOutputAfterFlush flushSelection (parsedMatrixReadBus store accesses context)) false,
+    ?_, ?_⟩
+  · simp [parsedMatrixReadCycleStep, lowered, flushResolved, writesReady]
+  · exact updateParsedMatrixReadForwardingCycle_reads_back files slots context.cycle _
 
 /-- Update the ALU forwarding value for one cycle from an already prepared
 integer ALU result. `data` is the post-flush four-word bus; the flag controls
