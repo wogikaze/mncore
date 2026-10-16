@@ -40,6 +40,20 @@ CASES = {
     "debug_set_record": ("d set $lm0n0c0b0m0p0 1 0000000000000000\n", True, 1),
     "debug_get_record": ("d get $lm0n0c0b0m0p0 1\n", True, 1),
     "dram_set_record": ("r 0 000000000 000001 0000000000000000\n", True, 1),
+    "l1bm_long_addr_0": ("l1bmm $lb0 $nowrite\n", True, 1),
+    "l1bm_long_addr_8188": ("l1bmm $lb8188 $nowrite\n", True, 1),
+    "l1bm_long_addr_8192": ("l1bmm $lb8192 $nowrite\n", False, None),
+    "l1bm_mab_15": ("l1bmm@15 $lm0 $lb0\n", True, 1),
+    "l1bm_mab_16": ("l1bmm@16 $lm0 $lb0\n", False, None),
+    "l2bm_dar_l2b_0": ("l2bmdars $lc1024@.0 $dar0; l2bmdarw\n", True, 1),
+    "l2bm_dar_l2b_1": ("l2bmdars $lc1024@.1 $dar0; l2bmdarw\n", True, 1),
+    "l2bm_dar_l2b_2": ("l2bmdars $lc1024@.2 $dar0; l2bmdarw\n", False, None),
+    "dar_addr_1023": ("l2bmdars $lc1024@.0 $dar1023; l2bmdarw\n", True, 1),
+    "dar_addr_1024": ("l2bmdars $lc1024@.0 $dar1024; l2bmdarw\n", False, None),
+    "mabdiff_minus129": ("l1bmd-129 $lm0 $lb0\n", True, 1),
+    "mabdiff_minus128": ("l1bmd-128 $lm0 $lb0\n", True, 1),
+    "mabdiff_plus127": ("l1bmd127 $lm0 $lb0\n", True, 1),
+    "mabdiff_plus128": ("l1bmd128 $lm0 $lb0\n", True, 1),
 }
 for index in range(2, 31):
     CASES[f"imr_selector_{index}"] = (f"lpassa $lm0 $ln0/$imr{index}\n", True, 1)
@@ -92,6 +106,9 @@ def main() -> None:
             "$imr0, $imr31 are accepted while $imr32 and $imr255 fail encoding. Active mask directives `maskn 0` and `maskn 31` are accepted, while `maskn 32` fails. This conflicts with the Rust MaskSource comment claiming entries 1 through 15.",
             "Matrix row 15 is accepted and row 16 is rejected.",
             "hbfn/6 and hbfn/9 are accepted; hbfn/10 is rejected.",
+            "$lb8188 is accepted while $lb8192 fails the 13-bit encoding field; the L1BM address must also be 4-word aligned. l1bmm@15 is accepted and @16 is rejected.",
+            "DAR address 1023 is accepted and 1024 is rejected; `$lc...@.<l2b>` accepts selectors 0 and 1 and rejects 2.",
+            "l1bmd-129, l1bmd-128, l1bmd127, and l1bmd128 are all accepted by assemble3; this is parser/encoding acceptance evidence, not a claim that these offsets are semantically useful.",
             "The assembler accepts d set, d get and r input records, but the challenge judge's default solution sanitizer retains only j/m instruction rows; these records are filtered before execution. The scored program therefore excludes debug and DRAM initialization records.",
             "Judge flags can preserve d get/d set, but the normal challenge invocation does not set them; the d-set invalidation applies only when such a record is retained."
         ],
