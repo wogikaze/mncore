@@ -1,4 +1,5 @@
 import Std
+import ProofsLean.IntegerALU
 
 /- Abstracts the PE-expression issue predicates in viz/core/src/issue.rs
 (`check`, corresponding to SDM 3.6.4). This is only the issue checker layer:
@@ -238,12 +239,50 @@ theorem ParsedPrecision.code_injective : Function.Injective ParsedPrecision.code
   intro a b equal
   cases a <;> cases b <;> simp [ParsedPrecision.code] at equal ⊢
 
+def ParsedPrecision.laneWidth : ParsedPrecision → IntegerALU.Precision
+  | .d | .l => .long
+  | .f | .g | .i => .word
+  | .h | .s => .half
+
 inductive ParsedAluName where
   | msl | msr | passa | inc | dec | not | lnot | rsqrt | floor | ftoi
   | bfe | bfn | max | min | packbit | and | or | xor | add | sub
   | lsl | lsr | bsl | bsr | relu | relu0 | relu1 | relu2 | relu3
   | lrelud | lreluo | ilrelud
   deriving DecidableEq, Repr
+
+def ParsedAluName.toIntegerOp (name : ParsedAluName) (unsigned : Bool) :
+    Option IntegerALU.Op :=
+  match name with
+  | .inc => some (.arith .inc unsigned)
+  | .dec => some (.arith .dec unsigned)
+  | .add => some (.arith .add unsigned)
+  | .sub => some (.arith .sub unsigned)
+  | .not => some .bitNot
+  | .lnot => some .logicalNot
+  | .and => some .bitAnd
+  | .or => some .bitOr
+  | .xor => some .bitXor
+  | .max => some (.maximum unsigned)
+  | .min => some (.minimum unsigned)
+  | .packbit => some .packbit
+  | .passa => some .passa
+  | .lsl => some (.shift .left)
+  | .lsr => some (.shift (.right unsigned))
+  | .bsl => some (.shift .rotateLeft)
+  | .bsr => some (.shift .rotateRight)
+  | .msl | .msr | .rsqrt | .floor | .ftoi | .bfe | .bfn
+  | .relu | .relu0 | .relu1 | .relu2 | .relu3 | .lrelud | .lreluo | .ilrelud => none
+
+def ParsedAluName.supportsIntegerAt
+    (name : ParsedAluName) (precision : ParsedPrecision) : Bool :=
+  match name with
+  | .packbit => precision != .g
+  | .passa => precision == .l || precision == .i || precision == .s
+  | .inc | .dec | .not | .lnot | .and | .or | .xor | .add | .sub
+  | .max | .min | .lsl | .lsr | .bsl | .bsr =>
+      precision == .l || precision == .i || precision == .s
+  | _ => false
 
 inductive ParsedRrnOp where
   | fadd | max | min | iadd | band | and | bor | or
@@ -299,6 +338,37 @@ structure ParsedExpr where
   flush : Option ParsedMask
   text : String
   deriving DecidableEq, Repr
+
+/-- Map only the integer ALU subset whose parsed precision is established.
+Floating and otherwise unsupported encodings stay unknown. -/
+def ParsedOp.integerRequest : ParsedOp → StepResult IntegerALU.Request
+  | .alu name (some precision) unsigned _ =>
+      if name.supportsIntegerAt precision then
+        match name.toIntegerOp unsigned with
+        | some op => .ok (.integer precision.laneWidth op)
+        | none => .unknown
+      else .unknown
+  | _ => .unknown
+
+def evaluateParsedIntegerAlu (op : ParsedOp) (x y : IntegerALU.Bus)
+    (reduced : Bool) : StepResult IntegerALU.BusResult :=
+  match op.integerRequest with
+  | .ok request => IntegerALU.partialEvaluate request x y reduced
+  | .failure => .failure
+  | .unknown => .unknown
+
+theorem unsupported_parsed_integer_is_unknown (op : ParsedOp)
+    (unsupported : op.integerRequest = .unknown) (x y : IntegerALU.Bus)
+    (reduced : Bool) : evaluateParsedIntegerAlu op x y reduced = .unknown := by
+  simp [evaluateParsedIntegerAlu, unsupported]
+
+theorem iinc_integer_request :
+    (ParsedOp.alu .inc (some .i) false none).integerRequest =
+      .ok (.integer .word (.arith .inc false)) := rfl
+
+theorem parsed_float_rsqrt_is_unknown :
+    (ParsedOp.alu .rsqrt (some .f) false none).integerRequest = .unknown := rfl
+
 
 def ParsedExpr.hasTurnaround (e : ParsedExpr) : Bool :=
   (e.sources ++ e.destinations).any fun operand =>
