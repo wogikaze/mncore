@@ -104,6 +104,7 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.ParsedIntegerContext.linearIndex_lt
 #print axioms ProofsLean.MNCore.PEMemory.ParsedIntegerContext.linearIndex_ofLinearIndex
 #print axioms ProofsLean.MNCore.PEMemory.parsed_fixed_integerValue_ofLinearIndex
+#print axioms ProofsLean.MNCore.Issue.ParsedAluName.inputCount_positive
 #print axioms ProofsLean.MNCore.PEMemory.parsed_fixed_integer_input
 #print axioms ProofsLean.MNCore.PEMemory.parsed_issue_advances_elapsed_word
 #print axioms ProofsLean.MNCore.PEMemory.parsed_issue_line_mask_flag_iff

@@ -144,7 +144,7 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   Rust parserがこのParsedLineを生成する対応と、
   ソース全体を通したdirective適用は未接続。
   符号反転・精度拡張・丸め・マスク付き入力、非PEメモリはlowering対象外。
-- `Issue.lean`: PE式の同時発行判定について、グループ重複、MAU組み合わせ、
+- `Issue.lean`: Rust `AluOp::inputs()` と全32 opcodeのsource数をLeanで定義し、issue mirror監査でも両表の一致を確認する。PE式の同時発行判定について、グループ重複、MAU組み合わせ、
   行列レジスタ使用、PEメモリの読み書きポート、即値とLM0、zero-flush重複を
   抽象レコード上の述語として定義し、判定と合法性の同値を証明した。
   VSMのPE演算子・精度・丸め/符号属性・L1/L2演算子・オペランド全形式を持つ構文型を

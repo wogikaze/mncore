@@ -274,6 +274,19 @@ def ParsedAluName.toIntegerOp (name : ParsedAluName) (unsigned : Bool) :
   | .msl | .msr | .rsqrt | .floor | .ftoi | .bfe | .bfn
   | .relu | .relu0 | .relu1 | .relu2 | .relu3 | .lrelud | .lreluo | .ilrelud => none
 
+/-- Number of source operands consumed by each parsed ALU opcode, mirrored from
+Rust `AluOp::inputs`. This is syntax metadata; execution support remains separate. -/
+def ParsedAluName.inputCount : ParsedAluName → Nat
+  | .msl | .msr | .passa | .inc | .dec | .not | .lnot | .rsqrt | .floor
+  | .ftoi | .bfe | .bfn => 1
+  | .max | .min | .packbit | .and | .or | .xor | .add | .sub | .lsl | .lsr
+  | .bsl | .bsr | .relu | .relu0 | .relu1 | .relu2 | .relu3 | .lrelud
+  | .lreluo | .ilrelud => 2
+
+theorem ParsedAluName.inputCount_positive (name : ParsedAluName) :
+    0 < name.inputCount := by
+  cases name <;> decide
+
 def ParsedAluName.supportsIntegerAt
     (name : ParsedAluName) (precision : ParsedPrecision) : Bool :=
   match name with

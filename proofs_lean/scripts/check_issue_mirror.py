@@ -46,7 +46,40 @@ def enum_matches(source: str, rust_name: str, lean_name: str, mapping: dict[str,
         raise ValueError(f"{lean_name} lacks mapped constructors: {sorted(missing)}")
 
 
+def rust_alu_input_counts() -> dict[str, int]:
+    match = re.search(r"const ALU_OPS:.*?= &\[(.*?)\n\];", VSM, re.S)
+    if not match:
+        raise ValueError("Rust ALU_OPS table not found")
+    rows = re.findall(r'\("([a-z0-9]+)",\s*AluOp::([A-Za-z0-9_]+),\s*AluType::[A-Za-z0-9_]+,\s*(\d+)\)', match.group(1))
+    counts = {variant[0].lower() + variant[1:]: int(count) for _, variant, count in rows}
+    names = {name for name, _, _ in rows}
+    if len(counts) != len(rows) or len(names) != len(rows):
+        raise ValueError("duplicate Rust ALU opcode or variant in ALU_OPS")
+    return counts
+
+
+def lean_alu_input_counts() -> dict[str, int]:
+    match = re.search(r"def ParsedAluName\.inputCount.*?\n(?=theorem\b)", LEAN, re.S)
+    if not match:
+        raise ValueError("Lean ParsedAluName.inputCount definition not found")
+    counts: dict[str, int] = {}
+    for group, count in re.findall(r"\|\s*((?:\.[A-Za-z][A-Za-z0-9_]*(?:\s*\|\s*)?)+)\s*=>\s*(\d+)", match.group(0)):
+        for name in re.findall(r"\.([A-Za-z][A-Za-z0-9_]*)", group):
+            if name in counts:
+                raise ValueError(f"duplicate Lean ALU input count for {name}")
+            counts[name] = int(count)
+    return counts
+
+
+def validate_alu_input_counts() -> None:
+    rust, lean = rust_alu_input_counts(), lean_alu_input_counts()
+    if rust != lean:
+        raise ValueError(f"ALU input count drift: rust-only={rust.items() - lean.items()}, "
+                         f"lean-only={lean.items() - rust.items()}")
+
+
 def validate() -> None:
+    validate_alu_input_counts()
     enum_matches(VSM, "Op", "ParsedOp", {
         "Alu": "alu", "Imm": "immediate", "Zero": "zero", "Mau": "mau",
         "MatWrite": "matrixWrite", "MatRead": "matrixRead", "Wait": "wait",
@@ -125,7 +158,7 @@ def validate() -> None:
                     "Noforward", "L1", "L2", "Other"):
         if not re.search(rf"Op::{variant}\b", ISSUE):
             raise ValueError(f"issue.rs does not classify Op::{variant}")
-    print("PASS: Rust/Lean issue projection constructor inventories match.")
+    print("PASS: Rust/Lean issue projection constructors and ALU input counts match.")
 
 
 if __name__ == "__main__":

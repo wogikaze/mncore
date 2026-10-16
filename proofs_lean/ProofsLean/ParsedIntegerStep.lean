@@ -388,11 +388,8 @@ example (registers : ProofsLean.MNCore.Masks.RegisterFile) :
 example (registers : ProofsLean.MNCore.Masks.RegisterFile) :
     resolveParsedMaskFlags? (.pattern false 8) registers 1 = some 0 := by simp [resolveParsedMaskFlags?]
 
-def ParsedAluName.integerInputCount : ParsedAluName → Nat
-  | .inc | .dec | .not | .lnot | .passa => 1
-  | .and | .or | .xor | .add | .sub | .max | .min | .packbit
-  | .lsl | .lsr | .bsl | .bsr => 2
-  | _ => 0
+def ParsedAluName.integerInputCount (name : ParsedAluName) : Nat :=
+  name.inputCount
 
 structure ParsedIntegerAccesses where
   op : ParsedOp
