@@ -971,6 +971,166 @@ theorem ParsedL2Op.inFiniteEnvelope_finite :
     Finite {op : ParsedL2Op // op.inFiniteEnvelope} :=
   Finite.of_injective ParsedL2Op.finiteCode ParsedL2Op.finiteCode_injective
 
+abbrev ParsedOpAluFiniteCode :=
+  ParsedAluName × Option ParsedPrecision × Bool × Option (Fin 10)
+abbrev ParsedOpMauFiniteCode :=
+  ParsedPrecision × Bool × CalcKind × Option Char × Bool
+abbrev ParsedOpImmediateFiniteCode := Fin (2 ^ 32) × Bool
+abbrev ParsedOpFiniteCode :=
+  Sum ParsedOpAluFiniteCode
+    (Sum ParsedOpImmediateFiniteCode
+      (Sum PUnit.{1}
+        (Sum ParsedOpMauFiniteCode
+          (Sum ParsedPrecision
+            (Sum ParsedPrecision
+              (Sum (Fin 256)
+                (Sum PUnit.{1}
+                  (Sum ParsedL1OpFiniteCode ParsedL2OpFiniteCode))))))))
+
+private noncomputable instance : Fintype Char := by
+  letI : Finite Char := char_finite
+  exact Fintype.ofFinite Char
+private noncomputable instance : Fintype ParsedAluName := by
+  letI : Finite ParsedAluName := ParsedAluName.finite
+  exact Fintype.ofFinite ParsedAluName
+private noncomputable instance : Fintype ParsedPrecision := by
+  letI : Finite ParsedPrecision := ParsedPrecision.finite
+  exact Fintype.ofFinite ParsedPrecision
+private noncomputable instance : Fintype CalcKind := by
+  letI : Finite CalcKind := CalcKind.finite
+  exact Fintype.ofFinite CalcKind
+private noncomputable instance : Fintype ParsedOpAluFiniteCode := inferInstance
+private noncomputable instance : Fintype ParsedOpImmediateFiniteCode := inferInstance
+private noncomputable instance : Fintype ParsedOpMauFiniteCode := inferInstance
+private noncomputable instance : Fintype ParsedL1OpFiniteCode := inferInstance
+private noncomputable instance : Fintype ParsedL2OpFiniteCode := inferInstance
+private noncomputable instance : Fintype ParsedOpFiniteCode := inferInstance
+
+private def parsedOpAluCode (code : ParsedOpAluFiniteCode) : ParsedOpFiniteCode :=
+  Sum.inl code
+private def parsedOpImmediateCode (code : ParsedOpImmediateFiniteCode) : ParsedOpFiniteCode :=
+  Sum.inr (Sum.inl code)
+private def parsedOpZeroCode : ParsedOpFiniteCode :=
+  Sum.inr (Sum.inr (Sum.inl PUnit.unit))
+private def parsedOpMauCode (code : ParsedOpMauFiniteCode) : ParsedOpFiniteCode :=
+  Sum.inr (Sum.inr (Sum.inr (Sum.inl code)))
+private def parsedOpMatrixWriteCode (code : ParsedPrecision) : ParsedOpFiniteCode :=
+  Sum.inr (Sum.inr (Sum.inr (Sum.inr (Sum.inl code))))
+private def parsedOpMatrixReadCode (code : ParsedPrecision) : ParsedOpFiniteCode :=
+  Sum.inr (Sum.inr (Sum.inr (Sum.inr (Sum.inr (Sum.inl code)))))
+private def parsedOpWaitCode (code : Fin 256) : ParsedOpFiniteCode :=
+  Sum.inr (Sum.inr (Sum.inr (Sum.inr (Sum.inr (Sum.inr (Sum.inl code))))))
+private abbrev ParsedOpTail9 := Sum ParsedL1OpFiniteCode ParsedL2OpFiniteCode
+private abbrev ParsedOpTail8 := Sum PUnit.{1} ParsedOpTail9
+private abbrev ParsedOpTail7 := Sum (Fin 256) ParsedOpTail8
+private abbrev ParsedOpTail6 := Sum ParsedPrecision ParsedOpTail7
+private abbrev ParsedOpTail5 := Sum ParsedPrecision ParsedOpTail6
+private abbrev ParsedOpTail4 := Sum ParsedOpMauFiniteCode ParsedOpTail5
+private abbrev ParsedOpTail3 := Sum PUnit.{1} ParsedOpTail4
+private abbrev ParsedOpTail2 := Sum ParsedOpImmediateFiniteCode ParsedOpTail3
+private abbrev ParsedOpTail1 := Sum ParsedOpAluFiniteCode ParsedOpTail2
+private def parsedOpTail9L1 (code : ParsedL1OpFiniteCode) : ParsedOpTail9 := Sum.inl code
+private def parsedOpTail9L2 (code : ParsedL2OpFiniteCode) : ParsedOpTail9 := Sum.inr code
+private def parsedOpTail8L1 (code : ParsedL1OpFiniteCode) : ParsedOpTail8 :=
+  Sum.inr (parsedOpTail9L1 code)
+private def parsedOpTail8L2 (code : ParsedL2OpFiniteCode) : ParsedOpTail8 :=
+  Sum.inr (parsedOpTail9L2 code)
+private def parsedOpTail7L1 (code : ParsedL1OpFiniteCode) : ParsedOpTail7 :=
+  Sum.inr (parsedOpTail8L1 code)
+private def parsedOpTail7L2 (code : ParsedL2OpFiniteCode) : ParsedOpTail7 :=
+  Sum.inr (parsedOpTail8L2 code)
+private def parsedOpTail6L1 (code : ParsedL1OpFiniteCode) : ParsedOpTail6 :=
+  Sum.inr (parsedOpTail7L1 code)
+private def parsedOpTail6L2 (code : ParsedL2OpFiniteCode) : ParsedOpTail6 :=
+  Sum.inr (parsedOpTail7L2 code)
+private def parsedOpTail5L1 (code : ParsedL1OpFiniteCode) : ParsedOpTail5 :=
+  Sum.inr (parsedOpTail6L1 code)
+private def parsedOpTail5L2 (code : ParsedL2OpFiniteCode) : ParsedOpTail5 :=
+  Sum.inr (parsedOpTail6L2 code)
+private def parsedOpTail4L1 (code : ParsedL1OpFiniteCode) : ParsedOpTail4 :=
+  Sum.inr (parsedOpTail5L1 code)
+private def parsedOpTail4L2 (code : ParsedL2OpFiniteCode) : ParsedOpTail4 :=
+  Sum.inr (parsedOpTail5L2 code)
+private def parsedOpTail3L1 (code : ParsedL1OpFiniteCode) : ParsedOpTail3 :=
+  Sum.inr (parsedOpTail4L1 code)
+private def parsedOpTail3L2 (code : ParsedL2OpFiniteCode) : ParsedOpTail3 :=
+  Sum.inr (parsedOpTail4L2 code)
+private def parsedOpTail2L1 (code : ParsedL1OpFiniteCode) : ParsedOpTail2 :=
+  Sum.inr (parsedOpTail3L1 code)
+private def parsedOpTail2L2 (code : ParsedL2OpFiniteCode) : ParsedOpTail2 :=
+  Sum.inr (parsedOpTail3L2 code)
+private def parsedOpTail1L1 (code : ParsedL1OpFiniteCode) : ParsedOpTail1 :=
+  Sum.inr (parsedOpTail2L1 code)
+private def parsedOpTail1L2 (code : ParsedL2OpFiniteCode) : ParsedOpTail1 :=
+  Sum.inr (parsedOpTail2L2 code)
+private def parsedOpNoforwardCode : ParsedOpFiniteCode :=
+  Sum.inr (Sum.inr (Sum.inr (Sum.inr (Sum.inr (Sum.inr
+    (Sum.inr (Sum.inl PUnit.unit)))))))
+private def parsedOpL1bmCode (code : ParsedL1OpFiniteCode) : ParsedOpFiniteCode :=
+  parsedOpTail1L1 code
+private def parsedOpL2bmCode (code : ParsedL2OpFiniteCode) : ParsedOpFiniteCode :=
+  parsedOpTail1L2 code
+
+def ParsedOp.inFiniteEnvelope : ParsedOp → Prop
+  | .alu _ _ _ arg => parsedBfArgInFiniteEnvelope arg
+  | .immediate .. | .zero | .mau .. | .matrixWrite .. | .matrixRead .. | .noforward => True
+  | .wait tag => waitTagInFiniteEnvelope tag
+  | .l1bm op => op.inFiniteEnvelope
+  | .l2bm op => op.inFiniteEnvelope
+
+private def ParsedOp.finiteCode
+    (op : {op : ParsedOp // op.inFiniteEnvelope}) : ParsedOpFiniteCode := by
+  rcases op with ⟨op, bound⟩
+  cases op with
+  | alu name precision unsigned arg =>
+      exact parsedOpAluCode (name, precision, unsigned,
+        parsedBfArgFiniteCode ⟨arg, bound⟩)
+  | immediate value unsigned => exact parsedOpImmediateCode (value.toFin, unsigned)
+  | zero => exact parsedOpZeroCode
+  | mau precision matrix kind half round =>
+      exact parsedOpMauCode (precision, matrix, kind, half, round)
+  | matrixWrite precision => exact parsedOpMatrixWriteCode precision
+  | matrixRead precision => exact parsedOpMatrixReadCode precision
+  | wait tag => exact parsedOpWaitCode (waitTagFiniteCode ⟨tag, bound⟩)
+  | noforward => exact parsedOpNoforwardCode
+  | l1bm operation => exact parsedOpL1bmCode (ParsedL1Op.finiteCode ⟨operation, bound⟩)
+  | l2bm operation => exact parsedOpL2bmCode (ParsedL2Op.finiteCode ⟨operation, bound⟩)
+
+private theorem ParsedOp.finiteCode_injective : Function.Injective ParsedOp.finiteCode := by
+  intro a b equal
+  rcases a with ⟨a, ha⟩
+  rcases b with ⟨b, hb⟩
+  apply Subtype.ext
+  cases a <;> cases b <;>
+    simp_all [ParsedOp.finiteCode, parsedOpAluCode, parsedOpImmediateCode,
+      parsedOpZeroCode, parsedOpMauCode, parsedOpMatrixWriteCode,
+      parsedOpMatrixReadCode, parsedOpWaitCode, parsedOpNoforwardCode,
+      parsedOpL1bmCode, parsedOpL2bmCode, parsedOpTail1L1, parsedOpTail1L2,
+      parsedOpTail2L1, parsedOpTail2L2, parsedOpTail3L1, parsedOpTail3L2,
+      parsedOpTail4L1, parsedOpTail4L2, parsedOpTail5L1, parsedOpTail5L2,
+      parsedOpTail6L1, parsedOpTail6L2, parsedOpTail7L1, parsedOpTail7L2,
+      parsedOpTail8L1, parsedOpTail8L2, parsedOpTail9L1, parsedOpTail9L2]
+  all_goals
+    first
+    | rcases equal with ⟨_, _, _, argCodeEqual⟩
+      exact congrArg Subtype.val (parsedBfArgFiniteCode_injective argCodeEqual)
+    | exact BitVec.toFin_inj.mp equal.1
+    | exact congrArg Fin.val equal
+    | exact congrArg Subtype.val (ParsedL1Op.finiteCode_injective equal)
+    | exact congrArg Subtype.val (ParsedL2Op.finiteCode_injective equal)
+
+theorem ParsedOp.inFiniteEnvelope_finite :
+    Finite {op : ParsedOp // op.inFiniteEnvelope} := by
+  letI : Finite ParsedAluName := ParsedAluName.finite
+  letI : Finite ParsedPrecision := ParsedPrecision.finite
+  letI : Finite CalcKind := CalcKind.finite
+  letI : Finite Char := char_finite
+  letI : Finite {op : ParsedL1Op // op.inFiniteEnvelope} :=
+    ParsedL1Op.inFiniteEnvelope_finite
+  letI : Finite {op : ParsedL2Op // op.inFiniteEnvelope} :=
+    ParsedL2Op.inFiniteEnvelope_finite
+  exact Finite.of_injective ParsedOp.finiteCode ParsedOp.finiteCode_injective
+
 def omrEntryInFiniteEnvelope (entry : Nat) : Prop := entry < 16
 
 private def omrEntryCode

@@ -70,6 +70,7 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.ParsedAluName.finite
 #print axioms ProofsLean.MNCore.Issue.ParsedPrecision.finite
 #print axioms ProofsLean.MNCore.Issue.CalcKind.finite
+#print axioms ProofsLean.MNCore.Issue.ParsedOp.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.ParsedMask.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.omrEntryInFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.natBelow_finite

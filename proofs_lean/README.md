@@ -103,7 +103,10 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   opcode本体と同時発行PE行の有限性にはまだ届かない。
   次段階のopcode carrier構成に向け、Leanで既定の`Finite` instanceがない`Char`をUnicode
   code point (`< U+110000`) へ埋め込み有限性を証明し、`ParsedAluName`、`ParsedPrecision`、
-  `CalcKind`の有限符号も定義した。これらの部品だけでは`ParsedOp`全体の有限性を主張しない。
+  `CalcKind`の有限符号も定義した。さらにALU引数、wait tag、L1/L2 opの既存範囲条件を
+  合成した`ParsedOp.inFiniteEnvelope`を定義し、全opcode constructorを有限なタグ付きcarrierへ
+  単射で写して`ParsedOp.inFiniteEnvelope_finite`を証明した。parser出力がこの範囲に必ず入る
+  ことの証明は別途必要であり、ここでは無制限な`ParsedOp`全体の有限性を主張しない。
   全ての構造化`ParsedOperand` constructorを有限コードへ写して
   `ParsedOperand.inFiniteEnvelope_finite`を証明した。
   同ファイルで`ParsedMask.entry < 32`の有限部分型も証明した。assemble3では`$imr0..31`が受理され
