@@ -50,6 +50,7 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.parsedMaskedSource_score
 #print axioms ProofsLean.MNCore.PEMemory.mask_directive_has_zero_issue_cost
 #print axioms ProofsLean.MNCore.PEMemory.parsed_wait_expression_preserves_register_state
+#print axioms ProofsLean.MNCore.PEMemory.parsed_noforward_suppresses_forwarding_updates
 #print axioms ProofsLean.MNCore.PEMemory.parsed_nop_preserves_register_state
 #print axioms ProofsLean.MNCore.PEMemory.parsed_nop_count_has_matching_issue_cost
 #print axioms ProofsLean.MNCore.PEMemory.parsed_nop_line_lowers_to_count_issue_words

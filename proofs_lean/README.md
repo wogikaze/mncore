@@ -110,7 +110,10 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   executionの一致、directiveのissue costが0であること、lowering成功時の実行一致を証明した。
   nop行は指定count分のno-op issueへ展開し、register状態を保持することとscoreがcountに
   一致することを証明した。PE行内のwait式もmachine.step同様にskipしてregister状態を保つ。
-  nopに付くwaitタグとnoforwardによるforwarding状態更新は、この状態モデルでは未モデル化。
+  noforward markerから既存Forwarding状態遷移への抑制信号を接続し、当該行にnoforwardがあると
+  forwarding slotsが保持されることも証明した。ただし現在のParsedMaskedNormalizedMachineは
+  PEメモリ状態のみを持ち、producer値・poison・wait距離・hazard状態との統合は未完了。
+  nopに付くwaitタグも未モデル化。
   mv、debug、DRAM初期化
   など他のtop-level行はlowering対象外。精度縮減、hazard/port legalityは未接続で、
   完全な命令実行意味論ではない。

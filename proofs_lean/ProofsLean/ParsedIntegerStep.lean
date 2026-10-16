@@ -4,6 +4,7 @@ import ProofsLean.PlusOne
 import ProofsLean.Masks
 import ProofsLean.MaskedPEMemory
 import ProofsLean.ControlNormalization
+import ProofsLean.Forwarding
 
 /-! A deliberately partial instruction fragment: direct PE-memory reads,
 the parsed integer ALU request, and masked or unmasked memory writes. This
@@ -654,6 +655,28 @@ def parsedMaskedExpressionStep (control : ParsedMaskExecutionControl)
       | .ok next => some next
       | .failure | .unknown => none
   | .nop => some files
+
+def parsedLineHasNoForward (expressions : List ParsedExpr) : Bool :=
+  expressions.any fun expression => match expression.op with
+    | .noforward => true
+    | _ => false
+
+def advanceParsedLineForwarding (old : ProofsLean.MNCore.Forwarding.Slots)
+    (expressions : List ParsedExpr)
+    (outputs : ProofsLean.MNCore.Forwarding.Unit →
+      Option (Fin 4 → ProofsLean.MNCore.Forwarding.Value IntegerALU.Bus)) :
+    ProofsLean.StepResult ProofsLean.MNCore.Forwarding.Slots :=
+  ProofsLean.MNCore.Forwarding.advance old
+    (.issue (parsedLineHasNoForward expressions) outputs)
+
+theorem parsed_noforward_suppresses_forwarding_updates
+    (old : ProofsLean.MNCore.Forwarding.Slots) (expressions : List ParsedExpr)
+    (outputs : ProofsLean.MNCore.Forwarding.Unit →
+      Option (Fin 4 → ProofsLean.MNCore.Forwarding.Value IntegerALU.Bus))
+    (hasNoForward : parsedLineHasNoForward expressions = true) :
+    advanceParsedLineForwarding old expressions outputs = .ok old := by
+  simp [advanceParsedLineForwarding, hasNoForward,
+    ProofsLean.MNCore.Forwarding.advance]
 
 def ParsedLine.toParsedMaskedStatements? :
     ParsedLine → Option (List ParsedMaskedSourceStatement)
