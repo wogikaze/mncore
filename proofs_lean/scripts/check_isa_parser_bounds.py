@@ -85,6 +85,16 @@ for prefix, aligned_max, capacity in [
         f"lpassa ${prefix}{aligned_max} ${other_lm}\n", True, 1)
     CASES[f"memory_{prefix}_capacity"] = (
         f"lpassa ${prefix}{capacity} ${other_lm}\n", False, None)
+for entry in range(8):
+    for immode in range(8):
+        CASES[f"l1b_set_{entry}_{immode}"] = (
+            f"l2bmb@{entry}/{immode} $lc0 $lb0\n", True, 1)
+for entry in range(9):
+    CASES[f"l2bm_from_l1b_{entry}"] = (
+        f"l2bm@{entry} $lb0 $lc0\n", entry < 8, 1 if entry < 8 else None)
+for width, expected in [("mb", True), ("lmb", True), ("llmb", False)]:
+    CASES[f"bar_width_{width}"] = (
+        f"lpassa $n0 ${width}\n", expected, 1 if expected else None)
 
 
 def sha(path: Path) -> str:
@@ -133,6 +143,7 @@ def main() -> None:
             "hbfn/6 through hbfn/9 are accepted; hbfn/10 is rejected.",
             "LM0/LM1 and GRF0/GRF1 accept aligned final addresses at widths 1, 2, and 4; their single-word capacities are respectively 4096 and 512, and the capacity address is rejected.",
             "Each of the four explicit LM0 cycle addresses accepts 4095 and rejects 4096; madpe values 0 through 3 are accepted and 4 is rejected.",
+            "All 64 L1B set address/immode pairs in 0..7 are accepted; `l2bm@<l1b>` accepts 0..7 and rejects 8. Base-address register writes accept widths 1 and 2 but reject width 4.",
             "$lb8188 is accepted while $lb8192 fails the 13-bit encoding field; the L1BM address must also be 4-word aligned. l1bmm@15 is accepted and @16 is rejected.",
             "DAR address 1023 is accepted and 1024 is rejected; `$lc...@.<l2b>` accepts selectors 0 and 1 and rejects 2.",
             "l1bmd-129, l1bmd-128, l1bmd127, and l1bmd128 are all accepted by assemble3; this is parser/encoding acceptance evidence, not a claim that these offsets are semantically useful.",
