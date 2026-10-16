@@ -66,6 +66,9 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.zeroLongMask_on_double_access
 #print axioms ProofsLean.MNCore.PEMemory.single_line_mask_cancels_omr_directive
 #print axioms ProofsLean.MNCore.PEMemory.own_omr_mask_precedes_multiline_directive
+#print axioms ProofsLean.MNCore.PEMemory.own_memory_mask_precedes_multiline_directive
+#print axioms ProofsLean.MNCore.PEMemory.single_line_mask_cancels_memory_directive
+#print axioms ProofsLean.MNCore.PEMemory.untargeted_memory_uses_unmasked_selection
 #print axioms ProofsLean.MNCore.Issue.parsed_topline_check_sound
 #print axioms ProofsLean.MNCore.Issue.parsed_topline_check_complete
 #print axioms ProofsLean.MNCore.Issue.mask_directive_replaces_state

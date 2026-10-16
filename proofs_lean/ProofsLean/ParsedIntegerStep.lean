@@ -222,6 +222,32 @@ theorem own_omr_mask_precedes_multiline_directive
     ParsedOperand.resolveOmrWriteSelection? (.omr 1 (some mask)) registers cycle directive true =
       resolveParsedMaskFlags? mask registers cycle := rfl
 
+theorem own_memory_mask_precedes_multiline_directive
+    (registers : ProofsLean.MNCore.Masks.RegisterFile) (cycle : Fin 4)
+    (directive : ParsedMaskDirective) (bank : Bank) (access : Access)
+    (mask : ParsedMask) :
+    ParsedOperand.resolveMemoryWriteSelection?
+      (.mem access false false false (some mask)) bank registers cycle directive true =
+      resolveParsedMaskSelection? mask registers cycle := rfl
+
+theorem single_line_mask_cancels_memory_directive
+    (registers : ProofsLean.MNCore.Masks.RegisterFile) (cycle : Fin 4)
+    (directive : ParsedMaskDirective) (bank : Bank) (access : Access) :
+    ParsedOperand.resolveMemoryWriteSelection?
+      (.mem access false false false none) bank registers cycle directive true =
+      some ⟨BitVec.allOnes 4, true⟩ := by
+  simp [ParsedOperand.resolveMemoryWriteSelection?]
+
+theorem untargeted_memory_uses_unmasked_selection
+    (registers : ProofsLean.MNCore.Masks.RegisterFile) (cycle : Fin 4)
+    (directive : ParsedMaskDirective) (bank : Bank) (access : Access)
+    (notTargeted : directiveTargetsBank directive.targets bank = false) :
+    ParsedOperand.resolveMemoryWriteSelection?
+      (.mem access false false false none) bank registers cycle directive false =
+      some ⟨BitVec.allOnes 4, true⟩ := by
+  simp [ParsedOperand.resolveMemoryWriteSelection?, resolveMemoryDirectiveSelection?,
+    notTargeted]
+
 example (registers : ProofsLean.MNCore.Masks.RegisterFile) :
     resolveParsedMaskFlags? (.pattern false 8) registers 0 =
       some (BitVec.allOnes 4) := by simp [resolveParsedMaskFlags?]
