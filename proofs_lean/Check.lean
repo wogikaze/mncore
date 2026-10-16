@@ -12,6 +12,8 @@ import Lean
 #print axioms ProofsLean.programsUpTo_complete
 #print axioms ProofsLean.programsUpToFinset_complete
 #print axioms ProofsLean.programsUpToFintype_complete
+#print axioms ProofsLean.finiteSubtypeAlphabet
+#print axioms ProofsLean.mem_finiteSubtypeAlphabet
 #print axioms ProofsLean.shortProgramsFinset_complete
 #print axioms ProofsLean.finiteAlphabetCertificate
 #print axioms ProofsLean.shortProgramsFintype_complete
@@ -94,6 +96,8 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.legalCostBelowEnvelope_covered
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.legalCostBelowEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.legalCostBelowFintype
+#print axioms ProofsLean.MNCore.Issue.InstructionLine.legalCostBelowFinset
+#print axioms ProofsLean.MNCore.Issue.InstructionLine.mem_legalCostBelowFinset
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.legalCostBelowAlphabet
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.mem_legalCostBelowAlphabet
 #print axioms ProofsLean.MNCore.Issue.ParsedMask.inFiniteEnvelope_finite

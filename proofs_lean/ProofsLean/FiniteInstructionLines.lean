@@ -102,18 +102,41 @@ noncomputable def InstructionLine.legalCostBelowFintype
     InstructionLine.legalCostBelowEnvelope_finite bound legal covered
   exact Fintype.ofFinite _
 
+/-- Finite-set form of the bound-specific legal alphabet, directly consumable
+by `ProofsLean.finiteAlphabetCertificate` when the machine's line type is
+`InstructionLine`. -/
+noncomputable def InstructionLine.legalCostBelowFinset
+    (bound : Nat)
+    (legal : InstructionLine → Prop)
+    (covered : ∀ line, legal line → InstructionLine.cost line < bound →
+      line.inFiniteEnvelope bound) :
+    Finset InstructionLine := by
+  let Carrier := {line : InstructionLine //
+    legal line ∧ InstructionLine.cost line < bound}
+  letI : Fintype Carrier := InstructionLine.legalCostBelowFintype
+    bound legal covered
+  exact ProofsLean.finiteSubtypeAlphabet
+    (fun line => legal line ∧ InstructionLine.cost line < bound)
+
+theorem InstructionLine.mem_legalCostBelowFinset
+    (bound : Nat)
+    (legal : InstructionLine → Prop)
+    (covered : ∀ line, legal line → InstructionLine.cost line < bound →
+      line.inFiniteEnvelope bound)
+    (line : InstructionLine) :
+    line ∈ InstructionLine.legalCostBelowFinset bound legal covered ↔
+      legal line ∧ InstructionLine.cost line < bound := by
+  classical
+  simp [InstructionLine.legalCostBelowFinset, ProofsLean.finiteSubtypeAlphabet]
+
 /-- A concrete list of precisely the legal lines below a fixed cost bound. -/
 noncomputable def InstructionLine.legalCostBelowAlphabet
     (bound : Nat)
     (legal : InstructionLine → Prop)
     (covered : ∀ line, legal line → InstructionLine.cost line < bound →
       line.inFiniteEnvelope bound) :
-    List InstructionLine := by
-  let Carrier := {line : InstructionLine //
-    legal line ∧ InstructionLine.cost line < bound}
-  letI : Fintype Carrier := InstructionLine.legalCostBelowFintype
-    bound legal covered
-  exact (Finset.univ.image fun candidate : Carrier => candidate.1).toList
+    List InstructionLine :=
+  (InstructionLine.legalCostBelowFinset bound legal covered).toList
 
 theorem InstructionLine.mem_legalCostBelowAlphabet
     (bound : Nat)
@@ -124,8 +147,8 @@ theorem InstructionLine.mem_legalCostBelowAlphabet
     (cost : InstructionLine.cost line < bound) :
     line ∈ InstructionLine.legalCostBelowAlphabet bound legal covered := by
   classical
-  simp only [InstructionLine.legalCostBelowAlphabet, Finset.mem_toList,
-    Finset.mem_image, Finset.mem_univ, true_and]
-  exact ⟨⟨line, isLegal, cost⟩, rfl⟩
+  rw [InstructionLine.legalCostBelowAlphabet, Finset.mem_toList]
+  exact (InstructionLine.mem_legalCostBelowFinset bound legal covered line).mpr
+    ⟨isLegal, cost⟩
 
 end ProofsLean.MNCore.Issue

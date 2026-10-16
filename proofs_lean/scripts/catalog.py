@@ -576,7 +576,7 @@ def coverage_catalog() -> dict:
                 "ProofsLean.finiteAlphabetCertificate",
                 "ProofsLean.shortProgramsFintype_complete",
             ],
-            "limitation": "Requires a Fintype line type; MN-Core's cost-bounded legal-line finite carrier and coverage proof remain unconnected.",
+            "limitation": "A cost-bounded finite-subtype alphabet is available, but the universal MN-Core proof that legal rows lie in the operand envelope and the machine connection remain open.",
         },
         "finite_carrier_proofs": [{
             "source": "proofs_lean/ProofsLean/FiniteRegion.lean",
@@ -613,6 +613,13 @@ def coverage_catalog() -> dict:
             "scope": "Finite subtype of legal normalized instruction lines below a fixed cost bound, conditional on a linewise envelope inclusion premise.",
             "evidence": "Applies the finite bounded carrier through an injective embedding using the supplied legal-line envelope premise.",
             "missing": "The supplied premise is not yet proved for an MNCore machine; opcode/parser completeness, operand range soundness, simultaneous issue, and hazards remain open.",
+        }, {
+            "source": "proofs_lean/ProofsLean/FiniteInstructionLines.lean",
+            "sha256": digest(ROOT / "ProofsLean/FiniteInstructionLines.lean"),
+            "theorem": "ProofsLean.MNCore.Issue.InstructionLine.legalCostBelowFinset",
+            "scope": "Finset alphabet for exactly the legal normalized instruction lines below a cost bound, under the stated finite-envelope inclusion premise.",
+            "evidence": "Builds the subtype Fintype and embeds its values through ProofsLean.finiteSubtypeAlphabet; membership is characterized by legality and cost below the bound.",
+            "missing": "The linewise envelope premise and correspondence to complete MN-Core parsed source remain unproved.",
         }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),

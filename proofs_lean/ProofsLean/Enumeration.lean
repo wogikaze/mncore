@@ -77,6 +77,19 @@ theorem programsUpToFinset_complete [DecidableEq α] (alphabet : Finset α)
 def programsUpToFintype [Fintype α] [DecidableEq α] (n : Nat) : Finset (List α) :=
   programsUpToFinset Finset.univ n
 
+/-- Finset of values in a finite subtype, embedded into its ambient type. This
+turns a proof-bounded carrier into an alphabet accepted by
+`finiteAlphabetCertificate`. -/
+noncomputable def finiteSubtypeAlphabet (predicate : α → Prop)
+    [Fintype {value : α // predicate value}] [DecidableEq α] : Finset α :=
+  Finset.univ.image fun value : {value : α // predicate value} => value.1
+
+theorem mem_finiteSubtypeAlphabet (predicate : α → Prop)
+    [Fintype {value : α // predicate value}] [DecidableEq α] (value : α) :
+    value ∈ finiteSubtypeAlphabet predicate ↔ predicate value := by
+  classical
+  simp [finiteSubtypeAlphabet]
+
 theorem programsUpToFintype_complete [Fintype α] [DecidableEq α]
     (n : Nat) (p : List α) (length : p.length ≤ n) :
     p ∈ programsUpToFintype (α := α) n := by

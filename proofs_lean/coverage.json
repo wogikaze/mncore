@@ -151,7 +151,7 @@
   },
   "fintype_bounded_enumeration": {
     "source": "proofs_lean/ProofsLean/Enumeration.lean",
-    "sha256": "2a299f5e836a336edfe83a68183425f9464c807436b0ce2c098d62a99fa53479",
+    "sha256": "71088f0d714895bbd93cbe3dffcf42400db291cb4e4dcc68bbce4b1990b4e7bb",
     "finite_candidate_set": "programsUpToFinset",
     "bound_specific_certificate": "ProofsLean.finiteAlphabetCertificate",
     "fintype_specialization": "programsUpToFintype",
@@ -163,7 +163,7 @@
       "ProofsLean.finiteAlphabetCertificate",
       "ProofsLean.shortProgramsFintype_complete"
     ],
-    "limitation": "Requires a Fintype line type; MN-Core's cost-bounded legal-line finite carrier and coverage proof remain unconnected."
+    "limitation": "A cost-bounded finite-subtype alphabet is available, but the universal MN-Core proof that legal rows lie in the operand envelope and the machine connection remain open."
   },
   "finite_carrier_proofs": [
     {
@@ -192,7 +192,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteInstructionLines.lean",
-      "sha256": "d793731ce8771758a7fbac42ffa0c9920ce72f1e8417558ba86c959449ddaafc",
+      "sha256": "baaadf4bd1235e49e4b00e1807659512dc959b22aad01561fc5ae8ae2e2e1039",
       "theorem": "ProofsLean.MNCore.Issue.InstructionLine.costBelowEnvelope_finite",
       "scope": "Finite subtype of normalized instruction lines whose cost is below a fixed bound and whose payloads satisfy the proved finite envelopes.",
       "evidence": "Subtype of InstructionLine.inFiniteEnvelope_finite; cost is additionally restricted below the same bound.",
@@ -200,11 +200,19 @@
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteInstructionLines.lean",
-      "sha256": "d793731ce8771758a7fbac42ffa0c9920ce72f1e8417558ba86c959449ddaafc",
+      "sha256": "baaadf4bd1235e49e4b00e1807659512dc959b22aad01561fc5ae8ae2e2e1039",
       "theorem": "ProofsLean.MNCore.Issue.InstructionLine.legalCostBelowEnvelope_finite",
       "scope": "Finite subtype of legal normalized instruction lines below a fixed cost bound, conditional on a linewise envelope inclusion premise.",
       "evidence": "Applies the finite bounded carrier through an injective embedding using the supplied legal-line envelope premise.",
       "missing": "The supplied premise is not yet proved for an MNCore machine; opcode/parser completeness, operand range soundness, simultaneous issue, and hazards remain open."
+    },
+    {
+      "source": "proofs_lean/ProofsLean/FiniteInstructionLines.lean",
+      "sha256": "baaadf4bd1235e49e4b00e1807659512dc959b22aad01561fc5ae8ae2e2e1039",
+      "theorem": "ProofsLean.MNCore.Issue.InstructionLine.legalCostBelowFinset",
+      "scope": "Finset alphabet for exactly the legal normalized instruction lines below a cost bound, under the stated finite-envelope inclusion premise.",
+      "evidence": "Builds the subtype Fintype and embeds its values through ProofsLean.finiteSubtypeAlphabet; membership is characterized by legality and cost below the bound.",
+      "missing": "The linewise envelope premise and correspondence to complete MN-Core parsed source remain unproved."
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
