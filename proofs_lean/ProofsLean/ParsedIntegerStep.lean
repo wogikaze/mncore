@@ -3,6 +3,7 @@ import ProofsLean.Issue
 import ProofsLean.PlusOne
 import ProofsLean.Masks
 import ProofsLean.MaskedPEMemory
+import ProofsLean.ControlNormalization
 
 /-! A deliberately partial instruction fragment: direct PE-memory reads,
 the parsed integer ALU request, and masked or unmasked memory writes. This
@@ -540,6 +541,85 @@ def executeParsedMaskedIntegerExpr? (files : IntegerRegisterFiles)
       directive pe cycle bar0 bar1 tWord with
   | some accesses => some (parsedIntegerMaskedRegisterStep files accesses false)
   | none => none
+
+abbrev ParsedMaskedSourceStatement :=
+  ProofsLean.ControlNormalization.Statement ParsedMaskDirective ParsedExpr
+
+def updateParsedMaskDirective (next : ParsedMaskDirective)
+    (_current : ParsedMaskDirective) : ParsedMaskDirective := next
+
+def parsedMaskedExpressionStep (directive : ParsedMaskDirective)
+    (expression : ParsedExpr) (files : IntegerRegisterFiles) :
+    Option IntegerRegisterFiles :=
+  match executeParsedMaskedIntegerExpr? files expression directive 0 0 0 0 0 with
+  | some (.ok next) => some next
+  | some .failure | some .unknown | none => none
+
+def ParsedLine.toParsedMaskedStatement? : ParsedLine → Option ParsedMaskedSourceStatement
+  | .maskDirective widthWords targets entry =>
+      some (.directive ⟨widthWords, targets, entry⟩)
+  | .pe [expression] => some (.issue expression)
+  | _ => none
+
+def lowerParsedMaskedSource (lines : List ParsedLine) :
+    Option (List ParsedMaskedSourceStatement) :=
+  lines.mapM ParsedLine.toParsedMaskedStatement?
+
+def runParsedMaskedSource (source : List ParsedMaskedSourceStatement)
+    (directive : ParsedMaskDirective) (files : IntegerRegisterFiles) :
+    Option IntegerRegisterFiles :=
+  ProofsLean.ControlNormalization.runSource updateParsedMaskDirective
+    parsedMaskedExpressionStep source directive files
+
+def parsedMaskedNormalizedMachine : ProofsLean.Machine where
+  Line := ParsedMaskDirective × ParsedExpr
+  State := IntegerRegisterFiles
+  Input := Unit
+  step := fun pair files => parsedMaskedExpressionStep pair.1 pair.2 files
+  legal := fun _ => True
+  lineCost := fun _ => 1
+  positiveCost := fun _ => by decide
+
+def runParsedMaskedCompiled (source : List ParsedMaskedSourceStatement)
+    (directive : ParsedMaskDirective) (files : IntegerRegisterFiles) :
+    Option IntegerRegisterFiles :=
+  let compiled := ProofsLean.ControlNormalization.compile
+    updateParsedMaskDirective source directive
+  ProofsLean.execute parsedMaskedNormalizedMachine compiled files
+
+theorem parsedMaskedSource_execution (source : List ParsedMaskedSourceStatement)
+    (directive : ParsedMaskDirective) (files : IntegerRegisterFiles) :
+    runParsedMaskedSource source directive files =
+      runParsedMaskedCompiled source directive files := by
+  exact ProofsLean.ControlNormalization.source_execution
+    updateParsedMaskDirective parsedMaskedExpressionStep (fun _ => True) Unit
+    source directive files
+
+theorem mask_directive_has_zero_issue_cost (directive : ParsedMaskDirective) :
+    ProofsLean.ControlNormalization.cost
+      ([.directive directive] : List ParsedMaskedSourceStatement) = 0 := rfl
+
+theorem parsedMaskedSource_score (source : List ParsedMaskedSourceStatement)
+    (directive : ParsedMaskDirective) :
+    ProofsLean.score parsedMaskedNormalizedMachine
+      (ProofsLean.ControlNormalization.compile updateParsedMaskDirective source directive) =
+      ProofsLean.ControlNormalization.cost source :=
+  ProofsLean.ControlNormalization.source_score updateParsedMaskDirective
+    parsedMaskedExpressionStep (fun _ => True) Unit source directive
+
+theorem lowered_parsed_masked_source_executes_as_normalized
+    (lines : List ParsedLine) (source : List ParsedMaskedSourceStatement)
+    (lowered : lowerParsedMaskedSource lines = some source)
+    (directive : ParsedMaskDirective) (files : IntegerRegisterFiles) :
+    (lowerParsedMaskedSource lines).map
+      (fun loweredSource => runParsedMaskedSource loweredSource directive files) =
+      some (ProofsLean.execute parsedMaskedNormalizedMachine
+        (ProofsLean.ControlNormalization.compile updateParsedMaskDirective source directive)
+        files) := by
+  rw [lowered]
+  simp only [Option.map_some]
+  rw [parsedMaskedSource_execution]
+  rfl
 
 def parsedIntegerRegisterStep (files : IntegerRegisterFiles)
     (sourceX sourceY destination : DirectMemoryAccess) (op : ParsedOp)

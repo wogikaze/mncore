@@ -44,6 +44,10 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.readRegisterBank_after_write
 #print axioms ProofsLean.MNCore.PEMemory.readDirectAccessMasked_after_write
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerMaskedRegisterStep_success
+#print axioms ProofsLean.MNCore.PEMemory.parsedMaskedSource_execution
+#print axioms ProofsLean.MNCore.PEMemory.parsedMaskedSource_score
+#print axioms ProofsLean.MNCore.PEMemory.mask_directive_has_zero_issue_cost
+#print axioms ProofsLean.MNCore.PEMemory.lowered_parsed_masked_source_executes_as_normalized
 #print axioms ProofsLean.MNCore.PEMemory.direct_access_write_readback
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerRegisterStep_succeeds
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerRegisterStep_readback
