@@ -58,6 +58,39 @@ theorem mabdiffInFiniteEnvelope_finite :
     Finite {mabdiff : Int // mabdiffInFiniteEnvelope mabdiff} :=
   Finite.of_injective mabdiffFiniteCode mabdiffFiniteCode_injective
 
+private def ParsedRrnOp.finiteCode : ParsedRrnOp → Fin 8
+  | .fadd => 0 | .max => 1 | .min => 2 | .iadd => 3
+  | .band => 4 | .and => 5 | .bor => 6 | .or => 7
+
+private theorem ParsedRrnOp.finiteCode_injective :
+    Function.Injective ParsedRrnOp.finiteCode := by
+  intro a b equal
+  cases a <;> cases b <;> simp [ParsedRrnOp.finiteCode] at equal ⊢
+
+def ParsedRrn.inFiniteEnvelope (rrn : ParsedRrn) : Prop :=
+  rrn.precision.toNat < 128
+
+private def ParsedRrn.finiteCode
+    (rrn : {rrn : ParsedRrn // rrn.inFiniteEnvelope}) : Fin 128 × Fin 8 :=
+  (⟨rrn.1.precision.toNat, rrn.2⟩, ParsedRrnOp.finiteCode rrn.1.op)
+
+private theorem ParsedRrn.finiteCode_injective :
+    Function.Injective ParsedRrn.finiteCode := by
+  rintro ⟨⟨ap, ao⟩, ha⟩ ⟨⟨bp, bo⟩, hb⟩ equal
+  apply Subtype.ext
+  simp only [ParsedRrn.finiteCode, Prod.mk.injEq, Fin.mk.injEq] at equal
+  rcases equal with ⟨charValues, opValues⟩
+  have charNatEqual := congrArg Fin.val charValues
+  have precisionEqual : ap = bp := Char.toNat_inj.mp charNatEqual
+  have opEqual : ao = bo := ParsedRrnOp.finiteCode_injective opValues
+  cases precisionEqual
+  cases opEqual
+  rfl
+
+theorem ParsedRrn.inFiniteEnvelope_finite :
+    Finite {rrn : ParsedRrn // rrn.inFiniteEnvelope} :=
+  Finite.of_injective ParsedRrn.finiteCode ParsedRrn.finiteCode_injective
+
 def optionNatInFiniteEnvelope (bound : Nat) (value : Option Nat) : Prop :=
   ∀ n, value = some n → n < bound
 

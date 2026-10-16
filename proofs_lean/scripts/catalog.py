@@ -486,6 +486,13 @@ def coverage_catalog() -> dict:
         }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
+            "theorem": "ProofsLean.MNCore.Issue.ParsedRrn.inFiniteEnvelope_finite",
+            "scope": "Finite carrier for reduction operation codes and character precision values whose Unicode scalar is below 128.",
+            "evidence": "`ParsedRrnOp` has eight constructors; the precision envelope is an explicit finite ASCII-code envelope.",
+            "missing": "The envelope has not been connected to parser output or to the finite carrier proof for complete ParsedL1Op values.",
+        }, {
+            "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
+            "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
             "theorem": "ProofsLean.MNCore.Issue.waitTagInFiniteEnvelope_finite",
             "scope": "Finite carrier for positive wait tags below 256.",
             "evidence": "proofs_lean/evidence/isa-bounds/reference.json: i00 and i100 rejected; i01 and iFF accepted, with exhaustive probes for 1..255.",
