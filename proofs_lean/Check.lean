@@ -76,6 +76,8 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.NormalizedExpr.listInFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.NormalizedMv.finite
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.inFiniteEnvelope_finite
+#print axioms ProofsLean.MNCore.Issue.InstructionLine.costBelowEnvelope_finite
+#print axioms ProofsLean.MNCore.Issue.InstructionLine.legalCostBelowEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.ParsedMask.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.omrEntryInFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.natBelow_finite

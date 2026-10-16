@@ -470,6 +470,20 @@ def coverage_catalog() -> dict:
             "evidence": "Composes the proved finite carriers for normalized expressions, bounded expression lists, optional wait tags, and normalized MV operands.",
             "missing": "No proof yet shows that every legal fixed-cost line satisfies these expression payload envelopes, that the nop bound follows from cost, or that all legal line forms embed in this subtype.",
         }, {
+            "source": "proofs_lean/ProofsLean/FiniteInstructionLines.lean",
+            "sha256": digest(ROOT / "ProofsLean/FiniteInstructionLines.lean"),
+            "theorem": "ProofsLean.MNCore.Issue.InstructionLine.costBelowEnvelope_finite",
+            "scope": "Finite subtype of normalized instruction lines whose cost is below a fixed bound and whose payloads satisfy the proved finite envelopes.",
+            "evidence": "Subtype of InstructionLine.inFiniteEnvelope_finite; cost is additionally restricted below the same bound.",
+            "missing": "The parser/assembler and hazard model must prove that every legal line below the cost bound satisfies the payload envelope.",
+        }, {
+            "source": "proofs_lean/ProofsLean/FiniteInstructionLines.lean",
+            "sha256": digest(ROOT / "ProofsLean/FiniteInstructionLines.lean"),
+            "theorem": "ProofsLean.MNCore.Issue.InstructionLine.legalCostBelowEnvelope_finite",
+            "scope": "Finite subtype of legal normalized instruction lines below a fixed cost bound, conditional on a linewise envelope inclusion premise.",
+            "evidence": "Applies the finite bounded carrier through an injective embedding using the supplied legal-line envelope premise.",
+            "missing": "The supplied premise is not yet proved for an MNCore machine; opcode/parser completeness, operand range soundness, simultaneous issue, and hazards remain open.",
+        }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
             "theorem": "ProofsLean.MNCore.Issue.Access.inFiniteEnvelope_finite",

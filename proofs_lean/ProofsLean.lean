@@ -12,6 +12,7 @@ import ProofsLean.ParsedIntegerStep
 import ProofsLean.Issue
 import ProofsLean.FiniteRegion
 import ProofsLean.FiniteIssue
+import ProofsLean.FiniteInstructionLines
 import ProofsLean.AddressProperties
 import ProofsLean.Masks
 import ProofsLean.Forwarding
