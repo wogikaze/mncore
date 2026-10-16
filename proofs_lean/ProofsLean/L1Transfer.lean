@@ -330,6 +330,17 @@ def gatherTurnaroundWrites (mabDiff : Int) (buses : Fin 16 → Fin 4 → Bus) :
       (⟨offset, by have hm := sourceMab.isLt; have hp := pe.isLt; omega⟩,
         (buses sourceMab pe).high)
 
+def writeL1TurnaroundWord (turnaround : L1Turnaround) (cycle : Fin 4)
+    (address : Fin 64) (value : BitVec 64) : L1Turnaround :=
+  fun targetCycle targetAddress =>
+    if targetCycle = cycle ∧ targetAddress = address then value
+    else turnaround targetCycle targetAddress
+
+def commitL1TurnaroundWrites (turnaround : L1Turnaround) (cycle : Fin 4)
+    (writes : List L1TurnWrite) : L1Turnaround :=
+  writes.foldl (fun current write =>
+    writeL1TurnaroundWord current cycle write.1 write.2) turnaround
+
 theorem gatherDestinationMab_euclidean (mab : Fin 16) (mabDiff : Int) :
     (gatherDestinationMab mab mabDiff).val =
       ((Int.ofNat mab.val + mabDiff) % 16).toNat := by
@@ -360,6 +371,24 @@ theorem gatherTurnaroundWrites_contains_source (mabDiff : Int)
       (buses mab pe).high) ∈ gatherTurnaroundWrites mabDiff buses := by
   simp only [gatherTurnaroundWrites, List.mem_flatMap, List.mem_map]
   exact ⟨mab, List.mem_finRange mab, pe, List.mem_finRange pe, rfl⟩
+
+theorem committedGatherL1_last_readback (memory : L1Bank)
+    (memoryBase : Fin l1bmLongWords) (mabDiff : Int) (cycle : Fin 4)
+    (buses : Fin 16 → Fin 4 → Bus) :
+    commitL1Writes memory (gatherL1Writes memoryBase mabDiff cycle buses)
+      (addressAt memoryBase
+        (cycle.val * 64 + (gatherDestinationMab 15 mabDiff).val * 4 +
+          (3 : Fin 4).val)) =
+      (buses 15 3).high := by
+  simp [commitL1Writes, gatherL1Writes, writeL1Word, List.finRange]
+
+theorem committedGatherTurnaround_last_readback (turnaround : L1Turnaround)
+    (mabDiff : Int) (cycle : Fin 4) (buses : Fin 16 → Fin 4 → Bus) :
+    commitL1TurnaroundWrites turnaround cycle (gatherTurnaroundWrites mabDiff buses)
+      cycle ⟨(15 : Fin 16).val * 4 + (3 : Fin 4).val, by decide⟩ =
+      (buses 15 3).high := by
+  simp [commitL1TurnaroundWrites, gatherTurnaroundWrites,
+    writeL1TurnaroundWord, List.finRange]
 
 def updateBroadcastForwarding (old : ProofsLean.MNCore.Forwarding.Slots)
     (outputs : Fin 4 → Bus) (noForward : Bool) :

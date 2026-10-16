@@ -77,6 +77,8 @@ import Lean
 #print axioms ProofsLean.MNCore.L1Transfer.gatherTurnaroundWrites_count
 #print axioms ProofsLean.MNCore.L1Transfer.gatherL1Writes_contains_source
 #print axioms ProofsLean.MNCore.L1Transfer.gatherTurnaroundWrites_contains_source
+#print axioms ProofsLean.MNCore.L1Transfer.committedGatherL1_last_readback
+#print axioms ProofsLean.MNCore.L1Transfer.committedGatherTurnaround_last_readback
 #print axioms ProofsLean.MNCore.PEMemory.mask_directive_replaces_selection_preserves_context
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerMaskedLineStep_prepares_then_commits
 #print axioms ProofsLean.MNCore.PEMemory.parsedMaskedSource_execution
