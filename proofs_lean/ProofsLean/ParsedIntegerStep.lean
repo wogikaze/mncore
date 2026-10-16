@@ -194,6 +194,9 @@ def ParsedOperand.toParsedIntegerInput? (operand : ParsedOperand)
   | .fixed fixed =>
       some (.fixed (replicateIntegerLane precision
         (ParsedFixed.integerValue fixed precision group l2b l1b mab pe)))
+  | .mem access _ _ false none =>
+      (ParsedOperand.toDirectMemoryAccess? (.mem access false false false none)
+        pe cycle bar0 bar1 tWord).map .memory
   | _ => (ParsedOperand.toDirectMemoryAccess? operand pe cycle bar0 bar1 tWord).map .memory
 
 theorem parsed_fixed_integer_input
@@ -204,6 +207,16 @@ theorem parsed_fixed_integer_input
       group l2b l1b mab pe cycle bar0 bar1 tWord =
         some (.fixed (replicateIntegerLane precision
           (ParsedFixed.integerValue fixed precision group l2b l1b mab pe))) := rfl
+
+theorem parsed_integer_memory_input_ignores_negation_extension
+    (access : Access) (negated extended : Bool) (precision : IntegerALU.Precision)
+    (group : Fin 2) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
+    (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
+    ParsedOperand.toParsedIntegerInput?
+      (.mem access negated extended false none) precision group l2b l1b mab pe cycle
+      bar0 bar1 tWord =
+    (ParsedOperand.toDirectMemoryAccess? (.mem access false false false none)
+      pe cycle bar0 bar1 tWord).map .memory := rfl
 
 def ParsedOperand.toDirectMemoryDestination? (operand : ParsedOperand)
     (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
