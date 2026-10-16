@@ -101,8 +101,8 @@ import Lean
 #print axioms ProofsLean.ControlNormalization.source_score_advancing
 #print axioms ProofsLean.MNCore.PEMemory.prepareParsedMaskedConstantWrites_preserves_order
 #print axioms ProofsLean.MNCore.PEMemory.commit_constant_omr_destination_writes_zero
-#print axioms ProofsLean.MNCore.PEMemory.parsed_subpeid_integer_input
-#print axioms ProofsLean.MNCore.PEMemory.parsed_msb1_integer_input
+#print axioms ProofsLean.MNCore.PEMemory.ParsedIntegerContext.linearIndex_lt
+#print axioms ProofsLean.MNCore.PEMemory.parsed_fixed_integer_input
 #print axioms ProofsLean.MNCore.PEMemory.parsed_issue_advances_elapsed_word
 #print axioms ProofsLean.MNCore.PEMemory.parsed_issue_line_mask_flag_iff
 #print axioms ProofsLean.MNCore.PEMemory.parsed_issue_line_mask_cancels_unmasked_memory_target

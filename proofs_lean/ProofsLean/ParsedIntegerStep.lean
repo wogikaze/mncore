@@ -28,6 +28,32 @@ structure DirectMemoryAccess where
   address : Fin bank.capacity
   deriving DecidableEq, Repr
 
+structure ParsedIntegerContext where
+  pe : Fin 4
+  cycle : Fin 4
+  bar0 : BitVec 12
+  bar1 : BitVec 12
+  tWord : BitVec 32
+  group : Fin 2
+  l2b : Fin 2
+  l1b : Fin 8
+  mab : Fin 16
+  deriving DecidableEq, Repr
+
+def ParsedIntegerContext.linearIndex (context : ParsedIntegerContext) : Nat :=
+  (((context.group.val * 2 + context.l2b.val) * 8 + context.l1b.val) * 16 +
+    context.mab.val) * 4 + context.pe.val
+
+theorem ParsedIntegerContext.linearIndex_lt (context : ParsedIntegerContext) :
+    context.linearIndex < 2048 := by
+  simp [ParsedIntegerContext.linearIndex]
+  have hg := context.group.isLt
+  have hl2 := context.l2b.isLt
+  have hl1 := context.l1b.isLt
+  have hm := context.mab.isLt
+  have hp := context.pe.isLt
+  omega
+
 inductive ParsedIntegerInput where
   | memory (access : DirectMemoryAccess)
   | fixed (value : IntegerALU.Bus)
@@ -111,27 +137,39 @@ def ParsedOperand.toDirectMemoryAccess? (operand : ParsedOperand)
     Option DirectMemoryAccess :=
   ParsedOperand.toDirectMemoryAccessMode? operand false pe cycle bar0 bar1 tWord
 
+def ParsedFixed.integerValue (fixed : ParsedFixed) (precision : IntegerALU.Precision)
+    (group : Fin 2) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16) (pe : Fin 4) : Nat :=
+  match fixed with
+  | .l2bid => group.val * 2 + l2b.val
+  | .l1bid => l1b.val
+  | .mabid => mab.val
+  | .peid => mab.val * 4 + pe.val
+  | .subpeid => pe.val
+  | .msb1 => 2 ^ (precision.width - 1)
+
+example : ParsedFixed.integerValue .l2bid .long 1 1 0 0 0 = 3 := by decide
+example : ParsedFixed.integerValue .l1bid .long 0 0 7 0 0 = 7 := by decide
+example : ParsedFixed.integerValue .mabid .long 0 0 0 15 0 = 15 := by decide
+example : ParsedFixed.integerValue .peid .long 0 0 0 15 3 = 63 := by decide
+
 def ParsedOperand.toParsedIntegerInput? (operand : ParsedOperand)
-    (precision : IntegerALU.Precision) (pe cycle : Fin 4)
+    (precision : IntegerALU.Precision)
+    (group : Fin 2) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16) (pe cycle : Fin 4)
     (bar0 bar1 : BitVec 12) (tWord : BitVec 32) : Option ParsedIntegerInput :=
   match operand with
-  | .fixed .subpeid => some (.fixed (replicateIntegerLane precision pe.val))
-  | .fixed .msb1 =>
-      some (.fixed (replicateIntegerLane precision (2 ^ (precision.width - 1))))
-  | .fixed _ => none
+  | .fixed fixed =>
+      some (.fixed (replicateIntegerLane precision
+        (ParsedFixed.integerValue fixed precision group l2b l1b mab pe)))
   | _ => (ParsedOperand.toDirectMemoryAccess? operand pe cycle bar0 bar1 tWord).map .memory
 
-theorem parsed_subpeid_integer_input
-    (precision : IntegerALU.Precision) (pe cycle : Fin 4)
+theorem parsed_fixed_integer_input
+    (fixed : ParsedFixed) (precision : IntegerALU.Precision)
+    (group : Fin 2) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16) (pe cycle : Fin 4)
     (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
-    ParsedOperand.toParsedIntegerInput? (.fixed .subpeid) precision pe cycle bar0 bar1 tWord =
-      some (.fixed (replicateIntegerLane precision pe.val)) := rfl
-
-theorem parsed_msb1_integer_input
-    (precision : IntegerALU.Precision) (pe cycle : Fin 4)
-    (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
-    ParsedOperand.toParsedIntegerInput? (.fixed .msb1) precision pe cycle bar0 bar1 tWord =
-      some (.fixed (replicateIntegerLane precision (2 ^ (precision.width - 1)))) := rfl
+    ParsedOperand.toParsedIntegerInput? (.fixed fixed) precision
+      group l2b l1b mab pe cycle bar0 bar1 tWord =
+        some (.fixed (replicateIntegerLane precision
+          (ParsedFixed.integerValue fixed precision group l2b l1b mab pe))) := rfl
 
 def ParsedOperand.toDirectMemoryDestination? (operand : ParsedOperand)
     (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
@@ -392,6 +430,7 @@ resolving its explicit or multiline write mask and output flush for this cycle. 
 def ParsedExpr.toDirectMaskedIntegerAccessesInLine? (expression : ParsedExpr)
     (registers : ProofsLean.MNCore.Masks.RegisterFile)
     (directive : ParsedMaskDirective) (hasSingleLineMask : Bool)
+    (group : Fin 2) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
     (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
     Option ParsedMaskedIntegerAccesses :=
   match expression.op with
@@ -402,7 +441,7 @@ def ParsedExpr.toDirectMaskedIntegerAccessesInLine? (expression : ParsedExpr)
           | [source], [destination] =>
               if ParsedAluName.integerInputCount name != 1 then none else
               match ParsedOperand.toParsedIntegerInput? source parsedPrecision.laneWidth
-                  pe cycle bar0 bar1 tWord with
+                  group l2b l1b mab pe cycle bar0 bar1 tWord with
               | none => none
               | some sourceAccess =>
                   match ParsedOperand.toDirectMemoryDestination? destination pe cycle bar0 bar1 tWord with
@@ -419,9 +458,9 @@ def ParsedExpr.toDirectMaskedIntegerAccessesInLine? (expression : ParsedExpr)
           | [sourceX, sourceY], [destination] =>
               if ParsedAluName.integerInputCount name != 2 then none else
               match ParsedOperand.toParsedIntegerInput? sourceX parsedPrecision.laneWidth
-                    pe cycle bar0 bar1 tWord,
+                    group l2b l1b mab pe cycle bar0 bar1 tWord,
                     ParsedOperand.toParsedIntegerInput? sourceY parsedPrecision.laneWidth
-                    pe cycle bar0 bar1 tWord with
+                    group l2b l1b mab pe cycle bar0 bar1 tWord with
               | some xAccess, some yAccess =>
                   match ParsedOperand.toDirectMemoryDestination? destination pe cycle bar0 bar1 tWord with
                   | none => none
@@ -459,10 +498,11 @@ def ParsedExpr.toDirectMaskedIntegerAccessesInLine? (expression : ParsedExpr)
 def ParsedExpr.toDirectMaskedIntegerAccesses? (expression : ParsedExpr)
     (registers : ProofsLean.MNCore.Masks.RegisterFile)
     (directive : ParsedMaskDirective)
+    (group : Fin 2) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
     (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
     Option ParsedMaskedIntegerAccesses :=
   ParsedExpr.toDirectMaskedIntegerAccessesInLine? expression registers directive
-    (parsedExprHasSingleLineWriteMask expression) pe cycle bar0 bar1 tWord
+    (parsedExprHasSingleLineWriteMask expression) group l2b l1b mab pe cycle bar0 bar1 tWord
 
 inductive ParsedConstantDestination where
   | memory (accesses : ParsedMaskedIntegerAccesses)
@@ -474,6 +514,7 @@ writes the same computed bus to every destination in source order. -/
 def ParsedExpr.toDirectMaskedConstantWrites? (expression : ParsedExpr)
     (registers : ProofsLean.MNCore.Masks.RegisterFile)
     (directive : ParsedMaskDirective) (hasSingleLineMask : Bool)
+    (group : Fin 2) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
     (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
     Option (List ParsedConstantDestination) :=
   match expression.op with
@@ -489,7 +530,7 @@ def ParsedExpr.toDirectMaskedConstantWrites? (expression : ParsedExpr)
         | _ => do
             let oneDestination := { expression with destinations := [destination] }
             let lowered ← ParsedExpr.toDirectMaskedIntegerAccessesInLine? oneDestination
-              registers directive hasSingleLineMask pe cycle bar0 bar1 tWord
+              registers directive hasSingleLineMask group l2b l1b mab pe cycle bar0 bar1 tWord
             some (.memory lowered)
   | _ => none
 
@@ -523,10 +564,10 @@ def parsedMsb1MaskedExpr : ParsedExpr where
   text := "iinc $msb1 $ln0v"
 
 example : (ParsedExpr.toDirectMaskedIntegerAccesses? parsedSubpeidMaskedExpr
-    (fun _ _ => 0) {} 2 0 0 0 0).isSome = true := by decide
+    (fun _ _ => 0) {} 0 0 0 0 0 2 0 0 0).isSome = true := by decide
 
 example : (ParsedExpr.toDirectMaskedIntegerAccesses? parsedMsb1MaskedExpr
-    (fun _ _ => 0) {} 2 0 0 0 0).isSome = true := by decide
+    (fun _ _ => 0) {} 0 0 0 0 0 2 0 0 0).isSome = true := by decide
 
 def parsedImmediateMultiDestinationExpr : ParsedExpr where
   op := .immediate 0x12345678 false
@@ -539,7 +580,7 @@ def parsedImmediateMultiDestinationExpr : ParsedExpr where
 
 example :
     (ParsedExpr.toDirectMaskedConstantWrites? parsedImmediateMultiDestinationExpr
-      (fun _ _ => 0) {} false 0 0 0 0 0).isSome = true := by decide
+      (fun _ _ => 0) {} false 0 0 0 0 0 0 0 0 0).isSome = true := by decide
 
 def parsedZeroOmrExpr : ParsedExpr where
   op := .zero
@@ -557,19 +598,19 @@ def parsedZeroNowriteExpr : ParsedExpr where
 
 example :
     (ParsedExpr.toDirectMaskedConstantWrites? parsedZeroOmrExpr
-      (fun _ _ => 0) {} false 0 0 0 0 0).isSome = true := by decide
+      (fun _ _ => 0) {} false 0 0 0 0 0 0 0 0 0).isSome = true := by decide
 
 example :
     (ParsedExpr.toDirectMaskedConstantWrites? parsedZeroNowriteExpr
-      (fun _ _ => 0) {} false 0 0 0 0 0).isSome = true := by decide
+      (fun _ _ => 0) {} false 0 0 0 0 0 0 0 0 0).isSome = true := by decide
 
 example :
     (ParsedExpr.toDirectMaskedIntegerAccesses? parsedZeroMaskedExpr (fun _ _ => 0) {}
-      0 0 0 0 0).isSome = true := by decide
+      0 0 0 0 0 0 0 0 0).isSome = true := by decide
 
 example :
     (ParsedExpr.toDirectMaskedIntegerAccesses?
-      (parsedImmediateMaskedExpr 0x12345678 false) (fun _ _ => 0) {} 0 0 0 0 0).isSome =
+      (parsedImmediateMaskedExpr 0x12345678 false) (fun _ _ => 0) {} 0 0 0 0 0 0 0 0 0).isSome =
       true := by decide
 
 example : ParsedOperand.toDirectMemoryAccess?
@@ -737,19 +778,13 @@ theorem parsedIntegerMaskedRegisterStep_success (files : IntegerRegisterFiles)
 
 def executeParsedMaskedIntegerExpr? (files : IntegerRegisterFiles)
     (expression : ParsedExpr) (directive : ParsedMaskDirective)
+    (group : Fin 2) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
     (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
     Option (ProofsLean.StepResult IntegerRegisterFiles) :=
   match ParsedExpr.toDirectMaskedIntegerAccesses? expression files.maskRegisters
-      directive pe cycle bar0 bar1 tWord with
+      directive group l2b l1b mab pe cycle bar0 bar1 tWord with
   | some accesses => some (parsedIntegerMaskedRegisterStep files accesses false)
   | none => none
-
-structure ParsedIntegerContext where
-  pe : Fin 4
-  cycle : Fin 4
-  (bar0 bar1 : BitVec 12)
-  tWord : BitVec 32
-  deriving DecidableEq, Repr
 
 structure ParsedMaskExecutionControl where
   directive : ParsedMaskDirective
@@ -919,7 +954,7 @@ theorem t_indirect_hazard_access_uses_cycle_region (cycle : Fin 4) :
     (tIndirectHazardAccess cycle).bank = .t ∧
       TimedPEAccess.rangeStart
         (TimedPEAccess.ofControl
-          ⟨{}, ⟨0, cycle, 0, 0, 0⟩, 0⟩
+          ⟨{}, ⟨0, cycle, 0, 0, 0, 0, 0, 0, 0⟩, 0⟩
           (tIndirectHazardAccess cycle) false cycle) = cycle.val := by
   constructor
   · rfl
@@ -1182,7 +1217,8 @@ def prepareParsedMaskedLine (files : IntegerRegisterFiles)
         | .wait _ | .noforward => prepare rest
         | .zero | .immediate .. =>
           match ParsedExpr.toDirectMaskedConstantWrites? expression files.maskRegisters
-              control.directive hasSingleLineMask control.context.pe control.context.cycle
+              control.directive hasSingleLineMask control.context.group control.context.l2b
+              control.context.l1b control.context.mab control.context.pe control.context.cycle
               control.context.bar0 control.context.bar1 control.context.tWord with
           | none => .unknown
           | some accesses =>
@@ -1196,7 +1232,8 @@ def prepareParsedMaskedLine (files : IntegerRegisterFiles)
                   | .unknown => .unknown
         | _ =>
           match ParsedExpr.toDirectMaskedIntegerAccessesInLine? expression files.maskRegisters
-              control.directive hasSingleLineMask control.context.pe control.context.cycle
+              control.directive hasSingleLineMask control.context.group control.context.l2b
+              control.context.l1b control.context.mab control.context.pe control.context.cycle
               control.context.bar0 control.context.bar1 control.context.tWord with
           | none => .unknown
           | some accesses =>
