@@ -52,13 +52,17 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   Phase 4向けに、候補プログラムの族を述語で表す`SymbolicBoundCertificate`も定義した。
   有限列挙証明書はその特殊ケースへ変換でき、symbolic certificateのsoundnessも証明した。
 - `Enumeration.lean`: アルファベット上の命令列を長さ上限まで覆う列挙定理。
+  `programsUpToFinset`は有限アルファベットから重複なしの有限候補集合を作る。
+  `finiteAlphabetCertificate`は無限の行型からboundごとに切り出した有限carrierにも適用でき、
+  `programsUpToFintype`/`fintypeCertificate`は全行型が有限な場合の特例となる。
+  各boundの候補列挙完全性を証明したが、MN-Coreの合法な短い行がその有限carrierに入る証明は未接続。
   被覆は合法プログラムに現れる行に対してのみ必要。さらに上限ごとの
   `LegalLinesCoveredBelow` と `legalLinesCostBelow` を定義し、`nop/n`のような
   無限族をコスト上限で有限化する。固定上限の有限被覆が列挙完全性を与える。
   抽象的な`nop/n`モデルでは全上限について有限性を証明した。MN-Coreの
   実際の行型については、アドレス・即値・全オペランド範囲、同時発行と
   ハザードに基づく有限性が未証明。
-- `evidence/isa-bounds/reference.json`: 公式`assemble3`の1,094個の境界プローブ。
+- `evidence/isa-bounds/reference.json`: 公式`assemble3`の1,104個の境界プローブ。
   `nop/0`は受理され0語を出力するため正コストの行からは正規化で除外する。
   `$omr`は1〜15が受理、`$imr`と有効なマスク指令のselectorは0〜31が受理され、
   32は拒否された。後者はRustコメントの「1〜15」と不一致。challenge judgeは

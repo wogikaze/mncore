@@ -46,8 +46,13 @@ theorem increment_eq_add_one (x : BitVec 32) : increment x = x + 1 := rfl
 theorem increment_numerical (x : BitVec 32) (bounded : x.toNat ≤ 50) :
     (increment x).toNat = x.toNat + 1 := by
   rw [increment_eq_add_one, BitVec.toNat_add]
-  have below : x.toNat + 1 < 2 ^ 32 := by omega
-  simp [BitVec.toNat_ofNat, Nat.mod_eq_of_lt below]
+  have below : x.toNat + 1 < 2 ^ 32 := by
+    have pow : 2 ^ 32 = 4294967296 := by decide
+    rw [pow]
+    omega
+  have oneNat : (1 : BitVec 32).toNat = 1 := by decide
+  rw [oneNat]
+  rw [Nat.mod_eq_of_lt below]
 
 def incrementPair (high low : BitVec 32) : BitVec 64 :=
   (IntegerALU.evaluateBus .word (.arith .inc false)

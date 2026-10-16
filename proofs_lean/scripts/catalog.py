@@ -562,6 +562,22 @@ def coverage_catalog() -> dict:
         "opcode_destination_arity_experiment": opcode_arity_experiment(),
         "answer_parser_gap_audit": answer_parser_gap_audit(),
         "parallel_issue_boundary_experiment": parallel_issue_boundary_experiment(),
+        "fintype_bounded_enumeration": {
+            "source": "proofs_lean/ProofsLean/Enumeration.lean",
+            "sha256": digest(ROOT / "ProofsLean/Enumeration.lean"),
+            "finite_candidate_set": "programsUpToFinset",
+            "bound_specific_certificate": "ProofsLean.finiteAlphabetCertificate",
+            "fintype_specialization": "programsUpToFintype",
+            "certificate": "ProofsLean.fintypeCertificate",
+            "proved": [
+                "ProofsLean.programsUpToFinset_complete",
+                "ProofsLean.programsUpToFintype_complete",
+                "ProofsLean.shortProgramsFinset_complete",
+                "ProofsLean.finiteAlphabetCertificate",
+                "ProofsLean.shortProgramsFintype_complete",
+            ],
+            "limitation": "Requires a Fintype line type; MN-Core's cost-bounded legal-line finite carrier and coverage proof remain unconnected.",
+        },
         "finite_carrier_proofs": [{
             "source": "proofs_lean/ProofsLean/FiniteRegion.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteRegion.lean"),

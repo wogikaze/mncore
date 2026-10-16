@@ -10,6 +10,12 @@ import Lean
 #print axioms ProofsLean.OptimalityCertificate.sound
 #print axioms ProofsLean.shorter_correct_refutes_bound
 #print axioms ProofsLean.programsUpTo_complete
+#print axioms ProofsLean.programsUpToFinset_complete
+#print axioms ProofsLean.programsUpToFintype_complete
+#print axioms ProofsLean.shortProgramsFinset_complete
+#print axioms ProofsLean.finiteAlphabetCertificate
+#print axioms ProofsLean.shortProgramsFintype_complete
+#print axioms ProofsLean.fintypeCertificate
 #print axioms ProofsLean.shortPrograms_complete
 #print axioms ProofsLean.legalLinesCoveredBelow_of_covered
 #print axioms ProofsLean.lineCost_le_score_of_mem

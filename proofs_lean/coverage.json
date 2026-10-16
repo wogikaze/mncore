@@ -149,6 +149,22 @@
     ],
     "limitations": "These probes cover single-row applications and zero-flush entry agreement; they do not establish complete parser, assembler, or hazard legality correspondence."
   },
+  "fintype_bounded_enumeration": {
+    "source": "proofs_lean/ProofsLean/Enumeration.lean",
+    "sha256": "2a299f5e836a336edfe83a68183425f9464c807436b0ce2c098d62a99fa53479",
+    "finite_candidate_set": "programsUpToFinset",
+    "bound_specific_certificate": "ProofsLean.finiteAlphabetCertificate",
+    "fintype_specialization": "programsUpToFintype",
+    "certificate": "ProofsLean.fintypeCertificate",
+    "proved": [
+      "ProofsLean.programsUpToFinset_complete",
+      "ProofsLean.programsUpToFintype_complete",
+      "ProofsLean.shortProgramsFinset_complete",
+      "ProofsLean.finiteAlphabetCertificate",
+      "ProofsLean.shortProgramsFintype_complete"
+    ],
+    "limitation": "Requires a Fintype line type; MN-Core's cost-bounded legal-line finite carrier and coverage proof remain unconnected."
+  },
   "finite_carrier_proofs": [
     {
       "source": "proofs_lean/ProofsLean/FiniteRegion.lean",

@@ -1,5 +1,7 @@
 import ProofsLean.Optimality
 import Mathlib.Data.Fintype.Basic
+import Mathlib.Data.Finset.Basic
+import Mathlib.Data.Finset.Union
 import Mathlib.Data.Set.Finite.Basic
 
 namespace ProofsLean
@@ -37,6 +39,51 @@ theorem programsUpTo_complete (alphabet : List α) (n : Nat) (p : List α)
         · simpa using length
       simp only [programsUpTo, List.mem_cons, List.mem_flatMap, List.mem_map]
       exact Or.inr ⟨line, head, rest, tail, rfl⟩
+
+/-- A duplicate-free finite enumeration of all lists of length at most `n`
+whose elements come from `alphabet`. The finite set representation is useful
+when the alphabet is obtained from a `Fintype`, and avoids materializing
+duplicate programs from different recursion paths. -/
+def programsUpToFinset [DecidableEq α] (alphabet : Finset α) : Nat → Finset (List α)
+  | 0 => {[]}
+  | n + 1 => insert [] (alphabet.biUnion fun line =>
+      (programsUpToFinset alphabet n).image (fun program => line :: program))
+
+theorem programsUpToFinset_complete [DecidableEq α] (alphabet : Finset α)
+    (n : Nat) (p : List α) (covered : ∀ line ∈ p, line ∈ alphabet)
+    (length : p.length ≤ n) : p ∈ programsUpToFinset alphabet n := by
+  induction n generalizing p with
+  | zero =>
+      cases p with
+      | nil => simp [programsUpToFinset]
+      | cons line rest => simp at length
+  | succ n ih =>
+      cases p with
+      | nil => simp [programsUpToFinset]
+      | cons line rest =>
+          have head : line ∈ alphabet := covered line List.mem_cons_self
+          have tail : rest ∈ programsUpToFinset alphabet n := by
+            apply ih
+            · intro line' mem
+              exact covered line' (List.mem_cons_of_mem line mem)
+            · simpa using length
+          simp only [programsUpToFinset, Finset.mem_insert, Finset.mem_biUnion,
+            Finset.mem_image]
+          right
+          refine ⟨line, head, rest, tail, ?_⟩
+          rfl
+
+/-- Finite-type specialization of `programsUpToFinset`. -/
+def programsUpToFintype [Fintype α] [DecidableEq α] (n : Nat) : Finset (List α) :=
+  programsUpToFinset Finset.univ n
+
+theorem programsUpToFintype_complete [Fintype α] [DecidableEq α]
+    (n : Nat) (p : List α) (length : p.length ≤ n) :
+    p ∈ programsUpToFintype (α := α) n := by
+  apply programsUpToFinset_complete
+  · intro line _
+    exact Finset.mem_univ line
+  · exact length
 
 def shortPrograms (m : Machine) (alphabet : List m.Line) (bound : Nat) :
     List (Program m) :=
@@ -155,14 +202,72 @@ theorem legalLines_finite_iff {m : Machine} :
   ⟨fun h => ⟨h.toFinset.toList, legalLinesCovered_of_finite h⟩,
     fun ⟨_, h⟩ => legalLines_finite_of_covered h⟩
 
+/-- Score-bounded programs over a finite alphabet, represented as a `Finset`.
+The alphabet may be the image of a `Fintype` subtype of an otherwise infinite
+machine line type. -/
+noncomputable def shortProgramsFinset (m : Machine) (alphabet : Finset m.Line)
+    (bound : Nat) : Finset (Program m) := by
+  classical
+  exact (programsUpToFinset alphabet (bound - 1)).filter
+    (fun p => decide (score m p < bound))
+
+theorem shortProgramsFinset_complete (m : Machine) (alphabet : Finset m.Line)
+    (bound : Nat) (covers : ∀ p, m.legal p → score m p < bound →
+      ∀ line ∈ p, line ∈ alphabet) (p : Program m) (legal : m.legal p)
+    (short : score m p < bound) : p ∈ shortProgramsFinset m alphabet bound := by
+  classical
+  have length : p.length ≤ bound - 1 := by
+    have scoreLength := length_le_score m p
+    omega
+  have enumerated : p ∈ programsUpToFinset alphabet (bound - 1) :=
+    programsUpToFinset_complete alphabet (bound - 1) p (covers p legal short) length
+  unfold shortProgramsFinset
+  exact Finset.mem_filter.mpr ⟨enumerated, by simpa using short⟩
+
+/-- A finite alphabet certificate suitable for MN-Core's bound-specific
+finite carriers. -/
+noncomputable def finiteAlphabetCertificate (m : Machine) (spec : Problem m)
+    (alphabet : Finset m.Line) (bound : Nat)
+    (covers : ∀ p, m.legal p → score m p < bound →
+      ∀ line ∈ p, line ∈ alphabet)
+    (rejected : ∀ p ∈ shortProgramsFinset m alphabet bound,
+      ¬ Correct m spec p) : BoundCertificate m spec bound := by
+  classical
+  refine ⟨(shortProgramsFinset m alphabet bound).toList, ?_, ?_⟩
+  · intro p legal short
+    exact Finset.mem_toList.mpr
+      (shortProgramsFinset_complete m alphabet bound covers p legal short)
+  · intro p member
+    apply rejected p
+    exact Finset.mem_toList.mp member
+
 /-- Fintype convenience: when the line type itself is finite, no separate
 coverage argument is needed. -/
+noncomputable def shortProgramsFintype (m : Machine) [Fintype m.Line] (bound : Nat) :
+    List (Program m) := by
+  classical
+  exact ((programsUpToFintype (α := m.Line) (bound - 1)).filter
+    (fun p => decide (score m p < bound))).toList
+
+theorem shortProgramsFintype_complete (m : Machine) [Fintype m.Line]
+    (bound : Nat) (p : Program m) (_legal : m.legal p) (short : score m p < bound) :
+    p ∈ shortProgramsFintype m bound := by
+  classical
+  have length : p.length ≤ bound - 1 := by
+    have scoreLength := length_le_score m p
+    omega
+  have enumerated : p ∈ programsUpToFintype (α := m.Line) (bound - 1) :=
+    programsUpToFintype_complete (bound - 1) p length
+  unfold shortProgramsFintype
+  apply Finset.mem_toList.mpr
+  exact Finset.mem_filter.mpr ⟨enumerated, by simpa using short⟩
+
 noncomputable def fintypeCertificate (m : Machine) [Fintype m.Line]
     (spec : Problem m) (bound : Nat)
-    (rejected : ∀ p ∈ shortPrograms m Finset.univ.toList bound,
+    (rejected : ∀ p ∈ shortProgramsFinset m Finset.univ bound,
       ¬ Correct m spec p) :
     BoundCertificate m spec bound :=
-  enumerationCertificate m spec Finset.univ.toList bound
-    (legalLinesCoveredBelow_of_covered legalLinesCovered_univ) rejected
+  finiteAlphabetCertificate m spec Finset.univ bound
+    (fun _ _ _ line _ => Finset.mem_univ line) rejected
 
 end ProofsLean
