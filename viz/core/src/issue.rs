@@ -139,6 +139,14 @@ pub fn check(exprs: &[Expr]) -> Result<(), String> {
             return Err(format!("`{}` and `{}` both write {}", f.text, e.text, mem_name(*m)));
         }
     }
+    // The mask register file exposes one write port per issue step. This
+    // includes writes made by otherwise distinct issue groups.
+    let mask_writes = exprs.iter().flat_map(|e| e.dsts.iter())
+        .filter(|operand| matches!(operand, Operand::Omr { .. }))
+        .count();
+    if mask_writes > 1 {
+        return Err("multiple expressions write mask registers in one step".into());
+    }
     for (i, (m, r, e)) in reads.iter().enumerate() {
         if let Some((_, _, f)) = reads[..i].iter().find(|(n, s, _)| n == m && s != r) {
             return Err(format!("{} is read at two different addresses (`{}` and `{}`)", mem_name(*m), f.text, e.text));
@@ -195,6 +203,8 @@ mod tests {
             "gbfn $ls0v $lr0v;gmwrite $lr8v $lx0",
             "gmwrite $aluf $ly0;gmread $lx4 $nowrite",
             "lpassa $lm0v $lr0v/$imr1; l1bmm $lb0 $ls0v/$imr1",
+            "gmfma $ly $ls0v $lr0v $ln0v $omr1",
+            "lpassa $lt $omr1",
         ] {
             assert_eq!(issue(ok), Ok(()), "{ok}");
         }
@@ -207,6 +217,8 @@ mod tests {
             "lpassa $lm0v $lr0v/$imr1; l1bmm $lb0 $ls0v/$llimr1",
             "lpassa $lm0v $lr0v/$imr1; l1bmm $lb0 $ls0v/$imr2",
             "lpassa/$imr1 $lm0v $lr0v/$imr2",
+            "gmfma $ly $ls0v $lr0v $ln0v $omr1; lpassa $lt $omr1",
+            "gmfma $ly $ls0v $lr0v $ln0v $omr1; lpassa $lt $omr2",
         ] {
             assert!(issue(bad).is_err(), "{bad}");
         }

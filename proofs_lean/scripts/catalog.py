@@ -350,7 +350,7 @@ def isa_bounds_experiment() -> dict:
             raise ValueError(f"stale ISA boundary experiment: {item['path']}")
     if not all(row["matches_expected"] for row in record["observations"]):
         raise ValueError("ISA boundary experiment contains an unexpected assembler result")
-    if len(record["observations"]) != 1104:
+    if len(record["observations"]) != 1106:
         raise ValueError("ISA boundary experiment case count changed")
     return {
         "source": reference.relative_to(REPO).as_posix(),
@@ -491,6 +491,8 @@ def parallel_issue_boundary_experiment() -> dict:
         "mask_application_conflicting_width": (False, None),
         "mask_application_conflicting_entry": (False, None),
         "mask_flush_conflicting_entry": (False, None),
+        "omr_cross_group_same_entry": (False, None),
+        "omr_cross_group_different_entries": (False, None),
         "l2bmdars_parallel_l2bm_exception": (False, None),
     }
     for case, (accepted, words) in expected.items():
@@ -512,8 +514,9 @@ def parallel_issue_boundary_experiment() -> dict:
             "ProofsLean.MNCore.Issue.projected_mask_applications_are_parser_masks",
             "ProofsLean.MNCore.Issue.conflicting_mask_widths_rejected",
             "ProofsLean.MNCore.Issue.conflicting_mask_entries_rejected",
+            "ProofsLean.MNCore.Issue.duplicate_mask_register_writes_rejected",
         ],
-        "limitations": "These probes cover single-row applications and zero-flush entry agreement; they do not establish complete parser, assembler, or hazard legality correspondence.",
+        "limitations": "These probes cover mask agreement and OMR write-port conflicts; they do not establish complete parser, assembler, or hazard legality correspondence.",
     }
 
 

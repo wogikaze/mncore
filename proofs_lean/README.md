@@ -62,7 +62,7 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   抽象的な`nop/n`モデルでは全上限について有限性を証明した。MN-Coreの
   実際の行型については、アドレス・即値・全オペランド範囲、同時発行と
   ハザードに基づく有限性が未証明。
-- `evidence/isa-bounds/reference.json`: 公式`assemble3`の1,104個の境界プローブ。
+- `evidence/isa-bounds/reference.json`: 公式`assemble3`の1,106個の境界プローブ。
   `nop/0`は受理され0語を出力するため正コストの行からは正規化で除外する。
   `$omr`は1〜15が受理、`$imr`と有効なマスク指令のselectorは0〜31が受理され、
   32は拒否された。後者はRustコメントの「1〜15」と不一致。challenge judgeは
@@ -80,6 +80,8 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   同時発行のwrite-mask/zero-flush規則について、マニュアル3.6.4の幅一致と3.6.2.1の
   可変entry一致をRustとLeanの`Issue.Legal`に追加した。同幅・同entryは受理され、幅違い・
   entry違い・write maskとzero-flushのentry違いはassemble3で拒否された。
+  さらにOMRはPE operandとして単一書込みポートを持ち、異なるissue groupから同じentryまたは
+  別entryへ同時に書くlineがassemble3で拒否されることを確認し、RustとLeanに投影・制約を追加した。
   `zero`はLM0/LM1/GRF0/GRF1/T/OMRへ1個ずつ出力する6 destination を受理し、
   各カテゴリ内の重複出力を拒否した。Rust parserはopcodeごとのsource個数で分割後、
   残りの全tokenをdestinationにするため、このassembler観測だけではparser-encoding間の

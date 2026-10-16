@@ -119,6 +119,9 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.mismatched_fma_matrix_write_rejected
 #print axioms ProofsLean.MNCore.Issue.projected_reads_are_mem_operands
 #print axioms ProofsLean.MNCore.Issue.projected_writes_are_mem_operands
+#print axioms ProofsLean.MNCore.Issue.projected_mask_register_writes_are_destinations
+#print axioms ProofsLean.MNCore.Issue.duplicate_mask_register_writes_are_illegal
+#print axioms ProofsLean.MNCore.Issue.duplicate_mask_register_writes_rejected
 #print axioms ProofsLean.MNCore.Issue.projected_group_is_parser_group
 #print axioms ProofsLean.MNCore.Issue.projected_mau_is_parser_mau
 #print axioms ProofsLean.MNCore.Issue.normalized_expr_issue_projection

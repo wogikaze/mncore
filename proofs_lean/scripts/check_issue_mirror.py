@@ -218,10 +218,23 @@ def validate_mask_application_rules() -> None:
         raise ValueError("Lean issue projection omits parsed mask applications")
 
 
+def validate_mask_register_write_rule() -> None:
+    rust_check = re.search(r"pub fn check\(exprs: &\[Expr\]\).*?\n\}", ISSUE, re.S)
+    if not rust_check or "mask_writes > 1" not in rust_check.group(0):
+        raise ValueError("Rust issue checker omits the mask-register single-write-port rule")
+    legal = re.search(r"def Legal \(xs : List Expr\) : Prop :=(.*?)(?=\n(?:theorem|\/--|noncomputable)\b)", LEAN, re.S)
+    projection = re.search(r"def ParsedExpr\.toIssueExpr.*?\n(?=theorem\b)", LEAN, re.S)
+    if not legal or "maskRegisterWritesUnique xs" not in legal.group(1):
+        raise ValueError("Lean Legal omits mask-register write uniqueness")
+    if not projection or "omrWrites := e.maskRegisterWrites" not in projection.group(0):
+        raise ValueError("Lean projection omits mask-register destination writes")
+
+
 def validate() -> None:
     validate_alu_input_counts()
     validate_parser_source_limits()
     validate_mask_application_rules()
+    validate_mask_register_write_rule()
     parse_expr = re.search(r"fn parse_expr\(part: &str\).*?\n\}", VSM, re.S)
     if not parse_expr or "classify(&opcode).ok_or_else" not in parse_expr.group(0):
         raise ValueError("unknown PE opcode must fail parse_expr classification")

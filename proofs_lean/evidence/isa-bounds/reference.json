@@ -25,7 +25,7 @@
     },
     {
       "path": "proofs_lean/scripts/check_isa_parser_bounds.py",
-      "sha256": "5ccfa432de4f05d5307bcb97d8ad4e967fd2353672b972598728f8f685e0e51f"
+      "sha256": "8663fbed47147202c4dbb28fad89b72429f02909fc14c20671917928530de4fc"
     }
   ],
   "observations": [
@@ -548,6 +548,24 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "conflict one-time mask imr",
+      "matches_expected": true,
+      "returncode": -6
+    },
+    {
+      "case": "omr_cross_group_same_entry",
+      "source": "gmfma $ly $ls0v $lr0v $ln0v $omr1; lpassa $lt $omr1",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Instruction field conflict detected between `out_maskreg` and `out_maskreg`.",
+      "matches_expected": true,
+      "returncode": -6
+    },
+    {
+      "case": "omr_cross_group_different_entries",
+      "source": "gmfma $ly $ls0v $lr0v $ln0v $omr1; lpassa $lt $omr2",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Instruction field conflict detected between `out_maskreg` and `out_maskreg`.",
       "matches_expected": true,
       "returncode": -6
     },
@@ -8934,6 +8952,7 @@
     "$imr0, $imr31 are accepted while $imr32 and $imr255 fail encoding. Active `maskn`, `maskln`, and `masklln` directives accept selector 31 and reject 32. This conflicts with the Rust MaskSource comment claiming entries 1 through 15.",
     "Representative unknown `$qraw` operands in ALU source/destination, zero destination, matrix-read source, and L1BM source positions produce no assembler output; assemble3 aborts with return code -6 on these malformed tokens. This is sampled rejection evidence, not a proof over every Raw string.",
     "SDM 3.6.4 requires simultaneous mask applications to use the same width; Section 3.6.2.1 also requires matching variable entry addresses. The same-width pair is accepted, while mixed widths, mixed entries, and a write-mask/zero-flush entry mismatch are rejected.",
+    "SDM 3.6.4 treats mask registers as PE operands and disallows multiple writes to that operand in one step. Two otherwise accepted operations that write OMR are rejected together, both for the same entry and for different entries.",
     "The June 2026 manual's Section 3.6.4 describes an l2bmdars exception for simultaneous issue with another L2BM operation, but the bundled assemble3 rejects the focused l2bmdars+l2bmb line. The local encoder/model agreement is unresolved against the newer manual.",
     "Matrix rows 0 through 15 are accepted; row 16 is rejected.",
     "PE destination lists are not sized by source arity: lpassa accepts three outputs across LM1/GRF0/GRF1, and zero accepts LM0/LM1/GRF0/GRF1 plus OMR. The sampled duplicate-bank and nowrite combinations are rejected; this is not an exhaustive output grammar proof.",

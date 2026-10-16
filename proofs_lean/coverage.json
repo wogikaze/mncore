@@ -7,12 +7,12 @@
   "inventory_scope": "Compiler-generated ALU/MAU spelling candidates plus separately scoped source-derived records; not an authoritative complete ISA or legality model.",
   "selected_parser_boundary_experiment": {
     "source": "proofs_lean/evidence/isa-bounds/reference.json",
-    "sha256": "6a3544ad1ad48fade208de10ef72d5cfb52f0e490efdf9d9f53e04a235575be0",
+    "sha256": "93b92ef6fbdbd5a8073950e3b5e4d5c156a959b0d4037fda7fb058e833300ddf",
     "generator": "proofs_lean/scripts/check_isa_parser_bounds.py",
-    "generator_sha256": "5ccfa432de4f05d5307bcb97d8ad4e967fd2353672b972598728f8f685e0e51f",
-    "probes": 1104,
+    "generator_sha256": "8663fbed47147202c4dbb28fad89b72429f02909fc14c20671917928530de4fc",
+    "probes": 1106,
     "accepted": 1020,
-    "rejected": 84,
+    "rejected": 86,
     "findings": [
       "nop/0 is accepted and emits zero instruction words; nop/0 with a wait is rejected, so the zero-count no-wait form can be erased during normalization.",
       "wait i00 is rejected; i01 and iFF are accepted; i100 is rejected.",
@@ -20,6 +20,7 @@
       "$imr0, $imr31 are accepted while $imr32 and $imr255 fail encoding. Active `maskn`, `maskln`, and `masklln` directives accept selector 31 and reject 32. This conflicts with the Rust MaskSource comment claiming entries 1 through 15.",
       "Representative unknown `$qraw` operands in ALU source/destination, zero destination, matrix-read source, and L1BM source positions produce no assembler output; assemble3 aborts with return code -6 on these malformed tokens. This is sampled rejection evidence, not a proof over every Raw string.",
       "SDM 3.6.4 requires simultaneous mask applications to use the same width; Section 3.6.2.1 also requires matching variable entry addresses. The same-width pair is accepted, while mixed widths, mixed entries, and a write-mask/zero-flush entry mismatch are rejected.",
+      "SDM 3.6.4 treats mask registers as PE operands and disallows multiple writes to that operand in one step. Two otherwise accepted operations that write OMR are rejected together, both for the same entry and for different entries.",
       "The June 2026 manual's Section 3.6.4 describes an l2bmdars exception for simultaneous issue with another L2BM operation, but the bundled assemble3 rejects the focused l2bmdars+l2bmb line. The local encoder/model agreement is unresolved against the newer manual.",
       "Matrix rows 0 through 15 are accepted; row 16 is rejected.",
       "PE destination lists are not sized by source arity: lpassa accepts three outputs across LM1/GRF0/GRF1, and zero accepts LM0/LM1/GRF0/GRF1 plus OMR. The sampled duplicate-bank and nowrite combinations are rejected; this is not an exhaustive output grammar proof.",
@@ -108,7 +109,7 @@
   },
   "parallel_issue_boundary_experiment": {
     "source": "proofs_lean/evidence/isa-bounds/reference.json",
-    "sha256": "6a3544ad1ad48fade208de10ef72d5cfb52f0e490efdf9d9f53e04a235575be0",
+    "sha256": "93b92ef6fbdbd5a8073950e3b5e4d5c156a959b0d4037fda7fb058e833300ddf",
     "manual_sections": [
       "SDM 3.6.2.1",
       "SDM 3.6.4"
@@ -135,6 +136,16 @@
         "assembler_output_lines": null
       },
       {
+        "case": "omr_cross_group_same_entry",
+        "accepted": false,
+        "assembler_output_lines": null
+      },
+      {
+        "case": "omr_cross_group_different_entries",
+        "accepted": false,
+        "assembler_output_lines": null
+      },
+      {
         "case": "l2bmdars_parallel_l2bm_exception",
         "accepted": false,
         "assembler_output_lines": null
@@ -145,9 +156,10 @@
       "ProofsLean.MNCore.Issue.maskEntriesAgree",
       "ProofsLean.MNCore.Issue.projected_mask_applications_are_parser_masks",
       "ProofsLean.MNCore.Issue.conflicting_mask_widths_rejected",
-      "ProofsLean.MNCore.Issue.conflicting_mask_entries_rejected"
+      "ProofsLean.MNCore.Issue.conflicting_mask_entries_rejected",
+      "ProofsLean.MNCore.Issue.duplicate_mask_register_writes_rejected"
     ],
-    "limitations": "These probes cover single-row applications and zero-flush entry agreement; they do not establish complete parser, assembler, or hazard legality correspondence."
+    "limitations": "These probes cover mask agreement and OMR write-port conflicts; they do not establish complete parser, assembler, or hazard legality correspondence."
   },
   "fintype_bounded_enumeration": {
     "source": "proofs_lean/ProofsLean/Enumeration.lean",
@@ -526,7 +538,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/Issue.lean",
-      "sha256": "9f17cc6042afd0d353d90a53424d32b111ea922c6666bf1ef060ec2dec234e1d",
+      "sha256": "188b7101e643dd3a6b23609822711e778069f24a2084bfbbb568c1c642112498",
       "implemented": "Full structural PE Op/Operand payload mirror, issue projection, abstract PE-line rules, and a partial parsed-op to integer-ALU bridge for supported L/I/S integer operations and packbit",
       "scope": "The Rust enum inventory is checked against Lean constructors. A separate partial executor covers supported integer ALU/zero/immediate expressions with direct PE-memory destinations, masks/flush and ordered multiple destinations; this is not full ISA semantics",
       "source_basis": [
@@ -536,7 +548,7 @@
         },
         {
           "source": "viz/core/src/issue.rs",
-          "sha256": "9cbd48bbad25d45e61499b9a2cc8c11d6c2bb94529f30969c6470fd412772484"
+          "sha256": "869d7112cefe5cceb110229883734b8d8a14e17bab316867f82c2f1162ddeb99"
         },
         {
           "source": "proofs_lean/ProofsLean/ParsedIntegerStep.lean",

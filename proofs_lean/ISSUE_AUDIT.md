@@ -14,14 +14,14 @@ proof that `assemble3` accepts every modeled line.
 | At most two MAU groups, same precision | Rust and Lean count calculation, matrix-write, and matrix-read groups and compare precision | Mirrored for represented expression records. |
 | Vector FMA/MUL plus matrix write input agreement | Rust and Lean compare the structured operand at source 2 against the matrix-write source | Mirrored for structured operands; parser correspondence is still open. |
 | Each matrix register side appears at most once | Rust and Lean count X/Y matrix operands in sources and destinations | Mirrored for represented matrix operands. |
-| No two expressions write the same PE operand | Issue projection's write list contains only `.mem` operands; matrix uses are counted separately | Incomplete: OMR and other destination forms are not part of the general write-conflict check. |
+| No two expressions write the same PE operand | PE-memory ports are checked by memory bank; OMR writes have a separate single-write-port rule | OMR write conflicts are mirrored and checked against the assembler for same and different entries. Other fixed/forwarding destination conflicts remain incomplete. |
 | Reads from one PE operand use one region, including mask-flag reads | Read projection contains only `.mem` source operands | Incomplete: mask and forwarding reads are not explicitly projected into port constraints. |
 | LM0/LM1 read/write regions agree | Rust and Lean compare projected `.mem` accesses | Mirrored for projected accesses only. |
 | Immediate excludes LM0 access | Rust and Lean check projected `.mem` accesses | Mirrored for projected accesses only. |
 | At most one zero-flush mask | Rust and Lean count expressions with a flush | Mirrored for parser-produced flush metadata. |
 
 The current checker can reject the `l2bmdars` exception and can miss conflicts
-involving operands outside its PE-memory projection. The first gap can omit
+involving operands outside its PE-memory and OMR projections. The first gap can omit
 legal candidates; the latter can admit lines the assembler rejects. The
 top-level nop restriction also needs to be connected to parsed source lines.
 These gaps must be resolved against the manual and `assemble3` before
@@ -40,6 +40,13 @@ the sampled valid forms. The zero-count nop/wait form is rejected as well.
 This supports modeling nop-with-wait as a dedicated line constructor and MV
 as a separate line form, while parser-to-assembler correspondence remains to
 be proved.
+
+The assembler accepts `gmfma ... $omr1` and `lpassa $lt $omr1` independently,
+but rejects their simultaneous issue with an `out_maskreg` conflict. The pair
+is also rejected when the destinations are `$omr1` and `$omr2`, which supports
+a single OMR write port rather than entry equality. Rust and Lean now enforce
+at most one OMR destination per PE issue line. This does not yet project mask
+register reads or other fixed/forwarding operands into the general port rules.
 
 ## Next formalization work
 

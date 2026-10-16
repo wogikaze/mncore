@@ -88,6 +88,10 @@ CASES = {
         "lpassa $lm0v $lr0v/$imr1; l1bmm $lb0 $ls0v/$imr2\n", False, None),
     "mask_flush_conflicting_entry": (
         "lpassa/$imr1 $lm0v $lr0v/$imr2\n", False, None),
+    "omr_cross_group_same_entry": (
+        "gmfma $ly $ls0v $lr0v $ln0v $omr1; lpassa $lt $omr1\n", False, None),
+    "omr_cross_group_different_entries": (
+        "gmfma $ly $ls0v $lr0v $ln0v $omr1; lpassa $lt $omr2\n", False, None),
     "l2bmdars_parallel_l2bm_exception": (
         "l2bmdars $lc0@.0 $dar0; l2bmb $lc256 $lb0\n", False, None),
     "debug_set_record": ("d set $lm0n0c0b0m0p0 1 0000000000000000\n", True, 1),
@@ -249,6 +253,7 @@ def main() -> None:
             "$imr0, $imr31 are accepted while $imr32 and $imr255 fail encoding. Active `maskn`, `maskln`, and `masklln` directives accept selector 31 and reject 32. This conflicts with the Rust MaskSource comment claiming entries 1 through 15.",
             "Representative unknown `$qraw` operands in ALU source/destination, zero destination, matrix-read source, and L1BM source positions produce no assembler output; assemble3 aborts with return code -6 on these malformed tokens. This is sampled rejection evidence, not a proof over every Raw string.",
             "SDM 3.6.4 requires simultaneous mask applications to use the same width; Section 3.6.2.1 also requires matching variable entry addresses. The same-width pair is accepted, while mixed widths, mixed entries, and a write-mask/zero-flush entry mismatch are rejected.",
+            "SDM 3.6.4 treats mask registers as PE operands and disallows multiple writes to that operand in one step. Two otherwise accepted operations that write OMR are rejected together, both for the same entry and for different entries.",
             "The June 2026 manual's Section 3.6.4 describes an l2bmdars exception for simultaneous issue with another L2BM operation, but the bundled assemble3 rejects the focused l2bmdars+l2bmb line. The local encoder/model agreement is unresolved against the newer manual.",
             "Matrix rows 0 through 15 are accepted; row 16 is rejected.",
             "PE destination lists are not sized by source arity: lpassa accepts three outputs across LM1/GRF0/GRF1, and zero accepts LM0/LM1/GRF0/GRF1 plus OMR. The sampled duplicate-bank and nowrite combinations are rejected; this is not an exhaustive output grammar proof.",
