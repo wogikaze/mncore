@@ -41,7 +41,10 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.parsed_integer_evaluation_uses_requested_semantics
 #print axioms ProofsLean.MNCore.Issue.parsed_float_rsqrt_is_unknown
 #print axioms ProofsLean.MNCore.PEMemory.pack_unpackALUBus
-#print axioms ProofsLean.MNCore.PEMemory.parsedIntegerWriteStep_readback
+#print axioms ProofsLean.MNCore.PEMemory.readRegisterBank_after_write
+#print axioms ProofsLean.MNCore.PEMemory.direct_access_write_readback
+#print axioms ProofsLean.MNCore.PEMemory.parsedIntegerRegisterStep_succeeds
+#print axioms ProofsLean.MNCore.PEMemory.parsedIntegerRegisterStep_readback
 #print axioms ProofsLean.MNCore.Issue.parsed_topline_check_sound
 #print axioms ProofsLean.MNCore.Issue.parsed_topline_check_complete
 #print axioms ProofsLean.ControlNormalization.compile_length
