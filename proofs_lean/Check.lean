@@ -212,6 +212,11 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.mask_entry_zero_selects_all_cycles
 #print axioms ProofsLean.MNCore.PEMemory.mask_entry_32_is_pattern_not_entry_zero
 #print axioms ProofsLean.MNCore.PEMemory.mask_entry_255_selects_all_cycles
+#print axioms ProofsLean.MNCore.PEMemory.parseMaskSelector_pattern
+#print axioms ProofsLean.MNCore.PEMemory.parseMaskSelector_ll_imr
+#print axioms ProofsLean.MNCore.PEMemory.parseMaskSelector_llimr
+#print axioms ProofsLean.MNCore.PEMemory.parseMaskSelector_rejects_u8_overflow
+#print axioms ProofsLean.MNCore.PEMemory.parseMaskSelector_rejects_bad_pattern
 #print axioms ProofsLean.MNCore.Issue.zero_has_execution_request
 #print axioms ProofsLean.MNCore.Issue.immediate_has_execution_request
 #print axioms ProofsLean.MNCore.Issue.zero_execution_ignores_inputs

@@ -405,6 +405,58 @@ def parsedOperandHasSingleLineWriteMask : ParsedOperand → Bool
   | .mem _ _ _ _ mask | .bar _ _ mask | .omr _ mask => mask.isSome
   | _ => false
 
+def trimMaskSelectorModifiers (text : String) : List Char :=
+  (text.toList.reverse.dropWhile fun c => c == 't' || c == 'p').reverse
+
+def parseMaskSelectorDigits : List Char → Nat → Option Nat
+  | [], value => some value
+  | digit :: rest, value =>
+      if 48 ≤ digit.toNat && digit.toNat ≤ 57 then
+        parseMaskSelectorDigits rest (value * 10 + digit.toNat - 48)
+      else none
+
+def parseMaskSelector? (text : String) : Option ParsedMask := do
+  let chars := trimMaskSelectorModifiers text
+  let (longLong, body) :=
+    if chars.take 6 == "$llimr".toList then (true, "$imr".toList ++ chars.drop 6)
+    else if chars.take 2 == "ll".toList then (true, chars.drop 2)
+    else (false, chars)
+  if body.take 4 == "$imr".toList then
+    let digits := body.drop 4
+    if digits.isEmpty then none else
+    let index ← parseMaskSelectorDigits digits 0
+    if index < 256 then some (.entry longLong index) else none
+  else
+    match body with
+    | [b3, b2, b1, b0] =>
+        if [b3, b2, b1, b0].all (fun bit => bit == '0' || bit == '1') then
+          let value := (if b3 == '1' then 8 else 0) +
+            (if b2 == '1' then 4 else 0) +
+            (if b1 == '1' then 2 else 0) + (if b0 == '1' then 1 else 0)
+          some (.pattern longLong (BitVec.ofNat 4 value))
+        else none
+    | _ => none
+
+theorem parseMaskSelector_pattern :
+    parseMaskSelector? "1010" = some (.pattern false 10) := by
+  rfl
+
+theorem parseMaskSelector_ll_imr :
+    parseMaskSelector? "ll$imr7tp" = some (.entry true 7) := by
+  rfl
+
+theorem parseMaskSelector_llimr :
+    parseMaskSelector? "$llimr15p" = some (.entry true 15) := by
+  rfl
+
+theorem parseMaskSelector_rejects_u8_overflow :
+    parseMaskSelector? "$imr256" = none := by
+  rfl
+
+theorem parseMaskSelector_rejects_bad_pattern :
+    parseMaskSelector? "10x0" = none := by
+  rfl
+
 /-- Resolve the write mask for one PE cycle. Explicit selectors take priority;
 the caller supplies an already-resolved multiline directive when no selector
 appears on the OMR destination. -/
