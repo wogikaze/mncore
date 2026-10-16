@@ -60,6 +60,10 @@ for index in range(2, 31):
     CASES[f"mask_directive_n_{index}"] = (f"maskn {index}\nlpassa $lm0 $ln0\n", True, 1)
 for index in range(2, 15):
     CASES[f"omr_{index}"] = (f"zero $omr{index}\n", True, 1)
+for index in range(16):
+    CASES[f"matrix_row_{index}"] = (f"gmread $lx{index} $nowrite\n", True, 1)
+for index in range(6, 10):
+    CASES[f"hbfn_{index}"] = (f"hbfn/{index} $lm0 $ln0\n", True, 1)
 
 
 def sha(path: Path) -> str:
@@ -104,8 +108,8 @@ def main() -> None:
             "wait i00 is rejected; i01 and iFF are accepted; i100 is rejected.",
             "$omr0 and $omr16 are rejected; $omr1 and $omr15 are accepted.",
             "$imr0, $imr31 are accepted while $imr32 and $imr255 fail encoding. Active mask directives `maskn 0` and `maskn 31` are accepted, while `maskn 32` fails. This conflicts with the Rust MaskSource comment claiming entries 1 through 15.",
-            "Matrix row 15 is accepted and row 16 is rejected.",
-            "hbfn/6 and hbfn/9 are accepted; hbfn/10 is rejected.",
+            "Matrix rows 0 through 15 are accepted; row 16 is rejected.",
+            "hbfn/6 through hbfn/9 are accepted; hbfn/10 is rejected.",
             "$lb8188 is accepted while $lb8192 fails the 13-bit encoding field; the L1BM address must also be 4-word aligned. l1bmm@15 is accepted and @16 is rejected.",
             "DAR address 1023 is accepted and 1024 is rejected; `$lc...@.<l2b>` accepts selectors 0 and 1 and rejects 2.",
             "l1bmd-129, l1bmd-128, l1bmd127, and l1bmd128 are all accepted by assemble3; this is parser/encoding acceptance evidence, not a claim that these offsets are semantically useful.",
