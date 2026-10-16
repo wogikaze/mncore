@@ -350,6 +350,51 @@ def ParsedOp.integerRequest : ParsedOp → StepResult IntegerALU.Request
       else .unknown
   | _ => .unknown
 
+inductive ParsedExecutionRequest where
+  | integer (precision : IntegerALU.Precision) (op : IntegerALU.Op)
+  | zero
+  | immediate (payload : BitVec 32) (sparse : Bool)
+  deriving DecidableEq, Repr
+
+def ParsedOp.executionRequest : ParsedOp → StepResult ParsedExecutionRequest
+  | .zero => .ok .zero
+  | .immediate payload sparse => .ok (.immediate payload sparse)
+  | op => match op.integerRequest with
+      | .ok (.integer precision aluOp) => .ok (.integer precision aluOp)
+      | .ok (.unimplemented _) | .failure | .unknown => .unknown
+
+def evaluateParsedExecutionRequest (request : ParsedExecutionRequest)
+    (x y : IntegerALU.Bus) (reduced : Bool) : IntegerALU.BusResult :=
+  match request with
+  | .integer precision op => IntegerALU.evaluateBus precision op x y reduced
+  | .zero => ⟨⟨0, 0⟩, fun _ => false⟩
+  | .immediate payload sparse =>
+      let word := payload ++ (if sparse then (0 : BitVec 32) else payload)
+      ⟨⟨word, word⟩, fun _ => false⟩
+
+theorem zero_has_execution_request :
+    (ParsedOp.zero : ParsedOp).executionRequest = .ok .zero := rfl
+
+theorem immediate_has_execution_request (value : BitVec 32) (sparse : Bool) :
+    (ParsedOp.immediate value sparse).executionRequest =
+      .ok (.immediate value sparse) := rfl
+
+theorem integer_request_is_execution_request (op : ParsedOp)
+    (precision : IntegerALU.Precision) (aluOp : IntegerALU.Op)
+    (selected : op.integerRequest = .ok (.integer precision aluOp)) :
+    op.executionRequest = .ok (.integer precision aluOp) := by
+  cases op <;> simp_all [ParsedOp.integerRequest, ParsedOp.executionRequest]
+
+theorem zero_execution_ignores_inputs (x y z w : IntegerALU.Bus)
+    (reduced reduced' : Bool) :
+    evaluateParsedExecutionRequest .zero x y reduced =
+      evaluateParsedExecutionRequest .zero z w reduced' := rfl
+
+theorem immediate_execution_ignores_inputs (value : BitVec 32) (sparse : Bool)
+    (x y z w : IntegerALU.Bus) (reduced reduced' : Bool) :
+    evaluateParsedExecutionRequest (.immediate value sparse) x y reduced =
+      evaluateParsedExecutionRequest (.immediate value sparse) z w reduced' := rfl
+
 theorem supported_integer_opcode_has_mapping (name : ParsedAluName)
     (precision : ParsedPrecision) (unsigned : Bool)
     (supported : name.supportsIntegerAt precision = true) :
@@ -359,20 +404,21 @@ theorem supported_integer_opcode_has_mapping (name : ParsedAluName)
 
 def evaluateParsedIntegerAlu (op : ParsedOp) (x y : IntegerALU.Bus)
     (reduced : Bool) : StepResult IntegerALU.BusResult :=
-  match op.integerRequest with
-  | .ok request => IntegerALU.partialEvaluate request x y reduced
+  match op.executionRequest with
+  | .ok request => .ok (evaluateParsedExecutionRequest request x y reduced)
   | .failure => .failure
   | .unknown => .unknown
 
 theorem parsed_integer_evaluation_uses_requested_semantics (op : ParsedOp)
-    (request : IntegerALU.Request) (selected : op.integerRequest = .ok request)
+    (precision : IntegerALU.Precision) (aluOp : IntegerALU.Op)
+    (selected : op.executionRequest = .ok (.integer precision aluOp))
     (x y : IntegerALU.Bus) (reduced : Bool) :
     evaluateParsedIntegerAlu op x y reduced =
-      IntegerALU.partialEvaluate request x y reduced := by
-  simp [evaluateParsedIntegerAlu, selected]
+      .ok (IntegerALU.evaluateBus precision aluOp x y reduced) := by
+  simp [evaluateParsedIntegerAlu, selected, evaluateParsedExecutionRequest]
 
 theorem unsupported_parsed_integer_is_unknown (op : ParsedOp)
-    (unsupported : op.integerRequest = .unknown) (x y : IntegerALU.Bus)
+    (unsupported : op.executionRequest = .unknown) (x y : IntegerALU.Bus)
     (reduced : Bool) : evaluateParsedIntegerAlu op x y reduced = .unknown := by
   simp [evaluateParsedIntegerAlu, unsupported]
 

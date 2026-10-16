@@ -82,6 +82,11 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.own_memory_mask_precedes_multiline_directive
 #print axioms ProofsLean.MNCore.PEMemory.single_line_mask_cancels_memory_directive
 #print axioms ProofsLean.MNCore.PEMemory.untargeted_memory_uses_unmasked_selection
+#print axioms ProofsLean.MNCore.Issue.zero_has_execution_request
+#print axioms ProofsLean.MNCore.Issue.immediate_has_execution_request
+#print axioms ProofsLean.MNCore.Issue.zero_execution_ignores_inputs
+#print axioms ProofsLean.MNCore.Issue.integer_request_is_execution_request
+#print axioms ProofsLean.MNCore.Issue.immediate_execution_ignores_inputs
 #print axioms ProofsLean.MNCore.Issue.parsed_topline_check_sound
 #print axioms ProofsLean.MNCore.Issue.parsed_topline_check_complete
 #print axioms ProofsLean.MNCore.Issue.mask_directive_replaces_state
