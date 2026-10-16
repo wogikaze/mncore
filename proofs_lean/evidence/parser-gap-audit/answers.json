@@ -4163,6 +4163,103 @@
     "spassa",
     "zero"
   ],
+  "raw_operand_fallback_probes": [
+    {
+      "case": "alu_source",
+      "expected_role": "src",
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": [
+              {
+                "operand": "$qraw",
+                "role": "src"
+              }
+            ]
+          }
+        ],
+        "parsed": true
+      },
+      "source": "iadd $qraw $lm0 $ln0"
+    },
+    {
+      "case": "alu_destination",
+      "expected_role": "dst",
+      "result": {
+        "expressions": [
+          {
+            "class": "alu",
+            "raw_operands": [
+              {
+                "operand": "$qraw",
+                "role": "dst"
+              }
+            ]
+          }
+        ],
+        "parsed": true
+      },
+      "source": "iadd $lm0 $ln0 $qraw"
+    },
+    {
+      "case": "zero_destination",
+      "expected_role": "dst",
+      "result": {
+        "expressions": [
+          {
+            "class": "zero",
+            "raw_operands": [
+              {
+                "operand": "$qraw",
+                "role": "dst"
+              }
+            ]
+          }
+        ],
+        "parsed": true
+      },
+      "source": "zero $qraw"
+    },
+    {
+      "case": "matrix_read_source",
+      "expected_role": "src",
+      "result": {
+        "expressions": [
+          {
+            "class": "mat_read",
+            "raw_operands": [
+              {
+                "operand": "$qraw",
+                "role": "src"
+              }
+            ]
+          }
+        ],
+        "parsed": true
+      },
+      "source": "gmread $qraw $nowrite"
+    },
+    {
+      "case": "l1bm_source",
+      "expected_role": "src",
+      "result": {
+        "expressions": [
+          {
+            "class": "l1",
+            "raw_operands": [
+              {
+                "operand": "$qraw",
+                "role": "src"
+              }
+            ]
+          }
+        ],
+        "parsed": true
+      },
+      "source": "l1bmm $qraw $lb0"
+    }
+  ],
   "raw_operand_occurrences": [],
   "schema_version": 2,
   "scope": "Checked-in problems/**/answer.vsm files only; not a complete ISA spelling inventory.",
@@ -4462,7 +4559,7 @@
   ],
   "scanner": {
     "path": "viz/core/src/bin/parser_gap_scan.rs",
-    "sha256": "16c6ef85ea2bfa895160e9ef8a17d4593d5cb0f807d1d9d27ca9dc059494d1e3"
+    "sha256": "92642eb57b15f4ce5d156ac69283cb4449ff6f44aa58ef4b4fe825de8679956a"
   },
   "opcode_candidate_source": {
     "path": "mncompile/machine.py",

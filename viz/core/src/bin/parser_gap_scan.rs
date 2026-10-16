@@ -59,6 +59,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut parse_errors = Vec::new();
     let mut op_spellings = BTreeSet::new();
     let mut candidate_results = Vec::new();
+    let mut raw_operand_fallback_probes = Vec::new();
     let mut answer_expression_shape_counts = BTreeMap::new();
 
     for path in &files {
@@ -163,6 +164,52 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
+    for (case, source, expected_role) in [
+        ("alu_source", "iadd $qraw $lm0 $ln0", "src"),
+        ("alu_destination", "iadd $lm0 $ln0 $qraw", "dst"),
+        ("zero_destination", "zero $qraw", "dst"),
+        ("matrix_read_source", "gmread $qraw $nowrite", "src"),
+        ("l1bm_source", "l1bmm $qraw $lb0", "src"),
+    ] {
+        let parsed = match vsm::parse(source) {
+            Ok(lines) => {
+                let mut expressions = Vec::new();
+                for (_, line) in lines {
+                    if let Line::Pe(parsed_line) = line {
+                        for expression in parsed_line {
+                            let raw: Vec<_> = [
+                                ("src", &expression.srcs),
+                                ("dst", &expression.dsts),
+                            ]
+                            .into_iter()
+                            .flat_map(|(role, operands)| {
+                                operands.iter().filter_map(move |operand| {
+                                    raw_operand(operand).map(|text| json!({
+                                        "role": role,
+                                        "operand": text,
+                                    }))
+                                })
+                            })
+                            .collect();
+                            expressions.push(json!({
+                                "class": op_name(&expression.op),
+                                "raw_operands": raw,
+                            }));
+                        }
+                    }
+                }
+                json!({ "parsed": true, "expressions": expressions })
+            }
+            Err(error) => json!({ "parsed": false, "error": error.msg }),
+        };
+        raw_operand_fallback_probes.push(json!({
+            "case": case,
+            "source": source,
+            "expected_role": expected_role,
+            "result": parsed,
+        }));
+    }
+
     let answer_expression_shapes: Vec<_> = answer_expression_shape_counts
         .into_iter()
         .map(|((spelling, class, source_count, destination_count, destinations_nodup), occurrences)| json!({
@@ -184,6 +231,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "other_opcode_occurrences": other_ops,
         "parse_errors": parse_errors,
         "opcode_candidate_results": candidate_results,
+        "raw_operand_fallback_probes": raw_operand_fallback_probes,
     });
     println!("{}", serde_json::to_string_pretty(&result)?);
     Ok(())

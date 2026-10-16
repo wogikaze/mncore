@@ -9,7 +9,7 @@
     },
     {
       "path": "proofs_lean/evidence/parser-gap-audit/answers.json",
-      "sha256": "407ec2ea2390c873a85b1b76975c689446b3985c7c8ca5eda4ef7af5a341b9dd"
+      "sha256": "4a83013b5c11fb9aeeac240c6101a281f4ad0cd3b953500429e2eb80f19615eb"
     },
     {
       "path": "proofs_lean/scripts/check_opcode_arity_reference.py",

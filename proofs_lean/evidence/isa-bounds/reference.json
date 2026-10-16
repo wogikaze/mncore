@@ -25,7 +25,7 @@
     },
     {
       "path": "proofs_lean/scripts/check_isa_parser_bounds.py",
-      "sha256": "fd71564055aa6a5c9e64abfdec95310055f3b39be783405cffedab1140d41643"
+      "sha256": "9a84eaa36271c5078ebc5093b670843d90d144b0d01b3b00d32445a48b1770e6"
     }
   ],
   "observations": [
@@ -473,46 +473,46 @@
     },
     {
       "case": "raw_operand_alu_source",
-      "source": "iadd $raw $lm0",
+      "source": "iadd $qraw $lm0 $ln0",
       "accepted": false,
       "assembler_output_lines": null,
-      "diagnostic": "Empty integer.",
+      "diagnostic": "Invalid location : $qraw",
       "matches_expected": true,
       "returncode": -6
     },
     {
       "case": "raw_operand_alu_destination",
-      "source": "iadd $lm0 $raw",
+      "source": "iadd $lm0 $ln0 $qraw",
       "accepted": false,
       "assembler_output_lines": null,
-      "diagnostic": "Empty integer.",
+      "diagnostic": "Invalid location : $qraw",
       "matches_expected": true,
       "returncode": -6
     },
     {
       "case": "raw_operand_zero_destination",
-      "source": "zero $raw",
+      "source": "zero $qraw",
       "accepted": false,
       "assembler_output_lines": null,
-      "diagnostic": "Empty integer.",
+      "diagnostic": "Invalid location : $qraw",
       "matches_expected": true,
       "returncode": -6
     },
     {
       "case": "raw_operand_matrix_source",
-      "source": "gmread $raw $nowrite",
+      "source": "gmread $qraw $nowrite",
       "accepted": false,
       "assembler_output_lines": null,
-      "diagnostic": "Empty integer.",
+      "diagnostic": "Invalid location : $qraw",
       "matches_expected": true,
       "returncode": -6
     },
     {
       "case": "raw_operand_l1bm_source",
-      "source": "l1bmm $raw $lb0",
+      "source": "l1bmm $qraw $lb0",
       "accepted": false,
       "assembler_output_lines": null,
-      "diagnostic": "Empty integer.",
+      "diagnostic": "Invalid location : $qraw",
       "matches_expected": true,
       "returncode": -6
     },
@@ -8888,7 +8888,7 @@
     "wait i00 is rejected; i01 and iFF are accepted; i100 is rejected.",
     "$omr0 and $omr16 are rejected; $omr1 and $omr15 are accepted.",
     "$imr0, $imr31 are accepted while $imr32 and $imr255 fail encoding. Active `maskn`, `maskln`, and `masklln` directives accept selector 31 and reject 32. This conflicts with the Rust MaskSource comment claiming entries 1 through 15.",
-    "Representative unknown `$raw` operands in ALU source/destination, zero destination, matrix-read source, and L1BM source positions produce no assembler output; assemble3 aborts with return code -6 on these malformed tokens. This is sampled rejection evidence, not a proof over every Raw string.",
+    "Representative unknown `$qraw` operands in ALU source/destination, zero destination, matrix-read source, and L1BM source positions produce no assembler output; assemble3 aborts with return code -6 on these malformed tokens. This is sampled rejection evidence, not a proof over every Raw string.",
     "Matrix rows 0 through 15 are accepted; row 16 is rejected.",
     "PE destination lists are not sized by source arity: lpassa accepts three outputs across LM1/GRF0/GRF1, and zero accepts LM0/LM1/GRF0/GRF1 plus OMR. The sampled duplicate-bank and nowrite combinations are rejected; this is not an exhaustive output grammar proof.",
     "hbfe and hbfn accept /6 through /9 and reject /10 in the selected boundary probes.",

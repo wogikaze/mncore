@@ -36,6 +36,29 @@ def main() -> None:
     if result.returncode:
         raise SystemExit(result.stdout + result.stderr)
     audit = json.loads(result.stdout)
+    expected_raw_probes = {
+        "alu_source": "src",
+        "alu_destination": "dst",
+        "zero_destination": "dst",
+        "matrix_read_source": "src",
+        "l1bm_source": "src",
+    }
+    raw_probes = audit.get("raw_operand_fallback_probes", [])
+    if len(raw_probes) != len(expected_raw_probes):
+        raise ValueError("raw-operand fallback probe inventory changed")
+    for probe in raw_probes:
+        expected_role = expected_raw_probes.get(probe["case"])
+        result = probe["result"]
+        if expected_role is None or not result["parsed"]:
+            raise ValueError(f"Rust parser did not parse raw fallback fixture: {probe['case']}")
+        expressions = result["expressions"]
+        if len(expressions) != 1 or expressions[0]["raw_operands"] != [
+            {"role": expected_role, "operand": "$qraw"}
+        ]:
+            raise ValueError(f"Rust Raw fallback changed for fixture: {probe['case']}")
+        expected_raw_probes.pop(probe["case"])
+    if expected_raw_probes:
+        raise ValueError(f"missing Raw fallback fixtures: {sorted(expected_raw_probes)}")
     answers = sorted((REPO / "problems").rglob("answer.vsm"))
     audit["input_hashes"] = [
         {"path": path.relative_to(REPO).as_posix(), "sha256": sha(path)}

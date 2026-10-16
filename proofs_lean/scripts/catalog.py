@@ -414,6 +414,29 @@ def answer_parser_gap_audit() -> dict:
         raise ValueError("a checked-in answer expression has repeated parsed destinations")
     if record["parse_errors"] or record["raw_operand_occurrences"] or record["other_opcode_occurrences"]:
         raise ValueError("checked-in answers contain parser errors or structural fallbacks")
+    raw_fallbacks = record.get("raw_operand_fallback_probes", [])
+    if len(raw_fallbacks) != 5:
+        raise ValueError("Rust Raw operand fallback probes are missing")
+    assembler_reference = json.loads(
+        (ROOT / "evidence/isa-bounds/reference.json").read_text()
+    )
+    assembler_raw = {
+        row["case"].removeprefix("raw_operand_"): row
+        for row in assembler_reference["observations"]
+        if row["case"].startswith("raw_operand_")
+    }
+    for probe in raw_fallbacks:
+        assembler_case = {
+            "alu_source": "alu_source",
+            "alu_destination": "alu_destination",
+            "zero_destination": "zero_destination",
+            "matrix_read_source": "matrix_source",
+            "l1bm_source": "l1bm_source",
+        }[probe["case"]]
+        observation = assembler_raw.get(assembler_case)
+        if (observation is None or observation["source"] != probe["source"] or
+                observation["accepted"] or observation["assembler_output_lines"] is not None):
+            raise ValueError(f"Rust/assembler Raw fallback evidence mismatch: {probe['case']}")
     for item in [*record["input_hashes"], record["scanner"], record["opcode_candidate_source"]]:
         if digest(REPO / item["path"]) != item["sha256"]:
             raise ValueError(f"stale parser-gap audit input: {item['path']}")
@@ -436,6 +459,7 @@ def answer_parser_gap_audit() -> dict:
             for row in record["opcode_candidate_results"]
             for expression in row["result"].get("expressions", [])
         ),
+        "raw_operand_fallback_probes": len(raw_fallbacks),
         "unique_opcode_spellings": len(record["parsed_operator_spellings"]),
         "parser_source_destination_arity": dict(sorted(Counter(
             f"{expression['class']}:src{expression['source_count']}:dst{expression['destination_count']}"
