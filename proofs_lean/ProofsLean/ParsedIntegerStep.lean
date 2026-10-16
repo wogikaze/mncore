@@ -202,6 +202,23 @@ theorem parsedIntegerRoundedSourceAccess_is_rejected
     ParsedOperand.toUnroundedIntegerSourceAccess?
       (.mem access false false true mask) pe cycle bar0 bar1 tWord = none := rfl
 
+def ParsedOperand.toIntegerMaskSourceAccess? (operand : ParsedOperand)
+    (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
+    Option (DirectMemoryAccess × Bool) :=
+  match operand with
+  | .mem access _ _ rounded _ =>
+      (ParsedOperand.toDirectMemoryAccess? (.mem access false false false none)
+        pe cycle bar0 bar1 tWord).map (fun resolved => (resolved, rounded))
+  | _ => none
+
+theorem parsedIntegerMaskSourceAccess_preserves_rounding_ignores_attributes
+    (access : Access) (negated extended rounded : Bool) (mask : Option ParsedMask)
+    (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
+    ParsedOperand.toIntegerMaskSourceAccess?
+      (.mem access negated extended rounded mask) pe cycle bar0 bar1 tWord =
+      (ParsedOperand.toDirectMemoryAccess? (.mem access false false false none)
+        pe cycle bar0 bar1 tWord).map (fun resolved => (resolved, rounded)) := rfl
+
 def ParsedFixed.integerValue (fixed : ParsedFixed) (precision : IntegerALU.Precision)
     (group : Fin 2) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16) (pe : Fin 4) : Nat :=
   match fixed with
@@ -811,6 +828,8 @@ structure ParsedIntegerMaskAccesses where
   op : ParsedOp
   sourceX : DirectMemoryAccess
   sourceY : DirectMemoryAccess
+  sourceXRounded : Bool
+  sourceYRounded : Bool
   destination : Fin 15
   selection : BitVec 4
   hasIntegerRequest : ∃ precision aluOp,
@@ -3378,12 +3397,23 @@ def prepareParsedConstantTarget (files : IntegerRegisterFiles) (cycle : Fin 4)
       .ok ⟨none, some (entry, cycle, 0), (fun _ => 0), ⟨BitVec.allOnes 4, true⟩⟩
   | .noWrite => .ok ⟨none, none, (fun _ => 0), ⟨BitVec.allOnes 4, true⟩⟩
 
+def evaluateParsedIntegerMaskSources (files : IntegerRegisterFiles) (op : ParsedOp)
+    (sourceX sourceY : DirectMemoryAccess) (sourceXRounded sourceYRounded reduced : Bool) :
+    ProofsLean.StepResult IntegerALU.BusResult :=
+  evaluateParsedIntegerAlu op
+    (ParsedIntegerInput.applyRounding sourceXRounded (pack (readDirectAccess files sourceX)))
+    (ParsedIntegerInput.applyRounding sourceYRounded (pack (readDirectAccess files sourceY))) reduced
+
+def evaluateParsedIntegerMaskAccesses (files : IntegerRegisterFiles)
+    (accesses : ParsedIntegerMaskAccesses) (reduced : Bool) :
+    ProofsLean.StepResult IntegerALU.BusResult :=
+  evaluateParsedIntegerMaskSources files accesses.op accesses.sourceX accesses.sourceY
+    accesses.sourceXRounded accesses.sourceYRounded reduced
+
 def prepareParsedIntegerMaskWrite (files : IntegerRegisterFiles) (cycle : Fin 4)
     (accesses : ParsedIntegerMaskAccesses) (reduced : Bool) :
     ProofsLean.StepResult PreparedParsedMaskedWrite :=
-  match evaluateParsedIntegerAlu accesses.op
-      (pack (readDirectAccess files accesses.sourceX))
-      (pack (readDirectAccess files accesses.sourceY)) reduced with
+  match evaluateParsedIntegerMaskAccesses files accesses reduced with
   | .failure => .failure
   | .unknown => .unknown
   | .ok output =>
@@ -3544,23 +3574,23 @@ def parsedIntegerMaskExprAccessesInLine? (expression : ParsedExpr)
           match expression.sources, expression.destinations with
           | [source], [destination] =>
               if ParsedAluName.integerInputCount name != 1 then none else
-              match ParsedOperand.toUnroundedIntegerSourceAccess? source pe cycle bar0 bar1 tWord,
+              match ParsedOperand.toIntegerMaskSourceAccess? source pe cycle bar0 bar1 tWord,
                     ParsedOperand.toMaskRegisterEntry? destination,
                     ParsedOperand.resolveOmrWriteSelection? destination registers cycle directive
                       hasSingleLineMask with
-              | some sourceAccess, some entry, some selection =>
-                  some ⟨expression.op, sourceAccess, sourceAccess, entry,
+              | some (sourceAccess, rounded), some entry, some selection =>
+                  some ⟨expression.op, sourceAccess, sourceAccess, rounded, rounded, entry,
                     selection, ⟨precision, aluOp, hRequest⟩⟩
               | _, _, _ => none
           | [sourceX, sourceY], [destination] =>
               if ParsedAluName.integerInputCount name != 2 then none else
-              match ParsedOperand.toUnroundedIntegerSourceAccess? sourceX pe cycle bar0 bar1 tWord,
-                    ParsedOperand.toUnroundedIntegerSourceAccess? sourceY pe cycle bar0 bar1 tWord,
+              match ParsedOperand.toIntegerMaskSourceAccess? sourceX pe cycle bar0 bar1 tWord,
+                    ParsedOperand.toIntegerMaskSourceAccess? sourceY pe cycle bar0 bar1 tWord,
                     ParsedOperand.toMaskRegisterEntry? destination,
                     ParsedOperand.resolveOmrWriteSelection? destination registers cycle directive
                       hasSingleLineMask with
-              | some xAccess, some yAccess, some entry, some selection =>
-                  some ⟨expression.op, xAccess, yAccess, entry,
+              | some (xAccess, xRounded), some (yAccess, yRounded), some entry, some selection =>
+                  some ⟨expression.op, xAccess, yAccess, xRounded, yRounded, entry,
                     selection, ⟨precision, aluOp, hRequest⟩⟩
               | _, _, _, _ => none
           | _, _ => none
@@ -4562,6 +4592,15 @@ def parsedIntegerRegisterOutput (files : IntegerRegisterFiles)
     (pack (readDirectAccess files sourceX))
     (pack (readDirectAccess files sourceY)) reduced
 
+def parsedIntegerMaskRegisterOutput (files : IntegerRegisterFiles)
+    (accesses : ParsedIntegerMaskAccesses) (precision : IntegerALU.Precision)
+    (aluOp : IntegerALU.Op) (reduced : Bool) : IntegerALU.BusResult :=
+  IntegerALU.evaluateBus precision aluOp
+    (ParsedIntegerInput.applyRounding accesses.sourceXRounded
+      (pack (readDirectAccess files accesses.sourceX)))
+    (ParsedIntegerInput.applyRounding accesses.sourceYRounded
+      (pack (readDirectAccess files accesses.sourceY))) reduced
+
 def integerFlagsVector (output : IntegerALU.BusResult) : BitVec 4 :=
   BitVec.ofBoolListLE [output.flags 0, output.flags 1, output.flags 2, output.flags 3]
 
@@ -4595,11 +4634,11 @@ theorem integerFlagsVector_bit3 (output : IntegerALU.BusResult) :
 
 def parsedIntegerMaskRegisterStep (files : IntegerRegisterFiles)
     (sourceX sourceY : DirectMemoryAccess) (entry : Fin 15) (cycle : Fin 4)
-    (selection : BitVec 4) (op : ParsedOp) (reduced : Bool) :
+    (selection : BitVec 4) (op : ParsedOp) (sourceXRounded sourceYRounded : Bool)
+    (reduced : Bool) :
     ProofsLean.StepResult IntegerRegisterFiles :=
-  match evaluateParsedIntegerAlu op
-      (pack (readDirectAccess files sourceX))
-      (pack (readDirectAccess files sourceY)) reduced with
+  match evaluateParsedIntegerMaskSources files op sourceX sourceY
+      sourceXRounded sourceYRounded reduced with
   | .ok output => .ok { files with maskRegisters :=
       (ProofsLean.MNCore.Masks.writeRegister files.maskRegisters entry cycle
         (integerFlagsVector output) selection) }
@@ -4614,16 +4653,14 @@ theorem parsedIntegerMaskPreparedStep_matches_direct_step
      | .failure => .failure
      | .unknown => .unknown) =
       parsedIntegerMaskRegisterStep files accesses.sourceX accesses.sourceY
-        accesses.destination cycle accesses.selection accesses.op reduced := by
-  unfold prepareParsedIntegerMaskWrite parsedIntegerMaskRegisterStep
-  cases h : evaluateParsedIntegerAlu accesses.op
-      (pack (readDirectAccess files accesses.sourceX))
-      (pack (readDirectAccess files accesses.sourceY)) reduced with
-  | failure => simp [h]
-  | unknown => simp [h]
-  | ok output =>
-      simp [h, commitParsedMaskedWrites, integerFlagsVector,
-        ProofsLean.MNCore.Masks.writeRegister]
+        accesses.destination cycle accesses.selection accesses.op
+        accesses.sourceXRounded accesses.sourceYRounded reduced := by
+  simp only [prepareParsedIntegerMaskWrite, parsedIntegerMaskRegisterStep,
+    evaluateParsedIntegerMaskAccesses]
+  cases h : evaluateParsedIntegerMaskSources files accesses.op accesses.sourceX accesses.sourceY
+      accesses.sourceXRounded accesses.sourceYRounded reduced <;>
+    simp [h, commitParsedMaskedWrites, integerFlagsVector,
+      ProofsLean.MNCore.Masks.writeRegister]
 
 example : (parsedIntegerMaskExprAccesses?
     ({ op := .alu .inc (some .i) false none,
@@ -4656,7 +4693,8 @@ def executeParsedIntegerMaskExpr? (files : IntegerRegisterFiles)
   match parsedIntegerMaskExprAccesses? expression files.maskRegisters directive
       pe cycle bar0 bar1 tWord with
   | some accesses => some (parsedIntegerMaskRegisterStep files accesses.sourceX
-      accesses.sourceY accesses.destination cycle accesses.selection accesses.op false)
+      accesses.sourceY accesses.destination cycle accesses.selection accesses.op
+      accesses.sourceXRounded accesses.sourceYRounded false)
   | none => none
 
 theorem executeParsedIntegerMaskExpr?_uses_lowering
@@ -4667,7 +4705,8 @@ theorem executeParsedIntegerMaskExpr?_uses_lowering
       pe cycle bar0 bar1 tWord = some accesses) :
     executeParsedIntegerMaskExpr? files expression pe cycle bar0 bar1 tWord directive =
       some (parsedIntegerMaskRegisterStep files accesses.sourceX accesses.sourceY
-        accesses.destination cycle accesses.selection accesses.op false) := by
+        accesses.destination cycle accesses.selection accesses.op
+        accesses.sourceXRounded accesses.sourceYRounded false) := by
   simp [executeParsedIntegerMaskExpr?, lowered]
 
 theorem mask_read_after_selected_write (registers : ProofsLean.MNCore.Masks.RegisterFile)
@@ -4691,23 +4730,34 @@ theorem mask_read_after_writeRegister (registers : ProofsLean.MNCore.Masks.Regis
 theorem parsedIntegerMaskStep_readback (files : IntegerRegisterFiles)
     (sourceX sourceY : DirectMemoryAccess) (entry : Fin 15) (cycle : Fin 4)
     (selection : BitVec 4) (op : ParsedOp)
+    (sourceXRounded sourceYRounded : Bool)
     (precision : IntegerALU.Precision) (aluOp : IntegerALU.Op)
     (selected : op.integerRequest = .ok (.integer precision aluOp))
     (reduced : Bool) :
     ∃ nextFiles,
-      parsedIntegerMaskRegisterStep files sourceX sourceY entry cycle selection op reduced =
+      parsedIntegerMaskRegisterStep files sourceX sourceY entry cycle selection op
+        sourceXRounded sourceYRounded reduced =
         .ok nextFiles ∧
       ProofsLean.MNCore.Masks.readEntry nextFiles.maskRegisters
         ⟨entry.val + 1, by have := entry.isLt; omega⟩ cycle =
-        integerFlagsVector (parsedIntegerRegisterOutput files sourceX sourceY
-          precision aluOp reduced) &&& selection := by
-  let output := parsedIntegerRegisterOutput files sourceX sourceY precision aluOp reduced
+        integerFlagsVector (IntegerALU.evaluateBus precision aluOp
+          (ParsedIntegerInput.applyRounding sourceXRounded
+            (pack (readDirectAccess files sourceX)))
+          (ParsedIntegerInput.applyRounding sourceYRounded
+            (pack (readDirectAccess files sourceY))) reduced) &&& selection := by
+  let output := IntegerALU.evaluateBus precision aluOp
+    (ParsedIntegerInput.applyRounding sourceXRounded (pack (readDirectAccess files sourceX)))
+    (ParsedIntegerInput.applyRounding sourceYRounded (pack (readDirectAccess files sourceY))) reduced
   refine ⟨{ files with maskRegisters :=
       (ProofsLean.MNCore.Masks.writeRegister files.maskRegisters entry cycle
         (integerFlagsVector output) selection) }, ?_, ?_⟩
   · have selectedExec := integer_request_is_execution_request op precision aluOp selected
-    simp [parsedIntegerMaskRegisterStep, evaluateParsedIntegerAlu, selectedExec,
-      output, evaluateParsedExecutionRequest, parsedIntegerRegisterOutput]
+    have hEval := parsed_integer_evaluation_uses_requested_semantics op precision aluOp selectedExec
+      (ParsedIntegerInput.applyRounding sourceXRounded (pack (readDirectAccess files sourceX)))
+      (ParsedIntegerInput.applyRounding sourceYRounded (pack (readDirectAccess files sourceY)))
+      reduced
+    unfold parsedIntegerMaskRegisterStep evaluateParsedIntegerMaskSources
+    rw [hEval]
   · exact mask_read_after_selected_write files.maskRegisters entry cycle
       (integerFlagsVector output) selection
 
@@ -4811,20 +4861,27 @@ theorem executeParsedIntegerMaskExpr_readback (files : IntegerRegisterFiles)
         some (.ok nextFiles) ∧
       ProofsLean.MNCore.Masks.readEntry nextFiles.maskRegisters
         ⟨accesses.destination.val + 1, by have := accesses.destination.isLt; omega⟩ cycle =
-        integerFlagsVector (parsedIntegerRegisterOutput files accesses.sourceX
-          accesses.sourceY precision aluOp false) &&& accesses.selection := by
+        integerFlagsVector (parsedIntegerMaskRegisterOutput files accesses
+          precision aluOp false) &&& accesses.selection := by
   rcases accesses.hasIntegerRequest with ⟨precision, aluOp, selected⟩
-  let output := parsedIntegerRegisterOutput files accesses.sourceX accesses.sourceY
-    precision aluOp false
+  let output := parsedIntegerMaskRegisterOutput files accesses precision aluOp false
   refine ⟨precision, aluOp,
     { files with maskRegisters :=
       (ProofsLean.MNCore.Masks.writeRegister files.maskRegisters accesses.destination cycle
         (integerFlagsVector output) accesses.selection) }, selected, ?_, ?_⟩
   · have selectedExec : accesses.op.executionRequest = .ok (.integer precision aluOp) := by
       exact integer_request_is_execution_request accesses.op precision aluOp selected
-    simp [executeParsedIntegerMaskExpr?, lowered, parsedIntegerMaskRegisterStep,
-      evaluateParsedIntegerAlu, selectedExec, output, evaluateParsedExecutionRequest]
-    constructor <;> rfl
+    have hEval := parsed_integer_evaluation_uses_requested_semantics accesses.op precision aluOp selectedExec
+      (ParsedIntegerInput.applyRounding accesses.sourceXRounded
+        (pack (readDirectAccess files accesses.sourceX)))
+      (ParsedIntegerInput.applyRounding accesses.sourceYRounded
+        (pack (readDirectAccess files accesses.sourceY))) false
+    unfold executeParsedIntegerMaskExpr?
+    rw [lowered]
+    simp only [Option.some.injEq]
+    unfold parsedIntegerMaskRegisterStep evaluateParsedIntegerMaskSources
+    rw [hEval]
+    rfl
   · exact mask_read_after_selected_write files.maskRegisters accesses.destination cycle
       (integerFlagsVector output) accesses.selection
 
