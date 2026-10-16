@@ -99,7 +99,11 @@ structure ParsedIntegerAccesses where
   sourceX : DirectMemoryAccess
   sourceY : DirectMemoryAccess
   destination : DirectMemoryAccess
-  deriving DecidableEq, Repr
+  hasIntegerRequest : ∃ precision aluOp,
+    op.integerRequest = .ok (.integer precision aluOp)
+
+def ParsedIntegerAccesses.locations (accesses : ParsedIntegerAccesses) :=
+  (accesses.sourceX, accesses.sourceY, accesses.destination)
 
 /-- Lower the memory-only ALU expression subset from ParsedExpr to explicit
 per-cycle accesses. Operands with rounding, masked destinations, non-memory
@@ -109,8 +113,8 @@ def ParsedExpr.toDirectIntegerAccesses? (expression : ParsedExpr)
     Option ParsedIntegerAccesses :=
   match expression.op with
   | .alu name (some _) _ _ =>
-      match expression.op.integerRequest with
-      | .ok (.integer _ _) =>
+      match hRequest : expression.op.integerRequest with
+      | .ok (.integer precision aluOp) =>
           if expression.flush.isSome then none else
           match expression.sources, expression.destinations with
           | [source], [destination] =>
@@ -118,7 +122,8 @@ def ParsedExpr.toDirectIntegerAccesses? (expression : ParsedExpr)
               match ParsedOperand.toDirectMemoryAccess? source pe cycle bar0 bar1 tWord,
                     ParsedOperand.toUnmaskedDirectDestination? destination pe cycle bar0 bar1 tWord with
               | some sourceAccess, some destinationAccess =>
-                  some ⟨expression.op, sourceAccess, sourceAccess, destinationAccess⟩
+                  some ⟨expression.op, sourceAccess, sourceAccess, destinationAccess,
+                    ⟨precision, aluOp, hRequest⟩⟩
               | _, _ => none
           | [sourceX, sourceY], [destination] =>
               if ParsedAluName.integerInputCount name != 2 then none else
@@ -126,7 +131,8 @@ def ParsedExpr.toDirectIntegerAccesses? (expression : ParsedExpr)
                     ParsedOperand.toDirectMemoryAccess? sourceY pe cycle bar0 bar1 tWord,
                     ParsedOperand.toUnmaskedDirectDestination? destination pe cycle bar0 bar1 tWord with
               | some xAccess, some yAccess, some destinationAccess =>
-                  some ⟨expression.op, xAccess, yAccess, destinationAccess⟩
+                  some ⟨expression.op, xAccess, yAccess, destinationAccess,
+                    ⟨precision, aluOp, hRequest⟩⟩
               | _, _, _ => none
           | _, _ => none
       | _ => none
@@ -140,11 +146,12 @@ example : ParsedOperand.toDirectMemoryAccess?
     (.mem ⟨.lm0, ⟨2, 3, 3, 3, 3, false, some 2⟩⟩ false false false none)
     2 0 3 0 0 = some ⟨.lm0, .long, ⟨8, by decide⟩⟩ := by decide
 
-example : ParsedExpr.toDirectIntegerAccesses?
-    ProofsLean.MNCore.Issue.plusOneParsed 0 0 0 0 0 =
-      some ⟨ProofsLean.MNCore.Issue.plusOneParsed.op,
-        ⟨.lm0, .long, ⟨0, by decide⟩⟩, ⟨.lm0, .long, ⟨0, by decide⟩⟩,
-        ⟨.lm1, .long, ⟨0, by decide⟩⟩⟩ := by decide
+example : (ParsedExpr.toDirectIntegerAccesses?
+    ProofsLean.MNCore.Issue.plusOneParsed 0 0 0 0 0).map
+      ParsedIntegerAccesses.locations = some
+        (⟨.lm0, .long, ⟨0, by decide⟩⟩,
+         ⟨.lm0, .long, ⟨0, by decide⟩⟩,
+         ⟨.lm1, .long, ⟨0, by decide⟩⟩) := by decide
 
 def readRegisterBank (files : IntegerRegisterFiles) (bank : Bank) (width : Width)
     (address : Fin bank.capacity) : WordBus :=
@@ -268,19 +275,26 @@ theorem executeParsedIntegerExpr_readback (files : IntegerRegisterFiles)
     (tWord : BitVec 32) (accesses : ParsedIntegerAccesses)
     (lowered : ParsedExpr.toDirectIntegerAccesses? expression pe cycle bar0 bar1 tWord =
       some accesses)
-    (precision : IntegerALU.Precision) (aluOp : IntegerALU.Op)
-    (selected : accesses.op.integerRequest = .ok (.integer precision aluOp))
     (index : Fin 4)
     (within : index.val < count accesses.destination.bank accesses.destination.width) :
-    ∃ nextFiles,
+    ∃ precision aluOp nextFiles,
+      accesses.op.integerRequest = .ok (.integer precision aluOp) ∧
       executeParsedIntegerExpr? files expression pe cycle bar0 bar1 tWord =
         some (.ok nextFiles) ∧
       readDirectAccess nextFiles accesses.destination index =
         unpackALUBus (parsedIntegerRegisterOutput files accesses.sourceX
           accesses.sourceY precision aluOp false).value index := by
-  simp only [executeParsedIntegerExpr?, lowered, Option.some.injEq]
-  exact parsedIntegerRegisterStep_readback files accesses.sourceX accesses.sourceY
-    accesses.destination accesses.op false precision aluOp selected index within
+  rcases accesses.hasIntegerRequest with ⟨precision, aluOp, selected⟩
+  refine ⟨precision, aluOp,
+    writeDirectAccess files accesses.destination
+      (unpackALUBus (parsedIntegerRegisterOutput files accesses.sourceX
+        accesses.sourceY precision aluOp false).value), selected, ?_, ?_⟩
+  · simp only [executeParsedIntegerExpr?, lowered, Option.some.injEq]
+    exact parsedIntegerRegisterStep_succeeds files accesses.sourceX accesses.sourceY
+      accesses.destination accesses.op false precision aluOp selected
+  · exact direct_access_write_readback files accesses.destination
+      (unpackALUBus (parsedIntegerRegisterOutput files accesses.sourceX
+        accesses.sourceY precision aluOp false).value) index within
 
 
 end ProofsLean.MNCore.PEMemory

@@ -84,7 +84,8 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   VSMオペランドのデコード、マスク・精度変換・遅延・ハザード・同時発行を含まず、
   全命令ステップではない。別途、cycleごとのregion、BAR、T間接語、MADPEから
   直接アクセス記述子を作る部分loweringを定義し、loweringに成功したParsedExprについて
-  整数requestの宛先読み戻しを証明した。Welcomeのplus-one ParsedExprがLM0→LM1の
+  整数requestの存在証拠をlowering結果に保持し、その証拠だけから宛先読み戻しを導いた。
+  Welcomeのplus-one ParsedExprがLM0→LM1の
   longアクセスへloweringされ、そのALU出力が既存の2語iincモデルと一致することも証明した。
   丸め入力や非PEメモリはlowering対象外。
 - `Issue.lean`: PE式の同時発行判定について、グループ重複、MAU組み合わせ、
