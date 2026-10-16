@@ -407,6 +407,9 @@ def answer_parser_gap_audit() -> dict:
         for expression in row["result"].get("expressions", [])
     ):
         raise ValueError("a parser candidate exceeds the three-source envelope")
+    answer_shapes = record.get("answer_expression_shapes", [])
+    if not answer_shapes or any(row["source_count"] > 3 for row in answer_shapes):
+        raise ValueError("a parsed answer expression exceeds the Lean three-source envelope")
     if record["parse_errors"] or record["raw_operand_occurrences"] or record["other_opcode_occurrences"]:
         raise ValueError("checked-in answers contain parser errors or structural fallbacks")
     for item in [*record["input_hashes"], record["scanner"], record["opcode_candidate_source"]]:
@@ -436,6 +439,13 @@ def answer_parser_gap_audit() -> dict:
             f"{expression['class']}:src{expression['source_count']}:dst{expression['destination_count']}"
             for row in record["opcode_candidate_results"]
             for expression in row["result"].get("expressions", [])
+        ).items())),
+        "answer_expression_count": sum(row["occurrences"] for row in answer_shapes),
+        "answer_max_source_count": max(row["source_count"] for row in answer_shapes),
+        "answer_parser_source_arity": dict(sorted(Counter(
+            f"{row['class']}:src{row['source_count']}"
+            for row in answer_shapes
+            for _ in range(row["occurrences"])
         ).items())),
         "raw_operand_occurrences": len(record["raw_operand_occurrences"]),
         "other_opcode_occurrences": len(record["other_opcode_occurrences"]),

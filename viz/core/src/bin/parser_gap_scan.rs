@@ -6,7 +6,7 @@
 
 use mncore_sim::vsm::{self, Line, Op, Operand};
 use serde_json::{json, Value};
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -59,6 +59,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut parse_errors = Vec::new();
     let mut op_spellings = BTreeSet::new();
     let mut candidate_results = Vec::new();
+    let mut answer_expression_shape_counts = BTreeMap::new();
 
     for path in &files {
         let source = fs::read_to_string(path)?;
@@ -74,14 +75,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         continue;
                     };
                     for expression in expressions {
-                        op_spellings.insert(
-                            expression
-                                .text
-                                .split_whitespace()
-                                .next()
-                                .unwrap_or("")
-                                .to_string(),
-                        );
+                        let spelling = expression
+                            .text
+                            .split_whitespace()
+                            .next()
+                            .unwrap_or("")
+                            .to_string();
+                        op_spellings.insert(spelling.clone());
+                        *answer_expression_shape_counts.entry((
+                            spelling,
+                            op_name(&expression.op),
+                            expression.srcs.len(),
+                            expression.dsts.len(),
+                        )).or_insert(0usize) += 1;
                         if let Op::Other(text) = &expression.op {
                             other_ops.push(json!({
                                 "path": path,
@@ -154,11 +160,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
+    let answer_expression_shapes: Vec<_> = answer_expression_shape_counts
+        .into_iter()
+        .map(|((spelling, class, source_count, destination_count), occurrences)| json!({
+            "spelling": spelling,
+            "class": class,
+            "source_count": source_count,
+            "destination_count": destination_count,
+            "occurrences": occurrences,
+        }))
+        .collect();
     let result: Value = json!({
-        "schema_version": 1,
+        "schema_version": 2,
         "scope": "Checked-in problems/**/answer.vsm files only; not a complete ISA spelling inventory.",
         "answer_files": files.len(),
         "parsed_operator_spellings": op_spellings,
+        "answer_expression_shapes": answer_expression_shapes,
         "raw_operand_occurrences": raw_operands,
         "other_opcode_occurrences": other_ops,
         "parse_errors": parse_errors,

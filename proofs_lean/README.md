@@ -76,7 +76,8 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   同じ行に置く2通りの順序も拒否された。
 - `evidence/parser-gap-audit/answers.json`: 問題ディレクトリの全73 `answer.vsm`を
   Rust VSM parserで走査した結果。parse error、`Operand::Raw`、`Op::Other`はいずれも
-  0件で、opcode綴りを155種類確認した。さらにコンパイラ由来の184候補はすべて
+  0件で、opcode綴りを155種類確認した。1,539個の解答PE式のsource countも記録し、
+  最大3であることをcatalogが検査する。さらにコンパイラ由来の184候補はすべて
   汎用operandを与えたときRust parserに分類された。これは候補の構文解析確認であり、
   assemble3での合法性や全命令の列挙完了を意味しない。
 - `evidence/opcode-arity/reference.json`: 184 compiler ALU/MAU/matrix/immediate/zero候補すべてに
