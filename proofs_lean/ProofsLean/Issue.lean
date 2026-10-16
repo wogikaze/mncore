@@ -593,6 +593,41 @@ inductive ParsedMvKind where
   | reduce (rrn : ParsedRrn) | reduce2 (rrn : ParsedRrn) | reduce4 (rrn : ParsedRrn)
   deriving DecidableEq, Repr
 
+/-- Parse the RRN suffix used by MV reduction opcodes. The precision selects
+the same operation family as `Rrn::parse_prefix` in the Rust parser. -/
+def parseParsedMvRrn? (chars : List Char) : Option ParsedRrn := do
+  let precision ← chars.head?
+  let opChars := chars.drop 1
+  let op ← match precision, String.ofList opChars with
+    | 'd', "fadd" | 'f', "fadd" | 'h', "fadd" => some .fadd
+    | 'd', "max" | 'f', "max" | 'h', "max" => some .max
+    | 'd', "min" | 'f', "min" | 'h', "min" => some .min
+    | 'l', "iadd" | 'i', "iadd" | 's', "iadd" => some .iadd
+    | 'l', "band" | 'i', "band" | 's', "band" => some .band
+    | 'l', "and" | 'i', "and" | 's', "and" => some .and
+    | 'l', "bor" | 'i', "bor" | 's', "bor" => some .bor
+    | 'l', "or" | 'i', "or" | 's', "or" => some .or
+    | _, _ => none
+  pure ⟨precision, op⟩
+
+/-- Decode the MV opcode mode. RRN modes require an exact RRN spelling. -/
+def parseParsedMvKind? (mode : String) : Option ParsedMvKind := do
+  if mode == "p" then some .copy
+  else if mode == "b" then some .broadcast
+  else if mode == "b2" then some .broadcast2
+  else if mode == "b4" then some .broadcast4
+  else if mode == "d" then some .distribute
+  else if mode.startsWith "r2" then
+    let rrn ← parseParsedMvRrn? ((mode.drop 2).toString.toList)
+    some (.reduce2 rrn)
+  else if mode.startsWith "r4" then
+    let rrn ← parseParsedMvRrn? ((mode.drop 2).toString.toList)
+    some (.reduce4 rrn)
+  else if mode.startsWith "r" then
+    let rrn ← parseParsedMvRrn? ((mode.drop 1).toString.toList)
+    some (.reduce rrn)
+  else none
+
 inductive ParsedMvOperand where
   | pdm (address : Fin (2 ^ 64)) (group : Option (Fin 256))
   | dram (address : Fin (2 ^ 64)) (group : Option (Fin 256)) (indirect : Bool)
