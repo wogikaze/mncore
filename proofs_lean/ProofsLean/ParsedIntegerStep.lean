@@ -3240,8 +3240,11 @@ theorem parsedIssueCheckedALUProducerLineFourCycleStep_accepted
     (reduced : Bool)
     (accepted : checkParsedLine expressions = true) :
     parsedIssueCheckedALUProducerLineFourCycleStep files slots expressions control reduced =
-      parsedALUProducerLineFourCycleStep files slots expressions control reduced := by
-  simp [parsedIssueCheckedALUProducerLineFourCycleStep, accepted]
+      parsedALUProducerLineFourCycleStep files slots expressions control reduced ∧
+        LegalParsedLine expressions := by
+  constructor
+  · simp [parsedIssueCheckedALUProducerLineFourCycleStep, accepted]
+  · exact parsed_check_sound expressions accepted
 
 theorem parsedIssueCheckedALUProducerLineFourCycleStep_rejects
     (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)
