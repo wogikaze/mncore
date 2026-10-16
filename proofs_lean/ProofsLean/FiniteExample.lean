@@ -12,7 +12,7 @@ inductive Line where
   | fillTrue
   deriving DecidableEq, Repr
 
-noncomputable instance : Fintype Line := ⟨{.flipLeft, .flipRight, .fillTrue}, by intro x; cases x <;> simp⟩
+instance : Fintype Line := ⟨{.flipLeft, .flipRight, .fillTrue}, by intro x; cases x <;> simp⟩
 
 def machine : Machine where
   Line := Line
@@ -26,8 +26,15 @@ def machine : Machine where
   lineCost := fun _ => 1
   positiveCost := fun _ => by decide
 
-noncomputable instance : Fintype machine.Line := inferInstanceAs (Fintype Line)
-instance : DecidableEq machine.Line := inferInstanceAs (DecidableEq Line)
+/-- The alphabet every legal program draws from: all three lines are legal. -/
+def alphabet : List Line := [.flipLeft, .flipRight, .fillTrue]
+
+theorem covers : LegalLinesCovered machine alphabet :=
+  legalLinesCovered_of_total (fun line => by
+    cases line
+    · exact List.mem_cons_self
+    · exact List.mem_cons_of_mem _ List.mem_cons_self
+    · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self))
 
 def problem : Problem machine where
   admissible := fun _ => True
@@ -48,24 +55,11 @@ theorem fill_refuted : Refutes machine problem [.fillTrue] (true, true) := by
   simp [Refutes, problem, execute, machine]
 
 theorem rejects_all_short :
-    ∀ p ∈ shortPrograms machine 2, ¬ Correct machine problem p := by
+    ∀ p ∈ shortPrograms machine alphabet 2, ¬ Correct machine problem p := by
   intro p member
   have listed : p ∈ [[], [.flipLeft], [.flipRight], [.fillTrue]] := by
-    rcases List.mem_cons.mp member with empty | filtered
-    · exact List.mem_cons.mpr (Or.inl empty)
-    · rcases List.mem_filter.mp filtered with ⟨_, scoreDecide⟩
-      have sb : score machine p < 2 := of_decide_eq_true scoreDecide
-      have len : p.length ≤ 1 := by
-        have lower := length_le_score machine p
-        omega
-      cases p with
-      | nil => simp
-      | cons line rest =>
-        have restEmpty : rest = [] := by cases rest with
-          | nil => rfl
-          | cons x xs => simp at len
-        subst rest
-        cases line <;> simp
+    rcases List.mem_filter.mp member with ⟨enumerated, _⟩
+    exact enumerated
   have cases : p = [] ∨ p = [.flipLeft] ∨ p = [.flipRight] ∨ p = [.fillTrue] := by
     simpa only [List.mem_cons, List.not_mem_nil, or_false] using listed
   rcases cases with rfl | rfl | rfl | rfl
@@ -74,15 +68,15 @@ theorem rejects_all_short :
   · exact refutes_not_correct right_refuted
   · exact refutes_not_correct fill_refuted
 
-noncomputable def lowerCertificate : BoundCertificate machine problem 2 :=
-  enumerationCertificate machine problem 2 rejects_all_short
+def lowerCertificate : BoundCertificate machine problem 2 :=
+  enumerationCertificate machine problem alphabet 2 covers rejects_all_short
 
 theorem two_lines_correct : Correct machine problem [.flipLeft, .flipRight] := by
   refine ⟨True.intro, ?_⟩
   intro input _
   exact ⟨(!input.1, !input.2), by simp [execute, machine, problem, id], rfl⟩
 
-noncomputable def optimalCertificate : OptimalityCertificate machine problem where
+def optimalCertificate : OptimalityCertificate machine problem where
   program := [.flipLeft, .flipRight]
   correct := two_lines_correct
   lower := lowerCertificate
@@ -118,5 +112,37 @@ def missingSemantics : PartialMachine where
 
 theorem missing_cannot_be_sealed : ¬ missingSemantics.Complete :=
   unknown_prevents_sealing missingSemantics ⟨(), (), rfl⟩
+
+/- Regression: legality-relative coverage matters for machines whose line type
+is infinite. Here `Line := Nat`, but only lines below 3 may legally issue, so
+the finite alphabet [0, 1, 2] covers every legal program while no total cover
+of Nat can exist. -/
+namespace Bounded
+
+def machine : Machine where
+  Line := Nat
+  State := Nat
+  Input := Unit
+  step := fun line state => some (state + line)
+  legal := fun p => ∀ l ∈ p, l < 3
+  lineCost := fun _ => 1
+  positiveCost := fun _ => by decide
+
+private theorem nat_lt_three_mem {n : Nat} (h : n < 3) : n ∈ [0, 1, 2] := by
+  simp only [List.mem_cons, List.not_mem_nil, or_false]
+  omega
+
+theorem covers : LegalLinesCovered machine ([0, 1, 2] : List Nat) := by
+  intro p legal line mem
+  exact nat_lt_three_mem (legal line mem)
+
+theorem legalLines_finite : (legalLines machine).Finite :=
+  legalLines_finite_of_covered covers
+
+theorem no_total_cover : ¬ ∀ line : machine.Line, line ∈ ([0, 1, 2] : List Nat) := by
+  intro total
+  exact absurd (total (3 : Nat)) (by decide)
+
+end Bounded
 
 end ProofsLean.FiniteExample

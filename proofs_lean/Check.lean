@@ -9,6 +9,15 @@ import Lean
 #print axioms ProofsLean.shorter_correct_refutes_bound
 #print axioms ProofsLean.programsUpTo_complete
 #print axioms ProofsLean.shortPrograms_complete
+#print axioms ProofsLean.legalLinesCovered_of_total
+#print axioms ProofsLean.legalLinesCovered_univ
+#print axioms ProofsLean.legalLinesCovered_of_finite
+#print axioms ProofsLean.legalLines_finite_of_covered
+#print axioms ProofsLean.legalLines_finite_iff
+#print axioms ProofsLean.FiniteExample.covers
+#print axioms ProofsLean.FiniteExample.Bounded.covers
+#print axioms ProofsLean.FiniteExample.Bounded.legalLines_finite
+#print axioms ProofsLean.FiniteExample.Bounded.no_total_cover
 #print axioms ProofsLean.FiniteExample.two_lines_optimal
 #print axioms ProofsLean.FiniteExample.testcase_correct_does_not_imply_general_correct
 #print axioms ProofsLean.FiniteExample.one_case_has_no_two_line_lower_bound

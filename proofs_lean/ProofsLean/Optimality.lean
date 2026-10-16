@@ -8,11 +8,12 @@ def LowerBound (m : Machine) (spec : Problem m) (bound : Nat) : Prop :=
 def Optimal (m : Machine) (spec : Problem m) (p : Program m) : Prop :=
   Correct m spec p ∧ LowerBound m spec (score m p)
 
-/-- Each listed candidate must be rejected, and every shorter program must be
-listed. Neither failed edits nor a count of rejected candidates establishes coverage. -/
+/-- Each listed candidate must be rejected, and every legal shorter program must
+be listed. Illegal shorter programs place no obligation on the enumeration.
+Neither failed edits nor a count of rejected candidates establishes coverage. -/
 structure BoundCertificate (m : Machine) (spec : Problem m) (bound : Nat) where
   candidates : List (Program m)
-  complete : ∀ p, score m p < bound → p ∈ candidates
+  complete : ∀ p, m.legal p → score m p < bound → p ∈ candidates
   rejected : ∀ p ∈ candidates, ¬ Correct m spec p
 
 theorem BoundCertificate.sound (certificate : BoundCertificate m spec bound) :
@@ -21,7 +22,8 @@ theorem BoundCertificate.sound (certificate : BoundCertificate m spec bound) :
   by_cases h : bound ≤ score m p
   · exact h
   · have short : score m p < bound := by omega
-    exact False.elim (certificate.rejected p (certificate.complete p short) correct)
+    exact False.elim
+      (certificate.rejected p (certificate.complete p correct.1 short) correct)
 
 structure OptimalityCertificate (m : Machine) (spec : Problem m) where
   program : Program m
