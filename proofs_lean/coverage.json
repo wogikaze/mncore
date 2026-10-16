@@ -134,7 +134,7 @@
       "source": "proofs_lean/ProofsLean/Issue.lean",
       "sha256": "6f8cdf9aa8aff3d404e800aa5c58f0fc96967e9e263ec2976d7589604a795873",
       "implemented": "Full structural PE Op/Operand payload mirror, issue projection, abstract PE-line rules, and a partial parsed-op to integer-ALU bridge for supported L/I/S integer operations and packbit",
-      "scope": "The Rust enum inventory is checked against Lean constructors; parser correspondence, operand reads/reduction, masks, timing, writes, floating operations and full ISA semantics are not proved",
+      "scope": "The Rust enum inventory is checked against Lean constructors. A separate partial executor covers supported integer ALU/zero/immediate expressions with direct PE-memory destinations, masks/flush and ordered multiple destinations; this is not full ISA semantics",
       "source_basis": [
         {
           "source": "viz/core/src/vsm.rs",
@@ -143,9 +143,13 @@
         {
           "source": "viz/core/src/issue.rs",
           "sha256": "64f96a79d4d8446c3942868d0549bc918bcd3f13a9dc1d25403ebe42755409e0"
+        },
+        {
+          "source": "proofs_lean/ProofsLean/ParsedIntegerStep.lean",
+          "sha256": "628ff4d254033ea162c5582d2a08646d1338631b1ca73ba546c6641ab9e7cd76"
         }
       ],
-      "missing": "VSM parser correspondence, all assembler legality checks outside issue.rs, hardware correspondence and integration with the total instruction transition",
+      "missing": "VSM parser correspondence, non-PE and matrix destinations, floating/MAU/L1/L2/MV execution, all assembler legality checks outside issue.rs, hardware correspondence and integration with the total instruction transition",
       "reference_experiment": null
     }
   ],

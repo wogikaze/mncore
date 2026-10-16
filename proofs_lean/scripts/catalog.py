@@ -370,6 +370,7 @@ def coverage_catalog() -> dict:
     forwarding_source = ROOT / "ProofsLean/Forwarding.lean"
     encoded_forwarding = ROOT / "ProofsLean/EncodedForwarding.lean"
     issue_source = ROOT / "ProofsLean/Issue.lean"
+    parsed_integer_source = ROOT / "ProofsLean/ParsedIntegerStep.lean"
     return {
         "schema_version": 1,
         "isa_exhaustiveness_proven": False,
@@ -428,13 +429,16 @@ def coverage_catalog() -> dict:
         }, {
             "source": issue_source.relative_to(REPO).as_posix(), "sha256": digest(issue_source),
             "implemented": "Full structural PE Op/Operand payload mirror, issue projection, abstract PE-line rules, and a partial parsed-op to integer-ALU bridge for supported L/I/S integer operations and packbit",
-            "scope": "The Rust enum inventory is checked against Lean constructors; parser correspondence, operand reads/reduction, masks, timing, writes, floating operations and full ISA semantics are not proved",
+            "scope": "The Rust enum inventory is checked against Lean constructors. A separate partial executor covers supported integer ALU/zero/immediate expressions with direct PE-memory destinations, masks/flush and ordered multiple destinations; this is not full ISA semantics",
             "source_basis": [{
                 "source": "viz/core/src/vsm.rs", "sha256": digest(REPO / "viz/core/src/vsm.rs"),
             }, {
                 "source": "viz/core/src/issue.rs", "sha256": digest(REPO / "viz/core/src/issue.rs"),
+            }, {
+                "source": parsed_integer_source.relative_to(REPO).as_posix(),
+                "sha256": digest(parsed_integer_source),
             }],
-            "missing": "VSM parser correspondence, all assembler legality checks outside issue.rs, hardware correspondence and integration with the total instruction transition",
+            "missing": "VSM parser correspondence, non-PE and matrix destinations, floating/MAU/L1/L2/MV execution, all assembler legality checks outside issue.rs, hardware correspondence and integration with the total instruction transition",
             "reference_experiment": None,
         }],
         "unresolved_semantic_discrepancies": [rotation_discrepancy()],

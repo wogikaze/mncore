@@ -184,6 +184,8 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   constant bus構成を転記し、immの4語配置、常時0のフラグ、入力バスと縮減状態への非依存性を
   証明した。direct PE-memory destinationを持つこれらの式は複数destinationへ同じbusを書けるようにし、
   source順にprepare・commitされる定理と、LM/GRFの2 destination lowering例を追加した。
+  対応する整数ALU式についても、複数のdirect PE-memory destinationをsource順にlowerし、
+  同じ旧stateから個々のwriteをprepareして順序を保ってcommitする経路を追加した。
   `$nowrite` は効果なしとして除外し、OMR destinationは対応するentry/cycleを0で更新する。
   非PE memoryやBARなど未対応destinationを含む式は依然unknownとなる。
   整数ALUのsourceにはmemoryに加えて `$l2bid`、`$l1bid`、`$mabid`、`$peid`、`$subpeid`、`$msb1` を接続した。PE座標（group/L2B/L1B/MAB/PE）から実行系と同じ値を作り、precisionに応じた128-bit反復busを定義した。linear PE indexからの座標分解と、各固定operand値がindexから直接得られる式に一致することも証明した。パーサから実行時PE座標への全体接続とRust意味論との対応は未証明。

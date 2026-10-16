@@ -270,6 +270,9 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.parsed_forward_integer_input
 #print axioms ProofsLean.MNCore.PEMemory.parsed_forward_expr_lowering
 #print axioms ProofsLean.MNCore.PEMemory.executeParsedMaskedIntegerExprWithForwarding?_uses_lowering
+#print axioms ProofsLean.MNCore.PEMemory.parsed_integer_multiple_destinations_lower_in_order
+#print axioms ProofsLean.MNCore.PEMemory.prepareParsedMaskedIntegerWrites_preserves_order
+#print axioms ProofsLean.MNCore.PEMemory.prepareParsedMaskedIntegerWritesWithForwarding_preserves_order
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerInput_forward_known
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerInput_forward_poison_fails
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerInput_forward_unknown_stays_unknown
