@@ -68,6 +68,10 @@ import Lean
 #print axioms ProofsLean.MNCore.L1Transfer.mwriteWrites_contains_high
 #print axioms ProofsLean.MNCore.L1Transfer.mwriteWrites_contains_low
 #print axioms ProofsLean.MNCore.L1Transfer.m4writeWrites_contains_high
+#print axioms ProofsLean.MNCore.L1Transfer.mwriteWrites_twoLongWords_form
+#print axioms ProofsLean.MNCore.L1Transfer.committedMwriteCycle_last_low_readback
+#print axioms ProofsLean.MNCore.L1Transfer.m4writeWrites_last
+#print axioms ProofsLean.MNCore.L1Transfer.committedM4writeCycle_last_readback
 #print axioms ProofsLean.MNCore.PEMemory.mask_directive_replaces_selection_preserves_context
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerMaskedLineStep_prepares_then_commits
 #print axioms ProofsLean.MNCore.PEMemory.parsedMaskedSource_execution

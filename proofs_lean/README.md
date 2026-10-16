@@ -202,7 +202,8 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   PE→L1BMの`mwrite`/`m4write` pending write列も定義し、1-word/2-word時の4/8および
   16/32書込み数と、pending list末尾書込みのcommit readbackを証明した。m4writeのsourceは
   Rust同様に(mo, selected MAB, PE)で選択し、各PEのhigh/low long wordが対応offsetの
-  pending write listに含まれることも証明した。turnaround stateへの同時更新、全L1B・MAB群の
+  pending write listに含まれることも証明した。さらに`mwrite`の2-word列と`m4write`の
+  最終payloadを実際にfold commitした後のreadbackを証明した。turnaround stateへの同時更新、全L1B・MAB群の
   line実行、gather/reduce、他L1転送との同時発行は未接続。
 
 `Machine.positiveCost` はスコアが正の行へ正規化済みであるという条件。

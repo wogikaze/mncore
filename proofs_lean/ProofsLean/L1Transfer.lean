@@ -236,6 +236,34 @@ theorem mwriteWrites_contains_low (memoryBase : Fin l1bmLongWords)
   refine ⟨pe, List.mem_finRange pe, ?_⟩
   simp [mwriteWrites]
 
+theorem mwriteWrites_twoLongWords_form (memoryBase : Fin l1bmLongWords)
+    (cycle : Fin 4) (buses : Fin 4 → Bus) :
+    mwriteWrites memoryBase true cycle buses =
+      [(addressAt memoryBase (cycle.val * 8), (buses 0).high),
+       (addressAt memoryBase (cycle.val * 8 + 4), (buses 0).low),
+       (addressAt memoryBase (cycle.val * 8 + (1 : Fin 4).val), (buses 1).high),
+       (addressAt memoryBase (cycle.val * 8 + (1 : Fin 4).val + 4), (buses 1).low),
+       (addressAt memoryBase (cycle.val * 8 + (2 : Fin 4).val), (buses 2).high),
+       (addressAt memoryBase (cycle.val * 8 + (2 : Fin 4).val + 4), (buses 2).low),
+       (addressAt memoryBase (cycle.val * 8 + (3 : Fin 4).val), (buses 3).high),
+       (addressAt memoryBase (cycle.val * 8 + (3 : Fin 4).val + 4), (buses 3).low)] := by
+  simp [mwriteWrites, List.finRange]
+
+theorem committedMwriteCycle_last_low_readback (memory : L1Bank)
+    (memoryBase : Fin l1bmLongWords) (cycle : Fin 4) (buses : Fin 4 → Bus) :
+    commitL1Writes memory (mwriteWrites memoryBase true cycle buses)
+      (addressAt memoryBase (cycle.val * 8 + 7)) = (buses 3).low := by
+  rw [mwriteWrites_twoLongWords_form]
+  exact commitL1Writes_last_readback memory
+    [(addressAt memoryBase (cycle.val * 8), (buses 0).high),
+     (addressAt memoryBase (cycle.val * 8 + 4), (buses 0).low),
+     (addressAt memoryBase (cycle.val * 8 + 1), (buses 1).high),
+     (addressAt memoryBase (cycle.val * 8 + 5), (buses 1).low),
+     (addressAt memoryBase (cycle.val * 8 + 2), (buses 2).high),
+     (addressAt memoryBase (cycle.val * 8 + 6), (buses 2).low),
+     (addressAt memoryBase (cycle.val * 8 + 3), (buses 3).high)]
+    (addressAt memoryBase (cycle.val * 8 + 7)) (buses 3).low
+
 theorem m4writeWrites_count (memoryBase : Fin l1bmLongWords)
     (twoLongWords : Bool) (cycle mabGroup : Fin 4)
     (buses : Fin 4 → Fin 4 → Fin 4 → Bus) :
@@ -254,6 +282,31 @@ theorem m4writeWrites_contains_high (memoryBase : Fin l1bmLongWords)
   apply List.mem_flatMap.mpr
   refine ⟨pe, List.mem_finRange pe, ?_⟩
   simp [m4writeWrites]
+
+theorem m4writeWrites_last (memoryBase : Fin l1bmLongWords)
+    (twoLongWords : Bool) (cycle mabGroup : Fin 4)
+    (buses : Fin 4 → Fin 4 → Fin 4 → Bus) :
+    (m4writeWrites memoryBase twoLongWords cycle mabGroup buses).getLast? =
+      if twoLongWords then
+        some (addressAt memoryBase (cycle.val * 32 + (3 : Fin 4).val * 8 +
+          (3 : Fin 4).val + 4), (buses 3 mabGroup 3).low)
+      else
+        some (addressAt memoryBase (cycle.val * 16 + (3 : Fin 4).val * 4 +
+          (3 : Fin 4).val), (buses 3 mabGroup 3).high) := by
+  cases twoLongWords <;> simp [m4writeWrites, List.finRange]
+
+theorem committedM4writeCycle_last_readback (memory : L1Bank)
+    (memoryBase : Fin l1bmLongWords) (twoLongWords : Bool)
+    (cycle mabGroup : Fin 4) (buses : Fin 4 → Fin 4 → Fin 4 → Bus) :
+    let lastOffset := if twoLongWords
+      then cycle.val * 32 + (3 : Fin 4).val * 8 + (3 : Fin 4).val + 4
+      else cycle.val * 16 + (3 : Fin 4).val * 4 + (3 : Fin 4).val
+    let lastValue := if twoLongWords then (buses 3 mabGroup 3).low
+      else (buses 3 mabGroup 3).high
+    commitL1Writes memory (m4writeWrites memoryBase twoLongWords cycle mabGroup buses)
+      (addressAt memoryBase lastOffset) = lastValue := by
+  cases twoLongWords <;>
+    simp [m4writeWrites, commitL1Writes, writeL1Word, List.finRange]
 
 def updateBroadcastForwarding (old : ProofsLean.MNCore.Forwarding.Slots)
     (outputs : Fin 4 → Bus) (noForward : Bool) :
