@@ -86,7 +86,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   全サイクルの読み取り後に書き込むスケジュールの正しさは証明していない。
 - `MaskedPEMemory.lean`: PEメモリ宛先の単語選択と半語マージを含むmasked storeを定義。
   全選択時の既存無マスク書き込みとの一致、読み戻し、書き込み範囲外の保持を証明した。
-  ParsedExpr実行器に宛先マスク書き込みを接続した。命令スケジュール、hazard/port legalityは未接続。
+  ParsedExpr実行器に宛先マスク書き込みを接続し、整数ALUのsource read・評価成功から
+  post-flushバスを使ったmasked write後のword readbackまでを証明した。命令スケジュール、
+  hazard/port legalityは未接続。
 - `BusLayout.lean`: MSB側から並ぶ4本の32ビットメモリ語と、64ビット2本のALUバスを接続し、
   バスを語列へ分解して再構成すると元のバスに戻ることを証明。
   命令の読み出し・書き込みスケジュールは扱わない。

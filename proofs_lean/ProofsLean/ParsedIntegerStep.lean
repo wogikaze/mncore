@@ -2300,6 +2300,30 @@ theorem parsedIntegerMaskedRegisterStep_success (files : IntegerRegisterFiles)
         accesses.writeSelection) := by
   simp [parsedIntegerMaskedRegisterStep, sourceX, sourceY, evaluated]
 
+theorem parsedIntegerMaskedRegisterStep_masked_readback
+    (files : IntegerRegisterFiles) (accesses : ParsedMaskedIntegerAccesses)
+    (reduced : Bool) (x y : IntegerALU.Bus) (output : IntegerALU.BusResult)
+    (sourceX : ParsedIntegerInput.read files accesses.sourceX = .ok x)
+    (sourceY : ParsedIntegerInput.read files accesses.sourceY = .ok y)
+    (evaluated : evaluateParsedIntegerAlu accesses.op x y reduced = .ok output)
+    (index : Fin 4) (within : index.val < count accesses.destination.bank
+      accesses.destination.width) :
+    ∃ nextFiles, parsedIntegerMaskedRegisterStep files accesses reduced = .ok nextFiles ∧
+      readDirectAccess nextFiles accesses.destination index =
+        mergeSelectedWord (readDirectAccess files accesses.destination index)
+          (unpackALUBus
+            (parsedOutputAfterFlush accesses.flushSelection output.value) index)
+          (selectedWordMask accesses.writeSelection.flags
+            accesses.writeSelection.longLong index) := by
+  refine ⟨writeDirectAccessMasked files accesses.destination
+      (unpackALUBus (parsedOutputAfterFlush accesses.flushSelection output.value))
+      accesses.writeSelection, ?_, ?_⟩
+  · exact parsedIntegerMaskedRegisterStep_success files accesses reduced x y output
+      sourceX sourceY evaluated
+  · exact readDirectAccessMasked_after_write files accesses.destination
+      (unpackALUBus (parsedOutputAfterFlush accesses.flushSelection output.value))
+      accesses.writeSelection index within
+
 def executeParsedMaskedIntegerExpr? (files : IntegerRegisterFiles)
     (expression : ParsedExpr) (directive : ParsedMaskDirective)
     (group : Fin 2) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
