@@ -815,6 +815,18 @@ example : ParsedOperand.toDirectMemoryAccess?
     (.mem ⟨.lm0, ⟨1, 0, 0, 0, 0, false, none⟩⟩ false true false none)
     0 0 0 0 0 = none := by decide
 
+def parsedAlufForwardMaskedExpr : ParsedExpr where
+  op := .alu .inc (some .i) false none
+  sources := [.forward .aluf false false false]
+  destinations := [plusOneWrite]
+  flush := none
+  text := "iinc $aluf $ln0v"
+
+theorem parsed_forward_expr_lowering :
+    (ParsedExpr.toDirectMaskedIntegerAccesses? parsedAlufForwardMaskedExpr (fun _ _ => 0) {}
+      0 0 0 0 0 0 0 0 0).map (fun accesses => accesses.sourceX) =
+        some (.forward .aluf false) := by decide
+
 example : ParsedOperand.toDirectMemoryAccess?
     (.mem ⟨.lm0, ⟨1, 0, 0, 0, 0, false, none⟩⟩ false false false
       (some (.pattern false 0)))
@@ -1586,6 +1598,31 @@ def parsedIntegerMaskedRegisterStepWithForwarding (files : IntegerRegisterFiles)
   | .ok write => .ok (commitParsedMaskedWrites files [write])
   | .failure => .failure
   | .unknown => .unknown
+
+def executeParsedMaskedIntegerExprWithForwarding? (files : IntegerRegisterFiles)
+    (slots : ProofsLean.MNCore.Forwarding.Slots) (expression : ParsedExpr)
+    (directive : ParsedMaskDirective)
+    (group : Fin 2) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
+    (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
+    Option (ProofsLean.StepResult IntegerRegisterFiles) :=
+  match ParsedExpr.toDirectMaskedIntegerAccesses? expression files.maskRegisters
+      directive group l2b l1b mab pe cycle bar0 bar1 tWord with
+  | some accesses =>
+      some (parsedIntegerMaskedRegisterStepWithForwarding files slots cycle accesses false)
+  | none => none
+
+theorem executeParsedMaskedIntegerExprWithForwarding?_uses_lowering
+    (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (expression : ParsedExpr) (directive : ParsedMaskDirective)
+    (group : Fin 2) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
+    (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
+    (accesses : ParsedMaskedIntegerAccesses)
+    (lowered : ParsedExpr.toDirectMaskedIntegerAccesses? expression files.maskRegisters
+      directive group l2b l1b mab pe cycle bar0 bar1 tWord = some accesses) :
+    executeParsedMaskedIntegerExprWithForwarding? files slots expression directive
+      group l2b l1b mab pe cycle bar0 bar1 tWord =
+        some (parsedIntegerMaskedRegisterStepWithForwarding files slots cycle accesses false) := by
+  simp [executeParsedMaskedIntegerExprWithForwarding?, lowered]
 
 theorem parsedIntegerMaskedRegisterStepWithForwarding_success
     (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)

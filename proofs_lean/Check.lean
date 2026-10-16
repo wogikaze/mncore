@@ -118,6 +118,8 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerInput_read_rounded
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerInput_read_unrounded
 #print axioms ProofsLean.MNCore.PEMemory.parsed_forward_integer_input
+#print axioms ProofsLean.MNCore.PEMemory.parsed_forward_expr_lowering
+#print axioms ProofsLean.MNCore.PEMemory.executeParsedMaskedIntegerExprWithForwarding?_uses_lowering
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerInput_forward_known
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerInput_forward_poison_fails
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerInput_forward_unknown_stays_unknown
