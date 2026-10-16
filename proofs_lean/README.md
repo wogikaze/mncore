@@ -107,6 +107,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   `ParsedL1Selector.inFiniteEnvelope_finite`は`mwrite`/`m4write`のselectorだけを有限carrier化し、
   `ParsedL1Op.selectorView?_bounded`は該当operationから有限範囲への射影を示す。
   これは`ParsedL1Op`全体の有限性やparser出力に対する一般的健全性を証明しない。
+  `ParsedL2Op.fromL1b`のselectorも0..7の全件受理・8拒否を根拠に有限carrier化し、
+  `ParsedL2Op.fromL1View?_bounded`で範囲条件からcarrierへの射影を示した。
+  これは`ParsedL2Op`全体の有限性やparser出力への一般的健全性を証明しない。
   `hbfe`/`hbfn`のmantissa length引数も、assemble3の`6..9`受理・`5,10,11`拒否を根拠に
   optional payloadの有限carrierを証明した。
   これらのpayload定理から`ParsedOp`/`ParsedLine`全体への合成、他の残存Nat/Int範囲、

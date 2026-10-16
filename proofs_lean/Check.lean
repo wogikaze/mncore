@@ -50,6 +50,8 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.ParsedL1Mabdiff.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.ParsedL1Selector.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.ParsedL1Op.selectorView?_bounded
+#print axioms ProofsLean.MNCore.Issue.ParsedL2FromL1.inFiniteEnvelope_finite
+#print axioms ProofsLean.MNCore.Issue.ParsedL2Op.fromL1View?_bounded
 #print axioms ProofsLean.MNCore.Issue.ParsedL1Op.mabdiffView?_bounded
 #print axioms ProofsLean.MNCore.Issue.waitTagInFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.optionWaitTagInFiniteEnvelope_finite

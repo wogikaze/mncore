@@ -507,6 +507,13 @@ def coverage_catalog() -> dict:
         }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
+            "theorem": "ProofsLean.MNCore.Issue.ParsedL2FromL1.inFiniteEnvelope_finite",
+            "scope": "Finite tagged carrier for `ParsedL2Op.fromL1b` selectors below 8.",
+            "evidence": "proofs_lean/evidence/isa-bounds/reference.json: l2bm@0..7 accepted and @8 rejected.",
+            "missing": "Only the from-L1B selector payload is bounded; complete ParsedL2Op finiteness and parser-to-envelope soundness remain unproved.",
+        }, {
+            "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
+            "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
             "theorem": "ProofsLean.MNCore.Issue.waitTagInFiniteEnvelope_finite",
             "scope": "Finite carrier for positive wait tags below 256.",
             "evidence": "proofs_lean/evidence/isa-bounds/reference.json: i00 and i100 rejected; i01 and iFF accepted, with exhaustive probes for 1..255.",

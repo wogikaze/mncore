@@ -175,6 +175,57 @@ theorem ParsedL1Op.selectorView?_bounded
       simpa [ParsedL1Selector.inFiniteEnvelope] using bound
   | _ => simp [ParsedL1Op.selectorView?]
 
+def ParsedL2Op.fromL1InFiniteEnvelope : ParsedL2Op → Prop
+  | .fromL1b index => index < 8
+  | _ => True
+
+inductive ParsedL2FromL1 where
+  | selector (index : Nat)
+  deriving DecidableEq, Repr
+
+def ParsedL2FromL1.inFiniteEnvelope : ParsedL2FromL1 → Prop
+  | .selector index => index < 8
+
+private def ParsedL2FromL1.finiteCode
+    (selector : {selector : ParsedL2FromL1 // selector.inFiniteEnvelope}) : Fin 8 :=
+  match selector with
+  | ⟨.selector index, bound⟩ => ⟨index, bound⟩
+
+private theorem ParsedL2FromL1.finiteCode_injective :
+    Function.Injective ParsedL2FromL1.finiteCode := by
+  intro a b equal
+  cases a with
+  | mk a ha =>
+    cases b with
+    | mk b hb =>
+      apply Subtype.ext
+      cases a with
+      | selector ai =>
+        cases b with
+        | selector bi =>
+          have indices : ai = bi := congrArg Fin.val equal
+          cases indices
+          rfl
+
+theorem ParsedL2FromL1.inFiniteEnvelope_finite :
+    Finite {selector : ParsedL2FromL1 // selector.inFiniteEnvelope} :=
+  Finite.of_injective ParsedL2FromL1.finiteCode ParsedL2FromL1.finiteCode_injective
+
+def ParsedL2Op.fromL1View? : ParsedL2Op → Option ParsedL2FromL1
+  | .fromL1b index => some (.selector index)
+  | _ => none
+
+theorem ParsedL2Op.fromL1View?_bounded
+    (op : ParsedL2Op) (bound : op.fromL1InFiniteEnvelope) :
+    ∀ value, op.fromL1View? = some value → value.inFiniteEnvelope := by
+  cases op with
+  | fromL1b index =>
+      intro value equal
+      cases equal
+      change index < 8 at bound
+      simpa [ParsedL2FromL1.inFiniteEnvelope] using bound
+  | _ => simp [ParsedL2Op.fromL1View?]
+
 def ParsedL1Op.mabdiffInFiniteEnvelope : ParsedL1Op → Prop
   | .distrib offset => ProofsLean.MNCore.Issue.mabdiffInFiniteEnvelope offset
   | .gather offset => ProofsLean.MNCore.Issue.mabdiffInFiniteEnvelope offset
