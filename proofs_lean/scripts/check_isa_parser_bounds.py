@@ -77,6 +77,12 @@ CASES = {
     "l2bm_address_32752": ("l2bmb $lc32752 $lb0\n", True, 1),
     "l2bm_address_32760": ("l2bmb $lc32760 $lb0\n", False, None),
     "l2bm_address_32768": ("l2bmb $lc32768 $lb0\n", False, None),
+    "matrix_read_width2": ("gmread $lx0 $nowrite\n", True, 1),
+    "matrix_read_width4": ("gmread $llx0 $nowrite\n", False, None),
+    "matrix_write_width2": ("gmwrite $aluf $lx0\n", True, 1),
+    "matrix_write_width4": ("gmwrite $aluf $llx0\n", False, None),
+    "matrix_mul_width2": ("gmmul $lx $aluf $ln0v4\n", True, 1),
+    "matrix_mul_width4": ("gmmul $llx $aluf $ln0v4\n", True, 1),
 }
 for index in range(2, 31):
     CASES[f"imr_selector_{index}"] = (f"lpassa $lm0 $ln0/$imr{index}\n", True, 1)
@@ -165,6 +171,7 @@ def main() -> None:
             "The sampled MV encoding requires nonzero transfer size to be a multiple of 64 long words; 32704 is accepted while 32768 overflows the size field. Zero is accepted by the assembler.",
             "L1BM width-2 addresses require 4-word alignment and width-4 addresses require 8-word alignment, within the 8192-long-word capacity. The L2BM transfer source accepts 16-aligned addresses through 32752 and rejects 32760 (alignment) and 32768 (range).",
             "Wait tags 1 through 255 are accepted; 0 and 256 are rejected.",
+            "Matrix rows 0..15 were checked using gmread. The tested matrix operand widths are instruction-specific: gmread/gmwrite accept width 2 and reject width 4, while gmmul accepts widths 2 and 4.",
             "$lb8188 is accepted while $lb8192 fails the 13-bit encoding field; the L1BM address must also be 4-word aligned. l1bmm@15 is accepted and @16 is rejected.",
             "DAR address 1023 is accepted and 1024 is rejected; `$lc...@.<l2b>` accepts selectors 0 and 1 and rejects 2.",
             "l1bmd-129, l1bmd-128, l1bmd127, and l1bmd128 are all accepted by assemble3; this is parser/encoding acceptance evidence, not a claim that these offsets are semantically useful.",

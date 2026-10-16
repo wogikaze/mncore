@@ -25,7 +25,7 @@
     },
     {
       "path": "proofs_lean/scripts/check_isa_parser_bounds.py",
-      "sha256": "c45ced3dc44ea0ea53655f75e590c9ceafced678eb6dc0cad692b22be35f93ee"
+      "sha256": "fedb03a390f2907f5e931e660e3082dc4f978381a0ca089c1b5e96381cb21e5b"
     }
   ],
   "observations": [
@@ -539,6 +539,54 @@
       "accepted": false,
       "assembler_output_lines": null,
       "diagnostic": "Out of range L2BM address.",
+      "matches_expected": true
+    },
+    {
+      "case": "matrix_read_width2",
+      "source": "gmread $lx0 $nowrite",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "matrix_read_width4",
+      "source": "gmread $llx0 $nowrite",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "mread except half-word input should be long word size",
+      "matches_expected": true
+    },
+    {
+      "case": "matrix_write_width2",
+      "source": "gmwrite $aluf $lx0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "matrix_write_width4",
+      "source": "gmwrite $aluf $llx0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "mwrite output should be long word size except half word dmode",
+      "matches_expected": true
+    },
+    {
+      "case": "matrix_mul_width2",
+      "source": "gmmul $lx $aluf $ln0v4",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "matrix_mul_width4",
+      "source": "gmmul $llx $aluf $ln0v4",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
       "matches_expected": true
     },
     {
@@ -4083,6 +4131,7 @@
     "The sampled MV encoding requires nonzero transfer size to be a multiple of 64 long words; 32704 is accepted while 32768 overflows the size field. Zero is accepted by the assembler.",
     "L1BM width-2 addresses require 4-word alignment and width-4 addresses require 8-word alignment, within the 8192-long-word capacity. The L2BM transfer source accepts 16-aligned addresses through 32752 and rejects 32760 (alignment) and 32768 (range).",
     "Wait tags 1 through 255 are accepted; 0 and 256 are rejected.",
+    "Matrix rows 0..15 were checked using gmread. The tested matrix operand widths are instruction-specific: gmread/gmwrite accept width 2 and reject width 4, while gmmul accepts widths 2 and 4.",
     "$lb8188 is accepted while $lb8192 fails the 13-bit encoding field; the L1BM address must also be 4-word aligned. l1bmm@15 is accepted and @16 is rejected.",
     "DAR address 1023 is accepted and 1024 is rejected; `$lc...@.<l2b>` accepts selectors 0 and 1 and rejects 2.",
     "l1bmd-129, l1bmd-128, l1bmd127, and l1bmd128 are all accepted by assemble3; this is parser/encoding acceptance evidence, not a claim that these offsets are semantically useful.",
