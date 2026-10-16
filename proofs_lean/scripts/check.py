@@ -76,7 +76,7 @@ def validate_source(text: str, filename: str) -> None:
 def validate_axioms(output: str) -> None:
     records = re.findall(r"depends on axioms:\s*\[([^]]*)\]", output)
     no_axioms = re.findall(r"does not depend on any axioms", output)
-    if len(records) + len(no_axioms) != 145:
+    if len(records) + len(no_axioms) != 146:
         raise ValueError(f"missing kernel dependency reports: {output}")
     for record in records:
         names = {x.strip() for x in record.split(",") if x.strip()}

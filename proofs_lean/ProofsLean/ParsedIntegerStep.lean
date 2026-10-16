@@ -1664,6 +1664,36 @@ theorem updateParsedIntegerALUForwardingCycle_reads_back
   simp [ParsedIntegerInput.readWithForwarding, ParsedIntegerInput.forwardUnit,
     ParsedIntegerInput.applyRounding]
 
+/-- Single-expression, single-cycle integer ALU transition. The register write
+and ALU forwarding update consume the same prepared, post-flush result. -/
+def parsedIntegerMaskedALUAndForwardingCycleStep
+    (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (cycle : Fin 4) (accesses : ParsedMaskedIntegerAccesses) (reduced noForward : Bool) :
+    ProofsLean.StepResult (IntegerRegisterFiles × ProofsLean.MNCore.Forwarding.Slots) :=
+  match prepareParsedMaskedWriteWithForwarding files slots cycle accesses reduced with
+  | .failure => .failure
+  | .unknown => .unknown
+  | .ok write =>
+      match updateParsedIntegerALUForwardingCycle slots cycle (.ok write) noForward with
+      | .failure => .failure
+      | .unknown => .unknown
+      | .ok nextSlots =>
+          .ok (commitParsedMaskedWrites files [write], nextSlots)
+
+theorem parsedIntegerMaskedALUAndForwardingCycleStep_prepares_once
+    (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (cycle : Fin 4) (accesses : ParsedMaskedIntegerAccesses) (reduced noForward : Bool) :
+    parsedIntegerMaskedALUAndForwardingCycleStep files slots cycle accesses reduced noForward =
+      match prepareParsedMaskedWriteWithForwarding files slots cycle accesses reduced with
+      | .failure => .failure
+      | .unknown => .unknown
+      | .ok write =>
+          match updateParsedIntegerALUForwardingCycle slots cycle (.ok write) noForward with
+          | .failure => .failure
+          | .unknown => .unknown
+          | .ok nextSlots =>
+              .ok (commitParsedMaskedWrites files [write], nextSlots) := rfl
+
 def parsedIntegerMaskedLineStepWithForwarding (files : IntegerRegisterFiles)
     (slots : ProofsLean.MNCore.Forwarding.Slots)
     (expressions : List ParsedExpr) (control : ParsedMaskExecutionControl) :
