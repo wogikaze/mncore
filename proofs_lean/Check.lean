@@ -95,6 +95,8 @@ import Lean
 #print axioms ProofsLean.ControlNormalization.source_execution_advancing
 #print axioms ProofsLean.ControlNormalization.source_score_advancing
 #print axioms ProofsLean.MNCore.PEMemory.parsed_issue_advances_elapsed_word
+#print axioms ProofsLean.MNCore.PEMemory.parsed_issue_line_mask_flag_iff
+#print axioms ProofsLean.MNCore.PEMemory.parsed_issue_line_mask_cancels_unmasked_memory_target
 #print axioms ProofsLean.MNCore.PEMemory.parsed_issue_advances_absolute_cycle
 #print axioms ProofsLean.MNCore.PEMemory.parsed_source_clock_matches_issue_cost
 #print axioms ProofsLean.MNCore.PEMemory.parsed_source_access_clock_matches_issue_cost

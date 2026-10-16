@@ -211,6 +211,24 @@ def resolveFlushSelection? (flush : Option ParsedMask)
 def parsedExprHasSingleLineWriteMask (expression : ParsedExpr) : Bool :=
   expression.destinations.any parsedOperandHasSingleLineWriteMask
 
+theorem parsed_issue_line_mask_flag_iff
+    (expressions : List ParsedExpr) :
+    expressions.any parsedExprHasSingleLineWriteMask = true ↔
+      ∃ expression, expression ∈ expressions ∧
+        parsedExprHasSingleLineWriteMask expression = true := by
+  simp [List.any_eq_true]
+
+theorem parsed_issue_line_mask_cancels_unmasked_memory_target
+    (expressions : List ParsedExpr)
+    (registers : ProofsLean.MNCore.Masks.RegisterFile) (cycle : Fin 4)
+    (directive : ParsedMaskDirective) (bank : Bank) (access : Access)
+    (lineHasMask : expressions.any parsedExprHasSingleLineWriteMask = true) :
+    ParsedOperand.resolveMemoryWriteSelection?
+      (.mem access false false false none) bank registers cycle directive
+      (expressions.any parsedExprHasSingleLineWriteMask) =
+      some ⟨BitVec.allOnes 4, true⟩ := by
+  simp [lineHasMask, ParsedOperand.resolveMemoryWriteSelection?]
+
 theorem single_line_mask_cancels_omr_directive
     (registers : ProofsLean.MNCore.Masks.RegisterFile) (cycle : Fin 4)
     (directive : ParsedMaskDirective) :

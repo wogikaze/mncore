@@ -138,7 +138,10 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   など他のtop-level行はlowering対象外。精度縮減、hazard/port legalityは未接続で、
   完全な命令実行意味論ではない。
   multiline directiveの対象・entry・幅をParsedLineに保持し、mask stateの置換と通常行での保持を証明した。
-  OMR対象directiveから選択フラグを解決する。Rust parserがこのParsedLineを生成する対応と、
+  issue line全体の single-line mask 集約を定義し、マスクを持つdestinationの存在と集約flagが
+  trueであることの同値、およびそのflagが同じ行の別のunmasked memory destinationで
+  multiline directiveを打ち消すことを証明した。OMR対象directiveから選択フラグを解決する。
+  Rust parserがこのParsedLineを生成する対応と、
   ソース全体を通したdirective適用は未接続。
   符号反転・精度拡張・丸め・マスク付き入力、非PEメモリはlowering対象外。
 - `Issue.lean`: PE式の同時発行判定について、グループ重複、MAU組み合わせ、
