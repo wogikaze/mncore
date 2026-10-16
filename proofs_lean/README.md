@@ -110,6 +110,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   `ParsedL2Op.fromL1b`のselectorも0..7の全件受理・8拒否を根拠に有限carrier化し、
   `ParsedL2Op.fromL1View?_bounded`で範囲条件からcarrierへの射影を示した。
   これは`ParsedL2Op`全体の有限性やparser出力への一般的健全性を証明しない。
+  `ParsedL1Op.inFiniteEnvelope_finite`では、全9 variantをselector、RRN precision、MAB差分の
+  envelopeでタグ付き有限型へ写し、`ParsedL1Op`全体のbounded subtypeが有限であることを証明した。
+  このenvelopeがassembler受理parser出力を全て含む証明、およびPE行・machineへの合成は未実装。
   `hbfe`/`hbfn`のmantissa length引数も、assemble3の`6..9`受理・`5,10,11`拒否を根拠に
   optional payloadの有限carrierを証明した。
   これらのpayload定理から`ParsedOp`/`ParsedLine`全体への合成、他の残存Nat/Int範囲、

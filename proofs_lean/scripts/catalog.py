@@ -507,6 +507,13 @@ def coverage_catalog() -> dict:
         }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
+            "theorem": "ProofsLean.MNCore.Issue.ParsedL1Op.inFiniteEnvelope_finite",
+            "scope": "Finite tagged carrier for all nine ParsedL1Op variants under the observed mab selector, RRN precision and MAB difference envelopes.",
+            "evidence": "proofs_lean/evidence/isa-bounds/reference.json: l1bmm/l1bmm4 selectors 0..15, signed mabdiff -255..255, plus ParsedRrn's explicit ASCII precision envelope and finite opcode set.",
+            "missing": "The envelope is not yet proved to contain every assembler-accepted ParsedL1Op parse, and no finite PE-line or machine-level carrier is composed from it.",
+        }, {
+            "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
+            "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
             "theorem": "ProofsLean.MNCore.Issue.ParsedL2FromL1.inFiniteEnvelope_finite",
             "scope": "Finite tagged carrier for `ParsedL2Op.fromL1b` selectors below 8.",
             "evidence": "proofs_lean/evidence/isa-bounds/reference.json: l2bm@0..7 accepted and @8 rejected.",

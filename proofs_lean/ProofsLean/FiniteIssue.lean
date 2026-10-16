@@ -91,12 +91,19 @@ theorem ParsedRrn.inFiniteEnvelope_finite :
     Finite {rrn : ParsedRrn // rrn.inFiniteEnvelope} :=
   Finite.of_injective ParsedRrn.finiteCode ParsedRrn.finiteCode_injective
 
+private theorem ParsedRrn.finiteCode_value_injective
+    (a b : ParsedRrn) (ha : a.inFiniteEnvelope) (hb : b.inFiniteEnvelope)
+    (equal : ParsedRrn.finiteCode ⟨a, ha⟩ = ParsedRrn.finiteCode ⟨b, hb⟩) :
+    a = b := by
+  have subtypeEqual := ParsedRrn.finiteCode_injective equal
+  exact congrArg Subtype.val subtypeEqual
+
 inductive ParsedL1Mabdiff where
   | distrib (offset : Int) | gather (offset : Int)
   deriving DecidableEq, Repr
 
 def ParsedL1Mabdiff.inFiniteEnvelope : ParsedL1Mabdiff → Prop
-  | .distrib offset | .gather offset => mabdiffInFiniteEnvelope offset
+  | .distrib offset | .gather offset => ProofsLean.MNCore.Issue.mabdiffInFiniteEnvelope offset
 
 private def ParsedL1Mabdiff.finiteCode
     (op : {op : ParsedL1Mabdiff // op.inFiniteEnvelope}) : Fin 512 ⊕ Fin 512 :=
@@ -225,6 +232,56 @@ theorem ParsedL2Op.fromL1View?_bounded
       change index < 8 at bound
       simpa [ParsedL2FromL1.inFiniteEnvelope] using bound
   | _ => simp [ParsedL2Op.fromL1View?]
+
+abbrev ParsedL1OpFiniteCode :=
+  Fin 9 × (Fin 1 ⊕ Fin 16 ⊕
+    ((Fin 128 × Fin 8) × Bool ⊕ Fin 512))
+
+def ParsedL1Op.inFiniteEnvelope : ParsedL1Op → Prop
+  | .mwrite index | .m4write index => index < 16
+  | .reduce rrn _ | .reduce4 rrn _ => rrn.inFiniteEnvelope
+  | .distrib offset | .gather offset => mabdiffInFiniteEnvelope offset
+  | .pbcast | .mbcast | .m4bcast => True
+
+private def ParsedL1Op.finiteCode
+    (op : {op : ParsedL1Op // op.inFiniteEnvelope}) : ParsedL1OpFiniteCode :=
+  match op with
+  | ⟨.pbcast, _⟩ => (0, Sum.inl 0)
+  | ⟨.mbcast, _⟩ => (1, Sum.inl 0)
+  | ⟨.mwrite index, bound⟩ => (2, Sum.inr (Sum.inl ⟨index, bound⟩))
+  | ⟨.m4bcast, _⟩ => (3, Sum.inl 0)
+  | ⟨.m4write index, bound⟩ => (4, Sum.inr (Sum.inl ⟨index, bound⟩))
+  | ⟨.reduce rrn round, bound⟩ =>
+      (5, Sum.inr (Sum.inr (Sum.inl (ParsedRrn.finiteCode ⟨rrn, bound⟩, round))))
+  | ⟨.reduce4 rrn round, bound⟩ =>
+      (6, Sum.inr (Sum.inr (Sum.inl (ParsedRrn.finiteCode ⟨rrn, bound⟩, round))))
+  | ⟨.distrib offset, bound⟩ =>
+      (7, Sum.inr (Sum.inr (Sum.inr (mabdiffFiniteCode ⟨offset, bound⟩))))
+  | ⟨.gather offset, bound⟩ =>
+      (8, Sum.inr (Sum.inr (Sum.inr (mabdiffFiniteCode ⟨offset, bound⟩))))
+
+private theorem ParsedL1Op.finiteCode_injective :
+    Function.Injective ParsedL1Op.finiteCode := by
+  intro a b equal
+  cases a with
+  | mk a ha =>
+    cases b with
+    | mk b hb =>
+      apply Subtype.ext
+      cases a <;> cases b <;>
+        simp_all [ParsedL1Op.finiteCode, ParsedRrn.finiteCode]
+      all_goals
+        try exact congrArg Fin.val equal
+        try
+          exact ParsedRrn.finiteCode_value_injective _ _
+            (by simpa [ParsedL1Op.inFiniteEnvelope] using ha)
+            (by simpa [ParsedL1Op.inFiniteEnvelope] using hb)
+            (Prod.ext equal.1.1 equal.1.2)
+        try exact congrArg Subtype.val (mabdiffFiniteCode_injective equal)
+
+theorem ParsedL1Op.inFiniteEnvelope_finite :
+    Finite {op : ParsedL1Op // op.inFiniteEnvelope} := by
+  exact Finite.of_injective ParsedL1Op.finiteCode ParsedL1Op.finiteCode_injective
 
 def ParsedL1Op.mabdiffInFiniteEnvelope : ParsedL1Op → Prop
   | .distrib offset => ProofsLean.MNCore.Issue.mabdiffInFiniteEnvelope offset
