@@ -103,6 +103,10 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   parser outputや`ParsedL1Op`全体にはまだ接続していない。
   `ParsedL1Op.distrib/gather`からoffset付きvariantだけを取り出す射影を定義し、その結果が有限なtagged carrierに
   入ることを証明した。これも他の`ParsedL1Op` variantや完全なPE行の有限性は含まない。
+  `l1bmm@`と`l1bmm4@`のselector 0..15をassemble3で全件確認し、両形式の16が拒否されることも確認した。
+  `ParsedL1Selector.inFiniteEnvelope_finite`は`mwrite`/`m4write`のselectorだけを有限carrier化し、
+  `ParsedL1Op.selectorView?_bounded`は該当operationから有限範囲への射影を示す。
+  これは`ParsedL1Op`全体の有限性やparser出力に対する一般的健全性を証明しない。
   `hbfe`/`hbfn`のmantissa length引数も、assemble3の`6..9`受理・`5,10,11`拒否を根拠に
   optional payloadの有限carrierを証明した。
   これらのpayload定理から`ParsedOp`/`ParsedLine`全体への合成、他の残存Nat/Int範囲、

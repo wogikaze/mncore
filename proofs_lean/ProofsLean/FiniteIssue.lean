@@ -121,6 +121,60 @@ theorem ParsedL1Mabdiff.inFiniteEnvelope_finite :
     Finite {op : ParsedL1Mabdiff // op.inFiniteEnvelope} :=
   Finite.of_injective ParsedL1Mabdiff.finiteCode ParsedL1Mabdiff.finiteCode_injective
 
+inductive ParsedL1Selector where
+  | mab (index : Nat) | mab4 (index : Nat)
+  deriving DecidableEq, Repr
+
+def ParsedL1Selector.inFiniteEnvelope : ParsedL1Selector → Prop
+  | .mab index | .mab4 index => index < 16
+
+private def ParsedL1Selector.finiteCode
+    (selector : {selector : ParsedL1Selector // selector.inFiniteEnvelope}) : Fin 16 ⊕ Fin 16 :=
+  match selector with
+  | ⟨.mab index, bound⟩ => Sum.inl ⟨index, bound⟩
+  | ⟨.mab4 index, bound⟩ => Sum.inr ⟨index, bound⟩
+
+private theorem ParsedL1Selector.finiteCode_injective :
+    Function.Injective ParsedL1Selector.finiteCode := by
+  intro a b equal
+  cases a with
+  | mk a ha =>
+    cases b with
+    | mk b hb =>
+      apply Subtype.ext
+      cases a <;> cases b <;>
+        simp [ParsedL1Selector.finiteCode] at equal ⊢
+      all_goals exact congrArg Fin.val equal
+
+theorem ParsedL1Selector.inFiniteEnvelope_finite :
+    Finite {selector : ParsedL1Selector // selector.inFiniteEnvelope} :=
+  Finite.of_injective ParsedL1Selector.finiteCode ParsedL1Selector.finiteCode_injective
+
+def ParsedL1Op.selectorInFiniteEnvelope : ParsedL1Op → Prop
+  | .mwrite index | .m4write index => index < 16
+  | _ => True
+
+def ParsedL1Op.selectorView? : ParsedL1Op → Option ParsedL1Selector
+  | .mwrite index => some (.mab index)
+  | .m4write index => some (.mab4 index)
+  | _ => none
+
+theorem ParsedL1Op.selectorView?_bounded
+    (op : ParsedL1Op) (bound : op.selectorInFiniteEnvelope) :
+    ∀ value, op.selectorView? = some value → value.inFiniteEnvelope := by
+  cases op with
+  | mwrite index =>
+      intro value equal
+      cases equal
+      change index < 16 at bound
+      simpa [ParsedL1Selector.inFiniteEnvelope] using bound
+  | m4write index =>
+      intro value equal
+      cases equal
+      change index < 16 at bound
+      simpa [ParsedL1Selector.inFiniteEnvelope] using bound
+  | _ => simp [ParsedL1Op.selectorView?]
+
 def ParsedL1Op.mabdiffInFiniteEnvelope : ParsedL1Op → Prop
   | .distrib offset => ProofsLean.MNCore.Issue.mabdiffInFiniteEnvelope offset
   | .gather offset => ProofsLean.MNCore.Issue.mabdiffInFiniteEnvelope offset
