@@ -747,6 +747,48 @@ theorem ParsedOperand.inFiniteEnvelope_finite :
     Finite {operand : ParsedOperand // operand.inFiniteEnvelope} :=
   Finite.of_injective ParsedOperand.finiteCode ParsedOperand.finiteCode_injective
 
+/-- A parser-bounded source tuple whose operands lie in the recorded finite
+operand envelope ranges over a finite type. Destinations are deliberately not
+included: Rust assigns the remaining token suffix to destinations without a
+parser-side length bound. -/
+def ParsedExpr.sourcesInFiniteEnvelope (expression : ParsedExpr) : Prop :=
+  expression.sources.length ≤ 3 ∧
+    ∀ operand ∈ expression.sources, operand.inFiniteEnvelope
+
+theorem ParsedExpr.sourcesInFiniteEnvelope_of_parserArity
+    (expression : ParsedExpr)
+    (arity : expression.sourcesMatchParserArity)
+    (operands : ∀ operand ∈ expression.sources, operand.inFiniteEnvelope) :
+    expression.sourcesInFiniteEnvelope :=
+  ⟨expression.sources_length_le_three arity, operands⟩
+
+private def ParsedExpr.sourceCode
+    (sources : {sources : List ParsedOperand //
+      sources.length ≤ 3 ∧ ∀ operand ∈ sources, operand.inFiniteEnvelope}) :
+    {values : List {operand : ParsedOperand // operand.inFiniteEnvelope} //
+      values.length ≤ 3} := by
+  let values := sources.1.attach.map fun operand =>
+    (⟨operand.1, sources.2.2 operand.1 operand.2⟩ :
+      {operand : ParsedOperand // operand.inFiniteEnvelope})
+  refine ⟨values, ?_⟩
+  simpa [values] using sources.2.1
+
+private theorem ParsedExpr.sourceCode_injective :
+    Function.Injective ParsedExpr.sourceCode := by
+  intro a b equal
+  apply Subtype.ext
+  have valueEqual := congrArg (fun values => values.1.map Subtype.val) equal
+  simpa [ParsedExpr.sourceCode, List.attach_map_val] using valueEqual
+
+theorem ParsedExpr.sourcesInFiniteEnvelope_finite :
+    Finite {sources : List ParsedOperand //
+      sources.length ≤ 3 ∧ ∀ operand ∈ sources, operand.inFiniteEnvelope} := by
+  let Operand := {operand : ParsedOperand // operand.inFiniteEnvelope}
+  letI : Finite Operand := ParsedOperand.inFiniteEnvelope_finite
+  letI : Finite {values : List Operand // values.length ≤ 3} :=
+    listLengthLE_finite Operand 3
+  exact Finite.of_injective ParsedExpr.sourceCode ParsedExpr.sourceCode_injective
+
 def ParsedL1bSet.inFiniteEnvelope (set : ParsedL1bSet) : Prop :=
   set.mask < 8 ∧ set.immode < 8
 
