@@ -91,6 +91,10 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   10以下であることを証明した（`projectLine_expression_count_le_ten`）。operandの数値envelopeも定義し、
   有限な要素型上で長さ上限付きListの部分型が有限である補題`listLengthLE_finite`も追加した。
   これは各命令のsources/destinations件数上限を得て初めて、式やPE行の有限性に適用できる。
+  Rust `parse_expr`の入力prefix分割を`ParsedOp.parserSourceLimit`として写し、ALU入力数、MAUの
+  FMA=3/MUL=2/その他、matrix read/write=1、transfer=高々1を記録した。
+  `ParsedExpr.sources_length_le_three`はこのarity条件からsource最大3を導くが、
+  arbitrary `ParsedExpr` がRust parser出力である証明や、destination列の上限はまだ含まない。
   全ての構造化`ParsedOperand` constructorを有限コードへ写して
   `ParsedOperand.inFiniteEnvelope_finite`を証明した。
   同ファイルで`ParsedMask.entry < 32`の有限部分型も証明した。assemble3では`$imr0..31`が受理され

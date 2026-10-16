@@ -351,6 +351,42 @@ inductive ParsedOp where
   | l2bm (op : ParsedL2Op)
   deriving DecidableEq, Repr
 
+/-- Maximum number of source tokens assigned by Rust `parse_expr` before its
+remaining operands are split into destinations. This mirrors the parser's
+`n_in` calculation; it is not by itself a theorem that an arbitrary
+`ParsedExpr` came from that parser. -/
+def ParsedOp.parserSourceLimit : ParsedOp → Nat
+  | .alu name .. => name.inputCount
+  | .immediate .. | .zero | .wait .. | .noforward => 0
+  | .mau _ matrix kind .. =>
+      match matrix, kind with
+      | _, .fma => 3
+      | _, .mul => 2
+      | false, .add => 2
+      | _, _ => 1
+  | .matrixWrite .. | .matrixRead .. => 1
+  | .l1bm .. | .l2bm .. => 1
+
+theorem ParsedAluName.inputCount_le_two (name : ParsedAluName) :
+    name.inputCount ≤ 2 := by
+  cases name <;> decide
+
+theorem ParsedOp.parserSourceLimit_le_three (op : ParsedOp) :
+    op.parserSourceLimit ≤ 3 := by
+  cases op with
+  | alu name _ _ _ =>
+      exact Nat.le_trans (ParsedAluName.inputCount_le_two name) (by decide)
+  | immediate value unsigned => change 0 ≤ 3; omega
+  | zero => change 0 ≤ 3; omega
+  | mau precision matrix kind half round =>
+      cases matrix <;> cases kind <;> simp [ParsedOp.parserSourceLimit]
+  | matrixWrite precision => change 1 ≤ 3; omega
+  | matrixRead precision => change 1 ≤ 3; omega
+  | wait tag => change 0 ≤ 3; omega
+  | noforward => simp [ParsedOp.parserSourceLimit]
+  | l1bm operation => change 1 ≤ 3; omega
+  | l2bm operation => change 1 ≤ 3; omega
+
 /-- Structural PE-expression AST mirror. Issue and execution interpretations
 are separate functions over this syntax. -/
 structure ParsedExpr where
@@ -360,6 +396,15 @@ structure ParsedExpr where
   flush : Option ParsedMask
   text : String
   deriving DecidableEq, Repr
+
+/-- Source-count condition imposed by the Rust parser's fixed source prefix. -/
+def ParsedExpr.sourcesMatchParserArity (expression : ParsedExpr) : Prop :=
+  expression.sources.length ≤ expression.op.parserSourceLimit
+
+theorem ParsedExpr.sources_length_le_three (expression : ParsedExpr)
+    (arity : expression.sourcesMatchParserArity) :
+    expression.sources.length ≤ 3 :=
+  Nat.le_trans arity expression.op.parserSourceLimit_le_three
 
 /-- Canonical PE expression syntax. Display text is intentionally absent;
 source and destination order remains explicit. -/
