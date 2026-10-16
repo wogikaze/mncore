@@ -1,5 +1,6 @@
 import ProofsLean.BusLayout
 import ProofsLean.Issue
+import ProofsLean.PlusOne
 
 /-! A deliberately partial instruction fragment: two unmasked memory reads,
 the parsed integer ALU request, and one unmasked memory write. This composes
@@ -98,6 +99,7 @@ structure ParsedIntegerAccesses where
   sourceX : DirectMemoryAccess
   sourceY : DirectMemoryAccess
   destination : DirectMemoryAccess
+  deriving DecidableEq, Repr
 
 /-- Lower the memory-only ALU expression subset from ParsedExpr to explicit
 per-cycle accesses. Operands with rounding, masked destinations, non-memory
@@ -137,6 +139,12 @@ example : ParsedOperand.toDirectMemoryAccess?
 example : ParsedOperand.toDirectMemoryAccess?
     (.mem ⟨.lm0, ⟨2, 3, 3, 3, 3, false, some 2⟩⟩ false false false none)
     2 0 3 0 0 = some ⟨.lm0, .long, ⟨8, by decide⟩⟩ := by decide
+
+example : ParsedExpr.toDirectIntegerAccesses?
+    ProofsLean.MNCore.Issue.plusOneParsed 0 0 0 0 0 =
+      some ⟨ProofsLean.MNCore.Issue.plusOneParsed.op,
+        ⟨.lm0, .long, ⟨0, by decide⟩⟩, ⟨.lm0, .long, ⟨0, by decide⟩⟩,
+        ⟨.lm1, .long, ⟨0, by decide⟩⟩⟩ := by decide
 
 def readRegisterBank (files : IntegerRegisterFiles) (bank : Bank) (width : Width)
     (address : Fin bank.capacity) : WordBus :=
@@ -195,6 +203,26 @@ def parsedIntegerRegisterOutput (files : IntegerRegisterFiles)
   IntegerALU.evaluateBus precision aluOp
     (pack (readDirectAccess files sourceX))
     (pack (readDirectAccess files sourceY)) reduced
+
+theorem parsed_iinc_output_eq_incrementPair (files : IntegerRegisterFiles)
+    (address : Fin Bank.lm0.capacity) :
+    (parsedIntegerRegisterOutput files ⟨.lm0, .long, address⟩
+      ⟨.lm0, .long, address⟩ .word (.arith .inc false) false).value.high =
+      ProofsLean.MNCore.PlusOne.incrementPair
+        (files.lm0 address) (files.lm0 (advance .lm0 address 1)) := by
+  have hzero : advance .lm0 address 0 = address := by
+    apply Fin.ext
+    simp [advance, Nat.mod_eq_of_lt address.isLt]
+  have hread0 : readWords .lm0 .long files.lm0 address 0 = files.lm0 address := by
+    simp [readWords, count, Width.words, advance, Nat.mod_eq_of_lt address.isLt]
+  have hread1 : readWords .lm0 .long files.lm0 address 1 =
+      files.lm0 (advance .lm0 address 1) := by
+    simp [readWords, count, Width.words]
+  simp [parsedIntegerRegisterOutput, readDirectAccess, readRegisterBank,
+    ProofsLean.MNCore.PlusOne.incrementPair, pack, hread0, hread1,
+    IntegerALU.evaluateBus, IntegerALU.lane, IntegerALU.Precision.lanes,
+    IntegerALU.Precision.width, IntegerALU.evaluateLane, IntegerALU.arithmetic,
+    List.range, List.range.loop]
 
 theorem direct_access_write_readback (files : IntegerRegisterFiles)
     (destination : DirectMemoryAccess) (data : WordBus) (index : Fin 4)
