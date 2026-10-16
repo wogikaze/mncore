@@ -1098,6 +1098,57 @@ theorem ParsedExpr.toDirectDoubleMatrixWriteAccesses_destination_invariant
       cases loweredB
       exact ⟨rfl, rfl⟩
 
+structure ParsedSingleMatrixWriteAccesses where
+  source : ParsedIntegerInput
+  sideY : Bool
+  row : Nat
+
+structure ParsedSingleMatrixWriteShape where
+  source : ParsedOperand
+  sideY : Bool
+  row : Nat
+
+def ParsedExpr.toDirectSingleMatrixWriteShape?
+    (expression : ParsedExpr) : Option ParsedSingleMatrixWriteShape :=
+  match expression.op, expression.sources, expression.destinations with
+  | .matrixWrite .f, [source], [.matrix sideY _ (some row)] =>
+      match source with
+      | .mem _ false false false _ | .forward _ false false false =>
+          some ⟨source, sideY, row⟩
+      | _ => none
+  | _, _, _ => none
+
+def ParsedExpr.toDirectSingleMatrixWriteAccesses?
+    (expression : ParsedExpr) (context : ParsedIntegerContext) :
+    Option ParsedSingleMatrixWriteAccesses := do
+  let shape ← ParsedExpr.toDirectSingleMatrixWriteShape? expression
+  let source ← ParsedOperand.toParsedIntegerInput? shape.source .long
+    context.group context.l2b context.l1b context.mab context.pe context.cycle
+    context.bar0 context.bar1 context.tWord
+  some ⟨source, shape.sideY, shape.row⟩
+
+theorem ParsedExpr.toDirectSingleMatrixWriteAccesses_destination_invariant
+    (expression : ParsedExpr) (contextA contextB : ParsedIntegerContext)
+    (accessesA accessesB : ParsedSingleMatrixWriteAccesses)
+    (loweredA : ParsedExpr.toDirectSingleMatrixWriteAccesses? expression contextA = some accessesA)
+    (loweredB : ParsedExpr.toDirectSingleMatrixWriteAccesses? expression contextB = some accessesB) :
+    accessesA.sideY = accessesB.sideY ∧ accessesA.row = accessesB.row := by
+  cases hShape : ParsedExpr.toDirectSingleMatrixWriteShape? expression with
+  | none => simp [ParsedExpr.toDirectSingleMatrixWriteAccesses?, hShape] at loweredA
+  | some shape =>
+      simp only [ParsedExpr.toDirectSingleMatrixWriteAccesses?, hShape] at loweredA loweredB
+      cases hSourceA : ParsedOperand.toParsedIntegerInput? shape.source .long
+        contextA.group contextA.l2b contextA.l1b contextA.mab contextA.pe contextA.cycle
+        contextA.bar0 contextA.bar1 contextA.tWord <;>
+        simp [hSourceA] at loweredA
+      cases hSourceB : ParsedOperand.toParsedIntegerInput? shape.source .long
+        contextB.group contextB.l2b contextB.l1b contextB.mab contextB.pe contextB.cycle
+        contextB.bar0 contextB.bar1 contextB.tWord <;>
+        simp [hSourceB] at loweredB
+      cases loweredA
+      cases loweredB
+      exact ⟨rfl, rfl⟩
+
 def parsedMatrixReadBaseD (row : Nat) : Fin 4 :=
   ⟨row % 4, Nat.mod_lt _ (by decide)⟩
 
@@ -1154,6 +1205,43 @@ def writeParsedDoubleMatrixStoreRow (old : ParsedMatrixReadStore)
     else old nextMab nextSide
 
 def parsedMatrixWritePEs : List (Fin 4) := [0, 1, 2, 3]
+
+def prepareParsedSingleMatrixWritePEs (files : IntegerRegisterFiles)
+    (slots : ProofsLean.MNCore.Forwarding.Slots) (expression : ParsedExpr)
+    (groupContext : ParsedPEGroupContext) (cycle : Fin 4)
+    (pes : List (Fin 4)) (buses : Fin 4 → IntegerALU.Bus) :
+    ProofsLean.StepResult (Fin 4 → IntegerALU.Bus) :=
+  match pes with
+  | [] => .ok buses
+  | pe :: rest =>
+      let context := groupContext.at pe cycle
+      match ParsedExpr.toDirectSingleMatrixWriteAccesses? expression context with
+      | none => .unknown
+      | some accesses =>
+          match ParsedIntegerInput.readWithForwarding files slots cycle accesses.source with
+          | .failure => .failure
+          | .unknown => .unknown
+          | .ok bus =>
+              prepareParsedSingleMatrixWritePEs files slots expression groupContext cycle rest
+                (fun index => if index = pe then bus else buses index)
+
+theorem prepareParsedSingleMatrixWritePEs_all
+    (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (expression : ParsedExpr) (groupContext : ParsedPEGroupContext) (cycle : Fin 4)
+    (accesses : Fin 4 → ParsedSingleMatrixWriteAccesses)
+    (buses : Fin 4 → IntegerALU.Bus)
+    (lowered : ∀ pe, ParsedExpr.toDirectSingleMatrixWriteAccesses? expression
+      (groupContext.at pe cycle) = some (accesses pe))
+    (read : ∀ pe, ParsedIntegerInput.readWithForwarding files slots cycle
+      (accesses pe).source = .ok (buses pe)) :
+    prepareParsedSingleMatrixWritePEs files slots expression groupContext cycle
+      parsedMatrixWritePEs (fun _ => ⟨0, 0⟩) = .ok buses := by
+  simp [prepareParsedSingleMatrixWritePEs, parsedMatrixWritePEs, lowered, read]
+  funext pe
+  have peCases : pe = 0 ∨ pe = 1 ∨ pe = 2 ∨ pe = 3 := by
+    have h := pe.isLt
+    omega
+  rcases peCases with h | h | h | h <;> simp [h]
 
 def prepareParsedDoubleMatrixWritePEs (files : IntegerRegisterFiles)
     (slots : ProofsLean.MNCore.Forwarding.Slots) (expression : ParsedExpr)
@@ -1522,6 +1610,13 @@ theorem doubleMatrixReadBus_physical_layout
 def singleMatrixPhysicalRow (row : Fin 8) : Fin 16 :=
   ⟨row.val * 2, by have h := row.isLt; omega⟩
 
+theorem singleMatrixPhysicalRow_injective : Function.Injective singleMatrixPhysicalRow := by
+  intro left right equal
+  apply Fin.ext
+  have values := congrArg Fin.val equal
+  simp [singleMatrixPhysicalRow] at values
+  omega
+
 def singleMatrixReadColumn (base : Fin 8) (cycle : Fin 4) : Fin 8 :=
   ⟨(base.val + cycle.val) % 8, Nat.mod_lt _ (by decide)⟩
 
@@ -1532,6 +1627,181 @@ def singleMatrixReadBus (words : DoubleMatrixPhysicalFace)
   let row1 : Fin 8 := ⟨2 * pe.val + 1, by have h := pe.isLt; omega⟩
   ⟨words (singleMatrixPhysicalRow row0) column ++
     words (singleMatrixPhysicalRow row1) column, 0⟩
+
+def singleMatrixWriteRowAt (base : Nat) (cycle : Fin 4) : Fin 8 :=
+  ⟨(base + cycle.val) % 8, Nat.mod_lt _ (by decide)⟩
+
+/-- Rust `unpack(..., 32, 2)` for one PE reads the two high 32-bit words. -/
+def singleMatrixWriteValues (buses : Fin 4 → IntegerALU.Bus) : Fin 8 → BitVec 32 :=
+  fun index =>
+    let pe : Fin 4 := ⟨index.val / 2, by have h := index.isLt; omega⟩
+    if index.val % 2 = 0 then (buses pe).high.extractLsb' 32 32
+    else (buses pe).high.extractLsb' 0 32
+
+def writeSingleMatrixPhysicalRow (old : DoubleMatrixPhysicalFace)
+    (row : Fin 8) (values : Fin 8 → BitVec 32) : DoubleMatrixPhysicalFace :=
+  let physicalRow := singleMatrixPhysicalRow row
+  fun targetRow => if targetRow = physicalRow then values else old targetRow
+
+def writeParsedSingleMatrixStoreRow (old : ParsedMatrixReadStore)
+    (mab : Fin 16) (sideY : Bool) (row : Fin 8)
+    (values : Fin 8 → BitVec 32) : ParsedMatrixReadStore :=
+  fun nextMab nextSide =>
+    if nextMab = mab ∧ nextSide = sideY then
+      writeSingleMatrixPhysicalRow (old nextMab nextSide) row values
+    else old nextMab nextSide
+
+theorem singleMatrixWriteValues_high_word
+    (buses : Fin 4 → IntegerALU.Bus) (pe : Fin 4) :
+    singleMatrixWriteValues buses ⟨2 * pe.val, by have h := pe.isLt; omega⟩ =
+      (buses pe).high.extractLsb' 32 32 := by
+  simp [singleMatrixWriteValues]
+
+theorem singleMatrixWriteValues_low_word
+    (buses : Fin 4 → IntegerALU.Bus) (pe : Fin 4) :
+    singleMatrixWriteValues buses ⟨2 * pe.val + 1, by have h := pe.isLt; omega⟩ =
+      (buses pe).high.extractLsb' 0 32 := by
+  have division : (2 * pe.val + 1) / 2 = pe.val := by omega
+  simp [singleMatrixWriteValues, division]
+
+theorem singleMatrixReadBus_after_write_high_cell
+    (old : DoubleMatrixPhysicalFace) (row column : Fin 8)
+    (values : Fin 8 → BitVec 32)
+    (even : row.val % 2 = 0) :
+    (singleMatrixReadBus (writeSingleMatrixPhysicalRow old row values) column
+      ⟨row.val / 2, by have _h := row.isLt; omega⟩ 0).high.extractLsb' 32 32 =
+        values column := by
+  let row0 : Fin 8 := ⟨2 * (row.val / 2), by have h := row.isLt; omega⟩
+  let row1 : Fin 8 := ⟨2 * (row.val / 2) + 1, by have h := row.isLt; omega⟩
+  have row0Eq : row0 = row := by
+    apply Fin.ext
+    simp [row0]
+    omega
+  have row1Ne : row1 ≠ row := by
+    intro equal
+    have values := congrArg Fin.val equal
+    simp [row1] at values
+    omega
+  have row0PhysicalEq : singleMatrixPhysicalRow row0 = singleMatrixPhysicalRow row :=
+    congrArg singleMatrixPhysicalRow row0Eq
+  have row1PhysicalNe : singleMatrixPhysicalRow row1 ≠ singleMatrixPhysicalRow row := by
+    intro equal
+    exact row1Ne (singleMatrixPhysicalRow_injective equal)
+  simp [singleMatrixReadBus, singleMatrixReadColumn, writeSingleMatrixPhysicalRow,
+    row0, row1, row0PhysicalEq, row1PhysicalNe,
+    Nat.mod_eq_of_lt column.isLt]
+  exact BitVec.extractLsb'_append_eq_left
+
+theorem singleMatrixReadBus_after_write_low_cell
+    (old : DoubleMatrixPhysicalFace) (row column : Fin 8)
+    (values : Fin 8 → BitVec 32)
+    (odd : row.val % 2 = 1) :
+    (singleMatrixReadBus (writeSingleMatrixPhysicalRow old row values) column
+      ⟨row.val / 2, by have _h := row.isLt; omega⟩ 0).high.extractLsb' 0 32 =
+        values column := by
+  let row0 : Fin 8 := ⟨2 * (row.val / 2), by have h := row.isLt; omega⟩
+  let row1 : Fin 8 := ⟨2 * (row.val / 2) + 1, by have h := row.isLt; omega⟩
+  have row1Eq : row1 = row := by
+    apply Fin.ext
+    simp [row1]
+    omega
+  have row0Ne : row0 ≠ row := by
+    intro equal
+    have values := congrArg Fin.val equal
+    simp [row0] at values
+    omega
+  have row1PhysicalEq : singleMatrixPhysicalRow row1 = singleMatrixPhysicalRow row :=
+    congrArg singleMatrixPhysicalRow row1Eq
+  have row0PhysicalNe : singleMatrixPhysicalRow row0 ≠ singleMatrixPhysicalRow row := by
+    intro equal
+    exact row0Ne (singleMatrixPhysicalRow_injective equal)
+  simp [singleMatrixReadBus, singleMatrixReadColumn, writeSingleMatrixPhysicalRow,
+    row0, row1, row1PhysicalEq, row0PhysicalNe,
+    Nat.mod_eq_of_lt column.isLt]
+  exact BitVec.extractLsb'_append_eq_right
+
+theorem parsedSingleMatrixStore_readback_cell
+    (old : ParsedMatrixReadStore) (mab : Fin 16) (sideY : Bool)
+    (row column : Fin 8) (values : Fin 8 → BitVec 32) :
+    let readPE : Fin 4 := ⟨row.val / 2, by have h := row.isLt; omega⟩
+    if row.val % 2 = 0 then
+      (singleMatrixReadBus
+        (writeParsedSingleMatrixStoreRow old mab sideY row values mab sideY)
+        column readPE 0).high.extractLsb' 32 32 = values column
+    else
+      (singleMatrixReadBus
+        (writeParsedSingleMatrixStoreRow old mab sideY row values mab sideY)
+        column readPE 0).high.extractLsb' 0 32 = values column := by
+  dsimp
+  by_cases even : row.val % 2 = 0
+  · simp [even, writeParsedSingleMatrixStoreRow]
+    exact singleMatrixReadBus_after_write_high_cell (old mab sideY) row column values even
+  · have odd : row.val % 2 = 1 := by
+      have h : row.val % 2 < 2 := Nat.mod_lt _ (by decide)
+      omega
+    simp [writeParsedSingleMatrixStoreRow, odd]
+    exact singleMatrixReadBus_after_write_low_cell (old mab sideY) row column values odd
+
+def parsedSingleMatrixWriteCycle (files : IntegerRegisterFiles)
+    (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (groupContext : ParsedPEGroupContext) (expression : ParsedExpr)
+    (oldStore : ParsedMatrixReadStore) (cycle : Fin 4) :
+    ProofsLean.StepResult ParsedMatrixReadStore :=
+  let context := groupContext.at 0 cycle
+  match ParsedExpr.toDirectSingleMatrixWriteAccesses? expression context with
+  | none => .unknown
+  | some accesses =>
+      match prepareParsedSingleMatrixWritePEs files slots expression groupContext cycle
+          parsedMatrixWritePEs (fun _ => ⟨0, 0⟩) with
+      | .failure => .failure
+      | .unknown => .unknown
+      | .ok buses =>
+          .ok (writeParsedSingleMatrixStoreRow oldStore groupContext.mab accesses.sideY
+            (singleMatrixWriteRowAt accesses.row cycle) (singleMatrixWriteValues buses))
+
+theorem parsedSingleMatrixWriteCycle_readback_cell
+    (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (groupContext : ParsedPEGroupContext) (expression : ParsedExpr)
+    (oldStore : ParsedMatrixReadStore) (cycle column : Fin 4)
+    (accesses : Fin 4 → ParsedSingleMatrixWriteAccesses)
+    (buses : Fin 4 → IntegerALU.Bus)
+    (lowered : ∀ pe, ParsedExpr.toDirectSingleMatrixWriteAccesses? expression
+      (groupContext.at pe cycle) = some (accesses pe))
+    (read : ∀ pe, ParsedIntegerInput.readWithForwarding files slots cycle
+      (accesses pe).source = .ok (buses pe)) :
+    ∃ newStore, parsedSingleMatrixWriteCycle files slots groupContext expression oldStore cycle =
+      .ok newStore ∧
+      (let writeRow := singleMatrixWriteRowAt (accesses 0).row cycle
+       let readPE : Fin 4 := ⟨writeRow.val / 2, by have h := writeRow.isLt; omega⟩
+       if writeRow.val % 2 = 0 then
+         (singleMatrixReadBus
+           (newStore groupContext.mab (accesses 0).sideY)
+           ⟨2 * column.val, by have h := column.isLt; omega⟩ readPE 0).high.extractLsb' 32 32 =
+             singleMatrixWriteValues buses ⟨2 * column.val, by have h := column.isLt; omega⟩
+       else
+         (singleMatrixReadBus
+           (newStore groupContext.mab (accesses 0).sideY)
+           ⟨2 * column.val + 1, by have h := column.isLt; omega⟩ readPE 0).high.extractLsb' 0 32 =
+             singleMatrixWriteValues buses ⟨2 * column.val + 1, by have h := column.isLt; omega⟩) := by
+  have prepared := prepareParsedSingleMatrixWritePEs_all files slots expression groupContext
+    cycle accesses buses lowered read
+  refine ⟨writeParsedSingleMatrixStoreRow oldStore groupContext.mab (accesses 0).sideY
+    (singleMatrixWriteRowAt (accesses 0).row cycle) (singleMatrixWriteValues buses), ?_, ?_⟩
+  · simp only [parsedSingleMatrixWriteCycle, lowered, prepared]
+  · let writeRow := singleMatrixWriteRowAt (accesses 0).row cycle
+    dsimp
+    by_cases even : writeRow.val % 2 = 0
+    · simpa [even, writeRow] using parsedSingleMatrixStore_readback_cell oldStore
+        groupContext.mab (accesses 0).sideY writeRow
+        ⟨2 * column.val, by have h := column.isLt; omega⟩
+        (singleMatrixWriteValues buses)
+    · have odd : writeRow.val % 2 = 1 := by
+        have h : writeRow.val % 2 < 2 := Nat.mod_lt _ (by decide)
+        omega
+      simpa [even, odd, writeRow] using parsedSingleMatrixStore_readback_cell oldStore
+        groupContext.mab (accesses 0).sideY writeRow
+        ⟨2 * column.val + 1, by have h := column.isLt; omega⟩
+        (singleMatrixWriteValues buses)
 
 def halfMatrixReadColumn (base : Fin 16) (cycle : Fin 4) : Fin 16 :=
   ⟨(base.val + 2 * cycle.val) % 16, Nat.mod_lt _ (by decide)⟩
