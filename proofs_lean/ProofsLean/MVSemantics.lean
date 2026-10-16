@@ -285,6 +285,120 @@ def executeParsedMvB? (memory : Memory) (transfer : ParsedMv) : Option Memory :=
   let plan ← parsedMvBPlan? transfer
   pure (executeCopies memory plan)
 
+def b4FanoutOffsetCopies (sourceCell : Cell) (destination : ParsedMvOperand)
+    (bank : Fin 2) (destinationOffset : Nat) : List CopyPair :=
+  (List.finRange 4).map fun group =>
+    (sourceCell, cellFor destination group bank destinationOffset)
+
+def b4ScatterCopiesAux (sourceAt : Nat → Cell) (destination : ParsedMvOperand)
+    (bankAt : Nat → Fin 2) (destinationOffsetAt : Nat → Nat) : Nat → Nat → List CopyPair
+  | _, 0 => []
+  | position, count + 1 =>
+      b4FanoutOffsetCopies (sourceAt position) destination
+          (bankAt position) (destinationOffsetAt position) ++
+        b4ScatterCopiesAux sourceAt destination bankAt destinationOffsetAt
+          (position + 1) count
+
+def b4ScatterCopies (sourceAt : Nat → Cell) (destination : ParsedMvOperand)
+    (bankAt : Nat → Fin 2) (destinationOffsetAt : Nat → Nat)
+    (count : Nat) : List CopyPair :=
+  b4ScatterCopiesAux sourceAt destination bankAt destinationOffsetAt 0 count
+
+theorem b4FanoutOffsetCopies_length (sourceCell : Cell)
+    (destination : ParsedMvOperand) (bank : Fin 2) (offset : Nat) :
+    (b4FanoutOffsetCopies sourceCell destination bank offset).length = 4 := by
+  simp [b4FanoutOffsetCopies, List.finRange]
+
+theorem b4ScatterCopiesAux_length (sourceAt : Nat → Cell)
+    (destination : ParsedMvOperand) (bankAt : Nat → Fin 2)
+    (destinationOffsetAt : Nat → Nat)
+    (position count : Nat) :
+    (b4ScatterCopiesAux sourceAt destination bankAt destinationOffsetAt position count).length =
+      count * 4 := by
+  induction count generalizing position with
+  | zero => simp [b4ScatterCopiesAux]
+  | succ count ih =>
+      simp [b4ScatterCopiesAux, b4FanoutOffsetCopies_length, ih, Nat.succ_mul]
+      omega
+
+theorem b4ScatterCopies_length (sourceAt : Nat → Cell)
+    (destination : ParsedMvOperand) (bankAt : Nat → Fin 2)
+    (destinationOffsetAt : Nat → Nat)
+    (count : Nat) :
+    (b4ScatterCopies sourceAt destination bankAt destinationOffsetAt count).length =
+      count * 4 := by
+  exact b4ScatterCopiesAux_length sourceAt destination bankAt destinationOffsetAt 0 count
+
+def b4DestinationBank (position : Nat) : Fin 2 :=
+  ⟨(position % 128) / 64, by
+    have hmod : position % 128 < 128 := Nat.mod_lt _ (by decide)
+    omega⟩
+
+def b4SourceGroup (position : Nat) : Fin 4 :=
+  ⟨(position % 64) / 16, by
+    have hmod : position % 64 < 64 := Nat.mod_lt _ (by decide)
+    omega⟩
+
+def b4SourceOffset (position : Nat) : Nat :=
+  32 * (position / 128) + 16 * (b4DestinationBank position).val + position % 16
+
+def b4DestinationOffset (position : Nat) : Nat :=
+  64 * (position / 128) + 16 * (b4SourceGroup position).val + position % 16
+
+def b4DramCopyPlan (source destination : ParsedMvOperand) (count : Nat) :
+    List CopyPair :=
+  b4ScatterCopies
+    (fun position => cellFor source (b4SourceGroup position)
+      (b4DestinationBank position) (b4SourceOffset position))
+    destination b4DestinationBank b4DestinationOffset count
+
+theorem b4DramCoordinates_flatten (block : Nat) (bank : Fin 2)
+    (group : Fin 4) (word : Fin 16) :
+    b4DestinationBank (128 * block + 64 * bank.val + 16 * group.val + word.val) = bank ∧
+    b4SourceGroup (128 * block + 64 * bank.val + 16 * group.val + word.val) = group ∧
+    b4SourceOffset (128 * block + 64 * bank.val + 16 * group.val + word.val) =
+      32 * block + 16 * bank.val + word.val ∧
+    b4DestinationOffset (128 * block + 64 * bank.val + 16 * group.val + word.val) =
+      64 * block + 16 * group.val + word.val := by
+  have hbank := bank.isLt
+  have hgroup := group.isLt
+  have hword := word.isLt
+  constructor
+  · apply Fin.ext
+    simp only [b4DestinationBank]
+    omega
+  constructor
+  · apply Fin.ext
+    simp only [b4SourceGroup]
+    omega
+  constructor
+  · simp only [b4SourceOffset, b4DestinationBank]
+    omega
+  · simp only [b4DestinationOffset, b4SourceGroup]
+    omega
+
+theorem b4DramCopyPlan_length (source destination : ParsedMvOperand) (count : Nat) :
+    (b4DramCopyPlan source destination count).length = count * 4 := by
+  exact b4ScatterCopies_length _ _ _ _ _
+
+theorem b4MvWriteCount (size : Fin (2 ^ 64)) :
+    ((size.val / 64) * 128) * 4 = (size.val / 64) * 512 := by
+  omega
+
+def parsedMvB4Plan? (transfer : ParsedMv) : Option (List CopyPair) := do
+  if transfer.kind != .broadcast4 then none else
+  match transfer.source, transfer.destination with
+  | none, _ | _, none => pure []
+  | some source, some destination => do
+      if (match source with | .dram _ _ indirect => indirect | _ => true) ||
+          (match destination with | .dram _ _ indirect => indirect | _ => false) then none else
+      let count := (transfer.size.val / 64) * 128
+      pure (b4DramCopyPlan source destination count)
+
+def executeParsedMvB4? (memory : Memory) (transfer : ParsedMv) : Option Memory := do
+  let plan ← parsedMvB4Plan? transfer
+  pure (executeCopies memory plan)
+
 theorem b2GroupOffsetCopies_ignores_operand_selectors
     (source destination : Fin (2 ^ 64)) (sourceGroup destinationGroup : Fin 256)
     (sourceBank destinationBank : Fin 256) (group : Fin 4) (offset : Nat) :
@@ -372,6 +486,15 @@ theorem executeParsedMvB_read (memory : Memory) (transfer : ParsedMv)
         | some source => memory source
         | none => memory cell) := by
   simp [executeParsedMvB?, hplan, executeCopies_read]
+
+theorem executeParsedMvB4_read (memory : Memory) (transfer : ParsedMv)
+    (plan : List CopyPair) (cell : Cell)
+    (hplan : parsedMvB4Plan? transfer = some plan) :
+    (executeParsedMvB4? memory transfer).map (fun result => result cell) =
+      some (match finalSource plan cell with
+        | some source => memory source
+        | none => memory cell) := by
+  simp [executeParsedMvB4?, hplan, executeCopies_read]
 
 /-- An overlapping left-to-right copy reads every source from the old state:
 writing cell 1 cannot change the value subsequently copied from cell 1 to cell 2. -/
