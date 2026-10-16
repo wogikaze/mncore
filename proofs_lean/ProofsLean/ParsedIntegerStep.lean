@@ -3381,6 +3381,19 @@ def prepareParsedMaskedIntegerWrites (files : IntegerRegisterFiles)
           | .unknown => .unknown
           | .ok writes => .ok (write :: writes)
 
+def traverseStepResult {α β : Type} (f : α → ProofsLean.StepResult β) :
+    List α → ProofsLean.StepResult (List β)
+  | [] => .ok []
+  | value :: rest =>
+      match f value with
+      | .failure => .failure
+      | .unknown => .unknown
+      | .ok head =>
+          match traverseStepResult f rest with
+          | .failure => .failure
+          | .unknown => .unknown
+          | .ok tail => .ok (head :: tail)
+
 theorem prepareParsedMaskedIntegerWrites_preserves_order
     (files : IntegerRegisterFiles) (access : ParsedMaskedIntegerAccesses)
     (rest : List ParsedMaskedIntegerAccesses) (reduced : Bool)
@@ -3389,6 +3402,27 @@ theorem prepareParsedMaskedIntegerWrites_preserves_order
     (tailReady : prepareParsedMaskedIntegerWrites files rest reduced = .ok writes) :
     prepareParsedMaskedIntegerWrites files (access :: rest) reduced = .ok (write :: writes) := by
   simp [prepareParsedMaskedIntegerWrites, headReady, tailReady]
+
+theorem prepareParsedMaskedIntegerWrites_is_traverse (files : IntegerRegisterFiles)
+    (accesses : List ParsedMaskedIntegerAccesses) (reduced : Bool) :
+    prepareParsedMaskedIntegerWrites files accesses reduced =
+      traverseStepResult
+        (fun access => prepareParsedMaskedWrite files access reduced) accesses := by
+  induction accesses with
+  | nil => rfl
+  | cons access rest ih =>
+      cases h : prepareParsedMaskedWrite files access reduced with
+      | failure => simp [prepareParsedMaskedIntegerWrites, traverseStepResult, h]
+      | unknown => simp [prepareParsedMaskedIntegerWrites, traverseStepResult, h]
+      | ok write =>
+          cases htail : traverseStepResult
+              (fun access => prepareParsedMaskedWrite files access reduced) rest with
+          | failure =>
+              simp [prepareParsedMaskedIntegerWrites, traverseStepResult, h, htail, ih]
+          | unknown =>
+              simp [prepareParsedMaskedIntegerWrites, traverseStepResult, h, htail, ih]
+          | ok writes =>
+              simp [prepareParsedMaskedIntegerWrites, traverseStepResult, h, htail, ih]
 
 def prepareParsedMaskedIntegerWritesWithForwarding (files : IntegerRegisterFiles)
     (slots : ProofsLean.MNCore.Forwarding.Slots) (cycle : Fin 4)
@@ -3419,6 +3453,34 @@ theorem prepareParsedMaskedIntegerWritesWithForwarding_preserves_order
     prepareParsedMaskedIntegerWritesWithForwarding files slots cycle
       (access :: rest) reduced = .ok (write :: writes) := by
   simp [prepareParsedMaskedIntegerWritesWithForwarding, headReady, tailReady]
+
+theorem prepareParsedMaskedIntegerWritesWithForwarding_is_traverse
+    (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (cycle : Fin 4) (accesses : List ParsedMaskedIntegerAccesses) (reduced : Bool) :
+    prepareParsedMaskedIntegerWritesWithForwarding files slots cycle accesses reduced =
+      traverseStepResult (fun access =>
+        prepareParsedMaskedWriteWithForwarding files slots cycle access reduced) accesses := by
+  induction accesses with
+  | nil => rfl
+  | cons access rest ih =>
+      cases h : prepareParsedMaskedWriteWithForwarding files slots cycle access reduced with
+      | failure =>
+          simp [prepareParsedMaskedIntegerWritesWithForwarding, traverseStepResult, h]
+      | unknown =>
+          simp [prepareParsedMaskedIntegerWritesWithForwarding, traverseStepResult, h]
+      | ok write =>
+          cases htail : traverseStepResult
+              (fun access => prepareParsedMaskedWriteWithForwarding files slots cycle access reduced)
+              rest with
+          | failure =>
+              simp [prepareParsedMaskedIntegerWritesWithForwarding,
+                traverseStepResult, h, htail, ih]
+          | unknown =>
+              simp [prepareParsedMaskedIntegerWritesWithForwarding,
+                traverseStepResult, h, htail, ih]
+          | ok writes =>
+              simp [prepareParsedMaskedIntegerWritesWithForwarding,
+                traverseStepResult, h, htail, ih]
 
 def prepareParsedMaskedLine (files : IntegerRegisterFiles)
     (expressions : List ParsedExpr) (control : ParsedMaskExecutionControl) :
@@ -3518,6 +3580,12 @@ def commitParsedMaskedWrites (files : IntegerRegisterFiles)
         | some destination =>
             writeDirectAccessMasked current destination write.data write.selection
         | none => current) files
+
+theorem commitParsedMaskedWrites_append (files : IntegerRegisterFiles)
+    (first second : List PreparedParsedMaskedWrite) :
+    commitParsedMaskedWrites files (first ++ second) =
+      commitParsedMaskedWrites (commitParsedMaskedWrites files first) second := by
+  simp [commitParsedMaskedWrites, List.foldl_append]
 
 def updateParsedMatrixReadForwardingCycle
     (old : ProofsLean.MNCore.Forwarding.Slots) (cycle : Fin 4)
