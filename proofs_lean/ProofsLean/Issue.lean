@@ -364,6 +364,13 @@ def evaluateParsedIntegerAlu (op : ParsedOp) (x y : IntegerALU.Bus)
   | .failure => .failure
   | .unknown => .unknown
 
+theorem parsed_integer_evaluation_uses_requested_semantics (op : ParsedOp)
+    (request : IntegerALU.Request) (selected : op.integerRequest = .ok request)
+    (x y : IntegerALU.Bus) (reduced : Bool) :
+    evaluateParsedIntegerAlu op x y reduced =
+      IntegerALU.partialEvaluate request x y reduced := by
+  simp [evaluateParsedIntegerAlu, selected]
+
 theorem unsupported_parsed_integer_is_unknown (op : ParsedOp)
     (unsupported : op.integerRequest = .unknown) (x y : IntegerALU.Bus)
     (reduced : Bool) : evaluateParsedIntegerAlu op x y reduced = .unknown := by
