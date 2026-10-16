@@ -21,6 +21,105 @@ def IntegerPrecision.width : IntegerPrecision → Nat
 def IntegerPrecision.lanes (precision : IntegerPrecision) : Nat :=
   64 / precision.width
 
+inductive FloatPrecision where
+  | half | single | double
+  deriving DecidableEq, Repr
+
+def FloatPrecision.exponentBits : FloatPrecision → Nat
+  | .half => 6
+  | .single => 8
+  | .double => 11
+
+def FloatPrecision.mantissaBits : FloatPrecision → Nat
+  | .half => 9
+  | .single => 23
+  | .double => 52
+
+def FloatPrecision.width (precision : FloatPrecision) : Nat :=
+  1 + precision.exponentBits + precision.mantissaBits
+
+def FloatPrecision.exponentMax (precision : FloatPrecision) : Nat :=
+  2 ^ precision.exponentBits - 1
+
+def FloatPrecision.bias (precision : FloatPrecision) : Nat :=
+  2 ^ (precision.exponentBits - 1) - 1
+
+/-- Round an unsigned significand right by `shift`, using round-to-nearest-even.
+The `shift ≥ 128` case matches the Rust u128 helper. -/
+def roundShift (value shift : Nat) : Nat :=
+  if shift == 0 then value
+  else if shift >= 128 then 0
+  else
+    let quotient := value / 2 ^ shift
+    let remainder := value % 2 ^ shift
+    let halfway := 2 ^ (shift - 1)
+    quotient + if halfway < remainder || (remainder == halfway && quotient % 2 == 1)
+      then 1 else 0
+
+def floatExponent (precision : FloatPrecision) (bits : Nat) : Nat :=
+  bits / 2 ^ precision.mantissaBits % 2 ^ precision.exponentBits
+
+def floatSignificand (precision : FloatPrecision) (bits : Nat) : Nat :=
+  (2 ^ precision.mantissaBits + bits % 2 ^ precision.mantissaBits) * 8
+
+def floatIsNegative (precision : FloatPrecision) (bits : Nat) : Bool :=
+  bits / 2 ^ (precision.width - 1) % 2 == 1
+
+def maxFloatExponent (precision : FloatPrecision) (values : List Nat) : Nat :=
+  (values.map (floatExponent precision)).foldl Nat.max 0
+
+/-- Signed, exponent-aligned RRN significand sum before final format rounding. -/
+def floatAlignedSum (precision : FloatPrecision) (values : List Nat) : Int :=
+  let maxExponent := maxFloatExponent precision values
+  values.foldl (fun sum bits =>
+    let exponent := floatExponent precision bits
+    if exponent == 0 then sum
+    else
+      let aligned := roundShift (floatSignificand precision bits) (maxExponent - exponent)
+      if floatIsNegative precision bits then sum - Int.ofNat aligned
+      else sum + Int.ofNat aligned) 0
+
+def roundPack (precision : FloatPrecision) (negative : Bool)
+    (significand : Nat) (exponent : Int) : Nat :=
+  if significand == 0 then 0
+  else
+    let topBit := Nat.log2 significand
+    let mantissaBits := precision.mantissaBits
+    let (kept, normalizedTop) := if topBit > mantissaBits then
+      let rounded := roundShift significand (topBit - mantissaBits)
+      if rounded >= 2 ^ (mantissaBits + 1) then (rounded / 2, topBit + 1)
+      else (rounded, topBit)
+    else (significand * 2 ^ (mantissaBits - topBit), topBit)
+    let biased := exponent + Int.ofNat normalizedTop + Int.ofNat precision.bias
+    if biased >= Int.ofNat precision.exponentMax then
+      (if negative then 1 else 0) * 2 ^ (precision.width - 1) +
+        precision.exponentMax * 2 ^ mantissaBits
+    else if biased <= 0 then 0
+    else
+      (if negative then 1 else 0) * 2 ^ (precision.width - 1) +
+        biased.toNat * 2 ^ mantissaBits + kept % 2 ^ mantissaBits
+
+def floatInfinity (precision : FloatPrecision) (negative : Bool) : Nat :=
+  (if negative then 1 else 0) * 2 ^ (precision.width - 1) +
+    precision.exponentMax * 2 ^ precision.mantissaBits
+
+/-- RRN floating addition for the finite formats implemented by `rrn::fadd`.
+Exponent-zero operands are ignored, infinities follow the emulator's sign rule,
+and finite sums are rounded once into the requested output format. -/
+def reduceFloatAdd (input output : FloatPrecision) (values : List Nat) : Nat :=
+  let maxExponent := maxFloatExponent input values
+  if maxExponent == 0 then 0
+  else if maxExponent == input.exponentMax then
+    floatInfinity output (values.all fun bits =>
+      floatExponent input bits != input.exponentMax || floatIsNegative input bits)
+  else
+    let sum := floatAlignedSum input values
+    if sum == 0 then 0
+    else
+      let exponent := Int.ofNat maxExponent - Int.ofNat input.bias -
+        Int.ofNat input.mantissaBits - 3
+      roundPack output (sum < 0) sum.natAbs exponent
+
 def signMagnitudeKey (value : BitVec width) : Int :=
   let signPlace := 2 ^ (width - 1)
   let magnitude := value.toNat % signPlace
@@ -88,5 +187,31 @@ theorem half_precision_reduction_is_lane_wise :
     reduceLongInteger .add .half
       [BitVec.ofNat 64 0x0001000200030004, BitVec.ofNat 64 0x0005000600070008] =
       BitVec.ofNat 64 0x00060008000a000c := by decide
+
+theorem round_shift_tie_to_even_down : roundShift 10 2 = 2 := by decide
+
+theorem round_shift_tie_to_even_up : roundShift 14 2 = 4 := by decide
+
+theorem round_shift_tie_odd_quotient_up : roundShift 22 2 = 6 := by decide
+
+theorem round_shift_u128_overflow_distance_is_zero : roundShift (2 ^ 128 - 1) 128 = 0 := by decide
+
+theorem single_precision_one_plus_two_aligned_sum :
+    floatAlignedSum .single [0x3f800000, 0x40000000] = 3 * 2 ^ 25 := by decide
+
+theorem single_precision_opposites_cancel_before_rounding :
+    floatAlignedSum .single [0x3f800000, 0xbf800000] = 0 := by decide
+
+theorem single_round_pack_one :
+    roundPack .single false (2 ^ 26) (-26) = 0x3f800000 := by decide
+
+theorem single_rrn_one_plus_two_is_three :
+    reduceFloatAdd .single .single [0x3f800000, 0x40000000] = 0x40400000 := by decide
+
+theorem single_rrn_opposites_cancel_to_positive_zero :
+    reduceFloatAdd .single .single [0x3f800000, 0xbf800000] = 0 := by decide
+
+theorem single_rrn_infinity_sign_matches_all_infinities :
+    reduceFloatAdd .single .single [0x7f800000, 0xff800000] = 0x7f800000 := by decide
 
 end ProofsLean.MNCore.RRN

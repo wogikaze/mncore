@@ -214,7 +214,10 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   integer RRNのwrap-add、bitwise and/or、論理 and/or、sign-magnitude max/minを追加し、
   long word内のhalf/word/long各laneを別々に縮約して再結合する意味論を定義した。
   integer `reduce`/`reduce4`では選択MAB入力の縮約結果をpending列に接続し、出力件数を証明した。
-  floating add、precision extension、rounding、PE/L1 turnaroundへのcommitは未接続。
+  浮動小数点RRNではround-to-nearest-evenの右シフト、有限値の指数揃えと符号付き仮数和、
+  出力形式への正規化round-pack、infinity/zero規則を定義し、singleの具体例を証明した。
+  float RRN結果とL1 pending列の接続、half precision extensionとoutput roundingの例外配置、
+  PE/L1 turnaroundへのcommitは未接続。
 
 `Machine.positiveCost` はスコアが正の行へ正規化済みであるという条件。
 MN-Coreにはゼロコストの制御文があるので、その正規化の意味保存と完全性を証明するまでは

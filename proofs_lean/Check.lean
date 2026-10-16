@@ -83,6 +83,16 @@ import Lean
 #print axioms ProofsLean.MNCore.RRN.all_nonzero_is_logical
 #print axioms ProofsLean.MNCore.RRN.any_nonzero_is_logical
 #print axioms ProofsLean.MNCore.RRN.half_precision_reduction_is_lane_wise
+#print axioms ProofsLean.MNCore.RRN.round_shift_tie_to_even_down
+#print axioms ProofsLean.MNCore.RRN.round_shift_tie_to_even_up
+#print axioms ProofsLean.MNCore.RRN.round_shift_tie_odd_quotient_up
+#print axioms ProofsLean.MNCore.RRN.round_shift_u128_overflow_distance_is_zero
+#print axioms ProofsLean.MNCore.RRN.single_precision_one_plus_two_aligned_sum
+#print axioms ProofsLean.MNCore.RRN.single_precision_opposites_cancel_before_rounding
+#print axioms ProofsLean.MNCore.RRN.single_round_pack_one
+#print axioms ProofsLean.MNCore.RRN.single_rrn_one_plus_two_is_three
+#print axioms ProofsLean.MNCore.RRN.single_rrn_opposites_cancel_to_positive_zero
+#print axioms ProofsLean.MNCore.RRN.single_rrn_infinity_sign_matches_all_infinities
 #print axioms ProofsLean.MNCore.L1Transfer.mwriteWrites_contains_high
 #print axioms ProofsLean.MNCore.L1Transfer.mwriteWrites_contains_low
 #print axioms ProofsLean.MNCore.L1Transfer.m4writeWrites_contains_high
