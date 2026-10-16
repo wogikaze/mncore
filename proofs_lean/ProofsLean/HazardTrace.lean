@@ -1,7 +1,7 @@
 import ProofsLean.Issue
 import ProofsLean.L1Transfer
 
-/- L1BM hazard access extraction from the parsed expression record, following
+/- L1BM/L2BM hazard access extraction from the parsed expression record, following
 `viz/core/src/hazard.rs::expr_accesses`. -/
 namespace ProofsLean.MNCore.HazardTrace
 
@@ -32,6 +32,43 @@ def parsedL1HazardInfo (op : ParsedL1Op) :
   | .distrib _ => (.distrib, false)
   | .gather _ => (.gather, false)
 
+def operandBlockAddress (operand : ParsedOperand) : Nat :=
+  match operand with
+  | .l1bm _ address => address.getD 0
+  | .l2bm address _ => address
+  | _ => 0
+
+def l1BlockRangeEvents (mask : Nat) (write : Bool)
+    (path : ProofsLean.MNCore.PEMemory.BlockHazardPath)
+    (base stride length startWord : Nat) :
+    List ProofsLean.MNCore.PEMemory.TimedBlockAccess :=
+  (List.finRange 8).flatMap fun bank =>
+    if Nat.testBit mask bank.val then
+      (List.finRange 4).map fun cycle =>
+        ⟨.l1bm bank, path, write,
+          some ((base + cycle.val * stride) % l1bmLongWords),
+          length, startWord, cycle⟩
+    else []
+
+def l2BlockRangeEvents (write : Bool)
+    (path : ProofsLean.MNCore.PEMemory.BlockHazardPath)
+    (base stride startWord : Nat) :
+    List ProofsLean.MNCore.PEMemory.TimedBlockAccess :=
+  (List.finRange 2).flatMap fun bank =>
+    (List.finRange 4).map fun cycle =>
+      ⟨.l2bm bank, path, write,
+        some ((base + cycle.val * stride) % 32768), stride, startWord, cycle⟩
+
+def multicastDestinationMask (sourceMask immode : Nat) : Nat := Id.run do
+  let mut destinationMask := 0
+  for source in List.range 8 do
+    if Nat.testBit sourceMask source then
+      for destination in List.range 8 do
+        if destination != source &&
+            (Nat.land destination immode) == (Nat.land source immode) then
+          destinationMask := Nat.lor destinationMask (2 ^ destination)
+  return destinationMask
+
 def l1ExprHazardEvents (expr : ParsedExpr) (startWord : Nat) :
     List ProofsLean.MNCore.PEMemory.TimedBlockAccess :=
   match expr.op with
@@ -52,6 +89,39 @@ def l1ExprHazardEvents (expr : ParsedExpr) (startWord : Nat) :
                 Nat.mod_lt _ (by decide)⟩ hazardOp twoLongWords rounded ext toPE
                 startWord cycle
       | some (_, none) => []
+  | .l2bm op =>
+      let a0 := match expr.sources with
+        | operand :: _ => operandBlockAddress operand
+        | [] => 0
+      let a1 := match expr.destinations with
+        | operand :: _ => operandBlockAddress operand
+        | [] => 0
+      let l1 := fun mask write (path : ProofsLean.MNCore.PEMemory.BlockHazardPath)
+          base stride length =>
+        l1BlockRangeEvents mask write path base stride length startWord
+      let l2 := fun write (path : ProofsLean.MNCore.PEMemory.BlockHazardPath)
+          base stride =>
+        l2BlockRangeEvents write path base stride startWord
+      match op with
+      | .bcast set => l1 set.mask true .l2ToL1 a1 16 16 ++
+          l2 false .l2ToL1 a0 16
+      | .bcast2 set => l1 set.mask true .l2ToL1 a1 16 16 ++
+          l2 false .l2ToL1 a0 64
+      | .distrib set => l1 set.mask true .l2ToL1 a1 8 8 ++
+          l2 false .l2ToL1 a0 64
+      | .fromL1b bank => l1 (2 ^ bank) false .l1ToL2 a0 16 16 ++
+          l2 true .l1ToL2 a1 16
+      | .reduce _ set => l1 set.mask false .l1ToL2 a0 16 16 ++
+          l2 true .l1ToL2 a1 16
+      | .reduce2 _ => l1 255 false .l1ToL2 a0 16 16 ++
+          l2 true .l1ToL2 a1 64
+      | .gather => l1 255 false .l1ToL2 a0 8 8 ++
+          l2 true .l1ToL2 a1 64
+      | .imcast set =>
+          let destinationMask := multicastDestinationMask set.mask set.immode
+          l1 set.mask false .multicast a0 16 16 ++
+            l1 destinationMask true .multicast a1 16 16
+      | .dars | .darw => []
   | _ => []
 
 def l1LineHazardEvents
