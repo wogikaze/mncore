@@ -129,7 +129,8 @@ def Legal (xs : List Expr) : Prop :=
   immediateExcludesLm0 xs ∧
   zeroFlushUnique xs
 
-/-- Executable recognizer for the abstract rule set. -/
+/-- Classical decision specification for the abstract rule set. This is not
+claimed as executable parser or hardware validation. -/
 noncomputable def check (xs : List Expr) : Bool := by
   classical
   exact decide (Legal xs)
@@ -182,5 +183,169 @@ theorem duplicate_alu_groups_rejected (a b : Nat) (different : a ≠ b) :
   have groupRule := legal.2.1
   have h := groupRule (aluExpr a) (by simp) (aluExpr b) (by simp) different .alu rfl
   exact h rfl
+
+end ProofsLean.MNCore.Issue
+
+namespace ProofsLean.MNCore.Issue
+
+/-- Operand properties observed by `issue.rs`. The token preserves parsed
+operand equality where the checker compares MAU/mwrite source operands. -/
+structure ParsedOperand where
+  token : Nat
+  memory : Option Access
+  matrixSide : Option Bool
+  l1bmTurnaround : Bool
+  deriving DecidableEq, Repr
+
+inductive ParsedOp where
+  | alu | immediate | zero
+  | mau (precision : Nat) (kind : CalcKind) (matrix : Bool)
+  | matrixWrite (precision : Nat)
+  | matrixRead (precision : Nat)
+  | l1bm | l2bm (darw : Bool) | wait | noforward | other
+  deriving DecidableEq, Repr
+
+/-- Issue-relevant projection of a parser expression. The complete data
+operand and instruction semantics are intentionally carried elsewhere. -/
+structure ParsedExpr where
+  op : ParsedOp
+  sources : List ParsedOperand
+  destinations : List ParsedOperand
+  zeroFlush : Bool
+  deriving DecidableEq, Repr
+
+def ParsedExpr.hasTurnaround (e : ParsedExpr) : Bool :=
+  (e.sources ++ e.destinations).any ParsedOperand.l1bmTurnaround
+
+def ParsedExpr.issueGroup (e : ParsedExpr) : Option Group :=
+  match e.op with
+  | .alu | .immediate | .zero => some .alu
+  | .mau .. => some .mauCalc
+  | .matrixWrite .. => some .mauWrite
+  | .matrixRead .. => some .mauRead
+  | .l1bm => if e.hasTurnaround then some .l1bmTurnaround else some .l1bm
+  | .l2bm true => some .l2bmDarw
+  | .l2bm false => some .l2bm
+  | .wait => some .wait
+  | .noforward => some .noforward
+  | .other => none
+
+def ParsedExpr.issueMau (e : ParsedExpr) : Option Mau :=
+  match e.op with
+  | .mau precision kind matrix => some ⟨precision, .calc kind matrix⟩
+  | .matrixWrite precision => some ⟨precision, .matrixWrite⟩
+  | .matrixRead precision => some ⟨precision, .matrixRead⟩
+  | _ => none
+
+def ParsedOperand.accesses (xs : List ParsedOperand) : List Access :=
+  xs.filterMap ParsedOperand.memory
+
+def ParsedOperand.matrixUseCount (xs : List ParsedOperand) (side : Bool) : Nat :=
+  xs.filter (fun operand => operand.matrixSide == some side) |>.length
+
+def ParsedExpr.toIssueExpr (id : Nat) (e : ParsedExpr) : Expr where
+  id := id
+  group := e.issueGroup
+  mau := e.issueMau
+  secondSource := (e.sources[1]?).map ParsedOperand.token
+  matrixWriteSource := (e.sources[0]?).map ParsedOperand.token
+  reads := ParsedOperand.accesses e.sources
+  writes := ParsedOperand.accesses e.destinations
+  matrixXUses := ParsedOperand.matrixUseCount e.sources false +
+    ParsedOperand.matrixUseCount e.destinations false
+  matrixYUses := ParsedOperand.matrixUseCount e.sources true +
+    ParsedOperand.matrixUseCount e.destinations true
+  immediate := e.op matches .immediate
+  zeroFlush := e.zeroFlush
+
+/-- Preserve parser order and assign the unique list-position identity used by
+the abstract issue record. -/
+def projectFrom (nextId : Nat) : List ParsedExpr → List Expr
+  | [] => []
+  | expression :: rest =>
+      expression.toIssueExpr nextId :: projectFrom (nextId + 1) rest
+
+def projectLine (expressions : List ParsedExpr) : List Expr := projectFrom 0 expressions
+
+theorem projectFrom_id_lower (nextId : Nat) (expressions : List ParsedExpr)
+    (expression : Expr) (member : expression ∈ projectFrom nextId expressions) :
+    nextId ≤ expression.id := by
+  induction expressions generalizing nextId with
+  | nil => simp [projectFrom] at member
+  | cons parsed rest ih =>
+    simp only [projectFrom, List.mem_cons] at member
+    rcases member with head | tail
+    · subst expression
+      simp [ParsedExpr.toIssueExpr]
+    · have lower := ih (nextId + 1) tail
+      omega
+
+theorem projectFrom_idsUnique (nextId : Nat) (expressions : List ParsedExpr) :
+    idsUnique (projectFrom nextId expressions) := by
+  induction expressions generalizing nextId with
+  | nil => simp [idsUnique, projectFrom]
+  | cons parsed rest ih =>
+    intro e he f hf equalIds
+    simp only [projectFrom, List.mem_cons] at he hf
+    rcases he with eHead | eTail <;> rcases hf with fHead | fTail
+    · subst e
+      subst f
+      rfl
+    · subst e
+      have lower := projectFrom_id_lower (nextId + 1) rest f fTail
+      simp [ParsedExpr.toIssueExpr] at equalIds
+      omega
+    · subst f
+      have lower := projectFrom_id_lower (nextId + 1) rest e eTail
+      simp [ParsedExpr.toIssueExpr] at equalIds
+      omega
+    · exact ih (nextId + 1) e eTail f fTail equalIds
+
+theorem projectLine_idsUnique (expressions : List ParsedExpr) :
+    idsUnique (projectLine expressions) := projectFrom_idsUnique 0 expressions
+
+def LegalParsedLine (expressions : List ParsedExpr) : Prop := Legal (projectLine expressions)
+
+noncomputable def checkParsedLine (expressions : List ParsedExpr) : Bool :=
+  check (projectLine expressions)
+
+theorem parsed_check_sound (expressions : List ParsedExpr)
+    (accepted : checkParsedLine expressions = true) : LegalParsedLine expressions := by
+  exact check_sound (projectLine expressions) accepted
+
+theorem parsed_check_complete (expressions : List ParsedExpr)
+    (legal : LegalParsedLine expressions) : checkParsedLine expressions = true := by
+  exact check_complete (projectLine expressions) legal
+
+def plusOneRead : ParsedOperand where
+  token := 1
+  memory := some ⟨.lm0, ⟨2, 0⟩⟩
+  matrixSide := none
+  l1bmTurnaround := false
+
+def plusOneWrite : ParsedOperand where
+  token := 2
+  memory := some ⟨.lm1, ⟨2, 0⟩⟩
+  matrixSide := none
+  l1bmTurnaround := false
+
+def plusOneParsed : ParsedExpr where
+  op := .alu
+  sources := [plusOneRead]
+  destinations := [plusOneWrite]
+  zeroFlush := false
+
+theorem plusOne_issue_legal : LegalParsedLine [plusOneParsed] := by
+  unfold LegalParsedLine projectLine projectFrom ParsedExpr.toIssueExpr
+    ParsedExpr.issueGroup ParsedExpr.issueMau ParsedOperand.accesses
+    ParsedOperand.matrixUseCount ParsedExpr.hasTurnaround
+    plusOneParsed plusOneRead plusOneWrite
+  simp [Legal, idsUnique, groupsUnique, mauCountBounded, mauExpressions,
+    mauPrecisionsAgree, matrixWritePairAgrees, matrixRegistersUnique,
+    writesUnique, readsAgree, localReadWriteAgree, immediateExcludesLm0,
+    zeroFlushUnique, projectFrom]
+
+theorem plusOne_issue_accepts : checkParsedLine [plusOneParsed] = true :=
+  parsed_check_complete [plusOneParsed] plusOne_issue_legal
 
 end ProofsLean.MNCore.Issue

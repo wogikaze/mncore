@@ -25,6 +25,9 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.check_sound
 #print axioms ProofsLean.MNCore.Issue.check_complete
 #print axioms ProofsLean.MNCore.Issue.duplicate_alu_groups_rejected
+#print axioms ProofsLean.MNCore.Issue.projectLine_idsUnique
+#print axioms ProofsLean.MNCore.Issue.parsed_check_sound
+#print axioms ProofsLean.MNCore.Issue.plusOne_issue_accepts
 #print axioms ProofsLean.ControlNormalization.compile_length
 #print axioms ProofsLean.ControlNormalization.run_compiles
 #print axioms ProofsLean.ControlNormalization.source_execution

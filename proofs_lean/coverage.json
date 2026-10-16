@@ -119,7 +119,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/Issue.lean",
-      "sha256": "eb392d5d2a125605e00cb42aca061278459753c47285fec5714ff6a6c6db92ef",
+      "sha256": "a5eea87403b60e102021889cb54157c065c347c6e9525fb3096ee21a47043f2b",
       "implemented": "Abstract PE-line issue predicates: group uniqueness, MAU compatibility, matrix register use, PE memory ports, immediate/LM0 conflict and zero-flush uniqueness",
       "scope": "Formal rule layer corresponding to the local issue checker; Expr construction from parsed VSM and proof of assembler/hardware completeness are absent",
       "missing": "VSM parser correspondence, all assembler legality checks outside issue.rs, hardware correspondence and integration with the total instruction transition",
