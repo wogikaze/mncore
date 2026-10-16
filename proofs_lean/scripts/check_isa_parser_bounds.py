@@ -67,6 +67,16 @@ CASES = {
     "mv_size_32704": ("mvp/n32704 $d0 $lc0@.0\n", True, 1),
     "mv_size_32768": ("mvp/n32768 $d0 $lc0@.0\n", False, None),
     "mv_size_65536": ("mvp/n65536 $d0 $lc0@.0\n", False, None),
+    "l1bm_width2_max": ("l1bmm $lb8188 $nowrite\n", True, 1),
+    "l1bm_width2_unaligned": ("l1bmm $lb8190 $nowrite\n", False, None),
+    "l1bm_width2_capacity": ("l1bmm $lb8192 $nowrite\n", False, None),
+    "l1bm_width4_max": ("l1bmm $llb8184 $nowrite\n", True, 1),
+    "l1bm_width4_unaligned": ("l1bmm $llb8188 $nowrite\n", False, None),
+    "l1bm_width4_capacity": ("l1bmm $llb8192 $nowrite\n", False, None),
+    "l2bm_address_32736": ("l2bmb $lc32736 $lb0\n", True, 1),
+    "l2bm_address_32752": ("l2bmb $lc32752 $lb0\n", True, 1),
+    "l2bm_address_32760": ("l2bmb $lc32760 $lb0\n", False, None),
+    "l2bm_address_32768": ("l2bmb $lc32768 $lb0\n", False, None),
 }
 for index in range(2, 31):
     CASES[f"imr_selector_{index}"] = (f"lpassa $lm0 $ln0/$imr{index}\n", True, 1)
@@ -150,6 +160,7 @@ def main() -> None:
             "Each of the four explicit LM0 cycle addresses accepts 4095 and rejects 4096; madpe values 0 through 3 are accepted and 4 is rejected.",
             "All 64 L1B set address/immode pairs in 0..7 are accepted; `l2bm@<l1b>` accepts 0..7 and rejects 8. Base-address register writes accept widths 1 and 2 but reject width 4.",
             "The sampled MV encoding requires nonzero transfer size to be a multiple of 64 long words; 32704 is accepted while 32768 overflows the size field. Zero is accepted by the assembler.",
+            "L1BM width-2 addresses require 4-word alignment and width-4 addresses require 8-word alignment, within the 8192-long-word capacity. The L2BM transfer source accepts 16-aligned addresses through 32752 and rejects 32760 (alignment) and 32768 (range).",
             "$lb8188 is accepted while $lb8192 fails the 13-bit encoding field; the L1BM address must also be 4-word aligned. l1bmm@15 is accepted and @16 is rejected.",
             "DAR address 1023 is accepted and 1024 is rejected; `$lc...@.<l2b>` accepts selectors 0 and 1 and rejects 2.",
             "l1bmd-129, l1bmd-128, l1bmd127, and l1bmd128 are all accepted by assemble3; this is parser/encoding acceptance evidence, not a claim that these offsets are semantically useful.",
