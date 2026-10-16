@@ -97,6 +97,10 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   FMA=3/MUL=2/その他、matrix read/write=1、transfer=高々1を記録した。
   `ParsedExpr.sources_length_le_three`はこのarity条件からsource最大3を導くが、
   arbitrary `ParsedExpr` がRust parser出力である証明や、destination列の上限はまだ含まない。
+  184個のopcode候補に対するgeneric-token parseで、Rust parserのsource分割は0件が3候補、
+  1件が62候補、2件が104候補、3件が15候補だった。その分布はparser-gap監査と`coverage.json`に記録し、
+  正規化でopcode別source arity条件が保存され、そこから3以下が従う補題を追加した。
+  これはopcode綴りの網羅やassembler受理性の証明ではない。
   operandごとに既存の有限envelopeを要求するsource列のcarrierを追加し、長さ3以下の
   source列全体が有限であることを`ParsedExpr.sourcesInFiniteEnvelope_finite`で証明した。
   同じ構成を長さパラメータ付き`ParsedOperand.listInFiniteEnvelope_finite`に一般化し、

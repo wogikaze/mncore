@@ -41,7 +41,7 @@
   },
   "answer_parser_gap_audit": {
     "source": "proofs_lean/evidence/parser-gap-audit/answers.json",
-    "sha256": "56dd4affb95bd62d60e098b7949dc9efd36e8170dea80a442f70cfc74a54cdfe",
+    "sha256": "d6ba1fe3e29882986daf33606c16c921692ca612110351fb1ad4853c61022662",
     "generator": "proofs_lean/scripts/check_parser_gap_reference.py",
     "generator_sha256": "cf1cddc002d33390c75907f0cbb938871df230a5b8d90365eba03c7c7eb12d26",
     "answers": 73,
@@ -50,6 +50,17 @@
     "unparsed_syntax_candidates": [],
     "raw_operands_in_syntax_candidates": 0,
     "unique_opcode_spellings": 155,
+    "parser_source_destination_arity": {
+      "alu:src1:dst7": 49,
+      "alu:src2:dst6": 84,
+      "imm:src0:dst7": 2,
+      "mat_read:src1:dst7": 4,
+      "mat_write:src1:dst7": 4,
+      "mau:src1:dst7": 5,
+      "mau:src2:dst6": 20,
+      "mau:src3:dst5": 15,
+      "zero:src0:dst8": 1
+    },
     "raw_operand_occurrences": 0,
     "other_opcode_occurrences": 0,
     "parse_errors": 0,
@@ -368,7 +379,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/Issue.lean",
-      "sha256": "4e16d66a49d29fcb3ec5f4d4ac617abb670134bdccf8be2cb027c5018f4b3b6e",
+      "sha256": "9f9e5b598f5398a608ae0e7cd781d340f1de0c5e018256d3fef24af3ad077e81",
       "implemented": "Full structural PE Op/Operand payload mirror, issue projection, abstract PE-line rules, and a partial parsed-op to integer-ALU bridge for supported L/I/S integer operations and packbit",
       "scope": "The Rust enum inventory is checked against Lean constructors. A separate partial executor covers supported integer ALU/zero/immediate expressions with direct PE-memory destinations, masks/flush and ordered multiple destinations; this is not full ISA semantics",
       "source_basis": [

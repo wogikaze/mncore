@@ -6,7 +6,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -18,7 +20,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -30,7 +34,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -42,7 +48,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -54,7 +62,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -66,7 +76,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -78,7 +90,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -90,7 +104,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 5,
+            "raw_operands": [],
+            "source_count": 3
           }
         ],
         "parsed": true
@@ -102,7 +118,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 5,
+            "raw_operands": [],
+            "source_count": 3
           }
         ],
         "parsed": true
@@ -114,7 +132,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 5,
+            "raw_operands": [],
+            "source_count": 3
           }
         ],
         "parsed": true
@@ -126,7 +146,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 5,
+            "raw_operands": [],
+            "source_count": 3
           }
         ],
         "parsed": true
@@ -138,7 +160,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -150,7 +174,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -162,7 +188,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -174,7 +202,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -186,7 +216,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -198,7 +230,9 @@
         "expressions": [
           {
             "class": "mat_read",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -210,7 +244,9 @@
         "expressions": [
           {
             "class": "mat_write",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -222,7 +258,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -234,7 +272,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -246,7 +286,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -258,7 +300,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -270,7 +314,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -282,7 +328,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -294,7 +342,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -306,7 +356,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -318,7 +370,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -330,7 +384,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -342,7 +398,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 5,
+            "raw_operands": [],
+            "source_count": 3
           }
         ],
         "parsed": true
@@ -354,7 +412,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 5,
+            "raw_operands": [],
+            "source_count": 3
           }
         ],
         "parsed": true
@@ -366,7 +426,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 5,
+            "raw_operands": [],
+            "source_count": 3
           }
         ],
         "parsed": true
@@ -378,7 +440,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 5,
+            "raw_operands": [],
+            "source_count": 3
           }
         ],
         "parsed": true
@@ -390,7 +454,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -402,7 +468,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -414,7 +482,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -426,7 +496,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -438,7 +510,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -450,7 +524,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -462,7 +538,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -474,7 +552,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -486,7 +566,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -498,7 +580,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -510,7 +594,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -522,7 +608,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -534,7 +622,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -546,7 +636,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 5,
+            "raw_operands": [],
+            "source_count": 3
           }
         ],
         "parsed": true
@@ -558,7 +650,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -570,7 +664,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -582,7 +678,9 @@
         "expressions": [
           {
             "class": "mat_read",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -594,7 +692,9 @@
         "expressions": [
           {
             "class": "mat_write",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -606,7 +706,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -618,7 +720,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -630,7 +734,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -642,7 +748,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -654,7 +762,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -666,7 +776,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -678,7 +790,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -690,7 +804,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -702,7 +818,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -714,7 +832,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 5,
+            "raw_operands": [],
+            "source_count": 3
           }
         ],
         "parsed": true
@@ -726,7 +846,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -738,7 +860,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -750,7 +874,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -762,7 +888,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 5,
+            "raw_operands": [],
+            "source_count": 3
           }
         ],
         "parsed": true
@@ -774,7 +902,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -786,7 +916,9 @@
         "expressions": [
           {
             "class": "mat_read",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -798,7 +930,9 @@
         "expressions": [
           {
             "class": "mat_write",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -810,7 +944,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -822,7 +958,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -834,7 +972,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -846,7 +986,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -858,7 +1000,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -870,7 +1014,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -882,7 +1028,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -894,7 +1042,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -906,7 +1056,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -918,7 +1070,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -930,7 +1084,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -942,7 +1098,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -954,7 +1112,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -966,7 +1126,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -978,7 +1140,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 5,
+            "raw_operands": [],
+            "source_count": 3
           }
         ],
         "parsed": true
@@ -990,7 +1154,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 5,
+            "raw_operands": [],
+            "source_count": 3
           }
         ],
         "parsed": true
@@ -1002,7 +1168,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1014,7 +1182,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1026,7 +1196,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1038,7 +1210,9 @@
         "expressions": [
           {
             "class": "mat_read",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -1050,7 +1224,9 @@
         "expressions": [
           {
             "class": "mat_write",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -1062,7 +1238,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1074,7 +1252,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -1086,7 +1266,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1098,7 +1280,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1110,7 +1294,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1122,7 +1308,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1134,7 +1322,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1146,7 +1336,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -1158,7 +1350,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1170,7 +1364,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1182,7 +1378,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 5,
+            "raw_operands": [],
+            "source_count": 3
           }
         ],
         "parsed": true
@@ -1194,7 +1392,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 5,
+            "raw_operands": [],
+            "source_count": 3
           }
         ],
         "parsed": true
@@ -1206,7 +1406,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1218,7 +1420,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1230,7 +1434,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -1242,7 +1448,9 @@
         "expressions": [
           {
             "class": "mau",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -1254,7 +1462,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1266,7 +1476,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1278,7 +1490,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1290,7 +1504,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1302,7 +1518,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -1314,7 +1532,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -1326,7 +1546,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -1338,7 +1560,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1350,7 +1574,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1362,7 +1588,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1374,7 +1602,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1386,7 +1616,9 @@
         "expressions": [
           {
             "class": "imm",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 0
           }
         ],
         "parsed": true
@@ -1398,7 +1630,9 @@
         "expressions": [
           {
             "class": "imm",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 0
           }
         ],
         "parsed": true
@@ -1410,7 +1644,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -1422,7 +1658,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1434,7 +1672,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1446,7 +1686,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -1458,7 +1700,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1470,7 +1714,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1482,7 +1728,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1494,7 +1742,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1506,7 +1756,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1518,7 +1770,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1530,7 +1784,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -1542,7 +1798,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -1554,7 +1812,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -1566,7 +1826,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1578,7 +1840,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1590,7 +1854,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1602,7 +1868,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1614,7 +1882,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -1626,7 +1896,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1638,7 +1910,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1650,7 +1924,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -1662,7 +1938,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1674,7 +1952,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1686,7 +1966,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -1698,7 +1980,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -1710,7 +1994,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1722,7 +2008,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1734,7 +2022,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1746,7 +2036,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1758,7 +2050,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -1770,7 +2064,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -1782,7 +2078,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -1794,7 +2092,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1806,7 +2106,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1818,7 +2120,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1830,7 +2134,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1842,7 +2148,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -1854,7 +2162,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1866,7 +2176,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1878,7 +2190,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -1890,7 +2204,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1902,7 +2218,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1914,7 +2232,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -1926,7 +2246,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -1938,7 +2260,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -1950,7 +2274,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1962,7 +2288,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -1974,7 +2302,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -1986,7 +2316,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -1998,7 +2330,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -2010,7 +2344,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -2022,7 +2358,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -2034,7 +2372,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -2046,7 +2386,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -2058,7 +2400,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -2070,7 +2414,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -2082,7 +2428,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -2094,7 +2442,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -2106,7 +2456,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -2118,7 +2470,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -2130,7 +2484,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -2142,7 +2498,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 7,
+            "raw_operands": [],
+            "source_count": 1
           }
         ],
         "parsed": true
@@ -2154,7 +2512,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -2166,7 +2526,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -2178,7 +2540,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -2190,7 +2554,9 @@
         "expressions": [
           {
             "class": "alu",
-            "raw_operands": []
+            "destination_count": 6,
+            "raw_operands": [],
+            "source_count": 2
           }
         ],
         "parsed": true
@@ -2202,7 +2568,9 @@
         "expressions": [
           {
             "class": "zero",
-            "raw_operands": []
+            "destination_count": 8,
+            "raw_operands": [],
+            "source_count": 0
           }
         ],
         "parsed": true
@@ -2668,7 +3036,7 @@
   ],
   "scanner": {
     "path": "viz/core/src/bin/parser_gap_scan.rs",
-    "sha256": "988e912a24ae1ced2011345310e256b05406af68a6d550b0ee2be25efc227c90"
+    "sha256": "608f706eb3a47e76cdf5b3a9abff1b879e3f28402d5785b6533e0808b885b025"
   },
   "opcode_candidate_source": {
     "path": "mncompile/machine.py",

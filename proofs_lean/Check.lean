@@ -62,6 +62,8 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.projectLine_expression_count_le_ten
 #print axioms ProofsLean.MNCore.Issue.ParsedOp.parserSourceLimit_le_three
 #print axioms ProofsLean.MNCore.Issue.ParsedExpr.sources_length_le_three
+#print axioms ProofsLean.MNCore.Issue.ParsedExpr.normalize_sourcesMatchParserArity
+#print axioms ProofsLean.MNCore.Issue.NormalizedExpr.sources_length_le_three
 #print axioms ProofsLean.MNCore.Issue.ParsedExpr.sourcesInFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.ParsedExpr.sourcesInFiniteEnvelope_of_parserArity
 #print axioms ProofsLean.MNCore.Issue.ParsedOperand.listInFiniteEnvelope_finite

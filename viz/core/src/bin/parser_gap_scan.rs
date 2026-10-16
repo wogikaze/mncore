@@ -136,6 +136,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     .collect();
                                 parsed.push(json!({
                                     "class": op_name(&expression.op),
+                                    "source_count": expression.srcs.len(),
+                                    "destination_count": expression.dsts.len(),
                                     "raw_operands": raw,
                                 }));
                             }

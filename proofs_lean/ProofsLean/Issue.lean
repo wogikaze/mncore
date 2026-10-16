@@ -421,6 +421,22 @@ def ParsedExpr.normalize (expression : ParsedExpr) : NormalizedExpr :=
 def NormalizedExpr.toParsed (expression : NormalizedExpr) : ParsedExpr :=
   ⟨expression.op, expression.sources, expression.destinations, expression.flush, ""⟩
 
+/-- Canonical expressions retain the exact opcode-specific source-prefix bound
+imposed by Rust `parse_expr` when display text is erased. -/
+def NormalizedExpr.sourcesMatchParserArity (expression : NormalizedExpr) : Prop :=
+  expression.sources.length ≤ expression.op.parserSourceLimit
+
+theorem ParsedExpr.normalize_sourcesMatchParserArity
+    (expression : ParsedExpr)
+    (arity : expression.sourcesMatchParserArity) :
+    expression.normalize.sourcesMatchParserArity := by
+  exact arity
+
+theorem NormalizedExpr.sources_length_le_three (expression : NormalizedExpr)
+    (arity : expression.sourcesMatchParserArity) :
+    expression.sources.length ≤ 3 :=
+  Nat.le_trans arity expression.op.parserSourceLimit_le_three
+
 /-- Map only the integer ALU subset whose parsed precision is established.
 Floating and otherwise unsupported encodings stay unknown. -/
 def ParsedOp.integerRequest : ParsedOp → StepResult IntegerALU.Request

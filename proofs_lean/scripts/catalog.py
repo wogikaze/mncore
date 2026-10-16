@@ -373,6 +373,12 @@ def answer_parser_gap_audit() -> dict:
         raise ValueError("parser-gap audit must cover all 73 checked-in answers")
     if record["opcode_candidate_source"]["candidate_count"] != 184:
         raise ValueError("parser-gap audit must cover all 184 syntax candidates")
+    if any(
+        not expression.get("source_count", 0) <= 3
+        for row in record["opcode_candidate_results"]
+        for expression in row["result"].get("expressions", [])
+    ):
+        raise ValueError("a parser candidate exceeds the three-source envelope")
     if record["parse_errors"] or record["raw_operand_occurrences"] or record["other_opcode_occurrences"]:
         raise ValueError("checked-in answers contain parser errors or structural fallbacks")
     for item in [*record["input_hashes"], record["scanner"], record["opcode_candidate_source"]]:
@@ -398,6 +404,11 @@ def answer_parser_gap_audit() -> dict:
             for expression in row["result"].get("expressions", [])
         ),
         "unique_opcode_spellings": len(record["parsed_operator_spellings"]),
+        "parser_source_destination_arity": dict(sorted(Counter(
+            f"{expression['class']}:src{expression['source_count']}:dst{expression['destination_count']}"
+            for row in record["opcode_candidate_results"]
+            for expression in row["result"].get("expressions", [])
+        ).items())),
         "raw_operand_occurrences": len(record["raw_operand_occurrences"]),
         "other_opcode_occurrences": len(record["other_opcode_occurrences"]),
         "parse_errors": len(record["parse_errors"]),
