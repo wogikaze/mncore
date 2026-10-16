@@ -73,11 +73,19 @@ def validate_source(text: str, filename: str) -> None:
             raise ValueError(f"{filename}: unreviewed/stale import {module}")
 
 
-def validate_axioms(output: str) -> None:
+def expected_axiom_reports(check_source: str) -> int:
+    count = len(re.findall(r"^#print axioms\s+\S+", code_only(check_source), re.M))
+    if not count:
+        raise ValueError("Check.lean requests no kernel dependency reports")
+    return count
+
+
+def validate_axioms(output: str, expected: int) -> None:
     records = re.findall(r"depends on axioms:\s*\[([^]]*)\]", output)
     no_axioms = re.findall(r"does not depend on any axioms", output)
-    if len(records) + len(no_axioms) != 401:
-        raise ValueError(f"missing kernel dependency reports: {output}")
+    if len(records) + len(no_axioms) != expected:
+        raise ValueError(f"expected {expected} kernel dependency reports, got "
+                         f"{len(records) + len(no_axioms)}: {output}")
     for record in records:
         names = {x.strip() for x in record.split(",") if x.strip()}
         if names - ALLOWED_AXIOMS:
@@ -116,7 +124,8 @@ def main() -> None:
         if result.returncode:
             raise SystemExit(result.stdout + result.stderr)
         if args[-1] == "Check.lean":
-            validate_axioms(result.stdout + result.stderr)
+            validate_axioms(result.stdout + result.stderr,
+                            expected_axiom_reports((ROOT / "Check.lean").read_text()))
             if not re.search(r"AUDIT_DECLARATIONS: [1-9][0-9]*", result.stdout + result.stderr):
                 raise SystemExit("missing audit of all project declarations")
         print(result.stdout.strip())

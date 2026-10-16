@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from check import validate_axioms, validate_source
+from check import expected_axiom_reports, validate_axioms, validate_source
 
 
 class ProofGate(unittest.TestCase):
@@ -27,11 +27,24 @@ class ProofGate(unittest.TestCase):
 
     def test_kernel_escape_is_rejected(self):
         good = "'theorem' depends on axioms: [propext, Quot.sound]\n" * 11
-        validate_axioms(good)
+        validate_axioms(good, 11)
         for name in ("sorryAx", "Lean.ofReduceBool", "madeUpLowerBound"):
             with self.subTest(name=name), self.assertRaises(ValueError):
-                validate_axioms(good.replace("propext", name, 1))
+                validate_axioms(good.replace("propext", name, 1), 11)
 
     def test_missing_axiom_report_is_rejected(self):
         with self.assertRaises(ValueError):
-            validate_axioms("")
+            validate_axioms("", 1)
+        with self.assertRaises(ValueError):
+            validate_axioms("'t' depends on axioms: [propext]\n" * 2, 3)
+
+    def test_expected_reports_follow_check_source(self):
+        source = ("import ProofsLean\n#print axioms A.b\n-- #print axioms C.d\n"
+                  "/- #print axioms E.f -/\n#print axioms G.h\n")
+        self.assertEqual(expected_axiom_reports(source), 2)
+        with self.assertRaises(ValueError):
+            expected_axiom_reports("import ProofsLean\n")
+
+    def test_repository_check_source_is_countable(self):
+        root = Path(__file__).resolve().parents[1]
+        self.assertGreater(expected_axiom_reports((root / "Check.lean").read_text()), 0)
