@@ -54,8 +54,8 @@ def ParsedOperand.toDirectMemoryAccess? (operand : ParsedOperand)
     (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
     Option DirectMemoryAccess :=
   match operand with
-  | .mem access _ _ rounded _ =>
-      if rounded then none else
+  | .mem access negated extended rounded mask =>
+      if negated || extended || rounded || mask.isSome then none else
       match issueBankToRegisterBank access.bank, parsedWidth? access.region.width with
       | some bank, some width =>
           if (access.region.tIndirect && bank != .lm0) ||
@@ -164,6 +164,19 @@ example : ParsedOperand.toDirectMemoryAccess?
 example : ParsedOperand.toDirectMemoryAccess?
     (.mem ⟨.lm0, ⟨2, 3, 3, 3, 3, false, some 2⟩⟩ false false false none)
     2 0 3 0 0 = some ⟨.lm0, .long, ⟨8, by decide⟩⟩ := by decide
+
+example : ParsedOperand.toDirectMemoryAccess?
+    (.mem ⟨.lm0, ⟨1, 0, 0, 0, 0, false, none⟩⟩ true false false none)
+    0 0 0 0 0 = none := by decide
+
+example : ParsedOperand.toDirectMemoryAccess?
+    (.mem ⟨.lm0, ⟨1, 0, 0, 0, 0, false, none⟩⟩ false true false none)
+    0 0 0 0 0 = none := by decide
+
+example : ParsedOperand.toDirectMemoryAccess?
+    (.mem ⟨.lm0, ⟨1, 0, 0, 0, 0, false, none⟩⟩ false false false
+      (some (.pattern false 0)))
+    0 0 0 0 0 = none := by decide
 
 example : ParsedOperand.toMaskRegisterEntry? (.omr 1 none) = some 0 := by decide
 example : ParsedOperand.toMaskRegisterEntry? (.omr 15 none) = some 14 := by decide
