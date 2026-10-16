@@ -1,7 +1,8 @@
 """Guard the Lean PE-issue projection against Rust parser enum drift.
 
-This checks constructor inventories and the declared projection buckets. It
-does not prove Rust parser behavior or semantic correspondence.
+This checks constructor inventories, ALU source counts, the Rust/Lean parser
+source-limit rules, and declared projection buckets. It does not prove Rust
+parser behavior or semantic correspondence.
 """
 
 from __future__ import annotations
@@ -169,8 +170,39 @@ def validate_alu_input_counts() -> None:
                          f"lean-only={lean.items() - rust.items()}")
 
 
+def validate_parser_source_limits() -> None:
+    """Guard the complete Rust parse_expr source split against the Lean limit table."""
+    rust_match = re.search(r"let n_in = match &op\s*\{(.*?)\n\s*\};", VSM, re.S)
+    if not rust_match:
+        raise ValueError("Rust parse_expr source-count match not found")
+    lean_match = re.search(
+        r"def ParsedOp\.parserSourceLimit : ParsedOp → Nat(.*?)(?=\ntheorem\b)", LEAN, re.S)
+    if not lean_match:
+        raise ValueError("Lean ParsedOp.parserSourceLimit definition not found")
+    compact = lambda source: re.sub(r"\s+", "", source)
+    rust, lean = compact(rust_match.group(1)), compact(lean_match.group(1))
+    rust_rules = (
+        "Op::Alu{name,..}=>name.inputs(),",
+        "Op::Mau{matrix,kind,..}=>match(matrix,kind){(_,MauKind::Fma)=>3,(_,MauKind::Mul)|(false,MauKind::Add)=>2,_=>1,},",
+        "Op::MatWrite{..}|Op::MatRead{..}=>1,",
+        "_=>0,",
+    )
+    lean_rules = (
+        "|.aluname..=>name.inputCount",
+        "|.immediate..|.zero|.wait..|.noforward=>0",
+        "|.mau_matrixkind..=>matchmatrix,kindwith|_,.fma=>3|_,.mul=>2|false,.add=>2|_,_=>1",
+        "|.matrixWrite..|.matrixRead..=>1",
+        "|.l1bm..|.l2bm..=>1",
+    )
+    missing_rust = [rule for rule in rust_rules if rule not in rust]
+    missing_lean = [rule for rule in lean_rules if rule not in lean]
+    if missing_rust or missing_lean:
+        raise ValueError(f"parser source-limit rule drift: Rust={missing_rust}, Lean={missing_lean}")
+
+
 def validate() -> None:
     validate_alu_input_counts()
+    validate_parser_source_limits()
     parse_expr = re.search(r"fn parse_expr\(part: &str\).*?\n\}", VSM, re.S)
     if not parse_expr or "classify(&opcode).ok_or_else" not in parse_expr.group(0):
         raise ValueError("unknown PE opcode must fail parse_expr classification")
@@ -293,7 +325,7 @@ def validate() -> None:
                     "Noforward", "L1", "L2", "Other"):
         if not re.search(rf"Op::{variant}\b", ISSUE):
             raise ValueError(f"issue.rs does not classify Op::{variant}")
-    print("PASS: parsed Rust/Lean instruction, MV and operand constructors and ALU input counts match; Op::Other is parser-unreachable.")
+    print("PASS: parsed Rust/Lean instruction constructors and parser source-limit rules match; Op::Other is parser-unreachable.")
 
 
 if __name__ == "__main__":

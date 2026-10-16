@@ -80,6 +80,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   最大3であることをcatalogが検査する。さらにコンパイラ由来の184候補はすべて
   汎用operandを与えたときRust parserに分類された。これは候補の構文解析確認であり、
   assemble3での合法性や全命令の列挙完了を意味しない。
+- `check_issue_mirror.py`はRust `parse_expr`のALU/MAU/matrix/other各source分割式と
+  Lean `ParsedOp.parserSourceLimit`の対応を検査し、全構造opcodeの最大source数3以下という
+  定理の前提がRust parser側とずれた際に失敗する。これは実parser出力の形式的対応証明ではない。
 - `evidence/opcode-arity/reference.json`: 184 compiler ALU/MAU/matrix/immediate/zero候補すべてに
   opcode別source数のtemplateを与え、各候補が6以下の固有destination categoryからなる
   maximal templateをassemble3で受理し、同一destinationを追加したoverflowを拒否することを記録した。
