@@ -186,6 +186,20 @@ example : ParsedFixed.integerValue .l1bid .long 0 0 7 0 0 = 7 := by decide
 example : ParsedFixed.integerValue .mabid .long 0 0 0 15 0 = 15 := by decide
 example : ParsedFixed.integerValue .peid .long 0 0 0 15 3 = 63 := by decide
 
+def roundNearestEven (kept remainder midpoint : Nat) : Nat :=
+  kept + if midpoint < remainder || (remainder == midpoint && kept % 2 == 1)
+    then 1 else 0
+
+theorem roundNearestEven_tie_even (kept midpoint : Nat)
+    (even : kept % 2 = 0) :
+    roundNearestEven kept midpoint midpoint = kept := by
+  simp [roundNearestEven, even]
+
+theorem roundNearestEven_tie_odd (kept midpoint : Nat)
+    (odd : kept % 2 = 1) :
+    roundNearestEven kept midpoint midpoint = kept + 1 := by
+  simp [roundNearestEven, odd]
+
 /-- Rust `read_alu_input` converts each rounded single word through the MN-Core
 half format: 1/6/9 sign/exponent/mantissa bits, round-to-nearest-even, no subnormals. -/
 def roundSingleWordToHalf (word : BitVec 32) : BitVec 16 :=
@@ -200,9 +214,7 @@ def roundSingleWordToHalf (word : BitVec 32) : BitVec 16 :=
     let significand := 2 ^ 23 + mantissa
     let kept := significand / 2 ^ 14
     let remainder := significand % 2 ^ 14
-    let roundUp := remainder > 2 ^ 13 ||
-      (remainder == 2 ^ 13 && kept % 2 == 1)
-    let rounded := kept + if roundUp then 1 else 0
+    let rounded := roundNearestEven kept remainder (2 ^ 13)
     let carried := rounded == 2 ^ 10
     let halfExponent : Int := Int.ofNat exponent - 96 + if carried then 1 else 0
     if halfExponent >= 63 then BitVec.ofNat 16 (signBit + 63 * 2 ^ 9)

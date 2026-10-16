@@ -109,6 +109,8 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.parsed_integer_memory_input_ignores_negation_extension
 #print axioms ProofsLean.MNCore.PEMemory.readRegisterBank_t_reads_all_four_words
 #print axioms ProofsLean.MNCore.PEMemory.readRegisterBank_t_independent_of_width
+#print axioms ProofsLean.MNCore.PEMemory.roundNearestEven_tie_even
+#print axioms ProofsLean.MNCore.PEMemory.roundNearestEven_tie_odd
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerInput_read_rounded
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerInput_read_unrounded
 #print axioms ProofsLean.MNCore.PEMemory.parsed_issue_advances_elapsed_word
