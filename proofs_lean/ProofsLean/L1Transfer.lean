@@ -172,6 +172,60 @@ theorem distribSourceMab_wraps_up (mab : Fin 16) :
   simp [distribSourceMab]
   omega
 
+/-- Pending PE-to-L1BM writes are applied in vector order, as in
+`Blocks::apply`. -/
+abbrev L1Write := Fin l1bmLongWords × BitVec 64
+
+def writeL1Word (memory : L1Bank) (address : Fin l1bmLongWords)
+    (value : BitVec 64) : L1Bank :=
+  fun target => if target = address then value else memory target
+
+def commitL1Writes (memory : L1Bank) (writes : List L1Write) : L1Bank :=
+  writes.foldl (fun current write => writeL1Word current write.1 write.2) memory
+
+theorem writeL1Word_readback (memory : L1Bank) (address : Fin l1bmLongWords)
+    (value : BitVec 64) : writeL1Word memory address value address = value := by
+  simp [writeL1Word]
+
+theorem commitL1Writes_last_readback (memory : L1Bank) (writesBefore : List L1Write)
+    (address : Fin l1bmLongWords) (value : BitVec 64) :
+    commitL1Writes memory (writesBefore ++ [(address, value)]) address = value := by
+  simp [commitL1Writes, List.foldl_append, writeL1Word]
+
+def mwriteWrites (memoryBase : Fin l1bmLongWords) (twoLongWords : Bool)
+    (cycle : Fin 4) (buses : Fin 4 → Bus) : List L1Write :=
+  (List.finRange 4).flatMap fun pe =>
+    let offset := cycle.val * (if twoLongWords then 8 else 4) + pe.val
+    [(addressAt memoryBase offset, (buses pe).high)] ++
+      if twoLongWords then
+        [(addressAt memoryBase (offset + 4), (buses pe).low)]
+      else []
+
+def m4writeWrites (memoryBase : Fin l1bmLongWords) (twoLongWords : Bool)
+    (cycle mabGroup : Fin 4) (buses : Fin 4 → Fin 4 → Fin 4 → Bus) : List L1Write :=
+  (List.finRange 4).flatMap fun group =>
+    (List.finRange 4).flatMap fun pe =>
+      let baseOffset := cycle.val * (if twoLongWords then 32 else 16) +
+        group.val * (if twoLongWords then 8 else 4) + pe.val
+      let source := buses group mabGroup pe
+      [(addressAt memoryBase baseOffset, source.high)] ++
+        if twoLongWords then
+          [(addressAt memoryBase (baseOffset + 4), source.low)]
+        else []
+
+theorem mwriteWrites_count (memoryBase : Fin l1bmLongWords)
+    (twoLongWords : Bool) (cycle : Fin 4) (buses : Fin 4 → Bus) :
+    (mwriteWrites memoryBase twoLongWords cycle buses).length =
+      if twoLongWords then 8 else 4 := by
+  cases twoLongWords <;> simp [mwriteWrites, List.finRange]
+
+theorem m4writeWrites_count (memoryBase : Fin l1bmLongWords)
+    (twoLongWords : Bool) (cycle mabGroup : Fin 4)
+    (buses : Fin 4 → Fin 4 → Fin 4 → Bus) :
+    (m4writeWrites memoryBase twoLongWords cycle mabGroup buses).length =
+      if twoLongWords then 32 else 16 := by
+  cases twoLongWords <;> simp [m4writeWrites, List.length_flatMap, List.finRange]
+
 def updateBroadcastForwarding (old : ProofsLean.MNCore.Forwarding.Slots)
     (outputs : Fin 4 → Bus) (noForward : Bool) :
     ProofsLean.MNCore.Forwarding.Slots :=

@@ -61,6 +61,10 @@ import Lean
 #print axioms ProofsLean.MNCore.L1Transfer.distrib_addressed_words
 #print axioms ProofsLean.MNCore.L1Transfer.distribSourceMab_wraps_down
 #print axioms ProofsLean.MNCore.L1Transfer.distribSourceMab_wraps_up
+#print axioms ProofsLean.MNCore.L1Transfer.writeL1Word_readback
+#print axioms ProofsLean.MNCore.L1Transfer.commitL1Writes_last_readback
+#print axioms ProofsLean.MNCore.L1Transfer.mwriteWrites_count
+#print axioms ProofsLean.MNCore.L1Transfer.m4writeWrites_count
 #print axioms ProofsLean.MNCore.PEMemory.mask_directive_replaces_selection_preserves_context
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerMaskedLineStep_prepares_then_commits
 #print axioms ProofsLean.MNCore.PEMemory.parsedMaskedSource_execution
