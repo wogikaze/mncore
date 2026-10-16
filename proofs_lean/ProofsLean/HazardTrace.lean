@@ -231,6 +231,12 @@ def parsedMvHazardEvents (transfer : ParsedMv) (startWord : Nat) :
   parsedMvOperandHazardEvents transfer false transfer.source startWord ++
     parsedMvOperandHazardEvents transfer true transfer.destination startWord
 
+theorem parsedMvHazardEvents_count (transfer : ParsedMv) (startWord : Nat) :
+    (parsedMvHazardEvents transfer startWord).length =
+      (parsedMvOperandHazardEvents transfer false transfer.source startWord).length +
+        (parsedMvOperandHazardEvents transfer true transfer.destination startWord).length := by
+  simp [parsedMvHazardEvents]
+
 def parsedLineBlockHazardEvents (line : ParsedLine) (startWord : Nat) :
     List ProofsLean.MNCore.PEMemory.TimedBlockAccess :=
   match line with
@@ -247,6 +253,12 @@ def parsedSourceBlockHazardEvents : List ParsedLine → Nat →
         parsedSourceBlockHazardEvents rest
           (startWord +
             (ProofsLean.MNCore.PEMemory.ParsedLine.parsedMaskedIssueWords? line).getD 0)
+
+theorem parsedSourceBlockHazardEvents_single_mv_count
+    (transfer : ParsedMv) (startWord : Nat) :
+    (parsedSourceBlockHazardEvents [.mv transfer] startWord).length =
+      (parsedMvHazardEvents transfer startWord).length := by
+  simp [parsedSourceBlockHazardEvents, parsedLineBlockHazardEvents, parsedMvHazardEvents]
 
 def parsedSourceBlockHazardConstraints (source : List ParsedLine)
     (startWord : Nat) :=
