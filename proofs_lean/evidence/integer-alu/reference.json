@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "recorded_at": "2026-10-15T15:31:43.140981+00:00",
+  "recorded_at": "2026-10-16T04:28:30.577707+00:00",
   "evidence_kind": "finite_lean_datapath_reference_comparison",
   "scope": "72 integer spellings; 30 common operand pairs plus 48 width-specific boundary pairs for each shift spelling; unmasked unreduced scalar GRF accesses; one PE; all four broadcast cycles",
   "cases_per_spelling": {

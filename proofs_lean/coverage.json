@@ -14,7 +14,7 @@
       "missing": "Operand decoding/access/reduction, masks, timing/forwarding, parallel issue, all other ISA operations",
       "reference_experiment": {
         "path": "proofs_lean/evidence/integer-alu/reference.json",
-        "sha256": "bf162df268921b415743d5736967a0a87ef039174ec287c6f66ab7e648497fa8",
+        "sha256": "94aa33bb853c09f2abc9cfeb7ba072fc585f895a2d5c1892627d3941d7a3dfcf",
         "cases": 2880,
         "matched_cases": 2880,
         "unresolved_cases": 0,
