@@ -25,7 +25,7 @@
     },
     {
       "path": "proofs_lean/scripts/check_isa_parser_bounds.py",
-      "sha256": "d27db6b6d270378c1e43bab8bc115168a2394b4b8ba52313f9f3c7797e9b6f83"
+      "sha256": "3f0244256c2a6db01bb85bccb2f0f30ac14415ad715d0a7760438d984aaaad4d"
     }
   ],
   "observations": [
@@ -147,6 +147,46 @@
       "accepted": true,
       "assembler_output_lines": 1,
       "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "zero_single_nowrite_output",
+      "source": "zero $nowrite",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "zero_duplicate_nowrite_outputs",
+      "source": "zero $nowrite $nowrite",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "nowrite used twice as output",
+      "matches_expected": true
+    },
+    {
+      "case": "zero_duplicate_lm0_distinct_addresses",
+      "source": "zero $lm0 $lm4",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "LM0 used twice as output.",
+      "matches_expected": true
+    },
+    {
+      "case": "zero_duplicate_omr_distinct_entries",
+      "source": "zero $omr1 $omr2",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Mask register used twice as output.",
+      "matches_expected": true
+    },
+    {
+      "case": "matrix_write_two_matrix_destinations",
+      "source": "gmwrite $aluf $lx0 $ly0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Too many operand given to mwrite instruction.",
       "matches_expected": true
     },
     {
@@ -8642,6 +8682,7 @@
     "For l1bmd, every explicit signed offset from -255 through +255 was accepted, while -256 and +256 were rejected. The manual documents useful offsets 0..15. The Rust visualizer's i8 parser is narrower and cannot parse accepted values 128..255; Rust is not used as range evidence. These assembler probes still do not prove global parser completeness.",
     "The assembler accepts d set, d get and r input records, but the challenge judge's default solution sanitizer retains only j/m instruction rows; these records are filtered before execution. The scored program therefore excludes debug and DRAM initialization records.",
     "A zero instruction with one destination in each of LM0, LM1, GRF0, GRF1, T and OMR is accepted; duplicate destinations within each of those six categories are rejected. This bounds observed destination categories for these probes, but Rust's VSM parser itself still stores all tokens after the fixed source prefix as destinations, and the assembler probes are not a universal parser-to-encoding theorem.",
+    "Same-expression destination checks reject duplicate output classes even when the operand values differ (LM0 at two addresses, two OMR entries), reject repeated nowrite, and reject multiple matrix-write destinations. A single nowrite destination is accepted. These checks support finite destination arity for the sampled opcodes but do not establish a bound for every opcode spelling.",
     "Judge flags can preserve d get/d set, but the normal challenge invocation does not set them; the d-set invalidation applies only when such a record is retained."
   ],
   "submission_normalization": {

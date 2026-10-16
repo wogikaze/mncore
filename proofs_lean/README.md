@@ -56,7 +56,7 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   抽象的な`nop/n`モデルでは全上限について有限性を証明した。MN-Coreの
   実際の行型については、アドレス・即値・全オペランド範囲、同時発行と
   ハザードに基づく有限性が未証明。
-- `evidence/isa-bounds/reference.json`: 公式`assemble3`の1,074個の境界プローブ。
+- `evidence/isa-bounds/reference.json`: 公式`assemble3`の1,079個の境界プローブ。
   `nop/0`は受理され0語を出力するため正コストの行からは正規化で除外する。
   `$omr`は1〜15が受理、`$imr`と有効なマスク指令のselectorは0〜31が受理され、
   32は拒否された。後者はRustコメントの「1〜15」と不一致。challenge judgeは
@@ -65,7 +65,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   `zero`はLM0/LM1/GRF0/GRF1/T/OMRへ1個ずつ出力する6 destination を受理し、
   各カテゴリ内の重複出力を拒否した。Rust parserはopcodeごとのsource個数で分割後、
   残りの全tokenをdestinationにするため、このassembler観測だけではparser-encoding間の
-  一般的なarity健全性を証明しない。
+  一般的なarity健全性を証明しない。追加境界probeでは`zero`の同一category別address出力、
+  複数OMR/nowrite出力と`gmwrite`の複数matrix destinationも拒否され、単独`nowrite`は受理された。
+  destination上限の証拠はまだ代表opcodeのprobeに留まり、184候補全てへの一般化は未証明。
 - `evidence/parser-gap-audit/answers.json`: 問題ディレクトリの全73 `answer.vsm`を
   Rust VSM parserで走査した結果。parse error、`Operand::Raw`、`Op::Other`はいずれも
   0件で、opcode綴りを155種類確認した。さらにコンパイラ由来の184候補はすべて

@@ -32,6 +32,14 @@ CASES = {
         "zero $lm0 $ln0 $lr0 $ls0 $omr1\n", True, 1),
     "zero_multi_output_all_six_categories": (
         "zero $lm0 $ln0 $lr0 $ls0 $t $omr1\n", True, 1),
+    "zero_single_nowrite_output": ("zero $nowrite\n", True, 1),
+    "zero_duplicate_nowrite_outputs": ("zero $nowrite $nowrite\n", False, None),
+    "zero_duplicate_lm0_distinct_addresses": (
+        "zero $lm0 $lm4\n", False, None),
+    "zero_duplicate_omr_distinct_entries": (
+        "zero $omr1 $omr2\n", False, None),
+    "matrix_write_two_matrix_destinations": (
+        "gmwrite $aluf $lx0 $ly0\n", False, None),
     "zero_duplicate_lm0_output": ("zero $lm0 $lm2\n", False, None),
     "zero_duplicate_lm1_output": ("zero $ln0 $ln2\n", False, None),
     "zero_duplicate_grf0_output": ("zero $lr0 $lr2\n", False, None),
@@ -212,6 +220,7 @@ def main() -> None:
             "For l1bmd, every explicit signed offset from -255 through +255 was accepted, while -256 and +256 were rejected. The manual documents useful offsets 0..15. The Rust visualizer's i8 parser is narrower and cannot parse accepted values 128..255; Rust is not used as range evidence. These assembler probes still do not prove global parser completeness.",
             "The assembler accepts d set, d get and r input records, but the challenge judge's default solution sanitizer retains only j/m instruction rows; these records are filtered before execution. The scored program therefore excludes debug and DRAM initialization records.",
             "A zero instruction with one destination in each of LM0, LM1, GRF0, GRF1, T and OMR is accepted; duplicate destinations within each of those six categories are rejected. This bounds observed destination categories for these probes, but Rust's VSM parser itself still stores all tokens after the fixed source prefix as destinations, and the assembler probes are not a universal parser-to-encoding theorem.",
+            "Same-expression destination checks reject duplicate output classes even when the operand values differ (LM0 at two addresses, two OMR entries), reject repeated nowrite, and reject multiple matrix-write destinations. A single nowrite destination is accepted. These checks support finite destination arity for the sampled opcodes but do not establish a bound for every opcode spelling.",
             "Judge flags can preserve d get/d set, but the normal challenge invocation does not set them; the d-set invalidation applies only when such a record is retained."
         ],
         "submission_normalization": {
