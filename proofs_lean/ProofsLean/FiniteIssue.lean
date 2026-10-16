@@ -6,6 +6,7 @@ import Mathlib.Data.Fintype.Sum
 import Mathlib.Data.Fintype.Option
 import Mathlib.Data.BitVec
 import ProofsLean.Issue
+import ProofsLean.FiniteRegion
 
 namespace ProofsLean.MNCore.Issue
 
@@ -57,18 +58,18 @@ def ParsedMask.inFiniteEnvelope : ParsedMask → Prop
   | .pattern .. => True
   | .entry _ index => index < 32
 
-private abbrev ParsedMaskCode := (Bool × Fin 16) ⊕ (Bool × Fin 32)
-private instance : Fintype ParsedMaskCode := inferInstance
+abbrev ParsedMaskFiniteCode := (Bool × Fin 16) ⊕ (Bool × Fin 32)
+private instance : Fintype ParsedMaskFiniteCode := inferInstance
 
-private def parsedMaskCode (mask : {mask : ParsedMask // mask.inFiniteEnvelope}) :
-    ParsedMaskCode :=
+def ParsedMask.finiteCode (mask : {mask : ParsedMask // mask.inFiniteEnvelope}) :
+    ParsedMaskFiniteCode :=
   match mask with
   | ⟨.pattern longLong bits, _⟩ => Sum.inl (longLong, bits.toFin)
   | ⟨.entry longLong index, bound⟩ =>
     Sum.inr (longLong, ⟨index, by simpa [ParsedMask.inFiniteEnvelope] using bound⟩)
 
-private theorem parsedMaskCode_injective :
-    Function.Injective parsedMaskCode := by
+theorem ParsedMask.finiteCode_injective :
+    Function.Injective ParsedMask.finiteCode := by
   intro a b codeEqual
   cases a with
   | mk a ha =>
@@ -79,21 +80,21 @@ private theorem parsedMaskCode_injective :
       | pattern longLong bits =>
         cases b with
         | pattern otherLongLong otherBits =>
-          simp only [parsedMaskCode, Sum.inl.injEq, Prod.mk.injEq] at codeEqual
+          simp only [ParsedMask.finiteCode, Sum.inl.injEq, Prod.mk.injEq] at codeEqual
           rcases codeEqual with ⟨rfl, bitsEqual⟩
           have bitsEqual' : bits = otherBits := BitVec.toFin_injective bitsEqual
           subst otherBits
           rfl
         | entry otherLongLong otherIndex =>
-          simp only [parsedMaskCode] at codeEqual
+          simp only [ParsedMask.finiteCode] at codeEqual
           cases codeEqual
       | entry longLong index =>
         cases b with
         | pattern otherLongLong otherBits =>
-          simp only [parsedMaskCode] at codeEqual
+          simp only [ParsedMask.finiteCode] at codeEqual
           cases codeEqual
         | entry otherLongLong otherIndex =>
-          simp only [parsedMaskCode, Sum.inr.injEq, Prod.mk.injEq] at codeEqual
+          simp only [ParsedMask.finiteCode, Sum.inr.injEq, Prod.mk.injEq] at codeEqual
           rcases codeEqual with ⟨rfl, valueEqual⟩
           have indexEqual : index = otherIndex := congrArg Fin.val valueEqual
           subst otherIndex
@@ -101,7 +102,48 @@ private theorem parsedMaskCode_injective :
 
 theorem ParsedMask.inFiniteEnvelope_finite :
     Finite {mask : ParsedMask // mask.inFiniteEnvelope} :=
-  Finite.of_injective parsedMaskCode parsedMaskCode_injective
+  Finite.of_injective ParsedMask.finiteCode ParsedMask.finiteCode_injective
+
+def Access.inFiniteEnvelope (access : Access) : Prop :=
+  access.region.inFiniteEnvelope
+
+private def Bank.finiteCode : Bank → Fin 10
+  | .grf0 => 0 | .grf1 => 1 | .lm0 => 2 | .lm1 => 3 | .t => 4
+  | .l1bm => 5 | .l2bm => 6 | .pdm => 7 | .dram => 8 | .omr => 9
+
+private theorem Bank.finiteCode_injective : Function.Injective Bank.finiteCode := by
+  intro a b equal
+  cases a <;> cases b <;> simp [Bank.finiteCode] at equal ⊢
+
+private def Access.finiteCode
+    (access : {access : Access // access.inFiniteEnvelope}) : Fin 10 × RegionFiniteCode :=
+  (access.1.bank.finiteCode,
+    Region.finiteCode ⟨access.1.region, access.2⟩)
+
+private theorem Access.finiteCode_injective :
+    Function.Injective Access.finiteCode := by
+  intro a b equal
+  cases a with
+  | mk a ha =>
+    cases b with
+    | mk b hb =>
+      apply Subtype.ext
+      cases a with
+      | mk abank aregion =>
+        cases b with
+        | mk bbank bregion =>
+          simp only [Access.finiteCode, Prod.mk.injEq] at equal
+          rcases equal with ⟨banks, regions⟩
+          have bankEq := Bank.finiteCode_injective banks
+          have regionEq := Region.finiteCode_injective regions
+          cases bankEq
+          have rawRegionEq : aregion = bregion := congrArg Subtype.val regionEq
+          cases rawRegionEq
+          rfl
+
+theorem Access.inFiniteEnvelope_finite :
+    Finite {access : Access // access.inFiniteEnvelope} :=
+  Finite.of_injective Access.finiteCode Access.finiteCode_injective
 
 def omrEntryInFiniteEnvelope (entry : Nat) : Prop := entry < 16
 

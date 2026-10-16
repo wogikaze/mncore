@@ -56,7 +56,7 @@
   "finite_carrier_proofs": [
     {
       "source": "proofs_lean/ProofsLean/FiniteRegion.lean",
-      "sha256": "c28b777caf84d4e819093de2c359c5dfd8f49fc39f4c6eb1a7851140b5d18ffd",
+      "sha256": "11a5daad6554f46d39a926f315780111ea0b30a437fe1183aecee71ffcbce20e",
       "theorem": "ProofsLean.MNCore.Issue.Region.inFiniteEnvelope_finite",
       "scope": "Finite subtype for the PE region envelope documented by assemble3 boundary probes: width < 5, four addresses < 4096, and madpe < 4.",
       "evidence": "proofs_lean/evidence/isa-bounds/reference.json: region_address_cycle0_max through region_address_cycle3_overflow, madpe_3/madpe_4, and LM0/LM1/GRF capacity findings.",
@@ -64,7 +64,15 @@
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
-      "sha256": "346069ab49d7f3ef2f9afd45b346e56f7a5a46dfc8cfdac46c6c1d2895b592a6",
+      "sha256": "ebd915582e6f6a5a0ddc69e951e18749c6a8fe7bd83d9ea50aff8f64d746e789",
+      "theorem": "ProofsLean.MNCore.Issue.Access.inFiniteEnvelope_finite",
+      "scope": "Finite carrier for accesses whose region lies in the assembler-probed PE region envelope; the bank is one of ten constructors.",
+      "evidence": "Region bounds are listed in proofs_lean/evidence/isa-bounds/reference.json; Bank constructors are mirrored from the issue checker.",
+      "missing": "Bank-specific address legality, parser correspondence, and bounded operand/line carriers."
+    },
+    {
+      "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
+      "sha256": "ebd915582e6f6a5a0ddc69e951e18749c6a8fe7bd83d9ea50aff8f64d746e789",
       "theorem": "ProofsLean.MNCore.Issue.projectLine_expression_count_le_ten",
       "scope": "Legal projected PE rows have at most ten expressions, from ten unique issue groups and projection-assigned distinct IDs.",
       "evidence": "Formal consequence of Issue.groupsUnique and ParsedExpr.issueGroup being total; issue groups are mirrored from viz/core/src/issue.rs.",
@@ -72,7 +80,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
-      "sha256": "346069ab49d7f3ef2f9afd45b346e56f7a5a46dfc8cfdac46c6c1d2895b592a6",
+      "sha256": "ebd915582e6f6a5a0ddc69e951e18749c6a8fe7bd83d9ea50aff8f64d746e789",
       "theorem": "ProofsLean.MNCore.Issue.ParsedMask.inFiniteEnvelope_finite",
       "scope": "Finite subtype for ParsedMask patterns and entry selectors below 32.",
       "evidence": "proofs_lean/evidence/isa-bounds/reference.json: imr_selector_0, imr_selector_31, imr_selector_32; these are IMR mask selectors, not OMR entries.",
@@ -80,7 +88,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
-      "sha256": "346069ab49d7f3ef2f9afd45b346e56f7a5a46dfc8cfdac46c6c1d2895b592a6",
+      "sha256": "ebd915582e6f6a5a0ddc69e951e18749c6a8fe7bd83d9ea50aff8f64d746e789",
       "theorem": "ProofsLean.MNCore.Issue.omrEntryInFiniteEnvelope_finite",
       "scope": "Finite subtype for OMR entry values below 16, including invalid zero as a generous envelope.",
       "evidence": "proofs_lean/evidence/isa-bounds/reference.json: omr_0, omr_1, omr_15, omr_16.",
@@ -88,7 +96,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
-      "sha256": "346069ab49d7f3ef2f9afd45b346e56f7a5a46dfc8cfdac46c6c1d2895b592a6",
+      "sha256": "ebd915582e6f6a5a0ddc69e951e18749c6a8fe7bd83d9ea50aff8f64d746e789",
       "theorem": "ProofsLean.MNCore.Issue.natBelow_finite",
       "scope": "Every subtype of Nat below an arbitrary bound is finite, by injection into Fin bound.",
       "evidence": "General Lean encoding argument; per-field numeric bounds remain supported by their individual assembler probes.",
@@ -96,7 +104,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
-      "sha256": "346069ab49d7f3ef2f9afd45b346e56f7a5a46dfc8cfdac46c6c1d2895b592a6",
+      "sha256": "ebd915582e6f6a5a0ddc69e951e18749c6a8fe7bd83d9ea50aff8f64d746e789",
       "theorem": "ProofsLean.MNCore.Issue.optionNatBelow_finite",
       "scope": "Optional Nat values whose present payloads are below an arbitrary bound form a finite subtype.",
       "evidence": "General Lean encoding argument; optional operand-field bounds are recorded in the ISA boundary evidence.",
