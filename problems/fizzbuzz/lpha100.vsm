@@ -1,0 +1,120 @@
+imm ui"0x41200006" $ls[278,282,500,500] $lr278 $ln278 $t # last 6 bits are 0x06, 10.0
+imm ui"0x38d1bc87" $ls280 $ln236 # last 6 bits are 0x07, 0.00010001
+fvmul $aluf $t $ln234; imm i"0x41566683" $ls[256,286,500,500] # last 6 bits are 0x03, 13.4
+fvmul $mauf $t $ln232; imm i"4" $s285 $r243
+fvmul $mauf $t $ln230; imm f"1.0" $ls[264,272,440,500] $lr264 # 1.0
+lpassa $peid $lr400; fvadd $aluf $aluf $ln262 $ls274 $lm262 # 2.0
+fvpassa $mauf $lr274; imm f"2.4" $ls260 # 2.4
+imm ui"50"  $r245
+lpassa $l1bid $lr402; fvfma $ls[264,274,274,274] $ln262 $lr[264,0,264,274] $ls[276,452,456,458] $lm[500,500,456,458] # 3.0, 4,0, 5.0, 6.0
+lpassa $l2bid $lr404; fvfma $t $t $ls256 $ls252 # 113.4
+imm ui"584" $r247; fvfma $ls[260,276,0,0] $t $lr[0,278,0,0] $ls[294,292,500,500] # 24.0, 40.0
+imm f"1.0667" $s428; fvadd $ls[452,458,452,458] $ls[452,458,452,458] $nowrite # ↑(1/15), 8.0, 12.0, 8.0, 12.0
+land $lr[400,402,0,0] $ls[280,282,0,0] $lr[406,412,500,500]; fvfma $mauf $ln[0,0,262,0] $mauf $ls[438,448,500,500] $t # 8.0, 12.0, 24.0, 12.0
+lsub $lr[400,402,0,0] $aluf $lr[410,408,500,500]; fvadd $mauf $ls[0,276,0,452] $ls[500,290,500,296] # 8.0, 15.0, 24.0, 16.0
+imm f"1.5189873" $ln250; fvadd $mauf $ls294 $ls[220,500,500,222] # 120/79, 32.0, X, X, 40.0
+imm f"1.6901408" $ln254; fvfma $t $ls456 -$lr274 $nowrite  # 120/71, 58.0
+llsl $lr[412,404,410,408] $ls[282,284,282,286] $lr[412,404,410,408] $ls[412,404,410,408]; fvpassa $mauf $lm[500,228,500,500]
+imm f"0x3.p+22"  $ln300 $ls300; fvpassa $ls276 $nowrite
+imm f"1.9047619" $ln258; fvfma $ls458 $lr278 $mauf $nowrite # 120/63, 63.0
+ladd $lr[408,410,0,0] $ls[412,404,0,0] $lr[416,418,500,500] $ls[416,418,500,500]; fvpassa $mauf $ln432
+imm f"2.66666666667" $s424; fvadd $mauf $ls[438,296,0,0] $ln[434,436,500,500] # 71.0, 79.0
+imm f"1.6" $s426; fvpassa $t $lr[438,500,500,500]
+ladd $lr416 $ls418 $nowrite
+fvadd $ln[434,432,0,0] $ls264 $ls[226,224,500,500]; ladd $aluf $lr406 $t # 72.0, 64.0, tid
+ior $aluf $ln300 $nowrite; fvfma $mauf $lr438 $ls290 $lm[218,500,500,500]
+imm ui"0x42757A7A" $r[494,497,500,500]; fvadd $aluf -$ln300 $ls2 # Buzz, float(tid)
+lsub $t $lr[240,242,244,246] $omr1; fvpassa $mauf $nowrite
+fvfma $mauf $ln[262,258,254,250] $ls[264,260,256,252] $nowrite; iinc $lm[0,458,228,218] $ls[464,500,500,500] $lr[500,442,444,446] # 0x0001, 6.001, 591.001
+fftoi $mauf $nowrite; fvpassa $ln[430,432,434,436] $ls[430,432,434,436]
+ior $aluf $ln300 $nowrite
+fftoi $ls[438,296,294,220] $ls[476,478,480,482]; fvadd $aluf -$ln300 $lr4/$imr1 # 8, 16, 24, 32, float(est)
+idec $aluf $s[420,422,500,500] $r[420,422,500,500]; fvpassa $s[290,292,294,296] $n[290,292,294,296] # 7, 15
+imm f"3.5"  $ls450; fvpassa $ls[440,438,0,0] $lr[440,438,500,500]
+imm f"0.0666686" $ln298 $lr298; fvadd $aluf $ls264 $ls454 # 4.5
+imm ui"48"  $ls248; fvadd $r5 $s[270,274,272,276] $r[4,5,6,7] # est+0,est+2,est+1,est+3
+fftoi $ls[224,226,292,278] $ln[388,488,486,500] $s[500,500,487,500] $m[500,500,500,499] $r[500,500,500,499] # 64, 72, 40, 10
+imm i"0x4114" $ls460 # add
+imm ui"0x46697A7A" $r[492,496,500,500] # Fizz
+
+### to_string (4f+8i+3nop) ###                                  ### mod 15 alt
+fvmul $lr4 $ln[230,232,234,236] $nowrite; imm i"0x1441" $ls462
+fftoi $mauf $nowrite                                            ; fvadd $r4 -$s[272,0,0,0] $t $m[92,500,500,500] # est-1, est, est, est
+ior   $aluf $ln300 $nowrite                                     ; fvmul $mauf $r298 $nowrite
+fvadd $aluf -$ln300 $nowrite                                    ; fftoi $mauf $m[10,500,500,500] # int((est-1)/15)
+fvfma $lr4 $ln[230,232,234,236] -$mauf $nowrite                 ; ior   $aluf $ls300 $nowrite
+fvmul $mauf $ls278 $nowrite                                     ; ipassa $aluf $nowrite
+fftoi $mauf $nowrite                                            ; fvadd $aluf -$n300 $m[14,500,500,500] # float((est-1)/15)
+iadd $aluf $ls248 $nowrite                                      ; fvfma $t $n298 -$mauf $nowrite
+ilsl $aluf $ls[0,476,478,480] $lr[20,22,24,26] $ls[20,22,24,26] ; fvmul $mauf $n[290,292,294,296] $m[40,500,500,500] # ↑float((est-1)%15), X, X, X
+                                                                  fftoi $mauf $r[47,500,500,500]; fvadd $mauf $s[0,424,426,428] $t  # X, 8の倍数なら3の倍数, 8の倍数なら5の倍数, 16の倍数なら15の倍数
+                                                                  fvadd $mauf $ln300 $nowrite; land  $aluf $ls[0,420,420,422] $omr2 # True,3の倍数,5の倍数,15の倍数
+                                                                  fvadd $t $s[0,424,426,428] $t; land $mauf $lr[0,420,420,422] $omr3 # est+1が↑
+iadd $lr[20,22,0,0] $ls[24,26,0,0] $lr[28,500,500,500] $ls[500,28,500,500]; fvadd $mauf $ln300 $nowrite
+                                                                  fvadd $t $s[0,424,426,428] $t; land $mauf $lr[0,420,420,422] $omr4 # est+2が↑
+iadd $r[28,29,0,0] $s[28,29,0,0] $r[8,12,500,500]               ; fvadd $mauf $ln300 $t
+iinc $aluf $r[10,14,500,500] # str(est+1) str(est+3)
+
+                                                                  land  $t $ls[0,420,420,422] $omr5 # est+3が↑
+
+ipassa $s[481,479,477,475] $n491/$imr1 # Z
+ipassa $s[479,481,483,487] $n485/$imr1 # L
+
+ilsr $s[460,462,0,0] $r47 $nowrite; fvpassa $m14 $t
+iand $aluf $s464 $s[346,347,500,500] # 1or0, depending on (est-1)%15
+
+### start_pos
+fvfma $t $s[430,432,434,436] -$r[440,442,444,446] $nowrite; ipassa $n[485,487,487,489] $s113/$imr3 $r113/$imr3 # len(str(est+1))
+fvfma $m40 $s[450,452,454,456] $mauf $nowrite; ipassa $n[485,487,487,489] $s111/$imr2 # len(str(est+0))
+fftoi $mauf $nowrite; fvpassa $lr438 $t
+iadd $aluf $s[347,347,0,0] $nowrite
+isub $aluf $s[346,0,0,0] $nowrite
+isub $aluf $s[346,346,346,0] $r51/$imr1 # start_pos
+ipassa $n[485,487,487,489] $s115/$imr4 $r115/$imr4 # len(str(est+2))
+
+### %04d -> %d
+ilsl $r[8,10,12,14] $n491 $r[8,10,12,14]
+
+ior   $lr50 $ln300 $nowrite; fvpassa $ls2 $nowrite # float(start_pos+0x3.p+22)
+fvfma $mauf $t -$aluf $nowrite; iadd $s111 $r113 $s117 # len(str(est+0))+len(str(est+1))
+fvmul $mauf $t $nowrite; iadd $aluf $r115 $s129 # len(str(est+0))+len(str(est+1))+len(str(est+2))
+fftoi $mauf $ls80
+
+lpassa $lr[10,492,494,496] $lr102/$imr3 # str(est+1)
+lpassa $lr[8,492,494,496] $lr100/$imr2  # str(est+0)
+lpassa $lr[12,492,494,496] $lr104/$imr4 # str(est+2)
+lpassa $lr[14,492,494,496] $lr106/$imr5 # str(est+3)
+
+isub $s[111,117,129,81] $n388 $s[121,119,133,500] # len(str0)-64, len(str0+str1)-64, len(str0+str1+str2)-64, shamt-64
+isub $msb1 $aluf $s[123,125,500,83] # 64-len(str0), 64-len(str+0+str1), X, 64-shamt
+isub $msb1 $s[111,117,129,0] $s[127,135,131,500] # -len(str0)
+
+# build first word
+
+llsl $lr[498,498,102,104] $ls[122,124,122,124] $t $lr[500,500,40,42]
+llsr $lr[102,104,0,0] $ls[110,116,0,0] $nowrite
+ladd $t $aluf $nowrite
+ladd $lr[100,0,0,0] $aluf $lr[30,32,500,500] $ls[30,32,500,500]
+
+# build second word
+
+llsr $lr[102,104,106,0] $ls[120,118,132,0] $t
+llsl $lm498 $ls[126,134,130,0] $nowrite # \n
+lor $t $aluf $ln[500,500,34,500]
+lor $aluf $lr[40,42,0,0] $lr[36,38,40,500] $ls[36,38,40,500] $t
+ladd $lr30 $ls32 $lr0    # first word
+lor $ln34 $t $nowrite
+lor $aluf $ls38 $nowrite # second word
+
+
+llsr $aluf $ls82 $t      # second >> -shamt
+llsl $lr0 $ls80 $nowrite # first << shamt
+ladd $t $aluf $nowrite   # final 8 bytes
+l1bmd $aluf $lb0         # PE 1LW -> 64 LW (x 4cycles)
+nop
+nop
+l2bmd $lb0  $lc0         # L1BM 32LW -> L2BM 256LW
+l2bmd $lb32 $lc256       # L1BM 32LW -> L2BM 256LW
+nop
+mvd/n4096i01 $lc0 $p0@0
+mvp/n4096i03 $p0@0 $d0@0

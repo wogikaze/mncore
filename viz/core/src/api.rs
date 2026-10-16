@@ -65,20 +65,7 @@ fn expr_infos(l: &Line) -> Vec<ExprInfo> {
                 Op::Noforward => ("noforward", None),
                 Op::Other(_) => ("other", None),
             };
-            let turnaround = e.srcs.iter().chain(&e.dsts).any(|o| matches!(o, Operand::L1bm { addr: None, .. }));
-            let group = match &e.op {
-                Op::Alu { .. } | Op::Imm { .. } | Op::Zero => "alu",
-                Op::Mau { .. } => "mau-calc",
-                Op::MatWrite { .. } => "mau-mwrite",
-                Op::MatRead { .. } => "mau-mread",
-                Op::L1(_) if turnaround => "l1bm-turnaround",
-                Op::L1(_) => "l1bm",
-                Op::L2(crate::blockop::L2Op::Darw) => "l2bmdarw",
-                Op::L2(_) => "l2bm",
-                Op::Wait(_) => "wait",
-                Op::Noforward => "noforward",
-                Op::Other(_) => "other",
-            };
+            let group = crate::issue::group(e).unwrap_or("other");
             let (opcode, toks) = crate::vsm::tokenize(&e.text);
             let ndst = e.dsts.len().min(toks.len());
             let (srcs, dsts) = toks.split_at(toks.len() - ndst);

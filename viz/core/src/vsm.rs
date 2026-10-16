@@ -292,7 +292,7 @@ pub enum FixedKind {
     Msb1,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Addr {
     /// Word address for each of the 4 cycles before adding the base address register and T.
     pub cycles: [u32; 4],

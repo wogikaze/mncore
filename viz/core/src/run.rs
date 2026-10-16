@@ -48,7 +48,10 @@ impl Sim {
     pub fn exec(&mut self, line: &Line) -> Result<(), ExecError> {
         self.words += line.words() as u64;
         match line {
-            Line::Pe(exprs) => self.m.step(exprs)?,
+            Line::Pe(exprs) => {
+                crate::issue::check(exprs).map_err(ExecError::Assembly)?;
+                self.m.step(exprs)?
+            }
             Line::Nop { .. } => {}
             Line::MaskDirective { wl, targets, entry } => {
                 self.m.mask_state = MaskState { wl: *wl, targets: *targets, entry: *entry };
