@@ -132,6 +132,9 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.updateParsedIntegerALUForwardingCycle_semantics
 #print axioms ProofsLean.MNCore.PEMemory.doubleMatrixRead_mreadf_readback
 #print axioms ProofsLean.MNCore.PEMemory.doubleMatrixReadBus_physical_layout
+#print axioms ProofsLean.MNCore.PEMemory.singleMatrixReadBus_physical_layout
+#print axioms ProofsLean.MNCore.PEMemory.halfMatrixReadBus_physical_layout
+#print axioms ProofsLean.MNCore.PEMemory.writeMatrixReadOutputs_semantics
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerMaskedALUAndForwardingCycleStep_prepares_once
 #print axioms ProofsLean.MNCore.PEMemory.parsed_issue_advances_elapsed_word
 #print axioms ProofsLean.MNCore.PEMemory.parsed_issue_line_mask_flag_iff

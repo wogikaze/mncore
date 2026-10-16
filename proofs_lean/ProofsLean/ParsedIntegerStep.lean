@@ -1048,6 +1048,104 @@ theorem doubleMatrixReadBus_physical_layout
         words (doubleMatrixPhysicalRow pe)
           (doubleMatrixPhysicalColumnLow (doubleMatrixReadRow base cycle)), 0⟩ := rfl
 
+def singleMatrixPhysicalRow (row : Fin 8) : Fin 16 :=
+  ⟨row.val * 2, by have h := row.isLt; omega⟩
+
+def singleMatrixReadColumn (base : Fin 8) (cycle : Fin 4) : Fin 8 :=
+  ⟨(base.val + cycle.val) % 8, Nat.mod_lt _ (by decide)⟩
+
+def singleMatrixReadBus (words : DoubleMatrixPhysicalFace)
+    (base : Fin 8) (pe cycle : Fin 4) : IntegerALU.Bus :=
+  let column := singleMatrixReadColumn base cycle
+  let row0 : Fin 8 := ⟨2 * pe.val, by have h := pe.isLt; omega⟩
+  let row1 : Fin 8 := ⟨2 * pe.val + 1, by have h := pe.isLt; omega⟩
+  ⟨words (singleMatrixPhysicalRow row0) column ++
+    words (singleMatrixPhysicalRow row1) column, 0⟩
+
+def halfMatrixReadColumn (base : Fin 16) (cycle : Fin 4) : Fin 16 :=
+  ⟨(base.val + 2 * cycle.val) % 16, Nat.mod_lt _ (by decide)⟩
+
+def halfMatrixReadNextColumn (column : Fin 16) : Fin 16 :=
+  ⟨(column.val + 1) % 16, Nat.mod_lt _ (by decide)⟩
+
+def halfMatrixPhysicalElement (words : DoubleMatrixPhysicalFace)
+    (row column : Fin 16) : BitVec 16 :=
+  let word := words row ⟨column.val / 2, by have h := column.isLt; omega⟩
+  if column.val % 2 = 0 then word.extractLsb' 16 16 else word.extractLsb' 0 16
+
+def halfMatrixReadBus (words : DoubleMatrixPhysicalFace)
+    (base : Fin 16) (pe cycle : Fin 4) : IntegerALU.Bus :=
+  let column0 := halfMatrixReadColumn base cycle
+  let column1 := halfMatrixReadNextColumn column0
+  let row0 : Fin 16 := ⟨4 * pe.val, by have h := pe.isLt; omega⟩
+  let row1 : Fin 16 := ⟨4 * pe.val + 1, by have h := pe.isLt; omega⟩
+  let row2 : Fin 16 := ⟨4 * pe.val + 2, by have h := pe.isLt; omega⟩
+  let row3 : Fin 16 := ⟨4 * pe.val + 3, by have h := pe.isLt; omega⟩
+  let h0 := halfMatrixPhysicalElement words row0 column0
+  let h1 := halfMatrixPhysicalElement words row1 column0
+  let h2 := halfMatrixPhysicalElement words row2 column0
+  let h3 := halfMatrixPhysicalElement words row3 column0
+  let h4 := halfMatrixPhysicalElement words row0 column1
+  let h5 := halfMatrixPhysicalElement words row1 column1
+  let h6 := halfMatrixPhysicalElement words row2 column1
+  let h7 := halfMatrixPhysicalElement words row3 column1
+  ⟨h0 ++ h1 ++ h2 ++ h3, h4 ++ h5 ++ h6 ++ h7⟩
+
+def writeMatrixReadOutputs (old : ProofsLean.MNCore.Forwarding.Slots)
+    (outputs : Fin 4 → IntegerALU.Bus) (noForward : Bool) :
+    ProofsLean.StepResult ProofsLean.MNCore.Forwarding.Slots :=
+  if noForward then .ok old else .ok (fun unit cycle =>
+    if unit = .matrixRead then .known (outputs cycle) else old unit cycle)
+
+theorem writeMatrixReadOutputs_semantics
+    (old : ProofsLean.MNCore.Forwarding.Slots)
+    (outputs : Fin 4 → IntegerALU.Bus) (noForward : Bool) :
+    writeMatrixReadOutputs old outputs noForward =
+      if noForward then .ok old else .ok (fun unit cycle =>
+        if unit = .matrixRead then .known (outputs cycle) else old unit cycle) := by
+  cases noForward <;> rfl
+
+theorem singleMatrixReadBus_physical_layout
+    (words : DoubleMatrixPhysicalFace) (base : Fin 8) (pe cycle : Fin 4) :
+    (singleMatrixReadBus words base pe cycle).high =
+        words (singleMatrixPhysicalRow ⟨2 * pe.val, by have h := pe.isLt; omega⟩)
+          (singleMatrixReadColumn base cycle) ++
+        words (singleMatrixPhysicalRow ⟨2 * pe.val + 1, by have h := pe.isLt; omega⟩)
+          (singleMatrixReadColumn base cycle) ∧
+      (singleMatrixReadBus words base pe cycle).low = 0 := by
+  simp [singleMatrixReadBus]
+
+theorem halfMatrixReadBus_physical_layout
+    (words : DoubleMatrixPhysicalFace) (base : Fin 16) (pe cycle : Fin 4) :
+    halfMatrixReadBus words base pe cycle =
+      ⟨(halfMatrixPhysicalElement words ⟨4 * pe.val, by have h := pe.isLt; omega⟩
+          (halfMatrixReadColumn base cycle) ++
+        halfMatrixPhysicalElement words ⟨4 * pe.val + 1, by have h := pe.isLt; omega⟩
+          (halfMatrixReadColumn base cycle) ++
+        halfMatrixPhysicalElement words ⟨4 * pe.val + 2, by have h := pe.isLt; omega⟩
+          (halfMatrixReadColumn base cycle) ++
+        halfMatrixPhysicalElement words ⟨4 * pe.val + 3, by have h := pe.isLt; omega⟩
+          (halfMatrixReadColumn base cycle)),
+       (halfMatrixPhysicalElement words ⟨4 * pe.val, by have h := pe.isLt; omega⟩
+          (halfMatrixReadNextColumn (halfMatrixReadColumn base cycle)) ++
+        halfMatrixPhysicalElement words ⟨4 * pe.val + 1, by have h := pe.isLt; omega⟩
+          (halfMatrixReadNextColumn (halfMatrixReadColumn base cycle)) ++
+        halfMatrixPhysicalElement words ⟨4 * pe.val + 2, by have h := pe.isLt; omega⟩
+          (halfMatrixReadNextColumn (halfMatrixReadColumn base cycle)) ++
+        halfMatrixPhysicalElement words ⟨4 * pe.val + 3, by have h := pe.isLt; omega⟩
+          (halfMatrixReadNextColumn (halfMatrixReadColumn base cycle)))⟩ := by
+  simp [halfMatrixReadBus]
+
+theorem matrixReadOutputs_mreadf_readback
+    (files : IntegerRegisterFiles) (old : ProofsLean.MNCore.Forwarding.Slots)
+    (outputs : Fin 4 → IntegerALU.Bus) (cycle : Fin 4) :
+    ParsedIntegerInput.readWithForwarding files
+      (fun unit slotCycle =>
+        if unit = .matrixRead then .known (outputs slotCycle) else old unit slotCycle)
+      cycle (.forward .mreadf false) = .ok (outputs cycle) := by
+  simp [ParsedIntegerInput.readWithForwarding, ParsedIntegerInput.forwardUnit,
+    ParsedIntegerInput.applyRounding]
+
 def writeDirectAccess (files : IntegerRegisterFiles) (access : DirectMemoryAccess)
     (data : WordBus) : IntegerRegisterFiles :=
   writeRegisterBank files access.bank access.width access.address data
