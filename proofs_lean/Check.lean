@@ -10,6 +10,11 @@ import Lean
 #print axioms ProofsLean.programsUpTo_complete
 #print axioms ProofsLean.shortPrograms_complete
 #print axioms ProofsLean.legalLinesCoveredBelow_of_covered
+#print axioms ProofsLean.lineCost_le_score_of_mem
+#print axioms ProofsLean.legalLinesCoveredBelow_of_costCovered
+#print axioms ProofsLean.legalLinesCostCovered_of_finite
+#print axioms ProofsLean.legalLinesCostBelow_finite_of_covered
+#print axioms ProofsLean.legalLinesCostBelow_finite_iff
 #print axioms ProofsLean.legalLinesCovered_of_total
 #print axioms ProofsLean.legalLinesCovered_univ
 #print axioms ProofsLean.legalLinesCovered_of_finite
@@ -20,6 +25,8 @@ import Lean
 #print axioms ProofsLean.FiniteExample.Bounded.covers_below_two
 #print axioms ProofsLean.FiniteExample.Bounded.legalLines_finite
 #print axioms ProofsLean.FiniteExample.Bounded.no_total_cover
+#print axioms ProofsLean.FiniteExample.NopCounts.finite_cost_bounded_lines
+#print axioms ProofsLean.FiniteExample.NopCounts.cost_bounded_alphabet_exists
 #print axioms ProofsLean.FiniteExample.two_lines_optimal
 #print axioms ProofsLean.FiniteExample.testcase_correct_does_not_imply_general_correct
 #print axioms ProofsLean.FiniteExample.one_case_has_no_two_line_lower_bound

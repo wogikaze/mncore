@@ -62,6 +62,59 @@ theorem legalLinesCoveredBelow_of_covered {m : Machine} {alphabet : List m.Line}
     LegalLinesCoveredBelow m alphabet bound :=
   fun p legal _ => covers p legal
 
+/-- A cost-bounded universe of legal lines. This is the target finite set for
+MN-Core: unbounded `nop/n` lines are excluded at each fixed bound. -/
+def legalLinesCostBelow (m : Machine) (bound : Nat) : Set m.Line :=
+  {line | ∃ p, m.legal p ∧ line ∈ p ∧ m.lineCost line < bound}
+
+def LegalLinesCostCovered (m : Machine) (alphabet : List m.Line) (bound : Nat) : Prop :=
+  ∀ line ∈ legalLinesCostBelow m bound, line ∈ alphabet
+
+theorem lineCost_le_score_of_mem (m : Machine) (p : Program m) (line : m.Line)
+    (member : line ∈ p) : m.lineCost line ≤ score m p := by
+  induction p generalizing line with
+  | nil => simp at member
+  | cons head tail ih =>
+    simp only [List.mem_cons] at member
+    simp only [score]
+    rcases member with same | inTail
+    · subst head
+      omega
+    · have tailBound := ih line inTail
+      omega
+
+theorem legalLinesCoveredBelow_of_costCovered {m : Machine}
+    {alphabet : List m.Line} {bound : Nat}
+    (covers : LegalLinesCostCovered m alphabet bound) :
+    LegalLinesCoveredBelow m alphabet bound := by
+  intro p legal short line member
+  apply covers line
+  exact ⟨p, legal, member, lt_of_le_of_lt
+    (lineCost_le_score_of_mem m p line member) short⟩
+
+theorem legalLinesCostCovered_of_finite {m : Machine} {bound : Nat}
+    (finite : (legalLinesCostBelow m bound).Finite) :
+    LegalLinesCostCovered m finite.toFinset.toList bound := by
+  intro line member
+  exact Finset.mem_toList.mpr
+    (finite.mem_toFinset.mpr member)
+
+theorem legalLinesCostBelow_finite_of_covered {m : Machine} {alphabet : List m.Line}
+    {bound : Nat} (covers : LegalLinesCostCovered m alphabet bound) :
+    (legalLinesCostBelow m bound).Finite := by
+  apply Set.Finite.subset (List.finite_toSet alphabet)
+  intro line member
+  exact covers line member
+
+theorem legalLinesCostBelow_finite_iff {m : Machine} (bound : Nat) :
+    (legalLinesCostBelow m bound).Finite ↔
+      ∃ alphabet : List m.Line, LegalLinesCostCovered m alphabet bound := by
+  constructor
+  · intro finite
+    exact ⟨finite.toFinset.toList, legalLinesCostCovered_of_finite finite⟩
+  · rintro ⟨alphabet, covers⟩
+    exact legalLinesCostBelow_finite_of_covered covers
+
 theorem shortPrograms_complete {m : Machine} {alphabet : List m.Line} {bound : Nat}
     (covers : LegalLinesCoveredBelow m alphabet bound) (p : Program m) (legal : m.legal p)
     (short : score m p < bound) : p ∈ shortPrograms m alphabet bound := by

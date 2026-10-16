@@ -149,4 +149,35 @@ theorem no_total_cover : ¬ ∀ line : machine.Line, line ∈ ([0, 1, 2] : List 
 
 end Bounded
 
+/- A count-parameterized line family models normalized `nop/n`: the zero-cost
+`nop/0` case is not represented as a line, and each positive count has cost n.
+For any fixed score bound, only finitely many such lines are candidates. -/
+namespace NopCounts
+
+def machine : Machine where
+  Line := Nat
+  State := Unit
+  Input := Unit
+  step := fun _ state => some state
+  legal := fun _ => True
+  lineCost := fun count => count + 1
+  positiveCost := fun _ => by omega
+
+theorem finite_cost_bounded_lines (bound : Nat) :
+    (legalLinesCostBelow machine bound).Finite := by
+  apply Set.Finite.subset (Finset.finite_toSet (Finset.range bound))
+  intro count member
+  rcases member with ⟨program, _, _, cost_lt⟩
+  change count ∈ Finset.range bound
+  apply Finset.mem_range.mpr
+  change count + 1 < bound at cost_lt
+  omega
+
+theorem cost_bounded_alphabet_exists (bound : Nat) :
+    ∃ alphabet : List Nat, LegalLinesCostCovered machine alphabet bound := by
+  let finite := finite_cost_bounded_lines bound
+  exact ⟨finite.toFinset.toList, legalLinesCostCovered_of_finite finite⟩
+
+end NopCounts
+
 end ProofsLean.FiniteExample
