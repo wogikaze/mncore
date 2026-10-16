@@ -111,6 +111,11 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.mem_legalCostBelowFinset
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.legalCostBelowAlphabet
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.mem_legalCostBelowAlphabet
+#print axioms ProofsLean.MNCore.Issue.InstructionLine.localIssueLegal
+#print axioms ProofsLean.MNCore.Issue.InstructionLine.localIssueLegal_inFiniteEnvelope
+#print axioms ProofsLean.MNCore.Issue.InstructionLine.localIssueLegalCostBelowFintype
+#print axioms ProofsLean.MNCore.Issue.InstructionLine.localIssueLegalCostBelowAlphabet
+#print axioms ProofsLean.MNCore.Issue.InstructionLine.mem_localIssueLegalCostBelowAlphabet
 #print axioms ProofsLean.MNCore.Issue.ParsedMask.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.ParsedMaskDirective.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.ParsedLine.updateMaskState_inFiniteEnvelope

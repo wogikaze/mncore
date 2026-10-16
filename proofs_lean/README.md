@@ -221,6 +221,11 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   `Fintype`を与え、正確な`legalCostBelowFinset`/`legalCostBelowAlphabet`を構成できる。
   Finset の方は`finiteAlphabetCertificate`へ直接渡せる。合法なMN-Core行がenvelopeに入る
   一般証明と、完成したMN-Core machineへの接続はまだない。
+- `InstructionLine.localIssueLegal`: parsed issue checkerと、当該行コスト+1のpayload envelopeを
+  組み合わせた局所述語を定義した。コストがbound未満ならbound固有envelopeに入ることを証明し、
+  `localIssueLegalCostBelowFintype`と`localIssueLegalCostBelowAlphabet`を構成した。
+  alphabetの所属条件も局所合法性とコスト上限の組み合わせに一致する。これは単一行の結果であり、
+  命令間hazard、parser/assembler完全性、MNCore全体のmachine合法性を証明したものではない。
 - `FiniteExample.lean`: 3命令・4入力の小さな機械で、全候補の反証、2行の最適性、
   限定入力では1行解が存在することを証明する回帰例。**MN-Coreではない。**
 - `PlusOne.lean`: Welcome（`challenge/1.plus-one`）の2行の `iinc` 解について、
