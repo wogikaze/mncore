@@ -16,6 +16,7 @@ import ProofsLean.Forwarding
 import ProofsLean.EncodedForwarding
 import ProofsLean.L1Transfer
 import ProofsLean.HazardTrace
+import ProofsLean.MVSemantics
 import ProofsLean.RRN
 import ProofsLean.ControlNormalization
 import ProofsLean.PlusOne
