@@ -85,6 +85,9 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.mem_costBelowEnvelopeAlphabet
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.legalCostBelowEnvelope_covered
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.legalCostBelowEnvelope_finite
+#print axioms ProofsLean.MNCore.Issue.InstructionLine.legalCostBelowFintype
+#print axioms ProofsLean.MNCore.Issue.InstructionLine.legalCostBelowAlphabet
+#print axioms ProofsLean.MNCore.Issue.InstructionLine.mem_legalCostBelowAlphabet
 #print axioms ProofsLean.MNCore.Issue.ParsedMask.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.omrEntryInFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.natBelow_finite

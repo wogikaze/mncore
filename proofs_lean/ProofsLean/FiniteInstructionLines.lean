@@ -87,4 +87,45 @@ theorem InstructionLine.legalCostBelowEnvelope_finite
           InstructionLine.cost line < bound ∧ line.inFiniteEnvelope bound} => line.1)
         equal)
 
+/-- The legal subset itself has a `Fintype`, whenever every bounded legal line
+satisfies the payload envelope. This is the exact finite carrier needed by a
+machine-specific alphabet; the legality predicate remains an explicit input. -/
+noncomputable def InstructionLine.legalCostBelowFintype
+    (bound : Nat)
+    (legal : InstructionLine → Prop)
+    (covered : ∀ line, legal line → InstructionLine.cost line < bound →
+      line.inFiniteEnvelope bound) :
+    Fintype {line : InstructionLine //
+      legal line ∧ InstructionLine.cost line < bound} := by
+  letI : Finite {line : InstructionLine //
+      legal line ∧ InstructionLine.cost line < bound} :=
+    InstructionLine.legalCostBelowEnvelope_finite bound legal covered
+  exact Fintype.ofFinite _
+
+/-- A concrete list of precisely the legal lines below a fixed cost bound. -/
+noncomputable def InstructionLine.legalCostBelowAlphabet
+    (bound : Nat)
+    (legal : InstructionLine → Prop)
+    (covered : ∀ line, legal line → InstructionLine.cost line < bound →
+      line.inFiniteEnvelope bound) :
+    List InstructionLine := by
+  let Carrier := {line : InstructionLine //
+    legal line ∧ InstructionLine.cost line < bound}
+  letI : Fintype Carrier := InstructionLine.legalCostBelowFintype
+    bound legal covered
+  exact (Finset.univ.image fun candidate : Carrier => candidate.1).toList
+
+theorem InstructionLine.mem_legalCostBelowAlphabet
+    (bound : Nat)
+    (legal : InstructionLine → Prop)
+    (covered : ∀ line, legal line → InstructionLine.cost line < bound →
+      line.inFiniteEnvelope bound)
+    (line : InstructionLine) (isLegal : legal line)
+    (cost : InstructionLine.cost line < bound) :
+    line ∈ InstructionLine.legalCostBelowAlphabet bound legal covered := by
+  classical
+  simp only [InstructionLine.legalCostBelowAlphabet, Finset.mem_toList,
+    Finset.mem_image, Finset.mem_univ, true_and]
+  exact ⟨⟨line, isLegal, cost⟩, rfl⟩
+
 end ProofsLean.MNCore.Issue

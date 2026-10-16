@@ -182,6 +182,8 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   入る条件付き有限性を証明した。さらにMathlib `Fintype`からboundごとの
   `costBelowEnvelopeAlphabet`を構成し、包含条件のもとで合法行を覆うことを証明した。
   このalphabetは理論上の有限carrierで、列挙の計算可能性やenvelope包含は主張しない。
+  さらにenvelope包含条件を満たす`legal`述語については、合法かつcost制限内の部分型に
+  `Fintype`を与え、正確な`legalCostBelowAlphabet`を構成できる。
 - `FiniteExample.lean`: 3命令・4入力の小さな機械で、全候補の反証、2行の最適性、
   限定入力では1行解が存在することを証明する回帰例。**MN-Coreではない。**
 - `PlusOne.lean`: Welcome（`challenge/1.plus-one`）の2行の `iinc` 解について、
