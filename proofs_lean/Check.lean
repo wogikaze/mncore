@@ -66,6 +66,9 @@ import Lean
 #print axioms ProofsLean.MNCore.L1Transfer.commitL1Writes_getLast_readback
 #print axioms ProofsLean.MNCore.L1Transfer.commitL1TurnaroundWrites_getLast_readback
 #print axioms ProofsLean.MNCore.L1Transfer.mwriteWrites_count
+#print axioms ProofsLean.MNCore.L1Transfer.mwrite_then_pbcast_is_l1bm_port_conflict
+#print axioms ProofsLean.MNCore.L1Transfer.m4write_then_pbcast_is_l1bm_port_conflict
+#print axioms ProofsLean.MNCore.L1Transfer.mwrite_pbcast_minimum_distance
 #print axioms ProofsLean.MNCore.L1Transfer.m4writeWrites_count
 #print axioms ProofsLean.MNCore.L1Transfer.mwriteFourCycleWrites_count
 #print axioms ProofsLean.MNCore.L1Transfer.m4writeFourCycleWrites_count

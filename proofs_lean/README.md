@@ -141,6 +141,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   overlapを要求しport conflictはdisjoint addressにも適用されることを証明した。
   block accessからstep/cycle単位のconstraintを作る関数も追加したが、L1/L2/MV source event生成と
   既存source hazard collectorへの統合は未完了。
+  既存L1Transferの`mwrite`/`m4write` pending出力spanと`pbcast` L1BM read spanをtyped eventへ写し、
+  write→readのport conflict、および3 issue-word境界での12-cycle constraint生成を証明した。
+  その他のL1 block opcodeとsource全体からのevent収集は未接続。
   これは対象PEメモリ規則の条件モデルであり、Rust analyzerの全Access生成、mask directiveの実効状態、
   BARによる静的range照合、reportのsort/dedupを含む出力一致証明ではない。
   mv、debug、DRAM初期化

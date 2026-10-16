@@ -8,6 +8,7 @@ writes, masks, multi-bank issue, and issue timing remain separate obligations. -
 namespace ProofsLean.MNCore.L1Transfer
 
 open ProofsLean.MNCore.IntegerALU
+open ProofsLean.MNCore.PEMemory
 
 def l1bmLongWords : Nat := 8192
 
@@ -264,6 +265,64 @@ def m4writeWrites (memoryBase : Fin l1bmLongWords) (twoLongWords : Bool)
         if twoLongWords then
           [(addressAt memoryBase (baseOffset + 4), source.low)]
         else []
+
+/-- One Rust hazard.rs L1BM access span for an `mwrite` cycle. The write list
+contains its PE payload words; the static analyzer groups them as one span. -/
+def mwriteHazardEvent (l1b : Fin 8) (memoryBase : Fin l1bmLongWords)
+    (twoLongWords : Bool) (startWord : Nat) (cycle : Fin 4) : TimedBlockAccess :=
+  let stride := if twoLongWords then 8 else 4
+  ⟨.l1bm l1b, .peToL1, true,
+    some (addressAt memoryBase (cycle.val * stride)).val,
+    stride, startWord, cycle⟩
+
+/-- The corresponding static span for one `m4write` cycle. -/
+def m4writeHazardEvent (l1b : Fin 8) (memoryBase : Fin l1bmLongWords)
+    (twoLongWords : Bool) (startWord : Nat) (cycle : Fin 4) : TimedBlockAccess :=
+  let stride := if twoLongWords then 32 else 16
+  ⟨.l1bm l1b, .peToL1, true,
+    some (addressAt memoryBase (cycle.val * stride)).val,
+    stride, startWord, cycle⟩
+
+/-- Static L1BM source span for Rust's `pbcast` access accounting. -/
+def pbcastHazardEvent (l1b : Fin 8) (memoryBase : Fin l1bmLongWords)
+    (twoLongWords : Bool) (startWord : Nat) (cycle : Fin 4) : TimedBlockAccess :=
+  ⟨.l1bm l1b, .l1ToPe, false,
+    some (addressAt memoryBase cycle.val).val,
+    if twoLongWords then 5 else 1, startWord, cycle⟩
+
+theorem mwrite_then_pbcast_is_l1bm_port_conflict
+    (l1b : Fin 8) (memoryBase : Fin l1bmLongWords)
+    (twoLongWords : Bool) (writeCycle readCycle : Fin 4) :
+    blockHazardRule?
+      (mwriteHazardEvent l1b memoryBase twoLongWords 0 writeCycle)
+      (pbcastHazardEvent l1b memoryBase twoLongWords 3 readCycle) =
+      some ⟨.portConflict, .steps 3⟩ := by
+  simp [mwriteHazardEvent, pbcastHazardEvent, blockHazardRule?]
+
+theorem m4write_then_pbcast_is_l1bm_port_conflict
+    (l1b : Fin 8) (memoryBase : Fin l1bmLongWords)
+    (twoLongWords : Bool) (writeCycle readCycle : Fin 4) :
+    blockHazardRule?
+      (m4writeHazardEvent l1b memoryBase twoLongWords 0 writeCycle)
+      (pbcastHazardEvent l1b memoryBase twoLongWords 3 readCycle) =
+      some ⟨.portConflict, .steps 3⟩ := by
+  simp [m4writeHazardEvent, pbcastHazardEvent, blockHazardRule?]
+
+theorem mwrite_pbcast_minimum_distance
+    (l1b : Fin 8) (memoryBase : Fin l1bmLongWords)
+    (twoLongWords : Bool) (writeCycle readCycle : Fin 4) :
+    ∃ constraint,
+      makeTimedBlockHazardConstraint?
+        (mwriteHazardEvent l1b memoryBase twoLongWords 0 writeCycle)
+        (pbcastHazardEvent l1b memoryBase twoLongWords 3 readCycle) =
+          some constraint ∧
+      constraint.kind = .portConflict ∧
+      constraint.distance = 12 ∧ constraint.required = 12 := by
+  refine ⟨⟨mwriteHazardEvent l1b memoryBase twoLongWords 0 writeCycle,
+    pbcastHazardEvent l1b memoryBase twoLongWords 3 readCycle,
+    .portConflict, 12, 12⟩, ?_, rfl, rfl, rfl⟩
+  simp [makeTimedBlockHazardConstraint?, applicableBlockHazardRule?,
+    mwriteHazardEvent, pbcastHazardEvent, blockHazardRule?]
 
 def mwriteFourCycleWrites (memoryBase : Fin l1bmLongWords) (twoLongWords : Bool)
     (buses : Fin 4 → Fin 4 → Bus) : List L1Write :=
