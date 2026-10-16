@@ -354,3 +354,10 @@ run_cmd do
 #print axioms ProofsLean.MNCore.PEMemory.parsedSingleMatrixStore_four_rows_readback
 #print axioms ProofsLean.MNCore.PEMemory.parsedSingleMatrixWriteFourCycle_readback_selected_word
 #print axioms ProofsLean.MNCore.PEMemory.parsedGMatrixWriteFourCycle_readback_selected_word
+#print axioms ProofsLean.MNCore.MVSemantics.stageCopies_lastValue
+#print axioms ProofsLean.MNCore.MVSemantics.commitWrites_read
+#print axioms ProofsLean.MNCore.MVSemantics.executeCopies_read
+#print axioms ProofsLean.MNCore.MVSemantics.executeCopies_overlap_uses_snapshot
+#print axioms ProofsLean.MNCore.MVSemantics.executeCopies_preserves_unwritten
+#print axioms ProofsLean.MNCore.MVSemantics.pCopyPlan_length
+#print axioms ProofsLean.MNCore.MVSemantics.executeParsedMvPCopy_read
