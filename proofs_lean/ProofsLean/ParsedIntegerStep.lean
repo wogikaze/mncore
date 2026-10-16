@@ -4203,6 +4203,17 @@ theorem parsedMaskedSource_score (source : List ParsedMaskedSourceStatement)
     advanceParsedMaskControl parsedMaskedExpressionStep parsedMaskedIssueLegal Unit
     source control
 
+theorem parsed_source_issue_words_equal_compiled_score
+    (lines : List ParsedLine) (source : List ParsedMaskedSourceStatement)
+    (lowered : lowerParsedMaskedSource lines = some source)
+    (control : ParsedMaskExecutionControl) :
+    parsedMaskedIssueWordTotal? lines = some
+      (ProofsLean.score parsedMaskedNormalizedMachine
+        (ProofsLean.ControlNormalization.compileAdvancing updateParsedMaskDirective
+          advanceParsedMaskControl source control)) := by
+  rw [parsedMaskedSource_score]
+  exact parsed_source_lowering_preserves_total_issue_words lines source lowered
+
 theorem lowered_parsed_masked_source_executes_as_normalized
     (lines : List ParsedLine) (source : List ParsedMaskedSourceStatement)
     (lowered : lowerParsedMaskedSource lines = some source)

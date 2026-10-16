@@ -175,6 +175,7 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerMaskedLineStep_prepares_then_commits
 #print axioms ProofsLean.MNCore.PEMemory.parsedMaskedSource_execution
 #print axioms ProofsLean.MNCore.PEMemory.parsedMaskedSource_score
+#print axioms ProofsLean.MNCore.PEMemory.parsed_source_issue_words_equal_compiled_score
 #print axioms ProofsLean.MNCore.PEMemory.mask_directive_has_zero_issue_cost
 #print axioms ProofsLean.MNCore.PEMemory.parsed_wait_expression_preserves_register_state
 #print axioms ProofsLean.MNCore.PEMemory.parsed_noforward_suppresses_forwarding_updates
