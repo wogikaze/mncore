@@ -364,6 +364,7 @@ def coverage_catalog() -> dict:
     fragment_source = ROOT / "ProofsLean/IntegerALU.lean"
     untyped_source = ROOT / "ProofsLean/UntypedALU.lean"
     memory_source = ROOT / "ProofsLean/PEMemory.lean"
+    masked_memory_source = ROOT / "ProofsLean/MaskedPEMemory.lean"
     address_properties = ROOT / "ProofsLean/AddressProperties.lean"
     mask_source = ROOT / "ProofsLean/Masks.lean"
     forwarding_source = ROOT / "ProofsLean/Forwarding.lean"
@@ -396,6 +397,16 @@ def coverage_catalog() -> dict:
             "missing": "Complete operand decoding/legality, masks, precision conversion, read/write timing, forwarding, parallel-port checks and universal reference conformance",
             "reference_experiment": datapath_experiment("pe-memory", 1),
             "additional_reference_experiments": [datapath_experiment("dynamic-address", 1)],
+        }, {
+            "source": masked_memory_source.relative_to(REPO).as_posix(),
+            "sha256": digest(masked_memory_source),
+            "implemented": "Per-word PE-memory mask application for ll and half-word modes; all-ones equivalence and masked write readback proofs",
+            "scope": "Immediate memory primitive with caller-supplied flags and selector width; not connected to a complete instruction step",
+            "missing": "Directive resolution for memory targets, mask-state timing, hazards, parallel ports and universal reference conformance",
+            "source_basis": [{
+                "source": "viz/core/src/machine.rs",
+                "sha256": digest(REPO / "viz/core/src/machine.rs"),
+            }],
         }, {
             "source": mask_source.relative_to(REPO).as_posix(), "sha256": digest(mask_source),
             "implemented": "Fixed/variable mask entries, per-half/word write merging, zero flush, flag preservation, mask-register AND writes, single-line cancellation of multiline selection",

@@ -6,6 +6,7 @@ import ProofsLean.FiniteExample
 import ProofsLean.IntegerALU
 import ProofsLean.UntypedALU
 import ProofsLean.PEMemory
+import ProofsLean.MaskedPEMemory
 import ProofsLean.BusLayout
 import ProofsLean.ParsedIntegerStep
 import ProofsLean.Issue
