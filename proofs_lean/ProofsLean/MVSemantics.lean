@@ -124,6 +124,67 @@ def executeParsedMvPCopy? (memory : Memory) (transfer : ParsedMv) : Option Memor
   let plan ← parsedMvPCopyPlan? transfer
   pure (executeCopies memory plan)
 
+def b2GroupOffsetCopies (source destination : ParsedMvOperand)
+    (group : Fin 4) (offset : Nat) : List CopyPair :=
+  let sourceCell := cellFor source group 0 offset
+  [(sourceCell, cellFor destination group 0 offset),
+    (sourceCell, cellFor destination group 1 offset)]
+
+def b2GroupCopiesAux (source destination : ParsedMvOperand)
+    (group : Fin 4) : Nat → Nat → List CopyPair
+  | _, 0 => []
+  | offset, count + 1 =>
+      b2GroupOffsetCopies source destination group offset ++
+        b2GroupCopiesAux source destination group (offset + 1) count
+
+def b2GroupCopies (source destination : ParsedMvOperand)
+    (group : Fin 4) (count : Nat) : List CopyPair :=
+  b2GroupCopiesAux source destination group 0 count
+
+/-- Rust `MvKind::B2`: for each group and long-word offset, read bank 0 and
+write the same old value to both L2BM banks. Explicit operand selectors are
+ignored by this opcode's executor loop. -/
+def b2CopyPlan (source destination : ParsedMvOperand) (count : Nat) :
+    List CopyPair :=
+  (List.finRange 4).flatMap fun group =>
+    b2GroupCopies source destination group count
+
+theorem b2GroupCopies_length (source destination : ParsedMvOperand)
+    (group : Fin 4) (offset count : Nat) :
+    (b2GroupCopiesAux source destination group offset count).length = count * 2 := by
+  induction count generalizing offset with
+  | zero => simp [b2GroupCopiesAux]
+  | succ count ih =>
+      simp [b2GroupCopiesAux, b2GroupOffsetCopies, ih, Nat.succ_mul]
+
+theorem b2CopyPlan_length (source destination : ParsedMvOperand) (count : Nat) :
+    (b2CopyPlan source destination count).length = 8 * count := by
+  simp [b2CopyPlan, b2GroupCopies, b2GroupCopies_length, List.finRange]
+  omega
+
+def parsedMvB2Plan? (transfer : ParsedMv) : Option (List CopyPair) := do
+  if transfer.kind != .broadcast2 then none else
+  match transfer.source, transfer.destination with
+  | none, _ | _, none => pure []
+  | some source, some destination => do
+      if (match source with | .dram _ _ indirect => indirect | _ => false) ||
+          (match destination with | .dram _ _ indirect => indirect | _ => false) then none else
+        let count := (transfer.size.val / 64) * 64
+        pure (b2CopyPlan source destination count)
+
+def executeParsedMvB2? (memory : Memory) (transfer : ParsedMv) : Option Memory := do
+  let plan ← parsedMvB2Plan? transfer
+  pure (executeCopies memory plan)
+
+theorem b2GroupOffsetCopies_ignores_operand_selectors
+    (source destination : Fin (2 ^ 64)) (sourceGroup destinationGroup : Fin 256)
+    (sourceBank destinationBank : Fin 256) (group : Fin 4) (offset : Nat) :
+    b2GroupOffsetCopies
+      (.l2bm source (some sourceGroup) (some sourceBank))
+      (.l2bm destination (some destinationGroup) (some destinationBank)) group offset =
+    b2GroupOffsetCopies
+      (.l2bm source none none) (.l2bm destination none none) group offset := rfl
+
 /-- Source value of the final staged write to a cell, if any. -/
 def finalSource (copies : List CopyPair) (cell : Cell) : Option Cell :=
   match copies with
@@ -184,6 +245,15 @@ theorem executeParsedMvPCopy_read (memory : Memory) (transfer : ParsedMv)
         | some source => memory source
         | none => memory cell) := by
   simp [executeParsedMvPCopy?, hplan, executeCopies_read]
+
+theorem executeParsedMvB2_read (memory : Memory) (transfer : ParsedMv)
+    (plan : List CopyPair) (cell : Cell)
+    (hplan : parsedMvB2Plan? transfer = some plan) :
+    (executeParsedMvB2? memory transfer).map (fun result => result cell) =
+      some (match finalSource plan cell with
+        | some source => memory source
+        | none => memory cell) := by
+  simp [executeParsedMvB2?, hplan, executeCopies_read]
 
 /-- An overlapping left-to-right copy reads every source from the old state:
 writing cell 1 cannot change the value subsequently copied from cell 1 to cell 2. -/

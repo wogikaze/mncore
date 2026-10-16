@@ -361,3 +361,7 @@ run_cmd do
 #print axioms ProofsLean.MNCore.MVSemantics.executeCopies_preserves_unwritten
 #print axioms ProofsLean.MNCore.MVSemantics.pCopyPlan_length
 #print axioms ProofsLean.MNCore.MVSemantics.executeParsedMvPCopy_read
+#print axioms ProofsLean.MNCore.MVSemantics.b2GroupCopies_length
+#print axioms ProofsLean.MNCore.MVSemantics.b2CopyPlan_length
+#print axioms ProofsLean.MNCore.MVSemantics.b2GroupOffsetCopies_ignores_operand_selectors
+#print axioms ProofsLean.MNCore.MVSemantics.executeParsedMvB2_read
