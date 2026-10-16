@@ -65,7 +65,8 @@ def validate_source(text: str, filename: str) -> None:
         raise ValueError(f"{filename}: kernel bypass or evidence-free promotion")
     for imports in re.findall(r"^import\s+([^\n]+)", code, re.M):
         for module in imports.split():
-            if module == "Std" or (module == "Lean" and filename == "Check.lean"):
+            if (module == "Std" or module == "Mathlib" or module.startswith("Mathlib.")
+                    or (module == "Lean" and filename == "Check.lean")):
                 continue
             if module == "ProofsLean" or module.startswith("ProofsLean."):
                 if (ROOT / (module.replace(".", "/") + ".lean")).exists():
@@ -119,7 +120,10 @@ def main() -> None:
         validate_source(path.read_text(), str(path.relative_to(ROOT)))
     validate_import_closure()
     lake = shutil.which("lake") or str(Path.home() / ".elan/bin/lake")
-    for args in ([lake, "clean"], [lake, "build", "proofs_lean", "alu_probe", "untyped_probe", "memory_probe", "dynamic_address_probe", "mask_probe", "forwarding_probe", "lbf_encoded_probe"], [lake, "env", "lean", "Check.lean"]):
+    # `lake clean` also deletes dependency builds under .lake/packages/*/.lake/build,
+    # which would discard the fetched Mathlib cache; remove only this package's build dir.
+    shutil.rmtree(ROOT / ".lake" / "build", ignore_errors=True)
+    for args in ([lake, "build", "proofs_lean", "alu_probe", "untyped_probe", "memory_probe", "dynamic_address_probe", "mask_probe", "forwarding_probe", "lbf_encoded_probe"], [lake, "env", "lean", "Check.lean"]):
         result = subprocess.run(args, cwd=ROOT, capture_output=True, text=True, timeout=300)
         if result.returncode:
             raise SystemExit(result.stdout + result.stderr)

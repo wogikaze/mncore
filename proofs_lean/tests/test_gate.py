@@ -17,6 +17,13 @@ class ProofGate(unittest.TestCase):
     def test_comments_and_strings_do_not_create_false_alarms(self):
         validate_source('/- sorry /- axiom -/ admit -/\n-- unsafe\ndef name := "sorry"', "good.lean")
 
+    def test_mathlib_imports_are_allowed_but_lookalikes_are_rejected(self):
+        validate_source("import Mathlib", "good.lean")
+        validate_source("import Mathlib.Data.Fintype.Card", "good.lean")
+        for module in ("Mathlibx.Foo", "Aesop", "Batteries.Data.List.Basic"):
+            with self.subTest(module=module), self.assertRaises(ValueError):
+                validate_source(f"import {module}", "bad.lean")
+
     def test_legacy_olean_cannot_be_imported(self):
         with self.assertRaisesRegex(ValueError, "stale import"):
             validate_source("import ProofsLean.Pkg12", "bad.lean")

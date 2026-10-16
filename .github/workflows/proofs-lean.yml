@@ -36,6 +36,7 @@ jobs:
           lake-package-directory: proofs_lean
           build: 'true'
           use-github-cache: 'false'
+          use-mathlib-cache: 'true'
       - name: Audit catalogs, clean build, and kernel dependencies
         run: python3 proofs_lean/scripts/check.py
       - name: Check rejection of unsupported proof claims

@@ -36,3 +36,8 @@ root = "ForwardingProbe"
 [[lean_exe]]
 name = "lbf_encoded_probe"
 root = "LBFEncodedProbe"
+
+[[require]]
+name = "mathlib"
+git = "https://github.com/leanprover-community/mathlib4"
+rev = "v4.35.0"
