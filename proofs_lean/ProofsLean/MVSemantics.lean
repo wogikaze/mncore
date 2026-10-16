@@ -525,6 +525,11 @@ def parsedMvR2Plan? (transfer : ParsedMv) : Option (List ReductionPair) := do
   match transfer.kind with
   | .reduce2 _ => pure ()
   | _ => none
+  if (match transfer.source with
+      | some (.dram _ _ true) => true
+      | _ => false) || (match transfer.destination with
+      | some (.dram _ _ true) => true
+      | _ => false) then none else
   match transfer.source, transfer.destination with
   | none, _ | _, none => pure []
   | some source, some destination => do
@@ -576,6 +581,168 @@ def executeParsedMvR2? (memory : Memory) (transfer : ParsedMv) : Option Memory :
   let reduce ← parsedMvReducer? rrn
   let plan ← parsedMvR2Plan? transfer
   pure (executeReductions memory reduce plan)
+
+def rAllGroupBankSources (source : ParsedMvOperand) (offset : Nat) : List Cell :=
+  (List.finRange 4).flatMap fun group =>
+    [cellFor source group 0 offset, cellFor source group 1 offset]
+
+def rPdmPlan (source destination : ParsedMvOperand) (destinationGroup : Fin 4)
+    (count : Nat) : List ReductionPair :=
+  (List.range count).map fun offset =>
+    (rAllGroupBankSources source offset,
+      cellFor destination destinationGroup 0 offset)
+
+def rDramPlan (source destination : ParsedMvOperand) (count : Nat)
+    : List ReductionPair :=
+  (List.range count).map fun position =>
+    let group := bDramSourceGroup position
+    let destinationOffset := 16 * (position / 64) + position % 16
+    (rAllGroupBankSources source position,
+      cellFor destination group 0 destinationOffset)
+
+def r4PositionBank (position : Nat) : Fin 2 :=
+  ⟨(position % 128) / 64, by
+    have hmod : position % 128 < 128 := Nat.mod_lt _ (by decide)
+    omega⟩
+
+def r4PositionGroup (position : Nat) : Fin 4 :=
+  ⟨(position % 64) / 16, by
+    have hmod : position % 64 < 64 := Nat.mod_lt _ (by decide)
+    omega⟩
+
+def r4SourceOffset (position : Nat) : Nat :=
+  64 * (position / 128) + 16 * (r4PositionGroup position).val + position % 16
+
+def r4DestinationOffset (position : Nat) : Nat :=
+  32 * (position / 128) + 16 * (r4PositionBank position).val + position % 16
+
+theorem r4Coordinates_flatten (block : Nat) (bank : Fin 2) (group : Fin 4)
+    (word : Fin 16) :
+    r4PositionBank (128 * block + 64 * bank.val + 16 * group.val + word.val) = bank ∧
+    r4PositionGroup (128 * block + 64 * bank.val + 16 * group.val + word.val) = group ∧
+    r4SourceOffset (128 * block + 64 * bank.val + 16 * group.val + word.val) =
+      64 * block + 16 * group.val + word.val ∧
+    r4DestinationOffset (128 * block + 64 * bank.val + 16 * group.val + word.val) =
+      32 * block + 16 * bank.val + word.val := by
+  have hb := bank.isLt
+  have hg := group.isLt
+  have hw := word.isLt
+  have htail : 64 * bank.val + 16 * group.val + word.val < 128 := by omega
+  have hmod128 :
+      (128 * block + 64 * bank.val + 16 * group.val + word.val) % 128 =
+        64 * bank.val + 16 * group.val + word.val := by omega
+  have hdiv128 :
+      (128 * block + 64 * bank.val + 16 * group.val + word.val) / 128 = block := by omega
+  have hmod64 :
+      (128 * block + 64 * bank.val + 16 * group.val + word.val) % 64 =
+        16 * group.val + word.val := by omega
+  have hmod16 :
+      (128 * block + 64 * bank.val + 16 * group.val + word.val) % 16 = word.val := by omega
+  have hBank : r4PositionBank
+      (128 * block + 64 * bank.val + 16 * group.val + word.val) = bank := by
+    apply Fin.ext
+    change ((128 * block + 64 * bank.val + 16 * group.val + word.val) % 128) / 64 = bank.val
+    rw [hmod128]
+    omega
+  have hGroup : r4PositionGroup
+      (128 * block + 64 * bank.val + 16 * group.val + word.val) = group := by
+    apply Fin.ext
+    change ((128 * block + 64 * bank.val + 16 * group.val + word.val) % 64) / 16 = group.val
+    rw [hmod64]
+    omega
+  constructor
+  · exact hBank
+  constructor
+  · exact hGroup
+  constructor
+  · simp [r4SourceOffset, hdiv128, hGroup, hmod16]
+  · simp [r4DestinationOffset, hdiv128, hBank, hmod16]
+
+def r4Plan (source destination : ParsedMvOperand) (count : Nat)
+    : List ReductionPair :=
+  (List.range count).map fun position =>
+    let bank := r4PositionBank position
+    let group := r4PositionGroup position
+    let sources := (List.finRange 4).map fun sourceGroup =>
+      cellFor source sourceGroup bank (r4SourceOffset position)
+    (sources, cellFor destination group 0 (r4DestinationOffset position))
+
+theorem rPdmPlan_length (source destination : ParsedMvOperand)
+    (destinationGroup : Fin 4) (count : Nat) :
+    (rPdmPlan source destination destinationGroup count).length = count := by
+  simp [rPdmPlan, List.length_map, List.length_range]
+
+theorem rDramPlan_length (source destination : ParsedMvOperand)
+    (count : Nat) : (rDramPlan source destination count).length = count := by
+  simp [rDramPlan, List.length_map, List.length_range]
+
+theorem r4Plan_length (source destination : ParsedMvOperand)
+    (count : Nat) : (r4Plan source destination count).length = count := by
+  simp [r4Plan, List.length_map, List.length_range]
+
+def rNestedReducer (reduce : List (BitVec 64) → BitVec 64)
+    (values : List (BitVec 64)) : BitVec 64 :=
+  reduce ((List.finRange 4).map fun group =>
+    reduce ((values.drop (group.val * 2)).take 2))
+
+def r4Reducer (reduce : List (BitVec 64) → BitVec 64)
+    (values : List (BitVec 64)) : BitVec 64 := reduce values
+
+def parsedMvRPlan? (transfer : ParsedMv) : Option (List ReductionPair) := do
+  let .reduce rrn := transfer.kind | none
+  if (parsedMvReducer? rrn).isNone then none else
+  if (match transfer.source with
+      | some (.dram _ _ true) => true
+      | _ => false) || (match transfer.destination with
+      | some (.dram _ _ true) => true
+      | _ => false) then none else
+  match transfer.source, transfer.destination with
+  | some source, some (destination@(.pdm _ _)) => do
+      let destinationGroup ← mvFirstOperandGroup? destination
+      pure (rPdmPlan source destination destinationGroup
+        ((transfer.size.val / 64) * 64))
+  | some source, some (destination@(.dram _ _ _)) =>
+      pure (rDramPlan source destination ((transfer.size.val / 64) * 64))
+  | _, _ => none
+
+def parsedMvR4Plan? (transfer : ParsedMv) : Option (List ReductionPair) := do
+  let .reduce4 rrn := transfer.kind | none
+  if (parsedMvReducer? rrn).isNone then none else
+  if (match transfer.source with
+      | some (.dram _ _ true) => true
+      | _ => false) || (match transfer.destination with
+      | some (.dram _ _ true) => true
+      | _ => false) then none else
+  match transfer.source, transfer.destination with
+  | some source, some destination =>
+      pure (r4Plan source destination ((transfer.size.val / 64) * 128))
+  | _, _ => none
+
+def parsedMvRPlanWithReducer? (transfer : ParsedMv) :
+    Option ((List (BitVec 64) → BitVec 64) × List ReductionPair) := do
+  let .reduce rrn := transfer.kind | none
+  let reduce ← parsedMvReducer? rrn
+  let plan ← parsedMvRPlan? transfer
+  pure (rNestedReducer reduce, plan)
+
+def parsedMvR4PlanWithReducer? (transfer : ParsedMv) :
+    Option ((List (BitVec 64) → BitVec 64) × List ReductionPair) := do
+  let .reduce4 rrn := transfer.kind | none
+  let reduce ← parsedMvReducer? rrn
+  let plan ← parsedMvR4Plan? transfer
+  pure (r4Reducer reduce, plan)
+
+def executeParsedMvR? (memory : Memory) (transfer : ParsedMv) : Option Memory := do
+  let .reduce rrn := transfer.kind | none
+  let reduce ← parsedMvReducer? rrn
+  let plan ← parsedMvRPlan? transfer
+  pure (executeReductions memory (rNestedReducer reduce) plan)
+
+def executeParsedMvR4? (memory : Memory) (transfer : ParsedMv) : Option Memory := do
+  let .reduce4 rrn := transfer.kind | none
+  let reduce ← parsedMvReducer? rrn
+  let plan ← parsedMvR4Plan? transfer
+  pure (executeReductions memory (r4Reducer reduce) plan)
 
 def parsedMvBPlan? (transfer : ParsedMv) : Option (List CopyPair) := do
   if transfer.kind != .broadcast then none else
@@ -840,6 +1007,34 @@ theorem executeParsedMvR2_read (memory : Memory) (transfer : ParsedMv)
         simp [executeParsedMvR2?, hplan, hk, hreduce]
   | nop | copy | broadcast | broadcast2 | broadcast4 | distribute | reduce _ | reduce4 _ =>
       simp [executeParsedMvR2?, hk]
+
+theorem executeParsedMvR_read (memory : Memory) (transfer : ParsedMv)
+    (plan : List ReductionPair) (cell : Cell)
+    (hplan : parsedMvRPlan? transfer = some plan) :
+    (executeParsedMvR? memory transfer).map (fun result => result cell) =
+      match parsedMvRPlanWithReducer? transfer with
+      | some (reduce, _) => some (executeReductions memory reduce plan cell)
+      | none => none := by
+  cases hk : transfer.kind with
+  | reduce rrn =>
+      cases hreduce : parsedMvReducer? rrn <;>
+        simp [executeParsedMvR?, parsedMvRPlanWithReducer?, hplan, hk, hreduce]
+  | nop | copy | broadcast | broadcast2 | broadcast4 | distribute | reduce2 _ | reduce4 _ =>
+      simp [executeParsedMvR?, parsedMvRPlanWithReducer?, hk]
+
+theorem executeParsedMvR4_read (memory : Memory) (transfer : ParsedMv)
+    (plan : List ReductionPair) (cell : Cell)
+    (hplan : parsedMvR4Plan? transfer = some plan) :
+    (executeParsedMvR4? memory transfer).map (fun result => result cell) =
+      match parsedMvR4PlanWithReducer? transfer with
+      | some (reduce, _) => some (executeReductions memory reduce plan cell)
+      | none => none := by
+  cases hk : transfer.kind with
+  | reduce4 rrn =>
+      cases hreduce : parsedMvReducer? rrn <;>
+        simp [executeParsedMvR4?, parsedMvR4PlanWithReducer?, hplan, hk, hreduce]
+  | nop | copy | broadcast | broadcast2 | broadcast4 | distribute | reduce _ | reduce2 _ =>
+      simp [executeParsedMvR4?, parsedMvR4PlanWithReducer?, hk]
 
 /-- An overlapping left-to-right copy reads every source from the old state:
 writing cell 1 cannot change the value subsequently copied from cell 1 to cell 2. -/
