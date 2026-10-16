@@ -47,6 +47,12 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerMaskedRegisterStep_masked_readback
 #print axioms ProofsLean.MNCore.PEMemory.parsedIssueCheckedALUProducerLineFourCycleStep_accepted
 #print axioms ProofsLean.MNCore.PEMemory.parsedIssueCheckedALUProducerLineFourCycleStep_rejects
+#print axioms ProofsLean.MNCore.L1Transfer.pbcast_high
+#print axioms ProofsLean.MNCore.L1Transfer.pbcast_low
+#print axioms ProofsLean.MNCore.L1Transfer.pbcastTurnaround_high
+#print axioms ProofsLean.MNCore.L1Transfer.pbcastTurnaround_low
+#print axioms ProofsLean.MNCore.L1Transfer.addressAt_wraps
+#print axioms ProofsLean.MNCore.L1Transfer.pbcast_forwarding_readback
 #print axioms ProofsLean.MNCore.PEMemory.mask_directive_replaces_selection_preserves_context
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerMaskedLineStep_prepares_then_commits
 #print axioms ProofsLean.MNCore.PEMemory.parsedMaskedSource_execution

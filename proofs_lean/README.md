@@ -191,6 +191,11 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   L1BMフォワーディングの保持、次の生成による更新、noforwardによる保持を定義・証明。
   全426ビット命令のデコーダや、拒否されたVSMソースの合法性を証明するものではない。
   元のVSMモデルで未解決だった5ケースを自動昇格させない。
+- `L1Transfer.lean`: Rust `Blocks::l1_to_pe` の`pbcast` raw転送について、1 L1Bの
+  8192-long-word bankから各cycleのMSB long wordを読み、2-long-word source時だけ
+  4位置先のLSB long wordを加えるbus配置と、L1BM address wrapを定義・証明した。
+  turnaround sourceのcycle内offset 0/4と、LBF forwarding slotからの読み戻しも接続した。
+  他L1転送opcode、PE群全体の状態、L1BM書込み、転送と同時発行する命令は未接続。
 
 `Machine.positiveCost` はスコアが正の行へ正規化済みであるという条件。
 MN-Coreにはゼロコストの制御文があるので、その正規化の意味保存と完全性を証明するまでは
