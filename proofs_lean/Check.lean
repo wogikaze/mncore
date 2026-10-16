@@ -77,6 +77,7 @@ import Lean
 #print axioms ProofsLean.MNCore.L1Transfer.l1HazardSpan_reduce4
 #print axioms ProofsLean.MNCore.L1Transfer.l1HazardSpan_distrib_gather
 #print axioms ProofsLean.MNCore.L1Transfer.l1HazardEvent_direction
+#print axioms ProofsLean.MNCore.HazardTrace.l1ExprHazardEvents
 #print axioms ProofsLean.MNCore.L1Transfer.m4writeWrites_count
 #print axioms ProofsLean.MNCore.L1Transfer.mwriteFourCycleWrites_count
 #print axioms ProofsLean.MNCore.L1Transfer.m4writeFourCycleWrites_count
