@@ -19,13 +19,13 @@ theorem natBelow_finite (bound : Nat) : Finite {value : Nat // value < bound} :=
 def optionNatInFiniteEnvelope (bound : Nat) (value : Option Nat) : Prop :=
   ∀ n, value = some n → n < bound
 
-private def optionNatCode (bound : Nat) :
+def optionNatFiniteCode (bound : Nat) :
     {value : Option Nat // optionNatInFiniteEnvelope bound value} → Option (Fin bound)
   | ⟨none, _⟩ => none
   | ⟨some n, property⟩ => some ⟨n, property n rfl⟩
 
-private theorem optionNatCode_injective (bound : Nat) :
-    Function.Injective (optionNatCode bound) := by
+theorem optionNatFiniteCode_injective (bound : Nat) :
+    Function.Injective (optionNatFiniteCode bound) := by
   intro a b equal
   cases a with
   | mk a ha =>
@@ -37,22 +37,22 @@ private theorem optionNatCode_injective (bound : Nat) :
         cases b with
         | none => rfl
         | some n =>
-          simp only [optionNatCode] at equal
+          simp only [optionNatFiniteCode] at equal
           cases equal
       | some n =>
         cases b with
         | none =>
-          simp only [optionNatCode] at equal
+          simp only [optionNatFiniteCode] at equal
           cases equal
         | some m =>
-          simp only [optionNatCode, Option.some.injEq] at equal
+          simp only [optionNatFiniteCode, Option.some.injEq] at equal
           have valuesEqual : n = m := congrArg Fin.val equal
           cases valuesEqual
           rfl
 
 theorem optionNatBelow_finite (bound : Nat) :
     Finite {value : Option Nat // optionNatInFiniteEnvelope bound value} :=
-  Finite.of_injective (optionNatCode bound) (optionNatCode_injective bound)
+  Finite.of_injective (optionNatFiniteCode bound) (optionNatFiniteCode_injective bound)
 
 def ParsedMask.inFiniteEnvelope : ParsedMask → Prop
   | .pattern .. => True
@@ -107,20 +107,20 @@ theorem ParsedMask.inFiniteEnvelope_finite :
 def Access.inFiniteEnvelope (access : Access) : Prop :=
   access.region.inFiniteEnvelope
 
-private def Bank.finiteCode : Bank → Fin 10
+def Bank.finiteCode : Bank → Fin 10
   | .grf0 => 0 | .grf1 => 1 | .lm0 => 2 | .lm1 => 3 | .t => 4
   | .l1bm => 5 | .l2bm => 6 | .pdm => 7 | .dram => 8 | .omr => 9
 
-private theorem Bank.finiteCode_injective : Function.Injective Bank.finiteCode := by
+theorem Bank.finiteCode_injective : Function.Injective Bank.finiteCode := by
   intro a b equal
   cases a <;> cases b <;> simp [Bank.finiteCode] at equal ⊢
 
-private def Access.finiteCode
+def Access.finiteCode
     (access : {access : Access // access.inFiniteEnvelope}) : Fin 10 × RegionFiniteCode :=
   (access.1.bank.finiteCode,
     Region.finiteCode ⟨access.1.region, access.2⟩)
 
-private theorem Access.finiteCode_injective :
+theorem Access.finiteCode_injective :
     Function.Injective Access.finiteCode := by
   intro a b equal
   cases a with
@@ -144,6 +144,154 @@ private theorem Access.finiteCode_injective :
 theorem Access.inFiniteEnvelope_finite :
     Finite {access : Access // access.inFiniteEnvelope} :=
   Finite.of_injective Access.finiteCode Access.finiteCode_injective
+
+def optionMaskInFiniteEnvelope (mask : Option ParsedMask) : Prop :=
+  ∀ value, mask = some value → value.inFiniteEnvelope
+
+abbrev ParsedMaskOptionFiniteCode := Option ParsedMaskFiniteCode
+private instance : Fintype ParsedMaskOptionFiniteCode := inferInstance
+
+def optionMaskFiniteCode
+    (mask : {mask : Option ParsedMask // optionMaskInFiniteEnvelope mask}) :
+    ParsedMaskOptionFiniteCode :=
+  match mask with
+  | ⟨none, _⟩ => none
+  | ⟨some value, bound⟩ =>
+    some (ParsedMask.finiteCode ⟨value, bound value rfl⟩)
+
+theorem optionMaskFiniteCode_injective : Function.Injective optionMaskFiniteCode := by
+  intro a b equal
+  cases a with
+  | mk a ha =>
+    cases b with
+    | mk b hb =>
+      apply Subtype.ext
+      cases a with
+      | none => cases b with
+        | none => rfl
+        | some value => simp [optionMaskFiniteCode] at equal
+      | some value => cases b with
+        | none => simp [optionMaskFiniteCode] at equal
+        | some other =>
+          simp only [optionMaskFiniteCode, Option.some.injEq] at equal
+          have maskEq := ParsedMask.finiteCode_injective equal
+          exact congrArg some (congrArg Subtype.val maskEq)
+
+def ParsedOperand.inFiniteEnvelope : ParsedOperand → Prop
+  | .mem access _ _ _ mask => access.inFiniteEnvelope ∧ optionMaskInFiniteEnvelope mask
+  | .bar _ width mask => width < 5 ∧ optionMaskInFiniteEnvelope mask
+  | .forward .. => True
+  | .fixed .. => True
+  | .omr entry mask => entry < 16 ∧ optionMaskInFiniteEnvelope mask
+  | .matrix _ width row => width < 5 ∧ optionNatInFiniteEnvelope 16 row
+  | .nowrite => True
+  | .l1bm width address => width < 5 ∧ optionNatInFiniteEnvelope 8192 address
+  | .l2bm address l2b => address < 32768 ∧ optionNatInFiniteEnvelope 8 l2b
+  | .dar address => address < 1024
+
+theorem ParsedOperand.mem_inFiniteEnvelope_iff (access : Access) (neg ext rnd : Bool)
+    (mask : Option ParsedMask) :
+    ParsedOperand.inFiniteEnvelope (.mem access neg ext rnd mask) ↔
+      access.inFiniteEnvelope ∧ optionMaskInFiniteEnvelope mask := Iff.rfl
+
+theorem ParsedOperand.l1bm_inFiniteEnvelope_iff (width : Nat) (address : Option Nat) :
+    ParsedOperand.inFiniteEnvelope (.l1bm width address) ↔
+      width < 5 ∧ optionNatInFiniteEnvelope 8192 address := Iff.rfl
+
+theorem ParsedOperand.l2bm_inFiniteEnvelope_iff (address : Nat) (l2b : Option Nat) :
+    ParsedOperand.inFiniteEnvelope (.l2bm address l2b) ↔
+      address < 32768 ∧ optionNatInFiniteEnvelope 8 l2b := Iff.rfl
+
+abbrev OperandMemFiniteCode :=
+  (Fin 10 × RegionFiniteCode) × Bool × Bool × Bool × ParsedMaskOptionFiniteCode
+abbrev OperandBarFiniteCode := Bool × Fin 5 × ParsedMaskOptionFiniteCode
+abbrev OperandForwardFiniteCode := Fin 4 × Bool × Bool × Bool
+abbrev OperandFixedFiniteCode := Fin 6
+abbrev OperandOmrFiniteCode := Fin 16 × ParsedMaskOptionFiniteCode
+abbrev OperandMatrixFiniteCode := Bool × Fin 5 × Option (Fin 16)
+abbrev OperandL1bmFiniteCode := Fin 5 × Option (Fin 8192)
+abbrev OperandL2bmFiniteCode := Fin 32768 × Option (Fin 8)
+abbrev ParsedOperandFiniteCode :=
+  OperandMemFiniteCode ⊕ OperandBarFiniteCode ⊕ OperandForwardFiniteCode ⊕
+  OperandFixedFiniteCode ⊕ OperandOmrFiniteCode ⊕ OperandMatrixFiniteCode ⊕
+  PUnit ⊕ OperandL1bmFiniteCode ⊕ OperandL2bmFiniteCode ⊕ Fin 1024
+
+private instance : Fintype RegionFiniteCode := inferInstance
+private instance : Fintype ParsedOperandFiniteCode := inferInstance
+
+private def operandMemCode : OperandMemFiniteCode → ParsedOperandFiniteCode := Sum.inl
+private def operandBarCode (code : OperandBarFiniteCode) : ParsedOperandFiniteCode :=
+  Sum.inr (Sum.inl code)
+private def operandForwardCode (code : OperandForwardFiniteCode) : ParsedOperandFiniteCode :=
+  Sum.inr (Sum.inr (Sum.inl code))
+private def operandFixedCode (code : OperandFixedFiniteCode) : ParsedOperandFiniteCode :=
+  Sum.inr (Sum.inr (Sum.inr (Sum.inl code)))
+private def operandOmrCode (code : OperandOmrFiniteCode) : ParsedOperandFiniteCode :=
+  Sum.inr (Sum.inr (Sum.inr (Sum.inr (Sum.inl code))))
+private def operandMatrixCode (code : OperandMatrixFiniteCode) : ParsedOperandFiniteCode :=
+  Sum.inr (Sum.inr (Sum.inr (Sum.inr (Sum.inr (Sum.inl code)))))
+private def operandNowriteCode : ParsedOperandFiniteCode :=
+  Sum.inr (Sum.inr (Sum.inr (Sum.inr (Sum.inr (Sum.inr (Sum.inl PUnit.unit))))))
+private def operandL1bmCode (code : OperandL1bmFiniteCode) : ParsedOperandFiniteCode :=
+  Sum.inr (Sum.inr (Sum.inr (Sum.inr (Sum.inr (Sum.inr (Sum.inr (Sum.inl code)))))))
+private def operandL2bmCode (code : OperandL2bmFiniteCode) : ParsedOperandFiniteCode :=
+  Sum.inr (Sum.inr (Sum.inr (Sum.inr (Sum.inr (Sum.inr (Sum.inr
+    (Sum.inr (Sum.inl code))))))))
+private def operandDarCode (code : Fin 1024) : ParsedOperandFiniteCode :=
+  Sum.inr (Sum.inr (Sum.inr (Sum.inr (Sum.inr (Sum.inr (Sum.inr
+    (Sum.inr (Sum.inr code))))))))
+
+private def ParsedForward.finiteCode : ParsedForward → Fin 4
+  | .aluf => 0 | .mauf => 1 | .lbf => 2 | .mreadf => 3
+
+private def ParsedFixed.finiteCode : ParsedFixed → Fin 6
+  | .l2bid => 0 | .l1bid => 1 | .mabid => 2 | .peid => 3 | .subpeid => 4 | .msb1 => 5
+
+private theorem ParsedForward.finiteCode_injective : Function.Injective ParsedForward.finiteCode := by
+  intro a b equal
+  cases a <;> cases b <;> simp [ParsedForward.finiteCode] at equal ⊢
+
+private theorem ParsedFixed.finiteCode_injective : Function.Injective ParsedFixed.finiteCode := by
+  intro a b equal
+  cases a <;> cases b <;> simp [ParsedFixed.finiteCode] at equal ⊢
+
+def ParsedOperand.finiteCode
+    (operand : {operand : ParsedOperand // operand.inFiniteEnvelope}) :
+    ParsedOperandFiniteCode := by
+  rcases operand with ⟨operand, bounds⟩
+  cases operand with
+  | mem access neg ext rnd mask =>
+      rcases bounds with ⟨accessBound, maskBound⟩
+      exact operandMemCode
+        ((Access.finiteCode ⟨access, accessBound⟩), neg, ext, rnd,
+          optionMaskFiniteCode ⟨mask, maskBound⟩)
+  | bar lm1 width mask =>
+      rcases bounds with ⟨widthBound, maskBound⟩
+      exact operandBarCode (lm1, ⟨width, widthBound⟩,
+        optionMaskFiniteCode ⟨mask, maskBound⟩)
+  | forward kind neg ext rnd =>
+      exact operandForwardCode (kind.finiteCode, neg, ext, rnd)
+  | fixed kind =>
+      exact operandFixedCode kind.finiteCode
+  | omr entry mask =>
+      rcases bounds with ⟨entryBound, maskBound⟩
+      exact operandOmrCode (⟨entry, entryBound⟩,
+        optionMaskFiniteCode ⟨mask, maskBound⟩)
+  | matrix y width row =>
+      rcases bounds with ⟨widthBound, rowBound⟩
+      exact operandMatrixCode (y, ⟨width, widthBound⟩,
+        optionNatFiniteCode 16 ⟨row, rowBound⟩)
+  | nowrite => exact operandNowriteCode
+  | l1bm width address =>
+      rcases bounds with ⟨widthBound, addressBound⟩
+      exact operandL1bmCode (⟨width, widthBound⟩,
+        optionNatFiniteCode 8192 ⟨address, addressBound⟩)
+  | l2bm address l2b =>
+      rcases bounds with ⟨addressBound, l2bBound⟩
+      exact operandL2bmCode (⟨address, addressBound⟩,
+        optionNatFiniteCode 8 ⟨l2b, l2bBound⟩)
+  | dar address =>
+      exact operandDarCode ⟨address, bounds⟩
 
 def omrEntryInFiniteEnvelope (entry : Nat) : Prop := entry < 16
 
