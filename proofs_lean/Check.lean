@@ -176,3 +176,5 @@ run_cmd do
     throwError "incomplete project environment: only {checked} declarations"
   logInfo m!"AUDIT_DECLARATIONS: {checked}"
 #print axioms ProofsLean.MNCore.PEMemory.parsedDoubleMatrixWriteCycle_readback
+#print axioms ProofsLean.MNCore.PEMemory.prepareParsedDoubleMatrixWritePEs_all
+#print axioms ProofsLean.MNCore.PEMemory.parsedDoubleMatrixWriteCycle_readback_of_pe_reads
