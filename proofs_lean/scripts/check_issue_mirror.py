@@ -48,6 +48,21 @@ def lean_struct_fields(name: str) -> set[str]:
     return set(re.findall(r"(?m)^\s*([A-Za-z_][A-Za-z0-9_]*)\s*:", match.group(1)))
 
 
+def rust_struct_field_types(source: str, name: str) -> dict[str, str]:
+    match = re.search(rf"\bstruct\s+{re.escape(name)}\s*\{{(.*?)\n\}}", source, re.S)
+    if not match:
+        raise ValueError(f"Rust struct {name} not found")
+    body = re.sub(r"(?m)^\s*///.*$", "", match.group(1))
+    return dict(re.findall(r"(?m)^\s*pub\s+([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([^,]+),", body))
+
+
+def lean_struct_field_types(name: str) -> dict[str, str]:
+    match = re.search(rf"structure\s+{re.escape(name)}\s+where(.*?)(?=\n(?:inductive|structure|def|theorem|end)\b)", LEAN, re.S)
+    if not match:
+        raise ValueError(f"Lean structure {name} not found")
+    return dict(re.findall(r"(?m)^\s*([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(.+)$", match.group(1)))
+
+
 def enum_matches(source: str, rust_name: str, lean_name: str, mapping: dict[str, str]) -> None:
     actual = rust_variants(source, rust_name)
     expected = set(mapping)
@@ -72,6 +87,23 @@ def struct_fields_match(source: str, rust_name: str, lean_name: str,
     missing = set(mapping.values()) - lean
     if missing:
         raise ValueError(f"{lean_name} lacks mapped fields: {sorted(missing)}")
+
+
+def struct_field_types_match(source: str, rust_name: str, lean_name: str,
+                             mapping: dict[str, tuple[str, str, str]]) -> None:
+    rust_types = rust_struct_field_types(source, rust_name)
+    lean_types = lean_struct_field_types(lean_name)
+    for rust_field, (lean_field, expected_rust_type, expected_lean_type) in mapping.items():
+        if rust_field not in rust_types:
+            raise ValueError(f"{rust_name} lacks field {rust_field}")
+        if rust_types[rust_field] != expected_rust_type:
+            raise ValueError(f"{rust_name}.{rust_field} type drift: expected {expected_rust_type}, "
+                             f"found {rust_types[rust_field]}")
+        if lean_field not in lean_types:
+            raise ValueError(f"{lean_name} lacks field {lean_field}")
+        if lean_types[lean_field] != expected_lean_type:
+            raise ValueError(f"{lean_name}.{lean_field} type drift: expected {expected_lean_type}, "
+                             f"found {lean_types[lean_field]}")
 
 
 def rust_alu_input_counts() -> dict[str, int]:
@@ -193,6 +225,16 @@ def validate() -> None:
     struct_fields_match(MV, "Mv", "ParsedMv", {
         "kind": "kind", "size": "size", "tag": "tag", "nd": "nd",
         "priority": "priority", "src": "source", "dst": "destination", "text": "text",
+    })
+    struct_field_types_match(MV, "Mv", "ParsedMv", {
+        "kind": ("kind", "MvKind", "ParsedMvKind"),
+        "size": ("size", "u64", "Fin (2 ^ 64)"),
+        "tag": ("tag", "Option<u8>", "Option (Fin 256)"),
+        "nd": ("nd", "Option<u32>", "Option (Fin (2 ^ 32))"),
+        "priority": ("priority", "u8", "Fin 256"),
+        "src": ("source", "Option<MvOperand>", "Option ParsedMvOperand"),
+        "dst": ("destination", "Option<MvOperand>", "Option ParsedMvOperand"),
+        "text": ("text", "String", "String"),
     })
     for variant in ("Alu", "Imm", "Zero", "Mau", "MatWrite", "MatRead", "Wait",
                     "Noforward", "L1", "L2", "Other"):

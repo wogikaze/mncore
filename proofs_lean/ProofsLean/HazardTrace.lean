@@ -192,9 +192,9 @@ def parsedMvOperandHazardEvents (transfer : ParsedMv) (write : Bool)
   match operand with
   | some (.l2bm address _ selectedBank) =>
       (List.finRange 2).filterMap fun bank =>
-        if selectedBank.isNone || selectedBank == some bank.val then
-          some ⟨.l2bm bank, .mv, write, some address,
-            if transfer.kind == .nop then 0 else transfer.size,
+        if selectedBank.isNone || selectedBank.map Fin.val == some bank.val then
+          some ⟨.l2bm bank, .mv, write, some address.val,
+            if transfer.kind == .nop then 0 else transfer.size.val,
             startWord, ⟨0, by decide⟩⟩
         else none
   | _ => []
@@ -204,7 +204,7 @@ theorem parsedMvOperandHazardEvents_count (transfer : ParsedMv) (write : Bool)
     (parsedMvOperandHazardEvents transfer write operand startWord).length =
       match operand with
       | some (.l2bm _ _ none) => 2
-      | some (.l2bm _ _ (some bank)) => if bank < 2 then 1 else 0
+      | some (.l2bm _ _ (some bank)) => if bank.val < 2 then 1 else 0
       | _ => 0 := by
   cases operand with
   | none => rfl
@@ -216,14 +216,16 @@ theorem parsedMvOperandHazardEvents_count (transfer : ParsedMv) (write : Bool)
       cases selected with
       | none => simp [parsedMvOperandHazardEvents]
       | some bank =>
-        have bank_cases : bank = 0 ∨ bank = 1 ∨ 2 ≤ bank := by omega
+        have bank_cases : bank.val = 0 ∨ bank.val = 1 ∨ 2 ≤ bank.val := by omega
         rcases bank_cases with h | h | h
-        · subst bank
+        · have hb : bank = 0 := Fin.ext h
+          subst bank
           simp [parsedMvOperandHazardEvents, List.finRange]
-        · subst bank
+        · have hb : bank = 1 := Fin.ext h
+          subst bank
           simp [parsedMvOperandHazardEvents, List.finRange]
-        · have hneq0 : bank ≠ 0 := by omega
-          have hneq1 : bank ≠ 1 := by omega
+        · have hneq0 : bank.val ≠ 0 := by omega
+          have hneq1 : bank.val ≠ 1 := by omega
           simp [parsedMvOperandHazardEvents, List.finRange, hneq0, hneq1, h]
 
 def parsedMvHazardEvents (transfer : ParsedMv) (startWord : Nat) :

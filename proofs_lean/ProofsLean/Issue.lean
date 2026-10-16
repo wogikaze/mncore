@@ -594,17 +594,17 @@ inductive ParsedMvKind where
   deriving DecidableEq, Repr
 
 inductive ParsedMvOperand where
-  | pdm (address : Nat) (group : Option Nat)
-  | dram (address : Nat) (group : Option Nat) (indirect : Bool)
-  | l2bm (address : Nat) (group : Option Nat) (l2b : Option Nat)
+  | pdm (address : Fin (2 ^ 64)) (group : Option (Fin 256))
+  | dram (address : Fin (2 ^ 64)) (group : Option (Fin 256)) (indirect : Bool)
+  | l2bm (address : Fin (2 ^ 64)) (group : Option (Fin 256)) (l2b : Option (Fin 256))
   deriving DecidableEq, Repr
 
 structure ParsedMv where
   kind : ParsedMvKind
-  size : Nat
-  tag : Option Nat
-  nd : Option Nat
-  priority : Nat
+  size : Fin (2 ^ 64)
+  tag : Option (Fin 256)
+  nd : Option (Fin (2 ^ 32))
+  priority : Fin 256
   source : Option ParsedMvOperand
   destination : Option ParsedMvOperand
   text : String
