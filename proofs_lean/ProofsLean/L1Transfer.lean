@@ -70,6 +70,26 @@ def m4bcast (memory : L1Bank) (source : L1ReadSource)
   { high := readL1Long memory source cycle offset
     low := if twoLongWords then readL1Long memory source cycle (offset + 4) else 0 }
 
+/-- Euclidean source MAB selection used by Rust `distrib`: subtract the
+signed MAB difference and wrap into the 16 MABs of one L1B. -/
+def distribSourceMab (mab : Fin 16) (mabDiff : Int) : Fin 16 :=
+  let wrapped := (Int.ofNat mab.val - mabDiff) % 16
+  ⟨wrapped.toNat, by
+    have hnonneg : 0 ≤ wrapped := Int.emod_nonneg _ (by decide)
+    have hlt : wrapped < 16 := Int.emod_lt_of_pos _ (by decide)
+    omega⟩
+
+/-- L1BM `distrib` selects the source MAB for the destination and reads one
+long word per PE; addressed banks advance by 64 words per cycle. -/
+def distrib (memory : L1Bank) (source : L1ReadSource)
+    (mabDiff : Int) (mab : Fin 16) (pe cycle : Fin 4) : Bus :=
+  let sourceMab := distribSourceMab mab mabDiff
+  let base := match source with
+    | .addressed _ => cycle.val * 64
+    | .turnaround _ => 0
+  let offset := base + sourceMab.val * 4 + pe.val
+  { high := readL1Long memory source cycle offset, low := 0 }
+
 theorem pbcast_high (memory : L1Bank) (base : Fin l1bmLongWords)
     (twoLongWords : Bool) (cycle : Fin 4) :
     (pbcast memory base twoLongWords cycle).high = memory (addressAt base cycle.val) := rfl
@@ -125,6 +145,32 @@ theorem m4bcast_addressed_words (memory : L1Bank) (base : Fin l1bmLongWords)
         if twoLongWords then memory (addressAt base
           (cycle.val * 32 + mabGroup.val * 8 + pe.val + 4)) else 0 := by
   cases twoLongWords <;> simp [m4bcast, readL1Long, addressAt]
+
+theorem distribSourceMab_euclidean (mab : Fin 16) (mabDiff : Int) :
+    (distribSourceMab mab mabDiff).val =
+      ((Int.ofNat mab.val - mabDiff) % 16).toNat := rfl
+
+theorem distrib_addressed_words (memory : L1Bank) (base : Fin l1bmLongWords)
+    (mabDiff : Int) (mab : Fin 16) (pe cycle : Fin 4) :
+    (distrib memory (.addressed base) mabDiff mab pe cycle).high =
+      memory (addressAt base
+        (cycle.val * 64 + (distribSourceMab mab mabDiff).val * 4 + pe.val)) ∧
+    (distrib memory (.addressed base) mabDiff mab pe cycle).low = 0 := by
+  simp [distrib, readL1Long]
+
+theorem distribSourceMab_wraps_down (mab : Fin 16) :
+    distribSourceMab mab 1 =
+      ⟨(mab.val + 15) % 16, Nat.mod_lt _ (by decide)⟩ := by
+  apply Fin.ext
+  simp [distribSourceMab]
+  omega
+
+theorem distribSourceMab_wraps_up (mab : Fin 16) :
+    distribSourceMab mab (-1) =
+      ⟨(mab.val + 1) % 16, Nat.mod_lt _ (by decide)⟩ := by
+  apply Fin.ext
+  simp [distribSourceMab]
+  omega
 
 def updateBroadcastForwarding (old : ProofsLean.MNCore.Forwarding.Slots)
     (outputs : Fin 4 → Bus) (noForward : Bool) :

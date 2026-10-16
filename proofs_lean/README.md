@@ -197,8 +197,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   turnaround sourceのcycle内offset 0/4と、LBF forwarding slotからの読み戻しも接続した。
   `mbcast`はcycleあたり4/8-word strideとturnaroundで常に対になる2 long wordを読む規則を、
   `m4bcast`は4-MAB group index・cycle stride・source幅別のoffset規則を定義・証明した。
-  Rustの`mab >> 2` group選択もLean index関数へ接続した。`distrib`、PE群全体の状態、
-  L1BM書込み、転送と同時発行する命令は未接続。
+  Rustの`mab >> 2` group選択もLean index関数へ接続した。`distrib`の符号付きMAB差分を
+  Euclidean moduloで16 MABへwrapし、addressed sourceのcycle×64 offsetへ接続した。
+  3種類のread転送以外、PE群全体の状態、L1BM書込み、転送と同時発行する命令は未接続。
 
 `Machine.positiveCost` はスコアが正の行へ正規化済みであるという条件。
 MN-Coreにはゼロコストの制御文があるので、その正規化の意味保存と完全性を証明するまでは

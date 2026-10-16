@@ -57,6 +57,10 @@ import Lean
 #print axioms ProofsLean.MNCore.L1Transfer.mbcast_turnaround_words
 #print axioms ProofsLean.MNCore.L1Transfer.m4bcastGroup_matches_rust_index
 #print axioms ProofsLean.MNCore.L1Transfer.m4bcast_addressed_words
+#print axioms ProofsLean.MNCore.L1Transfer.distribSourceMab_euclidean
+#print axioms ProofsLean.MNCore.L1Transfer.distrib_addressed_words
+#print axioms ProofsLean.MNCore.L1Transfer.distribSourceMab_wraps_down
+#print axioms ProofsLean.MNCore.L1Transfer.distribSourceMab_wraps_up
 #print axioms ProofsLean.MNCore.PEMemory.mask_directive_replaces_selection_preserves_context
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerMaskedLineStep_prepares_then_commits
 #print axioms ProofsLean.MNCore.PEMemory.parsedMaskedSource_execution
