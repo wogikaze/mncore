@@ -54,6 +54,14 @@ CASES = {
     "mabdiff_minus128": ("l1bmd-128 $lm0 $lb0\n", True, 1),
     "mabdiff_plus127": ("l1bmd127 $lm0 $lb0\n", True, 1),
     "mabdiff_plus128": ("l1bmd128 $lm0 $lb0\n", True, 1),
+    "region_address_cycle0_max": ("lpassa $m[4095,0,0,0] $n0\n", True, 1),
+    "region_address_cycle1_max": ("lpassa $m[0,4095,0,0] $n0\n", True, 1),
+    "region_address_cycle2_max": ("lpassa $m[0,0,4095,0] $n0\n", True, 1),
+    "region_address_cycle3_max": ("lpassa $m[0,0,0,4095] $n0\n", True, 1),
+    "region_address_cycle3_overflow": ("lpassa $m[0,0,0,4096] $n0\n", False, None),
+    "madpe_2": ("lpassa $m0j2 $n0\n", True, 1),
+    "madpe_3": ("lpassa $m0j3 $n0\n", True, 1),
+    "madpe_4": ("lpassa $m0j4 $n0\n", False, None),
 }
 for index in range(2, 31):
     CASES[f"imr_selector_{index}"] = (f"lpassa $lm0 $ln0/$imr{index}\n", True, 1)
@@ -124,6 +132,7 @@ def main() -> None:
             "Matrix rows 0 through 15 are accepted; row 16 is rejected.",
             "hbfn/6 through hbfn/9 are accepted; hbfn/10 is rejected.",
             "LM0/LM1 and GRF0/GRF1 accept aligned final addresses at widths 1, 2, and 4; their single-word capacities are respectively 4096 and 512, and the capacity address is rejected.",
+            "Each of the four explicit LM0 cycle addresses accepts 4095 and rejects 4096; madpe values 0 through 3 are accepted and 4 is rejected.",
             "$lb8188 is accepted while $lb8192 fails the 13-bit encoding field; the L1BM address must also be 4-word aligned. l1bmm@15 is accepted and @16 is rejected.",
             "DAR address 1023 is accepted and 1024 is rejected; `$lc...@.<l2b>` accepts selectors 0 and 1 and rejects 2.",
             "l1bmd-129, l1bmd-128, l1bmd127, and l1bmd128 are all accepted by assemble3; this is parser/encoding acceptance evidence, not a claim that these offsets are semantically useful.",

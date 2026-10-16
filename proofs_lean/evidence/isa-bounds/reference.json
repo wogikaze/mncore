@@ -25,7 +25,7 @@
     },
     {
       "path": "proofs_lean/scripts/check_isa_parser_bounds.py",
-      "sha256": "0899630eac406a62fe43e3d73f6f11f2bde3273348d018441e1f65a7629029e9"
+      "sha256": "9decacd0c53af62f2324134da068987699952b15f38a3f7e276e2e6f2011e07c"
     }
   ],
   "observations": [
@@ -355,6 +355,70 @@
       "accepted": true,
       "assembler_output_lines": 1,
       "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "region_address_cycle0_max",
+      "source": "lpassa $m[4095,0,0,0] $n0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "region_address_cycle1_max",
+      "source": "lpassa $m[0,4095,0,0] $n0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "region_address_cycle2_max",
+      "source": "lpassa $m[0,0,4095,0] $n0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "region_address_cycle3_max",
+      "source": "lpassa $m[0,0,0,4095] $n0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "region_address_cycle3_overflow",
+      "source": "lpassa $m[0,0,0,4096] $n0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "LM0 address (in single word addressing) must be less than 4096.",
+      "matches_expected": true
+    },
+    {
+      "case": "madpe_2",
+      "source": "lpassa $m0j2 $n0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "madpe_3",
+      "source": "lpassa $m0j3 $n0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "madpe_4",
+      "source": "lpassa $m0j4 $n0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "MAB PE number must be less than  4.",
       "matches_expected": true
     },
     {
@@ -1262,6 +1326,7 @@
     "Matrix rows 0 through 15 are accepted; row 16 is rejected.",
     "hbfn/6 through hbfn/9 are accepted; hbfn/10 is rejected.",
     "LM0/LM1 and GRF0/GRF1 accept aligned final addresses at widths 1, 2, and 4; their single-word capacities are respectively 4096 and 512, and the capacity address is rejected.",
+    "Each of the four explicit LM0 cycle addresses accepts 4095 and rejects 4096; madpe values 0 through 3 are accepted and 4 is rejected.",
     "$lb8188 is accepted while $lb8192 fails the 13-bit encoding field; the L1BM address must also be 4-word aligned. l1bmm@15 is accepted and @16 is rejected.",
     "DAR address 1023 is accepted and 1024 is rejected; `$lc...@.<l2b>` accepts selectors 0 and 1 and rejects 2.",
     "l1bmd-129, l1bmd-128, l1bmd127, and l1bmd128 are all accepted by assemble3; this is parser/encoding acceptance evidence, not a claim that these offsets are semantically useful.",
