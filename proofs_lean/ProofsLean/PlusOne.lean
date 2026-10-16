@@ -69,10 +69,38 @@ theorem increment_pair_spec (high low : BitVec 32) :
       (BitVec.setWidth_append_eq_shiftLeft_setWidth_or).symm
     _ = _ := by simp
 
+def highAddress (address : Fin 16) : Fin 16 :=
+  ⟨2 * (address.val / 2), by have := address.isLt; omega⟩
+
+def lowAddress (address : Fin 16) : Fin 16 :=
+  ⟨2 * (address.val / 2) + 1, by have := address.isLt; omega⟩
+
+def busWord (state : State) (address : Fin 16) : BitVec 32 :=
+  let result := incrementPair (state.lm0 (highAddress address))
+    (state.lm0 (lowAddress address))
+  if address.val % 2 = 0 then result.extractLsb' 32 32
+  else result.extractLsb' 0 32
+
+theorem bus_word_eq_increment (state : State) (address : Fin 16) :
+    busWord state address = increment (state.lm0 address) := by
+  by_cases even : address.val % 2 = 0
+  · have same : highAddress address = address := by
+      apply Fin.ext
+      simp [highAddress]
+      omega
+    simp [busWord, even, increment_pair_spec, same]
+    exact BitVec.extractLsb'_append_eq_left
+  · have same : lowAddress address = address := by
+      apply Fin.ext
+      simp [lowAddress]
+      omega
+    simp [busWord, even, increment_pair_spec, same]
+    exact BitVec.extractLsb'_append_eq_right
+
 /-- One long-word line handles four cycles, with two 32-bit lanes per cycle. -/
 def step (line : Line) (state : State) : State :=
   { state with lm1 := fun address =>
-      if address.val / 8 = line.val then increment (state.lm0 address)
+      if address.val / 8 = line.val then busWord state address
       else state.lm1 address }
 
 def machine : Machine where
@@ -98,10 +126,10 @@ theorem answer_correct : Correct machine problem answer := by
   intro i
   have hi := i.isLt
   by_cases h : i.val / 8 = 1
-  · simpa [step, h] using increment_numerical (input i) (admissible i)
+  · simpa [step, h, bus_word_eq_increment] using increment_numerical (input i) (admissible i)
   · have h0 : i.val / 8 = 0 := by omega
     have hlt : i.val < 8 := by omega
-    simpa [step, h0, hlt] using increment_numerical (input i) (admissible i)
+    simpa [step, h0, hlt, bus_word_eq_increment] using increment_numerical (input i) (admissible i)
 
 def zeroInput : Words := fun _ => 0
 

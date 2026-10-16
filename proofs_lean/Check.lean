@@ -15,6 +15,7 @@ import Lean
 #print axioms ProofsLean.MNCore.PlusOne.answer_correct
 #print axioms ProofsLean.MNCore.PlusOne.answer_optimal_in_restricted_model
 #print axioms ProofsLean.MNCore.PlusOne.increment_pair_spec
+#print axioms ProofsLean.MNCore.PlusOne.bus_word_eq_increment
 #print axioms ProofsLean.MNCore.PlusOne.increment_numerical
 #print axioms ProofsLean.ControlNormalization.compile_length
 #print axioms ProofsLean.ControlNormalization.run_compiles
