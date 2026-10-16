@@ -67,6 +67,13 @@ theorem listLengthLE_finite (α : Type) [Finite α] (bound : Nat) :
                   cases tailEq
                   rfl
 
+private theorem nodup_length_le_fintype_card {α : Type} [Fintype α] [DecidableEq α]
+    (values : List α) (nodup : values.Nodup) : values.length ≤ Fintype.card α := by
+  have injective : Function.Injective values.get :=
+    List.nodup_iff_injective_get.mp nodup
+  have cardBound := Fintype.card_le_of_injective values.get injective
+  simpa using cardBound
+
 theorem natBelow_finite (bound : Nat) : Finite {value : Nat // value < bound} := by
   apply Finite.of_injective (fun value => (⟨value.1, value.2⟩ : Fin bound))
   intro a b equal
@@ -961,18 +968,58 @@ theorem ParsedExpr.sourcesInFiniteEnvelope_finite :
       sources.length ≤ 3 ∧ ∀ operand ∈ sources, operand.inFiniteEnvelope} :=
   ParsedOperand.listInFiniteEnvelope_finite 3
 
-/-- Candidate destination carrier under the six-category output envelope
-observed in assemble3 probes. The evidence is not a universal proof that every
-accepted opcode/parser combination obeys this bound. -/
+/-- Destination lists whose operands lie in the finite operand envelope and
+contain no duplicate parsed operand. The no-duplicate condition follows from
+the assembler's output-uniqueness rule; it yields a finite list bound from the
+finite operand carrier without assuming a fixed per-opcode destination count. -/
 def ParsedExpr.destinationsInFiniteEnvelope (expression : ParsedExpr) : Prop :=
-  expression.destinations.length ≤ 6 ∧
+  expression.destinations.Nodup ∧
     ∀ operand ∈ expression.destinations, operand.inFiniteEnvelope
 
+abbrev ParsedOperandNodupListFiniteEnvelope :=
+  {operands : List ParsedOperand //
+    operands.Nodup ∧ ∀ operand ∈ operands, operand.inFiniteEnvelope}
+
+private def ParsedOperand.nodupListFiniteCode
+    [Fintype {operand : ParsedOperand // operand.inFiniteEnvelope}]
+    (operands : ParsedOperandNodupListFiniteEnvelope) :
+    {values : List {operand : ParsedOperand // operand.inFiniteEnvelope} //
+      values.length ≤ Fintype.card {operand : ParsedOperand // operand.inFiniteEnvelope}} := by
+  classical
+  let toOperand := fun operand : {operand : ParsedOperand // operand ∈ operands.1} =>
+    (⟨operand.1, operands.2.2 operand.1 operand.2⟩ :
+      {operand : ParsedOperand // operand.inFiniteEnvelope})
+  let values := operands.1.attach.map toOperand
+  have valuesNodup : values.Nodup := by
+    apply List.Nodup.map
+    · intro a b equal
+      exact Subtype.ext
+        (congrArg
+          (fun operand : {operand : ParsedOperand // operand.inFiniteEnvelope} => operand.1)
+          equal)
+    · exact List.nodup_attach.mpr operands.2.1
+  refine ⟨values, ?_⟩
+  exact nodup_length_le_fintype_card values valuesNodup
+
+private theorem ParsedOperand.nodupListFiniteCode_injective
+    [Fintype {operand : ParsedOperand // operand.inFiniteEnvelope}] :
+    Function.Injective ParsedOperand.nodupListFiniteCode := by
+  intro a b equal
+  apply Subtype.ext
+  have valueEqual := congrArg (fun values => values.1.map Subtype.val) equal
+  simpa [ParsedOperand.nodupListFiniteCode, List.attach_map_val] using valueEqual
+
 theorem ParsedExpr.destinationsInFiniteEnvelope_finite :
-    Finite {destinations : List ParsedOperand //
-      destinations.length ≤ 6 ∧
-        ∀ operand ∈ destinations, operand.inFiniteEnvelope} :=
-  ParsedOperand.listInFiniteEnvelope_finite 6
+    Finite ParsedOperandNodupListFiniteEnvelope := by
+  classical
+  let Operand := {operand : ParsedOperand // operand.inFiniteEnvelope}
+  letI : Finite Operand := ParsedOperand.inFiniteEnvelope_finite
+  letI : Fintype Operand := Fintype.ofFinite Operand
+  letI : Finite {values : List Operand //
+      values.length ≤ Fintype.card Operand} :=
+    listLengthLE_finite Operand (Fintype.card Operand)
+  exact Finite.of_injective ParsedOperand.nodupListFiniteCode
+    ParsedOperand.nodupListFiniteCode_injective
 
 def ParsedL1bSet.inFiniteEnvelope (set : ParsedL1bSet) : Prop :=
   set.mask < 8 ∧ set.immode < 8
@@ -1241,14 +1288,14 @@ def NormalizedExpr.inFiniteEnvelope (expression : NormalizedExpr) : Prop :=
   expression.op.inFiniteEnvelope ∧
     expression.sources.length ≤ 3 ∧
     (∀ operand ∈ expression.sources, operand.inFiniteEnvelope) ∧
-    expression.destinations.length ≤ 6 ∧
+    expression.destinations.Nodup ∧
     (∀ operand ∈ expression.destinations, operand.inFiniteEnvelope) ∧
     optionMaskInFiniteEnvelope expression.flush
 
 private abbrev NormalizedExprFiniteCode :=
   {op : ParsedOp // op.inFiniteEnvelope} ×
     ParsedOperandListFiniteEnvelope 3 ×
-    ParsedOperandListFiniteEnvelope 6 ×
+    ParsedOperandNodupListFiniteEnvelope ×
     {flush : Option ParsedMask // optionMaskInFiniteEnvelope flush}
 
 private def NormalizedExpr.finiteCode
@@ -1257,10 +1304,10 @@ private def NormalizedExpr.finiteCode
   rcases expression with ⟨expression, bounds⟩
   rcases expression with ⟨op, sources, destinations, flush⟩
   rcases bounds with ⟨opBound, sourceLength, sourceBound,
-    destinationLength, destinationBound, flushBound⟩
+    destinationNodup, destinationBound, flushBound⟩
   exact (⟨op, opBound⟩,
     ⟨sources, sourceLength, sourceBound⟩,
-    ⟨destinations, destinationLength, destinationBound⟩,
+    ⟨destinations, destinationNodup, destinationBound⟩,
     ⟨flush, flushBound⟩)
 
 private theorem NormalizedExpr.finiteCode_injective :
@@ -1292,13 +1339,13 @@ theorem NormalizedExpr.inFiniteEnvelope_finite :
     ParsedOp.inFiniteEnvelope_finite
   letI : Finite (ParsedOperandListFiniteEnvelope 3) :=
     ParsedOperand.listInFiniteEnvelope_finite 3
-  letI : Finite (ParsedOperandListFiniteEnvelope 6) :=
-    ParsedOperand.listInFiniteEnvelope_finite 6
+  letI : Finite ParsedOperandNodupListFiniteEnvelope :=
+    ParsedExpr.destinationsInFiniteEnvelope_finite
   letI : Finite {flush : Option ParsedMask // optionMaskInFiniteEnvelope flush} :=
     optionMaskInFiniteEnvelope_finite
   letI : Fintype {op : ParsedOp // op.inFiniteEnvelope} := Fintype.ofFinite _
   letI : Fintype (ParsedOperandListFiniteEnvelope 3) := Fintype.ofFinite _
-  letI : Fintype (ParsedOperandListFiniteEnvelope 6) := Fintype.ofFinite _
+  letI : Fintype ParsedOperandNodupListFiniteEnvelope := Fintype.ofFinite _
   letI : Fintype {flush : Option ParsedMask // optionMaskInFiniteEnvelope flush} :=
     Fintype.ofFinite _
   letI : Fintype NormalizedExprFiniteCode := inferInstance

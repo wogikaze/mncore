@@ -511,6 +511,13 @@ def coverage_catalog() -> dict:
         }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
+            "theorem": "ProofsLean.MNCore.Issue.ParsedExpr.destinationsInFiniteEnvelope_finite",
+            "scope": "Finite carrier for Nodup destination lists whose operands lie in the finite PE operand envelope; the length bound follows from the finite operand carrier cardinality.",
+            "evidence": "General finite-type argument plus selected assemble3 probes rejecting repeated output categories, including distinct LM0 addresses, OMR entries, and nowrite outputs.",
+            "missing": "No proof yet that every assembler-accepted opcode/parser destination list is Nodup and lies in the operand envelope; the probes cover representative forms only.",
+        }, {
+            "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
+            "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
             "theorem": "ProofsLean.MNCore.Issue.ParsedL1bSet.inFiniteEnvelope_finite",
             "scope": "Finite carrier for L1B sets with address and immode selectors below 8.",
             "evidence": "proofs_lean/evidence/isa-bounds/reference.json: all 64 set pairs in 0..7 accepted; address 8 and immode 8 rejected.",

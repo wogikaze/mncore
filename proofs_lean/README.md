@@ -92,20 +92,21 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
 - `FiniteIssue.lean`: issue projectionが付ける連番IDと同時発行group一意性から、合法なPE行の式数が
   10以下であることを証明した（`projectLine_expression_count_le_ten`）。operandの数値envelopeも定義し、
   有限な要素型上で長さ上限付きListの部分型が有限である補題`listLengthLE_finite`も追加した。
-  これは各命令のsources/destinations件数上限を得て初めて、式やPE行の有限性に適用できる。
+  これは各命令のsource制約とdestination重複制約を得て初めて、式やPE行の有限性に適用できる。
   Rust `parse_expr`の入力prefix分割を`ParsedOp.parserSourceLimit`として写し、ALU入力数、MAUの
   FMA=3/MUL=2/その他、matrix read/write=1、transfer=高々1を記録した。
   `ParsedExpr.sources_length_le_three`はこのarity条件からsource最大3を導くが、
-  arbitrary `ParsedExpr` がRust parser出力である証明や、destination列の上限はまだ含まない。
+  arbitrary `ParsedExpr` がRust parser出力である証明や、合法なdestination列が重複なしになる証明はまだない。
   184個のopcode候補に対するgeneric-token parseで、Rust parserのsource分割は0件が3候補、
   1件が62候補、2件が104候補、3件が15候補だった。その分布はparser-gap監査と`coverage.json`に記録し、
   正規化でopcode別source arity条件が保存され、そこから3以下が従う補題を追加した。
   これはopcode綴りの網羅やassembler受理性の証明ではない。
   operandごとに既存の有限envelopeを要求するsource列のcarrierを追加し、長さ3以下の
   source列全体が有限であることを`ParsedExpr.sourcesInFiniteEnvelope_finite`で証明した。
-  同じ構成を長さパラメータ付き`ParsedOperand.listInFiniteEnvelope_finite`に一般化し、
-  assemble3で観測した6出力カテゴリに基づく長さ6以下のdestination carrierも有限とした。
-  ただし6上限が全opcodeに適用される包括的証明はなく、これは候補carrierの有限性のみ。
+  destination列は、要素がoperand envelope内でListが`Nodup`なら、その長さが有限operand型のcardinality
+  以下になることを示し、有限carrierへ写した。固定の6件上限を全opcodeへ外挿しない形にしたが、
+  全合法destination列に`Nodup`を課せる証明はまだない。選択したassemble3 probesでは同一出力categoryの
+  重複が拒否されたことだけを確認している。
   opcode本体と同時発行PE行の有限性にはまだ届かない。
   次段階のopcode carrier構成に向け、Leanで既定の`Finite` instanceがない`Char`をUnicode
   code point (`< U+110000`) へ埋め込み有限性を証明し、`ParsedAluName`、`ParsedPrecision`、
@@ -113,9 +114,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   合成した`ParsedOp.inFiniteEnvelope`を定義し、全opcode constructorを有限なタグ付きcarrierへ
   単射で写して`ParsedOp.inFiniteEnvelope_finite`を証明した。parser出力がこの範囲に必ず入る
   ことの証明は別途必要であり、ここでは無制限な`ParsedOp`全体の有限性を主張しない。
-  これをbounded source/destination列とflush maskと組み合わせ、`NormalizedExpr`の有限carrierも
-  証明した。現時点の上限はRust parserのsource arity上限3とassemble3出力カテゴリ実験の6であり、
-  destination上限の全命令への一般化およびparserからenvelopeへの網羅証明は残る。
+  これをbounded source列、Nodup destination列、flush maskと組み合わせ、`NormalizedExpr`の有限carrierも
+  証明した。source上限3はRust parserのopcode arityから従う。合法destinationがNodupか、全payloadが
+  assembler受理範囲内かというenvelope包含証明は残る。
   全ての構造化`ParsedOperand` constructorを有限コードへ写して
   `ParsedOperand.inFiniteEnvelope_finite`を証明した。
   同ファイルで`ParsedMask.entry < 32`の有限部分型も証明した。assemble3では`$imr0..31`が受理され
