@@ -219,6 +219,12 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.parseMaskSelector_rejects_u8_overflow
 #print axioms ProofsLean.MNCore.PEMemory.parseMaskSelector_rejects_bad_pattern
 #print axioms ProofsLean.MNCore.PEMemory.parsed_mask_selector_32_resolves_as_cycle_pattern
+#print axioms ProofsLean.MNCore.PEMemory.parseMaskDirective_targets_and_u8_cast
+#print axioms ProofsLean.MNCore.PEMemory.parseMaskDirective_binary_entry_cast
+#print axioms ProofsLean.MNCore.PEMemory.parseMaskDirective_decimal_plus
+#print axioms ProofsLean.MNCore.PEMemory.parseMaskDirective_rejects_bad_target
+#print axioms ProofsLean.MNCore.PEMemory.parseMaskDirective_rejects_extra_token
+#print axioms ProofsLean.MNCore.PEMemory.parsed_mask_directive_updates_runtime_state
 #print axioms ProofsLean.MNCore.Issue.zero_has_execution_request
 #print axioms ProofsLean.MNCore.Issue.immediate_has_execution_request
 #print axioms ProofsLean.MNCore.Issue.zero_execution_ignores_inputs

@@ -462,6 +462,102 @@ theorem parseMaskSelector_rejects_bad_pattern :
     parseMaskSelector? "10x0" = none := by
   rfl
 
+def maskDirectiveDigit? (base : Nat) (digit : Char) : Option Nat :=
+  let code := digit.toNat
+  if 48 ≤ code && code ≤ 57 then
+    let value := code - 48
+    if value < base then some value else none
+  else if base == 16 && 65 ≤ code && code ≤ 70 then some (code - 55)
+  else if base == 16 && 97 ≤ code && code ≤ 102 then some (code - 87)
+  else none
+
+def parseMaskDirectiveDigits (base : Nat) : List Char → Nat → Option Nat
+  | [], value => some value
+  | digit :: rest, value => do
+      let digitValue ← maskDirectiveDigit? base digit
+      parseMaskDirectiveDigits base rest (value * base + digitValue)
+
+def parseMaskDirectiveNumber? (text : String) : Option Nat := do
+  let chars := text.toList
+  let (base, rawDigits) :=
+    if chars.take 2 == "0x".toList then (16, chars.drop 2)
+    else if chars.take 2 == "0b".toList then (2, chars.drop 2)
+    else (10, chars)
+  let digits := if rawDigits.head? == some '+' then rawDigits.drop 1 else rawDigits
+  if digits.isEmpty then none else
+  let value ← parseMaskDirectiveDigits base digits 0
+  if value < 2 ^ 64 then some value else none
+
+def parseMaskDirectiveTargets : List Char → ParsedMaskTargets → Option ParsedMaskTargets
+  | [], targets => some targets
+  | target :: rest, targets =>
+      match target with
+      | 'r' => parseMaskDirectiveTargets rest { targets with grf0 := true }
+      | 's' => parseMaskDirectiveTargets rest { targets with grf1 := true }
+      | 't' => parseMaskDirectiveTargets rest { targets with t := true }
+      | 'm' => parseMaskDirectiveTargets rest { targets with lm0 := true }
+      | 'n' => parseMaskDirectiveTargets rest { targets with lm1 := true }
+      | 'k' => parseMaskDirectiveTargets rest { targets with maskRegister := true }
+      | _ => none
+
+def parseMaskDirectiveOperator? (operator : String) :
+    Option (Nat × ParsedMaskTargets) := do
+  let chars := operator.toList
+  if chars.take 4 != "mask".toList then none else
+  let suffix := chars.drop 4
+  let (widthWords, targets) :=
+    if suffix.take 2 == "ll".toList then (4, suffix.drop 2)
+    else if suffix.head? == some 'l' then (2, suffix.drop 1)
+    else (2, suffix)
+  let targets ← parseMaskDirectiveTargets targets {}
+  some (widthWords, targets)
+
+def splitMaskDirectiveWhitespace : List Char → List Char → List String → List String
+  | [], current, tokens =>
+      if current.isEmpty then tokens.reverse
+      else (String.ofList current.reverse :: tokens).reverse
+  | char :: rest, current, tokens =>
+      if char.isWhitespace then
+        if current.isEmpty then splitMaskDirectiveWhitespace rest [] tokens
+        else splitMaskDirectiveWhitespace rest [] (String.ofList current.reverse :: tokens)
+      else splitMaskDirectiveWhitespace rest (char :: current) tokens
+
+def parseMaskDirective? (text : String) : Option ParsedLine := do
+  let tokens := splitMaskDirectiveWhitespace text.toList [] []
+  let [operator, address] := tokens | none
+  let (widthWords, targets) ← parseMaskDirectiveOperator? operator
+  let entry ← parseMaskDirectiveNumber? address
+  some (.maskDirective widthWords targets (entry % 256))
+
+theorem parseMaskDirective_targets_and_u8_cast :
+    parseMaskDirective? "maskllrstmnk 0x123" = some
+      (.maskDirective 4 (⟨true, true, true, true, true, true⟩ : ParsedMaskTargets) 35) := by
+  rfl
+
+theorem parseMaskDirective_binary_entry_cast :
+    parseMaskDirective? "maskl 0b111111111" =
+      some (.maskDirective 2 {} 255) := by
+  rfl
+
+theorem parseMaskDirective_decimal_plus :
+    parseMaskDirective? "maskk +257" =
+      some (.maskDirective 2 { maskRegister := true } 1) := by
+  rfl
+
+theorem parseMaskDirective_rejects_bad_target :
+    parseMaskDirective? "maskx 1" = none := by
+  rfl
+
+theorem parseMaskDirective_rejects_extra_token :
+    parseMaskDirective? "mask 1 trailing" = none := by
+  rfl
+
+theorem parsed_mask_directive_updates_runtime_state (state : ParsedMaskDirective) :
+    (parseMaskDirective? "maskllm 258").map
+      (fun line => ParsedLine.updateMaskState line state) =
+        some ⟨4, ⟨false, false, false, true, false, false⟩, 2⟩ := by
+  rfl
+
 /-- Resolve the write mask for one PE cycle. Explicit selectors take priority;
 the caller supplies an already-resolved multiline directive when no selector
 appears on the OMR destination. -/
