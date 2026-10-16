@@ -57,6 +57,10 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.listLengthLE_finite
 #print axioms ProofsLean.MNCore.Issue.Access.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.ParsedOperand.inFiniteEnvelope_finite
+#print axioms ProofsLean.MNCore.Issue.ParsedOperand.bar_inFiniteEnvelope_iff
+#print axioms ProofsLean.MNCore.Issue.ParsedOperand.omr_inFiniteEnvelope_iff
+#print axioms ProofsLean.MNCore.Issue.ParsedOperand.matrix_inFiniteEnvelope_iff
+#print axioms ProofsLean.MNCore.Issue.ParsedOperand.l1bm_inFiniteEnvelope_iff
 #print axioms ProofsLean.MNCore.Issue.ParsedL1bSet.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.mabdiffInFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.ParsedRrn.inFiniteEnvelope_finite
@@ -95,6 +99,10 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.costBelowEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.costBelowEnvelopeAlphabet
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.mem_costBelowEnvelopeAlphabet
+#print axioms ProofsLean.MNCore.Issue.NormalizedMv.sizeInFiniteEnvelope_finite
+#print axioms ProofsLean.MNCore.Issue.mv_size_32704_in_envelope
+#print axioms ProofsLean.MNCore.Issue.mv_size_1_outside_envelope
+#print axioms ProofsLean.MNCore.Issue.mv_size_32768_outside_envelope
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.legalCostBelowEnvelope_covered
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.legalCostBelowEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.legalCostBelowFintype
@@ -111,6 +119,9 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.parseMaskDirectiveOperator_width_inFiniteEnvelope
 #print axioms ProofsLean.MNCore.PEMemory.parseMaskDirective_inFiniteEnvelope
 #print axioms ProofsLean.MNCore.Issue.omrEntryInFiniteEnvelope_finite
+#print axioms ProofsLean.MNCore.Issue.omr_entry_1_in_envelope
+#print axioms ProofsLean.MNCore.Issue.omr_entry_0_outside_envelope
+#print axioms ProofsLean.MNCore.Issue.omr_entry_16_outside_envelope
 #print axioms ProofsLean.MNCore.Issue.natBelow_finite
 #print axioms ProofsLean.MNCore.Issue.optionNatBelow_finite
 #print axioms ProofsLean.MNCore.Issue.check_complete

@@ -674,13 +674,13 @@ theorem optionMaskInFiniteEnvelope_finite :
 
 def ParsedOperand.inFiniteEnvelope : ParsedOperand → Prop
   | .mem access _ _ _ mask => access.inFiniteEnvelope ∧ optionMaskInFiniteEnvelope mask
-  | .bar _ width mask => width < 5 ∧ optionMaskInFiniteEnvelope mask
+  | .bar _ width mask => (width = 1 ∨ width = 2) ∧ optionMaskInFiniteEnvelope mask
   | .forward .. => True
   | .fixed .. => True
-  | .omr entry mask => entry < 16 ∧ optionMaskInFiniteEnvelope mask
-  | .matrix _ width row => width < 5 ∧ optionNatInFiniteEnvelope 16 row
+  | .omr entry mask => 0 < entry ∧ entry < 16 ∧ optionMaskInFiniteEnvelope mask
+  | .matrix _ width row => (width = 1 ∨ width = 2 ∨ width = 4) ∧ optionNatInFiniteEnvelope 16 row
   | .nowrite => True
-  | .l1bm width address => width < 5 ∧ optionNatInFiniteEnvelope 8192 address
+  | .l1bm width address => (width = 1 ∨ width = 2 ∨ width = 4) ∧ optionNatInFiniteEnvelope 8192 address
   | .l2bm address l2b => address < 32768 ∧ optionNatInFiniteEnvelope 8 l2b
   | .dar address => address < 1024
 
@@ -689,9 +689,26 @@ theorem ParsedOperand.mem_inFiniteEnvelope_iff (access : Access) (neg ext rnd : 
     ParsedOperand.inFiniteEnvelope (.mem access neg ext rnd mask) ↔
       access.inFiniteEnvelope ∧ optionMaskInFiniteEnvelope mask := Iff.rfl
 
+theorem ParsedOperand.bar_inFiniteEnvelope_iff (lm1 : Bool) (width : Nat)
+    (mask : Option ParsedMask) :
+    ParsedOperand.inFiniteEnvelope (.bar lm1 width mask) ↔
+      (width = 1 ∨ width = 2) ∧ optionMaskInFiniteEnvelope mask := Iff.rfl
+
+theorem ParsedOperand.omr_inFiniteEnvelope_iff (entry : Nat)
+    (mask : Option ParsedMask) :
+    ParsedOperand.inFiniteEnvelope (.omr entry mask) ↔
+      0 < entry ∧ entry < 16 ∧ optionMaskInFiniteEnvelope mask := Iff.rfl
+
+theorem ParsedOperand.matrix_inFiniteEnvelope_iff (y : Bool) (width : Nat)
+    (row : Option Nat) :
+    ParsedOperand.inFiniteEnvelope (.matrix y width row) ↔
+      (width = 1 ∨ width = 2 ∨ width = 4) ∧
+        optionNatInFiniteEnvelope 16 row := Iff.rfl
+
 theorem ParsedOperand.l1bm_inFiniteEnvelope_iff (width : Nat) (address : Option Nat) :
     ParsedOperand.inFiniteEnvelope (.l1bm width address) ↔
-      width < 5 ∧ optionNatInFiniteEnvelope 8192 address := Iff.rfl
+      (width = 1 ∨ width = 2 ∨ width = 4) ∧
+        optionNatInFiniteEnvelope 8192 address := Iff.rfl
 
 theorem ParsedOperand.l2bm_inFiniteEnvelope_iff (address : Nat) (l2b : Option Nat) :
     ParsedOperand.inFiniteEnvelope (.l2bm address l2b) ↔
@@ -764,24 +781,27 @@ def ParsedOperand.finiteCode
           optionMaskFiniteCode ⟨mask, maskBound⟩)
   | bar lm1 width mask =>
       rcases bounds with ⟨widthBound, maskBound⟩
-      exact operandBarCode (lm1, ⟨width, widthBound⟩,
+      have widthLT : width < 5 := by rcases widthBound with h | h <;> omega
+      exact operandBarCode (lm1, ⟨width, widthLT⟩,
         optionMaskFiniteCode ⟨mask, maskBound⟩)
   | forward kind neg ext rnd =>
       exact operandForwardCode (kind.finiteCode, neg, ext, rnd)
   | fixed kind =>
       exact operandFixedCode kind.finiteCode
   | omr entry mask =>
-      rcases bounds with ⟨entryBound, maskBound⟩
+      rcases bounds with ⟨positive, entryBound, maskBound⟩
       exact operandOmrCode (⟨entry, entryBound⟩,
         optionMaskFiniteCode ⟨mask, maskBound⟩)
   | matrix y width row =>
       rcases bounds with ⟨widthBound, rowBound⟩
-      exact operandMatrixCode (y, ⟨width, widthBound⟩,
+      have widthLT : width < 5 := by rcases widthBound with h | h | h <;> omega
+      exact operandMatrixCode (y, ⟨width, widthLT⟩,
         optionNatFiniteCode 16 ⟨row, rowBound⟩)
   | nowrite => exact operandNowriteCode
   | l1bm width address =>
       rcases bounds with ⟨widthBound, addressBound⟩
-      exact operandL1bmCode (⟨width, widthBound⟩,
+      have widthLT : width < 5 := by rcases widthBound with h | h | h <;> omega
+      exact operandL1bmCode (⟨width, widthLT⟩,
         optionNatFiniteCode 8192 ⟨address, addressBound⟩)
   | l2bm address l2b =>
       rcases bounds with ⟨addressBound, l2bBound⟩
@@ -1031,6 +1051,45 @@ theorem NormalizedMv.finite : Finite NormalizedMv := by
   letI : Fintype ParsedMvOperand := Fintype.ofFinite ParsedMvOperand
   letI : Fintype NormalizedMvFiniteCode := inferInstance
   exact Finite.of_injective NormalizedMv.finiteCode NormalizedMv.finiteCode_injective
+
+/-- The sampled `assemble3` MV size field accepts zero, or a nonzero size
+that is a multiple of 64 through 32704 long words. This is only the transfer
+size component; operand-address bounds remain separate obligations. -/
+def NormalizedMv.sizeInFiniteEnvelope (transfer : NormalizedMv) : Prop :=
+  transfer.size.val = 0 ∨
+    (transfer.size.val % 64 = 0 ∧ transfer.size.val ≤ 32704)
+
+theorem ParsedMv.normalize_sizeInFiniteEnvelope_iff (transfer : ParsedMv) :
+    transfer.normalize.sizeInFiniteEnvelope ↔
+      transfer.size.val = 0 ∨
+        (transfer.size.val % 64 = 0 ∧ transfer.size.val ≤ 32704) := Iff.rfl
+
+theorem mv_size_32704_in_envelope :
+    NormalizedMv.sizeInFiniteEnvelope
+      ({kind := .copy, size := ⟨32704, by decide⟩, tag := none, nd := none,
+        priority := 0, source := none, destination := none} : NormalizedMv) := by
+  simp [NormalizedMv.sizeInFiniteEnvelope]
+
+theorem mv_size_1_outside_envelope :
+    ¬ NormalizedMv.sizeInFiniteEnvelope
+      ({kind := .copy, size := ⟨1, by decide⟩, tag := none, nd := none,
+        priority := 0, source := none, destination := none} : NormalizedMv) := by
+  simp [NormalizedMv.sizeInFiniteEnvelope]
+
+theorem mv_size_32768_outside_envelope :
+    ¬ NormalizedMv.sizeInFiniteEnvelope
+      ({kind := .copy, size := ⟨32768, by decide⟩, tag := none, nd := none,
+        priority := 0, source := none, destination := none} : NormalizedMv) := by
+  simp [NormalizedMv.sizeInFiniteEnvelope]
+
+theorem NormalizedMv.sizeInFiniteEnvelope_finite :
+    Finite {transfer : NormalizedMv // transfer.sizeInFiniteEnvelope} := by
+  letI : Finite NormalizedMv := NormalizedMv.finite
+  exact Finite.of_injective (fun transfer : {transfer : NormalizedMv //
+      transfer.sizeInFiniteEnvelope} => transfer.1)
+    (by
+      intro a b equal
+      exact Subtype.ext equal)
 
 theorem ParsedExpr.sourcesInFiniteEnvelope_finite :
     Finite {sources : List ParsedOperand //
@@ -1484,12 +1543,12 @@ def InstructionLine.inFiniteEnvelope (bound : Nat) : InstructionLine → Prop
       expressions.length ≤ 10 ∧
         ∀ expression ∈ expressions, expression.inFiniteEnvelope
   | .nop count wait => count.val < bound ∧ InstructionLineWaitFiniteEnvelope wait
-  | .mv _ => True
+  | .mv transfer => transfer.sizeInFiniteEnvelope
 
 abbrev InstructionLineFiniteCode (bound : Nat) :=
   NormalizedExprListFiniteEnvelope 10 ⊕
     ((Fin bound × {wait : Option Nat // InstructionLineWaitFiniteEnvelope wait}) ⊕
-      NormalizedMv)
+      {transfer : NormalizedMv // transfer.sizeInFiniteEnvelope})
 
 private def InstructionLine.finiteCode (bound : Nat)
     (line : {line : InstructionLine // line.inFiniteEnvelope bound}) :
@@ -1499,7 +1558,7 @@ private def InstructionLine.finiteCode (bound : Nat)
   | pe expressions => exact Sum.inl ⟨expressions, bounds.1, bounds.2⟩
   | nop count wait =>
       exact Sum.inr (Sum.inl (⟨count.val, bounds.1⟩, ⟨wait, bounds.2⟩))
-  | mv transfer => exact Sum.inr (Sum.inr transfer)
+  | mv transfer => exact Sum.inr (Sum.inr ⟨transfer, bounds⟩)
 
 private theorem InstructionLine.finiteCode_injective (bound : Nat) :
     Function.Injective (InstructionLine.finiteCode bound) := by
@@ -1509,6 +1568,8 @@ private theorem InstructionLine.finiteCode_injective (bound : Nat) :
   apply Subtype.ext
   cases a <;> cases b <;>
     simp_all [InstructionLine.finiteCode, InstructionLine.inFiniteEnvelope]
+  case mv.mv =>
+    exact congrArg Subtype.val equal
   case nop.nop =>
     apply Subtype.ext
     exact equal.1
@@ -1525,15 +1586,19 @@ theorem InstructionLine.inFiniteEnvelope_finite (bound : Nat) :
     Fintype.ofFinite _
   letI : Finite NormalizedMv := NormalizedMv.finite
   letI : Fintype NormalizedMv := Fintype.ofFinite _
+  letI : Finite {transfer : NormalizedMv // transfer.sizeInFiniteEnvelope} :=
+    NormalizedMv.sizeInFiniteEnvelope_finite
+  letI : Fintype {transfer : NormalizedMv // transfer.sizeInFiniteEnvelope} :=
+    Fintype.ofFinite _
   letI : Fintype (InstructionLineFiniteCode bound) := inferInstance
   exact Finite.of_injective (InstructionLine.finiteCode bound)
     (InstructionLine.finiteCode_injective bound)
 
-def omrEntryInFiniteEnvelope (entry : Nat) : Prop := entry < 16
+def omrEntryInFiniteEnvelope (entry : Nat) : Prop := 0 < entry ∧ entry < 16
 
 private def omrEntryCode
     (entry : {entry : Nat // omrEntryInFiniteEnvelope entry}) : Fin 16 :=
-  ⟨entry.1, entry.2⟩
+  ⟨entry.1, entry.2.2⟩
 
 private theorem omrEntryCode_injective : Function.Injective omrEntryCode := by
   intro a b equal
@@ -1543,6 +1608,12 @@ private theorem omrEntryCode_injective : Function.Injective omrEntryCode := by
 theorem omrEntryInFiniteEnvelope_finite :
     Finite {entry : Nat // omrEntryInFiniteEnvelope entry} :=
   Finite.of_injective omrEntryCode omrEntryCode_injective
+
+theorem omr_entry_1_in_envelope : omrEntryInFiniteEnvelope 1 := by simp [omrEntryInFiniteEnvelope]
+
+theorem omr_entry_0_outside_envelope : ¬ omrEntryInFiniteEnvelope 0 := by simp [omrEntryInFiniteEnvelope]
+
+theorem omr_entry_16_outside_envelope : ¬ omrEntryInFiniteEnvelope 16 := by simp [omrEntryInFiniteEnvelope]
 
 private def Group.code : Group → Fin 10
   | .alu => 0

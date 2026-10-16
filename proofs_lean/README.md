@@ -62,7 +62,7 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   抽象的な`nop/n`モデルでは全上限について有限性を証明した。MN-Coreの
   実際の行型については、アドレス・即値・全オペランド範囲、同時発行と
   ハザードに基づく有限性が未証明。
-- `evidence/isa-bounds/reference.json`: 公式`assemble3`の1,111個の境界プローブ。
+- `evidence/isa-bounds/reference.json`: 公式`assemble3`の1,133個の境界プローブ。
   `nop/0`は受理され0語を出力するため正コストの行からは正規化で除外する。
   `$omr`は1〜15が受理、`$imr`と有効なマスク指令のselectorは0〜31が受理され、
   32は拒否された。後者はRustコメントの「1〜15」と不一致。challenge judgeは
@@ -120,10 +120,10 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   でなく、後続状態に畳み込む制御イベントとして残す。未制限の数値フィールドは
   まだ残り、実機命令型の有限性には至っていない。
 - 同時発行条件は [`ISSUE_AUDIT.md`](ISSUE_AUDIT.md) でSDM 3.6.4と照合した。
-  現行checkerは`l2bmdars`の合法な例外を拒否する一方、PEメモリ以外の宛先衝突や
-  マスク読み出しをポート検査へ投影していない。下限列挙に使える完全な合法性述語ではなく、
+  現行checkerはOMR/LBF/BAR出力とマスク読み出しの一部をモデル化したが、
+  `l2bmdars`の特殊な同時発行条件など未解決の規則が残る。下限列挙に使える完全な合法性述語ではなく、
   coverageは`partial_datapath_only`のままとする。
-- `FiniteRegion.lean`: assemble3境界プローブを根拠に、width `< 5`、4つのアドレス`< 4096`、
+- `FiniteRegion.lean`: assemble3境界プローブを根拠に、width 1/2/4、4つのアドレス`< 4096`、
   `madpe < 4`の`Region` envelopeを有限型へ埋め込み、`Region.inFiniteEnvelope_finite`を証明した。
   プローブは`evidence/isa-bounds/reference.json`にある。bank別の合法範囲/alignmentや、
   パーサーからこの上限への一般的な健全性証明は未実装で、PE line alphabet全体の有限性にも未接続。
@@ -160,7 +160,8 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   同ファイルで`ParsedMask.entry < 32`の有限部分型も証明した。assemble3では`$imr0..31`が受理され
   `$imr32`が拒否される一方、OMR entryは別の範囲である。parser出力からこの上限への一般証明は未実装。
   OMR indexについても`entry < 16`の有限部分型を証明し、assemble3の1..15受理・16拒否を根拠に登録した。
-  envelopeは不正な0も含む上位集合で、parser/assembler受理集合との完全な一致を主張しない。
+  envelopeは0を除外している。assemblerの境界記録とは一致するが、parser/assemblerの受理集合全体との
+  一致やparser出力からの一般的な範囲保証までは証明していない。
   あわせて`Nat < bound`と、各要素がその範囲内にある`Option Nat`の有限性をbound一般で証明した。
   後者は行列row、L1BM addressなどのoptionalな数値fieldをまとめる部品として使う。
   `ParsedL1bSet`についても、address/immodeの両方が`< 8`の有限carrierを証明した。
@@ -190,15 +191,18 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   optional payloadの有限carrierを証明した。
   これらのpayload定理から`ParsedOp`/`ParsedLine`全体への合成、他の残存Nat/Int範囲、
   パーサー出力のenvelope健全性はまだ未完了。
-  operand envelopeはregion width `< 5`/address `< 4096`/madpe `< 4`、mask selector `< 32`、
-  OMR entry `< 16`、matrix width `< 5`/row `< 16`、L1BM width `< 5`/address `< 8192`、
+  operand envelopeはregion width 1/2/4/address `< 4096`/madpe `< 4`、BAR width 1または2、mask selector `< 32`、
+  OMR entry `1 ≤ entry < 16`、matrix width 1/2/4/row `< 16`、L1BM width 1/2/4/address `< 8192`、
   L2BM address `< 32768`/selector `< 8`、DAR address `< 1024`を含む。
   これは境界プローブに基づく有限な上位集合であり、bank/opcode別alignmentや、全assembler-accepted
   operandがenvelopeに入ることの証明ではない。bounded operand carrierは有限だが、これを合法PE行や
   `MNCore.machine`の全行有限性へ接続する作業は未完了。
+  BAR幅は`mb`/`lmb`を受理し`llmb`を拒否する既存assemble3 probeから1または2語に制限した。
 - `InstructionLine.inFiniteEnvelope_finite`: PE行の式数を10以下、nop countを任意のbound未満とし、
   wait tagと各正規化式を既存envelope内に制限したline carrierの有限性を証明した。
-  `NormalizedMv`全体も、有限なopcode/operand構成から有限とした。現状は有限上位集合の証明であり、
+  MV転送サイズはassemble3の記録に基づき、0または64の倍数で32704以下に絞った有限subtypeを
+  carrierへ接続した（`mv_size_0`、`mv_size_1`、`mv_size_32704`、`mv_size_32768`で境界を照合）。
+  MVのアドレスなど残りのフィールドは有限な広い型のままである。現状は有限上位集合の証明であり、
   全合法lineが各payload envelopeに入ることや、固定costからnop count boundを得る証明は未接続。
 - `ParsedExpr.inFiniteEnvelope`から正規化式のenvelopeへの写像を証明した。opcode固有source arityから
   source長3以下を導ける一方、opcode・operand・flushの数値範囲とdestinationの重複なしを、実parser出力に

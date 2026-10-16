@@ -7,11 +7,11 @@
   "inventory_scope": "Compiler-generated ALU/MAU spelling candidates plus separately scoped source-derived records; not an authoritative complete ISA or legality model.",
   "selected_parser_boundary_experiment": {
     "source": "proofs_lean/evidence/isa-bounds/reference.json",
-    "sha256": "407a66ab175029ba8fdc6ac7db2e4abe249d809aeb6d14b5bbf127ecd97c4404",
+    "sha256": "7412545e1e4abe25c032f99db5665de1a72f8d6ff894382f144a26dcf324c9cc",
     "generator": "proofs_lean/scripts/check_isa_parser_bounds.py",
-    "generator_sha256": "ca20e487ff46649a4af1372f10c88470365ba13ba2dedffc9ed7da8c4ed4573a",
-    "probes": 1132,
-    "accepted": 1027,
+    "generator_sha256": "5b24ceb1894e7426b35241b9d36ce03a3ee2b4d2af5f6a59b55b343a726bffa7",
+    "probes": 1133,
+    "accepted": 1028,
     "rejected": 105,
     "findings": [
       "nop/0 is accepted and emits zero instruction words; nop/0 with a wait is rejected, so the zero-count no-wait form can be erased during normalization.",
@@ -113,7 +113,7 @@
   },
   "parallel_issue_boundary_experiment": {
     "source": "proofs_lean/evidence/isa-bounds/reference.json",
-    "sha256": "407a66ab175029ba8fdc6ac7db2e4abe249d809aeb6d14b5bbf127ecd97c4404",
+    "sha256": "7412545e1e4abe25c032f99db5665de1a72f8d6ff894382f144a26dcf324c9cc",
     "manual_sections": [
       "SDM 3.6.1.7",
       "SDM 3.6.1.9",
@@ -334,15 +334,15 @@
   "finite_carrier_proofs": [
     {
       "source": "proofs_lean/ProofsLean/FiniteRegion.lean",
-      "sha256": "11a5daad6554f46d39a926f315780111ea0b30a437fe1183aecee71ffcbce20e",
+      "sha256": "a34840fe3adfb30cc37b5e773fae2e9f03f07ae89d6562100852686a44d4f890",
       "theorem": "ProofsLean.MNCore.Issue.Region.inFiniteEnvelope_finite",
-      "scope": "Finite subtype for the PE region envelope documented by assemble3 boundary probes: width < 5, four addresses < 4096, and madpe < 4.",
+      "scope": "Finite subtype for the PE region envelope documented by assemble3 boundary probes: width in {1, 2, 4}, four addresses < 4096, and madpe < 4.",
       "evidence": "proofs_lean/evidence/isa-bounds/reference.json: region_address_cycle0_max through region_address_cycle3_overflow, madpe_3/madpe_4, and LM0/LM1/GRF capacity findings.",
       "missing": "A universal assembler soundness theorem from parsed legal operands to this envelope, bank-specific alignment, all other operand fields, bounded line lists, and machine-level coverage."
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
-      "sha256": "05fbb1e55514b10339473657b0d3e426d9f38c70ac6018d10236b64d5a826b12",
+      "sha256": "9d2bcad94e35a67b011b8d9c315678297575b191fb38dd1d84899a3fc6e746c4",
       "theorem": "ProofsLean.MNCore.Issue.listLengthLE_finite",
       "scope": "For any finite element type and any fixed bound, the subtype of lists with length at most that bound is finite.",
       "evidence": "Lean encodes each bounded list as either nil or a head paired with a shorter bounded tail; no external parser evidence is needed for this generic theorem.",
@@ -350,10 +350,10 @@
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
-      "sha256": "05fbb1e55514b10339473657b0d3e426d9f38c70ac6018d10236b64d5a826b12",
+      "sha256": "9d2bcad94e35a67b011b8d9c315678297575b191fb38dd1d84899a3fc6e746c4",
       "theorem": "ProofsLean.MNCore.Issue.InstructionLine.inFiniteEnvelope_finite",
-      "scope": "Finite carrier for PE rows of at most ten normalized expressions, nop rows with count below the given bound and bounded wait tags, and normalized MV transfers.",
-      "evidence": "Composes the proved finite carriers for normalized expressions, bounded expression lists, optional wait tags, and normalized MV operands.",
+      "scope": "Finite carrier for PE rows of at most ten normalized expressions, nop rows with count below the given bound and bounded wait tags, and normalized MV transfers whose size is zero or a multiple of 64 through 32704.",
+      "evidence": "Composes the proved finite carriers for normalized expressions, bounded expression lists, optional wait tags, and MV sizes; the size envelope is checked against the recorded assemble3 cases 0, 1, 64, 32704, and 32768.",
       "missing": "No proof yet shows that every legal fixed-cost line satisfies these expression payload envelopes, that the nop bound follows from cost, or that all legal line forms embed in this subtype."
     },
     {
@@ -382,7 +382,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
-      "sha256": "05fbb1e55514b10339473657b0d3e426d9f38c70ac6018d10236b64d5a826b12",
+      "sha256": "9d2bcad94e35a67b011b8d9c315678297575b191fb38dd1d84899a3fc6e746c4",
       "theorem": "ProofsLean.MNCore.Issue.Access.inFiniteEnvelope_finite",
       "scope": "Finite carrier for accesses whose region lies in the assembler-probed PE region envelope; the bank is one of ten constructors.",
       "evidence": "Region bounds are listed in proofs_lean/evidence/isa-bounds/reference.json; Bank constructors are mirrored from the issue checker.",
@@ -390,15 +390,15 @@
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
-      "sha256": "05fbb1e55514b10339473657b0d3e426d9f38c70ac6018d10236b64d5a826b12",
+      "sha256": "9d2bcad94e35a67b011b8d9c315678297575b191fb38dd1d84899a3fc6e746c4",
       "theorem": "ProofsLean.MNCore.Issue.ParsedOperand.inFiniteEnvelope_finite",
-      "scope": "Finite carrier for all structured PE operand constructors under the numeric envelope: region, mask, OMR, matrix, L1BM, L2BM, and DAR bounds.",
-      "evidence": "proofs_lean/evidence/isa-bounds/reference.json: OMR, mask selectors, matrix rows, L1BM and L2BM addresses/selectors, DAR addresses, and PE region bounds.",
+      "scope": "Finite carrier for all structured PE operand constructors under the numeric envelope: region widths 1/2/4, BAR widths 1/2, mask selectors, OMR entries 1..15, matrix and L1BM widths 1/2/4, L2BM, and DAR bounds.",
+      "evidence": "proofs_lean/evidence/isa-bounds/reference.json: OMR and BAR width boundaries, mask selectors, matrix rows, L1BM and L2BM addresses/selectors, DAR addresses, memory widths 1/2/4, and PE region bounds.",
       "missing": "Proof that every assembler-accepted operand parses inside this envelope; bank/opcode-specific alignment and width legality; finite PE lines and complete machine-level legality."
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
-      "sha256": "05fbb1e55514b10339473657b0d3e426d9f38c70ac6018d10236b64d5a826b12",
+      "sha256": "9d2bcad94e35a67b011b8d9c315678297575b191fb38dd1d84899a3fc6e746c4",
       "theorem": "ProofsLean.MNCore.Issue.ParsedExpr.destinationsInFiniteEnvelope_finite",
       "scope": "Finite carrier for Nodup destination lists whose operands lie in the finite PE operand envelope; the length bound follows from the finite operand carrier cardinality.",
       "evidence": "General finite-type argument plus selected assemble3 probes rejecting repeated output categories, including distinct LM0 addresses, OMR entries, and nowrite outputs.",
@@ -406,7 +406,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
-      "sha256": "05fbb1e55514b10339473657b0d3e426d9f38c70ac6018d10236b64d5a826b12",
+      "sha256": "9d2bcad94e35a67b011b8d9c315678297575b191fb38dd1d84899a3fc6e746c4",
       "theorem": "ProofsLean.MNCore.Issue.ParsedL1bSet.inFiniteEnvelope_finite",
       "scope": "Finite carrier for L1B sets with address and immode selectors below 8.",
       "evidence": "proofs_lean/evidence/isa-bounds/reference.json: all 64 set pairs in 0..7 accepted; address 8 and immode 8 rejected.",
@@ -414,7 +414,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
-      "sha256": "05fbb1e55514b10339473657b0d3e426d9f38c70ac6018d10236b64d5a826b12",
+      "sha256": "9d2bcad94e35a67b011b8d9c315678297575b191fb38dd1d84899a3fc6e746c4",
       "theorem": "ProofsLean.MNCore.Issue.mabdiffInFiniteEnvelope_finite",
       "scope": "Finite subtype for signed L1BM MAB differences in [-255, 255].",
       "evidence": "proofs_lean/evidence/isa-bounds/reference.json: explicit signed offsets -255..255 accepted; -256 and +256 rejected. The SDM documents useful values 0..15.",
@@ -422,7 +422,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
-      "sha256": "05fbb1e55514b10339473657b0d3e426d9f38c70ac6018d10236b64d5a826b12",
+      "sha256": "9d2bcad94e35a67b011b8d9c315678297575b191fb38dd1d84899a3fc6e746c4",
       "theorem": "ProofsLean.MNCore.Issue.ParsedRrn.inFiniteEnvelope_finite",
       "scope": "Finite carrier for reduction operation codes and character precision values whose Unicode scalar is below 128.",
       "evidence": "`ParsedRrnOp` has eight constructors; the precision envelope is an explicit finite ASCII-code envelope.",
@@ -430,7 +430,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
-      "sha256": "05fbb1e55514b10339473657b0d3e426d9f38c70ac6018d10236b64d5a826b12",
+      "sha256": "9d2bcad94e35a67b011b8d9c315678297575b191fb38dd1d84899a3fc6e746c4",
       "theorem": "ProofsLean.MNCore.Issue.ParsedL1Mabdiff.inFiniteEnvelope_finite",
       "scope": "Finite tagged carrier for the `distrib` and `gather` MAB-offset variants in the observed signed envelope.",
       "evidence": "Shares the exhaustive signed-offset assemble3 probes recorded in `isa-bounds/reference.json`.",
@@ -438,7 +438,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
-      "sha256": "05fbb1e55514b10339473657b0d3e426d9f38c70ac6018d10236b64d5a826b12",
+      "sha256": "9d2bcad94e35a67b011b8d9c315678297575b191fb38dd1d84899a3fc6e746c4",
       "theorem": "ProofsLean.MNCore.Issue.ParsedL1Selector.inFiniteEnvelope_finite",
       "scope": "Finite tagged carrier for L1BM `mwrite` and `m4write` selectors below 16.",
       "evidence": "proofs_lean/evidence/isa-bounds/reference.json: exhaustive acceptance of l1bmm@0..15 and l1bmm4@0..15, with @16 rejected for both.",
@@ -446,7 +446,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
-      "sha256": "05fbb1e55514b10339473657b0d3e426d9f38c70ac6018d10236b64d5a826b12",
+      "sha256": "9d2bcad94e35a67b011b8d9c315678297575b191fb38dd1d84899a3fc6e746c4",
       "theorem": "ProofsLean.MNCore.Issue.ParsedL1Op.inFiniteEnvelope_finite",
       "scope": "Finite tagged carrier for all nine ParsedL1Op variants under the observed mab selector, RRN precision and MAB difference envelopes.",
       "evidence": "proofs_lean/evidence/isa-bounds/reference.json: l1bmm/l1bmm4 selectors 0..15, signed mabdiff -255..255, plus ParsedRrn's explicit ASCII precision envelope and finite opcode set.",
@@ -454,7 +454,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
-      "sha256": "05fbb1e55514b10339473657b0d3e426d9f38c70ac6018d10236b64d5a826b12",
+      "sha256": "9d2bcad94e35a67b011b8d9c315678297575b191fb38dd1d84899a3fc6e746c4",
       "theorem": "ProofsLean.MNCore.Issue.ParsedL2Op.inFiniteEnvelope_finite",
       "scope": "Finite tagged carrier for all ten ParsedL2Op variants under bounded L1B set, from-L1B selector, and RRN envelopes.",
       "evidence": "proofs_lean/evidence/isa-bounds/reference.json: all 64 L1B set pairs, l2bm@0..7 accepted/@8 rejected, and finite RRN opcode/precision carrier.",
@@ -462,7 +462,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
-      "sha256": "05fbb1e55514b10339473657b0d3e426d9f38c70ac6018d10236b64d5a826b12",
+      "sha256": "9d2bcad94e35a67b011b8d9c315678297575b191fb38dd1d84899a3fc6e746c4",
       "theorem": "ProofsLean.MNCore.Issue.ParsedL2FromL1.inFiniteEnvelope_finite",
       "scope": "Finite tagged carrier for `ParsedL2Op.fromL1b` selectors below 8.",
       "evidence": "proofs_lean/evidence/isa-bounds/reference.json: l2bm@0..7 accepted and @8 rejected.",
@@ -470,7 +470,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
-      "sha256": "05fbb1e55514b10339473657b0d3e426d9f38c70ac6018d10236b64d5a826b12",
+      "sha256": "9d2bcad94e35a67b011b8d9c315678297575b191fb38dd1d84899a3fc6e746c4",
       "theorem": "ProofsLean.MNCore.Issue.waitTagInFiniteEnvelope_finite",
       "scope": "Finite carrier for positive wait tags below 256.",
       "evidence": "proofs_lean/evidence/isa-bounds/reference.json: i00 and i100 rejected; i01 and iFF accepted, with exhaustive probes for 1..255.",
@@ -478,7 +478,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
-      "sha256": "05fbb1e55514b10339473657b0d3e426d9f38c70ac6018d10236b64d5a826b12",
+      "sha256": "9d2bcad94e35a67b011b8d9c315678297575b191fb38dd1d84899a3fc6e746c4",
       "theorem": "ProofsLean.MNCore.Issue.optionWaitTagInFiniteEnvelope_finite",
       "scope": "Finite optional wait tags whose present value lies in 1..255.",
       "evidence": "Same assemble3 wait-tag boundaries as waitTagInFiniteEnvelope_finite.",
@@ -486,7 +486,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
-      "sha256": "05fbb1e55514b10339473657b0d3e426d9f38c70ac6018d10236b64d5a826b12",
+      "sha256": "9d2bcad94e35a67b011b8d9c315678297575b191fb38dd1d84899a3fc6e746c4",
       "theorem": "ProofsLean.MNCore.Issue.parsedBfArgInFiniteEnvelope_finite",
       "scope": "Finite optional mantissa-length arguments in the hbfe/hbfn range 6..9.",
       "evidence": "proofs_lean/evidence/isa-bounds/reference.json: hbfe/hbfn values 6..9 accepted and 5, 10, 11 rejected.",
@@ -494,7 +494,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
-      "sha256": "05fbb1e55514b10339473657b0d3e426d9f38c70ac6018d10236b64d5a826b12",
+      "sha256": "9d2bcad94e35a67b011b8d9c315678297575b191fb38dd1d84899a3fc6e746c4",
       "theorem": "ProofsLean.MNCore.Issue.projectLine_expression_count_le_ten",
       "scope": "Legal projected PE rows have at most ten expressions, from ten unique issue groups and projection-assigned distinct IDs.",
       "evidence": "Formal consequence of Issue.groupsUnique and ParsedExpr.issueGroup being total; issue groups are mirrored from viz/core/src/issue.rs.",
@@ -502,7 +502,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
-      "sha256": "05fbb1e55514b10339473657b0d3e426d9f38c70ac6018d10236b64d5a826b12",
+      "sha256": "9d2bcad94e35a67b011b8d9c315678297575b191fb38dd1d84899a3fc6e746c4",
       "theorem": "ProofsLean.MNCore.Issue.ParsedMask.inFiniteEnvelope_finite",
       "scope": "Finite subtype for ParsedMask patterns and entry selectors below 32.",
       "evidence": "proofs_lean/evidence/isa-bounds/reference.json: imr_selector_0, imr_selector_31, imr_selector_32; these are IMR mask selectors, not OMR entries.",
@@ -510,7 +510,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
-      "sha256": "05fbb1e55514b10339473657b0d3e426d9f38c70ac6018d10236b64d5a826b12",
+      "sha256": "9d2bcad94e35a67b011b8d9c315678297575b191fb38dd1d84899a3fc6e746c4",
       "theorem": "ProofsLean.MNCore.Issue.ParsedMaskDirective.inFiniteEnvelope_finite",
       "scope": "Finite carrier for control-state mask directives with width 2 or 4 and selector below 32.",
       "evidence": "proofs_lean/evidence/isa-bounds/reference.json: maskn, maskln, and masklln selectors 31 accepted and 32 rejected; width alternatives follow these directive spellings.",
@@ -518,7 +518,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
-      "sha256": "05fbb1e55514b10339473657b0d3e426d9f38c70ac6018d10236b64d5a826b12",
+      "sha256": "9d2bcad94e35a67b011b8d9c315678297575b191fb38dd1d84899a3fc6e746c4",
       "theorem": "ProofsLean.MNCore.Issue.ParsedLine.updateMaskState_inFiniteEnvelope",
       "scope": "Mask control-state updates preserve the finite directive envelope; non-directive lines preserve the previous bounded state.",
       "evidence": "Lean case analysis over ParsedLine.updateMaskState and the directive envelope; accepted width and selector bounds are recorded in isa-bounds/reference.json.",
@@ -542,15 +542,15 @@
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
-      "sha256": "05fbb1e55514b10339473657b0d3e426d9f38c70ac6018d10236b64d5a826b12",
+      "sha256": "9d2bcad94e35a67b011b8d9c315678297575b191fb38dd1d84899a3fc6e746c4",
       "theorem": "ProofsLean.MNCore.Issue.omrEntryInFiniteEnvelope_finite",
-      "scope": "Finite subtype for OMR entry values below 16, including invalid zero as a generous envelope.",
+      "scope": "Finite subtype for assembler-supported OMR entry values 1 through 15; zero is excluded.",
       "evidence": "proofs_lean/evidence/isa-bounds/reference.json: omr_0, omr_1, omr_15, omr_16.",
-      "missing": "Proof that all assembler-accepted OMR operands parse into this subtype, plus other operand fields and whole-line finiteness."
+      "missing": "Proof that all assembler-accepted OMR operands parse into this subtype, plus the other operand fields and whole-line finiteness."
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
-      "sha256": "05fbb1e55514b10339473657b0d3e426d9f38c70ac6018d10236b64d5a826b12",
+      "sha256": "9d2bcad94e35a67b011b8d9c315678297575b191fb38dd1d84899a3fc6e746c4",
       "theorem": "ProofsLean.MNCore.Issue.natBelow_finite",
       "scope": "Every subtype of Nat below an arbitrary bound is finite, by injection into Fin bound.",
       "evidence": "General Lean encoding argument; per-field numeric bounds remain supported by their individual assembler probes.",
@@ -558,7 +558,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
-      "sha256": "05fbb1e55514b10339473657b0d3e426d9f38c70ac6018d10236b64d5a826b12",
+      "sha256": "9d2bcad94e35a67b011b8d9c315678297575b191fb38dd1d84899a3fc6e746c4",
       "theorem": "ProofsLean.MNCore.Issue.optionNatBelow_finite",
       "scope": "Optional Nat values whose present payloads are below an arbitrary bound form a finite subtype.",
       "evidence": "General Lean encoding argument; optional operand-field bounds are recorded in the ISA boundary evidence.",
@@ -692,7 +692,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/Issue.lean",
-      "sha256": "3eca91fabfc705c0eb4783400b2cddb24a98440cfd72f721d3f236e389da62e4",
+      "sha256": "1af97348c63ee0fa24c63a72bf1d8f87b6d560bf48aae2207d0965f996e9a7c6",
       "implemented": "Full structural PE Op/Operand payload mirror, issue projection, abstract PE-line rules, and a partial parsed-op to integer-ALU bridge for supported L/I/S integer operations and packbit",
       "scope": "The Rust enum inventory is checked against Lean constructors. A separate partial executor covers supported integer ALU/zero/immediate expressions with direct PE-memory destinations, masks/flush and ordered multiple destinations; this is not full ISA semantics",
       "source_basis": [

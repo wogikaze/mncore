@@ -31,7 +31,8 @@ single-word PE memory capacity in the checked assemble3 probes (LM0/LM1: 4096;
 GRF0/GRF1: 512). Width-specific alignment and bank-specific legality remain
 separate. See `evidence/isa-bounds/reference.json`. -/
 def Region.inFiniteEnvelope (r : Region) : Prop :=
-  r.width < 5 ∧ r.address0 < 4096 ∧ r.address1 < 4096 ∧
+  (r.width = 1 ∨ r.width = 2 ∨ r.width = 4) ∧
+  r.address0 < 4096 ∧ r.address1 < 4096 ∧
   r.address2 < 4096 ∧ r.address3 < 4096 ∧
   ∀ n, r.madpe = some n → n < 4
 

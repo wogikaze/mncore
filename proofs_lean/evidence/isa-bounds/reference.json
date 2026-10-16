@@ -25,7 +25,7 @@
     },
     {
       "path": "proofs_lean/scripts/check_isa_parser_bounds.py",
-      "sha256": "ca20e487ff46649a4af1372f10c88470365ba13ba2dedffc9ed7da8c4ed4573a"
+      "sha256": "5b24ceb1894e7426b35241b9d36ce03a3ee2b4d2af5f6a59b55b343a726bffa7"
     }
   ],
   "observations": [
@@ -890,6 +890,14 @@
       "diagnostic": "MAB PE number must be less than  4.",
       "matches_expected": true,
       "returncode": -6
+    },
+    {
+      "case": "mv_size_0",
+      "source": "mvp/n0 $d0 $lc0@.0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
     },
     {
       "case": "mv_size_1",

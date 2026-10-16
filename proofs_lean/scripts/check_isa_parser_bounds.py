@@ -142,6 +142,7 @@ CASES = {
     "madpe_2": ("lpassa $m0j2 $n0\n", True, 1),
     "madpe_3": ("lpassa $m0j3 $n0\n", True, 1),
     "madpe_4": ("lpassa $m0j4 $n0\n", False, None),
+    "mv_size_0": ("mvp/n0 $d0 $lc0@.0\n", True, 1),
     "mv_size_1": ("mvp/n1 $d0 $lc0@.0\n", False, None),
     "mv_size_64": ("mvp/n64 $d0 $lc0@.0\n", True, 1),
     "mv_size_32704": ("mvp/n32704 $d0 $lc0@.0\n", True, 1),

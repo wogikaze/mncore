@@ -350,7 +350,7 @@ def isa_bounds_experiment() -> dict:
             raise ValueError(f"stale ISA boundary experiment: {item['path']}")
     if not all(row["matches_expected"] for row in record["observations"]):
         raise ValueError("ISA boundary experiment contains an unexpected assembler result")
-    if len(record["observations"]) != 1132:
+    if len(record["observations"]) != 1133:
         raise ValueError("ISA boundary experiment case count changed")
     return {
         "source": reference.relative_to(REPO).as_posix(),
@@ -610,7 +610,7 @@ def coverage_catalog() -> dict:
             "source": "proofs_lean/ProofsLean/FiniteRegion.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteRegion.lean"),
             "theorem": "ProofsLean.MNCore.Issue.Region.inFiniteEnvelope_finite",
-            "scope": "Finite subtype for the PE region envelope documented by assemble3 boundary probes: width < 5, four addresses < 4096, and madpe < 4.",
+            "scope": "Finite subtype for the PE region envelope documented by assemble3 boundary probes: width in {1, 2, 4}, four addresses < 4096, and madpe < 4.",
             "evidence": "proofs_lean/evidence/isa-bounds/reference.json: region_address_cycle0_max through region_address_cycle3_overflow, madpe_3/madpe_4, and LM0/LM1/GRF capacity findings.",
             "missing": "A universal assembler soundness theorem from parsed legal operands to this envelope, bank-specific alignment, all other operand fields, bounded line lists, and machine-level coverage.",
         }, {
@@ -624,8 +624,8 @@ def coverage_catalog() -> dict:
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
             "theorem": "ProofsLean.MNCore.Issue.InstructionLine.inFiniteEnvelope_finite",
-            "scope": "Finite carrier for PE rows of at most ten normalized expressions, nop rows with count below the given bound and bounded wait tags, and normalized MV transfers.",
-            "evidence": "Composes the proved finite carriers for normalized expressions, bounded expression lists, optional wait tags, and normalized MV operands.",
+            "scope": "Finite carrier for PE rows of at most ten normalized expressions, nop rows with count below the given bound and bounded wait tags, and normalized MV transfers whose size is zero or a multiple of 64 through 32704.",
+            "evidence": "Composes the proved finite carriers for normalized expressions, bounded expression lists, optional wait tags, and MV sizes; the size envelope is checked against the recorded assemble3 cases 0, 1, 64, 32704, and 32768.",
             "missing": "No proof yet shows that every legal fixed-cost line satisfies these expression payload envelopes, that the nop bound follows from cost, or that all legal line forms embed in this subtype.",
         }, {
             "source": "proofs_lean/ProofsLean/FiniteInstructionLines.lean",
@@ -659,8 +659,8 @@ def coverage_catalog() -> dict:
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
             "theorem": "ProofsLean.MNCore.Issue.ParsedOperand.inFiniteEnvelope_finite",
-            "scope": "Finite carrier for all structured PE operand constructors under the numeric envelope: region, mask, OMR, matrix, L1BM, L2BM, and DAR bounds.",
-            "evidence": "proofs_lean/evidence/isa-bounds/reference.json: OMR, mask selectors, matrix rows, L1BM and L2BM addresses/selectors, DAR addresses, and PE region bounds.",
+            "scope": "Finite carrier for all structured PE operand constructors under the numeric envelope: region widths 1/2/4, BAR widths 1/2, mask selectors, OMR entries 1..15, matrix and L1BM widths 1/2/4, L2BM, and DAR bounds.",
+            "evidence": "proofs_lean/evidence/isa-bounds/reference.json: OMR and BAR width boundaries, mask selectors, matrix rows, L1BM and L2BM addresses/selectors, DAR addresses, memory widths 1/2/4, and PE region bounds.",
             "missing": "Proof that every assembler-accepted operand parses inside this envelope; bank/opcode-specific alignment and width legality; finite PE lines and complete machine-level legality.",
         }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
@@ -792,9 +792,9 @@ def coverage_catalog() -> dict:
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
             "theorem": "ProofsLean.MNCore.Issue.omrEntryInFiniteEnvelope_finite",
-            "scope": "Finite subtype for OMR entry values below 16, including invalid zero as a generous envelope.",
+            "scope": "Finite subtype for assembler-supported OMR entry values 1 through 15; zero is excluded.",
             "evidence": "proofs_lean/evidence/isa-bounds/reference.json: omr_0, omr_1, omr_15, omr_16.",
-            "missing": "Proof that all assembler-accepted OMR operands parse into this subtype, plus other operand fields and whole-line finiteness.",
+            "missing": "Proof that all assembler-accepted OMR operands parse into this subtype, plus the other operand fields and whole-line finiteness.",
         }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),

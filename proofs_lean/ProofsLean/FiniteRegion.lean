@@ -19,7 +19,11 @@ def Region.finiteCode (r : {r : Region // r.inFiniteEnvelope}) : RegionFiniteCod
   let h := r.2
   let r := r.1
   rcases h with ⟨hw, h0, h1, h2, h3, hm⟩
-  exact Prod.mk ⟨r.width, hw⟩
+  have widthBound : r.width < 5 := by
+    have hw' : r.width = 1 ∨ r.width = 2 ∨ r.width = 4 := by
+      simpa [Region.inFiniteEnvelope] using hw
+    rcases hw' with one | two | four <;> omega
+  exact Prod.mk ⟨r.width, widthBound⟩
     (Prod.mk ⟨r.address0, h0⟩
       (Prod.mk ⟨r.address1, h1⟩
         (Prod.mk ⟨r.address2, h2⟩
@@ -53,8 +57,9 @@ theorem Region.finiteCode_injective : Function.Injective Region.finiteCode := by
       cases hm'
       rfl
 
-/-- Finite carrier for regions whose width, four cycle addresses, and madpe
-fall within the PE envelope recorded by the assemble3 boundary probes. This
+/-- Finite carrier for regions whose widths are one, two, or four words and
+whose four cycle addresses and madpe fall within the PE envelope recorded by
+the parser grammar and assemble3 boundary probes. This
 does not establish bank-specific legality, alignment, parser correspondence,
 or line-level boundedness. -/
 theorem Region.inFiniteEnvelope_finite :
