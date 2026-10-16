@@ -204,3 +204,4 @@ run_cmd do
 #print axioms ProofsLean.MNCore.PEMemory.parsedSingleMatrixStore_other_write_preserves_selected_word
 #print axioms ProofsLean.MNCore.PEMemory.parsedSingleMatrixStore_four_rows_readback
 #print axioms ProofsLean.MNCore.PEMemory.parsedSingleMatrixWriteFourCycle_readback_selected_word
+#print axioms ProofsLean.MNCore.PEMemory.parsedGMatrixWriteFourCycle_readback_selected_word

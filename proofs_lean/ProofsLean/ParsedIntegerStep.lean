@@ -2082,6 +2082,34 @@ theorem parsedSingleMatrixWriteFourCycle_readback_selected_word
       (accesses 0 0).sideY (accesses 0 0).row
       (fun writtenCycle => singleMatrixWriteValues (buses writtenCycle)) cycle column
 
+/-- G precision has the same raw 32-bit physical write and selected-word
+readback semantics as F, provided each PE's direct source lowering and read
+succeed. The opcode premise pins this result to the block-float ISA operation. -/
+theorem parsedGMatrixWriteFourCycle_readback_selected_word
+    (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (groupContext : ParsedPEGroupContext) (expression : ParsedExpr)
+    (isGWrite : expression.op = .matrixWrite .g)
+    (oldStore : ParsedMatrixReadStore)
+    (accesses : Fin 4 → Fin 4 → ParsedSingleMatrixWriteAccesses)
+    (buses : Fin 4 → Fin 4 → IntegerALU.Bus)
+    (lowered : ∀ cycle pe, ParsedExpr.toDirectSingleMatrixWriteAccesses? expression
+      (groupContext.at pe cycle) = some (accesses cycle pe))
+    (read : ∀ cycle pe, ParsedIntegerInput.readWithForwarding files slots cycle
+      (accesses cycle pe).source = .ok (buses cycle pe))
+    (cycle : Fin 4) (column : Fin 8) :
+    ∃ newStore, parsedSingleMatrixWriteFourCycle files slots groupContext expression oldStore =
+        .ok newStore ∧
+      singleMatrixReadSelectedWord
+        (newStore groupContext.mab (accesses 0 0).sideY)
+        (singleMatrixWriteRowAt (accesses 0 0).row cycle) column =
+          singleMatrixWriteValues (buses cycle) column := by
+  cases expression with
+  | mk op sources destinations flush text =>
+    cases isGWrite
+    exact parsedSingleMatrixWriteFourCycle_readback_selected_word files slots groupContext
+      { op := .matrixWrite .g, sources := sources, destinations := destinations,
+        flush := flush, text := text } oldStore accesses buses lowered read cycle column
+
 def halfMatrixReadColumn (base : Fin 16) (cycle : Fin 4) : Fin 16 :=
   ⟨(base.val + 2 * cycle.val) % 16, Nat.mod_lt _ (by decide)⟩
 
