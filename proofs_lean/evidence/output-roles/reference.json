@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "experiment": "assemble3 output-role and duplicate-destination validation",
+  "scope": "Focused zero-op probes for T, OMR, nowrite, and fixed operands; not an exhaustive per-opcode destination grammar.",
+  "tool_hashes": [
+    {
+      "path": "judge/judge-py/mncore2_emuenv/assemble3",
+      "sha256": "5baabcd47a137fbc4c8ec11fd02e23cb79818bbded9d0cb4c02291aaf738b955"
+    },
+    {
+      "path": "proofs_lean/scripts/check_output_roles_reference.py",
+      "sha256": "b0002c01ba8de0e32f7801180fd8f5c6a4f26524964f41e6bd5e7fe19abe92e4"
+    }
+  ],
+  "observations": [
+    {
+      "case": "t_single_output",
+      "source": "zero $t",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
+    },
+    {
+      "case": "t_duplicate_output",
+      "source": "zero $t $t",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "T register used twice as output."
+    },
+    {
+      "case": "omr_single_output",
+      "source": "zero $omr1",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
+    },
+    {
+      "case": "nowrite_single_output",
+      "source": "zero $nowrite",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
+    },
+    {
+      "case": "nowrite_duplicate_output",
+      "source": "zero $nowrite $nowrite",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "nowrite used twice as output"
+    },
+    {
+      "case": "peid_output",
+      "source": "zero $peid",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "Invalid location as an output."
+    },
+    {
+      "case": "l2bid_output",
+      "source": "zero $l2bid",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "Invalid location as an output."
+    },
+    {
+      "case": "mabid_output",
+      "source": "zero $mabid",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "Invalid location as an output."
+    }
+  ],
+  "limitations": [
+    "This records assembler behavior; it does not prove correspondence with the Lean issue checker.",
+    "The Lean finite destination carrier still needs a proof that accepted operands meet its list-shape conditions."
+  ]
+}

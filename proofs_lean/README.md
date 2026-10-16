@@ -209,6 +209,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
 - `ParsedExpr.inFiniteEnvelope`から正規化式のenvelopeへの写像を証明した。opcode固有source arityから
   source長3以下を導ける一方、opcode・operand・flushの数値範囲とdestinationの重複なしを、実parser出力に
   対して証明することは引き続きparser/assembler対応の未解決義務である。
+- `evidence/output-roles/reference.json`にassemble3の8つの出力role probeを記録した。T/OMR/nowriteの
+  単独出力と、T/nowriteの重複、fixed operandの出力可否を照合している。これはdestination list全体の
+  上限やLean issue checkerとの対応証明ではなく、finite envelopeの`Nodup`前提は引き続き未証明である。
 - `ParsedExpr.parserSourceArityValid`を追加し、Rust `parse_expr` の通常経路を使うALU/MAU/matrix命令は
   source数がopcodeの固定入力数に一致すること、zero-input/block-memory経路はparser上限以下であることを
   構文述語に反映した。parser上限が3以下であることを証明し、finite envelopeにもこの形状条件を含めた。

@@ -1107,9 +1107,10 @@ theorem ParsedExpr.sourcesInFiniteEnvelope_finite :
   ParsedOperand.listInFiniteEnvelope_finite 3
 
 /-- Destination lists whose operands lie in the finite operand envelope and
-contain no duplicate parsed operand. The no-duplicate condition follows from
-the assembler's output-uniqueness rule; it yields a finite list bound from the
-finite operand carrier without assuming a fixed per-opcode destination count. -/
+contain no duplicate parsed operand. This is a finite-carrier condition, not
+yet a consequence proved from `LegalParsedLine`: operand-role validation and
+assembler acceptance must justify it before this envelope can cover all legal
+source lines. -/
 def ParsedExpr.destinationsInFiniteEnvelope (expression : ParsedExpr) : Prop :=
   expression.destinations.Nodup ∧
     ∀ operand ∈ expression.destinations, operand.inFiniteEnvelope
