@@ -51,16 +51,27 @@ program. Lines that can never legally issue place no obligation on enumeration. 
 def LegalLinesCovered (m : Machine) (alphabet : List m.Line) : Prop :=
   ∀ p, m.legal p → ∀ line ∈ p, line ∈ alphabet
 
+/-- A bound-specific alphabet only needs to cover lines of legal programs
+whose total score is below that bound. This matters for unbounded-cost lines
+such as `nop/n`: a single finite alphabet cannot cover every possible count. -/
+def LegalLinesCoveredBelow (m : Machine) (alphabet : List m.Line) (bound : Nat) : Prop :=
+  ∀ p, m.legal p → score m p < bound → ∀ line ∈ p, line ∈ alphabet
+
+theorem legalLinesCoveredBelow_of_covered {m : Machine} {alphabet : List m.Line}
+    {bound : Nat} (covers : LegalLinesCovered m alphabet) :
+    LegalLinesCoveredBelow m alphabet bound :=
+  fun p legal _ => covers p legal
+
 theorem shortPrograms_complete {m : Machine} {alphabet : List m.Line} {bound : Nat}
-    (covers : LegalLinesCovered m alphabet) (p : Program m) (legal : m.legal p)
+    (covers : LegalLinesCoveredBelow m alphabet bound) (p : Program m) (legal : m.legal p)
     (short : score m p < bound) : p ∈ shortPrograms m alphabet bound := by
-  have member := programsUpTo_complete alphabet (bound - 1) p (covers p legal) (by
+  have member := programsUpTo_complete alphabet (bound - 1) p (covers p legal short) (by
     have length := length_le_score m p
     omega)
   simp [shortPrograms, List.mem_filter, member, short]
 
 def enumerationCertificate (m : Machine) (spec : Problem m) (alphabet : List m.Line)
-    (bound : Nat) (covers : LegalLinesCovered m alphabet)
+    (bound : Nat) (covers : LegalLinesCoveredBelow m alphabet bound)
     (rejected : ∀ p ∈ shortPrograms m alphabet bound, ¬ Correct m spec p) :
     BoundCertificate m spec bound where
   candidates := shortPrograms m alphabet bound
@@ -98,7 +109,7 @@ noncomputable def fintypeCertificate (m : Machine) [Fintype m.Line]
     (rejected : ∀ p ∈ shortPrograms m Finset.univ.toList bound,
       ¬ Correct m spec p) :
     BoundCertificate m spec bound :=
-  enumerationCertificate m spec Finset.univ.toList bound legalLinesCovered_univ
-    rejected
+  enumerationCertificate m spec Finset.univ.toList bound
+    (legalLinesCoveredBelow_of_covered legalLinesCovered_univ) rejected
 
 end ProofsLean

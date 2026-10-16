@@ -69,7 +69,8 @@ theorem rejects_all_short :
   · exact refutes_not_correct fill_refuted
 
 def lowerCertificate : BoundCertificate machine problem 2 :=
-  enumerationCertificate machine problem alphabet 2 covers rejects_all_short
+  enumerationCertificate machine problem alphabet 2
+    (legalLinesCoveredBelow_of_covered covers) rejects_all_short
 
 theorem two_lines_correct : Correct machine problem [.flipLeft, .flipRight] := by
   refine ⟨True.intro, ?_⟩
@@ -135,6 +136,9 @@ private theorem nat_lt_three_mem {n : Nat} (h : n < 3) : n ∈ [0, 1, 2] := by
 theorem covers : LegalLinesCovered machine ([0, 1, 2] : List Nat) := by
   intro p legal line mem
   exact nat_lt_three_mem (legal line mem)
+
+theorem covers_below_two : LegalLinesCoveredBelow machine ([0, 1, 2] : List Nat) 2 :=
+  legalLinesCoveredBelow_of_covered covers
 
 theorem legalLines_finite : (legalLines machine).Finite :=
   legalLines_finite_of_covered covers
