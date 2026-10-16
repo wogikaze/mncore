@@ -69,10 +69,8 @@ CASES = {
     "l2bm_dar_l2b_2": ("l2bmdars $lc1024@.2 $dar0; l2bmdarw\n", False, None),
     "dar_addr_1023": ("l2bmdars $lc1024@.0 $dar1023; l2bmdarw\n", True, 1),
     "dar_addr_1024": ("l2bmdars $lc1024@.0 $dar1024; l2bmdarw\n", False, None),
-    "mabdiff_minus129": ("l1bmd-129 $lm0 $lb0\n", True, 1),
-    "mabdiff_minus128": ("l1bmd-128 $lm0 $lb0\n", True, 1),
-    "mabdiff_plus127": ("l1bmd127 $lm0 $lb0\n", True, 1),
-    "mabdiff_plus128": ("l1bmd128 $lm0 $lb0\n", True, 1),
+    "mabdiff_minus256": ("l1bmd-256 $lm0 $lb0\n", False, None),
+    "mabdiff_plus256": ("l1bmd+256 $lm0 $lb0\n", False, None),
     "region_address_cycle0_max": ("lpassa $m[4095,0,0,0] $n0\n", True, 1),
     "region_address_cycle1_max": ("lpassa $m[0,4095,0,0] $n0\n", True, 1),
     "region_address_cycle2_max": ("lpassa $m[0,0,4095,0] $n0\n", True, 1),
@@ -137,6 +135,9 @@ for entry in range(8):
 for entry in range(9):
     CASES[f"l2bm_from_l1b_{entry}"] = (
         f"l2bm@{entry} $lb0 $lc0\n", entry < 8, 1 if entry < 8 else None)
+for offset in range(-255, 256):
+    opcode = f"l1bmd{offset:+d}" if offset else "l1bmd+0"
+    CASES[f"mabdiff_{offset:+d}"] = (f"{opcode} $lm0 $lb0\n", True, 1)
 for width, expected in [("mb", True), ("lmb", True), ("llmb", False)]:
     CASES[f"bar_width_{width}"] = (
         f"lpassa $n0 ${width}\n", expected, 1 if expected else None)
@@ -196,7 +197,7 @@ def main() -> None:
             "Matrix rows 0..15 were checked using gmread. The tested matrix operand widths are instruction-specific: gmread/gmwrite accept width 2 and reject width 4, while gmmul accepts widths 2 and 4.",
             "$lb8188 is accepted while $lb8192 fails the 13-bit encoding field; the L1BM address must also be 4-word aligned. l1bmm@15 is accepted and @16 is rejected.",
             "DAR address 1023 is accepted and 1024 is rejected; `$lc...@.<l2b>` accepts selectors 0 and 1 and rejects 2.",
-            "l1bmd-129, l1bmd-128, l1bmd127, and l1bmd128 are all accepted by assemble3; this is parser/encoding acceptance evidence, not a claim that these offsets are semantically useful.",
+            "For l1bmd, every explicit signed offset from -255 through +255 was accepted, while -256 and +256 were rejected. The manual documents useful offsets 0..15. The Rust visualizer's i8 parser is narrower and cannot parse accepted values 128..255; Rust is not used as range evidence. These assembler probes still do not prove global parser completeness.",
             "The assembler accepts d set, d get and r input records, but the challenge judge's default solution sanitizer retains only j/m instruction rows; these records are filtered before execution. The scored program therefore excludes debug and DRAM initialization records.",
             "Judge flags can preserve d get/d set, but the normal challenge invocation does not set them; the d-set invalidation applies only when such a record is retained."
         ],

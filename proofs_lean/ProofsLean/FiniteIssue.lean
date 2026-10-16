@@ -16,6 +16,48 @@ theorem natBelow_finite (bound : Nat) : Finite {value : Nat // value < bound} :=
   apply Subtype.ext
   exact congrArg Fin.val equal
 
+/-- The selected assemble3 boundary probes accept all signed `mabdiff` values
+from -255 through 255 and reject -256 and 256. This is a finite carrier for
+that observed envelope; parser correspondence remains a separate obligation. -/
+def mabdiffInFiniteEnvelope (mabdiff : Int) : Prop :=
+  -256 ≤ mabdiff ∧ mabdiff < 256
+
+private def mabdiffFiniteCode
+    (mabdiff : {mabdiff : Int // mabdiffInFiniteEnvelope mabdiff}) : Fin 512 := by
+  refine ⟨(mabdiff.1 + 256).toNat, ?_⟩
+  have hbound := mabdiff.2
+  unfold mabdiffInFiniteEnvelope at hbound
+  have hnonneg : 0 ≤ mabdiff.1 + 256 := by omega
+  have hlt : mabdiff.1 + 256 < 512 := by omega
+  have hcast : ((mabdiff.1 + 256).toNat : Int) = mabdiff.1 + 256 :=
+    Int.toNat_of_nonneg hnonneg
+  have hcastLt : ((mabdiff.1 + 256).toNat : Int) < 512 := by
+    rw [hcast]
+    exact hlt
+  exact_mod_cast hcastLt
+
+private theorem mabdiffFiniteCode_injective :
+    Function.Injective mabdiffFiniteCode := by
+  intro a b equal
+  apply Subtype.ext
+  have valuesEqual := congrArg Fin.val equal
+  change (a.1 + 256).toNat = (b.1 + 256).toNat at valuesEqual
+  have abound := a.2
+  have bbound := b.2
+  unfold mabdiffInFiniteEnvelope at abound bbound
+  have aNonneg : 0 ≤ a.1 + 256 := by omega
+  have bNonneg : 0 ≤ b.1 + 256 := by omega
+  have aCast : ((a.1 + 256).toNat : Int) = a.1 + 256 := Int.toNat_of_nonneg aNonneg
+  have bCast : ((b.1 + 256).toNat : Int) = b.1 + 256 := Int.toNat_of_nonneg bNonneg
+  have intValuesEqual := congrArg (Int.ofNat) valuesEqual
+  change ((a.1 + 256).toNat : Int) = ((b.1 + 256).toNat : Int) at intValuesEqual
+  rw [aCast, bCast] at intValuesEqual
+  omega
+
+theorem mabdiffInFiniteEnvelope_finite :
+    Finite {mabdiff : Int // mabdiffInFiniteEnvelope mabdiff} :=
+  Finite.of_injective mabdiffFiniteCode mabdiffFiniteCode_injective
+
 def optionNatInFiniteEnvelope (bound : Nat) (value : Option Nat) : Prop :=
   ∀ n, value = some n → n < bound
 

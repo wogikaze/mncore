@@ -25,7 +25,7 @@
     },
     {
       "path": "proofs_lean/scripts/check_isa_parser_bounds.py",
-      "sha256": "e3e485e5fe68395f6aff6a4dd5729614a74eed6f491923d0ae385452f3ebbf33"
+      "sha256": "4a8263f5de16419e1cf94aed20e30ef7daaed0b1271f34be37e9d5399c9c97d3"
     }
   ],
   "observations": [
@@ -438,35 +438,19 @@
       "matches_expected": true
     },
     {
-      "case": "mabdiff_minus129",
-      "source": "l1bmd-129 $lm0 $lb0",
-      "accepted": true,
-      "assembler_output_lines": 1,
-      "diagnostic": "",
+      "case": "mabdiff_minus256",
+      "source": "l1bmd-256 $lm0 $lb0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Too large unsigned integer.",
       "matches_expected": true
     },
     {
-      "case": "mabdiff_minus128",
-      "source": "l1bmd-128 $lm0 $lb0",
-      "accepted": true,
-      "assembler_output_lines": 1,
-      "diagnostic": "",
-      "matches_expected": true
-    },
-    {
-      "case": "mabdiff_plus127",
-      "source": "l1bmd127 $lm0 $lb0",
-      "accepted": true,
-      "assembler_output_lines": 1,
-      "diagnostic": "",
-      "matches_expected": true
-    },
-    {
-      "case": "mabdiff_plus128",
-      "source": "l1bmd128 $lm0 $lb0",
-      "accepted": true,
-      "assembler_output_lines": 1,
-      "diagnostic": "",
+      "case": "mabdiff_plus256",
+      "source": "l1bmd+256 $lm0 $lb0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Too large unsigned integer.",
       "matches_expected": true
     },
     {
@@ -4222,6 +4206,4094 @@
       "matches_expected": true
     },
     {
+      "case": "mabdiff_-255",
+      "source": "l1bmd-255 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-254",
+      "source": "l1bmd-254 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-253",
+      "source": "l1bmd-253 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-252",
+      "source": "l1bmd-252 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-251",
+      "source": "l1bmd-251 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-250",
+      "source": "l1bmd-250 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-249",
+      "source": "l1bmd-249 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-248",
+      "source": "l1bmd-248 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-247",
+      "source": "l1bmd-247 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-246",
+      "source": "l1bmd-246 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-245",
+      "source": "l1bmd-245 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-244",
+      "source": "l1bmd-244 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-243",
+      "source": "l1bmd-243 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-242",
+      "source": "l1bmd-242 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-241",
+      "source": "l1bmd-241 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-240",
+      "source": "l1bmd-240 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-239",
+      "source": "l1bmd-239 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-238",
+      "source": "l1bmd-238 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-237",
+      "source": "l1bmd-237 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-236",
+      "source": "l1bmd-236 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-235",
+      "source": "l1bmd-235 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-234",
+      "source": "l1bmd-234 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-233",
+      "source": "l1bmd-233 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-232",
+      "source": "l1bmd-232 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-231",
+      "source": "l1bmd-231 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-230",
+      "source": "l1bmd-230 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-229",
+      "source": "l1bmd-229 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-228",
+      "source": "l1bmd-228 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-227",
+      "source": "l1bmd-227 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-226",
+      "source": "l1bmd-226 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-225",
+      "source": "l1bmd-225 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-224",
+      "source": "l1bmd-224 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-223",
+      "source": "l1bmd-223 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-222",
+      "source": "l1bmd-222 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-221",
+      "source": "l1bmd-221 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-220",
+      "source": "l1bmd-220 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-219",
+      "source": "l1bmd-219 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-218",
+      "source": "l1bmd-218 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-217",
+      "source": "l1bmd-217 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-216",
+      "source": "l1bmd-216 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-215",
+      "source": "l1bmd-215 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-214",
+      "source": "l1bmd-214 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-213",
+      "source": "l1bmd-213 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-212",
+      "source": "l1bmd-212 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-211",
+      "source": "l1bmd-211 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-210",
+      "source": "l1bmd-210 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-209",
+      "source": "l1bmd-209 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-208",
+      "source": "l1bmd-208 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-207",
+      "source": "l1bmd-207 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-206",
+      "source": "l1bmd-206 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-205",
+      "source": "l1bmd-205 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-204",
+      "source": "l1bmd-204 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-203",
+      "source": "l1bmd-203 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-202",
+      "source": "l1bmd-202 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-201",
+      "source": "l1bmd-201 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-200",
+      "source": "l1bmd-200 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-199",
+      "source": "l1bmd-199 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-198",
+      "source": "l1bmd-198 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-197",
+      "source": "l1bmd-197 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-196",
+      "source": "l1bmd-196 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-195",
+      "source": "l1bmd-195 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-194",
+      "source": "l1bmd-194 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-193",
+      "source": "l1bmd-193 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-192",
+      "source": "l1bmd-192 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-191",
+      "source": "l1bmd-191 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-190",
+      "source": "l1bmd-190 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-189",
+      "source": "l1bmd-189 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-188",
+      "source": "l1bmd-188 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-187",
+      "source": "l1bmd-187 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-186",
+      "source": "l1bmd-186 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-185",
+      "source": "l1bmd-185 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-184",
+      "source": "l1bmd-184 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-183",
+      "source": "l1bmd-183 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-182",
+      "source": "l1bmd-182 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-181",
+      "source": "l1bmd-181 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-180",
+      "source": "l1bmd-180 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-179",
+      "source": "l1bmd-179 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-178",
+      "source": "l1bmd-178 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-177",
+      "source": "l1bmd-177 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-176",
+      "source": "l1bmd-176 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-175",
+      "source": "l1bmd-175 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-174",
+      "source": "l1bmd-174 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-173",
+      "source": "l1bmd-173 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-172",
+      "source": "l1bmd-172 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-171",
+      "source": "l1bmd-171 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-170",
+      "source": "l1bmd-170 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-169",
+      "source": "l1bmd-169 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-168",
+      "source": "l1bmd-168 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-167",
+      "source": "l1bmd-167 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-166",
+      "source": "l1bmd-166 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-165",
+      "source": "l1bmd-165 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-164",
+      "source": "l1bmd-164 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-163",
+      "source": "l1bmd-163 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-162",
+      "source": "l1bmd-162 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-161",
+      "source": "l1bmd-161 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-160",
+      "source": "l1bmd-160 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-159",
+      "source": "l1bmd-159 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-158",
+      "source": "l1bmd-158 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-157",
+      "source": "l1bmd-157 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-156",
+      "source": "l1bmd-156 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-155",
+      "source": "l1bmd-155 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-154",
+      "source": "l1bmd-154 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-153",
+      "source": "l1bmd-153 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-152",
+      "source": "l1bmd-152 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-151",
+      "source": "l1bmd-151 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-150",
+      "source": "l1bmd-150 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-149",
+      "source": "l1bmd-149 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-148",
+      "source": "l1bmd-148 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-147",
+      "source": "l1bmd-147 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-146",
+      "source": "l1bmd-146 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-145",
+      "source": "l1bmd-145 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-144",
+      "source": "l1bmd-144 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-143",
+      "source": "l1bmd-143 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-142",
+      "source": "l1bmd-142 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-141",
+      "source": "l1bmd-141 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-140",
+      "source": "l1bmd-140 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-139",
+      "source": "l1bmd-139 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-138",
+      "source": "l1bmd-138 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-137",
+      "source": "l1bmd-137 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-136",
+      "source": "l1bmd-136 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-135",
+      "source": "l1bmd-135 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-134",
+      "source": "l1bmd-134 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-133",
+      "source": "l1bmd-133 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-132",
+      "source": "l1bmd-132 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-131",
+      "source": "l1bmd-131 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-130",
+      "source": "l1bmd-130 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-129",
+      "source": "l1bmd-129 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-128",
+      "source": "l1bmd-128 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-127",
+      "source": "l1bmd-127 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-126",
+      "source": "l1bmd-126 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-125",
+      "source": "l1bmd-125 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-124",
+      "source": "l1bmd-124 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-123",
+      "source": "l1bmd-123 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-122",
+      "source": "l1bmd-122 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-121",
+      "source": "l1bmd-121 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-120",
+      "source": "l1bmd-120 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-119",
+      "source": "l1bmd-119 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-118",
+      "source": "l1bmd-118 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-117",
+      "source": "l1bmd-117 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-116",
+      "source": "l1bmd-116 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-115",
+      "source": "l1bmd-115 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-114",
+      "source": "l1bmd-114 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-113",
+      "source": "l1bmd-113 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-112",
+      "source": "l1bmd-112 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-111",
+      "source": "l1bmd-111 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-110",
+      "source": "l1bmd-110 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-109",
+      "source": "l1bmd-109 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-108",
+      "source": "l1bmd-108 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-107",
+      "source": "l1bmd-107 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-106",
+      "source": "l1bmd-106 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-105",
+      "source": "l1bmd-105 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-104",
+      "source": "l1bmd-104 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-103",
+      "source": "l1bmd-103 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-102",
+      "source": "l1bmd-102 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-101",
+      "source": "l1bmd-101 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-100",
+      "source": "l1bmd-100 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-99",
+      "source": "l1bmd-99 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-98",
+      "source": "l1bmd-98 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-97",
+      "source": "l1bmd-97 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-96",
+      "source": "l1bmd-96 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-95",
+      "source": "l1bmd-95 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-94",
+      "source": "l1bmd-94 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-93",
+      "source": "l1bmd-93 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-92",
+      "source": "l1bmd-92 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-91",
+      "source": "l1bmd-91 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-90",
+      "source": "l1bmd-90 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-89",
+      "source": "l1bmd-89 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-88",
+      "source": "l1bmd-88 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-87",
+      "source": "l1bmd-87 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-86",
+      "source": "l1bmd-86 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-85",
+      "source": "l1bmd-85 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-84",
+      "source": "l1bmd-84 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-83",
+      "source": "l1bmd-83 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-82",
+      "source": "l1bmd-82 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-81",
+      "source": "l1bmd-81 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-80",
+      "source": "l1bmd-80 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-79",
+      "source": "l1bmd-79 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-78",
+      "source": "l1bmd-78 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-77",
+      "source": "l1bmd-77 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-76",
+      "source": "l1bmd-76 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-75",
+      "source": "l1bmd-75 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-74",
+      "source": "l1bmd-74 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-73",
+      "source": "l1bmd-73 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-72",
+      "source": "l1bmd-72 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-71",
+      "source": "l1bmd-71 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-70",
+      "source": "l1bmd-70 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-69",
+      "source": "l1bmd-69 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-68",
+      "source": "l1bmd-68 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-67",
+      "source": "l1bmd-67 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-66",
+      "source": "l1bmd-66 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-65",
+      "source": "l1bmd-65 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-64",
+      "source": "l1bmd-64 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-63",
+      "source": "l1bmd-63 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-62",
+      "source": "l1bmd-62 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-61",
+      "source": "l1bmd-61 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-60",
+      "source": "l1bmd-60 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-59",
+      "source": "l1bmd-59 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-58",
+      "source": "l1bmd-58 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-57",
+      "source": "l1bmd-57 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-56",
+      "source": "l1bmd-56 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-55",
+      "source": "l1bmd-55 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-54",
+      "source": "l1bmd-54 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-53",
+      "source": "l1bmd-53 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-52",
+      "source": "l1bmd-52 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-51",
+      "source": "l1bmd-51 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-50",
+      "source": "l1bmd-50 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-49",
+      "source": "l1bmd-49 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-48",
+      "source": "l1bmd-48 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-47",
+      "source": "l1bmd-47 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-46",
+      "source": "l1bmd-46 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-45",
+      "source": "l1bmd-45 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-44",
+      "source": "l1bmd-44 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-43",
+      "source": "l1bmd-43 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-42",
+      "source": "l1bmd-42 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-41",
+      "source": "l1bmd-41 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-40",
+      "source": "l1bmd-40 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-39",
+      "source": "l1bmd-39 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-38",
+      "source": "l1bmd-38 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-37",
+      "source": "l1bmd-37 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-36",
+      "source": "l1bmd-36 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-35",
+      "source": "l1bmd-35 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-34",
+      "source": "l1bmd-34 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-33",
+      "source": "l1bmd-33 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-32",
+      "source": "l1bmd-32 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-31",
+      "source": "l1bmd-31 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-30",
+      "source": "l1bmd-30 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-29",
+      "source": "l1bmd-29 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-28",
+      "source": "l1bmd-28 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-27",
+      "source": "l1bmd-27 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-26",
+      "source": "l1bmd-26 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-25",
+      "source": "l1bmd-25 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-24",
+      "source": "l1bmd-24 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-23",
+      "source": "l1bmd-23 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-22",
+      "source": "l1bmd-22 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-21",
+      "source": "l1bmd-21 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-20",
+      "source": "l1bmd-20 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-19",
+      "source": "l1bmd-19 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-18",
+      "source": "l1bmd-18 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-17",
+      "source": "l1bmd-17 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-16",
+      "source": "l1bmd-16 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-15",
+      "source": "l1bmd-15 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-14",
+      "source": "l1bmd-14 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-13",
+      "source": "l1bmd-13 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-12",
+      "source": "l1bmd-12 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-11",
+      "source": "l1bmd-11 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-10",
+      "source": "l1bmd-10 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-9",
+      "source": "l1bmd-9 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-8",
+      "source": "l1bmd-8 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-7",
+      "source": "l1bmd-7 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-6",
+      "source": "l1bmd-6 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-5",
+      "source": "l1bmd-5 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-4",
+      "source": "l1bmd-4 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-3",
+      "source": "l1bmd-3 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-2",
+      "source": "l1bmd-2 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_-1",
+      "source": "l1bmd-1 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+0",
+      "source": "l1bmd+0 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+1",
+      "source": "l1bmd+1 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+2",
+      "source": "l1bmd+2 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+3",
+      "source": "l1bmd+3 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+4",
+      "source": "l1bmd+4 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+5",
+      "source": "l1bmd+5 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+6",
+      "source": "l1bmd+6 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+7",
+      "source": "l1bmd+7 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+8",
+      "source": "l1bmd+8 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+9",
+      "source": "l1bmd+9 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+10",
+      "source": "l1bmd+10 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+11",
+      "source": "l1bmd+11 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+12",
+      "source": "l1bmd+12 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+13",
+      "source": "l1bmd+13 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+14",
+      "source": "l1bmd+14 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+15",
+      "source": "l1bmd+15 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+16",
+      "source": "l1bmd+16 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+17",
+      "source": "l1bmd+17 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+18",
+      "source": "l1bmd+18 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+19",
+      "source": "l1bmd+19 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+20",
+      "source": "l1bmd+20 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+21",
+      "source": "l1bmd+21 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+22",
+      "source": "l1bmd+22 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+23",
+      "source": "l1bmd+23 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+24",
+      "source": "l1bmd+24 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+25",
+      "source": "l1bmd+25 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+26",
+      "source": "l1bmd+26 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+27",
+      "source": "l1bmd+27 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+28",
+      "source": "l1bmd+28 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+29",
+      "source": "l1bmd+29 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+30",
+      "source": "l1bmd+30 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+31",
+      "source": "l1bmd+31 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+32",
+      "source": "l1bmd+32 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+33",
+      "source": "l1bmd+33 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+34",
+      "source": "l1bmd+34 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+35",
+      "source": "l1bmd+35 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+36",
+      "source": "l1bmd+36 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+37",
+      "source": "l1bmd+37 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+38",
+      "source": "l1bmd+38 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+39",
+      "source": "l1bmd+39 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+40",
+      "source": "l1bmd+40 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+41",
+      "source": "l1bmd+41 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+42",
+      "source": "l1bmd+42 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+43",
+      "source": "l1bmd+43 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+44",
+      "source": "l1bmd+44 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+45",
+      "source": "l1bmd+45 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+46",
+      "source": "l1bmd+46 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+47",
+      "source": "l1bmd+47 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+48",
+      "source": "l1bmd+48 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+49",
+      "source": "l1bmd+49 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+50",
+      "source": "l1bmd+50 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+51",
+      "source": "l1bmd+51 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+52",
+      "source": "l1bmd+52 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+53",
+      "source": "l1bmd+53 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+54",
+      "source": "l1bmd+54 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+55",
+      "source": "l1bmd+55 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+56",
+      "source": "l1bmd+56 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+57",
+      "source": "l1bmd+57 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+58",
+      "source": "l1bmd+58 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+59",
+      "source": "l1bmd+59 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+60",
+      "source": "l1bmd+60 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+61",
+      "source": "l1bmd+61 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+62",
+      "source": "l1bmd+62 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+63",
+      "source": "l1bmd+63 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+64",
+      "source": "l1bmd+64 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+65",
+      "source": "l1bmd+65 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+66",
+      "source": "l1bmd+66 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+67",
+      "source": "l1bmd+67 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+68",
+      "source": "l1bmd+68 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+69",
+      "source": "l1bmd+69 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+70",
+      "source": "l1bmd+70 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+71",
+      "source": "l1bmd+71 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+72",
+      "source": "l1bmd+72 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+73",
+      "source": "l1bmd+73 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+74",
+      "source": "l1bmd+74 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+75",
+      "source": "l1bmd+75 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+76",
+      "source": "l1bmd+76 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+77",
+      "source": "l1bmd+77 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+78",
+      "source": "l1bmd+78 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+79",
+      "source": "l1bmd+79 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+80",
+      "source": "l1bmd+80 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+81",
+      "source": "l1bmd+81 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+82",
+      "source": "l1bmd+82 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+83",
+      "source": "l1bmd+83 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+84",
+      "source": "l1bmd+84 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+85",
+      "source": "l1bmd+85 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+86",
+      "source": "l1bmd+86 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+87",
+      "source": "l1bmd+87 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+88",
+      "source": "l1bmd+88 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+89",
+      "source": "l1bmd+89 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+90",
+      "source": "l1bmd+90 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+91",
+      "source": "l1bmd+91 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+92",
+      "source": "l1bmd+92 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+93",
+      "source": "l1bmd+93 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+94",
+      "source": "l1bmd+94 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+95",
+      "source": "l1bmd+95 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+96",
+      "source": "l1bmd+96 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+97",
+      "source": "l1bmd+97 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+98",
+      "source": "l1bmd+98 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+99",
+      "source": "l1bmd+99 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+100",
+      "source": "l1bmd+100 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+101",
+      "source": "l1bmd+101 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+102",
+      "source": "l1bmd+102 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+103",
+      "source": "l1bmd+103 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+104",
+      "source": "l1bmd+104 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+105",
+      "source": "l1bmd+105 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+106",
+      "source": "l1bmd+106 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+107",
+      "source": "l1bmd+107 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+108",
+      "source": "l1bmd+108 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+109",
+      "source": "l1bmd+109 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+110",
+      "source": "l1bmd+110 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+111",
+      "source": "l1bmd+111 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+112",
+      "source": "l1bmd+112 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+113",
+      "source": "l1bmd+113 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+114",
+      "source": "l1bmd+114 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+115",
+      "source": "l1bmd+115 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+116",
+      "source": "l1bmd+116 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+117",
+      "source": "l1bmd+117 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+118",
+      "source": "l1bmd+118 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+119",
+      "source": "l1bmd+119 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+120",
+      "source": "l1bmd+120 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+121",
+      "source": "l1bmd+121 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+122",
+      "source": "l1bmd+122 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+123",
+      "source": "l1bmd+123 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+124",
+      "source": "l1bmd+124 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+125",
+      "source": "l1bmd+125 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+126",
+      "source": "l1bmd+126 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+127",
+      "source": "l1bmd+127 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+128",
+      "source": "l1bmd+128 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+129",
+      "source": "l1bmd+129 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+130",
+      "source": "l1bmd+130 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+131",
+      "source": "l1bmd+131 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+132",
+      "source": "l1bmd+132 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+133",
+      "source": "l1bmd+133 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+134",
+      "source": "l1bmd+134 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+135",
+      "source": "l1bmd+135 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+136",
+      "source": "l1bmd+136 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+137",
+      "source": "l1bmd+137 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+138",
+      "source": "l1bmd+138 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+139",
+      "source": "l1bmd+139 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+140",
+      "source": "l1bmd+140 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+141",
+      "source": "l1bmd+141 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+142",
+      "source": "l1bmd+142 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+143",
+      "source": "l1bmd+143 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+144",
+      "source": "l1bmd+144 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+145",
+      "source": "l1bmd+145 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+146",
+      "source": "l1bmd+146 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+147",
+      "source": "l1bmd+147 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+148",
+      "source": "l1bmd+148 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+149",
+      "source": "l1bmd+149 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+150",
+      "source": "l1bmd+150 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+151",
+      "source": "l1bmd+151 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+152",
+      "source": "l1bmd+152 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+153",
+      "source": "l1bmd+153 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+154",
+      "source": "l1bmd+154 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+155",
+      "source": "l1bmd+155 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+156",
+      "source": "l1bmd+156 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+157",
+      "source": "l1bmd+157 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+158",
+      "source": "l1bmd+158 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+159",
+      "source": "l1bmd+159 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+160",
+      "source": "l1bmd+160 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+161",
+      "source": "l1bmd+161 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+162",
+      "source": "l1bmd+162 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+163",
+      "source": "l1bmd+163 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+164",
+      "source": "l1bmd+164 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+165",
+      "source": "l1bmd+165 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+166",
+      "source": "l1bmd+166 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+167",
+      "source": "l1bmd+167 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+168",
+      "source": "l1bmd+168 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+169",
+      "source": "l1bmd+169 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+170",
+      "source": "l1bmd+170 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+171",
+      "source": "l1bmd+171 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+172",
+      "source": "l1bmd+172 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+173",
+      "source": "l1bmd+173 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+174",
+      "source": "l1bmd+174 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+175",
+      "source": "l1bmd+175 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+176",
+      "source": "l1bmd+176 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+177",
+      "source": "l1bmd+177 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+178",
+      "source": "l1bmd+178 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+179",
+      "source": "l1bmd+179 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+180",
+      "source": "l1bmd+180 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+181",
+      "source": "l1bmd+181 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+182",
+      "source": "l1bmd+182 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+183",
+      "source": "l1bmd+183 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+184",
+      "source": "l1bmd+184 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+185",
+      "source": "l1bmd+185 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+186",
+      "source": "l1bmd+186 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+187",
+      "source": "l1bmd+187 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+188",
+      "source": "l1bmd+188 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+189",
+      "source": "l1bmd+189 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+190",
+      "source": "l1bmd+190 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+191",
+      "source": "l1bmd+191 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+192",
+      "source": "l1bmd+192 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+193",
+      "source": "l1bmd+193 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+194",
+      "source": "l1bmd+194 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+195",
+      "source": "l1bmd+195 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+196",
+      "source": "l1bmd+196 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+197",
+      "source": "l1bmd+197 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+198",
+      "source": "l1bmd+198 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+199",
+      "source": "l1bmd+199 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+200",
+      "source": "l1bmd+200 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+201",
+      "source": "l1bmd+201 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+202",
+      "source": "l1bmd+202 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+203",
+      "source": "l1bmd+203 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+204",
+      "source": "l1bmd+204 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+205",
+      "source": "l1bmd+205 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+206",
+      "source": "l1bmd+206 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+207",
+      "source": "l1bmd+207 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+208",
+      "source": "l1bmd+208 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+209",
+      "source": "l1bmd+209 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+210",
+      "source": "l1bmd+210 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+211",
+      "source": "l1bmd+211 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+212",
+      "source": "l1bmd+212 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+213",
+      "source": "l1bmd+213 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+214",
+      "source": "l1bmd+214 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+215",
+      "source": "l1bmd+215 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+216",
+      "source": "l1bmd+216 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+217",
+      "source": "l1bmd+217 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+218",
+      "source": "l1bmd+218 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+219",
+      "source": "l1bmd+219 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+220",
+      "source": "l1bmd+220 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+221",
+      "source": "l1bmd+221 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+222",
+      "source": "l1bmd+222 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+223",
+      "source": "l1bmd+223 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+224",
+      "source": "l1bmd+224 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+225",
+      "source": "l1bmd+225 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+226",
+      "source": "l1bmd+226 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+227",
+      "source": "l1bmd+227 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+228",
+      "source": "l1bmd+228 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+229",
+      "source": "l1bmd+229 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+230",
+      "source": "l1bmd+230 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+231",
+      "source": "l1bmd+231 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+232",
+      "source": "l1bmd+232 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+233",
+      "source": "l1bmd+233 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+234",
+      "source": "l1bmd+234 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+235",
+      "source": "l1bmd+235 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+236",
+      "source": "l1bmd+236 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+237",
+      "source": "l1bmd+237 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+238",
+      "source": "l1bmd+238 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+239",
+      "source": "l1bmd+239 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+240",
+      "source": "l1bmd+240 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+241",
+      "source": "l1bmd+241 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+242",
+      "source": "l1bmd+242 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+243",
+      "source": "l1bmd+243 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+244",
+      "source": "l1bmd+244 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+245",
+      "source": "l1bmd+245 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+246",
+      "source": "l1bmd+246 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+247",
+      "source": "l1bmd+247 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+248",
+      "source": "l1bmd+248 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+249",
+      "source": "l1bmd+249 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+250",
+      "source": "l1bmd+250 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+251",
+      "source": "l1bmd+251 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+252",
+      "source": "l1bmd+252 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+253",
+      "source": "l1bmd+253 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+254",
+      "source": "l1bmd+254 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "mabdiff_+255",
+      "source": "l1bmd+255 $lm0 $lb0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
       "case": "bar_width_mb",
       "source": "lpassa $n0 $mb",
       "accepted": true,
@@ -4263,7 +8335,7 @@
     "Matrix rows 0..15 were checked using gmread. The tested matrix operand widths are instruction-specific: gmread/gmwrite accept width 2 and reject width 4, while gmmul accepts widths 2 and 4.",
     "$lb8188 is accepted while $lb8192 fails the 13-bit encoding field; the L1BM address must also be 4-word aligned. l1bmm@15 is accepted and @16 is rejected.",
     "DAR address 1023 is accepted and 1024 is rejected; `$lc...@.<l2b>` accepts selectors 0 and 1 and rejects 2.",
-    "l1bmd-129, l1bmd-128, l1bmd127, and l1bmd128 are all accepted by assemble3; this is parser/encoding acceptance evidence, not a claim that these offsets are semantically useful.",
+    "For l1bmd, every explicit signed offset from -255 through +255 was accepted, while -256 and +256 were rejected. The manual documents useful offsets 0..15. The Rust visualizer's i8 parser is narrower and cannot parse accepted values 128..255; Rust is not used as range evidence. These assembler probes still do not prove global parser completeness.",
     "The assembler accepts d set, d get and r input records, but the challenge judge's default solution sanitizer retains only j/m instruction rows; these records are filtered before execution. The scored program therefore excludes debug and DRAM initialization records.",
     "Judge flags can preserve d get/d set, but the normal challenge invocation does not set them; the d-set invalidation applies only when such a record is retained."
   ],

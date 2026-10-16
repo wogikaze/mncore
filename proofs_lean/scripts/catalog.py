@@ -350,7 +350,7 @@ def isa_bounds_experiment() -> dict:
             raise ValueError(f"stale ISA boundary experiment: {item['path']}")
     if not all(row["matches_expected"] for row in record["observations"]):
         raise ValueError("ISA boundary experiment contains an unexpected assembler result")
-    if len(record["observations"]) != 527:
+    if len(record["observations"]) != 1036:
         raise ValueError("ISA boundary experiment case count changed")
     return {
         "source": reference.relative_to(REPO).as_posix(),
@@ -476,6 +476,13 @@ def coverage_catalog() -> dict:
             "scope": "Finite carrier for L1B sets with address and immode selectors below 8.",
             "evidence": "proofs_lean/evidence/isa-bounds/reference.json: all 64 set pairs in 0..7 accepted; address 8 and immode 8 rejected.",
             "missing": "Connection from every accepted L1/L2 operation to this set envelope and finite carriers for remaining operation fields.",
+        }, {
+            "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
+            "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
+            "theorem": "ProofsLean.MNCore.Issue.mabdiffInFiniteEnvelope_finite",
+            "scope": "Finite subtype for signed L1BM MAB differences in [-255, 255].",
+            "evidence": "proofs_lean/evidence/isa-bounds/reference.json: explicit signed offsets -255..255 accepted; -256 and +256 rejected. The SDM documents useful values 0..15.",
+            "missing": "A universal parser soundness result establishing that every assembler-accepted `mabdiff` lies in this envelope; the offset field is not yet bounded in `ParsedL1Op` or composed into finite PE-line carriers.",
         }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),

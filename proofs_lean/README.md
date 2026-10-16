@@ -96,6 +96,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   `ParsedL1bSet`についても、address/immodeの両方が`< 8`の有限carrierを証明した。
   全64組の`0..7`は受理され、追加したassemble3境界プローブで各フィールドの8は拒否された。
   wait tagについては、受理範囲`1..255`とoptionalな同範囲の有限carrierを証明した。
+  L1BMの`mabdiff`はassemble3で明示符号付きの`-255..255`全件を受理し、境界の`±256`を拒否することを確認し、
+  `-256 ≤ mabdiff < 256`の部分型が有限であることを証明した。SDMの有用範囲は`0..15`。
+  この実験はパーサーの全域健全性を証明せず、`ParsedL1Op`やPE行の有限carrierにも未接続。
   `hbfe`/`hbfn`のmantissa length引数も、assemble3の`6..9`受理・`5,10,11`拒否を根拠に
   optional payloadの有限carrierを証明した。
   これらのpayload定理から`ParsedOp`/`ParsedLine`全体への合成、他の残存Nat/Int範囲、
