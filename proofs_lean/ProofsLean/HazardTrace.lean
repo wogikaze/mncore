@@ -193,11 +193,15 @@ def parsedMvOperandHazardEvents (transfer : ParsedMv) (write : Bool)
   | some (.l2bm address _ selectedBank) =>
       (List.finRange 2).filterMap fun bank =>
         if selectedBank.isNone || selectedBank.map Fin.val == some bank.val then
-          some ⟨.l2bm bank, .mv, write, some address.val,
-            if transfer.kind == .nop then 0 else transfer.size.val,
+          some ⟨.l2bm bank, .mv, write, some (address.val % 2 ^ 32),
+            if transfer.kind == .nop then 0 else transfer.size.val % 2 ^ 32,
             startWord, ⟨0, by decide⟩⟩
         else none
   | _ => []
+
+theorem mv_u64_cast_to_u32_range (value : Nat) :
+    value % 2 ^ 32 < 2 ^ 32 := by
+  exact Nat.mod_lt _ (by decide)
 
 theorem parsedMvOperandHazardEvents_count (transfer : ParsedMv) (write : Bool)
     (operand : Option ParsedMvOperand) (startWord : Nat) :
