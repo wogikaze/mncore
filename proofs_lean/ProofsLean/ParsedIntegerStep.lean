@@ -699,6 +699,20 @@ def readRegisterBank (files : IntegerRegisterFiles) (bank : Bank) (width : Width
   | .grf1 => readWords .grf1 width files.grf1 address
   | .t => readWords .t width files.t address
 
+theorem readRegisterBank_t_reads_all_four_words (files : IntegerRegisterFiles)
+    (width : Width) (address : Fin Bank.t.capacity) (index : Fin 4) :
+    readRegisterBank files .t width address index =
+      files.t (advance .t address index.val) := by
+  simp [readRegisterBank, readWords, count, Bank.capacity, advance]
+
+theorem readRegisterBank_t_independent_of_width (files : IntegerRegisterFiles)
+    (width : Width) (address : Fin Bank.t.capacity) :
+    readRegisterBank files .t width address =
+      readRegisterBank files .t .word address := by
+  funext index
+  have hindex : index.val < 4 := by have h := index.isLt; exact h
+  simp [readRegisterBank, readWords, count, Bank.capacity, advance, hindex]
+
 def writeRegisterBank (files : IntegerRegisterFiles) (bank : Bank) (width : Width)
     (address : Fin bank.capacity) (data : WordBus) : IntegerRegisterFiles :=
   match bank with
