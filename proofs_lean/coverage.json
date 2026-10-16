@@ -36,6 +36,18 @@
     "scope": "Only listed probes. Acceptance/encoding evidence is not proof of complete ISA ranges or semantics.",
     "formal_isa_completeness_proof": false
   },
+  "answer_parser_gap_audit": {
+    "source": "proofs_lean/evidence/parser-gap-audit/answers.json",
+    "sha256": "3719a1d573e90f4b33c1e37cbb9d9d0c9f6c72821ccd6f6f3334cda61a8f32f2",
+    "generator": "proofs_lean/scripts/check_parser_gap_reference.py",
+    "generator_sha256": "5f645f2de174bf26854b61541adbf3e420a5eb13d698d169dfb60589ee096cc0",
+    "answers": 73,
+    "unique_opcode_spellings": 155,
+    "raw_operand_occurrences": 0,
+    "other_opcode_occurrences": 0,
+    "parse_errors": 0,
+    "scope": "Checked-in problems/**/answer.vsm files only; not a complete ISA spelling inventory."
+  },
   "datapath_fragments": [
     {
       "source": "proofs_lean/ProofsLean/IntegerALU.lean",

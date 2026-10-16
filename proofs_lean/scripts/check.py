@@ -115,6 +115,13 @@ def main() -> None:
     for name, data in (("audit.json", catalog.problem_catalog()), ("coverage.json", catalog.coverage_catalog())):
         if (ROOT / name).read_text() != catalog.render(data):
             raise SystemExit(f"{name} is stale or contains unsupported claims; regenerate it")
+    parser_gap = subprocess.run(
+        ["python3", "scripts/check_parser_gap_reference.py", "--check"],
+        cwd=ROOT, capture_output=True, text=True, timeout=300,
+    )
+    if parser_gap.returncode:
+        raise SystemExit(parser_gap.stdout + parser_gap.stderr)
+    print(parser_gap.stdout.strip())
     sources = [*sorted(ROOT.glob("*.lean")), *sorted((ROOT / "ProofsLean").rglob("*.lean"))]
     for path in sources:
         validate_source(path.read_text(), str(path.relative_to(ROOT)))

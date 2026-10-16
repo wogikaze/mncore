@@ -366,6 +366,30 @@ def isa_bounds_experiment() -> dict:
     }
 
 
+def answer_parser_gap_audit() -> dict:
+    reference = ROOT / "evidence/parser-gap-audit/answers.json"
+    record = json.loads(reference.read_text())
+    if record["answer_files"] != 73:
+        raise ValueError("parser-gap audit must cover all 73 checked-in answers")
+    if record["parse_errors"] or record["raw_operand_occurrences"] or record["other_opcode_occurrences"]:
+        raise ValueError("checked-in answers contain parser errors or structural fallbacks")
+    for item in [*record["input_hashes"], record["scanner"]]:
+        if digest(REPO / item["path"]) != item["sha256"]:
+            raise ValueError(f"stale parser-gap audit input: {item['path']}")
+    return {
+        "source": reference.relative_to(REPO).as_posix(),
+        "sha256": digest(reference),
+        "generator": "proofs_lean/scripts/check_parser_gap_reference.py",
+        "generator_sha256": digest(ROOT / "scripts/check_parser_gap_reference.py"),
+        "answers": record["answer_files"],
+        "unique_opcode_spellings": len(record["parsed_operator_spellings"]),
+        "raw_operand_occurrences": len(record["raw_operand_occurrences"]),
+        "other_opcode_occurrences": len(record["other_opcode_occurrences"]),
+        "parse_errors": len(record["parse_errors"]),
+        "scope": record["scope"],
+    }
+
+
 def coverage_catalog() -> dict:
     path = REPO / "mncompile/machine.py"
     tree = ast.parse(path.read_text())
@@ -408,6 +432,7 @@ def coverage_catalog() -> dict:
         "compiler_syntax_sha256": digest(path),
         "inventory_scope": "Compiler-generated ALU/MAU spelling candidates plus separately scoped source-derived records; not an authoritative complete ISA or legality model.",
         "selected_parser_boundary_experiment": isa_bounds_experiment(),
+        "answer_parser_gap_audit": answer_parser_gap_audit(),
         "datapath_fragments": [{
             "source": fragment_source.relative_to(REPO).as_posix(), "sha256": digest(fragment_source),
             "implemented": "16/32/64-bit inc/dec/add/sub/not/lnot/and/or/xor/integer max/min/passa/lsl/lsr/bsl/bsr/packbit; lane packing, replicated flags and LSB bypass",
