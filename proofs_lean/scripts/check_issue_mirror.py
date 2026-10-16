@@ -63,7 +63,8 @@ def lean_struct_field_types(name: str) -> dict[str, str]:
     return dict(re.findall(r"(?m)^\s*([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(.+)$", match.group(1)))
 
 
-def enum_matches(source: str, rust_name: str, lean_name: str, mapping: dict[str, str]) -> None:
+def enum_matches(source: str, rust_name: str, lean_name: str,
+                 mapping: dict[str, str | None]) -> None:
     actual = rust_variants(source, rust_name)
     expected = set(mapping)
     if actual != expected:
@@ -72,7 +73,7 @@ def enum_matches(source: str, rust_name: str, lean_name: str, mapping: dict[str,
             f"stale mapping={sorted(expected - actual)}"
         )
     constructors = lean_constructors(lean_name)
-    missing = set(mapping.values()) - constructors
+    missing = {name for name in mapping.values() if name is not None} - constructors
     if missing:
         raise ValueError(f"{lean_name} lacks mapped constructors: {sorted(missing)}")
 
@@ -170,10 +171,16 @@ def validate_alu_input_counts() -> None:
 
 def validate() -> None:
     validate_alu_input_counts()
+    parse_expr = re.search(r"fn parse_expr\(part: &str\).*?\n\}", VSM, re.S)
+    if not parse_expr or "classify(&opcode).ok_or_else" not in parse_expr.group(0):
+        raise ValueError("unknown PE opcode must fail parse_expr classification")
+    if "Op::Other" in parse_expr.group(0):
+        raise ValueError("parse_expr must not construct the API-only Op::Other variant")
     enum_matches(VSM, "Op", "ParsedOp", {
         "Alu": "alu", "Imm": "immediate", "Zero": "zero", "Mau": "mau",
         "MatWrite": "matrixWrite", "MatRead": "matrixRead", "Wait": "wait",
-        "Noforward": "noforward", "L1": "l1bm", "L2": "l2bm", "Other": "other",
+        # `Op::Other` is an API-only fallback: parse_expr returns Err for unknown opcodes.
+        "Noforward": "noforward", "L1": "l1bm", "L2": "l2bm", "Other": None,
     })
     enum_matches(VSM, "Operand", "ParsedOperand", {
         "Mem": "mem", "Bar": "bar", "Forward": "forward", "Fixed": "fixed",
@@ -284,7 +291,7 @@ def validate() -> None:
                     "Noforward", "L1", "L2", "Other"):
         if not re.search(rf"Op::{variant}\b", ISSUE):
             raise ValueError(f"issue.rs does not classify Op::{variant}")
-    print("PASS: Rust/Lean instruction, MV and operand constructors and ALU input counts match.")
+    print("PASS: parsed Rust/Lean instruction, MV and operand constructors and ALU input counts match; Op::Other is parser-unreachable.")
 
 
 if __name__ == "__main__":

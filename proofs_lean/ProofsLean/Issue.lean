@@ -339,7 +339,6 @@ inductive ParsedOp where
   | noforward
   | l1bm (op : ParsedL1Op)
   | l2bm (op : ParsedL2Op)
-  | other (text : String)
   deriving DecidableEq, Repr
 
 /-- Structural PE-expression AST mirror. Issue and execution interpretations
@@ -479,7 +478,6 @@ def ParsedExpr.issueGroup (e : ParsedExpr) : Option Group :=
   | .l2bm _ => some .l2bm
   | .wait _ => some .wait
   | .noforward => some .noforward
-  | .other _ => none
 
 def ParsedExpr.issueMau (e : ParsedExpr) : Option Mau :=
   match e.op with
