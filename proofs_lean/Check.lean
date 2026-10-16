@@ -193,3 +193,5 @@ run_cmd do
 #print axioms ProofsLean.MNCore.PEMemory.singleMatrixReadBus_after_write_low_cell
 #print axioms ProofsLean.MNCore.PEMemory.parsedSingleMatrixStore_readback_cell
 #print axioms ProofsLean.MNCore.PEMemory.parsedSingleMatrixWriteCycle_readback_cell
+#print axioms ProofsLean.MNCore.PEMemory.singleMatrixWriteRowAt_injective
+#print axioms ProofsLean.MNCore.PEMemory.parsedSingleMatrixWriteFourCycle_store

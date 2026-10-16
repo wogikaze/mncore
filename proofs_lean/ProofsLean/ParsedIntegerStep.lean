@@ -1631,6 +1631,16 @@ def singleMatrixReadBus (words : DoubleMatrixPhysicalFace)
 def singleMatrixWriteRowAt (base : Nat) (cycle : Fin 4) : Fin 8 :=
   ⟨(base + cycle.val) % 8, Nat.mod_lt _ (by decide)⟩
 
+theorem singleMatrixWriteRowAt_injective (base : Nat) :
+    Function.Injective (singleMatrixWriteRowAt base) := by
+  intro left right equal
+  apply Fin.ext
+  have values := congrArg Fin.val equal
+  simp [singleMatrixWriteRowAt] at values
+  have leftLt := left.isLt
+  have rightLt := right.isLt
+  omega
+
 /-- Rust `unpack(..., 32, 2)` for one PE reads the two high 32-bit words. -/
 def singleMatrixWriteValues (buses : Fin 4 → IntegerALU.Bus) : Fin 8 → BitVec 32 :=
   fun index =>
@@ -1650,6 +1660,18 @@ def writeParsedSingleMatrixStoreRow (old : ParsedMatrixReadStore)
     if nextMab = mab ∧ nextSide = sideY then
       writeSingleMatrixPhysicalRow (old nextMab nextSide) row values
     else old nextMab nextSide
+
+def writeParsedSingleMatrixStoreFourRows (old : ParsedMatrixReadStore)
+    (mab : Fin 16) (sideY : Bool) (base : Nat)
+    (values : Fin 4 → Fin 8 → BitVec 32) : ParsedMatrixReadStore :=
+  writeParsedSingleMatrixStoreRow
+    (writeParsedSingleMatrixStoreRow
+      (writeParsedSingleMatrixStoreRow
+        (writeParsedSingleMatrixStoreRow old mab sideY (singleMatrixWriteRowAt base 0)
+          (values 0))
+        mab sideY (singleMatrixWriteRowAt base 1) (values 1))
+      mab sideY (singleMatrixWriteRowAt base 2) (values 2))
+    mab sideY (singleMatrixWriteRowAt base 3) (values 3)
 
 theorem singleMatrixWriteValues_high_word
     (buses : Fin 4 → IntegerALU.Bus) (pe : Fin 4) :
@@ -1759,6 +1781,24 @@ def parsedSingleMatrixWriteCycle (files : IntegerRegisterFiles)
           .ok (writeParsedSingleMatrixStoreRow oldStore groupContext.mab accesses.sideY
             (singleMatrixWriteRowAt accesses.row cycle) (singleMatrixWriteValues buses))
 
+def parsedSingleMatrixWriteCycles (files : IntegerRegisterFiles)
+    (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (groupContext : ParsedPEGroupContext) (expression : ParsedExpr) :
+    List (Fin 4) → ParsedMatrixReadStore → ProofsLean.StepResult ParsedMatrixReadStore
+  | [], store => .ok store
+  | cycle :: rest, store =>
+      match parsedSingleMatrixWriteCycle files slots groupContext expression store cycle with
+      | .failure => .failure
+      | .unknown => .unknown
+      | .ok nextStore => parsedSingleMatrixWriteCycles files slots groupContext expression rest nextStore
+
+def parsedSingleMatrixWriteFourCycle (files : IntegerRegisterFiles)
+    (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (groupContext : ParsedPEGroupContext) (expression : ParsedExpr)
+    (oldStore : ParsedMatrixReadStore) :
+    ProofsLean.StepResult ParsedMatrixReadStore :=
+  parsedSingleMatrixWriteCycles files slots groupContext expression [0, 1, 2, 3] oldStore
+
 theorem parsedSingleMatrixWriteCycle_readback_cell
     (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)
     (groupContext : ParsedPEGroupContext) (expression : ParsedExpr)
@@ -1802,6 +1842,38 @@ theorem parsedSingleMatrixWriteCycle_readback_cell
         groupContext.mab (accesses 0).sideY writeRow
         ⟨2 * column.val + 1, by have h := column.isLt; omega⟩
         (singleMatrixWriteValues buses)
+
+theorem parsedSingleMatrixWriteFourCycle_store
+    (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (groupContext : ParsedPEGroupContext) (expression : ParsedExpr)
+    (oldStore : ParsedMatrixReadStore)
+    (accesses : Fin 4 → Fin 4 → ParsedSingleMatrixWriteAccesses)
+    (buses : Fin 4 → Fin 4 → IntegerALU.Bus)
+    (lowered : ∀ cycle pe, ParsedExpr.toDirectSingleMatrixWriteAccesses? expression
+      (groupContext.at pe cycle) = some (accesses cycle pe))
+    (read : ∀ cycle pe, ParsedIntegerInput.readWithForwarding files slots cycle
+      (accesses cycle pe).source = .ok (buses cycle pe)) :
+    parsedSingleMatrixWriteFourCycle files slots groupContext expression oldStore =
+      .ok (writeParsedSingleMatrixStoreFourRows oldStore groupContext.mab
+        (accesses 0 0).sideY (accesses 0 0).row
+        (fun cycle => singleMatrixWriteValues (buses cycle))) := by
+  have sameDestination (cycle pe : Fin 4) :=
+    ParsedExpr.toDirectSingleMatrixWriteAccesses_destination_invariant expression
+      (groupContext.at pe cycle) (groupContext.at 0 0) (accesses cycle pe) (accesses 0 0)
+      (lowered cycle pe) (lowered 0 0)
+  have cycleStep (cycle : Fin 4) (store : ParsedMatrixReadStore) :
+      parsedSingleMatrixWriteCycle files slots groupContext expression store cycle =
+        .ok (writeParsedSingleMatrixStoreRow store groupContext.mab (accesses 0 0).sideY
+          (singleMatrixWriteRowAt (accesses 0 0).row cycle)
+          (singleMatrixWriteValues (buses cycle))) := by
+    have prepared := prepareParsedSingleMatrixWritePEs_all files slots expression
+      groupContext cycle (accesses cycle) (buses cycle) (lowered cycle) (read cycle)
+    have hLower := lowered cycle 0
+    have hDestination := sameDestination cycle 0
+    simp only [parsedSingleMatrixWriteCycle, hLower, prepared,
+      hDestination.1, hDestination.2]
+  simp [parsedSingleMatrixWriteFourCycle, parsedSingleMatrixWriteCycles, cycleStep,
+    writeParsedSingleMatrixStoreFourRows]
 
 def halfMatrixReadColumn (base : Fin 16) (cycle : Fin 4) : Fin 16 :=
   ⟨(base.val + 2 * cycle.val) % 16, Nat.mod_lt _ (by decide)⟩
