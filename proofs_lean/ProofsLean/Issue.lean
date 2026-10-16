@@ -597,6 +597,18 @@ def ParsedExpr.nowriteOutputValid (expression : ParsedExpr) : Bool :=
 def ParsedExpr.sourcesMatchParserArity (expression : ParsedExpr) : Prop :=
   expression.sources.length ≤ expression.op.parserSourceLimit
 
+/-- The ordinary Rust `parse_expr` path splits a fixed opcode-specific prefix
+into sources and rejects a missing input or output. Custom zero-input and
+block-memory parser paths retain the weaker upper-bound condition. -/
+def ParsedOp.hasFixedParserSourceArity : ParsedOp → Bool
+  | .alu .. | .mau .. | .matrixWrite .. | .matrixRead .. => true
+  | .immediate .. | .zero | .wait .. | .noforward | .l1bm .. | .l2bm .. => false
+
+def ParsedExpr.parserSourceArityValid (expression : ParsedExpr) : Prop :=
+  if expression.op.hasFixedParserSourceArity then
+    expression.sources.length = expression.op.parserSourceLimit
+  else expression.sourcesMatchParserArity
+
 theorem ParsedExpr.sources_length_le_three (expression : ParsedExpr)
     (arity : expression.sourcesMatchParserArity) :
     expression.sources.length ≤ 3 :=
@@ -622,11 +634,39 @@ imposed by Rust `parse_expr` when display text is erased. -/
 def NormalizedExpr.sourcesMatchParserArity (expression : NormalizedExpr) : Prop :=
   expression.sources.length ≤ expression.op.parserSourceLimit
 
+def NormalizedExpr.parserSourceArityValid (expression : NormalizedExpr) : Prop :=
+  if expression.op.hasFixedParserSourceArity then
+    expression.sources.length = expression.op.parserSourceLimit
+  else expression.sourcesMatchParserArity
+
 theorem ParsedExpr.normalize_sourcesMatchParserArity
     (expression : ParsedExpr)
     (arity : expression.sourcesMatchParserArity) :
     expression.normalize.sourcesMatchParserArity := by
   exact arity
+
+theorem ParsedExpr.normalize_parserSourceArityValid
+    (expression : ParsedExpr)
+    (arity : expression.parserSourceArityValid) :
+    expression.normalize.parserSourceArityValid := by
+  exact arity
+
+theorem NormalizedExpr.parserSourceArityValid_length_le_three
+    (expression : NormalizedExpr)
+    (arity : expression.parserSourceArityValid) :
+    expression.sources.length ≤ 3 := by
+  unfold NormalizedExpr.parserSourceArityValid at arity
+  split at arity
+  · rw [arity]
+    exact expression.op.parserSourceLimit_le_three
+  · exact Nat.le_trans arity expression.op.parserSourceLimit_le_three
+
+theorem ParsedExpr.parserSourceArityValid_length_le_three
+    (expression : ParsedExpr)
+    (arity : expression.parserSourceArityValid) :
+    expression.sources.length ≤ 3 := by
+  exact expression.normalize.parserSourceArityValid_length_le_three
+    (expression.normalize_parserSourceArityValid arity)
 
 theorem NormalizedExpr.sources_length_le_three (expression : NormalizedExpr)
     (arity : expression.sourcesMatchParserArity) :

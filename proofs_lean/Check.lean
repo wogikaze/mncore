@@ -51,6 +51,9 @@ import Lean
 #print axioms ProofsLean.MNCore.PlusOne.step_writes_cycle_output_low
 #print axioms ProofsLean.MNCore.PlusOne.increment_numerical
 #print axioms ProofsLean.MNCore.Issue.check_sound
+#print axioms ProofsLean.MNCore.Issue.ParsedOp.parserSourceLimit_le_three
+#print axioms ProofsLean.MNCore.Issue.NormalizedExpr.parserSourceArityValid_length_le_three
+#print axioms ProofsLean.MNCore.Issue.ParsedExpr.parserSourceArityValid_length_le_three
 #print axioms ProofsLean.MNCore.Issue.base_address_write_conflicts_with_same_bank_read
 #print axioms ProofsLean.MNCore.Issue.projected_bar_writes_are_bar_destinations
 #print axioms ProofsLean.MNCore.Issue.Region.inFiniteEnvelope_finite

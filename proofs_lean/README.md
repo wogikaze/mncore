@@ -209,6 +209,10 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
 - `ParsedExpr.inFiniteEnvelope`から正規化式のenvelopeへの写像を証明した。opcode固有source arityから
   source長3以下を導ける一方、opcode・operand・flushの数値範囲とdestinationの重複なしを、実parser出力に
   対して証明することは引き続きparser/assembler対応の未解決義務である。
+- `ParsedExpr.parserSourceArityValid`を追加し、Rust `parse_expr` の通常経路を使うALU/MAU/matrix命令は
+  source数がopcodeの固定入力数に一致すること、zero-input/block-memory経路はparser上限以下であることを
+  構文述語に反映した。parser上限が3以下であることを証明し、finite envelopeにもこの形状条件を含めた。
+  Rust実装との完全な差分照合やdestination数・範囲の対応証明は未完了。
 - `InstructionLine.pe_inFiniteEnvelope_of_parsed`は、`LegalParsedLine`がissue groupから与える式数上限10と、
   式ごとのparsed payload envelope条件から、正規化PE行が有限carrierへ入ることを導く。
   残る前提は、実parser/assemblerが各式のpayload条件を満たすこと。

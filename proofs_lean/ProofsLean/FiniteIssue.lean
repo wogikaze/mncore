@@ -1424,6 +1424,7 @@ abbrev ParsedOperandListFiniteEnvelope (bound : Nat) :=
 
 def NormalizedExpr.inFiniteEnvelope (expression : NormalizedExpr) : Prop :=
   expression.op.inFiniteEnvelope ∧
+    expression.parserSourceArityValid ∧
     expression.sources.length ≤ 3 ∧
     (∀ operand ∈ expression.sources, operand.inFiniteEnvelope) ∧
     expression.destinations.Nodup ∧
@@ -1436,7 +1437,7 @@ uniqueness, numeric ranges, and flush ranges remain parser/assembler
 correspondence obligations. -/
 def ParsedExpr.inFiniteEnvelope (expression : ParsedExpr) : Prop :=
   expression.op.inFiniteEnvelope ∧
-    expression.sourcesMatchParserArity ∧
+    expression.parserSourceArityValid ∧
     (∀ operand ∈ expression.sources, operand.inFiniteEnvelope) ∧
     expression.destinations.Nodup ∧
     (∀ operand ∈ expression.destinations, operand.inFiniteEnvelope) ∧
@@ -1448,9 +1449,13 @@ theorem ParsedExpr.normalize_inFiniteEnvelope (expression : ParsedExpr)
   rcases expression with ⟨op, sources, destinations, flush, text⟩
   rcases envelope with ⟨opBound, sourceArity, sourceBound, destinationNodup,
     destinationBound, flushBound⟩
+  have normalizedArity :
+      (NormalizedExpr.mk op sources destinations flush).parserSourceArityValid :=
+    sourceArity
   simp only [ParsedExpr.normalize, NormalizedExpr.inFiniteEnvelope]
   exact ⟨opBound,
-    Nat.le_trans sourceArity op.parserSourceLimit_le_three,
+    sourceArity,
+    NormalizedExpr.parserSourceArityValid_length_le_three _ normalizedArity,
     sourceBound, destinationNodup, destinationBound, flushBound⟩
 
 private abbrev NormalizedExprFiniteCode :=
@@ -1464,7 +1469,7 @@ private def NormalizedExpr.finiteCode
     NormalizedExprFiniteCode := by
   rcases expression with ⟨expression, bounds⟩
   rcases expression with ⟨op, sources, destinations, flush⟩
-  rcases bounds with ⟨opBound, sourceLength, sourceBound,
+  rcases bounds with ⟨opBound, sourceArity, sourceLength, sourceBound,
     destinationNodup, destinationBound, flushBound⟩
   exact (⟨op, opBound⟩,
     ⟨sources, sourceLength, sourceBound⟩,
