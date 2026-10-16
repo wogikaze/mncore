@@ -162,7 +162,7 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   source順にprepare・commitされる定理と、LM/GRFの2 destination lowering例を追加した。
   `$nowrite` は効果なしとして除外し、OMR destinationは対応するentry/cycleを0で更新する。
   非PE memoryやBARなど未対応destinationを含む式は依然unknownとなる。
-  整数ALUのsourceにはmemoryに加えて `$l2bid`、`$l1bid`、`$mabid`、`$peid`、`$subpeid`、`$msb1` を接続した。PE座標（group/L2B/L1B/MAB/PE）から実行系と同じ値を作り、precisionに応じた128-bit反復busを定義した。座標の妥当範囲は証明したが、パーサから実行時PE座標への全体接続とRust意味論との対応は未証明。
+  整数ALUのsourceにはmemoryに加えて `$l2bid`、`$l1bid`、`$mabid`、`$peid`、`$subpeid`、`$msb1` を接続した。PE座標（group/L2B/L1B/MAB/PE）から実行系と同じ値を作り、precisionに応じた128-bit反復busを定義した。linear PE indexからの座標分解と、各固定operand値がindexから直接得られる式に一致することも証明した。パーサから実行時PE座標への全体接続とRust意味論との対応は未証明。
   Rust parser／実行器との意味対応自体は未証明。浮動小数点演算、汎用operand readと精度縮減、
   4-cycle/4-PE全体の実行、forwarding、ポート・hazard統合は未接続で、対応しない命令は`unknown`のまま扱う。
   さらに、L/I/S精度の整数ALU命令とpackbitだけを既存の部分ALU意味論へ写す関数を定義した。

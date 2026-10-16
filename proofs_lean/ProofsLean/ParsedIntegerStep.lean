@@ -44,6 +44,23 @@ def ParsedIntegerContext.linearIndex (context : ParsedIntegerContext) : Nat :=
   (((context.group.val * 2 + context.l2b.val) * 8 + context.l1b.val) * 16 +
     context.mab.val) * 4 + context.pe.val
 
+def ParsedIntegerContext.ofLinearIndex (index : Fin 2048) : ParsedIntegerContext where
+  pe := ⟨index.val % 4, by have h := index.isLt; omega⟩
+  cycle := 0
+  bar0 := 0
+  bar1 := 0
+  tWord := 0
+  group := ⟨index.val / 1024, by have h := index.isLt; omega⟩
+  l2b := ⟨index.val / 512 % 2, by have h := index.isLt; omega⟩
+  l1b := ⟨index.val / 64 % 8, by have h := index.isLt; omega⟩
+  mab := ⟨index.val / 4 % 16, by have h := index.isLt; omega⟩
+
+theorem ParsedIntegerContext.linearIndex_ofLinearIndex (index : Fin 2048) :
+    (ParsedIntegerContext.ofLinearIndex index).linearIndex = index.val := by
+  simp [ParsedIntegerContext.linearIndex, ParsedIntegerContext.ofLinearIndex]
+  have h := index.isLt
+  omega
+
 theorem ParsedIntegerContext.linearIndex_lt (context : ParsedIntegerContext) :
     context.linearIndex < 2048 := by
   simp [ParsedIntegerContext.linearIndex]
@@ -146,6 +163,23 @@ def ParsedFixed.integerValue (fixed : ParsedFixed) (precision : IntegerALU.Preci
   | .peid => mab.val * 4 + pe.val
   | .subpeid => pe.val
   | .msb1 => 2 ^ (precision.width - 1)
+
+theorem parsed_fixed_integerValue_ofLinearIndex (fixed : ParsedFixed)
+    (precision : IntegerALU.Precision) (index : Fin 2048) :
+    ParsedFixed.integerValue fixed precision
+      (ParsedIntegerContext.ofLinearIndex index).group
+      (ParsedIntegerContext.ofLinearIndex index).l2b
+      (ParsedIntegerContext.ofLinearIndex index).l1b
+      (ParsedIntegerContext.ofLinearIndex index).mab
+      (ParsedIntegerContext.ofLinearIndex index).pe =
+    match fixed with
+    | .l2bid => index.val / 512
+    | .l1bid => index.val / 64 % 8
+    | .mabid => index.val / 4 % 16
+    | .peid => index.val % 64
+    | .subpeid => index.val % 4
+    | .msb1 => 2 ^ (precision.width - 1) := by
+  cases fixed <;> simp [ParsedFixed.integerValue, ParsedIntegerContext.ofLinearIndex] <;> omega
 
 example : ParsedFixed.integerValue .l2bid .long 1 1 0 0 0 = 3 := by decide
 example : ParsedFixed.integerValue .l1bid .long 0 0 7 0 0 = 7 := by decide
