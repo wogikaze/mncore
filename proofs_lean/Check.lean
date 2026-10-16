@@ -63,6 +63,8 @@ import Lean
 #print axioms ProofsLean.MNCore.L1Transfer.distribSourceMab_wraps_up
 #print axioms ProofsLean.MNCore.L1Transfer.writeL1Word_readback
 #print axioms ProofsLean.MNCore.L1Transfer.commitL1Writes_last_readback
+#print axioms ProofsLean.MNCore.L1Transfer.commitL1Writes_getLast_readback
+#print axioms ProofsLean.MNCore.L1Transfer.commitL1TurnaroundWrites_getLast_readback
 #print axioms ProofsLean.MNCore.L1Transfer.mwriteWrites_count
 #print axioms ProofsLean.MNCore.L1Transfer.m4writeWrites_count
 #print axioms ProofsLean.MNCore.L1Transfer.mwriteFourCycleWrites_count
@@ -71,6 +73,10 @@ import Lean
 #print axioms ProofsLean.MNCore.L1Transfer.mwriteFourCycleWrites_contains_low
 #print axioms ProofsLean.MNCore.L1Transfer.m4writeFourCycleWrites_contains_high
 #print axioms ProofsLean.MNCore.L1Transfer.reduceL1Writes_count
+#print axioms ProofsLean.MNCore.L1Transfer.reduceL1Writes_last
+#print axioms ProofsLean.MNCore.L1Transfer.committedReduceL1Writes_last_readback
+#print axioms ProofsLean.MNCore.L1Transfer.reduceL1TurnaroundWrites_last
+#print axioms ProofsLean.MNCore.L1Transfer.committedReduceL1Turnaround_last_readback
 #print axioms ProofsLean.MNCore.L1Transfer.reduceL1Writes_contains_first
 #print axioms ProofsLean.MNCore.L1Transfer.reduceIntegerL1Writes_count
 #print axioms ProofsLean.MNCore.L1Transfer.reduceIntegerL1Writes_contains_result

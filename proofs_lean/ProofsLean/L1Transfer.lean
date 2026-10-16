@@ -213,12 +213,27 @@ theorem commitL1Writes_last_readback (memory : L1Bank) (writesBefore : List L1Wr
     commitL1Writes memory (writesBefore ++ [(address, value)]) address = value := by
   simp [commitL1Writes, List.foldl_append, writeL1Word]
 
+theorem commitL1Writes_getLast_readback (memory : L1Bank) (writes : List L1Write)
+    (lastAddress : Fin l1bmLongWords) (lastValue : BitVec 64)
+    (hlast : writes.getLast? = some (lastAddress, lastValue)) :
+    commitL1Writes memory writes lastAddress = lastValue := by
+  rcases List.getLast?_eq_some_iff.mp hlast with ⟨writesBefore, rfl⟩
+  exact commitL1Writes_last_readback memory writesBefore lastAddress lastValue
+
 theorem commitL1TurnaroundWrites_last_readback (turnaround : L1Turnaround)
     (cycle : Fin 4) (writesBefore : List L1TurnWrite)
     (offset : Fin 64) (value : BitVec 64) :
     commitL1TurnaroundWrites turnaround cycle (writesBefore ++ [(offset, value)])
       cycle offset = value := by
   simp [commitL1TurnaroundWrites, List.foldl_append, writeL1Turnaround]
+
+theorem commitL1TurnaroundWrites_getLast_readback (turnaround : L1Turnaround)
+    (cycle : Fin 4) (writes : List L1TurnWrite)
+    (lastOffset : Fin 64) (lastValue : BitVec 64)
+    (hlast : writes.getLast? = some (lastOffset, lastValue)) :
+    commitL1TurnaroundWrites turnaround cycle writes cycle lastOffset = lastValue := by
+  rcases List.getLast?_eq_some_iff.mp hlast with ⟨writesBefore, rfl⟩
+  exact commitL1TurnaroundWrites_last_readback turnaround cycle writesBefore lastOffset lastValue
 
 theorem commitL1Transfer_updates_both_targets (memory : L1Bank)
     (turnaround : L1Turnaround) (cycle : Fin 4)
@@ -344,6 +359,66 @@ theorem reduceL1Writes_count (memoryBase : Fin l1bmLongWords)
       else if rounded then 4 else if twoLongWords then 8 else 4 := by
   cases fourGroups <;> cases rounded <;> cases twoLongWords <;>
     simp [reduceL1Writes, List.length_flatMap, List.finRange]
+
+theorem reduceL1Writes_last (memoryBase : Fin l1bmLongWords)
+    (fourGroups rounded twoLongWords : Bool) (cycle : Fin 4)
+    (results : Fin 4 → Fin 4 → Fin 2 → BitVec 64) :
+    let group : Fin 4 := if fourGroups then 3 else 0
+    let part : Fin 2 := if !rounded && twoLongWords then 1 else 0
+    let stride := if rounded then (if fourGroups then 16 else 4)
+      else if fourGroups then (if twoLongWords then 32 else 16)
+      else if twoLongWords then 8 else 4
+    let offset := if rounded then group.val * 4 + 3
+      else group.val * (if twoLongWords then 8 else 4) + 3 +
+        (if twoLongWords then 4 else 0)
+    (reduceL1Writes memoryBase fourGroups rounded twoLongWords cycle results).getLast? =
+      some (addressAt memoryBase (cycle.val * stride + offset), results group 3 part) := by
+  cases fourGroups <;> cases rounded <;> cases twoLongWords <;>
+    simp [reduceL1Writes, List.finRange] <;> congr 1 <;> omega
+
+theorem committedReduceL1Writes_last_readback (memory : L1Bank)
+    (memoryBase : Fin l1bmLongWords) (fourGroups rounded twoLongWords : Bool)
+    (cycle : Fin 4) (results : Fin 4 → Fin 4 → Fin 2 → BitVec 64) :
+    let group : Fin 4 := if fourGroups then 3 else 0
+    let part : Fin 2 := if !rounded && twoLongWords then 1 else 0
+    let stride := if rounded then (if fourGroups then 16 else 4)
+      else if fourGroups then (if twoLongWords then 32 else 16)
+      else if twoLongWords then 8 else 4
+    let offset := if rounded then group.val * 4 + 3
+      else group.val * (if twoLongWords then 8 else 4) + 3 +
+        (if twoLongWords then 4 else 0)
+    commitL1Writes memory (reduceL1Writes memoryBase fourGroups rounded twoLongWords
+      cycle results) (addressAt memoryBase (cycle.val * stride + offset)) =
+      results group 3 part := by
+  apply commitL1Writes_getLast_readback
+  exact reduceL1Writes_last memoryBase fourGroups rounded twoLongWords cycle results
+
+theorem reduceL1TurnaroundWrites_last (fourGroups rounded twoLongWords : Bool)
+    (results : Fin 4 → Fin 4 → Fin 2 → BitVec 64) :
+    let group : Fin 4 := if fourGroups then 3 else 0
+    let part : Fin 2 := if !rounded && twoLongWords then 1 else 0
+    let offset := if rounded then group.val * 4 + 3
+      else group.val * (if twoLongWords then 8 else 4) + 3 +
+        (if twoLongWords then 4 else 0)
+    (reduceL1TurnaroundWrites fourGroups rounded twoLongWords results).getLast? =
+      some (⟨offset % 64, Nat.mod_lt _ (by decide)⟩, results group 3 part) := by
+  cases fourGroups <;> cases rounded <;> cases twoLongWords <;>
+    simp [reduceL1TurnaroundWrites, List.finRange] <;>
+      all_goals (first | omega | (apply Fin.ext; simp; omega))
+
+theorem committedReduceL1Turnaround_last_readback (turnaround : L1Turnaround)
+    (cycle : Fin 4) (fourGroups rounded twoLongWords : Bool)
+    (results : Fin 4 → Fin 4 → Fin 2 → BitVec 64) :
+    let group : Fin 4 := if fourGroups then 3 else 0
+    let part : Fin 2 := if !rounded && twoLongWords then 1 else 0
+    let offset := if rounded then group.val * 4 + 3
+      else group.val * (if twoLongWords then 8 else 4) + 3 +
+        (if twoLongWords then 4 else 0)
+    commitL1TurnaroundWrites turnaround cycle
+      (reduceL1TurnaroundWrites fourGroups rounded twoLongWords results)
+      cycle ⟨offset % 64, Nat.mod_lt _ (by decide)⟩ = results group 3 part := by
+  apply commitL1TurnaroundWrites_getLast_readback
+  exact reduceL1TurnaroundWrites_last fourGroups rounded twoLongWords results
 
 theorem reduceIntegerL1Writes_count (memoryBase : Fin l1bmLongWords)
     (fourGroups twoLongWords : Bool) (precision : RRN.IntegerPrecision)
