@@ -991,14 +991,31 @@ are logical 64-bit elements; the executor stores each element as two adjacent
 32-bit words in a physical row. -/
 abbrev DoubleMatrixFace := Fin 4 → Fin 4 → BitVec 64
 
+abbrev DoubleMatrixPhysicalFace := Fin 16 → Fin 8 → BitVec 32
+
+def doubleMatrixPhysicalRow (row : Fin 4) : Fin 16 :=
+  ⟨row.val * 4, by have h := row.isLt; omega⟩
+
+def doubleMatrixPhysicalColumnHigh (column : Fin 4) : Fin 8 :=
+  ⟨column.val * 2, by have h := column.isLt; omega⟩
+
+def doubleMatrixPhysicalColumnLow (column : Fin 4) : Fin 8 :=
+  ⟨column.val * 2 + 1, by have h := column.isLt; omega⟩
+
+def doubleMatrixFaceFromPhysicalWords (words : DoubleMatrixPhysicalFace) :
+    DoubleMatrixFace := fun row column =>
+  words (doubleMatrixPhysicalRow row) (doubleMatrixPhysicalColumnHigh column) ++
+    words (doubleMatrixPhysicalRow row) (doubleMatrixPhysicalColumnLow column)
+
 def doubleMatrixReadRow (base cycle : Fin 4) : Fin 4 :=
   ⟨(base.val + cycle.val) % 4, Nat.mod_lt _ (by decide)⟩
 
-/-- Rust `compute_mread` at D precision packs the selected 64-bit element in
+/-- Rust `compute_mread` at D precision selects the PE as matrix row and the
+operand row plus cycle as matrix column, then packs that 64-bit element in
 the most-significant long word and zero-fills the rest of the bus. -/
 def doubleMatrixReadBus (face : DoubleMatrixFace) (base pe cycle : Fin 4) :
     IntegerALU.Bus :=
-  ⟨face (doubleMatrixReadRow base cycle) pe, 0⟩
+  ⟨face pe (doubleMatrixReadRow base cycle), 0⟩
 
 def writeDoubleMatrixReadSlots (old : ProofsLean.MNCore.Forwarding.Slots)
     (face : DoubleMatrixFace) (base pe : Fin 4) (noForward : Bool) :
@@ -1010,22 +1027,26 @@ def writeDoubleMatrixReadSlots (old : ProofsLean.MNCore.Forwarding.Slots)
 
 theorem doubleMatrixRead_mreadf_readback
     (files : IntegerRegisterFiles) (old : ProofsLean.MNCore.Forwarding.Slots)
-    (face : DoubleMatrixFace) (base pe cycle : Fin 4) :
+    (words : DoubleMatrixPhysicalFace) (base pe cycle : Fin 4) :
     ParsedIntegerInput.readWithForwarding files
       (fun unit slotCycle =>
         if unit = .matrixRead then
-          .known (doubleMatrixReadBus face base pe slotCycle)
+          .known (doubleMatrixReadBus (doubleMatrixFaceFromPhysicalWords words)
+            base pe slotCycle)
         else old unit slotCycle)
       cycle (.forward .mreadf false) =
-        .ok (doubleMatrixReadBus face base pe cycle) := by
+        .ok (doubleMatrixReadBus (doubleMatrixFaceFromPhysicalWords words)
+          base pe cycle) := by
   simp [ParsedIntegerInput.readWithForwarding, ParsedIntegerInput.forwardUnit,
     ParsedIntegerInput.applyRounding]
 
-theorem doubleMatrixReadBus_matches_logical_element
-    (face : DoubleMatrixFace) (base pe cycle : Fin 4) :
-    (doubleMatrixReadBus face base pe cycle).high =
-        face (doubleMatrixReadRow base cycle) pe ∧
-      (doubleMatrixReadBus face base pe cycle).low = 0 := ⟨rfl, rfl⟩
+theorem doubleMatrixReadBus_physical_layout
+    (words : DoubleMatrixPhysicalFace) (base pe cycle : Fin 4) :
+    doubleMatrixReadBus (doubleMatrixFaceFromPhysicalWords words) base pe cycle =
+      ⟨words (doubleMatrixPhysicalRow pe)
+          (doubleMatrixPhysicalColumnHigh (doubleMatrixReadRow base cycle)) ++
+        words (doubleMatrixPhysicalRow pe)
+          (doubleMatrixPhysicalColumnLow (doubleMatrixReadRow base cycle)), 0⟩ := rfl
 
 def writeDirectAccess (files : IntegerRegisterFiles) (access : DirectMemoryAccess)
     (data : WordBus) : IntegerRegisterFiles :=
