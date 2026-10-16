@@ -110,7 +110,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   1語＝4cycle進み、directiveは時計を進めない。source全体の経過語数がnormalized issue costと
   一致する定理を追加した。複数式行は全式の入力とALU出力を
   同一の旧状態から先に準備し、その後で宛先書き込みを反映する。行全体のsingle-line mask有無も
-  すべての宛先loweringへ渡す。Issueモデルの合法性、source executionとnormalized issue
+  すべての宛先loweringへ渡す。ALU/zero/immediate line遷移にPE issue checkerを先に適用する
+  入口を追加し、checkerが拒否したlineはunknownとして保留する。checkerの受理範囲自体は
+  Rust parser／assembler全体の合法性との同値を意味しない。Issueモデルの合法性、source executionとnormalized issue
   executionの一致、directiveのissue costが0であること、lowering成功時の実行一致を証明した。
   nop行は指定count分のno-op issueへ展開し、register状態を保持することとscoreがcountに
   一致することを証明した。PE/nop/mask directive各行について、lowering後のissue costが

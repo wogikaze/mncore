@@ -3222,6 +3222,36 @@ def parsedALUProducerLineFourCycleStep (files : IntegerRegisterFiles)
   | .ok (writes, nextSlots) =>
       .ok (commitParsedMaskedWrites files writes, nextSlots)
 
+/-- Issue-checked entrypoint for the currently modeled ALU/constant line
+subset. A line rejected by the local PE issue checker is kept unresolved;
+the checker is not claimed to cover parser or assembler legality. -/
+noncomputable def parsedIssueCheckedALUProducerLineFourCycleStep (files : IntegerRegisterFiles)
+    (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (expressions : List ParsedExpr) (control : ParsedMaskExecutionControl)
+    (reduced : Bool) :
+    ProofsLean.StepResult (IntegerRegisterFiles × ProofsLean.MNCore.Forwarding.Slots) :=
+  if checkParsedLine expressions then
+    parsedALUProducerLineFourCycleStep files slots expressions control reduced
+  else .unknown
+
+theorem parsedIssueCheckedALUProducerLineFourCycleStep_accepted
+    (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (expressions : List ParsedExpr) (control : ParsedMaskExecutionControl)
+    (reduced : Bool)
+    (accepted : checkParsedLine expressions = true) :
+    parsedIssueCheckedALUProducerLineFourCycleStep files slots expressions control reduced =
+      parsedALUProducerLineFourCycleStep files slots expressions control reduced := by
+  simp [parsedIssueCheckedALUProducerLineFourCycleStep, accepted]
+
+theorem parsedIssueCheckedALUProducerLineFourCycleStep_rejects
+    (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (expressions : List ParsedExpr) (control : ParsedMaskExecutionControl)
+    (reduced : Bool)
+    (rejected : checkParsedLine expressions = false) :
+    parsedIssueCheckedALUProducerLineFourCycleStep files slots expressions control reduced =
+      .unknown := by
+  simp [parsedIssueCheckedALUProducerLineFourCycleStep, rejected]
+
 /-- Four-cycle line execution for the parsed integer ALU/constant and matrix
 read producers. Every expression reads pre-issue PE memory and matrix words;
 forwarding outputs accumulate by expression order, and writes commit at end. -/
