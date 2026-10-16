@@ -288,7 +288,6 @@ theorem one_line_incorrect (line : Line) : ¬ Correct machine problem [line] := 
   rcases cases with h0 | h1
   · have wrong := post (⟨8, by decide⟩ : Fin 16)
     simp [problem, step, zeroInput, h0] at wrong
-    exact (by decide : ¬ ((if (8 : Nat) < 8 then increment 0 else (0 : BitVec 32)).toNat = 1)) wrong
   · have wrong := post (⟨0, by decide⟩ : Fin 16)
     simp [problem, step, zeroInput, h1] at wrong
 

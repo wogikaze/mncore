@@ -12,6 +12,8 @@ inductive Line where
   | fillTrue
   deriving DecidableEq, Repr
 
+noncomputable instance : Fintype Line := ⟨{.flipLeft, .flipRight, .fillTrue}, by intro x; cases x <;> simp⟩
+
 def machine : Machine where
   Line := Line
   State := Bool × Bool
@@ -24,15 +26,14 @@ def machine : Machine where
   lineCost := fun _ => 1
   positiveCost := fun _ => by decide
 
+noncomputable instance : Fintype machine.Line := inferInstanceAs (Fintype Line)
+instance : DecidableEq machine.Line := inferInstanceAs (DecidableEq Line)
+
 def problem : Problem machine where
   admissible := fun _ => True
   initial := id
   post := fun input output => output = (!input.1, !input.2)
 
-def alphabet : List Line := [.flipLeft, .flipRight, .fillTrue]
-
-theorem covers (line : machine.Line) : line ∈ alphabet := by
-  cases line <;> decide
 
 theorem empty_refuted : Refutes machine problem [] (false, false) := by
   simp [Refutes, problem, execute, machine, id]
@@ -47,10 +48,24 @@ theorem fill_refuted : Refutes machine problem [.fillTrue] (true, true) := by
   simp [Refutes, problem, execute, machine]
 
 theorem rejects_all_short :
-    ∀ p ∈ shortPrograms machine alphabet 2, ¬ Correct machine problem p := by
+    ∀ p ∈ shortPrograms machine 2, ¬ Correct machine problem p := by
   intro p member
   have listed : p ∈ [[], [.flipLeft], [.flipRight], [.fillTrue]] := by
-    simpa [shortPrograms, programsUpTo, alphabet, score, machine] using member
+    rcases List.mem_cons.mp member with empty | filtered
+    · exact List.mem_cons.mpr (Or.inl empty)
+    · rcases List.mem_filter.mp filtered with ⟨_, scoreDecide⟩
+      have sb : score machine p < 2 := of_decide_eq_true scoreDecide
+      have len : p.length ≤ 1 := by
+        have lower := length_le_score machine p
+        omega
+      cases p with
+      | nil => simp
+      | cons line rest =>
+        have restEmpty : rest = [] := by cases rest with
+          | nil => rfl
+          | cons x xs => simp at len
+        subst rest
+        cases line <;> simp
   have cases : p = [] ∨ p = [.flipLeft] ∨ p = [.flipRight] ∨ p = [.fillTrue] := by
     simpa only [List.mem_cons, List.not_mem_nil, or_false] using listed
   rcases cases with rfl | rfl | rfl | rfl
@@ -59,15 +74,15 @@ theorem rejects_all_short :
   · exact refutes_not_correct right_refuted
   · exact refutes_not_correct fill_refuted
 
-def lowerCertificate : BoundCertificate machine problem 2 :=
-  enumerationCertificate machine problem alphabet 2 covers rejects_all_short
+noncomputable def lowerCertificate : BoundCertificate machine problem 2 :=
+  enumerationCertificate machine problem 2 rejects_all_short
 
 theorem two_lines_correct : Correct machine problem [.flipLeft, .flipRight] := by
   refine ⟨True.intro, ?_⟩
   intro input _
   exact ⟨(!input.1, !input.2), by simp [execute, machine, problem, id], rfl⟩
 
-def optimalCertificate : OptimalityCertificate machine problem where
+noncomputable def optimalCertificate : OptimalityCertificate machine problem where
   program := [.flipLeft, .flipRight]
   correct := two_lines_correct
   lower := lowerCertificate
