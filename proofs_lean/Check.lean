@@ -222,6 +222,8 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.parseMaskDirective_targets_and_u8_cast
 #print axioms ProofsLean.MNCore.PEMemory.parseMaskDirective_binary_entry_cast
 #print axioms ProofsLean.MNCore.PEMemory.parseMaskDirective_decimal_plus
+#print axioms ProofsLean.MNCore.PEMemory.parseMaskDirective_u64_max_casts_to_u8
+#print axioms ProofsLean.MNCore.PEMemory.parseMaskDirective_rejects_u64_overflow
 #print axioms ProofsLean.MNCore.PEMemory.parseMaskDirective_rejects_bad_target
 #print axioms ProofsLean.MNCore.PEMemory.parseMaskDirective_rejects_extra_token
 #print axioms ProofsLean.MNCore.PEMemory.parsed_mask_directive_updates_runtime_state

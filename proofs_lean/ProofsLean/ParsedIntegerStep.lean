@@ -544,6 +544,15 @@ theorem parseMaskDirective_decimal_plus :
       some (.maskDirective 2 { maskRegister := true } 1) := by
   rfl
 
+theorem parseMaskDirective_u64_max_casts_to_u8 :
+    parseMaskDirective? "mask 18446744073709551615" =
+      some (.maskDirective 2 {} 255) := by
+  rfl
+
+theorem parseMaskDirective_rejects_u64_overflow :
+    parseMaskDirective? "mask 18446744073709551616" = none := by
+  rfl
+
 theorem parseMaskDirective_rejects_bad_target :
     parseMaskDirective? "maskx 1" = none := by
   rfl
