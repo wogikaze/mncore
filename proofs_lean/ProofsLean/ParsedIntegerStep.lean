@@ -2588,6 +2588,80 @@ def collectPEHazardConstraints (eventsByIssue : List (List TimedPEAccess)) :
     List PEHazardConstraint :=
   collectPEHazardConstraintsAux [] eventsByIssue
 
+/-- Provenance that a constraint was emitted while comparing a prior issue
+window with a later issue's events. -/
+inductive PEHazardConstraintEmitted : List TimedPEAccess →
+    List (List TimedPEAccess) → PEHazardConstraint → Prop where
+  | current {earlier current rest constraint} :
+      constraint ∈ peHazardConstraintsBetween earlier current →
+      PEHazardConstraintEmitted earlier (current :: rest) constraint
+  | later {earlier current rest constraint} :
+      PEHazardConstraintEmitted (earlier ++ current) rest constraint →
+      PEHazardConstraintEmitted earlier (current :: rest) constraint
+
+theorem collectPEHazardConstraintsAux_mem_iff_emitted
+    (earlier : List TimedPEAccess) (remaining : List (List TimedPEAccess))
+    (constraint : PEHazardConstraint) :
+    constraint ∈ collectPEHazardConstraintsAux earlier remaining ↔
+      PEHazardConstraintEmitted earlier remaining constraint := by
+  induction remaining generalizing earlier with
+  | nil =>
+      constructor
+      · simp [collectPEHazardConstraintsAux]
+      · intro emitted
+        cases emitted
+  | cons current rest ih =>
+      simp only [collectPEHazardConstraintsAux, List.mem_append]
+      constructor
+      · intro member
+        rcases member with currentMember | laterMember
+        · exact .current currentMember
+        · exact .later ((ih (earlier ++ current)).mp laterMember)
+      · intro emitted
+        cases emitted with
+        | current currentMember => exact Or.inl currentMember
+        | later laterEmitted => exact Or.inr ((ih (earlier ++ current)).mpr laterEmitted)
+
+/-- Every collected constraint has an issue-group pair that emitted it. -/
+theorem collectPEHazardConstraintsAux_mem_has_emitting_groups
+    (earlier : List TimedPEAccess) (remaining : List (List TimedPEAccess))
+    (constraint : PEHazardConstraint)
+    (member : constraint ∈ collectPEHazardConstraintsAux earlier remaining) :
+    ∃ prior current, constraint ∈ peHazardConstraintsBetween prior current := by
+  induction remaining generalizing earlier with
+  | nil => simp [collectPEHazardConstraintsAux] at member
+  | cons current rest ih =>
+      simp only [collectPEHazardConstraintsAux, List.mem_append] at member
+      rcases member with currentMember | laterMember
+      · exact ⟨earlier, current, currentMember⟩
+      · exact ih (earlier ++ current) laterMember
+
+/-- A collected constraint records concrete write and read events from the
+issue groups compared by the hazard collector. -/
+theorem collectPEHazardConstraintsAux_mem_has_event_pair
+    (earlier : List TimedPEAccess) (remaining : List (List TimedPEAccess))
+    (constraint : PEHazardConstraint)
+    (member : constraint ∈ collectPEHazardConstraintsAux earlier remaining) :
+    ∃ (prior current : List TimedPEAccess) (write access : TimedPEAccess),
+      write ∈ prior ∧ access ∈ current ∧
+      makePEHazardConstraint? write access = some constraint ∧
+      access.startWord - write.startWord ≤ 4 := by
+  obtain ⟨prior, current, betweenMember⟩ :=
+    collectPEHazardConstraintsAux_mem_has_emitting_groups
+      earlier remaining constraint member
+  obtain ⟨write, writeMember, access, accessMember, generated⟩ :=
+    (pe_hazard_constraints_between_complete prior current constraint).mp betweenMember
+  cases made : makePEHazardConstraint? write access with
+  | none => simp [made] at generated
+  | some candidate =>
+      simp only [made] at generated
+      split at generated
+      · rename_i withinWindow
+        cases generated
+        exact ⟨prior, current, write, access, writeMember, accessMember,
+          made, withinWindow⟩
+      · simp at generated
+
 def parsedSourcePEHazardEvents? (source : List ParsedMaskedSourceStatement)
     (control : ParsedMaskExecutionControl) : Option (List (List TimedPEAccess)) :=
   let compiled := ProofsLean.ControlNormalization.compileAdvancing
@@ -2665,25 +2739,31 @@ theorem pe_hazard_checked_constraint_matches_pair_safety
     simp [PEHazardConstraint.violated] at safeDistance violated
     omega
 
-/-- A source-level empty hazard report certifies every generated write/read
-pair represented in its compiled event stream. -/
-theorem parsedSourcePEHazardViolations_empty_certifies_pair
+/-- A source-level empty hazard report certifies that each reported constraint
+comes from concrete events in two issue groups and that the corresponding
+write/read pair satisfies the modeled distance rule. -/
+theorem parsedSourcePEHazardViolations_empty_certifies_pairs
     (source : List ParsedMaskedSourceStatement) (control : ParsedMaskExecutionControl)
     (events : List (List TimedPEAccess))
     (eventsGenerated : parsedSourcePEHazardEvents? source control = some events)
     (noViolations : parsedSourcePEHazardViolations? source control = some [])
     (constraint : PEHazardConstraint)
-    (member : constraint ∈ collectPEHazardConstraints events)
-    (earlier later : TimedPEAccess)
-    (made : makePEHazardConstraint? earlier later = some constraint) :
-    peHazardSatisfied earlier later := by
+    (member : constraint ∈ collectPEHazardConstraints events) :
+    ∃ (prior current : List TimedPEAccess) (write access : TimedPEAccess),
+      write ∈ prior ∧ access ∈ current ∧
+      makePEHazardConstraint? write access = some constraint ∧
+      access.startWord - write.startWord ≤ 4 ∧
+      peHazardSatisfied write access := by
   have noGeneratedViolations :
       violatingPEHazardConstraints (collectPEHazardConstraints events) = [] := by
     simpa [parsedSourcePEHazardViolations?, parsedSourcePEHazardConstraints?,
       eventsGenerated] using noViolations
-  exact pe_hazard_checked_constraint_matches_pair_safety
-    (collectPEHazardConstraints events) earlier later constraint member made
-    noGeneratedViolations
+  obtain ⟨prior, current, write, access, writeMember, accessMember, made, withinWindow⟩ :=
+    collectPEHazardConstraintsAux_mem_has_event_pair [] events constraint member
+  exact ⟨prior, current, write, access, writeMember, accessMember, made, withinWindow,
+    pe_hazard_checked_constraint_matches_pair_safety
+      (collectPEHazardConstraints events) write access constraint member made
+      noGeneratedViolations⟩
 
 theorem lm_pe_hazard_requires_three_issue_words
     (earlier later : TimedPEAccess)

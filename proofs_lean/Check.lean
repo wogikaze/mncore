@@ -252,7 +252,10 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.pe_hazard_violation_filter_exact
 #print axioms ProofsLean.MNCore.PEMemory.pe_hazard_no_violations_satisfies_constraints
 #print axioms ProofsLean.MNCore.PEMemory.pe_hazard_checked_constraint_matches_pair_safety
-#print axioms ProofsLean.MNCore.PEMemory.parsedSourcePEHazardViolations_empty_certifies_pair
+#print axioms ProofsLean.MNCore.PEMemory.collectPEHazardConstraintsAux_mem_iff_emitted
+#print axioms ProofsLean.MNCore.PEMemory.collectPEHazardConstraintsAux_mem_has_emitting_groups
+#print axioms ProofsLean.MNCore.PEMemory.collectPEHazardConstraintsAux_mem_has_event_pair
+#print axioms ProofsLean.MNCore.PEMemory.parsedSourcePEHazardViolations_empty_certifies_pairs
 #print axioms ProofsLean.MNCore.PEMemory.pe_hazard_constraints_between_complete
 #print axioms ProofsLean.MNCore.PEMemory.pe_hazard_constraint_violation_matches_pair_safety
 
