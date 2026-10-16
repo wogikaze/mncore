@@ -160,7 +160,7 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   constant bus構成を転記し、immの4語配置、常時0のフラグ、入力バスと縮減状態への非依存性を
   証明した。direct PE-memory destinationを持つこれらの式は複数destinationへ同じbusを書けるようにし、
   source順にprepare・commitされる定理と、LM/GRFの2 destination lowering例を追加した。
-  非PE memory、BAR、OMRなど未対応destinationを含む式は依然unknownとなる。
+  `$nowrite` は効果なしとして除外する。非PE memory、BAR、OMRなど未対応destinationを含む式は依然unknownとなる。
   Rust parser／実行器との意味対応自体は未証明。浮動小数点演算、汎用operand readと精度縮減、
   4-cycle/4-PE全体の実行、forwarding、ポート・hazard統合は未接続で、対応しない命令は`unknown`のまま扱う。
   さらに、L/I/S精度の整数ALU命令とpackbitだけを既存の部分ALU意味論へ写す関数を定義した。

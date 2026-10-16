@@ -427,11 +427,15 @@ def ParsedExpr.toDirectMaskedConstantWrites? (expression : ParsedExpr)
     (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
     Option (List ParsedMaskedIntegerAccesses) :=
   match expression.op with
-  | .zero | .immediate .. =>
-      expression.destinations.mapM fun destination =>
-        let oneDestination := { expression with destinations := [destination] }
-        ParsedExpr.toDirectMaskedIntegerAccessesInLine? oneDestination registers directive
-          hasSingleLineMask pe cycle bar0 bar1 tWord
+  | .zero | .immediate .. => do
+      let perDestination ← expression.destinations.mapM fun destination =>
+        match destination with
+        | .nowrite => some []
+        | _ =>
+            let oneDestination := { expression with destinations := [destination] }
+            (ParsedExpr.toDirectMaskedIntegerAccessesInLine? oneDestination registers directive
+              hasSingleLineMask pe cycle bar0 bar1 tWord).map fun lowered => [lowered]
+      pure perDestination.flatten
   | _ => none
 
 
@@ -453,13 +457,25 @@ def parsedImmediateMultiDestinationExpr : ParsedExpr where
   op := .immediate 0x12345678 false
   sources := []
   destinations := [plusOneWrite,
-    .mem ⟨.grf0, ⟨1, 1, 1, 1, 1, false, none⟩⟩ false false false none]
+    .mem ⟨.grf0, ⟨1, 1, 1, 1, 1, false, none⟩⟩ false false false none,
+    .nowrite]
   flush := none
   text := "imm f\"1.0\" $ln0v $lr1v"
 
 example :
     (ParsedExpr.toDirectMaskedConstantWrites? parsedImmediateMultiDestinationExpr
       (fun _ _ => 0) {} false 0 0 0 0 0).isSome = true := by decide
+
+def parsedZeroNowriteExpr : ParsedExpr where
+  op := .zero
+  sources := []
+  destinations := [.nowrite]
+  flush := none
+  text := "zero $nowrite"
+
+example :
+    (ParsedExpr.toDirectMaskedConstantWrites? parsedZeroNowriteExpr
+      (fun _ _ => 0) {} false 0 0 0 0 0).map List.length = some 0 := by decide
 
 example :
     (ParsedExpr.toDirectMaskedIntegerAccesses? parsedZeroMaskedExpr (fun _ _ => 0) {}
