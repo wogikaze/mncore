@@ -143,7 +143,7 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   multiline directiveを打ち消すことを証明した。OMR対象directiveから選択フラグを解決する。
   Rust parserがこのParsedLineを生成する対応と、
   ソース全体を通したdirective適用は未接続。
-  整数ALUのRust入力処理に合わせ、sourceの符号反転・精度拡張属性を無視するloweringを接続して証明した。memory sourceの丸め属性はRustと同じsingle→half変換（最近接偶数、非正規数なし）を入力readへ接続し、tie-even・境界・特殊値を計算で証明し、再梱包後のhalf ALU各laneが元busの逆順4語を読む対応も証明した。mask付き入力と非PEメモリは引き続きlowering対象外。forward sourceのoperand loweringと、明示slotを渡す場合の既知値・poison・unknown伝播、およびALUから宛先writebackまでの直接stepも追加した。複数式PE行を同一の旧register state/旧forwarding slotsからprepareし、一括commitするstepも追加した。prepare済みの整数ALU出力をflush後busとして指定cycleの`aluf` slotへ反映し、そのslotのreadbackを証明した。さらに単一のinteger ALU式について4 cycleすべてを旧register state/旧forwarding slotsからprepareし、cycle別`aluf`を集めて一括commitする遷移を定義した。複数式を含む4-cycle行全体への統合と、zero/immediate・MAU・行列read・L1BM producerの同時出力は未接続。
+  整数ALUのRust入力処理に合わせ、sourceの符号反転・精度拡張属性を無視するloweringを接続して証明した。memory sourceの丸め属性はRustと同じsingle→half変換（最近接偶数、非正規数なし）を入力readへ接続し、tie-even・境界・特殊値を計算で証明し、再梱包後のhalf ALU各laneが元busの逆順4語を読む対応も証明した。mask付き入力と非PEメモリは引き続きlowering対象外。forward sourceのoperand loweringと、明示slotを渡す場合の既知値・poison・unknown伝播、およびALUから宛先writebackまでの直接stepも追加した。複数式PE行を同一の旧register state/旧forwarding slotsからprepareし、一括commitするstepも追加した。prepare済みの整数ALU出力をflush後busとして指定cycleの`aluf` slotへ反映し、そのslotのreadbackを証明した。さらに整数ALU式のみからなるissue lineについて、全式を同じ旧register state/旧forwarding slotsから4 cycle分prepareし、Rustの式順・cycle順でwriteをcommitし、cycle別`aluf`を集める遷移を定義した。zero/immediate・MAU・行列read・L1BM producerを含む一般PE lineの同時出力は未接続。
 - `Issue.lean`: Rust `AluOp::inputs()` と全32 opcodeのsource数をLeanで定義し、issue mirror監査でも両表の一致を確認する。PE式の同時発行判定について、グループ重複、MAU組み合わせ、
   行列レジスタ使用、PEメモリの読み書きポート、即値とLM0、zero-flush重複を
   抽象レコード上の述語として定義し、判定と合法性の同値を証明した。
