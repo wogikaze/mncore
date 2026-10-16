@@ -59,6 +59,12 @@ def l2BlockRangeEvents (write : Bool)
       ⟨.l2bm bank, path, write,
         some ((base + cycle.val * stride) % 32768), stride, startWord, cycle⟩
 
+theorem l2BlockRangeEvents_count (write : Bool)
+    (path : ProofsLean.MNCore.PEMemory.BlockHazardPath)
+    (base stride startWord : Nat) :
+    (l2BlockRangeEvents write path base stride startWord).length = 8 := by
+  simp [l2BlockRangeEvents, List.finRange]
+
 def multicastDestinationMask (sourceMask immode : Nat) : Nat := Id.run do
   let mut destinationMask := 0
   for source in List.range 8 do
