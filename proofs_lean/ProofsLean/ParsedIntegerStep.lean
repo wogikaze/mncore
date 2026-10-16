@@ -2665,6 +2665,26 @@ theorem pe_hazard_checked_constraint_matches_pair_safety
     simp [PEHazardConstraint.violated] at safeDistance violated
     omega
 
+/-- A source-level empty hazard report certifies every generated write/read
+pair represented in its compiled event stream. -/
+theorem parsedSourcePEHazardViolations_empty_certifies_pair
+    (source : List ParsedMaskedSourceStatement) (control : ParsedMaskExecutionControl)
+    (events : List (List TimedPEAccess))
+    (eventsGenerated : parsedSourcePEHazardEvents? source control = some events)
+    (noViolations : parsedSourcePEHazardViolations? source control = some [])
+    (constraint : PEHazardConstraint)
+    (member : constraint ∈ collectPEHazardConstraints events)
+    (earlier later : TimedPEAccess)
+    (made : makePEHazardConstraint? earlier later = some constraint) :
+    peHazardSatisfied earlier later := by
+  have noGeneratedViolations :
+      violatingPEHazardConstraints (collectPEHazardConstraints events) = [] := by
+    simpa [parsedSourcePEHazardViolations?, parsedSourcePEHazardConstraints?,
+      eventsGenerated] using noViolations
+  exact pe_hazard_checked_constraint_matches_pair_safety
+    (collectPEHazardConstraints events) earlier later constraint member made
+    noGeneratedViolations
+
 theorem lm_pe_hazard_requires_three_issue_words
     (earlier later : TimedPEAccess)
     (write : earlier.write = true) (read : later.write = false)
