@@ -2398,6 +2398,197 @@ inductive PEHazardDistance where
   | cycles (count : Nat)
   deriving DecidableEq, Repr
 
+inductive BlockHazardResource where
+  | l1bm (index : Fin 8)
+  | l2bm (index : Fin 2)
+  deriving DecidableEq, Repr
+
+inductive BlockHazardPath where
+  | l1ToPe
+  | peToL1
+  | l2ToL1
+  | l1ToL2
+  | multicast
+  | mv
+  deriving DecidableEq, Repr
+
+inductive BlockHazardKind where
+  | dataRace
+  | portConflict
+  deriving DecidableEq, Repr
+
+structure TimedBlockAccess where
+  resource : BlockHazardResource
+  path : BlockHazardPath
+  write : Bool
+  address : Option Nat
+  length : Nat
+  startWord : Nat
+  cycle : Fin 4
+  deriving DecidableEq, Repr
+
+structure BlockHazardRule where
+  kind : BlockHazardKind
+  distance : PEHazardDistance
+  deriving DecidableEq, Repr
+
+def timedBlockAccessesOverlap (left right : TimedBlockAccess) : Bool :=
+  match left.address, right.address with
+  | some leftAddress, some rightAddress =>
+      leftAddress < rightAddress + right.length &&
+        rightAddress < leftAddress + left.length
+  | _, _ => true
+
+/-- SDM 3.6.3.1–3.6.3.8 block-memory rules transcribed from
+`viz/core/src/hazard.rs`; same-resource filtering is part of this relation. -/
+def blockHazardRule? (earlier later : TimedBlockAccess) : Option BlockHazardRule :=
+  if earlier.resource != later.resource || !earlier.write || later.write then none
+  else match earlier.path, later.path, earlier.resource with
+  | .l1ToL2, .mv, .l2bm _ => some ⟨.dataRace, .steps 2⟩
+  | .l1ToL2, .l2ToL1, .l2bm _ => some ⟨.portConflict, .steps 4⟩
+  | .l2ToL1, .l1ToL2, .l1bm _ => some ⟨.portConflict, .steps 3⟩
+  | .l2ToL1, .multicast, .l1bm _ => some ⟨.portConflict, .steps 3⟩
+  | .multicast, .l1ToL2, .l1bm _ => some ⟨.portConflict, .steps 4⟩
+  | .multicast, .multicast, .l1bm _ => some ⟨.portConflict, .steps 4⟩
+  | .multicast, .l1ToPe, .l1bm _ => some ⟨.dataRace, .cycles 11⟩
+  | .l2ToL1, .l1ToPe, .l1bm _ => some ⟨.dataRace, .cycles 7⟩
+  | .peToL1, .l1ToL2, .l1bm _ => some ⟨.dataRace, .cycles 11⟩
+  | .peToL1, .multicast, .l1bm _ => some ⟨.dataRace, .cycles 11⟩
+  | .peToL1, .l1ToPe, .l1bm _ => some ⟨.portConflict, .steps 3⟩
+  | _, _, _ => none
+
+/-- Data-race rules require overlapping regions; port conflicts cover the whole
+resource regardless of address. -/
+def applicableBlockHazardRule? (earlier later : TimedBlockAccess) :
+    Option BlockHazardRule := do
+  let rule ← blockHazardRule? earlier later
+  if rule.kind == .dataRace && !timedBlockAccessesOverlap earlier later then none
+  else some rule
+
+def TimedBlockAccess.absoluteCycle (access : TimedBlockAccess) : Nat :=
+  access.startWord * 4 + access.cycle.val
+
+structure TimedBlockHazardConstraint where
+  earlier : TimedBlockAccess
+  later : TimedBlockAccess
+  kind : BlockHazardKind
+  distance : Nat
+  required : Nat
+  deriving DecidableEq, Repr
+
+/-- Construct an in-window constraint with the step/cycle units used by the
+Rust analyzer. -/
+def makeTimedBlockHazardConstraint? (earlier later : TimedBlockAccess) :
+    Option TimedBlockHazardConstraint := do
+  if !(earlier.startWord < later.startWord) ||
+      later.startWord - earlier.startWord > 4 then none else
+    let rule ← applicableBlockHazardRule? earlier later
+    match rule.distance with
+    | .steps count =>
+        some ⟨earlier, later, rule.kind,
+          (later.startWord - earlier.startWord) * 4, count * 4⟩
+    | .cycles count =>
+        some ⟨earlier, later, rule.kind,
+          later.absoluteCycle - earlier.absoluteCycle, count⟩
+
+/-- A data-race constraint is emitted only for overlapping locations. -/
+theorem applicableBlockHazardRule_dataRace_overlaps
+    (earlier later : TimedBlockAccess) (rule : BlockHazardRule)
+    (applicable : applicableBlockHazardRule? earlier later = some rule)
+    (dataRace : rule.kind = .dataRace) :
+    timedBlockAccessesOverlap earlier later = true := by
+  cases hRule : blockHazardRule? earlier later with
+  | none => simp [applicableBlockHazardRule?, hRule] at applicable
+  | some found =>
+      cases hKind : found.kind with
+      | dataRace =>
+          cases hOverlap : timedBlockAccessesOverlap earlier later with
+          | false => simp [applicableBlockHazardRule?, hRule, hKind, hOverlap] at applicable
+          | true =>
+              have same : found = rule := by
+                simpa [applicableBlockHazardRule?, hRule, hKind, hOverlap] using applicable
+              simpa [same] using hOverlap
+      | portConflict =>
+          simp [applicableBlockHazardRule?, hRule, hKind] at applicable
+          have same : found = rule := applicable
+          subst rule
+          simp [hKind] at dataRace
+
+/-- Port conflicts do not depend on address overlap. -/
+theorem applicableBlockHazardRule_portConflict_keeps_disjoint
+    (earlier later : TimedBlockAccess) (rule : BlockHazardRule)
+    (generated : blockHazardRule? earlier later = some rule)
+    (portConflict : rule.kind = .portConflict)
+    (disjoint : timedBlockAccessesOverlap earlier later = false) :
+    applicableBlockHazardRule? earlier later = some rule := by
+  simp [applicableBlockHazardRule?, generated, portConflict, disjoint]
+
+theorem l1ToL2_mv_l2bm_hazard_rule (index : Fin 2) :
+    blockHazardRule?
+      ⟨.l2bm index, .l1ToL2, true, some 0, 1, 0, 0⟩
+      ⟨.l2bm index, .mv, false, some 8, 1, 2, 0⟩ =
+      some ⟨.dataRace, .steps 2⟩ := by simp [blockHazardRule?]
+
+theorem l1ToL2_l2ToL1_l2bm_hazard_rule (index : Fin 2) :
+    blockHazardRule?
+      ⟨.l2bm index, .l1ToL2, true, some 0, 1, 0, 0⟩
+      ⟨.l2bm index, .l2ToL1, false, some 8, 1, 4, 0⟩ =
+      some ⟨.portConflict, .steps 4⟩ := by simp [blockHazardRule?]
+
+theorem l2ToL1_l1ToL2_l1bm_hazard_rule (index : Fin 8) :
+    blockHazardRule?
+      ⟨.l1bm index, .l2ToL1, true, some 0, 1, 0, 0⟩
+      ⟨.l1bm index, .l1ToL2, false, some 8, 1, 3, 0⟩ =
+      some ⟨.portConflict, .steps 3⟩ := by simp [blockHazardRule?]
+
+theorem l2ToL1_multicast_l1bm_hazard_rule (index : Fin 8) :
+    blockHazardRule?
+      ⟨.l1bm index, .l2ToL1, true, some 0, 1, 0, 0⟩
+      ⟨.l1bm index, .multicast, false, some 8, 1, 3, 0⟩ =
+      some ⟨.portConflict, .steps 3⟩ := by simp [blockHazardRule?]
+
+theorem multicast_l1ToL2_l1bm_hazard_rule (index : Fin 8) :
+    blockHazardRule?
+      ⟨.l1bm index, .multicast, true, some 0, 1, 0, 0⟩
+      ⟨.l1bm index, .l1ToL2, false, some 8, 1, 4, 0⟩ =
+      some ⟨.portConflict, .steps 4⟩ := by simp [blockHazardRule?]
+
+theorem multicast_multicast_l1bm_hazard_rule (index : Fin 8) :
+    blockHazardRule?
+      ⟨.l1bm index, .multicast, true, some 0, 1, 0, 0⟩
+      ⟨.l1bm index, .multicast, false, some 8, 1, 4, 0⟩ =
+      some ⟨.portConflict, .steps 4⟩ := by simp [blockHazardRule?]
+
+theorem multicast_l1ToPe_l1bm_hazard_rule (index : Fin 8) :
+    blockHazardRule?
+      ⟨.l1bm index, .multicast, true, some 0, 1, 0, 0⟩
+      ⟨.l1bm index, .l1ToPe, false, some 8, 1, 11, 0⟩ =
+      some ⟨.dataRace, .cycles 11⟩ := by simp [blockHazardRule?]
+
+theorem l2ToL1_l1ToPe_l1bm_hazard_rule (index : Fin 8) :
+    blockHazardRule?
+      ⟨.l1bm index, .l2ToL1, true, some 0, 1, 0, 0⟩
+      ⟨.l1bm index, .l1ToPe, false, some 8, 1, 7, 0⟩ =
+      some ⟨.dataRace, .cycles 7⟩ := by simp [blockHazardRule?]
+
+theorem peToL1_l1ToL2_l1bm_hazard_rule (index : Fin 8) :
+    blockHazardRule?
+      ⟨.l1bm index, .peToL1, true, some 0, 1, 0, 0⟩
+      ⟨.l1bm index, .l1ToL2, false, some 8, 1, 11, 0⟩ =
+      some ⟨.dataRace, .cycles 11⟩ := by simp [blockHazardRule?]
+
+theorem peToL1_multicast_l1bm_hazard_rule (index : Fin 8) :
+    blockHazardRule?
+      ⟨.l1bm index, .peToL1, true, some 0, 1, 0, 0⟩
+      ⟨.l1bm index, .multicast, false, some 8, 1, 11, 0⟩ =
+      some ⟨.dataRace, .cycles 11⟩ := by simp [blockHazardRule?]
+
+theorem peToL1_l1ToPe_l1bm_hazard_rule (index : Fin 8) :
+    blockHazardRule?
+      ⟨.l1bm index, .peToL1, true, some 0, 1, 0, 0⟩
+      ⟨.l1bm index, .l1ToPe, false, some 8, 1, 3, 0⟩ =
+      some ⟨.portConflict, .steps 3⟩ := by simp [blockHazardRule?]
+
 structure TimedPEAccess where
   access : DirectMemoryAccess
   write : Bool

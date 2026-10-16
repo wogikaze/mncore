@@ -136,6 +136,11 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   さらにRust `Constraint::violated`相当の`distance < required`でconstraint一覧をfilterし、
   violation結果のmembershipが元一覧中の違反constraintと同値であることを証明した。
   constraint単体について、違反判定とPE pair safetyの否定が同値であることも証明した。
+  Rust hazard.rs §3.6.3.1–3.6.3.8については、L1BM/L2BM resourceとL1/L2/MV pathを持つ
+  別のtyped rule tableを追加し、全11 path caseのkind/distance、およびdata raceだけが
+  overlapを要求しport conflictはdisjoint addressにも適用されることを証明した。
+  block accessからstep/cycle単位のconstraintを作る関数も追加したが、L1/L2/MV source event生成と
+  既存source hazard collectorへの統合は未完了。
   これは対象PEメモリ規則の条件モデルであり、Rust analyzerの全Access生成、mask directiveの実効状態、
   BARによる静的range照合、reportのsort/dedupを含む出力一致証明ではない。
   mv、debug、DRAM初期化
