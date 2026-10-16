@@ -742,6 +742,16 @@ structure PEHazardConstraint where
 def PEHazardConstraint.violated (constraint : PEHazardConstraint) : Bool :=
   constraint.distance < constraint.required
 
+def violatingPEHazardConstraints (constraints : List PEHazardConstraint) :
+    List PEHazardConstraint :=
+  constraints.filter PEHazardConstraint.violated
+
+theorem pe_hazard_violation_filter_exact
+    (constraints : List PEHazardConstraint) (constraint : PEHazardConstraint) :
+    constraint ∈ violatingPEHazardConstraints constraints ↔
+      constraint ∈ constraints ∧ constraint.distance < constraint.required := by
+  simp [violatingPEHazardConstraints, PEHazardConstraint.violated]
+
 def makePEHazardConstraint? (earlier later : TimedPEAccess) :
     Option PEHazardConstraint :=
   if earlier.startWord < later.startWord then
@@ -786,11 +796,16 @@ def parsedSourcePEHazardConstraints? (source : List ParsedMaskedSourceStatement)
     (control : ParsedMaskExecutionControl) : Option (List PEHazardConstraint) :=
   (parsedSourcePEHazardEvents? source control).map collectPEHazardConstraints
 
+def parsedSourcePEHazardViolations? (source : List ParsedMaskedSourceStatement)
+    (control : ParsedMaskExecutionControl) : Option (List PEHazardConstraint) :=
+  (parsedSourcePEHazardConstraints? source control).map violatingPEHazardConstraints
+
 theorem pe_hazard_constraint_uses_rule_distance
     (earlier later : TimedPEAccess) (constraint : PEHazardConstraint)
     (made : makePEHazardConstraint? earlier later = some constraint) :
-    ∃ ruleDistance, peHazardRequirement? earlier later = some ruleDistance ∧
-      constraint.earlier = earlier ∧ constraint.later = later ∧
+    earlier.startWord < later.startWord ∧
+      ∃ ruleDistance, peHazardRequirement? earlier later = some ruleDistance ∧
+        constraint.earlier = earlier ∧ constraint.later = later ∧
       (match ruleDistance with
        | .steps count => constraint.distance =
             (later.startWord - earlier.startWord) * 4 ∧ constraint.required = count * 4
@@ -804,12 +819,28 @@ theorem pe_hazard_constraint_uses_rule_distance
         | steps count =>
             simp [makePEHazardConstraint?, htime, hreq] at made
             cases made
-            exact ⟨.steps count, rfl, rfl, rfl, by simp⟩
+            exact ⟨htime, .steps count, rfl, rfl, rfl, by simp⟩
         | cycles count =>
             simp [makePEHazardConstraint?, htime, hreq] at made
             cases made
-            exact ⟨.cycles count, rfl, rfl, rfl, by simp⟩
+            exact ⟨htime, .cycles count, rfl, rfl, rfl, by simp⟩
   · simp [makePEHazardConstraint?, htime] at made
+
+theorem pe_hazard_constraint_violation_matches_pair_safety
+    (earlier later : TimedPEAccess) (constraint : PEHazardConstraint)
+    (made : makePEHazardConstraint? earlier later = some constraint) :
+    constraint.violated = true ↔ ¬ peHazardSatisfied earlier later := by
+  have info := pe_hazard_constraint_uses_rule_distance earlier later constraint made
+  rcases info with ⟨timeOrder, ruleDistance, requirement, sourceEq, targetEq, distanceFields⟩
+  cases ruleDistance with
+  | steps count =>
+      rcases distanceFields with ⟨hdistance, hrequired⟩
+      simp [PEHazardConstraint.violated, peHazardSatisfied, requirement,
+        hdistance, hrequired, timeOrder]
+  | cycles count =>
+      rcases distanceFields with ⟨hdistance, hrequired⟩
+      simp [PEHazardConstraint.violated, peHazardSatisfied, requirement,
+        hdistance, hrequired, timeOrder]
 
 theorem lm_pe_hazard_requires_three_issue_words
     (earlier later : TimedPEAccess)

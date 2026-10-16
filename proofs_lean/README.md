@@ -127,6 +127,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   sourceをcompileAdvancingし、directive・nopを反映したissueごとのevent列から、
   先行writeと後続readのconstraintを4 issue-word以内で集約する関数も追加した。
   生成constraintの距離・required値が上記ルールから作られることを証明した。
+  さらにRust `Constraint::violated`相当の`distance < required`でconstraint一覧をfilterし、
+  violation結果のmembershipが元一覧中の違反constraintと同値であることを証明した。
+  constraint単体について、違反判定とPE pair safetyの否定が同値であることも証明した。
   これは対象PEメモリ規則の条件モデルであり、Rust analyzerの全Access生成、mask directiveの実効状態、
   BARによる静的range照合、reportのsort/dedupを含む出力一致証明ではない。
   mv、debug、DRAM初期化
