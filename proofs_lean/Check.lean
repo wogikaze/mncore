@@ -65,6 +65,11 @@ import Lean
 #print axioms ProofsLean.MNCore.L1Transfer.commitL1Writes_last_readback
 #print axioms ProofsLean.MNCore.L1Transfer.mwriteWrites_count
 #print axioms ProofsLean.MNCore.L1Transfer.m4writeWrites_count
+#print axioms ProofsLean.MNCore.L1Transfer.mwriteFourCycleWrites_count
+#print axioms ProofsLean.MNCore.L1Transfer.m4writeFourCycleWrites_count
+#print axioms ProofsLean.MNCore.L1Transfer.mwriteFourCycleWrites_contains_high
+#print axioms ProofsLean.MNCore.L1Transfer.mwriteFourCycleWrites_contains_low
+#print axioms ProofsLean.MNCore.L1Transfer.m4writeFourCycleWrites_contains_high
 #print axioms ProofsLean.MNCore.L1Transfer.mwriteWrites_contains_high
 #print axioms ProofsLean.MNCore.L1Transfer.mwriteWrites_contains_low
 #print axioms ProofsLean.MNCore.L1Transfer.m4writeWrites_contains_high

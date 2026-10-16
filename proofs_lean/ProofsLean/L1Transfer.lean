@@ -213,6 +213,17 @@ def m4writeWrites (memoryBase : Fin l1bmLongWords) (twoLongWords : Bool)
           [(addressAt memoryBase (baseOffset + 4), source.low)]
         else []
 
+def mwriteFourCycleWrites (memoryBase : Fin l1bmLongWords) (twoLongWords : Bool)
+    (buses : Fin 4 → Fin 4 → Bus) : List L1Write :=
+  (List.finRange 4).flatMap fun cycle =>
+    mwriteWrites memoryBase twoLongWords cycle (buses cycle)
+
+def m4writeFourCycleWrites (memoryBase : Fin l1bmLongWords) (twoLongWords : Bool)
+    (mabGroup : Fin 4) (buses : Fin 4 → Fin 4 → Fin 4 → Fin 4 → Bus) :
+    List L1Write :=
+  (List.finRange 4).flatMap fun cycle =>
+    m4writeWrites memoryBase twoLongWords cycle mabGroup (buses cycle)
+
 theorem mwriteWrites_count (memoryBase : Fin l1bmLongWords)
     (twoLongWords : Bool) (cycle : Fin 4) (buses : Fin 4 → Bus) :
     (mwriteWrites memoryBase twoLongWords cycle buses).length =
@@ -271,6 +282,40 @@ theorem m4writeWrites_count (memoryBase : Fin l1bmLongWords)
       if twoLongWords then 32 else 16 := by
   cases twoLongWords <;> simp [m4writeWrites, List.length_flatMap, List.finRange]
 
+theorem mwriteFourCycleWrites_count (memoryBase : Fin l1bmLongWords)
+    (twoLongWords : Bool) (buses : Fin 4 → Fin 4 → Bus) :
+    (mwriteFourCycleWrites memoryBase twoLongWords buses).length =
+      if twoLongWords then 32 else 16 := by
+  cases twoLongWords <;>
+    simp [mwriteFourCycleWrites, List.length_flatMap, mwriteWrites_count,
+      List.finRange]
+
+theorem m4writeFourCycleWrites_count (memoryBase : Fin l1bmLongWords)
+    (twoLongWords : Bool) (mabGroup : Fin 4)
+    (buses : Fin 4 → Fin 4 → Fin 4 → Fin 4 → Bus) :
+    (m4writeFourCycleWrites memoryBase twoLongWords mabGroup buses).length =
+      if twoLongWords then 128 else 64 := by
+  cases twoLongWords <;>
+    simp [m4writeFourCycleWrites, List.length_flatMap, m4writeWrites_count,
+      List.finRange]
+
+theorem mwriteFourCycleWrites_contains_high (memoryBase : Fin l1bmLongWords)
+    (twoLongWords : Bool) (cycle pe : Fin 4) (buses : Fin 4 → Fin 4 → Bus) :
+    (addressAt memoryBase
+        (cycle.val * (if twoLongWords then 8 else 4) + pe.val),
+      (buses cycle pe).high) ∈ mwriteFourCycleWrites memoryBase twoLongWords buses := by
+  apply List.mem_flatMap.mpr
+  refine ⟨cycle, List.mem_finRange cycle, ?_⟩
+  exact mwriteWrites_contains_high memoryBase twoLongWords cycle pe (buses cycle)
+
+theorem mwriteFourCycleWrites_contains_low (memoryBase : Fin l1bmLongWords)
+    (cycle pe : Fin 4) (buses : Fin 4 → Fin 4 → Bus) :
+    (addressAt memoryBase (cycle.val * 8 + pe.val + 4),
+      (buses cycle pe).low) ∈ mwriteFourCycleWrites memoryBase true buses := by
+  apply List.mem_flatMap.mpr
+  refine ⟨cycle, List.mem_finRange cycle, ?_⟩
+  exact mwriteWrites_contains_low memoryBase cycle pe (buses cycle)
+
 theorem m4writeWrites_contains_high (memoryBase : Fin l1bmLongWords)
     (cycle mabGroup group pe : Fin 4) (buses : Fin 4 → Fin 4 → Fin 4 → Bus) :
     (addressAt memoryBase
@@ -282,6 +327,24 @@ theorem m4writeWrites_contains_high (memoryBase : Fin l1bmLongWords)
   apply List.mem_flatMap.mpr
   refine ⟨pe, List.mem_finRange pe, ?_⟩
   simp [m4writeWrites]
+
+theorem m4writeFourCycleWrites_contains_high (memoryBase : Fin l1bmLongWords)
+    (twoLongWords : Bool) (mabGroup cycle group pe : Fin 4)
+    (buses : Fin 4 → Fin 4 → Fin 4 → Fin 4 → Bus) :
+    (addressAt memoryBase
+        (cycle.val * (if twoLongWords then 32 else 16) +
+          group.val * (if twoLongWords then 8 else 4) + pe.val),
+      (buses cycle group mabGroup pe).high) ∈
+      m4writeFourCycleWrites memoryBase twoLongWords mabGroup buses := by
+  apply List.mem_flatMap.mpr
+  refine ⟨cycle, List.mem_finRange cycle, ?_⟩
+  cases twoLongWords
+  · exact m4writeWrites_contains_high memoryBase cycle mabGroup group pe (buses cycle)
+  · apply List.mem_flatMap.mpr
+    refine ⟨group, List.mem_finRange group, ?_⟩
+    apply List.mem_flatMap.mpr
+    refine ⟨pe, List.mem_finRange pe, ?_⟩
+    simp [m4writeWrites]
 
 theorem m4writeWrites_last (memoryBase : Fin l1bmLongWords)
     (twoLongWords : Bool) (cycle mabGroup : Fin 4)
