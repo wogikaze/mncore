@@ -96,6 +96,10 @@ def ParsedOperand.toMaskRegisterEntry? (operand : ParsedOperand) : Option (Fin 1
       if h : 1 ≤ entry ∧ entry < 16 then some ⟨entry - 1, by omega⟩ else none
   | _ => none
 
+def parsedOperandHasSingleLineWriteMask : ParsedOperand → Bool
+  | .mem _ _ _ _ mask | .bar _ _ mask | .omr _ mask => mask.isSome
+  | _ => false
+
 /-- Resolve the write mask for one PE cycle. Explicit selectors take priority;
 the caller supplies an already-resolved multiline directive when no selector
 appears on the OMR destination. -/
@@ -133,12 +137,30 @@ example (registers : ProofsLean.MNCore.Masks.RegisterFile) (cycle : Fin 4) :
 
 def ParsedOperand.resolveOmrWriteSelection? (operand : ParsedOperand)
     (registers : ProofsLean.MNCore.Masks.RegisterFile) (cycle : Fin 4)
-    (directive : ParsedMaskDirective) : Option (BitVec 4) :=
+    (directive : ParsedMaskDirective) (hasSingleLineMask : Bool) : Option (BitVec 4) :=
   match operand with
   | .omr _ (some mask) => resolveParsedMaskFlags? mask registers cycle
-  | .omr _ none => some ((resolveOmrDirectiveSelection? directive registers cycle).getD
-    (BitVec.allOnes 4))
+  | .omr _ none =>
+      if hasSingleLineMask then some (BitVec.allOnes 4)
+      else some ((resolveOmrDirectiveSelection? directive registers cycle).getD
+        (BitVec.allOnes 4))
   | _ => none
+
+def parsedExprHasSingleLineWriteMask (expression : ParsedExpr) : Bool :=
+  expression.destinations.any parsedOperandHasSingleLineWriteMask
+
+theorem single_line_mask_cancels_omr_directive
+    (registers : ProofsLean.MNCore.Masks.RegisterFile) (cycle : Fin 4)
+    (directive : ParsedMaskDirective) :
+    ParsedOperand.resolveOmrWriteSelection? (.omr 1 none) registers cycle directive true =
+      some (BitVec.allOnes 4) := by
+  simp [ParsedOperand.resolveOmrWriteSelection?]
+
+theorem own_omr_mask_precedes_multiline_directive
+    (registers : ProofsLean.MNCore.Masks.RegisterFile) (cycle : Fin 4)
+    (directive : ParsedMaskDirective) (mask : ParsedMask) :
+    ParsedOperand.resolveOmrWriteSelection? (.omr 1 (some mask)) registers cycle directive true =
+      resolveParsedMaskFlags? mask registers cycle := rfl
 
 example (registers : ProofsLean.MNCore.Masks.RegisterFile) :
     resolveParsedMaskFlags? (.pattern false 8) registers 0 =
@@ -357,7 +379,8 @@ def parsedIntegerMaskExprAccesses? (expression : ParsedExpr)
               if ParsedAluName.integerInputCount name != 1 then none else
               match ParsedOperand.toDirectMemoryAccess? source pe cycle bar0 bar1 tWord,
                     ParsedOperand.toMaskRegisterEntry? destination,
-                    ParsedOperand.resolveOmrWriteSelection? destination registers cycle directive with
+                    ParsedOperand.resolveOmrWriteSelection? destination registers cycle directive
+                      (parsedExprHasSingleLineWriteMask expression) with
               | some sourceAccess, some entry, some selection =>
                   some ⟨expression.op, sourceAccess, sourceAccess, entry,
                     selection, ⟨precision, aluOp, hRequest⟩⟩
@@ -367,7 +390,8 @@ def parsedIntegerMaskExprAccesses? (expression : ParsedExpr)
               match ParsedOperand.toDirectMemoryAccess? sourceX pe cycle bar0 bar1 tWord,
                     ParsedOperand.toDirectMemoryAccess? sourceY pe cycle bar0 bar1 tWord,
                     ParsedOperand.toMaskRegisterEntry? destination,
-                    ParsedOperand.resolveOmrWriteSelection? destination registers cycle directive with
+                    ParsedOperand.resolveOmrWriteSelection? destination registers cycle directive
+                      (parsedExprHasSingleLineWriteMask expression) with
               | some xAccess, some yAccess, some entry, some selection =>
                   some ⟨expression.op, xAccess, yAccess, entry,
                     selection, ⟨precision, aluOp, hRequest⟩⟩

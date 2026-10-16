@@ -55,6 +55,8 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.mask_read_after_selected_write
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerMaskStep_readback
 #print axioms ProofsLean.MNCore.PEMemory.executeParsedIntegerMaskExpr_readback
+#print axioms ProofsLean.MNCore.PEMemory.single_line_mask_cancels_omr_directive
+#print axioms ProofsLean.MNCore.PEMemory.own_omr_mask_precedes_multiline_directive
 #print axioms ProofsLean.MNCore.Issue.parsed_topline_check_sound
 #print axioms ProofsLean.MNCore.Issue.parsed_topline_check_complete
 #print axioms ProofsLean.MNCore.Issue.mask_directive_replaces_state
