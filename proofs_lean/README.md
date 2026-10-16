@@ -113,6 +113,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   `ParsedL1Op.inFiniteEnvelope_finite`では、全9 variantをselector、RRN precision、MAB差分の
   envelopeでタグ付き有限型へ写し、`ParsedL1Op`全体のbounded subtypeが有限であることを証明した。
   このenvelopeがassembler受理parser出力を全て含む証明、およびPE行・machineへの合成は未実装。
+  `ParsedL2Op.inFiniteEnvelope_finite`も、全10 variantについてL1B set、from-L1B selector、
+  RRN payloadを含むbounded subtypeの有限性を証明した。assembler受理集合との包含証明と
+  PE行・machineへの合成は引き続き未実装。
   `hbfe`/`hbfn`のmantissa length引数も、assemble3の`6..9`受理・`5,10,11`拒否を根拠に
   optional payloadの有限carrierを証明した。
   これらのpayload定理から`ParsedOp`/`ParsedLine`全体への合成、他の残存Nat/Int範囲、

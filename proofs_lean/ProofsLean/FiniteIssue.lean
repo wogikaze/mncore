@@ -720,6 +720,75 @@ theorem ParsedL1bSet.inFiniteEnvelope_finite :
     Finite {set : ParsedL1bSet // set.inFiniteEnvelope} :=
   Finite.of_injective ParsedL1bSet.finiteCode ParsedL1bSet.finiteCode_injective
 
+private theorem ParsedL1bSet.values_injective (a b : ParsedL1bSet)
+    (equal : a.mask = b.mask ∧ a.immode = b.immode) : a = b := by
+  cases a with
+  | mk am ai =>
+    cases b with
+    | mk bm bi =>
+      simp_all
+
+abbrev ParsedL2OpFiniteCode :=
+  Fin 10 × (Fin 8 × Fin 8) × (Fin 128 × Fin 8) × Fin 8 × Fin 512
+
+def ParsedL2Op.inFiniteEnvelope : ParsedL2Op → Prop
+  | .bcast set | .bcast2 set | .distrib set | .imcast set => set.inFiniteEnvelope
+  | .fromL1b index => index < 8
+  | .reduce rrn set => rrn.inFiniteEnvelope ∧ set.inFiniteEnvelope
+  | .reduce2 rrn => rrn.inFiniteEnvelope
+  | .gather | .dars | .darw => True
+
+private def ParsedL2Op.finiteCode
+    (op : {op : ParsedL2Op // op.inFiniteEnvelope}) : ParsedL2OpFiniteCode :=
+  let noSet : Fin 8 × Fin 8 := (0, 0)
+  let noRrn : Fin 128 × Fin 8 := (0, 0)
+  let noIndex : Fin 8 := 0
+  let noOffset : Fin 512 := 0
+  match op with
+  | ⟨.bcast set, bound⟩ => (0, ParsedL1bSet.finiteCode ⟨set, bound⟩, noRrn, noIndex, noOffset)
+  | ⟨.bcast2 set, bound⟩ => (1, ParsedL1bSet.finiteCode ⟨set, bound⟩, noRrn, noIndex, noOffset)
+  | ⟨.distrib set, bound⟩ => (2, ParsedL1bSet.finiteCode ⟨set, bound⟩, noRrn, noIndex, noOffset)
+  | ⟨.fromL1b index, bound⟩ => (3, noSet, noRrn, ⟨index, bound⟩, noOffset)
+  | ⟨.reduce rrn set, bound⟩ =>
+      (4, ParsedL1bSet.finiteCode ⟨set, bound.2⟩,
+        ParsedRrn.finiteCode ⟨rrn, bound.1⟩, noIndex, noOffset)
+  | ⟨.reduce2 rrn, bound⟩ =>
+      (5, noSet, ParsedRrn.finiteCode ⟨rrn, bound⟩, noIndex, noOffset)
+  | ⟨.gather, _⟩ => (6, noSet, noRrn, noIndex, noOffset)
+  | ⟨.imcast set, bound⟩ => (7, ParsedL1bSet.finiteCode ⟨set, bound⟩, noRrn, noIndex, noOffset)
+  | ⟨.dars, _⟩ => (8, noSet, noRrn, noIndex, noOffset)
+  | ⟨.darw, _⟩ => (9, noSet, noRrn, noIndex, noOffset)
+
+private theorem ParsedL2Op.finiteCode_injective :
+    Function.Injective ParsedL2Op.finiteCode := by
+  intro a b equal
+  cases a with
+  | mk a ha =>
+    cases b with
+    | mk b hb =>
+      apply Subtype.ext
+      cases a <;> cases b <;>
+        simp_all [ParsedL2Op.finiteCode, ParsedL1bSet.finiteCode, ParsedRrn.finiteCode]
+      all_goals
+        try exact congrArg Fin.val equal
+        try exact ParsedL1bSet.values_injective _ _ equal
+        try
+          exact ParsedRrn.finiteCode_value_injective _ _
+            (by simpa [ParsedL2Op.inFiniteEnvelope] using ha)
+            (by simpa [ParsedL2Op.inFiniteEnvelope] using hb)
+            (Prod.ext equal.1 equal.2)
+        try
+          exact And.intro
+            (ParsedRrn.finiteCode_value_injective _ _
+              (by simpa [ParsedL2Op.inFiniteEnvelope] using ha.1)
+              (by simpa [ParsedL2Op.inFiniteEnvelope] using hb.1)
+              (Prod.ext equal.2.1 equal.2.2))
+            (ParsedL1bSet.values_injective _ _ equal.1)
+
+theorem ParsedL2Op.inFiniteEnvelope_finite :
+    Finite {op : ParsedL2Op // op.inFiniteEnvelope} :=
+  Finite.of_injective ParsedL2Op.finiteCode ParsedL2Op.finiteCode_injective
+
 def omrEntryInFiniteEnvelope (entry : Nat) : Prop := entry < 16
 
 private def omrEntryCode

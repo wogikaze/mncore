@@ -514,6 +514,13 @@ def coverage_catalog() -> dict:
         }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
+            "theorem": "ProofsLean.MNCore.Issue.ParsedL2Op.inFiniteEnvelope_finite",
+            "scope": "Finite tagged carrier for all ten ParsedL2Op variants under bounded L1B set, from-L1B selector, and RRN envelopes.",
+            "evidence": "proofs_lean/evidence/isa-bounds/reference.json: all 64 L1B set pairs, l2bm@0..7 accepted/@8 rejected, and finite RRN opcode/precision carrier.",
+            "missing": "The envelope is not yet proved to contain every assembler-accepted ParsedL2Op parse, and no finite PE-line or machine-level carrier is composed from it.",
+        }, {
+            "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
+            "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
             "theorem": "ProofsLean.MNCore.Issue.ParsedL2FromL1.inFiniteEnvelope_finite",
             "scope": "Finite tagged carrier for `ParsedL2Op.fromL1b` selectors below 8.",
             "evidence": "proofs_lean/evidence/isa-bounds/reference.json: l2bm@0..7 accepted and @8 rejected.",
