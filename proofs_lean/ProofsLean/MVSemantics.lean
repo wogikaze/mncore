@@ -176,6 +176,115 @@ def executeParsedMvB2? (memory : Memory) (transfer : ParsedMv) : Option Memory :
   let plan ← parsedMvB2Plan? transfer
   pure (executeCopies memory plan)
 
+def bFanoutOffsetCopies (sourceCell : Cell) (destination : ParsedMvOperand)
+    (destinationOffset : Nat) : List CopyPair :=
+  (List.finRange 4).flatMap fun group =>
+    (List.finRange 2).map fun bank =>
+      (sourceCell, cellFor destination group bank destinationOffset)
+
+def bBroadcastCopiesAux (sourceAt : Nat → Cell) (destination : ParsedMvOperand)
+    (destinationOffsetAt : Nat → Nat) : Nat → Nat → List CopyPair
+  | _, 0 => []
+  | position, count + 1 =>
+      bFanoutOffsetCopies (sourceAt position) destination
+          (destinationOffsetAt position) ++
+        bBroadcastCopiesAux sourceAt destination destinationOffsetAt
+          (position + 1) count
+
+def bBroadcastCopies (sourceAt : Nat → Cell) (destination : ParsedMvOperand)
+    (destinationOffsetAt : Nat → Nat) (count : Nat) : List CopyPair :=
+  bBroadcastCopiesAux sourceAt destination destinationOffsetAt 0 count
+
+theorem bFanoutOffsetCopies_length (sourceCell : Cell)
+    (destination : ParsedMvOperand) (offset : Nat) :
+    (bFanoutOffsetCopies sourceCell destination offset).length = 8 := by
+  simp [bFanoutOffsetCopies, List.finRange]
+
+theorem bBroadcastCopiesAux_length (sourceAt : Nat → Cell)
+    (destination : ParsedMvOperand) (destinationOffsetAt : Nat → Nat)
+    (position count : Nat) :
+    (bBroadcastCopiesAux sourceAt destination destinationOffsetAt position count).length =
+      count * 8 := by
+  induction count generalizing position with
+  | zero => simp [bBroadcastCopiesAux]
+  | succ count ih =>
+      simp [bBroadcastCopiesAux, bFanoutOffsetCopies_length, ih, Nat.succ_mul]
+      omega
+
+theorem bBroadcastCopies_length (sourceAt : Nat → Cell)
+    (destination : ParsedMvOperand) (destinationOffsetAt : Nat → Nat)
+    (count : Nat) :
+    (bBroadcastCopies sourceAt destination destinationOffsetAt count).length =
+      count * 8 := by
+  exact bBroadcastCopiesAux_length sourceAt destination destinationOffsetAt 0 count
+
+def bPdmCopyPlan (source destination : ParsedMvOperand)
+    (sourceGroup : Fin 4) (count : Nat) : List CopyPair :=
+  bBroadcastCopies (fun offset => cellFor source sourceGroup 0 offset)
+    destination id count
+
+def bDramSourceGroup (position : Nat) : Fin 4 :=
+  ⟨(position % 64) / 16, by
+    have hmod : position % 64 < 64 := Nat.mod_lt _ (by decide)
+    omega⟩
+
+def bDramSourceOffset (position : Nat) : Nat :=
+  16 * (position / 64) + position % 16
+
+theorem bDramSourceCoordinate_flatten (block : Nat) (group : Fin 4)
+    (word : Fin 16) :
+    bDramSourceGroup (64 * block + 16 * group.val + word.val) = group ∧
+    bDramSourceOffset (64 * block + 16 * group.val + word.val) =
+      16 * block + word.val := by
+  have hgroup := group.isLt
+  have hword := word.isLt
+  constructor
+  · apply Fin.ext
+    simp only [bDramSourceGroup]
+    omega
+  · simp only [bDramSourceOffset]
+    omega
+
+def bDramCopyPlan (source destination : ParsedMvOperand)
+    (count : Nat) : List CopyPair :=
+  bBroadcastCopies
+    (fun position => cellFor source (bDramSourceGroup position) 0
+      (bDramSourceOffset position)) destination id count
+
+theorem bPdmCopyPlan_length (source destination : ParsedMvOperand)
+    (sourceGroup : Fin 4) (count : Nat) :
+    (bPdmCopyPlan source destination sourceGroup count).length = count * 8 := by
+  exact bBroadcastCopies_length _ _ _ _
+
+theorem bDramCopyPlan_length (source destination : ParsedMvOperand)
+    (count : Nat) :
+    (bDramCopyPlan source destination count).length = count * 8 := by
+  exact bBroadcastCopies_length _ _ _ _
+
+def mvFirstOperandGroup? (operand : ParsedMvOperand) : Option (Fin 4) := do
+  let groups ← mvOperandGroups? operand
+  groups.head?
+
+def parsedMvBPlan? (transfer : ParsedMv) : Option (List CopyPair) := do
+  if transfer.kind != .broadcast then none else
+  match transfer.source, transfer.destination with
+  | none, _ | _, none => pure []
+  | some source, some destination => do
+      if (match source with | .dram _ _ indirect => indirect | _ => false) ||
+          (match destination with | .dram _ _ indirect => indirect | _ => false) then none else
+      let count := (transfer.size.val / 64) * 64
+      match source with
+      | .pdm _ _ =>
+          let sourceGroup ← mvFirstOperandGroup? source
+          pure (bPdmCopyPlan source destination sourceGroup count)
+      | .dram _ _ false => pure (bDramCopyPlan source destination count)
+      | .dram _ _ true => none
+      | .l2bm _ _ _ => none
+
+def executeParsedMvB? (memory : Memory) (transfer : ParsedMv) : Option Memory := do
+  let plan ← parsedMvBPlan? transfer
+  pure (executeCopies memory plan)
+
 theorem b2GroupOffsetCopies_ignores_operand_selectors
     (source destination : Fin (2 ^ 64)) (sourceGroup destinationGroup : Fin 256)
     (sourceBank destinationBank : Fin 256) (group : Fin 4) (offset : Nat) :
@@ -254,6 +363,15 @@ theorem executeParsedMvB2_read (memory : Memory) (transfer : ParsedMv)
         | some source => memory source
         | none => memory cell) := by
   simp [executeParsedMvB2?, hplan, executeCopies_read]
+
+theorem executeParsedMvB_read (memory : Memory) (transfer : ParsedMv)
+    (plan : List CopyPair) (cell : Cell)
+    (hplan : parsedMvBPlan? transfer = some plan) :
+    (executeParsedMvB? memory transfer).map (fun result => result cell) =
+      some (match finalSource plan cell with
+        | some source => memory source
+        | none => memory cell) := by
+  simp [executeParsedMvB?, hplan, executeCopies_read]
 
 /-- An overlapping left-to-right copy reads every source from the old state:
 writing cell 1 cannot change the value subsequently copied from cell 1 to cell 2. -/

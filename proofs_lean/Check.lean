@@ -365,3 +365,10 @@ run_cmd do
 #print axioms ProofsLean.MNCore.MVSemantics.b2CopyPlan_length
 #print axioms ProofsLean.MNCore.MVSemantics.b2GroupOffsetCopies_ignores_operand_selectors
 #print axioms ProofsLean.MNCore.MVSemantics.executeParsedMvB2_read
+#print axioms ProofsLean.MNCore.MVSemantics.bFanoutOffsetCopies_length
+#print axioms ProofsLean.MNCore.MVSemantics.bBroadcastCopiesAux_length
+#print axioms ProofsLean.MNCore.MVSemantics.bBroadcastCopies_length
+#print axioms ProofsLean.MNCore.MVSemantics.bPdmCopyPlan_length
+#print axioms ProofsLean.MNCore.MVSemantics.bDramSourceCoordinate_flatten
+#print axioms ProofsLean.MNCore.MVSemantics.bDramCopyPlan_length
+#print axioms ProofsLean.MNCore.MVSemantics.executeParsedMvB_read
