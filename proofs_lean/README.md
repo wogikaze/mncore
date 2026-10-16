@@ -156,9 +156,13 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   保存することも定義・証明した。Rust VSMパーサの各分岐がこのLean型を生成する対応、
   `issue.rs`以外のアセンブラ合法性規則、
   ハードウェア対応は未証明。
-  zero と imm/immu を既存のBus結果・mask・PEメモリ書き戻し経路へ追加した。immはRust実行器と
-  同じ4語配置を取り、フラグが常に0、入力バスと縮減状態に依存しないことを証明した。
-  direct PE-memory destinationを持つこれらの式がmasked loweringを通る具体例も追加した。
+  zero と imm/immu を既存のBus結果・mask・PEメモリ書き戻し経路へ追加した。Rust実行器の
+  constant bus構成を転記し、immの4語配置、常時0のフラグ、入力バスと縮減状態への非依存性を
+  証明した。direct PE-memory destinationを持つこれらの式は複数destinationへ同じbusを書けるようにし、
+  source順にprepare・commitされる定理と、LM/GRFの2 destination lowering例を追加した。
+  非PE memory、BAR、OMRなど未対応destinationを含む式は依然unknownとなる。
+  Rust parser／実行器との意味対応自体は未証明。浮動小数点演算、汎用operand readと精度縮減、
+  4-cycle/4-PE全体の実行、forwarding、ポート・hazard統合は未接続で、対応しない命令は`unknown`のまま扱う。
   さらに、L/I/S精度の整数ALU命令とpackbitだけを既存の部分ALU意味論へ写す関数を定義した。
   浮動小数点演算、オペランド読み出し・精度縮小、マスク、タイミング、書き戻しは未接続で、
   対応しない命令は`unknown`のまま扱う。対応対象は必ずALU opcodeに写ることと、
