@@ -69,6 +69,14 @@ import Lean
 #print axioms ProofsLean.MNCore.L1Transfer.mwrite_then_pbcast_is_l1bm_port_conflict
 #print axioms ProofsLean.MNCore.L1Transfer.m4write_then_pbcast_is_l1bm_port_conflict
 #print axioms ProofsLean.MNCore.L1Transfer.mwrite_pbcast_minimum_distance
+#print axioms ProofsLean.MNCore.L1Transfer.l1HazardSpan_pbcast
+#print axioms ProofsLean.MNCore.L1Transfer.l1HazardSpan_mwrite
+#print axioms ProofsLean.MNCore.L1Transfer.l1HazardSpan_m4write
+#print axioms ProofsLean.MNCore.L1Transfer.l1HazardSpan_multicast_widths
+#print axioms ProofsLean.MNCore.L1Transfer.l1HazardSpan_reduce
+#print axioms ProofsLean.MNCore.L1Transfer.l1HazardSpan_reduce4
+#print axioms ProofsLean.MNCore.L1Transfer.l1HazardSpan_distrib_gather
+#print axioms ProofsLean.MNCore.L1Transfer.l1HazardEvent_direction
 #print axioms ProofsLean.MNCore.L1Transfer.m4writeWrites_count
 #print axioms ProofsLean.MNCore.L1Transfer.mwriteFourCycleWrites_count
 #print axioms ProofsLean.MNCore.L1Transfer.m4writeFourCycleWrites_count

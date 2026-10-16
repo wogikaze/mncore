@@ -268,27 +268,93 @@ def m4writeWrites (memoryBase : Fin l1bmLongWords) (twoLongWords : Bool)
 
 /-- One Rust hazard.rs L1BM access span for an `mwrite` cycle. The write list
 contains its PE payload words; the static analyzer groups them as one span. -/
+inductive L1HazardOp where
+  | pbcast | mbcast | mwrite | m4bcast | m4write
+  | reduce | reduce4 | distrib | gather
+  deriving DecidableEq, Repr
+
+/-- Per-cycle L1BM span table from Rust `hazard.rs::l1_cycle_span`. -/
+def l1HazardSpan (op : L1HazardOp) (twoLongWords rounded ext : Bool) : Nat × Nat :=
+  match op with
+  | .pbcast => (1, if twoLongWords then 5 else 1)
+  | .mbcast | .mwrite => if twoLongWords then (8, 8) else (4, 4)
+  | .reduce =>
+      if rounded then (4, 4) else if ext then (8, 8)
+      else if twoLongWords then (8, 8) else (4, 4)
+  | .reduce4 =>
+      if rounded then (16, 16) else if ext then (32, 32)
+      else if twoLongWords then (32, 32) else (16, 16)
+  | .m4bcast | .m4write => if twoLongWords then (32, 32) else (16, 16)
+  | .distrib | .gather => (64, 64)
+
+/-- Create one L1BM event span in either direction. `sourceToPE` selects the
+resource path; the operation and width fields determine its cycle span. -/
+def l1HazardEvent (l1b : Fin 8) (memoryBase : Fin l1bmLongWords)
+    (op : L1HazardOp) (twoLongWords rounded ext sourceToPE : Bool)
+    (startWord : Nat) (cycle : Fin 4) : TimedBlockAccess :=
+  let (stride, length) := l1HazardSpan op twoLongWords rounded ext
+  ⟨.l1bm l1b, if sourceToPE then .l1ToPe else .peToL1, !sourceToPE,
+    some (addressAt memoryBase (cycle.val * stride)).val,
+    length, startWord, cycle⟩
+
 def mwriteHazardEvent (l1b : Fin 8) (memoryBase : Fin l1bmLongWords)
     (twoLongWords : Bool) (startWord : Nat) (cycle : Fin 4) : TimedBlockAccess :=
-  let stride := if twoLongWords then 8 else 4
-  ⟨.l1bm l1b, .peToL1, true,
-    some (addressAt memoryBase (cycle.val * stride)).val,
-    stride, startWord, cycle⟩
+  l1HazardEvent l1b memoryBase .mwrite twoLongWords false false false startWord cycle
 
 /-- The corresponding static span for one `m4write` cycle. -/
 def m4writeHazardEvent (l1b : Fin 8) (memoryBase : Fin l1bmLongWords)
     (twoLongWords : Bool) (startWord : Nat) (cycle : Fin 4) : TimedBlockAccess :=
-  let stride := if twoLongWords then 32 else 16
-  ⟨.l1bm l1b, .peToL1, true,
-    some (addressAt memoryBase (cycle.val * stride)).val,
-    stride, startWord, cycle⟩
+  l1HazardEvent l1b memoryBase .m4write twoLongWords false false false startWord cycle
 
 /-- Static L1BM source span for Rust's `pbcast` access accounting. -/
 def pbcastHazardEvent (l1b : Fin 8) (memoryBase : Fin l1bmLongWords)
     (twoLongWords : Bool) (startWord : Nat) (cycle : Fin 4) : TimedBlockAccess :=
-  ⟨.l1bm l1b, .l1ToPe, false,
-    some (addressAt memoryBase cycle.val).val,
-    if twoLongWords then 5 else 1, startWord, cycle⟩
+  l1HazardEvent l1b memoryBase .pbcast twoLongWords false false true startWord cycle
+
+theorem l1HazardSpan_pbcast (twoLongWords : Bool) :
+    l1HazardSpan .pbcast twoLongWords false false =
+      (1, if twoLongWords then 5 else 1) := rfl
+
+theorem l1HazardSpan_mwrite (twoLongWords : Bool) :
+    l1HazardSpan .mwrite twoLongWords false false =
+      if twoLongWords then (8, 8) else (4, 4) := rfl
+
+theorem l1HazardSpan_m4write (twoLongWords : Bool) :
+    l1HazardSpan .m4write twoLongWords false false =
+      if twoLongWords then (32, 32) else (16, 16) := rfl
+
+theorem l1HazardSpan_multicast_widths (twoLongWords : Bool) :
+    l1HazardSpan .mbcast twoLongWords false false =
+        (if twoLongWords then 8 else 4, if twoLongWords then 8 else 4) ∧
+      l1HazardSpan .m4bcast twoLongWords false false =
+        (if twoLongWords then 32 else 16, if twoLongWords then 32 else 16) := by
+  cases twoLongWords <;> exact ⟨rfl, rfl⟩
+
+theorem l1HazardSpan_reduce (twoLongWords rounded ext : Bool) :
+    l1HazardSpan .reduce twoLongWords rounded ext =
+      if rounded then (4, 4) else if ext then (8, 8)
+      else if twoLongWords then (8, 8) else (4, 4) := rfl
+
+theorem l1HazardSpan_reduce4 (twoLongWords rounded ext : Bool) :
+    l1HazardSpan .reduce4 twoLongWords rounded ext =
+      if rounded then (16, 16) else if ext then (32, 32)
+      else if twoLongWords then (32, 32) else (16, 16) := rfl
+
+theorem l1HazardSpan_distrib_gather (twoLongWords rounded ext : Bool) :
+    l1HazardSpan .distrib twoLongWords rounded ext = (64, 64) ∧
+    l1HazardSpan .gather twoLongWords rounded ext = (64, 64) := by
+  exact ⟨rfl, rfl⟩
+
+theorem l1HazardEvent_direction
+    (l1b : Fin 8) (memoryBase : Fin l1bmLongWords) (op : L1HazardOp)
+    (twoLongWords rounded ext sourceToPE : Bool) (startWord : Nat) (cycle : Fin 4) :
+    (l1HazardEvent l1b memoryBase op twoLongWords rounded ext sourceToPE
+      startWord cycle).resource = .l1bm l1b ∧
+    (l1HazardEvent l1b memoryBase op twoLongWords rounded ext sourceToPE
+      startWord cycle).path = (if sourceToPE then .l1ToPe else .peToL1) ∧
+    (l1HazardEvent l1b memoryBase op twoLongWords rounded ext sourceToPE
+      startWord cycle).write = !sourceToPE := by
+  simp [l1HazardEvent]
 
 theorem mwrite_then_pbcast_is_l1bm_port_conflict
     (l1b : Fin 8) (memoryBase : Fin l1bmLongWords)
@@ -297,7 +363,8 @@ theorem mwrite_then_pbcast_is_l1bm_port_conflict
       (mwriteHazardEvent l1b memoryBase twoLongWords 0 writeCycle)
       (pbcastHazardEvent l1b memoryBase twoLongWords 3 readCycle) =
       some ⟨.portConflict, .steps 3⟩ := by
-  simp [mwriteHazardEvent, pbcastHazardEvent, blockHazardRule?]
+  simp [mwriteHazardEvent, pbcastHazardEvent, l1HazardEvent,
+    l1HazardSpan, blockHazardRule?]
 
 theorem m4write_then_pbcast_is_l1bm_port_conflict
     (l1b : Fin 8) (memoryBase : Fin l1bmLongWords)
@@ -306,7 +373,8 @@ theorem m4write_then_pbcast_is_l1bm_port_conflict
       (m4writeHazardEvent l1b memoryBase twoLongWords 0 writeCycle)
       (pbcastHazardEvent l1b memoryBase twoLongWords 3 readCycle) =
       some ⟨.portConflict, .steps 3⟩ := by
-  simp [m4writeHazardEvent, pbcastHazardEvent, blockHazardRule?]
+  simp [m4writeHazardEvent, pbcastHazardEvent, l1HazardEvent,
+    l1HazardSpan, blockHazardRule?]
 
 theorem mwrite_pbcast_minimum_distance
     (l1b : Fin 8) (memoryBase : Fin l1bmLongWords)
@@ -322,7 +390,8 @@ theorem mwrite_pbcast_minimum_distance
     pbcastHazardEvent l1b memoryBase twoLongWords 3 readCycle,
     .portConflict, 12, 12⟩, ?_, rfl, rfl, rfl⟩
   simp [makeTimedBlockHazardConstraint?, applicableBlockHazardRule?,
-    mwriteHazardEvent, pbcastHazardEvent, blockHazardRule?]
+    mwriteHazardEvent, pbcastHazardEvent, l1HazardEvent,
+    l1HazardSpan, blockHazardRule?]
 
 def mwriteFourCycleWrites (memoryBase : Fin l1bmLongWords) (twoLongWords : Bool)
     (buses : Fin 4 → Fin 4 → Bus) : List L1Write :=
