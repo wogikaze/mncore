@@ -308,6 +308,59 @@ theorem committedM4writeCycle_last_readback (memory : L1Bank)
   cases twoLongWords <;>
     simp [m4writeWrites, commitL1Writes, writeL1Word, List.finRange]
 
+abbrev L1TurnWrite := Fin 64 × BitVec 64
+
+def gatherDestinationMab (mab : Fin 16) (mabDiff : Int) : Fin 16 :=
+  distribSourceMab mab (-mabDiff)
+
+def gatherL1Writes (memoryBase : Fin l1bmLongWords) (mabDiff : Int)
+    (cycle : Fin 4) (buses : Fin 16 → Fin 4 → Bus) : List L1Write :=
+  (List.finRange 16).flatMap fun sourceMab =>
+    (List.finRange 4).map fun pe =>
+      let targetMab := gatherDestinationMab sourceMab mabDiff
+      let offset := cycle.val * 64 + targetMab.val * 4 + pe.val
+      (addressAt memoryBase offset, (buses sourceMab pe).high)
+
+def gatherTurnaroundWrites (mabDiff : Int) (buses : Fin 16 → Fin 4 → Bus) :
+    List L1TurnWrite :=
+  (List.finRange 16).flatMap fun sourceMab =>
+    (List.finRange 4).map fun pe =>
+      let targetMab := gatherDestinationMab sourceMab mabDiff
+      let offset := sourceMab.val * 4 + pe.val
+      (⟨offset, by have hm := sourceMab.isLt; have hp := pe.isLt; omega⟩,
+        (buses sourceMab pe).high)
+
+theorem gatherDestinationMab_euclidean (mab : Fin 16) (mabDiff : Int) :
+    (gatherDestinationMab mab mabDiff).val =
+      ((Int.ofNat mab.val + mabDiff) % 16).toNat := by
+  simp [gatherDestinationMab, distribSourceMab, Int.sub_eq_add_neg]
+
+theorem gatherL1Writes_count (memoryBase : Fin l1bmLongWords) (mabDiff : Int)
+    (cycle : Fin 4) (buses : Fin 16 → Fin 4 → Bus) :
+    (gatherL1Writes memoryBase mabDiff cycle buses).length = 64 := by
+  simp [gatherL1Writes, List.length_flatMap, List.finRange]
+
+theorem gatherTurnaroundWrites_count (mabDiff : Int)
+    (buses : Fin 16 → Fin 4 → Bus) :
+    (gatherTurnaroundWrites mabDiff buses).length = 64 := by
+  simp [gatherTurnaroundWrites, List.length_flatMap, List.finRange]
+
+theorem gatherL1Writes_contains_source (memoryBase : Fin l1bmLongWords)
+    (mabDiff : Int) (cycle : Fin 4) (mab : Fin 16) (pe : Fin 4)
+    (buses : Fin 16 → Fin 4 → Bus) :
+    (addressAt memoryBase
+      (cycle.val * 64 + (gatherDestinationMab mab mabDiff).val * 4 + pe.val),
+      (buses mab pe).high) ∈ gatherL1Writes memoryBase mabDiff cycle buses := by
+  simp only [gatherL1Writes, List.mem_flatMap, List.mem_map]
+  exact ⟨mab, List.mem_finRange mab, pe, List.mem_finRange pe, rfl⟩
+
+theorem gatherTurnaroundWrites_contains_source (mabDiff : Int)
+    (mab : Fin 16) (pe : Fin 4) (buses : Fin 16 → Fin 4 → Bus) :
+    (⟨mab.val * 4 + pe.val, by have hm := mab.isLt; have hp := pe.isLt; omega⟩,
+      (buses mab pe).high) ∈ gatherTurnaroundWrites mabDiff buses := by
+  simp only [gatherTurnaroundWrites, List.mem_flatMap, List.mem_map]
+  exact ⟨mab, List.mem_finRange mab, pe, List.mem_finRange pe, rfl⟩
+
 def updateBroadcastForwarding (old : ProofsLean.MNCore.Forwarding.Slots)
     (outputs : Fin 4 → Bus) (noForward : Bool) :
     ProofsLean.MNCore.Forwarding.Slots :=

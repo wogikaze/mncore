@@ -72,6 +72,11 @@ import Lean
 #print axioms ProofsLean.MNCore.L1Transfer.committedMwriteCycle_last_low_readback
 #print axioms ProofsLean.MNCore.L1Transfer.m4writeWrites_last
 #print axioms ProofsLean.MNCore.L1Transfer.committedM4writeCycle_last_readback
+#print axioms ProofsLean.MNCore.L1Transfer.gatherDestinationMab_euclidean
+#print axioms ProofsLean.MNCore.L1Transfer.gatherL1Writes_count
+#print axioms ProofsLean.MNCore.L1Transfer.gatherTurnaroundWrites_count
+#print axioms ProofsLean.MNCore.L1Transfer.gatherL1Writes_contains_source
+#print axioms ProofsLean.MNCore.L1Transfer.gatherTurnaroundWrites_contains_source
 #print axioms ProofsLean.MNCore.PEMemory.mask_directive_replaces_selection_preserves_context
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerMaskedLineStep_prepares_then_commits
 #print axioms ProofsLean.MNCore.PEMemory.parsedMaskedSource_execution

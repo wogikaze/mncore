@@ -204,7 +204,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   Rust同様に(mo, selected MAB, PE)で選択し、各PEのhigh/low long wordが対応offsetの
   pending write listに含まれることも証明した。さらに`mwrite`の2-word列と`m4write`の
   最終payloadを実際にfold commitした後のreadbackを証明した。turnaround stateへの同時更新、全L1B・MAB群の
-  line実行、gather/reduce、他L1転送との同時発行は未接続。
+  line実行、reduce、他L1転送との同時発行は未接続。`gather`については符号付きMAB差分で
+  宛先を16 MAB内にwrapする関数を共有し、cycle×64 offsetのL1BM pending writesと、元MAB順の
+  turnaround pending writesを定義した。両列の64要素数と各(source MAB, PE)値の対応を証明した。
 
 `Machine.positiveCost` はスコアが正の行へ正規化済みであるという条件。
 MN-Coreにはゼロコストの制御文があるので、その正規化の意味保存と完全性を証明するまでは
