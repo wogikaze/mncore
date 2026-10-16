@@ -75,6 +75,9 @@ def multicastDestinationMask (sourceMask immode : Nat) : Nat := Id.run do
           destinationMask := Nat.lor destinationMask (2 ^ destination)
   return destinationMask
 
+def mvU64ToU32 (value : Fin (2 ^ 64)) : Fin (2 ^ 32) :=
+  ⟨value.val % 2 ^ 32, Nat.mod_lt _ (by decide)⟩
+
 def l1ExprHazardEvents (expr : ParsedExpr) (startWord : Nat) :
     List ProofsLean.MNCore.PEMemory.TimedBlockAccess :=
   match expr.op with
@@ -193,15 +196,14 @@ def parsedMvOperandHazardEvents (transfer : ParsedMv) (write : Bool)
   | some (.l2bm address _ selectedBank) =>
       (List.finRange 2).filterMap fun bank =>
         if selectedBank.isNone || selectedBank.map Fin.val == some bank.val then
-          some ⟨.l2bm bank, .mv, write, some (address.val % 2 ^ 32),
-            if transfer.kind == .nop then 0 else transfer.size.val % 2 ^ 32,
+          some ⟨.l2bm bank, .mv, write, some (mvU64ToU32 address).val,
+            if transfer.kind == .nop then 0 else (mvU64ToU32 transfer.size).val,
             startWord, ⟨0, by decide⟩⟩
         else none
   | _ => []
 
-theorem mv_u64_cast_to_u32_range (value : Nat) :
-    value % 2 ^ 32 < 2 ^ 32 := by
-  exact Nat.mod_lt _ (by decide)
+theorem mv_u64_cast_to_u32_value (value : Fin (2 ^ 64)) :
+    (mvU64ToU32 value).val = value.val % 2 ^ 32 := rfl
 
 theorem parsedMvOperandHazardEvents_count (transfer : ParsedMv) (write : Bool)
     (operand : Option ParsedMvOperand) (startWord : Nat) :

@@ -88,7 +88,7 @@ import Lean
 #print axioms ProofsLean.MNCore.HazardTrace.parsedMvOperandHazardEvents_count
 #print axioms ProofsLean.MNCore.HazardTrace.parsedMvHazardEvents_count
 #print axioms ProofsLean.MNCore.HazardTrace.parsedSourceBlockHazardEvents_single_mv_count
-#print axioms ProofsLean.MNCore.HazardTrace.mv_u64_cast_to_u32_range
+#print axioms ProofsLean.MNCore.HazardTrace.mv_u64_cast_to_u32_value
 #print axioms ProofsLean.MNCore.HazardTrace.parsedSourceBlockHazardConstraints
 #print axioms ProofsLean.MNCore.L1Transfer.m4writeWrites_count
 #print axioms ProofsLean.MNCore.L1Transfer.mwriteFourCycleWrites_count
