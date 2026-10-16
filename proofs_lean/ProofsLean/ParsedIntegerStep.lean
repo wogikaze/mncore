@@ -1045,6 +1045,57 @@ def doubleMatrixFaceFromPhysicalWords (words : DoubleMatrixPhysicalFace) :
   words (doubleMatrixPhysicalRow row) (doubleMatrixPhysicalColumnHigh column) ++
     words (doubleMatrixPhysicalRow row) (doubleMatrixPhysicalColumnLow column)
 
+def doubleMatrixWriteRowWords (values : Fin 4 → BitVec 64) :
+    Fin 8 → BitVec 32 := fun word =>
+  let value := values ⟨word.val / 2, by have h := word.isLt; omega⟩
+  if word.val % 2 = 0 then value.extractLsb' 32 32 else value.extractLsb' 0 32
+
+def writeDoubleMatrixPhysicalRow (old : DoubleMatrixPhysicalFace)
+    (row : Fin 4) (values : Fin 4 → BitVec 64) : DoubleMatrixPhysicalFace :=
+  let physicalRow := doubleMatrixPhysicalRow row
+  fun targetRow => if targetRow = physicalRow then doubleMatrixWriteRowWords values
+    else old targetRow
+
+theorem doubleMatrixWriteRowWords_high_word (values : Fin 4 → BitVec 64)
+    (column : Fin 4) :
+    doubleMatrixWriteRowWords values (doubleMatrixPhysicalColumnHigh column) =
+      (values column).extractLsb' 32 32 := by
+  simp [doubleMatrixWriteRowWords, doubleMatrixPhysicalColumnHigh]
+
+theorem doubleMatrixWriteRowWords_low_word (values : Fin 4 → BitVec 64)
+    (column : Fin 4) :
+    doubleMatrixWriteRowWords values (doubleMatrixPhysicalColumnLow column) =
+      (values column).extractLsb' 0 32 := by
+  have division : (column.val * 2 + 1) / 2 = column.val := by omega
+  simp [doubleMatrixWriteRowWords, doubleMatrixPhysicalColumnLow, division]
+
+theorem doubleMatrixPhysicalRow_injective :
+    Function.Injective doubleMatrixPhysicalRow := by
+  intro left right equal
+  apply Fin.ext
+  have values := congrArg Fin.val equal
+  simp [doubleMatrixPhysicalRow] at values
+  omega
+
+theorem doubleMatrixFaceFromPhysicalWords_after_write
+    (old : DoubleMatrixPhysicalFace) (writeRow logicalRow column : Fin 4)
+    (values : Fin 4 → BitVec 64) :
+    doubleMatrixFaceFromPhysicalWords
+      (writeDoubleMatrixPhysicalRow old writeRow values) logicalRow column =
+        if logicalRow = writeRow then values column
+        else doubleMatrixFaceFromPhysicalWords old logicalRow column := by
+  by_cases same : logicalRow = writeRow
+  · subst logicalRow
+    simp [doubleMatrixFaceFromPhysicalWords, writeDoubleMatrixPhysicalRow,
+      doubleMatrixWriteRowWords_high_word, doubleMatrixWriteRowWords_low_word]
+    exact BitVec.extractLsb'_append_extractLsb'
+  · have physicalDifferent : doubleMatrixPhysicalRow logicalRow ≠
+        doubleMatrixPhysicalRow writeRow := by
+      intro equal
+      exact same (doubleMatrixPhysicalRow_injective equal)
+    simp [doubleMatrixFaceFromPhysicalWords, writeDoubleMatrixPhysicalRow, physicalDifferent,
+      same]
+
 def doubleMatrixReadRow (base cycle : Fin 4) : Fin 4 :=
   ⟨(base.val + cycle.val) % 4, Nat.mod_lt _ (by decide)⟩
 
@@ -1054,6 +1105,16 @@ the most-significant long word and zero-fills the rest of the bus. -/
 def doubleMatrixReadBus (face : DoubleMatrixFace) (base pe cycle : Fin 4) :
     IntegerALU.Bus :=
   ⟨face pe (doubleMatrixReadRow base cycle), 0⟩
+
+theorem doubleMatrixRead_after_transposed_write
+    (old : DoubleMatrixPhysicalFace) (writeRow sourcePE : Fin 4)
+    (values : Fin 4 → BitVec 64) :
+    doubleMatrixReadBus
+      (doubleMatrixFaceFromPhysicalWords (writeDoubleMatrixPhysicalRow old writeRow values))
+      sourcePE writeRow 0 = ⟨values sourcePE, 0⟩ := by
+  simp [doubleMatrixReadBus, doubleMatrixReadRow,
+    Nat.mod_eq_of_lt sourcePE.isLt,
+    doubleMatrixFaceFromPhysicalWords_after_write]
 
 def writeDoubleMatrixReadSlots (old : ProofsLean.MNCore.Forwarding.Slots)
     (face : DoubleMatrixFace) (base pe : Fin 4) (noForward : Bool) :
