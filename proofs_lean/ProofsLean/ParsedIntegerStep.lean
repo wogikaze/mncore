@@ -1887,14 +1887,13 @@ def prepareParsedMatrixReadTargets (targets : List ParsedMatrixReadTarget)
       | .ok writes =>
           .ok (⟨some access, none, unpackALUBus output, selection⟩ :: writes)
 
-/-- One cycle of a parsed matrix-read expression for the selected MAB store.
-The read bus is computed from the old matrix words, written to each supported
-PE-memory destination, and installed in that cycle's `mreadf` slot. -/
-def parsedMatrixReadCycleStep (files : IntegerRegisterFiles)
+/-- Prepare one cycle of a parsed matrix-read expression. -/
+def prepareParsedMatrixReadCycle (files : IntegerRegisterFiles)
     (slots : ProofsLean.MNCore.Forwarding.Slots) (store : ParsedMatrixReadStore)
     (expression : ParsedExpr) (directive : ParsedMaskDirective)
     (hasSingleLineMask noForward : Bool) (context : ParsedIntegerContext) :
-    ProofsLean.StepResult (IntegerRegisterFiles × ProofsLean.MNCore.Forwarding.Slots) :=
+    ProofsLean.StepResult (List PreparedParsedMaskedWrite ×
+      ProofsLean.MNCore.Forwarding.Slots) :=
   match ParsedExpr.toDirectMatrixReadAccesses? expression files.maskRegisters
       directive hasSingleLineMask context with
   | none => .unknown
@@ -1908,8 +1907,20 @@ def parsedMatrixReadCycleStep (files : IntegerRegisterFiles)
           | .failure => .failure
           | .unknown => .unknown
           | .ok writes =>
-              .ok (commitParsedMaskedWrites files writes,
-                updateParsedMatrixReadForwardingCycle slots context.cycle output noForward)
+              .ok (writes, updateParsedMatrixReadForwardingCycle
+                slots context.cycle output noForward)
+
+def parsedMatrixReadCycleStep (files : IntegerRegisterFiles)
+    (slots : ProofsLean.MNCore.Forwarding.Slots) (store : ParsedMatrixReadStore)
+    (expression : ParsedExpr) (directive : ParsedMaskDirective)
+    (hasSingleLineMask noForward : Bool) (context : ParsedIntegerContext) :
+    ProofsLean.StepResult (IntegerRegisterFiles × ProofsLean.MNCore.Forwarding.Slots) :=
+  match prepareParsedMatrixReadCycle files slots store expression directive
+      hasSingleLineMask noForward context with
+  | .failure => .failure
+  | .unknown => .unknown
+  | .ok (writes, nextSlots) =>
+      .ok (commitParsedMaskedWrites files writes, nextSlots)
 
 theorem parsedMatrixReadCycleStep_output_forwardable
     (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)
@@ -1934,8 +1945,46 @@ theorem parsedMatrixReadCycleStep_output_forwardable
     updateParsedMatrixReadForwardingCycle slots context.cycle
       (parsedOutputAfterFlush flushSelection (parsedMatrixReadBus store accesses context)) false,
     ?_, ?_⟩
-  · simp [parsedMatrixReadCycleStep, lowered, flushResolved, writesReady]
+  · simp [parsedMatrixReadCycleStep, prepareParsedMatrixReadCycle,
+      lowered, flushResolved, writesReady]
   · exact updateParsedMatrixReadForwardingCycle_reads_back files slots context.cycle _
+
+def parsedMatrixReadCycles : List (Fin 4) := [0, 1, 2, 3]
+
+/-- Prepare one matrix-read expression across all four cycles using the old
+PE-memory and matrix state, then commit the cycle-ordered destination writes. -/
+def prepareParsedMatrixReadExprCycles (files : IntegerRegisterFiles)
+    (initialSlots : ProofsLean.MNCore.Forwarding.Slots) (store : ParsedMatrixReadStore)
+    (expression : ParsedExpr) (directive : ParsedMaskDirective)
+    (hasSingleLineMask noForward : Bool) (context : ParsedIntegerContext) :
+    ProofsLean.StepResult (List PreparedParsedMaskedWrite ×
+      ProofsLean.MNCore.Forwarding.Slots) :=
+  let rec prepare (cycles : List (Fin 4))
+      (writes : List PreparedParsedMaskedWrite)
+      (nextSlots : ProofsLean.MNCore.Forwarding.Slots) :=
+    match cycles with
+    | [] => .ok (writes, nextSlots)
+    | cycle :: rest =>
+        let cycleContext := { context with cycle := cycle }
+        match prepareParsedMatrixReadCycle files nextSlots store expression directive
+            hasSingleLineMask noForward cycleContext with
+        | .failure => .failure
+        | .unknown => .unknown
+        | .ok (cycleWrites, cycleSlots) =>
+            prepare rest (writes ++ cycleWrites) cycleSlots
+  prepare parsedMatrixReadCycles [] initialSlots
+
+def parsedMatrixReadExprFourCycleStep (files : IntegerRegisterFiles)
+    (slots : ProofsLean.MNCore.Forwarding.Slots) (store : ParsedMatrixReadStore)
+    (expression : ParsedExpr) (directive : ParsedMaskDirective)
+    (hasSingleLineMask noForward : Bool) (context : ParsedIntegerContext) :
+    ProofsLean.StepResult (IntegerRegisterFiles × ProofsLean.MNCore.Forwarding.Slots) :=
+  match prepareParsedMatrixReadExprCycles files slots store expression directive
+      hasSingleLineMask noForward context with
+  | .failure => .failure
+  | .unknown => .unknown
+  | .ok (writes, nextSlots) =>
+      .ok (commitParsedMaskedWrites files writes, nextSlots)
 
 /-- Update the ALU forwarding value for one cycle from an already prepared
 integer ALU result. `data` is the post-flush four-word bus; the flag controls
@@ -2136,6 +2185,56 @@ def parsedALUProducerLineFourCycleStep (files : IntegerRegisterFiles)
     | _ => false
   match prepareParsedALUProducerLineCycles files slots expressions control
       hasSingleLineMask noForward reduced with
+  | .failure => .failure
+  | .unknown => .unknown
+  | .ok (writes, nextSlots) =>
+      .ok (commitParsedMaskedWrites files writes, nextSlots)
+
+/-- Four-cycle line execution for the parsed integer ALU/constant and matrix
+read producers. Every expression reads pre-issue PE memory and matrix words;
+forwarding outputs accumulate by expression order, and writes commit at end. -/
+def prepareParsedIntegerMatrixReadLineCycles (files : IntegerRegisterFiles)
+    (oldSlots : ProofsLean.MNCore.Forwarding.Slots) (store : ParsedMatrixReadStore)
+    (expressions : List ParsedExpr) (control : ParsedMaskExecutionControl)
+    (reduced : Bool) :
+    ProofsLean.StepResult (List PreparedParsedMaskedWrite ×
+      ProofsLean.MNCore.Forwarding.Slots) :=
+  let hasSingleLineMask := expressions.any parsedExprHasSingleLineWriteMask
+  let noForward := expressions.any fun expression =>
+    match expression.op with
+    | .noforward => true
+    | _ => false
+  let rec prepare (remaining : List ParsedExpr)
+      (writes : List PreparedParsedMaskedWrite)
+      (nextSlots : ProofsLean.MNCore.Forwarding.Slots) :=
+    match remaining with
+    | [] => .ok (writes, nextSlots)
+    | expression :: rest =>
+        match expression.op with
+        | .wait _ | .noforward => prepare rest writes nextSlots
+        | .alu .. | .zero | .immediate .. =>
+            match prepareParsedIntegerALUExprCycles files oldSlots nextSlots expression
+                control hasSingleLineMask noForward reduced with
+            | .failure => .failure
+            | .unknown => .unknown
+            | .ok (expressionWrites, expressionSlots) =>
+                prepare rest (writes ++ expressionWrites) expressionSlots
+        | .matrixRead .. =>
+            match prepareParsedMatrixReadExprCycles files nextSlots store expression
+                control.directive hasSingleLineMask noForward control.context with
+            | .failure => .failure
+            | .unknown => .unknown
+            | .ok (expressionWrites, expressionSlots) =>
+                prepare rest (writes ++ expressionWrites) expressionSlots
+        | _ => .unknown
+  prepare expressions [] oldSlots
+
+def parsedIntegerMatrixReadLineFourCycleStep (files : IntegerRegisterFiles)
+    (slots : ProofsLean.MNCore.Forwarding.Slots) (store : ParsedMatrixReadStore)
+    (expressions : List ParsedExpr) (control : ParsedMaskExecutionControl)
+    (reduced : Bool) :
+    ProofsLean.StepResult (IntegerRegisterFiles × ProofsLean.MNCore.Forwarding.Slots) :=
+  match prepareParsedIntegerMatrixReadLineCycles files slots store expressions control reduced with
   | .failure => .failure
   | .unknown => .unknown
   | .ok (writes, nextSlots) =>
