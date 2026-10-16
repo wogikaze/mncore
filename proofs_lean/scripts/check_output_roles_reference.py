@@ -1,4 +1,4 @@
-"""Probe assembler output-role validation needed by finite destination carriers."""
+"""Probe assembler operand-role validation needed by finite line carriers."""
 from __future__ import annotations
 
 import hashlib
@@ -42,6 +42,20 @@ CASES = [
     ("peid_output", "zero $peid", False),
     ("fixed_subpeid_output", "zero $subpeid", False),
     ("fixed_msb1_output", "zero $msb1", False),
+    ("alu_memory_output", "iadd $m0 $n0 $m0", True),
+    ("alu_t_output", "iadd $m0 $n0 $t", True),
+    ("alu_fixed_output", "iadd $m0 $n0 $peid", False),
+    ("alu_matrix_output", "iadd $m0 $n0 $lx0", False),
+    ("matrix_write_register_output", "gmwrite $aluf $lx0", True),
+    ("matrix_write_memory_output", "gmwrite $aluf $m0", False),
+    ("matrix_read_memory_output", "gmread $lx0 $m0", True),
+    ("matrix_read_register_output", "gmread $lx0 $lx0", False),
+    ("mau_memory_output", "dvadd $m0 $n0 $m0", True),
+    ("mau_matrix_output", "dvadd $m0 $n0 $lx0", False),
+    ("l1bm_to_regs_order", "l1bmm $lb0 $m0", True),
+    ("l1bm_to_regs_reversed", "l1bmm $m0 $lb0", False),
+    ("l2bm_to_l1bm_order", "l2bmb $lc0 $lb0", True),
+    ("l2bm_to_l1bm_reversed", "l2bmb $lb0 $lc0", False),
 ]
 
 
@@ -77,8 +91,8 @@ def main() -> None:
         raise SystemExit("assemble3 output-role observations differ from expectations")
     report = {
         "schema_version": 1,
-        "experiment": "assemble3 output-role and duplicate-destination validation",
-        "scope": "Focused zero-op probes across destination operand classes and duplicate outputs; not an exhaustive per-opcode destination grammar.",
+        "experiment": "assemble3 operand-role and duplicate-destination validation",
+        "scope": "Focused zero, ALU, MAU, matrix, L1BM, and L2BM probes; not an exhaustive per-opcode operand grammar.",
         "tool_hashes": [
             {"path": "judge/judge-py/mncore2_emuenv/assemble3", "sha256": sha(ASSEMBLER)},
             {"path": "proofs_lean/scripts/check_output_roles_reference.py", "sha256": sha(Path(__file__))},

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "experiment": "assemble3 output-role and duplicate-destination validation",
-  "scope": "Focused zero-op probes across destination operand classes and duplicate outputs; not an exhaustive per-opcode destination grammar.",
+  "experiment": "assemble3 operand-role and duplicate-destination validation",
+  "scope": "Focused zero, ALU, MAU, matrix, L1BM, and L2BM probes; not an exhaustive per-opcode operand grammar.",
   "tool_hashes": [
     {
       "path": "judge/judge-py/mncore2_emuenv/assemble3",
@@ -9,7 +9,7 @@
     },
     {
       "path": "proofs_lean/scripts/check_output_roles_reference.py",
-      "sha256": "8a6f13f9f1a21ac0177c316c62538abf0d55b2c3d6398fb53eb25e4bf9aa5185"
+      "sha256": "b80d22b5d13e0dbac3e4778c71409310937169aa971743d627b0b1cb4f9dd9fd"
     }
   ],
   "observations": [
@@ -264,6 +264,132 @@
       "returncode": -6,
       "words": null,
       "diagnostic": "Invalid location as an output."
+    },
+    {
+      "case": "alu_memory_output",
+      "source": "iadd $m0 $n0 $m0",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
+    },
+    {
+      "case": "alu_t_output",
+      "source": "iadd $m0 $n0 $t",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
+    },
+    {
+      "case": "alu_fixed_output",
+      "source": "iadd $m0 $n0 $peid",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "Invalid location as an output."
+    },
+    {
+      "case": "alu_matrix_output",
+      "source": "iadd $m0 $n0 $lx0",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "Invalid location as an output."
+    },
+    {
+      "case": "matrix_write_register_output",
+      "source": "gmwrite $aluf $lx0",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
+    },
+    {
+      "case": "matrix_write_memory_output",
+      "source": "gmwrite $aluf $m0",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "The output of mwrite must be a matrix register."
+    },
+    {
+      "case": "matrix_read_memory_output",
+      "source": "gmread $lx0 $m0",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
+    },
+    {
+      "case": "matrix_read_register_output",
+      "source": "gmread $lx0 $lx0",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "Invalid location as an output."
+    },
+    {
+      "case": "mau_memory_output",
+      "source": "dvadd $m0 $n0 $m0",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
+    },
+    {
+      "case": "mau_matrix_output",
+      "source": "dvadd $m0 $n0 $lx0",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "Invalid location as an output."
+    },
+    {
+      "case": "l1bm_to_regs_order",
+      "source": "l1bmm $lb0 $m0",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
+    },
+    {
+      "case": "l1bm_to_regs_reversed",
+      "source": "l1bmm $m0 $lb0",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "First operand of L1BM -> Regs operation must be an L1BM location."
+    },
+    {
+      "case": "l2bm_to_l1bm_order",
+      "source": "l2bmb $lc0 $lb0",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
+    },
+    {
+      "case": "l2bm_to_l1bm_reversed",
+      "source": "l2bmb $lb0 $lc0",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "The order of operands doesn't match to the transfer direction L2BM -> L1BM."
     }
   ],
   "limitations": [
