@@ -465,6 +465,13 @@ def coverage_catalog() -> dict:
         }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
+            "theorem": "ProofsLean.MNCore.Issue.InstructionLine.inFiniteEnvelope_finite",
+            "scope": "Finite carrier for PE rows of at most ten normalized expressions, nop rows with count below the given bound and bounded wait tags, and normalized MV transfers.",
+            "evidence": "Composes the proved finite carriers for normalized expressions, bounded expression lists, optional wait tags, and normalized MV operands.",
+            "missing": "No proof yet shows that every legal fixed-cost line satisfies these expression payload envelopes, that the nop bound follows from cost, or that all legal line forms embed in this subtype.",
+        }, {
+            "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
+            "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
             "theorem": "ProofsLean.MNCore.Issue.Access.inFiniteEnvelope_finite",
             "scope": "Finite carrier for accesses whose region lies in the assembler-probed PE region envelope; the bank is one of ten constructors.",
             "evidence": "Region bounds are listed in proofs_lean/evidence/isa-bounds/reference.json; Bank constructors are mirrored from the issue checker.",

@@ -151,6 +151,10 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   これは境界プローブに基づく有限な上位集合であり、bank/opcode別alignmentや、全assembler-accepted
   operandがenvelopeに入ることの証明ではない。bounded operand carrierは有限だが、これを合法PE行や
   `MNCore.machine`の全行有限性へ接続する作業は未完了。
+- `InstructionLine.inFiniteEnvelope_finite`: PE行の式数を10以下、nop countを任意のbound未満とし、
+  wait tagと各正規化式を既存envelope内に制限したline carrierの有限性を証明した。
+  `NormalizedMv`全体も、有限なopcode/operand構成から有限とした。現状は有限上位集合の証明であり、
+  全合法lineが各payload envelopeに入ることや、固定costからnop count boundを得る証明は未接続。
 - `FiniteExample.lean`: 3命令・4入力の小さな機械で、全候補の反証、2行の最適性、
   限定入力では1行解が存在することを証明する回帰例。**MN-Coreではない。**
 - `PlusOne.lean`: Welcome（`challenge/1.plus-one`）の2行の `iinc` 解について、

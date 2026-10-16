@@ -818,6 +818,30 @@ private theorem charFiniteCode_injective : Function.Injective charFiniteCode := 
 theorem char_finite : Finite Char :=
   Finite.of_injective charFiniteCode charFiniteCode_injective
 
+private def ParsedRrn.unrestrictedFiniteCode (rrn : ParsedRrn) : Fin 0x110000 × Fin 8 :=
+  (charFiniteCode rrn.precision, ParsedRrnOp.finiteCode rrn.op)
+
+private theorem ParsedRrn.unrestrictedFiniteCode_injective :
+    Function.Injective ParsedRrn.unrestrictedFiniteCode := by
+  intro a b equal
+  cases a with
+  | mk ap ao =>
+    cases b with
+    | mk bp bo =>
+      simp only [ParsedRrn.unrestrictedFiniteCode, Prod.mk.injEq] at equal
+      have charNatEqual : ap.toNat = bp.toNat := by
+        have codeEqual := congrArg Fin.val equal.1
+        simpa [charFiniteCode] using codeEqual
+      have precisionEqual := Char.toNat_inj.mp charNatEqual
+      have opEqual := ParsedRrnOp.finiteCode_injective equal.2
+      cases precisionEqual
+      cases opEqual
+      rfl
+
+theorem ParsedRrn.finite : Finite ParsedRrn :=
+  Finite.of_injective ParsedRrn.unrestrictedFiniteCode
+    ParsedRrn.unrestrictedFiniteCode_injective
+
 def ParsedAluName.finiteCode : ParsedAluName → Fin 32
   | .msl => 0 | .msr => 1 | .passa => 2 | .inc => 3
   | .dec => 4 | .not => 5 | .lnot => 6 | .rsqrt => 7
@@ -857,6 +881,80 @@ theorem CalcKind.finiteCode_injective : Function.Injective CalcKind.finiteCode :
 
 theorem CalcKind.finite : Finite CalcKind :=
   Finite.of_injective CalcKind.finiteCode CalcKind.finiteCode_injective
+
+abbrev ParsedMvKindFiniteCode := Fin 9 × Option ParsedRrn
+
+private def ParsedMvKind.finiteCode : ParsedMvKind → ParsedMvKindFiniteCode
+  | .nop => (0, none)
+  | .copy => (1, none)
+  | .broadcast => (2, none)
+  | .broadcast2 => (3, none)
+  | .broadcast4 => (4, none)
+  | .distribute => (5, none)
+  | .reduce rrn => (6, some rrn)
+  | .reduce2 rrn => (7, some rrn)
+  | .reduce4 rrn => (8, some rrn)
+
+private theorem ParsedMvKind.finiteCode_injective :
+    Function.Injective ParsedMvKind.finiteCode := by
+  intro a b equal
+  cases a <;> cases b <;> simp [ParsedMvKind.finiteCode] at equal ⊢
+  all_goals assumption
+
+theorem ParsedMvKind.finite : Finite ParsedMvKind := by
+  letI : Finite ParsedRrn := ParsedRrn.finite
+  letI : Fintype ParsedRrn := Fintype.ofFinite ParsedRrn
+  letI : Fintype ParsedMvKindFiniteCode := inferInstance
+  exact Finite.of_injective ParsedMvKind.finiteCode ParsedMvKind.finiteCode_injective
+
+abbrev ParsedMvOperandFiniteCode :=
+  Fin 3 × Fin (2 ^ 64) × Option (Fin 256) × Bool × Option (Fin 256)
+
+private def ParsedMvOperand.finiteCode (operand : ParsedMvOperand) :
+    ParsedMvOperandFiniteCode :=
+  match operand with
+  | .pdm address group => (0, address, group, false, none)
+  | .dram address group indirect => (1, address, group, indirect, none)
+  | .l2bm address group l2b => (2, address, group, false, l2b)
+
+private theorem ParsedMvOperand.finiteCode_injective :
+    Function.Injective ParsedMvOperand.finiteCode := by
+  intro a b equal
+  cases a <;> cases b <;>
+    simp [ParsedMvOperand.finiteCode] at equal ⊢
+  all_goals assumption
+
+theorem ParsedMvOperand.finite : Finite ParsedMvOperand := by
+  letI : Fintype ParsedMvOperandFiniteCode := inferInstance
+  exact Finite.of_injective ParsedMvOperand.finiteCode
+    ParsedMvOperand.finiteCode_injective
+
+abbrev NormalizedMvFiniteCode :=
+  ParsedMvKind × Fin (2 ^ 64) × Option (Fin 256) × Option (Fin (2 ^ 32)) ×
+    Fin 256 × Option ParsedMvOperand × Option ParsedMvOperand
+
+private def NormalizedMv.finiteCode (transfer : NormalizedMv) : NormalizedMvFiniteCode :=
+  (transfer.kind, transfer.size, transfer.tag, transfer.nd, transfer.priority,
+    transfer.source, transfer.destination)
+
+private theorem NormalizedMv.finiteCode_injective :
+    Function.Injective NormalizedMv.finiteCode := by
+  intro a b equal
+  cases a with
+  | mk ak asize atag and apriority asource adestination =>
+    cases b with
+    | mk bk bsize btag bnd bpriority bsource bdestination =>
+      simp [NormalizedMv.finiteCode] at equal
+      rcases equal with ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+      rfl
+
+theorem NormalizedMv.finite : Finite NormalizedMv := by
+  letI : Finite ParsedMvKind := ParsedMvKind.finite
+  letI : Fintype ParsedMvKind := Fintype.ofFinite ParsedMvKind
+  letI : Finite ParsedMvOperand := ParsedMvOperand.finite
+  letI : Fintype ParsedMvOperand := Fintype.ofFinite ParsedMvOperand
+  letI : Fintype NormalizedMvFiniteCode := inferInstance
+  exact Finite.of_injective NormalizedMv.finiteCode NormalizedMv.finiteCode_injective
 
 theorem ParsedExpr.sourcesInFiniteEnvelope_finite :
     Finite {sources : List ParsedOperand //
@@ -1206,6 +1304,91 @@ theorem NormalizedExpr.inFiniteEnvelope_finite :
   letI : Fintype NormalizedExprFiniteCode := inferInstance
   exact Finite.of_injective NormalizedExpr.finiteCode
     NormalizedExpr.finiteCode_injective
+
+abbrev NormalizedExprListFiniteEnvelope (bound : Nat) :=
+  {expressions : List NormalizedExpr //
+    expressions.length ≤ bound ∧
+      ∀ expression ∈ expressions, expression.inFiniteEnvelope}
+
+private def NormalizedExpr.listFiniteCode (bound : Nat)
+    (expressions : NormalizedExprListFiniteEnvelope bound) :
+    {values : List {expression : NormalizedExpr // expression.inFiniteEnvelope} //
+      values.length ≤ bound} := by
+  let values := expressions.1.attach.map fun expression =>
+    (⟨expression.1, expressions.2.2 expression.1 expression.2⟩ :
+      {expression : NormalizedExpr // expression.inFiniteEnvelope})
+  refine ⟨values, ?_⟩
+  simpa [values] using expressions.2.1
+
+private theorem NormalizedExpr.listFiniteCode_injective (bound : Nat) :
+    Function.Injective (NormalizedExpr.listFiniteCode bound) := by
+  intro a b equal
+  apply Subtype.ext
+  have valueEqual := congrArg (fun values => values.1.map Subtype.val) equal
+  simpa [NormalizedExpr.listFiniteCode, List.attach_map_val] using valueEqual
+
+theorem NormalizedExpr.listInFiniteEnvelope_finite (bound : Nat) :
+    Finite (NormalizedExprListFiniteEnvelope bound) := by
+  let Expression := {expression : NormalizedExpr // expression.inFiniteEnvelope}
+  letI : Finite Expression := NormalizedExpr.inFiniteEnvelope_finite
+  letI : Fintype Expression := Fintype.ofFinite Expression
+  letI : Finite {values : List Expression // values.length ≤ bound} :=
+    listLengthLE_finite Expression bound
+  exact Finite.of_injective (NormalizedExpr.listFiniteCode bound)
+    (NormalizedExpr.listFiniteCode_injective bound)
+
+abbrev InstructionLineWaitFiniteEnvelope (wait : Option Nat) : Prop :=
+  optionWaitTagInFiniteEnvelope wait
+
+def InstructionLine.inFiniteEnvelope (bound : Nat) : InstructionLine → Prop
+  | .pe expressions =>
+      expressions.length ≤ 10 ∧
+        ∀ expression ∈ expressions, expression.inFiniteEnvelope
+  | .nop count wait => count.val < bound ∧ InstructionLineWaitFiniteEnvelope wait
+  | .mv _ => True
+
+abbrev InstructionLineFiniteCode (bound : Nat) :=
+  NormalizedExprListFiniteEnvelope 10 ⊕
+    ((Fin bound × {wait : Option Nat // InstructionLineWaitFiniteEnvelope wait}) ⊕
+      NormalizedMv)
+
+private def InstructionLine.finiteCode (bound : Nat)
+    (line : {line : InstructionLine // line.inFiniteEnvelope bound}) :
+    InstructionLineFiniteCode bound := by
+  rcases line with ⟨line, bounds⟩
+  cases line with
+  | pe expressions => exact Sum.inl ⟨expressions, bounds.1, bounds.2⟩
+  | nop count wait =>
+      exact Sum.inr (Sum.inl (⟨count.val, bounds.1⟩, ⟨wait, bounds.2⟩))
+  | mv transfer => exact Sum.inr (Sum.inr transfer)
+
+private theorem InstructionLine.finiteCode_injective (bound : Nat) :
+    Function.Injective (InstructionLine.finiteCode bound) := by
+  intro a b equal
+  rcases a with ⟨a, ha⟩
+  rcases b with ⟨b, hb⟩
+  apply Subtype.ext
+  cases a <;> cases b <;>
+    simp_all [InstructionLine.finiteCode, InstructionLine.inFiniteEnvelope]
+  case nop.nop =>
+    apply Subtype.ext
+    exact equal.1
+
+theorem InstructionLine.inFiniteEnvelope_finite (bound : Nat) :
+    Finite {line : InstructionLine // line.inFiniteEnvelope bound} := by
+  classical
+  letI : Finite (NormalizedExprListFiniteEnvelope 10) :=
+    NormalizedExpr.listInFiniteEnvelope_finite 10
+  letI : Fintype (NormalizedExprListFiniteEnvelope 10) := Fintype.ofFinite _
+  letI : Finite {wait : Option Nat // InstructionLineWaitFiniteEnvelope wait} :=
+    optionWaitTagInFiniteEnvelope_finite
+  letI : Fintype {wait : Option Nat // InstructionLineWaitFiniteEnvelope wait} :=
+    Fintype.ofFinite _
+  letI : Finite NormalizedMv := NormalizedMv.finite
+  letI : Fintype NormalizedMv := Fintype.ofFinite _
+  letI : Fintype (InstructionLineFiniteCode bound) := inferInstance
+  exact Finite.of_injective (InstructionLine.finiteCode bound)
+    (InstructionLine.finiteCode_injective bound)
 
 def omrEntryInFiniteEnvelope (entry : Nat) : Prop := entry < 16
 
