@@ -136,8 +136,13 @@ pub fn check(exprs: &[Expr]) -> Result<(), String> {
             }
         }
     }
+    for e in exprs {
+        if e.dsts.iter().any(|operand| matches!(operand, Operand::Nowrite)) && e.dsts.len() != 1 {
+            return Err(format!("`{}` uses $nowrite with another destination", e.text));
+        }
+    }
     for (i, (m, _, e)) in writes.iter().enumerate() {
-        if let Some((_, _, f)) = writes[..i].iter().find(|(n, _, f)| n == m && !std::ptr::eq(*f, *e)) {
+        if let Some((_, _, f)) = writes[..i].iter().find(|(n, _, _)| n == m) {
             return Err(format!("`{}` and `{}` both write {}", f.text, e.text, mem_name(*m)));
         }
     }
@@ -217,6 +222,7 @@ mod tests {
             "lpassa $lm0v $lr0v/$imr1; l1bmm $lb0 $ls0v/$imr1",
             "gmfma $ly $ls0v $lr0v $ln0v $omr1",
             "lpassa $lt $omr1",
+            "zero $nowrite",
             "lpassa $lm0v $lr0v/$imr1; gmfma $ly $ls0v $lr0v $ln0v $omr1",
             "lpassa $lm0v $lr0v/$imr1; gmfma $ly $ls0v $lr0v $ln0v $omr2",
             "l1bmm $lb0 $lr0v",
@@ -235,6 +241,9 @@ mod tests {
             "gmfma $ly $ls0v $lr0v $ln0v $omr1; lpassa $lt $omr1",
             "gmfma $ly $ls0v $lr0v $ln0v $omr1; lpassa $lt $omr2",
             "l1bmm $lb0 $lr8v; l1bmm $lbi $lm0v",
+            "zero $lm0 $lm2",
+            "zero $nowrite $omr1",
+            "zero $nowrite $nowrite",
         ] {
             assert!(issue(bad).is_err(), "{bad}");
         }

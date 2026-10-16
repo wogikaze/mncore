@@ -20,18 +20,27 @@ proof that `assemble3` accepts every modeled line.
 | Immediate excludes LM0 access | Rust and Lean check projected `.mem` accesses | Mirrored for projected accesses only. |
 | At most one zero-flush mask | Rust and Lean count expressions with a flush | Mirrored for parser-produced flush metadata. |
 
-The current checker can reject the `l2bmdars` exception and can miss conflicts
-involving operands outside its PE-memory, mask-read, and OMR-write projections. The first gap can omit
-legal candidates; the latter can admit lines the assembler rejects. The
-top-level nop restriction also needs to be connected to parsed source lines.
-These gaps must be resolved against the manual and `assemble3` before
+SDM 3.6.1.19 additionally requires `$nowrite` to be the sole destination of
+its expression. The checker now enforces that condition and rejects duplicate
+destinations within one PE-memory bank, matching the sampled `assemble3`
+rejections for `$nowrite`, `$nowrite` mixed with another output, and duplicate
+LM0 outputs. These output-shape checks supplement the inter-expression port
+rules above.
+
+The current checker can reject the `l2bmdars` exception, which can omit legal
+candidates. Other memory-port and operand-form conditions may remain outside
+the checked projection and admit lines the assembler rejects. The top-level
+nop restriction also needs to be connected to parsed source lines. These gaps
+must be resolved against the manual and `assemble3` before
 promoting `parallel_issue_and_memory_port_legality` beyond
 `partial_datapath_only` in `coverage.json`.
 
 The boundary evidence now includes seven valid-operand pairs of `l2bmdars` with
 `l2bmb`, `l2bmb2`, `l2bmd`, `l2bm@`, `l2bmr*`, `l2bmr2*`, and `l2bmi`; all
-seven were rejected by `assemble3`. This does not identify the manual's special
-condition, so it does not justify removing the completeness gap. The
+seven were rejected by `assemble3`. A further matrix tested eight L2BM
+operation classes with both `.0` and `.1` selectors; all 16 combinations were
+also rejected. This does not identify the manual's special condition, so it
+does not justify removing the completeness gap. The
 `l2bmdars; l2bmdarw` pair remains accepted and is separately recorded.
 
 For the other line-level cases, the assembler accepts `nop; wait i01`, rejects

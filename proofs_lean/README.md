@@ -88,8 +88,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   一般的なarity健全性を証明しない。追加境界probeでは`zero`の同一category別address出力、
   複数OMR/nowrite出力と`gmwrite`の複数matrix destinationも拒否され、単独`nowrite`は受理された。
   destination上限の証拠はまだ代表opcodeのprobeに留まり、184候補全てへの一般化は未証明。
-  `l2bmdars`と他のL2BM opcodeの7通りの組み合わせも追加probeでは拒否されたが、
-  マニュアルが記す特殊条件の特定には至っていない。
+  Issue.Legal は同一式内の出力bank重複と、`$nowrite`を他destinationと併用する形も拒否する。
+  `l2bmdars`と他のL2BM opcodeの7通り、および8 opcode×2 selectorの16通りを追加probeしたが、
+  すべて拒否され、マニュアルが記す特殊条件の特定には至っていない。
   `nop; wait i01`は受理され、nopとALUの同時発行は拒否される。MVとPE式を
   同じ行に置く2通りの順序も拒否された。
 - `evidence/parser-gap-audit/answers.json`: 問題ディレクトリの全73 `answer.vsm`を

@@ -168,6 +168,20 @@ CASES = {
     "matrix_mul_width2": ("gmmul $lx $aluf $ln0v4\n", True, 1),
     "matrix_mul_width4": ("gmmul $llx $aluf $ln0v4\n", True, 1),
 }
+L2BMDARS_COMPANIONS = {
+    "bcast": "l2bmb $lc256 $lb0",
+    "bcast2": "l2bmb2 $lc256 $lb0",
+    "distrib": "l2bmd $lc256 $lb0",
+    "froml1b": "l2bm@0 $lb0 $lc256",
+    "reduce": "l2bmrdfadd $lb0 $lc256",
+    "reduce2": "l2bmr2dfadd $lb0 $lc256",
+    "gather": "l2bmd $lb0 $lc256",
+    "imcast": "l2bmi@0/4 $lb0 $lb0",
+}
+for selector in range(2):
+    for opcode, expression in L2BMDARS_COMPANIONS.items():
+        CASES[f"l2bmdars_{opcode}_selector{selector}"] = (
+            f"l2bmdars $lc0@.{selector} $dar0; {expression}\n", False, None)
 for index in range(2, 31):
     CASES[f"imr_selector_{index}"] = (f"lpassa $lm0 $ln0/$imr{index}\n", True, 1)
     CASES[f"mask_directive_n_{index}"] = (f"maskn {index}\nlpassa $lm0 $ln0\n", True, 1)
@@ -266,8 +280,10 @@ def main() -> None:
             "SDM 3.6.4 treats mask registers as PE operands and disallows multiple writes to that operand in one step. Two otherwise accepted operations that write OMR are rejected together, both for the same entry and for different entries.",
             "After seeding the turnaround buffer with a valid PE-to-L1BM transfer, an ordinary L1BM source and the turnaround source $lbi are each accepted alone. Issuing both to PE destinations together is rejected with an l1bm_emit conflict, an implicit $lbf write conflict across the distinct L1BM issue groups.",
             "The June 2026 manual's Section 3.6.4 describes an l2bmdars exception for simultaneous issue with another L2BM operation, but the bundled assemble3 rejects the focused l2bmdars+l2bmb line. The local encoder/model agreement is unresolved against the newer manual.",
+            "The l2bmdars companion matrix also rejected eight L2BM operation classes at each selector .0 and .1. This broadens the bundled assembler evidence but does not identify the newer manual's special exception or prove it cannot occur.",
             "Matrix rows 0 through 15 are accepted; row 16 is rejected.",
             "PE destination lists are not sized by source arity: lpassa accepts three outputs across LM1/GRF0/GRF1, and zero accepts LM0/LM1/GRF0/GRF1 plus OMR. The sampled duplicate-bank and nowrite combinations are rejected; this is not an exhaustive output grammar proof.",
+            "The issue checker now mirrors the sampled assembler rule that destination banks cannot repeat within one expression and `$nowrite` must be the sole destination.",
             "hbfe and hbfn accept /6 through /9 and reject /10 in the selected boundary probes.",
             "LM0/LM1 and GRF0/GRF1 accept aligned final addresses at widths 1, 2, and 4; their single-word capacities are respectively 4096 and 512, and the capacity address is rejected.",
             "Each of the four explicit LM0 cycle addresses accepts 4095 and rejects 4096; madpe values 0 through 3 are accepted and 4 is rejected.",

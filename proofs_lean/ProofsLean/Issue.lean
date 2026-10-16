@@ -111,6 +111,7 @@ structure Expr where
   writes : List Access
   omrWrites : List Nat
   lbfWrites : Nat
+  nowriteOutputValid : Bool
   matrixXUses : Nat
   matrixYUses : Nat
   maskApplications : List ParsedMask
@@ -158,8 +159,12 @@ def matrixRegistersUnique (xs : List Expr) : Prop :=
   (xs.map Expr.matrixXUses).sum ≤ 1 ∧ (xs.map Expr.matrixYUses).sum ≤ 1
 
 def writesUnique (xs : List Expr) : Prop :=
-  ∀ e ∈ xs, ∀ f ∈ xs, ∀ a ∈ e.writes, ∀ b ∈ f.writes,
-    e.id ≠ f.id → a.bank = b.bank → False
+  (∀ e ∈ xs, (e.writes.map Access.bank).Nodup) ∧
+  (∀ e ∈ xs, ∀ f ∈ xs, ∀ a ∈ e.writes, ∀ b ∈ f.writes,
+    e.id ≠ f.id → a.bank = b.bank → False)
+
+def nowriteOutputsUnique (xs : List Expr) : Prop :=
+  ∀ e ∈ xs, e.nowriteOutputValid = true
 
 def readsAgree (xs : List Expr) : Prop :=
   ∀ e ∈ xs, ∀ f ∈ xs, ∀ a ∈ e.reads, ∀ b ∈ f.reads,
@@ -213,6 +218,7 @@ def Legal (xs : List Expr) : Prop :=
   zeroFlushUnique xs ∧
   maskWidthsAgree xs ∧
   maskEntriesAgree xs ∧
+  nowriteOutputsUnique xs ∧
   lbfWritesUnique xs ∧
   maskRegisterWritesUnique xs
 
@@ -248,6 +254,7 @@ def emptyExpr : Expr where
   writes := []
   omrWrites := []
   lbfWrites := 0
+  nowriteOutputValid := true
   matrixXUses := 0
   matrixYUses := 0
   maskApplications := []
@@ -258,7 +265,8 @@ theorem empty_is_legal : Legal [] := by
   simp [Legal, idsUnique, groupsUnique, mauCountBounded, mauExpressions,
     mauPrecisionsAgree, matrixWritePairAgrees, matrixRegistersUnique,
     writesUnique, readsAgree, localReadWriteAgree, immediateExcludesLm0,
-    zeroFlushUnique, maskWidthsAgree, maskEntriesAgree, lbfWritesUnique,
+    zeroFlushUnique, maskWidthsAgree, maskEntriesAgree, nowriteOutputsUnique,
+    lbfWritesUnique,
     maskRegisterWritesUnique]
 
 theorem empty_check_accepts : check [] = true := check_complete [] empty_is_legal
@@ -302,10 +310,32 @@ def maskWriteIssueExpr (id : Nat) (group : Group) (entry : Nat) : Expr :=
 def lbfWriteIssueExpr (id : Nat) (group : Group) : Expr :=
   { emptyExpr with id := id, group := some group, lbfWrites := 1 }
 
+def invalidNowriteIssueExpr (id : Nat) : Expr :=
+  { emptyExpr with id := id, group := some .alu, nowriteOutputValid := false }
+
+theorem nowrite_with_other_destination_is_illegal :
+    ¬ Legal [invalidNowriteIssueExpr 0] := by
+  intro legal
+  rcases legal with ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, valid, _, _⟩
+  simp [nowriteOutputsUnique, invalidNowriteIssueExpr, emptyExpr] at valid
+
+def duplicateMemWriteIssueExpr : Expr :=
+  { emptyExpr with
+    id := 0
+    group := some .alu
+    writes := [⟨.lm0, ⟨1, 0, 0, 0, 0, false, none⟩⟩,
+      ⟨.lm0, ⟨1, 2, 2, 2, 2, false, none⟩⟩] }
+
+theorem duplicate_memory_destination_bank_is_illegal :
+    ¬ Legal [duplicateMemWriteIssueExpr] := by
+  intro legal
+  rcases legal with ⟨_, _, _, _, _, _, writes, _, _, _, _, _, _, _, _, _⟩
+  simp [writesUnique, duplicateMemWriteIssueExpr, emptyExpr] at writes
+
 theorem duplicate_lbf_writes_are_illegal :
     ¬ Legal [lbfWriteIssueExpr 0 .l1bm, lbfWriteIssueExpr 1 .l1bmTurnaround] := by
   intro legal
-  rcases legal with ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, writes, _⟩
+  rcases legal with ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, writes, _⟩
   simp [lbfWritesUnique, lbfWriteIssueExpr, emptyExpr] at writes
 
 theorem duplicate_lbf_writes_rejected :
@@ -522,6 +552,14 @@ def ParsedExpr.writesLbf (expression : ParsedExpr) : Bool :=
       | _ => false
   | _ => false
 
+def ParsedExpr.nowriteOutputValid (expression : ParsedExpr) : Bool :=
+  let nowrites := expression.destinations.filter fun operand =>
+    match operand with
+    | .nowrite => true
+    | _ => false
+  decide (nowrites.length = 0 ∨
+    (nowrites.length = 1 ∧ expression.destinations.length = 1))
+
 /-- Source-count condition imposed by the Rust parser's fixed source prefix. -/
 def ParsedExpr.sourcesMatchParserArity (expression : ParsedExpr) : Prop :=
   expression.sources.length ≤ expression.op.parserSourceLimit
@@ -704,6 +742,7 @@ def ParsedExpr.toIssueExpr (id : Nat) (e : ParsedExpr) : Expr where
   writes := ParsedOperand.accesses e.destinations
   omrWrites := e.maskRegisterWrites
   lbfWrites := if e.writesLbf then 1 else 0
+  nowriteOutputValid := e.nowriteOutputValid
   matrixXUses := ParsedOperand.matrixUseCount e.sources false +
     ParsedOperand.matrixUseCount e.destinations false
   matrixYUses := ParsedOperand.matrixUseCount e.sources true +
@@ -724,6 +763,9 @@ theorem projected_mask_register_writes_are_destinations (id : Nat) (e : ParsedEx
 
 theorem projected_lbf_writes_match_transfer_sources (id : Nat) (e : ParsedExpr) :
     (e.toIssueExpr id).lbfWrites = if e.writesLbf then 1 else 0 := rfl
+
+theorem projected_nowrite_output_validity (id : Nat) (e : ParsedExpr) :
+    (e.toIssueExpr id).nowriteOutputValid = e.nowriteOutputValid := rfl
 
 theorem projected_group_is_parser_group (id : Nat) (e : ParsedExpr) :
     (e.toIssueExpr id).group = e.issueGroup := rfl
@@ -813,6 +855,31 @@ noncomputable def checkParsedLine (expressions : List ParsedExpr) : Bool :=
 theorem parsed_check_sound (expressions : List ParsedExpr)
     (accepted : checkParsedLine expressions = true) : LegalParsedLine expressions := by
   exact check_sound (projectLine expressions) accepted
+
+theorem parsed_check_rejects_invalid_nowrite (expression : ParsedExpr)
+    (invalid : expression.nowriteOutputValid = false) :
+    checkParsedLine [expression] = false := by
+  classical
+  cases checked : checkParsedLine [expression] with
+  | false => rfl
+  | true =>
+      have legal := parsed_check_sound [expression] checked
+      rcases legal with ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, valid, _, _⟩
+      have projected : expression.nowriteOutputValid = true := by
+        simpa [LegalParsedLine, projectLine, projectFrom, nowriteOutputsUnique,
+          ParsedExpr.toIssueExpr] using valid
+      cases invalid.symm.trans projected
+
+def duplicateNowriteParsedExpr : ParsedExpr where
+  op := .zero
+  sources := []
+  destinations := [.nowrite, .omr 1 none]
+  flush := none
+  text := "zero $nowrite $omr1"
+
+theorem parsed_duplicate_nowrite_output_rejected :
+    checkParsedLine [duplicateNowriteParsedExpr] = false :=
+  parsed_check_rejects_invalid_nowrite duplicateNowriteParsedExpr (by decide)
 
 theorem parsed_check_complete (expressions : List ParsedExpr)
     (legal : LegalParsedLine expressions) : checkParsedLine expressions = true := by
@@ -1316,13 +1383,13 @@ theorem plusOne_issue_legal : LegalParsedLine [plusOneParsed] := by
     ParsedOperand.matrixUseCount ParsedExpr.hasTurnaround
     ParsedExpr.maskApplications ParsedOperand.writeMask?
     ParsedExpr.maskRegisterWrites ParsedOperand.maskRegisterWrite?
-    ParsedExpr.writesLbf
+    ParsedExpr.writesLbf ParsedExpr.nowriteOutputValid
     plusOneParsed plusOneRead plusOneWrite
   simp [Legal, idsUnique, groupsUnique, mauCountBounded, mauExpressions,
     mauPrecisionsAgree, matrixWritePairAgrees, matrixRegistersUnique,
     writesUnique, readsAgree, localReadWriteAgree, immediateExcludesLm0,
-    zeroFlushUnique, maskWidthsAgree, maskEntriesAgree, lbfWritesUnique,
-    maskRegisterWritesUnique,
+    zeroFlushUnique, maskWidthsAgree, maskEntriesAgree, nowriteOutputsUnique,
+    lbfWritesUnique, maskRegisterWritesUnique,
     projectFrom]
 
 theorem plusOne_issue_accepts : checkParsedLine [plusOneParsed] = true :=

@@ -125,6 +125,10 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.projected_lbf_writes_match_transfer_sources
 #print axioms ProofsLean.MNCore.Issue.duplicate_lbf_writes_are_illegal
 #print axioms ProofsLean.MNCore.Issue.duplicate_lbf_writes_rejected
+#print axioms ProofsLean.MNCore.Issue.duplicate_memory_destination_bank_is_illegal
+#print axioms ProofsLean.MNCore.Issue.nowrite_with_other_destination_is_illegal
+#print axioms ProofsLean.MNCore.Issue.projected_nowrite_output_validity
+#print axioms ProofsLean.MNCore.Issue.parsed_duplicate_nowrite_output_rejected
 #print axioms ProofsLean.MNCore.Issue.projected_group_is_parser_group
 #print axioms ProofsLean.MNCore.Issue.projected_mau_is_parser_mau
 #print axioms ProofsLean.MNCore.Issue.normalized_expr_issue_projection

@@ -350,7 +350,7 @@ def isa_bounds_experiment() -> dict:
             raise ValueError(f"stale ISA boundary experiment: {item['path']}")
     if not all(row["matches_expected"] for row in record["observations"]):
         raise ValueError("ISA boundary experiment contains an unexpected assembler result")
-    if len(record["observations"]) != 1111:
+    if len(record["observations"]) != 1127:
         raise ValueError("ISA boundary experiment case count changed")
     return {
         "source": reference.relative_to(REPO).as_posix(),
@@ -496,8 +496,16 @@ def parallel_issue_boundary_experiment() -> dict:
         "l1bm_forward_source": (True, 1),
         "l1bm_turnaround_forward_source": (True, 2),
         "l1bm_duplicate_lbf_write": (False, None),
+        "zero_duplicate_lm0_output": (False, None),
+        "zero_duplicate_nowrite_outputs": (False, None),
+        "zero_nowrite_with_other_output": (False, None),
         "l2bmdars_parallel_l2bm_exception": (False, None),
     }
+    companions = ("bcast", "bcast2", "distrib", "froml1b", "reduce",
+                  "reduce2", "gather", "imcast")
+    for selector in range(2):
+        for opcode in companions:
+            expected[f"l2bmdars_{opcode}_selector{selector}"] = (False, None)
     for case, (accepted, words) in expected.items():
         row = observations.get(case)
         if row is None or (row["accepted"], row["assembler_output_lines"]) != (accepted, words):
@@ -505,7 +513,7 @@ def parallel_issue_boundary_experiment() -> dict:
     return {
         "source": reference.relative_to(REPO).as_posix(),
         "sha256": digest(reference),
-        "manual_sections": ["SDM 3.6.1.15", "SDM 3.6.1.17", "SDM 3.6.2.1", "SDM 3.6.4"],
+        "manual_sections": ["SDM 3.6.1.15", "SDM 3.6.1.17", "SDM 3.6.1.19", "SDM 3.6.2.1", "SDM 3.6.4", "SDM 3.6.7.10"],
         "observations": [
             {"case": case, "accepted": observations[case]["accepted"],
              "assembler_output_lines": observations[case]["assembler_output_lines"]}
@@ -521,8 +529,12 @@ def parallel_issue_boundary_experiment() -> dict:
             "ProofsLean.MNCore.Issue.lbfWritesUnique",
             "ProofsLean.MNCore.Issue.projected_lbf_writes_match_transfer_sources",
             "ProofsLean.MNCore.Issue.duplicate_lbf_writes_rejected",
+            "ProofsLean.MNCore.Issue.duplicate_memory_destination_bank_is_illegal",
+            "ProofsLean.MNCore.Issue.nowrite_with_other_destination_is_illegal",
+            "ProofsLean.MNCore.Issue.projected_nowrite_output_validity",
+            "ProofsLean.MNCore.Issue.parsed_duplicate_nowrite_output_rejected",
         ],
-        "limitations": "These probes cover mask agreement, OMR writes, and the shared L1BM forwarding output; they do not establish complete parser, assembler, or hazard legality correspondence.",
+        "limitations": "These probes cover mask agreement, OMR and LBF writes, duplicate PE-memory destinations, and `$nowrite` exclusivity; they do not establish complete parser, assembler, or hazard legality correspondence.",
     }
 
 
