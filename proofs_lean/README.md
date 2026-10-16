@@ -124,8 +124,11 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   さらに対応するParsedOperand/ParsedExpr/PE issue lineからread/write event列を生成し、
   T indirect readのcycle別Tイベントも追加する。固定patternはRust `written_cycles`と同じcycle
   bitでwrite eventを除外し、entry maskは同解析器と同じく全cycleを候補にする。
+  sourceをcompileAdvancingし、directive・nopを反映したissueごとのevent列から、
+  先行writeと後続readのconstraintを4 issue-word以内で集約する関数も追加した。
+  生成constraintの距離・required値が上記ルールから作られることを証明した。
   これは対象PEメモリ規則の条件モデルであり、Rust analyzerの全Access生成、mask directiveの実効状態、
-  BARによる静的range照合、lookback/dedupを含むhazard report対応証明ではない。
+  BARによる静的range照合、reportのsort/dedupを含む出力一致証明ではない。
   mv、debug、DRAM初期化
   など他のtop-level行はlowering対象外。精度縮減、hazard/port legalityは未接続で、
   完全な命令実行意味論ではない。

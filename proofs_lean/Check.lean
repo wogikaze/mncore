@@ -105,6 +105,7 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.parsed_mask_pattern_controls_hazard_write_cycle
 #print axioms ProofsLean.MNCore.PEMemory.parsed_mask_entry_keeps_all_hazard_write_cycles
 #print axioms ProofsLean.MNCore.PEMemory.t_indirect_hazard_access_uses_cycle_region
+#print axioms ProofsLean.MNCore.PEMemory.pe_hazard_constraint_uses_rule_distance
 
 open Lean Elab Command in
 run_cmd do

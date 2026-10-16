@@ -732,6 +732,85 @@ theorem t_indirect_hazard_access_uses_cycle_region (cycle : Fin 4) :
   · rfl
   · simp [TimedPEAccess.rangeStart, TimedPEAccess.ofControl, tIndirectHazardAccess]
 
+structure PEHazardConstraint where
+  earlier : TimedPEAccess
+  later : TimedPEAccess
+  distance : Nat
+  required : Nat
+  deriving DecidableEq, Repr
+
+def PEHazardConstraint.violated (constraint : PEHazardConstraint) : Bool :=
+  constraint.distance < constraint.required
+
+def makePEHazardConstraint? (earlier later : TimedPEAccess) :
+    Option PEHazardConstraint :=
+  if earlier.startWord < later.startWord then
+    match peHazardRequirement? earlier later with
+    | none => none
+    | some (.steps count) =>
+        some ⟨earlier, later, (later.startWord - earlier.startWord) * 4, count * 4⟩
+    | some (.cycles count) =>
+        some ⟨earlier, later,
+          later.absoluteCycle - earlier.absoluteCycle, count⟩
+  else none
+
+def peHazardConstraintsBetween (earlier later : List TimedPEAccess) :
+    List PEHazardConstraint :=
+  earlier.flatMap fun write =>
+    later.filterMap fun access =>
+      match makePEHazardConstraint? write access with
+      | some constraint =>
+          if access.startWord - write.startWord ≤ 4 then some constraint else none
+      | none => none
+
+def collectPEHazardConstraintsAux (earlier : List TimedPEAccess)
+    (remaining : List (List TimedPEAccess)) : List PEHazardConstraint :=
+  match remaining with
+  | [] => []
+  | current :: rest =>
+      peHazardConstraintsBetween earlier current ++
+        collectPEHazardConstraintsAux (earlier ++ current) rest
+
+def collectPEHazardConstraints (eventsByIssue : List (List TimedPEAccess)) :
+    List PEHazardConstraint :=
+  collectPEHazardConstraintsAux [] eventsByIssue
+
+def parsedSourcePEHazardEvents? (source : List ParsedMaskedSourceStatement)
+    (control : ParsedMaskExecutionControl) : Option (List (List TimedPEAccess)) :=
+  let compiled := ProofsLean.ControlNormalization.compileAdvancing
+    updateParsedMaskDirective advanceParsedMaskControl source control
+  compiled.mapM fun instruction =>
+    instruction.2.toTimedPEHazardEvents? instruction.1
+
+def parsedSourcePEHazardConstraints? (source : List ParsedMaskedSourceStatement)
+    (control : ParsedMaskExecutionControl) : Option (List PEHazardConstraint) :=
+  (parsedSourcePEHazardEvents? source control).map collectPEHazardConstraints
+
+theorem pe_hazard_constraint_uses_rule_distance
+    (earlier later : TimedPEAccess) (constraint : PEHazardConstraint)
+    (made : makePEHazardConstraint? earlier later = some constraint) :
+    ∃ ruleDistance, peHazardRequirement? earlier later = some ruleDistance ∧
+      constraint.earlier = earlier ∧ constraint.later = later ∧
+      (match ruleDistance with
+       | .steps count => constraint.distance =
+            (later.startWord - earlier.startWord) * 4 ∧ constraint.required = count * 4
+       | .cycles count => constraint.distance =
+            later.absoluteCycle - earlier.absoluteCycle ∧ constraint.required = count) := by
+  by_cases htime : earlier.startWord < later.startWord
+  · cases hreq : peHazardRequirement? earlier later with
+    | none => simp [makePEHazardConstraint?, htime, hreq] at made
+    | some ruleDistance =>
+        cases ruleDistance with
+        | steps count =>
+            simp [makePEHazardConstraint?, htime, hreq] at made
+            cases made
+            exact ⟨.steps count, rfl, rfl, rfl, by simp⟩
+        | cycles count =>
+            simp [makePEHazardConstraint?, htime, hreq] at made
+            cases made
+            exact ⟨.cycles count, rfl, rfl, rfl, by simp⟩
+  · simp [makePEHazardConstraint?, htime] at made
+
 theorem lm_pe_hazard_requires_three_issue_words
     (earlier later : TimedPEAccess)
     (write : earlier.write = true) (read : later.write = false)
