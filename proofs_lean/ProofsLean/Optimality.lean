@@ -25,6 +25,35 @@ theorem BoundCertificate.sound (certificate : BoundCertificate m spec bound) :
     exact False.elim
       (certificate.rejected p (certificate.complete p correct.1 short) correct)
 
+/-- A symbolic lower-bound certificate can rule out a whole family of programs
+without materializing that family as a list. This is intended for bounds where
+the instruction alphabet is finite but far too large to enumerate explicitly:
+`contains` describes a proof-friendly superset of all legal short programs,
+and `rejected` proves every member of that family incorrect. -/
+structure SymbolicBoundCertificate (m : Machine) (spec : Problem m) (bound : Nat) where
+  contains : Program m → Prop
+  covers : ∀ p, m.legal p → score m p < bound → contains p
+  rejected : ∀ p, contains p → ¬ Correct m spec p
+
+theorem SymbolicBoundCertificate.sound
+    (certificate : SymbolicBoundCertificate m spec bound) :
+    LowerBound m spec bound := by
+  intro p correct
+  by_cases h : bound ≤ score m p
+  · exact h
+  · have short : score m p < bound := by omega
+    exact False.elim
+      (certificate.rejected p (certificate.covers p correct.1 short) correct)
+
+/-- Every concrete enumeration certificate is also a symbolic one, using
+membership in its finite candidate list as the family predicate. -/
+def BoundCertificate.toSymbolic
+    (certificate : BoundCertificate m spec bound) :
+    SymbolicBoundCertificate m spec bound where
+  contains := fun p => p ∈ certificate.candidates
+  covers := certificate.complete
+  rejected := certificate.rejected
+
 structure OptimalityCertificate (m : Machine) (spec : Problem m) where
   program : Program m
   correct : Correct m spec program

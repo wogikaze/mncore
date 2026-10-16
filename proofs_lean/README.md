@@ -48,7 +48,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   実際のVSMの全ゼロコスト文がこの条件を満たす証明は未実装。
 - `Optimality.lean`: 任意の合法・正しいプログラムを量化する下限と最適性。
   証明書の完全性は合法な短縮プログラムの被覆だけを要求し、
-  それぞれの候補の不正解の証明を要求する。
+  それぞれの候補の不正解の証明を要求する。巨大な候補集合を列挙しない
+  Phase 4向けに、候補プログラムの族を述語で表す`SymbolicBoundCertificate`も定義した。
+  有限列挙証明書はその特殊ケースへ変換でき、symbolic certificateのsoundnessも証明した。
 - `Enumeration.lean`: アルファベット上の命令列を長さ上限まで覆う列挙定理。
   被覆は合法プログラムに現れる行に対してのみ必要。さらに上限ごとの
   `LegalLinesCoveredBelow` と `legalLinesCostBelow` を定義し、`nop/n`のような

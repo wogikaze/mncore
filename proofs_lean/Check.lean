@@ -5,6 +5,8 @@ import Lean
 #print axioms ProofsLean.correct_restrict
 #print axioms ProofsLean.refutes_not_correct
 #print axioms ProofsLean.BoundCertificate.sound
+#print axioms ProofsLean.SymbolicBoundCertificate.sound
+#print axioms ProofsLean.BoundCertificate.toSymbolic
 #print axioms ProofsLean.OptimalityCertificate.sound
 #print axioms ProofsLean.shorter_correct_refutes_bound
 #print axioms ProofsLean.programsUpTo_complete
