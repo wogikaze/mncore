@@ -561,6 +561,7 @@ structure ParsedIntegerContext where
 structure ParsedMaskExecutionControl where
   directive : ParsedMaskDirective
   context : ParsedIntegerContext
+  elapsedWords : Nat
   deriving DecidableEq, Repr
 
 inductive ParsedMaskedIssueLine where
@@ -575,10 +576,66 @@ def updateParsedMaskDirective (next : ParsedMaskDirective)
     (current : ParsedMaskExecutionControl) : ParsedMaskExecutionControl :=
   { current with directive := next }
 
+def advanceParsedMaskControl (current : ParsedMaskExecutionControl)
+    (_line : ParsedMaskedIssueLine) : ParsedMaskExecutionControl :=
+  { current with elapsedWords := current.elapsedWords + 1 }
+
+def parsedAccessAbsoluteCycle (control : ParsedMaskExecutionControl)
+    (cycle : Fin 4) : Nat := control.elapsedWords * 4 + cycle.val
+
+def advanceParsedControlThroughSource :
+    List ParsedMaskedSourceStatement → ParsedMaskExecutionControl →
+      ParsedMaskExecutionControl
+  | [], control => control
+  | .directive directive :: rest, control =>
+      advanceParsedControlThroughSource rest (updateParsedMaskDirective directive control)
+  | .issue line :: rest, control =>
+      advanceParsedControlThroughSource rest (advanceParsedMaskControl control line)
+
+theorem parsed_source_clock_matches_issue_cost
+    (source : List ParsedMaskedSourceStatement) (control : ParsedMaskExecutionControl) :
+    (advanceParsedControlThroughSource source control).elapsedWords =
+      control.elapsedWords + ProofsLean.ControlNormalization.cost source := by
+  induction source generalizing control with
+  | nil => rfl
+  | cons statement rest ih =>
+      cases statement with
+      | directive directive =>
+          simp [advanceParsedControlThroughSource,
+            updateParsedMaskDirective, ProofsLean.ControlNormalization.cost, ih]
+      | issue line =>
+          simp [advanceParsedControlThroughSource, advanceParsedMaskControl,
+            ProofsLean.ControlNormalization.cost, ih]
+          omega
+
+theorem parsed_source_access_clock_matches_issue_cost
+    (source : List ParsedMaskedSourceStatement) (control : ParsedMaskExecutionControl)
+    (cycle : Fin 4) :
+    parsedAccessAbsoluteCycle (advanceParsedControlThroughSource source control) cycle =
+      parsedAccessAbsoluteCycle control cycle +
+        4 * ProofsLean.ControlNormalization.cost source := by
+  simp [parsedAccessAbsoluteCycle, parsed_source_clock_matches_issue_cost]
+  omega
+
+theorem parsed_issue_advances_elapsed_word
+    (control : ParsedMaskExecutionControl) (line : ParsedMaskedIssueLine) :
+    (advanceParsedMaskControl control line).elapsedWords = control.elapsedWords + 1 := rfl
+
+theorem parsed_issue_advances_absolute_cycle
+    (control : ParsedMaskExecutionControl) (line : ParsedMaskedIssueLine)
+    (cycle : Fin 4) :
+    parsedAccessAbsoluteCycle (advanceParsedMaskControl control line) cycle =
+      parsedAccessAbsoluteCycle control cycle + 4 := by
+  simp [advanceParsedMaskControl, parsedAccessAbsoluteCycle]
+  omega
+
 theorem mask_directive_replaces_selection_preserves_context
     (next : ParsedMaskDirective) (current : ParsedMaskExecutionControl) :
     (updateParsedMaskDirective next current).directive = next ∧
-      (updateParsedMaskDirective next current).context = current.context := by
+      (updateParsedMaskDirective next current).context = current.context ∧
+      (updateParsedMaskDirective next current).elapsedWords = current.elapsedWords := by
+  constructor
+  · rfl
   constructor <;> rfl
 
 structure PreparedParsedMaskedWrite where
@@ -702,8 +759,8 @@ def ParsedLine.parsedMaskedIssueWords? : ParsedLine → Option Nat
 def runParsedMaskedSource (source : List ParsedMaskedSourceStatement)
     (control : ParsedMaskExecutionControl) (files : IntegerRegisterFiles) :
     Option IntegerRegisterFiles :=
-  ProofsLean.ControlNormalization.runSource updateParsedMaskDirective
-    parsedMaskedExpressionStep source control files
+  ProofsLean.ControlNormalization.runSourceAdvancing updateParsedMaskDirective
+    advanceParsedMaskControl parsedMaskedExpressionStep source control files
 
 def parsedMaskedIssueLineLegal : ParsedMaskedIssueLine → Prop
   | .pe expressions => LegalParsedLine expressions
@@ -724,17 +781,17 @@ def parsedMaskedNormalizedMachine : ProofsLean.Machine where
 def runParsedMaskedCompiled (source : List ParsedMaskedSourceStatement)
     (control : ParsedMaskExecutionControl) (files : IntegerRegisterFiles) :
     Option IntegerRegisterFiles :=
-  let compiled := ProofsLean.ControlNormalization.compile
-    updateParsedMaskDirective source control
+  let compiled := ProofsLean.ControlNormalization.compileAdvancing
+    updateParsedMaskDirective advanceParsedMaskControl source control
   ProofsLean.execute parsedMaskedNormalizedMachine compiled files
 
 theorem parsedMaskedSource_execution (source : List ParsedMaskedSourceStatement)
     (control : ParsedMaskExecutionControl) (files : IntegerRegisterFiles) :
     runParsedMaskedSource source control files =
       runParsedMaskedCompiled source control files := by
-  exact ProofsLean.ControlNormalization.source_execution
-    updateParsedMaskDirective parsedMaskedExpressionStep parsedMaskedIssueLegal Unit
-    source control files
+  exact ProofsLean.ControlNormalization.source_execution_advancing
+    updateParsedMaskDirective advanceParsedMaskControl parsedMaskedExpressionStep
+    parsedMaskedIssueLegal Unit source control files
 
 theorem mask_directive_has_zero_issue_cost (directive : ParsedMaskDirective) :
     ProofsLean.ControlNormalization.cost
@@ -791,10 +848,12 @@ theorem parsed_nop_line_lowers_to_count_issue_words (count : Nat) (wait : Option
 theorem parsedMaskedSource_score (source : List ParsedMaskedSourceStatement)
     (control : ParsedMaskExecutionControl) :
     ProofsLean.score parsedMaskedNormalizedMachine
-      (ProofsLean.ControlNormalization.compile updateParsedMaskDirective source control) =
+      (ProofsLean.ControlNormalization.compileAdvancing updateParsedMaskDirective
+        advanceParsedMaskControl source control) =
       ProofsLean.ControlNormalization.cost source :=
-  ProofsLean.ControlNormalization.source_score updateParsedMaskDirective
-    parsedMaskedExpressionStep parsedMaskedIssueLegal Unit source control
+  ProofsLean.ControlNormalization.source_score_advancing updateParsedMaskDirective
+    advanceParsedMaskControl parsedMaskedExpressionStep parsedMaskedIssueLegal Unit
+    source control
 
 theorem lowered_parsed_masked_source_executes_as_normalized
     (lines : List ParsedLine) (source : List ParsedMaskedSourceStatement)
@@ -803,7 +862,8 @@ theorem lowered_parsed_masked_source_executes_as_normalized
     (lowerParsedMaskedSource lines).map
       (fun loweredSource => runParsedMaskedSource loweredSource control files) =
       some (ProofsLean.execute parsedMaskedNormalizedMachine
-        (ProofsLean.ControlNormalization.compile updateParsedMaskDirective source control)
+        (ProofsLean.ControlNormalization.compileAdvancing updateParsedMaskDirective
+          advanceParsedMaskControl source control)
         files) := by
   rw [lowered]
   simp only [Option.map_some]

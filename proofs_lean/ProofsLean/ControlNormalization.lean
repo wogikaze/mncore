@@ -65,6 +65,60 @@ theorem run_compiles (update : Directive → Control → Control)
       | none => simp
       | some next => simpa [h] using ih control next
 
+/-- Variant used when each scored issue word advances the control clock as well
+as applying zero-cost directive updates. -/
+def compileAdvancing (update : Directive → Control → Control)
+    (advance : Control → Line → Control) :
+    List (Statement Directive Line) → Control → List (Control × Line)
+  | [], _ => []
+  | .directive d :: rest, control =>
+      compileAdvancing update advance rest (update d control)
+  | .issue line :: rest, control =>
+      (control, line) :: compileAdvancing update advance rest (advance control line)
+
+def runSourceAdvancing (update : Directive → Control → Control)
+    (advance : Control → Line → Control)
+    (step : Control → Line → State → Option State) :
+    List (Statement Directive Line) → Control → State → Option State
+  | [], _, state => some state
+  | .directive d :: rest, control, state =>
+      runSourceAdvancing update advance step rest (update d control) state
+  | .issue line :: rest, control, state =>
+      (step control line state).bind
+        (runSourceAdvancing update advance step rest (advance control line))
+
+theorem compileAdvancing_length (update : Directive → Control → Control)
+    (advance : Control → Line → Control)
+    (source : List (Statement Directive Line)) (control : Control) :
+    (compileAdvancing update advance source control).length = cost source := by
+  induction source generalizing control with
+  | nil => rfl
+  | cons first rest ih =>
+      cases first with
+      | directive d => simpa [compileAdvancing, cost] using ih (update d control)
+      | issue line =>
+          simp [compileAdvancing, cost, ih (advance control line)]
+          omega
+
+theorem run_compiles_advancing (update : Directive → Control → Control)
+    (advance : Control → Line → Control)
+    (step : Control → Line → State → Option State)
+    (source : List (Statement Directive Line)) (control : Control) (state : State) :
+    runSourceAdvancing update advance step source control state =
+      runCompiled step (compileAdvancing update advance source control) state := by
+  induction source generalizing control state with
+  | nil => rfl
+  | cons first rest ih =>
+      cases first with
+      | directive d =>
+          simpa [runSourceAdvancing, compileAdvancing] using ih (update d control) state
+      | issue line =>
+          simp only [runSourceAdvancing, compileAdvancing, runCompiled]
+          cases h : step control line state with
+          | none => simp
+          | some next =>
+              simpa [h] using ih (advance control line) next
+
 /-- The normalized lines use the ordinary positive-cost proof interface. -/
 def normalizedMachine (step : Control → Line → State → Option State)
     (legal : List (Control × Line) → Prop) (Input : Type) : Machine where
@@ -90,6 +144,35 @@ theorem compiled_execution (step : Control → Line → State → Option State)
       cases h : step control line state with
       | none => simp
       | some next => simpa [h, normalizedMachine] using ih next
+
+theorem source_execution_advancing (update : Directive → Control → Control)
+    (advance : Control → Line → Control)
+    (step : Control → Line → State → Option State)
+    (legal : List (Control × Line) → Prop) (Input : Type)
+    (source : List (Statement Directive Line)) (control : Control) (state : State) :
+    runSourceAdvancing update advance step source control state =
+      execute (normalizedMachine step legal Input)
+        (compileAdvancing update advance source control) state := by
+  rw [run_compiles_advancing, compiled_execution]
+
+theorem source_score_advancing (update : Directive → Control → Control)
+    (advance : Control → Line → Control)
+    (step : Control → Line → State → Option State)
+    (legal : List (Control × Line) → Prop) (Input : Type)
+    (source : List (Statement Directive Line)) (control : Control) :
+    score (normalizedMachine step legal Input)
+      (compileAdvancing update advance source control) = cost source := by
+  have length := compileAdvancing_length update advance source control
+  suffices score (normalizedMachine step legal Input)
+      (compileAdvancing update advance source control) =
+        (compileAdvancing update advance source control).length by omega
+  induction compileAdvancing update advance source control with
+  | nil => rfl
+  | cons pair rest ih =>
+      simp only [score, List.length_cons]
+      change 1 + score (normalizedMachine step legal Input) rest = rest.length + 1
+      omega
+
 
 theorem source_execution (update : Directive → Control → Control)
     (step : Control → Line → State → Option State)

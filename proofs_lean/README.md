@@ -104,7 +104,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   単一行マスクが同じ命令行のmultiline directiveを取り消す優先順位も証明した。
   さらにPE行（複数式を含む）とmask directive行からなるtop-level subsetを部分loweringし、
   directiveの置換状態を既存ControlNormalizationに接続した。directive更新は選択状態だけを
-  置き換えてPE/cycle/BAR/Tの実行コンテキストを保持する。複数式行は全式の入力とALU出力を
+  置き換えてPE/cycle/BAR/Tの実行コンテキストと累積issue語数を保持する。issueごとに時計が
+  1語＝4cycle進み、directiveは時計を進めない。source全体の経過語数がnormalized issue costと
+  一致する定理を追加した。複数式行は全式の入力とALU出力を
   同一の旧状態から先に準備し、その後で宛先書き込みを反映する。行全体のsingle-line mask有無も
   すべての宛先loweringへ渡す。Issueモデルの合法性、source executionとnormalized issue
   executionの一致、directiveのissue costが0であること、lowering成功時の実行一致を証明した。

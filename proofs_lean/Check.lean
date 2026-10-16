@@ -90,6 +90,14 @@ import Lean
 #print axioms ProofsLean.ControlNormalization.run_compiles
 #print axioms ProofsLean.ControlNormalization.source_execution
 #print axioms ProofsLean.ControlNormalization.source_score
+#print axioms ProofsLean.ControlNormalization.compileAdvancing_length
+#print axioms ProofsLean.ControlNormalization.run_compiles_advancing
+#print axioms ProofsLean.ControlNormalization.source_execution_advancing
+#print axioms ProofsLean.ControlNormalization.source_score_advancing
+#print axioms ProofsLean.MNCore.PEMemory.parsed_issue_advances_elapsed_word
+#print axioms ProofsLean.MNCore.PEMemory.parsed_issue_advances_absolute_cycle
+#print axioms ProofsLean.MNCore.PEMemory.parsed_source_clock_matches_issue_cost
+#print axioms ProofsLean.MNCore.PEMemory.parsed_source_access_clock_matches_issue_cost
 
 open Lean Elab Command in
 run_cmd do
