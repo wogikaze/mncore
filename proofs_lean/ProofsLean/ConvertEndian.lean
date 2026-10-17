@@ -1,5 +1,6 @@
 import ProofsLean.ByteSwap
 import ProofsLean.SingleFMA
+import ProofsLean.FloatPEMemory
 
 /-! Bit-level datapath reconstruction of the public Convert Endian answer.
 
@@ -135,5 +136,32 @@ theorem abstractConvertEndian_dependencies_are_sound {Atom : Type}
     (abstractConvertEndian input).evaluate leftEnvironment =
       (abstractConvertEndian input).evaluate rightEnvironment :=
   AbstractValue.depends_only_on_inputs _ leftEnvironment rightEnvironment agree
+
+/-- Apply the composed Convert Endian datapath to one 64-bit LM0 element and
+write its result to one 64-bit LM1 element. This connects the bit-level
+datapath to the repository's physical two-word memory layout. -/
+def answerMemoryCycle (input : PEMemory.Memory .lm0) (output : PEMemory.Memory .lm1)
+    (inputAddress : Fin (PEMemory.Bank.capacity .lm0))
+    (outputAddress : Fin (PEMemory.Bank.capacity .lm1)) : PEMemory.Memory .lm1 :=
+  FloatPEMemory.writePair output outputAddress
+    (answerDatapath (FloatPEMemory.readPair .lm0 input inputAddress))
+
+theorem answerMemoryCycle_readback (input : PEMemory.Memory .lm0)
+    (output : PEMemory.Memory .lm1)
+    (inputAddress : Fin (PEMemory.Bank.capacity .lm0))
+    (outputAddress : Fin (PEMemory.Bank.capacity .lm1)) :
+    FloatPEMemory.readPair .lm1
+      (answerMemoryCycle input output inputAddress outputAddress) outputAddress =
+      answerDatapath (FloatPEMemory.readPair .lm0 input inputAddress) := by
+  exact FloatPEMemory.readPair_after_writePair output outputAddress _
+
+theorem answerMemoryCycle_byteSwap (input : PEMemory.Memory .lm0)
+    (output : PEMemory.Memory .lm1)
+    (inputAddress : Fin (PEMemory.Bank.capacity .lm0))
+    (outputAddress : Fin (PEMemory.Bank.capacity .lm1)) :
+    FloatPEMemory.readPair .lm1
+      (answerMemoryCycle input output inputAddress outputAddress) outputAddress =
+      byteSwap64 (FloatPEMemory.readPair .lm0 input inputAddress) := by
+  rw [answerMemoryCycle_readback, answerDatapath_is_byteSwap]
 
 end ProofsLean.MNCore.ConvertEndian
