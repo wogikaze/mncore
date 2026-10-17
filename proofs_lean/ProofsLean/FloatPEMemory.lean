@@ -264,6 +264,32 @@ theorem parsedFloatAddSmoke_cycle3_lowers :
       some (⟨6, by decide⟩, ⟨14, by decide⟩, ⟨22, by decide⟩) := by decide
 
 
+theorem parsedFloatAddSmoke_fourCycles_succeed
+    (files : PEMemory.IntegerRegisterFiles) :
+    ∃ result, executeParsedFloatAddLine? parsedFloatAddSmoke files 0 0 0 0 =
+      some result := by
+  unfold executeParsedFloatAddLine?
+  apply executeParsedFloatAddCycles_success
+  intro cycle member
+  have hc := cycle.isLt
+  have cases : cycle.val = 0 ∨ cycle.val = 1 ∨ cycle.val = 2 ∨ cycle.val = 3 := by
+    simp at member
+    omega
+  rcases cases with h | h | h | h
+  · have same : cycle = ⟨0, by decide⟩ := Fin.ext h
+    subst cycle
+    exact ⟨⟨0, by decide⟩, ⟨8, by decide⟩, ⟨16, by decide⟩, by decide⟩
+  · have same : cycle = ⟨1, by decide⟩ := Fin.ext h
+    subst cycle
+    exact ⟨⟨2, by decide⟩, ⟨10, by decide⟩, ⟨18, by decide⟩, by decide⟩
+  · have same : cycle = ⟨2, by decide⟩ := Fin.ext h
+    subst cycle
+    exact ⟨⟨4, by decide⟩, ⟨12, by decide⟩, ⟨20, by decide⟩, by decide⟩
+  · have same : cycle = ⟨3, by decide⟩ := Fin.ext h
+    subst cycle
+    exact ⟨⟨6, by decide⟩, ⟨14, by decide⟩, ⟨22, by decide⟩, by decide⟩
+
+
 def subtractCycle (left : PEMemory.Memory .lm0) (right : PEMemory.Memory .lm0)
     (output : PEMemory.Memory .lm1)
     (leftStart rightStart : Fin (PEMemory.Bank.capacity .lm0))
