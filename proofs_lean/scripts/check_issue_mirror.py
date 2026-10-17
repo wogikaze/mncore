@@ -192,7 +192,9 @@ def validate_parser_source_limits() -> None:
         "|.immediate..|.zero|.wait..|.noforward=>0",
         "|.mau_matrixkind..=>matchmatrix,kindwith|_,.fma=>3|_,.mul=>2|false,.add=>2|_,_=>1",
         "|.matrixWrite..|.matrixRead..=>1",
-        "|.l1bm..|.l2bm..=>1",
+        "|.l1bm..|.l2bm.dars=>1",
+        "|.l2bm.darw=>0",
+        "|.l2bm_=>1",
     )
     missing_rust = [rule for rule in rust_rules if rule not in rust]
     missing_lean = [rule for rule in lean_rules if rule not in lean]
