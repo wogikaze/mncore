@@ -189,6 +189,7 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.cost_positive
 #print axioms ProofsLean.MNCore.Issue.nop_zero_not_instruction
 #print axioms ProofsLean.MNCore.Issue.source_records_normalize_empty
+#print axioms ProofsLean.MNCore.Issue.ParsedLine.normalizeForSubmission_cost
 #print axioms ProofsLean.MNCore.Issue.normalized_positive_nop_cost
 #print axioms ProofsLean.MNCore.Issue.nop_zero_normalizes_empty
 #print axioms ProofsLean.MNCore.Issue.parsed_check_unchanged_by_normalization

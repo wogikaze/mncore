@@ -62,11 +62,14 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   抽象的な`nop/n`モデルでは全上限について有限性を証明した。MN-Coreの
   実際の行型については、アドレス・即値・全オペランド範囲、同時発行と
   ハザードに基づく有限性が未証明。
-- `evidence/isa-bounds/reference.json`: 公式`assemble3`の1,133個の境界プローブ。
+- `evidence/isa-bounds/reference.json`: 公式`assemble3`の1,206個の境界プローブ。
   `nop/0`は受理され0語を出力するため正コストの行からは正規化で除外する。
   `$omr`は1〜15が受理、`$imr`と有効なマスク指令のselectorは0〜31が受理され、
   32は拒否された。後者はRustコメントの「1〜15」と不一致。challenge judgeは
-  既定で解答から`d get`/`d set`/`r`記録を実行列から除外する。実験範囲外の
+  既定で解答から`d get`/`d set`/`r`記録を実行列から除外する。`--enable-set`で残した
+  `d set`はjudgeがscore無効として拒否する。`ParsedLine.normalizeForSubmission_cost`は
+  正規化後の命令語コストが各ソース行のsubmission costと一致することを証明する。
+  実験範囲外の
   構文・意味や完全網羅を証明するものではない。
   Leanではmask directiveの幅を2または4語、selectorを0〜31に制限した有限carrierも
   証明した。指令適用後も制御状態がその範囲を保つ補題を追加した。

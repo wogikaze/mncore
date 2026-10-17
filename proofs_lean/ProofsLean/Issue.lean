@@ -1709,6 +1709,57 @@ def ParsedLine.normalizeForSubmission? : ParsedLine → Option (List NormalizedL
       some [.maskDirective widthWords targets entry]
   | .debugSet | .debugGet | .dramSet => some []
 
+/-- Scored instruction words contributed by a normalized executable line.
+Control directives have zero cost and are handled by the control trace. -/
+def NormalizedLine.instructionCost : NormalizedLine → Nat
+  | .pe _ | .mv _ => 1
+  | .nop count _ => count
+  | .maskDirective .. => 0
+
+/-- Cost after the judge's solution sanitization. A zero-count nop with a wait
+is rejected by the assembler; source/debug records and control directives do
+not contribute scored instruction words. -/
+def ParsedLine.submissionCost? : ParsedLine → Option Nat
+  | .pe _ | .mv _ => some 1
+  | .nop 0 (some _) => none
+  | .nop count _ => some count
+  | .maskDirective .. | .debugSet | .debugGet | .dramSet => some 0
+
+theorem ParsedLine.normalizeForSubmission_cost (line : ParsedLine)
+    (normalized : List NormalizedLine)
+    (result : line.normalizeForSubmission? = some normalized) :
+    (normalized.map NormalizedLine.instructionCost).sum = line.submissionCost?.getD 0 := by
+  cases line with
+  | pe expressions =>
+      simp [ParsedLine.normalizeForSubmission?] at result
+      subst normalized
+      simp [ParsedLine.submissionCost?, NormalizedLine.instructionCost]
+  | nop count wait =>
+      cases count with
+      | zero =>
+          cases wait with
+          | none =>
+              simp [ParsedLine.normalizeForSubmission?] at result
+              subst normalized
+              simp [ParsedLine.submissionCost?]
+          | some tag => simp [ParsedLine.normalizeForSubmission?] at result
+      | succ count =>
+          simp [ParsedLine.normalizeForSubmission?] at result
+          subst normalized
+          simp [ParsedLine.submissionCost?, NormalizedLine.instructionCost]
+  | mv transfer =>
+      simp [ParsedLine.normalizeForSubmission?] at result
+      subst normalized
+      simp [ParsedLine.submissionCost?, NormalizedLine.instructionCost]
+  | maskDirective widthWords targets entry =>
+      simp [ParsedLine.normalizeForSubmission?] at result
+      subst normalized
+      simp [ParsedLine.submissionCost?, NormalizedLine.instructionCost]
+  | debugSet | debugGet | dramSet =>
+      simp [ParsedLine.normalizeForSubmission?] at result
+      subst normalized
+      simp [ParsedLine.submissionCost?]
+
 theorem nop_zero_normalizes_empty :
     ParsedLine.normalizeForSubmission? (.nop 0 none) = some [] := rfl
 
