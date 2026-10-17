@@ -4833,6 +4833,88 @@ theorem parsed_iinc_output_eq_incrementPair (files : IntegerRegisterFiles)
     IntegerALU.Precision.width, IntegerALU.evaluateLane, IntegerALU.arithmetic,
     List.range, List.range.loop]
 
+def plusOneFiles (state : ProofsLean.MNCore.PlusOne.State) : IntegerRegisterFiles where
+  lm0 := ProofsLean.MNCore.PlusOne.sourceMemory state
+  lm1 := fun _ => 0
+  grf0 := fun _ => 0
+  grf1 := fun _ => 0
+  t := fun _ => 0
+  maskRegisters := fun _ _ => 0
+
+theorem plusOneFiles_lm0 (state : ProofsLean.MNCore.PlusOne.State) :
+    (plusOneFiles state).lm0 = ProofsLean.MNCore.PlusOne.sourceMemory state := rfl
+
+def plusOneMemoryAddress (address : Fin 16) : Fin Bank.lm0.capacity :=
+  ⟨address.val, by have h := address.isLt; change address.val < 4096; omega⟩
+
+theorem plusOne_cycleLow_eq_advance (line : ProofsLean.MNCore.PlusOne.Line)
+    (cycle : Fin 4) :
+    plusOneMemoryAddress (ProofsLean.MNCore.PlusOne.cycleLow line cycle) =
+      advance .lm0 (plusOneMemoryAddress
+        (ProofsLean.MNCore.PlusOne.cycleHigh line cycle)) 1 := by
+  apply Fin.ext
+  simp [plusOneMemoryAddress, advance, Bank.capacity,
+    ProofsLean.MNCore.PlusOne.cycleHigh,
+    ProofsLean.MNCore.PlusOne.cycleLow]
+  have hl := line.isLt
+  have hc := cycle.isLt
+  omega
+
+theorem parsed_iinc_cycle_matches_plusOne
+    (state : ProofsLean.MNCore.PlusOne.State)
+    (line : ProofsLean.MNCore.PlusOne.Line) (cycle : Fin 4) :
+    (parsedIntegerRegisterOutput (plusOneFiles state)
+      ⟨.lm0, .long, plusOneMemoryAddress
+        (ProofsLean.MNCore.PlusOne.cycleHigh line cycle)⟩
+      ⟨.lm0, .long, plusOneMemoryAddress
+        (ProofsLean.MNCore.PlusOne.cycleHigh line cycle)⟩
+      .word (.arith .inc false) false).value.high =
+      ProofsLean.MNCore.PlusOne.cycleOutput state line cycle := by
+  have highBound : (ProofsLean.MNCore.PlusOne.cycleHigh line cycle).val < 16 := by
+    simp [ProofsLean.MNCore.PlusOne.cycleHigh]
+    have hl := line.isLt
+    have hc := cycle.isLt
+    omega
+  have highRead : ProofsLean.MNCore.PlusOne.sourceMemory state
+      (plusOneMemoryAddress (ProofsLean.MNCore.PlusOne.cycleHigh line cycle)) =
+      state.lm0 (ProofsLean.MNCore.PlusOne.cycleHigh line cycle) := by
+    simp [ProofsLean.MNCore.PlusOne.sourceMemory,
+      plusOneMemoryAddress, highBound]
+  have lowRead : ProofsLean.MNCore.PlusOne.sourceMemory state
+      (advance .lm0 (plusOneMemoryAddress
+        (ProofsLean.MNCore.PlusOne.cycleHigh line cycle)) 1) =
+      state.lm0 (ProofsLean.MNCore.PlusOne.cycleLow line cycle) := by
+    rw [← plusOne_cycleLow_eq_advance]
+    have lowBound : (ProofsLean.MNCore.PlusOne.cycleLow line cycle).val < 16 := by
+      simp [ProofsLean.MNCore.PlusOne.cycleLow]
+      have hl := line.isLt
+      have hc := cycle.isLt
+      omega
+    simp [ProofsLean.MNCore.PlusOne.sourceMemory,
+      plusOneMemoryAddress, lowBound]
+  calc
+    _ = ProofsLean.MNCore.PlusOne.incrementPair
+        ((plusOneFiles state).lm0 (plusOneMemoryAddress
+          (ProofsLean.MNCore.PlusOne.cycleHigh line cycle)))
+        ((plusOneFiles state).lm0 (advance .lm0 (plusOneMemoryAddress
+          (ProofsLean.MNCore.PlusOne.cycleHigh line cycle)) 1)) :=
+      parsed_iinc_output_eq_incrementPair (plusOneFiles state)
+        (plusOneMemoryAddress (ProofsLean.MNCore.PlusOne.cycleHigh line cycle))
+    _ = ProofsLean.MNCore.PlusOne.cycleOutput state line cycle := by
+      rw [plusOneFiles_lm0, highRead, lowRead]
+      calc
+        ProofsLean.MNCore.PlusOne.incrementPair
+            (state.lm0 (ProofsLean.MNCore.PlusOne.cycleHigh line cycle))
+            (state.lm0 (ProofsLean.MNCore.PlusOne.cycleLow line cycle)) =
+          ProofsLean.MNCore.PlusOne.busWord state
+              (ProofsLean.MNCore.PlusOne.cycleHigh line cycle) ++
+            ProofsLean.MNCore.PlusOne.busWord state
+              (ProofsLean.MNCore.PlusOne.cycleLow line cycle) :=
+          ProofsLean.MNCore.PlusOne.cycle_pair_bus state line cycle
+        _ = ProofsLean.MNCore.PlusOne.cycleOutput state line cycle := by
+          simpa [ProofsLean.MNCore.PlusOne.cycleOutput] using
+            (ProofsLean.MNCore.PlusOne.cycle_alu_output state line cycle).symm
+
 theorem direct_access_write_readback (files : IntegerRegisterFiles)
     (destination : DirectMemoryAccess) (data : WordBus) (index : Fin 4)
     (within : index.val < count destination.bank destination.width) :
