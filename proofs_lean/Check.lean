@@ -42,6 +42,10 @@ import Lean
 #print axioms ProofsLean.FiniteExample.testcase_correct_does_not_imply_general_correct
 #print axioms ProofsLean.FiniteExample.one_case_has_no_two_line_lower_bound
 #print axioms ProofsLean.MNCore.PlusOne.answer_correct
+#print axioms ProofsLean.MNCore.PlusOne.testcaseInput_admissible
+#print axioms ProofsLean.MNCore.PlusOne.answer_correct_for_testcase
+#print axioms ProofsLean.MNCore.PlusOne.problem_initial_lm0
+#print axioms ProofsLean.MNCore.PlusOne.problem_initial_lm1_zero
 #print axioms ProofsLean.MNCore.PlusOne.answer_optimal_in_restricted_model
 #print axioms ProofsLean.MNCore.PlusOne.increment_pair_spec
 #print axioms ProofsLean.MNCore.PlusOne.bus_word_eq_increment

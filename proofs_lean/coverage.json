@@ -128,6 +128,38 @@
     "connected_to_machine_step": false,
     "limitation": "Footprints are syntactic read/write candidates. The generic store frame lemma is not yet a frame theorem for an integrated instruction transition."
   },
+  "welcome_problem_specification": {
+    "problem_source": "problems/challenge/1.plus-one/problem.md",
+    "testcase_source": "problems/challenge/1.plus-one/testcase.vsm",
+    "formal_source": "proofs_lean/ProofsLean/PlusOne.lean",
+    "all_input_spec": "16 Int words, each in 0..50; output each word plus one.",
+    "all_input_correctness": "ProofsLean.MNCore.PlusOne.answer_correct",
+    "testcase_input": [
+      38,
+      28,
+      14,
+      42,
+      7,
+      20,
+      38,
+      18,
+      22,
+      10,
+      10,
+      23,
+      35,
+      39,
+      23,
+      2
+    ],
+    "testcase_only_correctness": "ProofsLean.MNCore.PlusOne.answer_correct_for_testcase",
+    "observed_output_pe": "n0c0b0m0p0",
+    "sram_zero_initialization_source": "viz/core/src/machine.rs",
+    "sram_zero_initialization_source_sha256": "cc62a4f9752f070b5d4e22887770f187f30c90763e15b746c245d9d7624c5378",
+    "sram_zero_initialization_evidence": "Words::get returns zero when the lazily allocated backing array is absent.",
+    "state_model_scope": "Single-PE two-iinc restricted model; not connected to the all-ISA machine state or instruction transition.",
+    "full_isa_optimality_proven": false
+  },
   "opcode_destination_arity_experiment": {
     "source": "proofs_lean/evidence/opcode-arity/reference.json",
     "sha256": "aa30ebce33877e5deed2392d3234266b504810a73ef4a31eebd2043c7c02fb87",

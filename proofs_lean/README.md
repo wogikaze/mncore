@@ -38,8 +38,8 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
    新しい有限性・範囲証明は追加しない。
 2. 候補列挙の基盤には`encodedUniverseMachine`を採用する。固定幅PE/MV符号語全体の有限性を使い、`InstructionLine`の範囲付き合法性経路は旧projectionとしてのみ残す。
    assembler sourceから符号語への全域対応は独立した未解決義務として記録する。
-3. Phase 2の状態は反映済み。Phase 3では、本物のStateと全命令footprintの骨格を追加した。次にこれをstepへ接続する。
-4. Welcomeの入力域・初期状態・出力仕様を確定し、必要な値意味論を足して正しさ、1行下限、公式emulator差分を順に接続する。
+3. Phase 2は反映済み。Phase 3では本物のStateと全命令footprintの骨格を追加した。次はそのframe条件を実際のstepへ接続する。
+4. Welcomeの入力域・初期状態・出力仕様は限定モデル上で記述済み。次は実VSM行のstep意味論、全合法1行の下限、公式emulator差分を順に接続する。
 
 ## 実装した定義
 
@@ -48,7 +48,8 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   全命令・全状態で未実装がないことを証明しない限り、完全モデルへ変換できない。
 - `MachineState.lean`: PE 2048個の5バンクregister files/OMR、L1BM 8バンク、L2BM/PDM/DRAM、
   ALUF/MAUF/LBF/MREADF busとvalidity、mask directive、PE context、hazard clockをまとめるState型。
-  初期値ポリシーはまだ仮定しない。
+  一般Stateの初期値ポリシーはまだ仮定しない。Welcomeに必要なPE SRAMはRust emulatorの
+  `Words::get`が未割当領域をzeroで読むことを確認した。
 - `Footprint.lean`: 全`InstructionLine`（PE/nop/MV）と全`ParsedOp`の構文footprintを定義し、
   operand source/destination、functional unit、clockのread/write候補を記録する。
   destination readはmasked writeのpreserve可能性を含む保守的な記録。
@@ -344,6 +345,10 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   接続した。
   **命令行はこの2種類だけの限定モデル**で、他の合法命令・同時発行・制御文を
   排除していない。したがって全ISAの最適性証明には数えない。
+  問題仕様の全domain（16語すべて`0..50`）に加えて、公式testcase.vsmの16入力値を固定した
+  testcase-only Problemも作り、2行解の限定モデル上の正しさを証明した。testcaseの出力は
+  `n0c0b0m0p0`だけを読むため、このファイルのWordsはそのPE一つをモデル化する。
+  Rust `machine.rs`の`Words::get`が未割当PE SRAMをzeroで返す証拠を、初期LM1=0の選択に用いた。
   次の証明義務は、実際のVSM 2行がこの状態遷移を実現すること、
   全合法な1行命令（他の演算器・転送・同時発行を含む）では16語の+1を実現できないこと、
   ゼロコスト制御文を含む全ソースをスコア付き行へ意味保存で正規化できること。

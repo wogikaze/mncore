@@ -254,6 +254,26 @@ def problem : Problem machine where
   initial := fun input => ⟨input, fun _ => 0⟩
   post := fun input state => ∀ i, (state.lm1 i).toNat = (input i).toNat + 1
 
+theorem problem_initial_lm0 (input : Words) (i : Fin 16) :
+    (problem.initial input).lm0 i = input i := rfl
+
+theorem problem_initial_lm1_zero (input : Words) (i : Fin 16) :
+    (problem.initial input).lm1 i = 0 := rfl
+
+/-- The exact 16 words loaded by `challenge/1.plus-one/testcase.vsm` into the
+single observed PE (`n0c0b0m0p0`). -/
+def testcaseInput : Words := fun index => BitVec.ofNat 32
+  (match index.val with
+   | 0 => 38 | 1 => 28 | 2 => 14 | 3 => 42
+   | 4 => 7 | 5 => 20 | 6 => 38 | 7 => 18
+   | 8 => 22 | 9 => 10 | 10 => 10 | 11 => 23
+   | 12 => 35 | 13 => 39 | 14 => 23 | 15 => 2
+   | _ => 0)
+
+/-- The testcase-only statement is a restriction of the all-input domain, not
+a substitute for the documented 0..50 specification. -/
+def testcaseProblem : Problem machine := problem.restrict [testcaseInput]
+
 def answer : Program machine := [⟨0, by decide⟩, ⟨1, by decide⟩]
 
 theorem answer_correct : Correct machine problem answer := by
@@ -267,6 +287,15 @@ theorem answer_correct : Correct machine problem answer := by
   · have h0 : i.val / 8 = 0 := by omega
     have hlt : i.val < 8 := by omega
     simpa [step, h0, hlt, bus_word_eq_increment] using increment_numerical (input i) (admissible i)
+
+theorem testcaseInput_admissible : problem.admissible testcaseInput := by
+  intro i
+  change (testcaseInput i).toNat ≤ 50
+  simp only [testcaseInput, BitVec.toNat_ofNat]
+  split <;> omega
+
+theorem answer_correct_for_testcase : Correct machine testcaseProblem answer := by
+  exact correct_restrict answer_correct [testcaseInput]
 
 def zeroInput : Words := fun _ => 0
 
