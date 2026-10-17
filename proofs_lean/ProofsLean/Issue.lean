@@ -550,13 +550,13 @@ structure ParsedRrn where
   deriving DecidableEq, Repr
 
 structure ParsedL1bSet where
-  mask : Nat
-  immode : Nat
+  mask : Fin 256
+  immode : Fin 8
   deriving DecidableEq, Repr
 
 /-- Parsed L1B selectors are an 8-bit membership bitmap and a 3-bit mode. -/
 def ParsedL1bSet.inFiniteEnvelope (set : ParsedL1bSet) : Prop :=
-  set.mask < 256 ∧ set.immode < 8
+  set.mask.val < 256 ∧ set.immode.val < 8
 
 inductive ParsedL1Op where
   | pbcast | mbcast | mwrite (mab : Nat) | m4bcast | m4write (mab : Nat)
@@ -1406,7 +1406,7 @@ def parsedL1bAddressModeBitmap (address immode : Fin 8) : BitVec 8 :=
     else bits) (0 : BitVec 8)
 
 def parsedL1bAddressModeSet (address immode : Fin 8) : ParsedL1bSet :=
-  ⟨(parsedL1bAddressModeBitmap address immode).toFin.val, immode.val⟩
+  ⟨(parsedL1bAddressModeBitmap address immode).toFin, immode⟩
 
 theorem parsedL1bAddressModeSet_inFiniteEnvelope (address immode : Fin 8) :
     (parsedL1bAddressModeSet address immode).inFiniteEnvelope := by
@@ -1483,13 +1483,13 @@ def parsedL1bListImmode (values : List (Fin 8)) : Fin 8 :=
       ⟨difference.toNat, difference.isLt⟩
 
 def parsedL1bListSet (values : List (Fin 8)) : ParsedL1bSet :=
-  ⟨(parsedL1bListMask values).toFin.val, (parsedL1bListImmode values).val⟩
+  ⟨(parsedL1bListMask values).toFin, parsedL1bListImmode values⟩
 
 theorem parsedL1bListSet_inFiniteEnvelope (values : List (Fin 8)) :
     (parsedL1bListSet values).inFiniteEnvelope := by
   constructor
-  · exact (parsedL1bListMask values).toFin.isLt
-  · exact (parsedL1bListImmode values).isLt
+  · exact (parsedL1bListSet values).mask.isLt
+  · exact (parsedL1bListSet values).immode.isLt
 
 /-- Parse the manual's bracketed L1B list form. Empty lists and malformed or
 out-of-range members are rejected, matching `L1bSet::parse`. -/

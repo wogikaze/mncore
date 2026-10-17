@@ -135,6 +135,8 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   現行checkerはOMR/LBF/BAR出力とマスク読み出しの一部をモデル化したが、
   `l2bmdars`の特殊な同時発行条件など未解決の規則が残る。下限列挙に使える完全な合法性述語ではなく、
   coverageは`partial_datapath_only`のままとする。
+- L1B selectorはマニュアルの8バンク構成に合わせ、membership bitmapを`Fin 256`、immodeを`Fin 8`で保持する。
+  リスト形式・address/immode形式のparserがこれらの型を直接生成し、mask/immodeの有限carrier証明も維持する。
 - `FiniteRegion.lean`: assemble3境界プローブを根拠に、width 1/2/4、4つのアドレス`< 4096`、
   `madpe < 4`の`Region` envelopeを有限型へ埋め込み、`Region.inFiniteEnvelope_finite`を証明した。
   `Access.inFiniteEnvelope`ではGRF0/GRF1に限り4 cycle addressを`< 512`に狭め、LM0/LM1の`< 4096`と

@@ -1214,7 +1214,7 @@ theorem ParsedExpr.destinationsInFiniteEnvelope_finite :
 
 def ParsedL1bSet.finiteCode
     (set : {set : ParsedL1bSet // set.inFiniteEnvelope}) : Fin 256 × Fin 8 :=
-  (⟨set.1.mask, set.2.1⟩, ⟨set.1.immode, set.2.2⟩)
+  (set.1.mask, set.1.immode)
 
 theorem ParsedL1bSet.fullSelectorMask_inFiniteEnvelope :
     ParsedL1bSet.inFiniteEnvelope ⟨255, 7⟩ := by
@@ -1233,10 +1233,8 @@ theorem ParsedL1bSet.finiteCode_injective : Function.Injective ParsedL1bSet.fini
         | mk bm bi =>
           simp only [ParsedL1bSet.finiteCode, Prod.mk.injEq] at equal
           rcases equal with ⟨maskCodeEq, immodeCodeEq⟩
-          have maskEq : am = bm := congrArg Fin.val maskCodeEq
-          have immodeEq : ai = bi := congrArg Fin.val immodeCodeEq
-          cases maskEq
-          cases immodeEq
+          cases maskCodeEq
+          cases immodeCodeEq
           rfl
 
 theorem ParsedL1bSet.inFiniteEnvelope_finite :

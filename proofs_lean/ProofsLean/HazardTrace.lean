@@ -112,23 +112,23 @@ def l1ExprHazardEvents (expr : ParsedExpr) (startWord : Nat) :
           base stride =>
         l2BlockRangeEvents write path base stride startWord
       match op with
-      | .bcast set => l1 set.mask true .l2ToL1 a1 16 16 ++
+      | .bcast set => l1 set.mask.val true .l2ToL1 a1 16 16 ++
           l2 false .l2ToL1 a0 16
-      | .bcast2 set => l1 set.mask true .l2ToL1 a1 16 16 ++
+      | .bcast2 set => l1 set.mask.val true .l2ToL1 a1 16 16 ++
           l2 false .l2ToL1 a0 64
-      | .distrib set => l1 set.mask true .l2ToL1 a1 8 8 ++
+      | .distrib set => l1 set.mask.val true .l2ToL1 a1 8 8 ++
           l2 false .l2ToL1 a0 64
       | .fromL1b bank => l1 (2 ^ bank) false .l1ToL2 a0 16 16 ++
           l2 true .l1ToL2 a1 16
-      | .reduce _ set => l1 set.mask false .l1ToL2 a0 16 16 ++
+      | .reduce _ set => l1 set.mask.val false .l1ToL2 a0 16 16 ++
           l2 true .l1ToL2 a1 16
       | .reduce2 _ => l1 255 false .l1ToL2 a0 16 16 ++
           l2 true .l1ToL2 a1 64
       | .gather => l1 255 false .l1ToL2 a0 8 8 ++
           l2 true .l1ToL2 a1 64
       | .imcast set =>
-          let destinationMask := multicastDestinationMask set.mask set.immode
-          l1 set.mask false .multicast a0 16 16 ++
+          let destinationMask := multicastDestinationMask set.mask.val set.immode.val
+          l1 set.mask.val false .multicast a0 16 16 ++
             l1 destinationMask true .multicast a1 16 16
       | .dars | .darw => []
   | _ => []

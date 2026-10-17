@@ -864,7 +864,7 @@ def coverage_catalog() -> dict:
             "parser_source_sha256": digest(ROOT / "ProofsLean/Issue.lean"),
             "parser_fragment": "parseParsedL1bSet?, parseParsedL2Opcode?",
             "parser_range_theorem": "ProofsLean.MNCore.Issue.parsedL1bAddressModeSet_inFiniteEnvelope",
-            "scope": "Finite carrier for 8-bit L1B membership masks below 256 and immode selectors below 8; Lean parses canonical decimal address[/immode] and bracketed list selectors and covers every `parse_l2_opcode` branch of `ParsedL2Op`.",
+            "scope": "L1B membership masks are represented directly by Fin 256 and immode selectors by Fin 8; Lean parses canonical decimal address[/immode] and bracketed list selectors and covers every `parse_l2_opcode` branch of ParsedL2Op.",
             "evidence": "`Issue.lean`: both selector parsers and envelope theorems; L2 opcode fixtures cover broadcast list/default, direction-dependent distribution/gather, from-L1B u8 range, RRN reductions/reduce2, dars/darw, and malformed RRN rejection. Typed-operand wrappers derive direction from the first operand. Selector fixtures cover all-eight, singleton, whitespace, empty-list rejection, and out-of-range rejection. assemble3 accepts the all-eight selector `@0/7`, all 64 address/immode pairs in 0..7, and rejects address 8 and immode 8.",
             "missing": "Full PE expression parsing and parser correspondence for all L1/L2 expression forms; parser-to-assembler acceptance correspondence is not established.",
         }, {
