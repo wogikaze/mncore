@@ -47,6 +47,25 @@ theorem writePair_preservesOutside (memory : PEMemory.Memory .lm1)
   apply PEMemory.write_preserves_outside .lm1 .long memory start target (pairBus value)
   simpa [PEMemory.count, PEMemory.Width.words] using outside
 
+
+theorem writePair_preservesPairOutside (memory : PEMemory.Memory .lm1)
+    (start target : Fin (PEMemory.Bank.capacity .lm1)) (value : BitVec 64)
+    (outside : ∀ lane : Fin 2,
+      2 ≤ PEMemory.distance .lm1 start (PEMemory.advance .lm1 target lane.val)) :
+    readPair .lm1 (writePair memory start value) target = readPair .lm1 memory target := by
+  unfold readPair
+  change (PEMemory.readWords .lm1 .long (writePair memory start value) target) 0 ++
+      (PEMemory.readWords .lm1 .long (writePair memory start value) target) 1 =
+    (PEMemory.readWords .lm1 .long memory target) 0 ++
+      (PEMemory.readWords .lm1 .long memory target) 1
+  rw [PEMemory.readWords, PEMemory.readWords]
+  simp only [PEMemory.count, PEMemory.Width.words, ↓reduceIte]
+  congr 1
+  · exact writePair_preservesOutside memory start (PEMemory.advance .lm1 target 0) value
+      (outside ⟨0, by decide⟩)
+  · exact writePair_preservesOutside memory start (PEMemory.advance .lm1 target 1) value
+      (outside ⟨1, by decide⟩)
+
 def binaryCycle (operation : BitVec 64 → BitVec 64 → BitVec 64)
     (left : PEMemory.Memory .lm0) (right : PEMemory.Memory .lm0)
     (output : PEMemory.Memory .lm1)
