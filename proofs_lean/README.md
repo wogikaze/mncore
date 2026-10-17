@@ -184,8 +184,10 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   assembler受理範囲内かというenvelope包含証明は残る。
   全ての構造化`ParsedOperand` constructorを有限コードへ写して
   `ParsedOperand.inFiniteEnvelope_finite`を証明した。
-  同ファイルで`ParsedMask.entry < 32`の有限部分型も証明した。assemble3では`$imr0..31`が受理され
-  `$imr32`が拒否される一方、OMR entryは別の範囲である。parser出力からこの上限への一般証明は未実装。
+  `ParsedMask.entry`をRust parserの保持域に合わせて`Fin 256`にし、assemble3で有効な
+  `index.val < 32`の有限部分型へ制限した。PE operand parserは`$imr255`まで保持し`$imr256`を拒否する。
+  assemble3では`$imr0..31`が受理され`$imr32`が拒否される一方、OMR entryは別の範囲である。
+  parser出力からassemble3の有効範囲への一般証明は未実装。
   OMR indexについても`entry < 16`の有限部分型を証明し、assemble3の1..15受理・16拒否を根拠に登録した。
   envelopeは0を除外している。assemblerの境界記録とは一致するが、parser/assemblerの受理集合全体との
   一致やparser出力からの一般的な範囲保証までは証明していない。

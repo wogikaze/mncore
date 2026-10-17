@@ -21,7 +21,7 @@ def parseParsedPEMask? (text : String) : Option ParsedMask := do
     else some (false, trimmed)
   if let some entryChars := parsedStripChars? ['$','i','m','r'] body then
     let entry ← parsedMvDecimal? entryChars
-    if entry < 256 then some (.entry longLong entry) else none
+    if h : entry < 256 then some (.entry longLong ⟨entry, h⟩) else none
   else
     match body with
     | [b3, b2, b1, b0] =>
@@ -237,6 +237,10 @@ theorem parseParsedPEOperand_fixed_and_nowrite :
 theorem parseParsedPEOperand_omr_mask :
     parseParsedPEOperand? "$omr15/ll1000tp" =
       some (.omr 15 (some (.pattern true 8))) := by decide
+
+theorem parseParsedPEMask_preserves_u8_selector_boundary :
+    parseParsedPEMask? "$imr255" = some (.entry false ⟨255, by decide⟩) ∧
+      parseParsedPEMask? "$imr256" = none := by decide
 
 theorem parseParsedPEOperand_base_address_registers :
     parseParsedPEOperand? "$mb" = some (.bar false 1 none) ∧

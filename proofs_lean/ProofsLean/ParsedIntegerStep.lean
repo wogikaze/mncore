@@ -468,7 +468,7 @@ def parseMaskSelector? (text : String) : Option ParsedMask := do
     let digits := if rawDigits.head? == some '+' then rawDigits.drop 1 else rawDigits
     if digits.isEmpty then none else
     let index ← parseMaskSelectorDigits digits 0
-    if index < 256 then some (.entry longLong index) else none
+    if h : index < 256 then some (.entry longLong ⟨index, h⟩) else none
   else
     match body with
     | [b3, b2, b1, b0] =>
@@ -666,6 +666,7 @@ def resolveParsedMaskFlags? (mask : ParsedMask)
   | .pattern _ bits =>
       some (if bits.getLsbD (3 - cycle.val) then BitVec.allOnes 4 else 0)
   | .entry _ index =>
+      let index := index.val
       if index == 0 then some (BitVec.allOnes 4)
       else if h : index < 16 then
         some (registers ⟨index - 1, by omega⟩ cycle)
@@ -722,7 +723,8 @@ def resolveOmrDirectiveSelection? (directive : ParsedMaskDirective)
     (registers : ProofsLean.MNCore.Masks.RegisterFile) (cycle : Fin 4) :
     Option (BitVec 4) :=
   if directive.targets.maskRegister && directive.entry != 0 then
-    resolveParsedMaskFlags? (.entry (directive.widthWords == 4) directive.entry)
+    resolveParsedMaskFlags? (.entry (directive.widthWords == 4)
+      ⟨directive.entry % 256, Nat.mod_lt _ (by decide)⟩)
       registers cycle
   else none
 
@@ -737,7 +739,8 @@ def resolveMemoryDirectiveSelection? (directive : ParsedMaskDirective) (bank : B
     (registers : ProofsLean.MNCore.Masks.RegisterFile) (cycle : Fin 4) :
     Option PEWordSelection :=
   if directiveTargetsBank directive.targets bank && directive.entry != 0 then
-    resolveParsedMaskSelection? (.entry (directive.widthWords == 4) directive.entry)
+    resolveParsedMaskSelection? (.entry (directive.widthWords == 4)
+      ⟨directive.entry % 256, Nat.mod_lt _ (by decide)⟩)
       registers cycle
   else none
 
@@ -3047,7 +3050,7 @@ theorem parsed_mask_pattern_controls_hazard_write_cycle
       bits.getLsbD (3 - cycle.val) := rfl
 
 theorem parsed_mask_entry_keeps_all_hazard_write_cycles
-    (cycle : Fin 4) (longLong : Bool) (entry : Nat) :
+    (cycle : Fin 4) (longLong : Bool) (entry : Fin 256) :
     parsedHazardPatternEnables (some (.entry longLong entry)) cycle = true := rfl
 
 theorem t_indirect_hazard_access_uses_cycle_region (cycle : Fin 4) :

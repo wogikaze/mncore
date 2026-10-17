@@ -530,7 +530,7 @@ theorem parsedBfArgInFiniteEnvelope_finite :
 
 def ParsedMask.inFiniteEnvelope : ParsedMask → Prop
   | .pattern .. => True
-  | .entry _ index => index < 32
+  | .entry _ index => index.val < 32
 
 def ParsedMaskTargets.finiteCode (targets : ParsedMaskTargets) :=
   (targets.grf0, targets.grf1, targets.t, targets.lm0, targets.lm1,
@@ -609,7 +609,7 @@ def ParsedMask.finiteCode (mask : {mask : ParsedMask // mask.inFiniteEnvelope}) 
   match mask with
   | ⟨.pattern longLong bits, _⟩ => Sum.inl (longLong, bits.toFin)
   | ⟨.entry longLong index, bound⟩ =>
-    Sum.inr (longLong, ⟨index, by simpa [ParsedMask.inFiniteEnvelope] using bound⟩)
+    Sum.inr (longLong, ⟨index.val, by simpa [ParsedMask.inFiniteEnvelope] using bound⟩)
 
 theorem ParsedMask.finiteCode_injective :
     Function.Injective ParsedMask.finiteCode := by
@@ -639,7 +639,9 @@ theorem ParsedMask.finiteCode_injective :
         | entry otherLongLong otherIndex =>
           simp only [ParsedMask.finiteCode, Sum.inr.injEq, Prod.mk.injEq] at codeEqual
           rcases codeEqual with ⟨rfl, valueEqual⟩
-          have indexEqual : index = otherIndex := congrArg Fin.val valueEqual
+          have indexValueEqual : index.val = otherIndex.val :=
+            congrArg (fun value : Fin 32 => value.val) valueEqual
+          have indexEqual : index = otherIndex := Fin.ext indexValueEqual
           subst otherIndex
           rfl
 

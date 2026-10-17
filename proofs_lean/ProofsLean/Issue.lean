@@ -66,14 +66,14 @@ inductive ParsedFixed where
 
 inductive ParsedMask where
   | pattern (longLong : Bool) (bits : BitVec 4)
-  | entry (longLong : Bool) (index : Nat)
+  | entry (longLong : Bool) (index : Fin 256)
   deriving DecidableEq, Repr
 
 def ParsedMask.isDoubleLong : ParsedMask → Bool
   | .pattern longLong _ | .entry longLong _ => longLong
 
 def ParsedMask.variableEntry? : ParsedMask → Option Nat
-  | .entry _ index => some index
+  | .entry _ index => some index.val
   | .pattern .. => none
 
 /-- Structured PE operand syntax. Rust's `Operand::Raw` is a diagnostic parser
