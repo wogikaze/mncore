@@ -462,6 +462,84 @@ theorem executeParsedFloatSubtractCycle_readback (expression : ParsedExpr)
     (binaryCycle_readback FloatSubtract.subtractBus files.lm0 files.lm0 files.lm1
       leftAddress rightAddress destinationAddress)
 
+/-- Lower A-B's forwarding form: either the ALU result (`$aluf`) or the
+previous MAU result (`$lr2`) is the left operand; the right memory operand is
+explicitly negated in the parsed source. -/
+def lowerParsedForwardedFloatSubtract? (expression : ParsedExpr) (pe cycle : Fin 4)
+    (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
+    Option (ParsedForward × Fin (PEMemory.Bank.capacity .lm0) ×
+      Fin (PEMemory.Bank.capacity .lm1)) := do
+  match expression.op with
+  | .mau .f false .add none false => pure ()
+  | _ => none
+  match expression.sources, expression.destinations with
+  | [.forward kind false false false, .mem right true false false none],
+      [.mem destination false false false none] =>
+      let rightAccess ← PEMemory.ParsedOperand.toDirectMemoryAccess?
+        (.mem right false false false none) pe cycle bar0 bar1 tWord
+      let destinationAccess ← PEMemory.ParsedOperand.toDirectMemoryAccess?
+        (.mem destination false false false none) pe cycle bar0 bar1 tWord
+      let rightAddress ← lm0LongAddress? rightAccess
+      let destinationAddress ← lm1LongAddress? destinationAccess
+      some (kind, rightAddress, destinationAddress)
+  | _, _ => none
+
+def executeParsedForwardedFloatSubtractCycle? (expression : ParsedExpr)
+    (files : PEMemory.IntegerRegisterFiles)
+    (slots : ProofsLean.MNCore.Forwarding.Slots) (pe cycle : Fin 4)
+    (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
+    Option PEMemory.IntegerRegisterFiles := do
+  let (kind, rightAddress, destinationAddress) ←
+    lowerParsedForwardedFloatSubtract? expression pe cycle bar0 bar1 tWord
+  let leftBus ← match PEMemory.ParsedIntegerInput.readWithForwarding files slots cycle
+      (.forward kind false) with
+    | .ok bus => some bus
+    | .failure | .unknown => none
+  let value := FloatSubtract.subtractBus leftBus.high
+    (readPair .lm0 files.lm0 rightAddress)
+  some (commitLM1 files (writePair files.lm1 destinationAddress value))
+
+theorem executeParsedForwardedFloatSubtractCycle_success
+    (expression : ParsedExpr) (files : PEMemory.IntegerRegisterFiles)
+    (slots : ProofsLean.MNCore.Forwarding.Slots) (pe cycle : Fin 4)
+    (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
+    (kind : ParsedForward) (rightAddress : Fin (PEMemory.Bank.capacity .lm0))
+    (destinationAddress : Fin (PEMemory.Bank.capacity .lm1)) (leftBus : IntegerALU.Bus)
+    (lowered : lowerParsedForwardedFloatSubtract? expression pe cycle bar0 bar1 tWord =
+      some (kind, rightAddress, destinationAddress))
+    (forwarded : slots (PEMemory.ParsedIntegerInput.forwardUnit kind) cycle =
+      .known leftBus) :
+    executeParsedForwardedFloatSubtractCycle? expression files slots pe cycle
+      bar0 bar1 tWord = some (commitLM1 files
+        (writePair files.lm1 destinationAddress
+          (FloatSubtract.subtractBus leftBus.high
+            (readPair .lm0 files.lm0 rightAddress)))) := by
+  have readForward : PEMemory.ParsedIntegerInput.readWithForwarding files slots cycle
+      (.forward kind false) = .ok leftBus := by
+    exact PEMemory.parsedIntegerInput_forward_known files slots cycle kind false
+      leftBus forwarded
+  simp [executeParsedForwardedFloatSubtractCycle?, lowered, readForward, commitLM1]
+
+theorem executeParsedForwardedFloatSubtractCycle_readback
+    (expression : ParsedExpr) (files : PEMemory.IntegerRegisterFiles)
+    (slots : ProofsLean.MNCore.Forwarding.Slots) (pe cycle : Fin 4)
+    (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
+    (kind : ParsedForward) (rightAddress : Fin (PEMemory.Bank.capacity .lm0))
+    (destinationAddress : Fin (PEMemory.Bank.capacity .lm1)) (leftBus : IntegerALU.Bus)
+    (lowered : lowerParsedForwardedFloatSubtract? expression pe cycle bar0 bar1 tWord =
+      some (kind, rightAddress, destinationAddress))
+    (forwarded : slots (PEMemory.ParsedIntegerInput.forwardUnit kind) cycle =
+      .known leftBus) :
+    (executeParsedForwardedFloatSubtractCycle? expression files slots pe cycle
+      bar0 bar1 tWord).map (fun next => readPair .lm1 next.lm1 destinationAddress) =
+      some (FloatSubtract.subtractBus leftBus.high
+        (readPair .lm0 files.lm0 rightAddress)) := by
+  rw [executeParsedForwardedFloatSubtractCycle_success expression files slots pe cycle
+    bar0 bar1 tWord kind rightAddress destinationAddress leftBus lowered forwarded]
+  simp only [Option.map_some, commitLM1]
+  exact congrArg some (readPair_after_writePair files.lm1 destinationAddress
+    (FloatSubtract.subtractBus leftBus.high (readPair .lm0 files.lm0 rightAddress)))
+
 def flatLongAccess (bank : Issue.Bank) (base : Nat) : Issue.Access :=
   ⟨bank, ⟨2, base, base + 2, base + 4, base + 6, false, none⟩⟩
 
@@ -499,6 +577,23 @@ def parsedFloatSubtractSmoke : ParsedExpr where
   destinations := [.mem (flatLongAccess .lm1 16) false false false none]
   flush := none
   text := "fvadd $lm0v -$lm8v $ln16v"
+
+def parsedForwardedFloatSubtractSmoke (kind : ParsedForward) : ParsedExpr where
+  op := .mau .f false .add none false
+  sources :=
+    [.forward kind false false false,
+     .mem (flatLongAccess .lm0 16) true false false none]
+  destinations := [.mem (flatLongAccess .lm1 0) false false false none]
+  flush := none
+  text := "fvadd $forward -$lm16v $ln0v"
+
+theorem parsedForwardedFloatSubtractSmoke_aluf_lowers :
+    lowerParsedForwardedFloatSubtract? (parsedForwardedFloatSubtractSmoke .aluf)
+      0 0 0 0 0 = some (.aluf, ⟨16, by decide⟩, ⟨0, by decide⟩) := by decide
+
+theorem parsedForwardedFloatSubtractSmoke_mauf_lowers :
+    lowerParsedForwardedFloatSubtract? (parsedForwardedFloatSubtractSmoke .mauf)
+      0 0 0 0 0 = some (.mauf, ⟨16, by decide⟩, ⟨0, by decide⟩) := by decide
 
 theorem parsedFloatSubtractSmoke_cycle0_lowers :
     lowerParsedFloatSubtract? parsedFloatSubtractSmoke 0 0 0 0 0 =
