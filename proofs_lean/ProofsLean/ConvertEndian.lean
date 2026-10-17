@@ -14,6 +14,7 @@ by one byte, and the destination selector exchanges the 32-bit lanes again. -/
 namespace ProofsLean.MNCore.ConvertEndian
 
 open ProofsLean.MNCore.Issue
+open ProofsLean.MNCore.PEMemory
 
 /-! The public answer's operands are first parsed by the repository's VSM
 operand parser. These facts pin down the exact per-cycle addresses and
@@ -141,6 +142,59 @@ def answerParsedLines? : Option (List ParsedLine) :=
 
 theorem answer_parsed_line_count : answerParsedLines?.map List.length = some 3 := by
   decide
+
+def answerIntegerShiftLowering? (cycle : Fin 4) :
+    Option ParsedMaskedIntegerAccesses := do
+  let expression ← answerIntegerShiftExpr?
+  ParsedExpr.toDirectMaskedIntegerAccesses? expression (fun _ _ => 0) {}
+    0 0 0 0 0 cycle 0 0 0
+
+def answerByteShiftLowering? (cycle : Fin 4) :
+    Option ParsedMaskedIntegerAccesses := do
+  let expression ← answerByteShiftExpr?
+  ParsedExpr.toDirectMaskedIntegerAccesses? expression (fun _ _ => 0) {}
+    0 0 0 0 0 cycle 0 0 0
+
+/-- Both integer ALU expressions in the public answer lower for all four PE
+cycles through the parsed masked-memory path, including ALUF/MAUF sources and
+the permuted LM1 destination selector. -/
+theorem answer_integer_shift_lowering_all_cycles (cycle : Fin 4) :
+    (answerIntegerShiftLowering? cycle).isSome = true := by
+  have cases : cycle.val = 0 ∨ cycle.val = 1 ∨ cycle.val = 2 ∨ cycle.val = 3 := by
+    have bound := cycle.isLt
+    omega
+  rcases cases with h | h | h | h
+  · have : cycle = 0 := Fin.ext h
+    subst cycle
+    decide
+  · have : cycle = 1 := Fin.ext h
+    subst cycle
+    decide
+  · have : cycle = 2 := Fin.ext h
+    subst cycle
+    decide
+  · have : cycle = 3 := Fin.ext h
+    subst cycle
+    decide
+
+theorem answer_byte_shift_lowering_all_cycles (cycle : Fin 4) :
+    (answerByteShiftLowering? cycle).isSome = true := by
+  have cases : cycle.val = 0 ∨ cycle.val = 1 ∨ cycle.val = 2 ∨ cycle.val = 3 := by
+    have bound := cycle.isLt
+    omega
+  rcases cases with h | h | h | h
+  · have : cycle = 0 := Fin.ext h
+    subst cycle
+    decide
+  · have : cycle = 1 := Fin.ext h
+    subst cycle
+    decide
+  · have : cycle = 2 := Fin.ext h
+    subst cycle
+    decide
+  · have : cycle = 3 := Fin.ext h
+    subst cycle
+    decide
 
 def swap32 (word : BitVec 64) : BitVec 64 :=
   (word.extractLsb' 0 32) ++ (word.extractLsb' 32 32)
