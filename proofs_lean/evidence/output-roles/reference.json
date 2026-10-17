@@ -9,7 +9,7 @@
     },
     {
       "path": "proofs_lean/scripts/check_output_roles_reference.py",
-      "sha256": "45e5b101868d28ace77e4e8bd10161d99286f9b6e0c3f26b7eba6036f18dc506"
+      "sha256": "4a2995dde3aa05dee3e3bfee21a2a9f62810fed1507365b1faacae18ace713f6"
     }
   ],
   "observations": [
@@ -428,6 +428,42 @@
       "diagnostic": ""
     },
     {
+      "case": "t_to_l1bm_mwrite",
+      "source": "l1bmm@1 $t $lb0",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
+    },
+    {
+      "case": "forward_to_l1bm_mwrite",
+      "source": "l1bmm@1 $aluf $lb0",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
+    },
+    {
+      "case": "matrix_register_cannot_source_l1bm",
+      "source": "l1bmm@1 $lx0 $lb0",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "First operand of Reg -> L1BM operation must be a T/GRF0/GRF1/LM0/LM1/Fwd location."
+    },
+    {
+      "case": "omr_cannot_source_l1bm",
+      "source": "l1bmm@1 $omr1 $lb0",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "First operand of Reg -> L1BM operation must be a T/GRF0/GRF1/LM0/LM1/Fwd location."
+    },
+    {
       "case": "l1bm_mwrite_wrong_direction",
       "source": "l1bmm@1 $lb0 $m0",
       "expected_accepted": false,
@@ -437,6 +473,15 @@
       "diagnostic": "First operand of Reg -> L1BM operation must be a T/GRF0/GRF1/LM0/LM1/Fwd location."
     },
     {
+      "case": "pe_to_l1bm_m4write",
+      "source": "l1bmm4@1 $m0 $lb0",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
+    },
+    {
       "case": "pe_reduce_to_l1bm",
       "source": "l1bmrffadd $m0 $lb0",
       "expected_accepted": true,
@@ -444,6 +489,15 @@
       "returncode": 0,
       "words": 1,
       "diagnostic": ""
+    },
+    {
+      "case": "l1bm_reduce_wrong_source_role",
+      "source": "l1bmrffadd $lb0 $lb0",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "L1RRN first operand must be a T/GRF0/GRF1/LM0/LM1/Fwd location."
     },
     {
       "case": "l1bm_distrib_to_pe",

@@ -141,6 +141,12 @@ def ParsedOperand.l1bmSourceRole : ParsedOperand → Prop
   | .l1bm .. => True
   | _ => False
 
+/-- PE-side values accepted as sources of L1BM transfers. Block-memory and
+DAR operands belong to the block-to-block paths instead. -/
+def ParsedOperand.peSourceRole : ParsedOperand → Prop
+  | .mem .. | .bar .. | .forward .. => True
+  | _ => False
+
 def ParsedOperand.writeMask? : ParsedOperand → Option ParsedMask
   | .mem _ _ _ _ mask | .bar _ _ mask | .omr _ mask => mask
   | _ => none
@@ -691,45 +697,87 @@ theorem ParsedOp.l2bm_darw_has_no_destination_role (operand : ParsedOperand) :
     ¬ ParsedOp.destinationRoleScreen (.l2bm .darw) [] operand := by
   simp [ParsedOp.destinationRoleScreen]
 
-def ParsedOp.sourceRoleScreen : ParsedOp → ParsedOperand → Prop
-  | .l2bm operation, operand =>
+def ParsedOp.sourceRoleScreen : ParsedOp → List ParsedOperand → ParsedOperand → Prop
+  | .l1bm operation, _, operand =>
+      match operation with
+      | .pbcast | .mbcast | .m4bcast | .distrib _ => operand.l1bmSourceRole
+      | .mwrite _ | .m4write _ | .reduce .. | .reduce4 .. | .gather _ =>
+          operand.peSourceRole
+  | .l2bm operation, _, operand =>
       match operation with
       | .bcast .. | .bcast2 .. | .distrib .. | .dars => operand.l2bmSourceRole
       | .fromL1b .. | .reduce .. | .reduce2 .. | .gather | .imcast .. =>
           operand.l1bmSourceRole
       | .darw => False
-  | _, _ => True
+  | _, _, _ => True
 
 theorem ParsedOp.l2bm_dars_source_role (operand : ParsedOperand) :
-    ParsedOp.sourceRoleScreen (.l2bm .dars) operand = operand.l2bmSourceRole := rfl
+    ParsedOp.sourceRoleScreen (.l2bm .dars) [] operand = operand.l2bmSourceRole := rfl
 
 theorem ParsedOp.l2bm_broadcast_source_role (set : ParsedL1bSet) :
-    ParsedOp.sourceRoleScreen (.l2bm (.bcast set)) (.l2bm 0 none) := by
+    ParsedOp.sourceRoleScreen (.l2bm (.bcast set)) [] (.l2bm 0 none) := by
   simp [ParsedOp.sourceRoleScreen, ParsedOperand.l2bmSourceRole]
 
 theorem ParsedOp.l2bm_broadcast_rejects_l1bm_source (set : ParsedL1bSet) :
-    ¬ ParsedOp.sourceRoleScreen (.l2bm (.bcast set)) (.l1bm 2 (some 0)) := by
+    ¬ ParsedOp.sourceRoleScreen (.l2bm (.bcast set)) [] (.l1bm 2 (some 0)) := by
   simp [ParsedOp.sourceRoleScreen, ParsedOperand.l2bmSourceRole]
 
 theorem ParsedOp.l2bm_from_l1b_source_role (index : Nat) :
-    ParsedOp.sourceRoleScreen (.l2bm (.fromL1b index)) (.l1bm 2 (some 0)) := by
+    ParsedOp.sourceRoleScreen (.l2bm (.fromL1b index)) [] (.l1bm 2 (some 0)) := by
   simp [ParsedOp.sourceRoleScreen, ParsedOperand.l1bmSourceRole]
 
 theorem ParsedOp.l2bm_from_l1b_rejects_l2bm_source (index : Nat) :
-    ¬ ParsedOp.sourceRoleScreen (.l2bm (.fromL1b index)) (.l2bm 0 none) := by
+    ¬ ParsedOp.sourceRoleScreen (.l2bm (.fromL1b index)) [] (.l2bm 0 none) := by
   simp [ParsedOp.sourceRoleScreen, ParsedOperand.l1bmSourceRole]
 
 theorem ParsedOp.l2bm_reduce_source_role (rrn : ParsedRrn) (set : ParsedL1bSet) :
-    ParsedOp.sourceRoleScreen (.l2bm (.reduce rrn set)) (.l1bm 2 (some 0)) := by
+    ParsedOp.sourceRoleScreen (.l2bm (.reduce rrn set)) [] (.l1bm 2 (some 0)) := by
   simp [ParsedOp.sourceRoleScreen, ParsedOperand.l1bmSourceRole]
 
 theorem ParsedOp.l2bm_multicast_source_role (set : ParsedL1bSet) :
-    ParsedOp.sourceRoleScreen (.l2bm (.imcast set)) (.l1bm 2 (some 0)) := by
+    ParsedOp.sourceRoleScreen (.l2bm (.imcast set)) [] (.l1bm 2 (some 0)) := by
   simp [ParsedOp.sourceRoleScreen, ParsedOperand.l1bmSourceRole]
 
 theorem ParsedOp.l2bm_multicast_rejects_l2bm_source (set : ParsedL1bSet) :
-    ¬ ParsedOp.sourceRoleScreen (.l2bm (.imcast set)) (.l2bm 0 none) := by
+    ¬ ParsedOp.sourceRoleScreen (.l2bm (.imcast set)) [] (.l2bm 0 none) := by
   simp [ParsedOp.sourceRoleScreen, ParsedOperand.l1bmSourceRole]
+
+theorem ParsedOp.l1bm_mwrite_pe_source (mab : Nat) (operand : ParsedOperand)
+    (role : operand.peSourceRole) :
+    ParsedOp.sourceRoleScreen (.l1bm (.mwrite mab)) [] operand := by
+  exact role
+
+theorem ParsedOp.l1bm_mwrite_rejects_l1bm_source (mab width : Nat)
+    (address : Option Nat) :
+    ¬ ParsedOp.sourceRoleScreen (.l1bm (.mwrite mab)) [] (.l1bm width address) := by
+  simp [ParsedOp.sourceRoleScreen, ParsedOperand.peSourceRole]
+
+theorem ParsedOp.l1bm_distrib_l1bm_source (offset : Int) (width : Nat)
+    (address : Option Nat) :
+    ParsedOp.sourceRoleScreen (.l1bm (.distrib offset)) [] (.l1bm width address) := by
+  simp [ParsedOp.sourceRoleScreen, ParsedOperand.l1bmSourceRole]
+
+theorem ParsedOp.l1bm_distrib_rejects_pe_source (offset : Int)
+    (operand : ParsedOperand) (role : ¬ operand.l1bmSourceRole) :
+    ¬ ParsedOp.sourceRoleScreen (.l1bm (.distrib offset)) [] operand := by
+  simpa [ParsedOp.sourceRoleScreen] using role
+
+theorem ParsedOp.l1bm_broadcast_l1bm_source (operation : ParsedL1Op)
+    (isBroadcast : operation = .pbcast ∨ operation = .mbcast ∨ operation = .m4bcast)
+    (width : Nat) (address : Option Nat) :
+    ParsedOp.sourceRoleScreen (.l1bm operation) [.l1bm width address]
+      (.l1bm width address) := by
+  rcases isBroadcast with h | h | h <;> simp [ParsedOp.sourceRoleScreen, h,
+    ParsedOperand.l1bmSourceRole]
+
+theorem ParsedOp.l1bm_broadcast_rejects_pe_source
+    (operation : ParsedL1Op)
+    (isBroadcast : operation = .pbcast ∨ operation = .mbcast ∨ operation = .m4bcast)
+    (width : Nat) (address : Option Nat) :
+    ¬ ParsedOp.sourceRoleScreen (.l1bm operation) [.l1bm width address]
+      (.mem ⟨.lm0, ⟨1, 0, 0, 0, 0, false, none⟩⟩ false false false none) := by
+  rcases isBroadcast with h | h | h <;> simp [ParsedOp.sourceRoleScreen, h,
+    ParsedOperand.l1bmSourceRole]
 
 /-- Structural PE-expression AST mirror. Issue and execution interpretations
 are separate functions over this syntax. -/
@@ -747,7 +795,7 @@ def ParsedExpr.destinationsPassRoleScreen (expression : ParsedExpr) : Prop :=
 
 def ParsedExpr.sourcesPassRoleScreen (expression : ParsedExpr) : Prop :=
   ∀ operand ∈ expression.sources,
-    expression.op.sourceRoleScreen operand
+    expression.op.sourceRoleScreen expression.sources operand
 
 def ParsedExpr.maskApplications (expression : ParsedExpr) : List ParsedMask :=
   (expression.sources ++ expression.destinations).filterMap ParsedOperand.writeMask? ++
@@ -821,7 +869,7 @@ def NormalizedExpr.destinationsPassRoleScreen (expression : NormalizedExpr) : Pr
 
 def NormalizedExpr.sourcesPassRoleScreen (expression : NormalizedExpr) : Prop :=
   ∀ operand ∈ expression.sources,
-    expression.op.sourceRoleScreen operand
+    expression.op.sourceRoleScreen expression.sources operand
 
 def ParsedExpr.normalize (expression : ParsedExpr) : NormalizedExpr :=
   ⟨expression.op, expression.sources, expression.destinations, expression.flush⟩
