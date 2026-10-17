@@ -111,6 +111,25 @@ theorem answer_parallel_expression_count :
     answerParallelExpressions?.map List.length = some 2 := by
   decide
 
+/-- Parsed expression groups for the three source lines. The middle list is
+kept as one issue line with two expressions, rather than flattened into two
+cycles. -/
+def answerExpressionLines? : Option (List (List ParsedExpr)) := do
+  let immediate ← answerImmediateExpr?
+  let parallel ← answerParallelExpressions?
+  let output ← answerByteShiftExpr?
+  some [[immediate], parallel, [output]]
+
+theorem answer_expression_line_shapes :
+    (answerExpressionLines?).map (List.map List.length) = some [1, 2, 1] := by
+  decide
+
+def answerParsedLines? : Option (List ParsedLine) :=
+  (answerExpressionLines?).map (List.map ParsedLine.pe)
+
+theorem answer_parsed_line_count : answerParsedLines?.map List.length = some 3 := by
+  decide
+
 def swap32 (word : BitVec 64) : BitVec 64 :=
   (word.extractLsb' 0 32) ++ (word.extractLsb' 32 32)
 
