@@ -109,6 +109,14 @@ theorem ParsedOperand.forward_notKnownSourceOnly (kind : ParsedForward) (neg ext
 def ParsedOperand.destinationsAvoidKnownSourceOnly (operands : List ParsedOperand) : Prop :=
   ∀ operand ∈ operands, operand.notKnownSourceOnly
 
+def ParsedOperand.scalarPEDestinationRole : ParsedOperand → Prop
+  | .mem .. | .bar .. | .omr .. | .nowrite => True
+  | _ => False
+
+def ParsedOperand.matrixReadDestinationRole : ParsedOperand → Prop
+  | .mem .. | .bar .. | .nowrite => True
+  | _ => False
+
 def ParsedOperand.writeMask? : ParsedOperand → Option ParsedMask
   | .mem _ _ _ _ mask | .bar _ _ mask | .omr _ mask => mask
   | _ => none
@@ -574,6 +582,22 @@ theorem ParsedOp.parserSourceLimit_le_three (op : ParsedOp) :
   | l1bm operation => change 1 ≤ 3; omega
   | l2bm operation => change 1 ≤ 3; omega
 
+/-- Opcode-class destination-role screen based on the assembler probes and
+Rust operand roles. It is a necessary filter only; block-memory roles and
+complete per-opcode acceptance remain to be modeled. -/
+def ParsedOp.destinationRoleScreen : ParsedOp → ParsedOperand → Prop
+  | .alu .., operand => operand.scalarPEDestinationRole
+  | .immediate .., operand => operand.scalarPEDestinationRole
+  | .zero, operand => operand.scalarPEDestinationRole
+  | .mau .., operand => operand.scalarPEDestinationRole
+  | .matrixWrite .., .matrix .. => True
+  | .matrixRead .., operand => operand.matrixReadDestinationRole
+  | .l1bm .., operand => operand.notKnownSourceOnly
+  | .l2bm .., operand => operand.notKnownSourceOnly
+  | .wait .., _ => False
+  | .noforward, _ => False
+  | .matrixWrite .., _ => False
+
 /-- Structural PE-expression AST mirror. Issue and execution interpretations
 are separate functions over this syntax. -/
 structure ParsedExpr where
@@ -583,6 +607,10 @@ structure ParsedExpr where
   flush : Option ParsedMask
   text : String
   deriving DecidableEq, Repr
+
+def ParsedExpr.destinationsPassRoleScreen (expression : ParsedExpr) : Prop :=
+  ∀ operand ∈ expression.destinations,
+    expression.op.destinationRoleScreen operand
 
 def ParsedExpr.maskApplications (expression : ParsedExpr) : List ParsedMask :=
   (expression.sources ++ expression.destinations).filterMap ParsedOperand.writeMask? ++
@@ -640,6 +668,10 @@ structure NormalizedExpr where
   flush : Option ParsedMask
   deriving DecidableEq, Repr
 
+def NormalizedExpr.destinationsPassRoleScreen (expression : NormalizedExpr) : Prop :=
+  ∀ operand ∈ expression.destinations,
+    expression.op.destinationRoleScreen operand
+
 def ParsedExpr.normalize (expression : ParsedExpr) : NormalizedExpr :=
   ⟨expression.op, expression.sources, expression.destinations, expression.flush⟩
 
@@ -667,6 +699,12 @@ theorem ParsedExpr.normalize_parserSourceArityValid
     (arity : expression.parserSourceArityValid) :
     expression.normalize.parserSourceArityValid := by
   exact arity
+
+theorem ParsedExpr.normalize_destinationsPassRoleScreen
+    (expression : ParsedExpr)
+    (roles : expression.destinationsPassRoleScreen) :
+    expression.normalize.destinationsPassRoleScreen := by
+  exact roles
 
 theorem NormalizedExpr.parserSourceArityValid_length_le_three
     (expression : NormalizedExpr)

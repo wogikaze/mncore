@@ -1431,6 +1431,7 @@ def NormalizedExpr.inFiniteEnvelope (expression : NormalizedExpr) : Prop :=
     expression.destinations.Nodup ∧
     ParsedOperand.destinationsAvoidKnownSourceOnly expression.destinations ∧
     (∀ operand ∈ expression.destinations, operand.inFiniteEnvelope) ∧
+    expression.destinationsPassRoleScreen ∧
     optionMaskInFiniteEnvelope expression.flush
 
 /-- The exact parsed-expression facts needed to normalize into the finite
@@ -1444,14 +1445,21 @@ def ParsedExpr.inFiniteEnvelope (expression : ParsedExpr) : Prop :=
     expression.destinations.Nodup ∧
     ParsedOperand.destinationsAvoidKnownSourceOnly expression.destinations ∧
     (∀ operand ∈ expression.destinations, operand.inFiniteEnvelope) ∧
+    expression.destinationsPassRoleScreen ∧
     optionMaskInFiniteEnvelope expression.flush
+
+theorem ParsedExpr.inFiniteEnvelope_destinationRolesPassScreen
+    (expression : ParsedExpr) (envelope : expression.inFiniteEnvelope) :
+    expression.destinationsPassRoleScreen := by
+  rcases envelope with ⟨_, _, _, _, _, _, roles, _⟩
+  exact roles
 
 theorem ParsedExpr.normalize_inFiniteEnvelope (expression : ParsedExpr)
     (envelope : expression.inFiniteEnvelope) :
     expression.normalize.inFiniteEnvelope := by
   rcases expression with ⟨op, sources, destinations, flush, text⟩
   rcases envelope with ⟨opBound, sourceArity, sourceBound, destinationNodup,
-    destinationRoles, destinationBound, flushBound⟩
+    destinationRoles, destinationBound, opcodeRoles, flushBound⟩
   have normalizedArity :
       (NormalizedExpr.mk op sources destinations flush).parserSourceArityValid :=
     sourceArity
@@ -1459,7 +1467,8 @@ theorem ParsedExpr.normalize_inFiniteEnvelope (expression : ParsedExpr)
   exact ⟨opBound,
     sourceArity,
     NormalizedExpr.parserSourceArityValid_length_le_three _ normalizedArity,
-    sourceBound, destinationNodup, destinationRoles, destinationBound, flushBound⟩
+    sourceBound, destinationNodup, destinationRoles, destinationBound,
+    opcodeRoles, flushBound⟩
 
 private abbrev NormalizedExprFiniteCode :=
   {op : ParsedOp // op.inFiniteEnvelope} ×
@@ -1473,7 +1482,7 @@ private def NormalizedExpr.finiteCode
   rcases expression with ⟨expression, bounds⟩
   rcases expression with ⟨op, sources, destinations, flush⟩
   rcases bounds with ⟨opBound, sourceArity, sourceLength, sourceBound,
-    destinationNodup, destinationRoles, destinationBound, flushBound⟩
+    destinationNodup, destinationRoles, destinationBound, opcodeRoles, flushBound⟩
   exact (⟨op, opBound⟩,
     ⟨sources, sourceLength, sourceBound⟩,
     ⟨destinations, destinationNodup, destinationBound⟩,
