@@ -9,7 +9,7 @@
     },
     {
       "path": "proofs_lean/scripts/check_output_roles_reference.py",
-      "sha256": "c23aee40c98c6f8bb14a541bed0ef5fc79218dc1d45170c51d076aee072268ec"
+      "sha256": "8a7f54902fa6907238dc87ef272046b60bd5fe36a45420c1f143c43b9c5ae9d1"
     }
   ],
   "observations": [
@@ -588,6 +588,69 @@
       "returncode": -6,
       "words": null,
       "diagnostic": "L2BM operation must have exactly two operands."
+    },
+    {
+      "case": "dars_to_dar",
+      "source": "l2bmdars $lc1024@.0 $dar0",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
+    },
+    {
+      "case": "dars_rejects_non_l2bm_source",
+      "source": "l2bmdars $dar0 $dar1",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "first operand of l2bmdars must be L2BM."
+    },
+    {
+      "case": "dars_rejects_l2bm_destination",
+      "source": "l2bmdars $lc1024@.0 $lc0",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "first operand of l2bmdars must be L2BM."
+    },
+    {
+      "case": "dars_rejects_extra_destination",
+      "source": "l2bmdars $lc1024@.0 $dar0 $dar1",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "l2bmdars must have exactly two operands."
+    },
+    {
+      "case": "dars_rejects_out_of_range_dar",
+      "source": "l2bmdars $lc1024@.0 $dar1024",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "DAR address is too big."
+    },
+    {
+      "case": "darw_zero_operand",
+      "source": "l2bmdarw",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
+    },
+    {
+      "case": "darw_rejects_operand",
+      "source": "l2bmdarw $dar0",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "Non PE operation after separator."
     }
   ],
   "limitations": [

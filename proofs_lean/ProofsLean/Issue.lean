@@ -129,6 +129,14 @@ def ParsedOperand.l2bmDestinationRole : ParsedOperand → Prop
   | .l2bm .. => True
   | _ => False
 
+def ParsedOperand.darDestinationRole : ParsedOperand → Prop
+  | .dar .. => True
+  | _ => False
+
+def ParsedOperand.l2bmSourceRole : ParsedOperand → Prop
+  | .l2bm .. => True
+  | _ => False
+
 def ParsedOperand.writeMask? : ParsedOperand → Option ParsedMask
   | .mem _ _ _ _ mask | .bar _ _ mask | .omr _ mask => mask
   | _ => none
@@ -572,7 +580,9 @@ def ParsedOp.parserSourceLimit : ParsedOp → Nat
       | false, .add => 2
       | _, _ => 1
   | .matrixWrite .. | .matrixRead .. => 1
-  | .l1bm .. | .l2bm .. => 1
+  | .l1bm .. | .l2bm .dars => 1
+  | .l2bm .darw => 0
+  | .l2bm _ => 1
 
 theorem ParsedAluName.inputCount_le_two (name : ParsedAluName) :
     name.inputCount ≤ 2 := by
@@ -592,7 +602,8 @@ theorem ParsedOp.parserSourceLimit_le_three (op : ParsedOp) :
   | wait tag => change 0 ≤ 3; omega
   | noforward => simp [ParsedOp.parserSourceLimit]
   | l1bm operation => change 1 ≤ 3; omega
-  | l2bm operation => change 1 ≤ 3; omega
+  | l2bm operation =>
+      cases operation <;> simp [ParsedOp.parserSourceLimit] <;> omega
 
 /-- Opcode-class destination-role screen based on the assembler probes and
 Rust operand roles. It is a necessary filter only; block-memory roles and
@@ -620,7 +631,8 @@ def ParsedOp.destinationRoleScreen : ParsedOp → List ParsedOperand → ParsedO
           operand.l1bmDestinationRole
       | .fromL1b .. | .reduce .. | .reduce2 .. | .gather =>
           operand.l2bmDestinationRole
-      | .dars | .darw => operand.notKnownSourceOnly
+      | .dars => operand.darDestinationRole
+      | .darw => False
   | .wait .., _, _ => False
   | .noforward, _, _ => False
 
@@ -662,6 +674,27 @@ theorem ParsedOp.l2bm_multicast_l1bm_role (set : ParsedL1bSet) :
       [.l1bm 2 (some 0)] (.l1bm 2 (some 16)) := by
   simp [ParsedOp.destinationRoleScreen, ParsedOperand.l1bmDestinationRole]
 
+theorem ParsedOp.l2bm_dars_writes_dar_role :
+    ParsedOp.destinationRoleScreen (.l2bm .dars) [.l2bm 1024 (some 0)] (.dar 0) := by
+  simp [ParsedOp.destinationRoleScreen, ParsedOperand.darDestinationRole]
+
+theorem ParsedOp.l2bm_dars_rejects_l2bm_destination :
+    ¬ ParsedOp.destinationRoleScreen (.l2bm .dars) [.l2bm 1024 (some 0)]
+      (.l2bm 0 none) := by
+  simp [ParsedOp.destinationRoleScreen, ParsedOperand.darDestinationRole]
+
+theorem ParsedOp.l2bm_darw_has_no_destination_role (operand : ParsedOperand) :
+    ¬ ParsedOp.destinationRoleScreen (.l2bm .darw) [] operand := by
+  simp [ParsedOp.destinationRoleScreen]
+
+def ParsedOp.sourceRoleScreen : ParsedOp → ParsedOperand → Prop
+  | .l2bm .dars, operand => operand.l2bmSourceRole
+  | .l2bm .darw, _ => False
+  | _, _ => True
+
+theorem ParsedOp.l2bm_dars_source_role (operand : ParsedOperand) :
+    ParsedOp.sourceRoleScreen (.l2bm .dars) operand = operand.l2bmSourceRole := rfl
+
 /-- Structural PE-expression AST mirror. Issue and execution interpretations
 are separate functions over this syntax. -/
 structure ParsedExpr where
@@ -675,6 +708,10 @@ structure ParsedExpr where
 def ParsedExpr.destinationsPassRoleScreen (expression : ParsedExpr) : Prop :=
   ∀ operand ∈ expression.destinations,
     expression.op.destinationRoleScreen expression.sources operand
+
+def ParsedExpr.sourcesPassRoleScreen (expression : ParsedExpr) : Prop :=
+  ∀ operand ∈ expression.sources,
+    expression.op.sourceRoleScreen operand
 
 def ParsedExpr.maskApplications (expression : ParsedExpr) : List ParsedMask :=
   (expression.sources ++ expression.destinations).filterMap ParsedOperand.writeMask? ++
@@ -711,12 +748,22 @@ into sources and rejects a missing input or output. Custom zero-input and
 block-memory parser paths retain the weaker upper-bound condition. -/
 def ParsedOp.hasFixedParserSourceArity : ParsedOp → Bool
   | .alu .. | .mau .. | .matrixWrite .. | .matrixRead .. => true
-  | .immediate .. | .zero | .wait .. | .noforward | .l1bm .. | .l2bm .. => false
+  | .l2bm .dars | .l2bm .darw => true
+  | .immediate .. | .zero | .wait .. | .noforward | .l1bm .. | .l2bm _ => false
 
 def ParsedExpr.parserSourceArityValid (expression : ParsedExpr) : Prop :=
   if expression.op.hasFixedParserSourceArity then
     expression.sources.length = expression.op.parserSourceLimit
   else expression.sourcesMatchParserArity
+
+/-- DARS has one L2BM source and one DAR output; DARW is a zero-operand
+companion instruction. The source count is fixed above and these destination
+counts follow the assemble3 role/arity probes. -/
+def ParsedExpr.blockDestinationArityValid (expression : ParsedExpr) : Prop :=
+  match expression.op with
+  | .l2bm .dars => expression.destinations.length = 1
+  | .l2bm .darw => expression.destinations.length = 0
+  | _ => True
 
 theorem ParsedExpr.sources_length_le_three (expression : ParsedExpr)
     (arity : expression.sourcesMatchParserArity) :
@@ -736,6 +783,10 @@ def NormalizedExpr.destinationsPassRoleScreen (expression : NormalizedExpr) : Pr
   ∀ operand ∈ expression.destinations,
     expression.op.destinationRoleScreen expression.sources operand
 
+def NormalizedExpr.sourcesPassRoleScreen (expression : NormalizedExpr) : Prop :=
+  ∀ operand ∈ expression.sources,
+    expression.op.sourceRoleScreen operand
+
 def ParsedExpr.normalize (expression : ParsedExpr) : NormalizedExpr :=
   ⟨expression.op, expression.sources, expression.destinations, expression.flush⟩
 
@@ -752,6 +803,12 @@ def NormalizedExpr.parserSourceArityValid (expression : NormalizedExpr) : Prop :
     expression.sources.length = expression.op.parserSourceLimit
   else expression.sourcesMatchParserArity
 
+def NormalizedExpr.blockDestinationArityValid (expression : NormalizedExpr) : Prop :=
+  match expression.op with
+  | .l2bm .dars => expression.destinations.length = 1
+  | .l2bm .darw => expression.destinations.length = 0
+  | _ => True
+
 theorem ParsedExpr.normalize_sourcesMatchParserArity
     (expression : ParsedExpr)
     (arity : expression.sourcesMatchParserArity) :
@@ -764,10 +821,22 @@ theorem ParsedExpr.normalize_parserSourceArityValid
     expression.normalize.parserSourceArityValid := by
   exact arity
 
+theorem ParsedExpr.normalize_blockDestinationArityValid
+    (expression : ParsedExpr)
+    (arity : expression.blockDestinationArityValid) :
+    expression.normalize.blockDestinationArityValid := by
+  exact arity
+
 theorem ParsedExpr.normalize_destinationsPassRoleScreen
     (expression : ParsedExpr)
     (roles : expression.destinationsPassRoleScreen) :
     expression.normalize.destinationsPassRoleScreen := by
+  exact roles
+
+theorem ParsedExpr.normalize_sourcesPassRoleScreen
+    (expression : ParsedExpr)
+    (roles : expression.sourcesPassRoleScreen) :
+    expression.normalize.sourcesPassRoleScreen := by
   exact roles
 
 theorem NormalizedExpr.parserSourceArityValid_length_le_three

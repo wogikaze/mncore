@@ -60,9 +60,14 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.ParsedOp.l2bm_broadcast_to_l1bm_role
 #print axioms ProofsLean.MNCore.Issue.ParsedOp.l2bm_gather_to_l2bm_role
 #print axioms ProofsLean.MNCore.Issue.ParsedOp.l2bm_multicast_l1bm_role
+#print axioms ProofsLean.MNCore.Issue.ParsedOp.l2bm_dars_writes_dar_role
+#print axioms ProofsLean.MNCore.Issue.ParsedOp.l2bm_dars_rejects_l2bm_destination
+#print axioms ProofsLean.MNCore.Issue.ParsedOp.l2bm_darw_has_no_destination_role
+#print axioms ProofsLean.MNCore.Issue.ParsedOp.l2bm_dars_source_role
 #print axioms ProofsLean.MNCore.Issue.ParsedOp.parserSourceLimit_le_three
 #print axioms ProofsLean.MNCore.Issue.NormalizedExpr.parserSourceArityValid_length_le_three
 #print axioms ProofsLean.MNCore.Issue.ParsedExpr.parserSourceArityValid_length_le_three
+#print axioms ProofsLean.MNCore.Issue.ParsedExpr.normalize_blockDestinationArityValid
 #print axioms ProofsLean.MNCore.Issue.base_address_write_conflicts_with_same_bank_read
 #print axioms ProofsLean.MNCore.Issue.projected_bar_writes_are_bar_destinations
 #print axioms ProofsLean.MNCore.Issue.Region.inFiniteEnvelope_finite
@@ -106,6 +111,7 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.NormalizedExpr.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.ParsedExpr.normalize_inFiniteEnvelope
 #print axioms ProofsLean.MNCore.Issue.ParsedExpr.inFiniteEnvelope_destinationRolesPassScreen
+#print axioms ProofsLean.MNCore.Issue.ParsedExpr.inFiniteEnvelope_sourceRolesPassScreen
 #print axioms ProofsLean.MNCore.Issue.NormalizedExpr.listInFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.NormalizedMv.finite
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.inFiniteEnvelope_finite

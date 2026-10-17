@@ -78,6 +78,13 @@ CASES = [
     ("l1bm_duplicate_pe_destination", "l1bmm $lb0 $m0 $m0", False),
     ("l1bm_distinct_bar_destinations", "l1bmm $lb0 $mb $nb", True),
     ("l2bm_extra_destination", "l2bmb $lc0 $lb0 $lb16", False),
+    ("dars_to_dar", "l2bmdars $lc1024@.0 $dar0", True),
+    ("dars_rejects_non_l2bm_source", "l2bmdars $dar0 $dar1", False),
+    ("dars_rejects_l2bm_destination", "l2bmdars $lc1024@.0 $lc0", False),
+    ("dars_rejects_extra_destination", "l2bmdars $lc1024@.0 $dar0 $dar1", False),
+    ("dars_rejects_out_of_range_dar", "l2bmdars $lc1024@.0 $dar1024", False),
+    ("darw_zero_operand", "l2bmdarw", True),
+    ("darw_rejects_operand", "l2bmdarw $dar0", False),
 ]
 
 
