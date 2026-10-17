@@ -25,7 +25,107 @@
     },
     {
       "path": "proofs_lean/scripts/check_isa_parser_bounds.py",
-      "sha256": "0f3f2274a9927cee386e7ba4c7bbb3029064b0a9249d950e9a78e2be2a685e9d"
+      "sha256": "2ef1c19977eda22474795413d67fc8325f25241e2a8a9d435e70657d7d99a809"
+    },
+    {
+      "path": "docs/mncore_llm/chapters/ch03/section-3.5.8.10__L2BMPDM並列個別転送命令__66b35ffe.md",
+      "sha256": "cde55b420388190a07bd7864ebe282a1e039439a3d5d2fccc7259e40f7df407c"
+    },
+    {
+      "path": "docs/mncore_llm/chapters/ch03/section-3.5.8.11__DRAML2BM並列個別転送命令__66b35ffe.md",
+      "sha256": "2b702149c5bc5e7c21650960b5502da4b93ff839fe08a3d5b0a67ebe2e0e2cc8"
+    },
+    {
+      "path": "docs/mncore_llm/chapters/ch03/section-3.5.8.12__L2BMDRAM並列個別転送命令__66b35ffe.md",
+      "sha256": "168759799ace5cb0c756a959770a8a22ccc3e82ff8b2c6fa54f7d0fd8e8edf66"
+    },
+    {
+      "path": "docs/mncore_llm/chapters/ch03/section-3.5.8.13__DRAML2BMグループ内放送命令__66b35ffe.md",
+      "sha256": "e9c0d40df5402982146d10fcd170666b3033490455aac5158a872a70e70ccdec"
+    },
+    {
+      "path": "docs/mncore_llm/chapters/ch03/section-3.5.8.14__L2BMDRAMグループ内縮約命令__66b35ffe.md",
+      "sha256": "2fa5e6feddee89ed51590049765dfcb98cb79911e3ac22b8b0eb75c215773af0"
+    },
+    {
+      "path": "docs/mncore_llm/chapters/ch03/section-3.5.8.15__L2BMPDMグループ内縮約命令__66b35ffe.md",
+      "sha256": "f811a8c7647b3b29ef08c6ac061a038633d773c6cac83a2c30c716c082e4f331"
+    },
+    {
+      "path": "docs/mncore_llm/chapters/ch03/section-3.5.8.16__DRAML2BMグループ間分配放送命令__66b35ffe.md",
+      "sha256": "e5e31f1a075eed7e312accec7b4c8e9422b22587011bf2a59e59d93ecd061add"
+    },
+    {
+      "path": "docs/mncore_llm/chapters/ch03/section-3.5.8.17__L2BMDRAMグループ間結合縮約命令__66b35ffe.md",
+      "sha256": "2aedea5a2454e7f116ea1e0d12656cb9fae95d9c52e6a66149dbacd6110db2e0"
+    },
+    {
+      "path": "docs/mncore_llm/chapters/ch03/section-3.5.8.18__PDML2BMグループ間放送命令__66b35ffe.md",
+      "sha256": "675800f97089d86faa8ac1e22bacfeb64edf4357893749b9e47f84a147d88aff"
+    },
+    {
+      "path": "docs/mncore_llm/chapters/ch03/section-3.5.8.19__L2BMPDMグループ間縮約命令__66b35ffe.md",
+      "sha256": "67e1d56409690bec339b1490f6e8ab2b8ab5e7b211f2d78decdf6bdfdc2c622f"
+    },
+    {
+      "path": "docs/mncore_llm/chapters/ch03/section-3.5.8.1__mvnop命令__66b35ffe.md",
+      "sha256": "ea8955192def693377f89a90f52585329011534371a016b7c24e1401f5aae343"
+    },
+    {
+      "path": "docs/mncore_llm/chapters/ch03/section-3.5.8.20__DRAML2BMグループ間放送命令__66b35ffe.md",
+      "sha256": "5110177f1b49609767e865cce73c37ced993e2c0b8e08d3090b4024d5ee425fa"
+    },
+    {
+      "path": "docs/mncore_llm/chapters/ch03/section-3.5.8.21__L2BMDRAMグループ間縮約命令__66b35ffe.md",
+      "sha256": "95fe122b3a1df6744c42e4b0af4920f67a7a5a3cdc10359df37fd87d2456be6f"
+    },
+    {
+      "path": "docs/mncore_llm/chapters/ch03/section-3.5.8.22__PDML2BM分配命令__66b35ffe.md",
+      "sha256": "7d8f3247143120b3189bf0b87d3b9759fa486c44394d625e5ba429c028325374"
+    },
+    {
+      "path": "docs/mncore_llm/chapters/ch03/section-3.5.8.23__L2BMPDM結合命令__66b35ffe.md",
+      "sha256": "983edfd247f9f3c9df4d0d3833ea2ee17c6357956674836d78863f78a5f0bf74"
+    },
+    {
+      "path": "docs/mncore_llm/chapters/ch03/section-3.5.8.24__PDMDRAM分配命令__66b35ffe.md",
+      "sha256": "f5fa01c78b86ac8621ff2e707c3efcd64438bf1325334a56c6b71b76e728ac00"
+    },
+    {
+      "path": "docs/mncore_llm/chapters/ch03/section-3.5.8.25__DRAMPDM結合命令__66b35ffe.md",
+      "sha256": "b060c70faec47db6463e2e152c461e13f6baaffd92883aa00b2f32c84b89e0d4"
+    },
+    {
+      "path": "docs/mncore_llm/chapters/ch03/section-3.5.8.2__PDMDRAM単独個別転送命令__66b35ffe.md",
+      "sha256": "0fdb77f66b3c1736609f9ed058d98de55bb502db20a3fde7021c1eb79881f4bd"
+    },
+    {
+      "path": "docs/mncore_llm/chapters/ch03/section-3.5.8.3__DRAMPDM単独個別転送命令__66b35ffe.md",
+      "sha256": "e7fa32ceaa4bc9702be5d1717d997dfba09a9a3ba19e8c898722ae073223ee72"
+    },
+    {
+      "path": "docs/mncore_llm/chapters/ch03/section-3.5.8.4__PDML2BM単独個別転送命令__66b35ffe.md",
+      "sha256": "64cc3447d02f52d8c167ebd85c5a7703f28d2c8759070ecf78c693f56ec0b0eb"
+    },
+    {
+      "path": "docs/mncore_llm/chapters/ch03/section-3.5.8.5__L2BMPDM単独個別転送命令__66b35ffe.md",
+      "sha256": "ab5bfc6cb81d5758bb765bf812f8b6ba1fdb395939e2a46e5d3981715e1fac88"
+    },
+    {
+      "path": "docs/mncore_llm/chapters/ch03/section-3.5.8.6__DRAML2BM単独個別転送命令__66b35ffe.md",
+      "sha256": "188fd7a583e7913b32871e4d532e591012e74ff8791ecdfa7f02137a54900862"
+    },
+    {
+      "path": "docs/mncore_llm/chapters/ch03/section-3.5.8.7__L2BMDRAM単独個別転送命令__66b35ffe.md",
+      "sha256": "14e73ac760653f1a0560eca76aa9476211ac0b0cb88ccaa6f867c7283b5377bf"
+    },
+    {
+      "path": "docs/mncore_llm/chapters/ch03/section-3.5.8.8__PDMPDM単独個別転送命令__66b35ffe.md",
+      "sha256": "d811ddce081a2f43348aefe8d8f235f60ee7ae084e47f74eff636345c6c8e9a8"
+    },
+    {
+      "path": "docs/mncore_llm/chapters/ch03/section-3.5.8.9__PDML2BM並列個別転送命令__66b35ffe.md",
+      "sha256": "8eb21982bb75883dfd7bb933dba1aa20752ecc72ca08519c0661c8c68093cb19"
     }
   ],
   "observations": [
@@ -1090,6 +1190,590 @@
       "accepted": true,
       "assembler_output_lines": 1,
       "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_10_size_64",
+      "source": "mvp/n64 $lc0@.0 $p0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_10_size_32704",
+      "source": "mvp/n32704 $lc0@.0 $p0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_10_size_32768",
+      "source": "mvp/n32768 $lc0@.0 $p0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 2048 >= 2^11",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_11_size_64",
+      "source": "mvp/n64 $d0 $lc0@.0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_11_size_32704",
+      "source": "mvp/n32704 $d0 $lc0@.0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_11_size_32768",
+      "source": "mvp/n32768 $d0 $lc0@.0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 2048 >= 2^11",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_12_size_64",
+      "source": "mvp/n64 $lc0@.0 $d0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_12_size_32704",
+      "source": "mvp/n32704 $lc0@.0 $d0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_12_size_32768",
+      "source": "mvp/n32768 $lc0@.0 $d0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 2048 >= 2^11",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_13_size_64",
+      "source": "mvb2/n64 $d0 $lc0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_13_size_32704",
+      "source": "mvb2/n32704 $d0 $lc0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_13_size_32768",
+      "source": "mvb2/n32768 $d0 $lc0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 2048 >= 2^11",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_14_size_64",
+      "source": "mvr2dfadd/n64 $lc0 $d0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_14_size_32704",
+      "source": "mvr2dfadd/n32704 $lc0 $d0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_14_size_32768",
+      "source": "mvr2dfadd/n32768 $lc0 $d0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 2048 >= 2^11",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_15_size_64",
+      "source": "mvr2dfadd/n64 $lc0@0 $p0@0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_15_size_32704",
+      "source": "mvr2dfadd/n32704 $lc0@0 $p0@0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_15_size_32768",
+      "source": "mvr2dfadd/n32768 $lc0@0 $p0@0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 2048 >= 2^11",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_16_size_64",
+      "source": "mvb4/n64 $d0 $lc0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_16_size_32704",
+      "source": "mvb4/n32704 $d0 $lc0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_16_size_32768",
+      "source": "mvb4/n32768 $d0 $lc0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 2048 >= 2^11",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_17_size_64",
+      "source": "mvr4dfadd/n64 $lc0 $d0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_17_size_32704",
+      "source": "mvr4dfadd/n32704 $lc0 $d0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_17_size_32768",
+      "source": "mvr4dfadd/n32768 $lc0 $d0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 2048 >= 2^11",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_18_size_64",
+      "source": "mvb/n64 $p0@0 $lc0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_18_size_32704",
+      "source": "mvb/n32704 $p0@0 $lc0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_18_size_32768",
+      "source": "mvb/n32768 $p0@0 $lc0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 2048 >= 2^11",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_19_size_64",
+      "source": "mvrdfadd/n64 $lc0 $p0@0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_19_size_32704",
+      "source": "mvrdfadd/n32704 $lc0 $p0@0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_19_size_32768",
+      "source": "mvrdfadd/n32768 $lc0 $p0@0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 2048 >= 2^11",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_1_mvnop",
+      "source": "mvnop",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_20_size_64",
+      "source": "mvb/n64 $d0 $lc0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_20_size_32704",
+      "source": "mvb/n32704 $d0 $lc0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_20_size_32768",
+      "source": "mvb/n32768 $d0 $lc0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 2048 >= 2^11",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_21_size_64",
+      "source": "mvrdfadd/n64 $lc0 $d0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_21_size_32704",
+      "source": "mvrdfadd/n32704 $lc0 $d0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_21_size_32768",
+      "source": "mvrdfadd/n32768 $lc0 $d0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 2048 >= 2^11",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_22_size_64",
+      "source": "mvd/n64 $p0@0 $lc0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_22_size_32704",
+      "source": "mvd/n32704 $p0@0 $lc0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_22_size_32768",
+      "source": "mvd/n32768 $p0@0 $lc0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 2048 >= 2^11",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_23_size_64",
+      "source": "mvd/n64 $lc0 $p0@0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_23_size_32704",
+      "source": "mvd/n32704 $lc0 $p0@0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_23_size_32768",
+      "source": "mvd/n32768 $lc0 $p0@0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 2048 >= 2^11",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_24_size_64",
+      "source": "mvd/n64 $p0@0 $d0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_24_size_32704",
+      "source": "mvd/n32704 $p0@0 $d0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_24_size_32768",
+      "source": "mvd/n32768 $p0@0 $d0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 2048 >= 2^11",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_25_size_64",
+      "source": "mvd/n64 $d0 $p0@0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_25_size_32704",
+      "source": "mvd/n32704 $d0 $p0@0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_25_size_32768",
+      "source": "mvd/n32768 $d0 $p0@0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 2048 >= 2^11",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_2_size_64",
+      "source": "mvp/n64 $p0@0 $d0@0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_2_size_32704",
+      "source": "mvp/n32704 $p0@0 $d0@0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_2_size_32768",
+      "source": "mvp/n32768 $p0@0 $d0@0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 2048 >= 2^11",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_3_size_64",
+      "source": "mvp/n64 $d0@0 $p0@0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_3_size_32704",
+      "source": "mvp/n32704 $d0@0 $p0@0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_3_size_32768",
+      "source": "mvp/n32768 $d0@0 $p0@0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 2048 >= 2^11",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_4_size_64",
+      "source": "mvp/n64 $p0@0 $lc0@0.0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_4_size_32704",
+      "source": "mvp/n32704 $p0@0 $lc0@0.0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_4_size_32768",
+      "source": "mvp/n32768 $p0@0 $lc0@0.0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 2048 >= 2^11",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_5_size_64",
+      "source": "mvp/n64 $lc0@0.0 $p0@0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_5_size_32704",
+      "source": "mvp/n32704 $lc0@0.0 $p0@0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_5_size_32768",
+      "source": "mvp/n32768 $lc0@0.0 $p0@0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 2048 >= 2^11",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_6_size_64",
+      "source": "mvp/n64 $d0@0 $lc0@0.0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_6_size_32704",
+      "source": "mvp/n32704 $d0@0 $lc0@0.0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_6_size_32768",
+      "source": "mvp/n32768 $d0@0 $lc0@0.0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 2048 >= 2^11",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_7_size_64",
+      "source": "mvp/n64 $lc0@0.0 $d0@0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_7_size_32704",
+      "source": "mvp/n32704 $lc0@0.0 $d0@0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_7_size_32768",
+      "source": "mvp/n32768 $lc0@0.0 $d0@0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 2048 >= 2^11",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_8_size_64",
+      "source": "mvp/n64 $p0@0 $p0@0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_8_size_32704",
+      "source": "mvp/n32704 $p0@0 $p0@0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_8_size_32768",
+      "source": "mvp/n32768 $p0@0 $p0@0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 2048 >= 2^11",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_9_size_64",
+      "source": "mvp/n64 $p0 $lc0@.0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_9_size_32704",
+      "source": "mvp/n32704 $p0 $lc0@.0",
+      "accepted": true,
+      "assembler_output_lines": 1,
+      "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "manual_mv_9_size_32768",
+      "source": "mvp/n32768 $p0 $lc0@.0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 2048 >= 2^11",
       "matches_expected": true
     },
     {
@@ -9199,7 +9883,7 @@
     "LM0/LM1 and GRF0/GRF1 accept aligned final addresses at widths 1, 2, and 4; their single-word capacities are respectively 4096 and 512, and the capacity address is rejected.",
     "Each of the four explicit LM0 cycle addresses accepts 4095 and rejects 4096; madpe values 0 through 3 are accepted and 4 is rejected.",
     "All 64 L1B set address/immode pairs in 0..7 are accepted, and address 8 and immode 8 are rejected; `l2bm@<l1b>` accepts 0..7 and rejects 8. Base-address register writes accept widths 1 and 2 but reject width 4.",
-    "The sampled MV encoding requires nonzero transfer size to be a multiple of 64 long words; 32704 is accepted while 32768 overflows the size field. Zero is accepted by the assembler.",
+    "For every documented MV grammar in Sections 3.5.8.2–3.5.8.25, generated zero-address probes accept sizes 64 and 32704 and reject 32768. The simple operand combinations are sampled evidence, not a proof of all accepted operands. The separate mvp probes show size zero is accepted, size one is rejected, and the size-field overflow at 32768 is rejected.",
     "L1BM width-2 addresses require 4-word alignment and width-4 addresses require 8-word alignment, within the 8192-long-word capacity. The L2BM transfer source accepts 16-aligned addresses through 32752 and rejects 32760 (alignment) and 32768 (range).",
     "Wait tags 1 through 255 are accepted; 0 and 256 are rejected.",
     "Matrix rows 0..15 were checked using gmread. The tested matrix operand widths are instruction-specific: gmread/gmwrite accept width 2 and reject width 4, while gmmul accepts widths 2 and 4.",

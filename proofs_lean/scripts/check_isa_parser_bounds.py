@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import resource
 import subprocess
 import tempfile
@@ -12,6 +13,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 REPO = ROOT.parent
 ASSEMBLER = REPO / "judge/judge-py/mncore2_emuenv/assemble3"
+MANUAL_MV_SOURCES = sorted((REPO / "docs/mncore_llm/chapters/ch03").glob("section-3.5.8.*.md"))
 CASES = {
     "nop_zero": ("nop/0\n", True, 0),
     "nop_one": ("nop/1\n", True, 1),
@@ -169,6 +171,41 @@ CASES = {
     "matrix_mul_width2": ("gmmul $lx $aluf $ln0v4\n", True, 1),
     "matrix_mul_width4": ("gmmul $llx $aluf $ln0v4\n", True, 1),
 }
+
+
+def manual_mv_cases() -> dict[str, tuple[str, bool, int | None]]:
+    """Build size-boundary probes from each documented MV grammar production."""
+    values = {
+        "op": "dfadd", "size": "64", "tag": "i01",
+        "addr_p": "0", "addr_d": "0", "addr_c": "0", "addr0": "0", "addr1": "0",
+        "group_p": "0", "group_d": "0", "group_c": "0", "group0": "0", "group1": "0",
+        "group": "0", "l2b_c": "0",
+    }
+    cases = {}
+    for path in MANUAL_MV_SOURCES:
+        match = re.search(r"```(?:txt)?文法\s*\n(.*?)```", path.read_text(), re.S)
+        if not match:
+            continue
+        productions = [line.strip() for line in match.group(1).splitlines() if line.strip()]
+        production = next((line for line in productions if line.startswith("mv")), None)
+        if production is None:
+            continue
+        section = re.search(r"3\.5\.8\.(\d+)", path.name).group(1)
+        if production == "mvnop":
+            cases[f"manual_mv_{section}_mvnop"] = ("mvnop\n", True, 1)
+            continue
+        template = production.replace("[<tag>]", "")
+        for key, value in values.items():
+            template = template.replace(f"<{key}>", value)
+        if re.search(r"<[a-zA-Z0-9_]+>", template):
+            raise ValueError(f"unfilled MV grammar field in {path}: {template}")
+        for size, accepted in ((64, True), (32704, True), (32768, False)):
+            source = template.replace("/n64", f"/n{size}") + "\n"
+            cases[f"manual_mv_{section}_size_{size}"] = (source, accepted, 1 if accepted else None)
+    return cases
+
+
+CASES.update(manual_mv_cases())
 L2BMDARS_COMPANIONS = {
     "bcast": "l2bmb $lc256 $lb0",
     "bcast2": "l2bmb2 $lc256 $lb0",
@@ -273,7 +310,7 @@ def main() -> None:
             observations.append(observation)
     sources = [ASSEMBLER, REPO / "viz/core/src/vsm.rs", REPO / "viz/core/src/mv.rs",
                REPO / "viz/core/src/blockop.rs", REPO / "judge/judge-py/judge.py",
-               Path(__file__).resolve()]
+               Path(__file__).resolve(), *MANUAL_MV_SOURCES]
     report = {
         "schema_version": 1,
         "experiment": "selected assembler parsing and encoding boundaries",
@@ -299,7 +336,7 @@ def main() -> None:
             "LM0/LM1 and GRF0/GRF1 accept aligned final addresses at widths 1, 2, and 4; their single-word capacities are respectively 4096 and 512, and the capacity address is rejected.",
             "Each of the four explicit LM0 cycle addresses accepts 4095 and rejects 4096; madpe values 0 through 3 are accepted and 4 is rejected.",
             "All 64 L1B set address/immode pairs in 0..7 are accepted, and address 8 and immode 8 are rejected; `l2bm@<l1b>` accepts 0..7 and rejects 8. Base-address register writes accept widths 1 and 2 but reject width 4.",
-            "The sampled MV encoding requires nonzero transfer size to be a multiple of 64 long words; 32704 is accepted while 32768 overflows the size field. Zero is accepted by the assembler.",
+            "For every documented MV grammar in Sections 3.5.8.2–3.5.8.25, generated zero-address probes accept sizes 64 and 32704 and reject 32768. The simple operand combinations are sampled evidence, not a proof of all accepted operands. The separate mvp probes show size zero is accepted, size one is rejected, and the size-field overflow at 32768 is rejected.",
             "L1BM width-2 addresses require 4-word alignment and width-4 addresses require 8-word alignment, within the 8192-long-word capacity. The L2BM transfer source accepts 16-aligned addresses through 32752 and rejects 32760 (alignment) and 32768 (range).",
             "Wait tags 1 through 255 are accepted; 0 and 256 are rejected.",
             "Matrix rows 0..15 were checked using gmread. The tested matrix operand widths are instruction-specific: gmread/gmwrite accept width 2 and reject width 4, while gmmul accepts widths 2 and 4.",

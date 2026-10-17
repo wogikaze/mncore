@@ -7,12 +7,12 @@
   "inventory_scope": "Compiler-generated ALU/MAU spelling candidates plus separately scoped source-derived records; not an authoritative complete ISA or legality model.",
   "selected_parser_boundary_experiment": {
     "source": "proofs_lean/evidence/isa-bounds/reference.json",
-    "sha256": "4b64852145c9644b12d5ae4f7b69aadf5f599e27bdf07f52dadeeb5fa019df76",
+    "sha256": "17e2774d60223fa2554638d447305d411dc58a396a8762b8a23b4e4e5d319e4a",
     "generator": "proofs_lean/scripts/check_isa_parser_bounds.py",
-    "generator_sha256": "0f3f2274a9927cee386e7ba4c7bbb3029064b0a9249d950e9a78e2be2a685e9d",
-    "probes": 1133,
-    "accepted": 1028,
-    "rejected": 105,
+    "generator_sha256": "2ef1c19977eda22474795413d67fc8325f25241e2a8a9d435e70657d7d99a809",
+    "probes": 1206,
+    "accepted": 1077,
+    "rejected": 129,
     "findings": [
       "nop/0 is accepted and emits zero instruction words; nop/0 with a wait is rejected, so the zero-count no-wait form can be erased during normalization.",
       "wait i00 is rejected; i01 and iFF are accepted; i100 is rejected.",
@@ -32,7 +32,7 @@
       "LM0/LM1 and GRF0/GRF1 accept aligned final addresses at widths 1, 2, and 4; their single-word capacities are respectively 4096 and 512, and the capacity address is rejected.",
       "Each of the four explicit LM0 cycle addresses accepts 4095 and rejects 4096; madpe values 0 through 3 are accepted and 4 is rejected.",
       "All 64 L1B set address/immode pairs in 0..7 are accepted, and address 8 and immode 8 are rejected; `l2bm@<l1b>` accepts 0..7 and rejects 8. Base-address register writes accept widths 1 and 2 but reject width 4.",
-      "The sampled MV encoding requires nonzero transfer size to be a multiple of 64 long words; 32704 is accepted while 32768 overflows the size field. Zero is accepted by the assembler.",
+      "For every documented MV grammar in Sections 3.5.8.2–3.5.8.25, generated zero-address probes accept sizes 64 and 32704 and reject 32768. The simple operand combinations are sampled evidence, not a proof of all accepted operands. The separate mvp probes show size zero is accepted, size one is rejected, and the size-field overflow at 32768 is rejected.",
       "L1BM width-2 addresses require 4-word alignment and width-4 addresses require 8-word alignment, within the 8192-long-word capacity. The L2BM transfer source accepts 16-aligned addresses through 32752 and rejects 32760 (alignment) and 32768 (range).",
       "Wait tags 1 through 255 are accepted; 0 and 256 are rejected.",
       "Matrix rows 0..15 were checked using gmread. The tested matrix operand widths are instruction-specific: gmread/gmwrite accept width 2 and reject width 4, while gmmul accepts widths 2 and 4.",
@@ -113,7 +113,7 @@
   },
   "parallel_issue_boundary_experiment": {
     "source": "proofs_lean/evidence/isa-bounds/reference.json",
-    "sha256": "4b64852145c9644b12d5ae4f7b69aadf5f599e27bdf07f52dadeeb5fa019df76",
+    "sha256": "17e2774d60223fa2554638d447305d411dc58a396a8762b8a23b4e4e5d319e4a",
     "manual_sections": [
       "SDM 3.6.1.7",
       "SDM 3.6.1.9",
