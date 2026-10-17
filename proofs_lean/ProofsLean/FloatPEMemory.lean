@@ -170,6 +170,49 @@ def commitLM1 (files : PEMemory.IntegerRegisterFiles)
     (memory : PEMemory.Memory .lm1) : PEMemory.IntegerRegisterFiles :=
   { files with lm1 := memory }
 
+def executeParsedFloatAddCycles? (expression : ParsedExpr)
+    (files : PEMemory.IntegerRegisterFiles) (pe : Fin 4)
+    (cycles : List (Fin 4)) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
+    Option PEMemory.IntegerRegisterFiles :=
+  match cycles with
+  | [] => some files
+  | cycle :: rest => do
+      let next ← executeParsedFloatAddCycle? expression files pe cycle bar0 bar1 tWord
+      executeParsedFloatAddCycles? expression next pe rest bar0 bar1 tWord
+
+def executeParsedFloatAddLine? (expression : ParsedExpr)
+    (files : PEMemory.IntegerRegisterFiles) (pe : Fin 4)
+    (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
+    Option PEMemory.IntegerRegisterFiles :=
+  executeParsedFloatAddCycles? expression files pe (List.finRange 4) bar0 bar1 tWord
+
+theorem executeParsedFloatAddCycles_success (expression : ParsedExpr)
+    (files : PEMemory.IntegerRegisterFiles) (pe : Fin 4)
+    (cycles : List (Fin 4)) (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
+    (lowered : ∀ cycle ∈ cycles, ∃ leftAddress rightAddress destinationAddress,
+      lowerParsedFloatAdd? expression pe cycle bar0 bar1 tWord =
+        some (leftAddress, rightAddress, destinationAddress)) :
+    ∃ result, executeParsedFloatAddCycles? expression files pe cycles bar0 bar1 tWord =
+      some result := by
+  induction cycles generalizing files with
+  | nil => exact ⟨files, rfl⟩
+  | cons cycle rest ih =>
+      obtain ⟨leftAddress, rightAddress, destinationAddress, headLowered⟩ :=
+        lowered cycle (by simp)
+      have tailLowered : ∀ next ∈ rest, ∃ leftAddress rightAddress destinationAddress,
+          lowerParsedFloatAdd? expression pe next bar0 bar1 tWord =
+            some (leftAddress, rightAddress, destinationAddress) := by
+        intro next member
+        exact lowered next (by simp [member])
+      let middle := commitLM1 files
+        (addCycle files.lm0 files.lm0 files.lm1 leftAddress rightAddress destinationAddress)
+      have firstStep : executeParsedFloatAddCycle? expression files pe cycle bar0 bar1 tWord =
+          some middle := by
+        simp [executeParsedFloatAddCycle?, headLowered, middle, commitLM1]
+      obtain ⟨result, restSteps⟩ := ih middle tailLowered
+      refine ⟨result, ?_⟩
+      simp [executeParsedFloatAddCycles?, firstStep, restSteps]
+
 theorem executeParsedFloatAddCycle_success (expression : ParsedExpr)
     (files : PEMemory.IntegerRegisterFiles) (pe cycle : Fin 4)
     (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
@@ -219,6 +262,7 @@ theorem parsedFloatAddSmoke_cycle0_lowers :
 theorem parsedFloatAddSmoke_cycle3_lowers :
     lowerParsedFloatAdd? parsedFloatAddSmoke 0 3 0 0 0 =
       some (⟨6, by decide⟩, ⟨14, by decide⟩, ⟨22, by decide⟩) := by decide
+
 
 def subtractCycle (left : PEMemory.Memory .lm0) (right : PEMemory.Memory .lm0)
     (output : PEMemory.Memory .lm1)
