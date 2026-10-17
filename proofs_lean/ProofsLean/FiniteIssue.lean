@@ -262,12 +262,12 @@ theorem ParsedL1Selector.inFiniteEnvelope_finite :
   Finite.of_injective ParsedL1Selector.finiteCode ParsedL1Selector.finiteCode_injective
 
 def ParsedL1Op.selectorInFiniteEnvelope : ParsedL1Op → Prop
-  | .mwrite index | .m4write index => index < 16
+  | .mwrite index | .m4write index => index.val < 16
   | _ => True
 
 def ParsedL1Op.selectorView? : ParsedL1Op → Option ParsedL1Selector
-  | .mwrite index => some (.mab index)
-  | .m4write index => some (.mab4 index)
+  | .mwrite index => some (.mab index.val)
+  | .m4write index => some (.mab4 index.val)
   | _ => none
 
 theorem ParsedL1Op.selectorView?_bounded
@@ -277,17 +277,17 @@ theorem ParsedL1Op.selectorView?_bounded
   | mwrite index =>
       intro value equal
       cases equal
-      change index < 16 at bound
+      change index.val < 16 at bound
       simpa [ParsedL1Selector.inFiniteEnvelope] using bound
   | m4write index =>
       intro value equal
       cases equal
-      change index < 16 at bound
+      change index.val < 16 at bound
       simpa [ParsedL1Selector.inFiniteEnvelope] using bound
   | _ => simp [ParsedL1Op.selectorView?]
 
 def ParsedL2Op.fromL1InFiniteEnvelope : ParsedL2Op → Prop
-  | .fromL1b index => index < 8
+  | .fromL1b index => index.val < 8
   | _ => True
 
 inductive ParsedL2FromL1 where
@@ -323,7 +323,7 @@ theorem ParsedL2FromL1.inFiniteEnvelope_finite :
   Finite.of_injective ParsedL2FromL1.finiteCode ParsedL2FromL1.finiteCode_injective
 
 def ParsedL2Op.fromL1View? : ParsedL2Op → Option ParsedL2FromL1
-  | .fromL1b index => some (.selector index)
+  | .fromL1b index => some (.selector index.val)
   | _ => none
 
 theorem ParsedL2Op.fromL1View?_bounded
@@ -333,16 +333,16 @@ theorem ParsedL2Op.fromL1View?_bounded
   | fromL1b index =>
       intro value equal
       cases equal
-      change index < 8 at bound
+      change index.val < 8 at bound
       simpa [ParsedL2FromL1.inFiniteEnvelope] using bound
   | _ => simp [ParsedL2Op.fromL1View?]
 
 abbrev ParsedL1OpFiniteCode :=
-  Fin 9 × (Fin 1 ⊕ Fin 16 ⊕
+  Fin 9 × (Fin 1 ⊕ Fin 256 ⊕
     ((Fin 128 × Fin 8) × Bool ⊕ Fin 512))
 
 def ParsedL1Op.inFiniteEnvelope : ParsedL1Op → Prop
-  | .mwrite index | .m4write index => index < 16
+  | .mwrite index | .m4write index => index.val < 16
   | .reduce rrn _ | .reduce4 rrn _ => rrn.inFiniteEnvelope
   | .distrib offset | .gather offset => mabdiffInFiniteEnvelope offset
   | .pbcast | .mbcast | .m4bcast => True
@@ -352,9 +352,9 @@ private def ParsedL1Op.finiteCode
   match op with
   | ⟨.pbcast, _⟩ => (0, Sum.inl 0)
   | ⟨.mbcast, _⟩ => (1, Sum.inl 0)
-  | ⟨.mwrite index, bound⟩ => (2, Sum.inr (Sum.inl ⟨index, bound⟩))
+  | ⟨.mwrite index, _⟩ => (2, Sum.inr (Sum.inl index))
   | ⟨.m4bcast, _⟩ => (3, Sum.inl 0)
-  | ⟨.m4write index, bound⟩ => (4, Sum.inr (Sum.inl ⟨index, bound⟩))
+  | ⟨.m4write index, _⟩ => (4, Sum.inr (Sum.inl index))
   | ⟨.reduce rrn round, bound⟩ =>
       (5, Sum.inr (Sum.inr (Sum.inl (ParsedRrn.finiteCode ⟨rrn, bound⟩, round))))
   | ⟨.reduce4 rrn round, bound⟩ =>
@@ -376,6 +376,9 @@ private theorem ParsedL1Op.finiteCode_injective :
         simp_all [ParsedL1Op.finiteCode, ParsedRrn.finiteCode]
       all_goals
         try exact congrArg Fin.val equal
+        try
+          apply Fin.ext
+          exact congrArg Fin.val equal
         try
           exact ParsedRrn.finiteCode_value_injective _ _
             (by simpa [ParsedL1Op.inFiniteEnvelope] using ha)
@@ -1250,11 +1253,11 @@ private theorem ParsedL1bSet.values_injective (a b : ParsedL1bSet)
       simp_all
 
 abbrev ParsedL2OpFiniteCode :=
-  Fin 10 × (Fin 256 × Fin 8) × (Fin 128 × Fin 8) × Fin 8 × Fin 512
+  Fin 10 × (Fin 256 × Fin 8) × (Fin 128 × Fin 8) × Fin 256 × Fin 512
 
 def ParsedL2Op.inFiniteEnvelope : ParsedL2Op → Prop
   | .bcast set | .bcast2 set | .distrib set | .imcast set => set.inFiniteEnvelope
-  | .fromL1b index => index < 8
+  | .fromL1b index => index.val < 8
   | .reduce rrn set => rrn.inFiniteEnvelope ∧ set.inFiniteEnvelope
   | .reduce2 rrn => rrn.inFiniteEnvelope
   | .gather | .dars | .darw => True
@@ -1263,13 +1266,13 @@ private def ParsedL2Op.finiteCode
     (op : {op : ParsedL2Op // op.inFiniteEnvelope}) : ParsedL2OpFiniteCode :=
   let noSet : Fin 256 × Fin 8 := (0, 0)
   let noRrn : Fin 128 × Fin 8 := (0, 0)
-  let noIndex : Fin 8 := 0
+  let noIndex : Fin 256 := 0
   let noOffset : Fin 512 := 0
   match op with
   | ⟨.bcast set, bound⟩ => (0, ParsedL1bSet.finiteCode ⟨set, bound⟩, noRrn, noIndex, noOffset)
   | ⟨.bcast2 set, bound⟩ => (1, ParsedL1bSet.finiteCode ⟨set, bound⟩, noRrn, noIndex, noOffset)
   | ⟨.distrib set, bound⟩ => (2, ParsedL1bSet.finiteCode ⟨set, bound⟩, noRrn, noIndex, noOffset)
-  | ⟨.fromL1b index, bound⟩ => (3, noSet, noRrn, ⟨index, bound⟩, noOffset)
+  | ⟨.fromL1b index, _⟩ => (3, noSet, noRrn, index, noOffset)
   | ⟨.reduce rrn set, bound⟩ =>
       (4, ParsedL1bSet.finiteCode ⟨set, bound.2⟩,
         ParsedRrn.finiteCode ⟨rrn, bound.1⟩, noIndex, noOffset)
@@ -1292,6 +1295,9 @@ private theorem ParsedL2Op.finiteCode_injective :
         simp_all [ParsedL2Op.finiteCode, ParsedL1bSet.finiteCode, ParsedRrn.finiteCode]
       all_goals
         try exact congrArg Fin.val equal
+        try
+          apply Fin.ext
+          exact congrArg Fin.val equal
         try exact ParsedL1bSet.values_injective _ _ equal
         try
           exact ParsedRrn.finiteCode_value_injective _ _

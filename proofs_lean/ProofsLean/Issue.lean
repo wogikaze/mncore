@@ -559,7 +559,7 @@ def ParsedL1bSet.inFiniteEnvelope (set : ParsedL1bSet) : Prop :=
   set.mask.val < 256 ∧ set.immode.val < 8
 
 inductive ParsedL1Op where
-  | pbcast | mbcast | mwrite (mab : Nat) | m4bcast | m4write (mab : Nat)
+  | pbcast | mbcast | mwrite (mab : Fin 256) | m4bcast | m4write (mab : Fin 256)
   | reduce (rrn : ParsedRrn) (round : Bool)
   | reduce4 (rrn : ParsedRrn) (round : Bool)
   | distrib (mabdiff : Int) | gather (mabdiff : Int)
@@ -567,7 +567,7 @@ inductive ParsedL1Op where
 
 inductive ParsedL2Op where
   | bcast (set : ParsedL1bSet) | bcast2 (set : ParsedL1bSet)
-  | distrib (set : ParsedL1bSet) | fromL1b (l1b : Nat)
+  | distrib (set : ParsedL1bSet) | fromL1b (l1b : Fin 256)
   | reduce (rrn : ParsedRrn) (set : ParsedL1bSet)
   | reduce2 (rrn : ParsedRrn) | gather | imcast (set : ParsedL1bSet)
   | dars | darw
@@ -664,7 +664,7 @@ theorem ParsedOp.l1bm_broadcast_from_l1bm_to_pe_role :
   simp [ParsedOp.destinationRoleScreen, ParsedOperand.l1bmDestinationRole,
     ParsedOperand.l1bmToPEDestinationRole]
 
-theorem ParsedOp.l1bm_mwrite_pe_to_l1bm_role (mab : Nat) :
+theorem ParsedOp.l1bm_mwrite_pe_to_l1bm_role (mab : Fin 256) :
     ParsedOp.destinationRoleScreen (.l1bm (.mwrite mab))
       [.forward .mauf false false false] (.l1bm 2 (some 0)) := by
   simp [ParsedOp.destinationRoleScreen, ParsedOperand.l1bmDestinationRole]
@@ -758,11 +758,11 @@ theorem ParsedOp.l2bm_broadcast_rejects_l1bm_source (set : ParsedL1bSet) :
     ¬ ParsedOp.sourceRoleScreen (.l2bm (.bcast set)) [] (.l1bm 2 (some 0)) := by
   simp [ParsedOp.sourceRoleScreen, ParsedOperand.l2bmSourceRole]
 
-theorem ParsedOp.l2bm_from_l1b_source_role (index : Nat) :
+theorem ParsedOp.l2bm_from_l1b_source_role (index : Fin 256) :
     ParsedOp.sourceRoleScreen (.l2bm (.fromL1b index)) [] (.l1bm 2 (some 0)) := by
   simp [ParsedOp.sourceRoleScreen, ParsedOperand.l1bmSourceRole]
 
-theorem ParsedOp.l2bm_from_l1b_rejects_l2bm_source (index : Nat) :
+theorem ParsedOp.l2bm_from_l1b_rejects_l2bm_source (index : Fin 256) :
     ¬ ParsedOp.sourceRoleScreen (.l2bm (.fromL1b index)) [] (.l2bm 0 none) := by
   simp [ParsedOp.sourceRoleScreen, ParsedOperand.l1bmSourceRole]
 
@@ -778,17 +778,17 @@ theorem ParsedOp.l2bm_multicast_rejects_l2bm_source (set : ParsedL1bSet) :
     ¬ ParsedOp.sourceRoleScreen (.l2bm (.imcast set)) [] (.l2bm 0 none) := by
   simp [ParsedOp.sourceRoleScreen, ParsedOperand.l1bmSourceRole]
 
-theorem ParsedOp.l1bm_mwrite_pe_source (mab : Nat) (operand : ParsedOperand)
+theorem ParsedOp.l1bm_mwrite_pe_source (mab : Fin 256) (operand : ParsedOperand)
     (role : operand.peSourceRole) :
     ParsedOp.sourceRoleScreen (.l1bm (.mwrite mab)) [] operand := by
   exact role
 
-theorem ParsedOp.l1bm_mwrite_rejects_l1bm_source (mab width : Nat)
+theorem ParsedOp.l1bm_mwrite_rejects_l1bm_source (mab : Fin 256) (width : Nat)
     (address : Option Nat) :
     ¬ ParsedOp.sourceRoleScreen (.l1bm (.mwrite mab)) [] (.l1bm width address) := by
   simp [ParsedOp.sourceRoleScreen, ParsedOperand.peSourceRole]
 
-theorem ParsedOp.l1bm_mwrite_rejects_base_address_source (mab : Nat)
+theorem ParsedOp.l1bm_mwrite_rejects_base_address_source (mab : Fin 256)
     (lm1 : Bool) (width : Nat) (mask : Option ParsedMask) :
     ¬ ParsedOp.sourceRoleScreen (.l1bm (.mwrite mab)) [] (.bar lm1 width mask) := by
   simp [ParsedOp.sourceRoleScreen, ParsedOperand.peSourceRole]
@@ -1574,7 +1574,7 @@ def parseParsedL2SelectorOpcode? (opcode : String) (fromL2 : Bool) :
       let text ← selectorText
       let value ← parsedMvDecimal? text.toList
       let l1b ← parsedNatToFin? value 256
-      some (.fromL1b l1b.val)
+      some (.fromL1b l1b)
   | _ => none
 
 theorem parseParsedL2SelectorOpcode_broadcast_list :
@@ -1680,7 +1680,7 @@ def parseParsedL1Opcode? (opcode : String) (toPE : Bool) : Option ParsedL1Op := 
     match suffix with
     | '@' :: mabChars => do
         let mab ← parsedMvDecimal? mabChars
-        if mab < 256 then some (.m4write mab) else none
+        if h : mab < 256 then some (.m4write ⟨mab, h⟩) else none
     | [] => some .m4bcast
     | _ => none
   else if rest.head? == some 'm' then
@@ -1688,7 +1688,7 @@ def parseParsedL1Opcode? (opcode : String) (toPE : Bool) : Option ParsedL1Op := 
     match suffix with
     | '@' :: mabChars => do
         let mab ← parsedMvDecimal? mabChars
-        if mab < 256 then some (.mwrite mab) else none
+        if h : mab < 256 then some (.mwrite ⟨mab, h⟩) else none
     | [] => some .mbcast
     | _ => none
   else if rest.head? == some 'd' then

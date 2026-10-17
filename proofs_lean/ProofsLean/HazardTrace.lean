@@ -118,7 +118,7 @@ def l1ExprHazardEvents (expr : ParsedExpr) (startWord : Nat) :
           l2 false .l2ToL1 a0 64
       | .distrib set => l1 set.mask.val true .l2ToL1 a1 8 8 ++
           l2 false .l2ToL1 a0 64
-      | .fromL1b bank => l1 (2 ^ bank) false .l1ToL2 a0 16 16 ++
+      | .fromL1b bank => l1 (2 ^ bank.val) false .l1ToL2 a0 16 16 ++
           l2 true .l1ToL2 a1 16
       | .reduce _ set => l1 set.mask.val false .l1ToL2 a0 16 16 ++
           l2 true .l1ToL2 a1 16

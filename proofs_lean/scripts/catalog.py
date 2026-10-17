@@ -896,7 +896,7 @@ def coverage_catalog() -> dict:
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
             "theorem": "ProofsLean.MNCore.Issue.ParsedL1Selector.inFiniteEnvelope_finite",
-            "scope": "Finite tagged carrier for L1BM `mwrite` and `m4write` selectors below 16.",
+            "scope": "Finite tagged carrier for assembler-accepted L1BM `mwrite` and `m4write` selectors below 16; parser values are separately represented by Fin 256.",
             "evidence": "proofs_lean/evidence/isa-bounds/reference.json: exhaustive acceptance of l1bmm@0..15 and l1bmm4@0..15, with @16 rejected for both.",
             "missing": "The L1 opcode parser retains Rust's u8 selector range, which is wider than this assembler-valid 0..15 envelope; parser output is not proved to lie in this narrower subset.",
         }, {
@@ -906,21 +906,21 @@ def coverage_catalog() -> dict:
             "parser_source": "proofs_lean/ProofsLean/Issue.lean",
             "parser_source_sha256": digest(ROOT / "ProofsLean/Issue.lean"),
             "parser_fragment": "parseParsedL1Opcode?",
-            "scope": "Finite tagged carrier for all nine ParsedL1Op variants under the observed mab selector, RRN precision and MAB difference envelopes.",
+            "scope": "Finite tagged carrier for all nine ParsedL1Op variants under the observed mab selector, RRN precision and MAB difference envelopes; parsed mwrite/m4write selectors use Fin 256.",
             "evidence": "proofs_lean/evidence/isa-bounds/reference.json: l1bmm/l1bmm4 selectors 0..15, signed mabdiff -255..255 in both gather/distribution operand directions, plus ParsedRrn's explicit ASCII precision envelope and finite opcode set. `Issue.lean` fixtures cover all nine Rust L1 opcode branches, direction-dependent d derived from the first typed operand, u8 selector parsing, signed offsets, RRN parsing, and round suffixes.",
             "missing": "No theorem yet proves every output of `parseParsedL1Opcode?` lies in the finite envelope (the Rust parser's u8 selector range is wider than the assembler's 0..15 range), and no finite PE-line or machine-level carrier is composed from it.",
         }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
             "theorem": "ProofsLean.MNCore.Issue.ParsedL2Op.inFiniteEnvelope_finite",
-            "scope": "Finite tagged carrier for all ten ParsedL2Op variants under bounded L1B set, from-L1B selector, and RRN envelopes.",
+            "scope": "Finite tagged carrier for all ten ParsedL2Op variants under bounded L1B set, from-L1B selector, and RRN envelopes; parsed from-L1B selector uses Fin 256.",
             "evidence": "proofs_lean/evidence/isa-bounds/reference.json: all 64 L1B set pairs, l2bm@0..7 accepted/@8 rejected, and finite RRN opcode/precision carrier.",
             "missing": "The envelope is not yet proved to contain every assembler-accepted ParsedL2Op parse, and no finite PE-line or machine-level carrier is composed from it.",
         }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
             "theorem": "ProofsLean.MNCore.Issue.ParsedL2FromL1.inFiniteEnvelope_finite",
-            "scope": "Finite tagged carrier for `ParsedL2Op.fromL1b` selectors below 8.",
+            "scope": "Finite tagged carrier for assembler-accepted `ParsedL2Op.fromL1b` selectors below 8; parsed values use Fin 256.",
             "evidence": "proofs_lean/evidence/isa-bounds/reference.json: l2bm@0..7 accepted and @8 rejected.",
             "missing": "Only the from-L1B selector payload is bounded; complete ParsedL2Op finiteness and parser-to-envelope soundness remain unproved.",
         }, {

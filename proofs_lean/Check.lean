@@ -113,6 +113,7 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.parseParsedL2SelectorOpcode_broadcast_list
 #print axioms ProofsLean.MNCore.Issue.parseParsedL2SelectorOpcode_distribution_list
 #print axioms ProofsLean.MNCore.Issue.parseParsedL2SelectorOpcode_from_l1b_parser_u8_range
+#print axioms ProofsLean.MNCore.Issue.parseParsedL1Opcode_mab_writes_parse_u8_range
 #print axioms ProofsLean.MNCore.Issue.parseParsedL2Opcode_reduce_with_list
 #print axioms ProofsLean.MNCore.Issue.parseParsedL2Opcode_reduce2_ignores_selector_like_rust
 #print axioms ProofsLean.MNCore.Issue.parseParsedL2Opcode_rejects_bad_rrn
