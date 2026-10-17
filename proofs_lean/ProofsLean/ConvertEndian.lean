@@ -177,6 +177,26 @@ theorem answer_integer_shift_lowering_all_cycles (cycle : Fin 4) :
     subst cycle
     decide
 
+theorem answer_integer_shift_lowering_request (cycle : Fin 4) :
+    (answerIntegerShiftLowering? cycle).map (fun accesses => accesses.op) =
+      some (.alu .bsl (some .i) false none) := by
+  have cases : cycle.val = 0 ∨ cycle.val = 1 ∨ cycle.val = 2 ∨ cycle.val = 3 := by
+    have bound := cycle.isLt
+    omega
+  rcases cases with h | h | h | h
+  · have : cycle = 0 := Fin.ext h
+    subst cycle
+    decide
+  · have : cycle = 1 := Fin.ext h
+    subst cycle
+    decide
+  · have : cycle = 2 := Fin.ext h
+    subst cycle
+    decide
+  · have : cycle = 3 := Fin.ext h
+    subst cycle
+    decide
+
 theorem answer_byte_shift_lowering_all_cycles (cycle : Fin 4) :
     (answerByteShiftLowering? cycle).isSome = true := by
   have cases : cycle.val = 0 ∨ cycle.val = 1 ∨ cycle.val = 2 ∨ cycle.val = 3 := by
@@ -236,6 +256,28 @@ theorem integerAlu_ibsl_matches (input : BitVec 64) :
     IntegerALU.Precision.lanes, IntegerALU.Precision.width,
     IntegerALU.evaluateLane, IntegerALU.shift, immediateWord,
     List.range, List.range.loop]; bv_decide
+
+theorem answer_integer_shift_parsed_evaluation
+    (cycle : Fin 4) (input : BitVec 64) :
+    (answerIntegerShiftLowering? cycle).map (fun accesses =>
+      evaluateParsedIntegerAlu accesses.op ⟨input, 0⟩
+        ⟨immediateBus, 0⟩ false) =
+      some (.ok (IntegerALU.evaluateBus .word (.shift .rotateLeft)
+        ⟨input, 0⟩ ⟨immediateBus, 0⟩ false)) := by
+  have request := answer_integer_shift_lowering_request cycle
+  cases lowered : answerIntegerShiftLowering? cycle with
+  | none => simp [lowered] at request
+  | some accesses =>
+      have opEq : accesses.op = .alu .bsl (some .i) false none := by
+        simpa [lowered] using request
+      have executionRequest : accesses.op.executionRequest =
+          .ok (.integer .word (.shift .rotateLeft)) := by
+        rw [opEq]
+        rfl
+      simp only [Option.map_some]
+      rw [parsed_integer_evaluation_uses_requested_semantics accesses.op
+        .word (.shift .rotateLeft) executionRequest ⟨input, 0⟩
+        ⟨immediateBus, 0⟩ false]
 
 /-- The `[1,0,3,2]` destination selector exchanges the two 32-bit groups. -/
 def selector2103 (word : BitVec 64) : BitVec 64 := swap32 word
