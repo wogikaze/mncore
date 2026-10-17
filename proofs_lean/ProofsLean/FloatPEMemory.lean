@@ -504,6 +504,14 @@ theorem parsedFloatSubtractSmoke_cycle0_lowers :
     lowerParsedFloatSubtract? parsedFloatSubtractSmoke 0 0 0 0 0 =
       some (⟨0, by decide⟩, ⟨8, by decide⟩, ⟨16, by decide⟩) := by decide
 
+theorem parsedFloatSubtractSmoke_cycle1_lowers :
+    lowerParsedFloatSubtract? parsedFloatSubtractSmoke 0 1 0 0 0 =
+      some (⟨2, by decide⟩, ⟨10, by decide⟩, ⟨18, by decide⟩) := by decide
+
+theorem parsedFloatSubtractSmoke_cycle2_lowers :
+    lowerParsedFloatSubtract? parsedFloatSubtractSmoke 0 2 0 0 0 =
+      some (⟨4, by decide⟩, ⟨12, by decide⟩, ⟨20, by decide⟩) := by decide
+
 theorem parsedFloatSubtractSmoke_cycle3_lowers :
     lowerParsedFloatSubtract? parsedFloatSubtractSmoke 0 3 0 0 0 =
       some (⟨6, by decide⟩, ⟨14, by decide⟩, ⟨22, by decide⟩) := by decide
@@ -734,6 +742,145 @@ theorem parsedFloatAddSmoke_fourCycles_finalReadback
     rw [hpair1]
     simp only [f1, commitLM1]
     exact binaryCycle_readback FloatAdd.addBus files.lm0 files.lm0 files.lm1
+      ⟨0, by decide⟩ ⟨8, by decide⟩ ⟨16, by decide⟩
+
+
+set_option maxRecDepth 1024 in
+theorem parsedFloatSubtractSmoke_fourCycles_finalReadback
+    (files : PEMemory.IntegerRegisterFiles) :
+    ∃ result,
+      executeParsedFloatSubtractLine? parsedFloatSubtractSmoke files 0 0 0 0 = some result ∧
+      readPair .lm1 result.lm1 ⟨22, by decide⟩ =
+        FloatSubtract.subtractBus (readPair .lm0 files.lm0 ⟨6, by decide⟩)
+          (readPair .lm0 files.lm0 ⟨14, by decide⟩) ∧
+      readPair .lm1 result.lm1 ⟨20, by decide⟩ =
+        FloatSubtract.subtractBus (readPair .lm0 files.lm0 ⟨4, by decide⟩)
+          (readPair .lm0 files.lm0 ⟨12, by decide⟩) ∧
+      readPair .lm1 result.lm1 ⟨18, by decide⟩ =
+        FloatSubtract.subtractBus (readPair .lm0 files.lm0 ⟨2, by decide⟩)
+          (readPair .lm0 files.lm0 ⟨10, by decide⟩) ∧
+      readPair .lm1 result.lm1 ⟨16, by decide⟩ =
+        FloatSubtract.subtractBus (readPair .lm0 files.lm0 ⟨0, by decide⟩)
+          (readPair .lm0 files.lm0 ⟨8, by decide⟩) := by
+  let f1 := commitLM1 files (subtractCycle files.lm0 files.lm0 files.lm1
+    ⟨0, by decide⟩ ⟨8, by decide⟩ ⟨16, by decide⟩)
+  let f2 := commitLM1 f1 (subtractCycle f1.lm0 f1.lm0 f1.lm1
+    ⟨2, by decide⟩ ⟨10, by decide⟩ ⟨18, by decide⟩)
+  let f3 := commitLM1 f2 (subtractCycle f2.lm0 f2.lm0 f2.lm1
+    ⟨4, by decide⟩ ⟨12, by decide⟩ ⟨20, by decide⟩)
+  have h0 := executeParsedFloatSubtractCycle_success parsedFloatSubtractSmoke files 0 0 0 0 0
+    ⟨0, by decide⟩ ⟨8, by decide⟩ ⟨16, by decide⟩ parsedFloatSubtractSmoke_cycle0_lowers
+  have h1 := executeParsedFloatSubtractCycle_success parsedFloatSubtractSmoke f1 0 1 0 0 0
+    ⟨2, by decide⟩ ⟨10, by decide⟩ ⟨18, by decide⟩ parsedFloatSubtractSmoke_cycle1_lowers
+  have h2 := executeParsedFloatSubtractCycle_success parsedFloatSubtractSmoke f2 0 2 0 0 0
+    ⟨4, by decide⟩ ⟨12, by decide⟩ ⟨20, by decide⟩ parsedFloatSubtractSmoke_cycle2_lowers
+  have h3 := executeParsedFloatSubtractCycle_success parsedFloatSubtractSmoke f3 0 3 0 0 0
+    ⟨6, by decide⟩ ⟨14, by decide⟩ ⟨22, by decide⟩ parsedFloatSubtractSmoke_cycle3_lowers
+  refine ⟨commitLM1 f3 (subtractCycle f3.lm0 f3.lm0 f3.lm1
+    ⟨6, by decide⟩ ⟨14, by decide⟩ ⟨22, by decide⟩), ?_, ?_, ?_, ?_, ?_⟩
+  · change executeParsedFloatSubtractCycles? parsedFloatSubtractSmoke files 0
+      (List.finRange 4) 0 0 0 = some (commitLM1 f3 (subtractCycle f3.lm0 f3.lm0 f3.lm1
+        ⟨6, by decide⟩ ⟨14, by decide⟩ ⟨22, by decide⟩))
+    have cycles : List.finRange 4 = ([0, 1, 2, 3] : List (Fin 4)) := by decide
+    rw [cycles]
+    simp only [executeParsedFloatSubtractCycles?, h0, h1, h2, h3]
+    rfl
+  · simp only [commitLM1]
+    have h3lm : f3.lm0 = files.lm0 := by
+      simp only [f3, f2, f1, commitLM1_lm0]
+    rw [h3lm]
+    exact binaryCycle_readback FloatSubtract.subtractBus files.lm0 files.lm0 f3.lm1
+      ⟨6, by decide⟩ ⟨14, by decide⟩ ⟨22, by decide⟩
+  · simp only [commitLM1]
+    have hpair3 : readPair .lm1
+        (subtractCycle f3.lm0 f3.lm0 f3.lm1 ⟨6, by decide⟩ ⟨14, by decide⟩ ⟨22, by decide⟩)
+        ⟨20, by decide⟩ = readPair .lm1 f3.lm1 ⟨20, by decide⟩ := by
+      simpa [subtractCycle, binaryCycle, parsedFloatAddSmokeOutputAddress] using
+        (writePair_preservesPairOutside _ (parsedFloatAddSmokeOutputAddress 3)
+          (parsedFloatAddSmokeOutputAddress 2)
+          (FloatSubtract.subtractBus
+            (readPair .lm0 _ ⟨6, by decide⟩)
+            (readPair .lm0 _ ⟨14, by decide⟩))
+          (by intro lane; exact
+            parsedFloatAddSmoke_laterWrite_outsideEarlier 3 2 (by decide) lane))
+    rw [hpair3]
+    simp only [f3, commitLM1]
+    have h2lm : f2.lm0 = files.lm0 := by simp only [f2, f1, commitLM1_lm0]
+    rw [h2lm]
+    exact binaryCycle_readback FloatSubtract.subtractBus files.lm0 files.lm0 f2.lm1
+      ⟨4, by decide⟩ ⟨12, by decide⟩ ⟨20, by decide⟩
+  · simp only [commitLM1]
+    have hpair3 : readPair .lm1
+        (subtractCycle f3.lm0 f3.lm0 f3.lm1 ⟨6, by decide⟩ ⟨14, by decide⟩ ⟨22, by decide⟩)
+        ⟨18, by decide⟩ = readPair .lm1 f3.lm1 ⟨18, by decide⟩ := by
+      simpa [subtractCycle, binaryCycle, parsedFloatAddSmokeOutputAddress] using
+        (writePair_preservesPairOutside _ (parsedFloatAddSmokeOutputAddress 3)
+          (parsedFloatAddSmokeOutputAddress 1)
+          (FloatSubtract.subtractBus
+            (readPair .lm0 _ ⟨6, by decide⟩)
+            (readPair .lm0 _ ⟨14, by decide⟩))
+          (by intro lane; exact
+            parsedFloatAddSmoke_laterWrite_outsideEarlier 3 1 (by decide) lane))
+    rw [hpair3]
+    simp only [f3, commitLM1]
+    have hpair2 : readPair .lm1
+        (subtractCycle f2.lm0 f2.lm0 f2.lm1 ⟨4, by decide⟩ ⟨12, by decide⟩ ⟨20, by decide⟩)
+        ⟨18, by decide⟩ = readPair .lm1 f2.lm1 ⟨18, by decide⟩ := by
+      simpa [subtractCycle, binaryCycle, parsedFloatAddSmokeOutputAddress] using
+        (writePair_preservesPairOutside _ (parsedFloatAddSmokeOutputAddress 2)
+          (parsedFloatAddSmokeOutputAddress 1)
+          (FloatSubtract.subtractBus
+            (readPair .lm0 _ ⟨4, by decide⟩)
+            (readPair .lm0 _ ⟨12, by decide⟩))
+          (by intro lane; exact
+            parsedFloatAddSmoke_laterWrite_outsideEarlier 2 1 (by decide) lane))
+    rw [hpair2]
+    simp only [f2, commitLM1]
+    have h1lm : f1.lm0 = files.lm0 := by simp only [f1, commitLM1_lm0]
+    rw [h1lm]
+    exact binaryCycle_readback FloatSubtract.subtractBus files.lm0 files.lm0 f1.lm1
+      ⟨2, by decide⟩ ⟨10, by decide⟩ ⟨18, by decide⟩
+  · simp only [commitLM1]
+    have hpair3 : readPair .lm1
+        (subtractCycle f3.lm0 f3.lm0 f3.lm1 ⟨6, by decide⟩ ⟨14, by decide⟩ ⟨22, by decide⟩)
+        ⟨16, by decide⟩ = readPair .lm1 f3.lm1 ⟨16, by decide⟩ := by
+      simpa [subtractCycle, binaryCycle, parsedFloatAddSmokeOutputAddress] using
+        (writePair_preservesPairOutside _ (parsedFloatAddSmokeOutputAddress 3)
+          (parsedFloatAddSmokeOutputAddress 0)
+          (FloatSubtract.subtractBus
+            (readPair .lm0 _ ⟨6, by decide⟩)
+            (readPair .lm0 _ ⟨14, by decide⟩))
+          (by intro lane; exact
+            parsedFloatAddSmoke_laterWrite_outsideEarlier 3 0 (by decide) lane))
+    rw [hpair3]
+    simp only [f3, commitLM1]
+    have hpair2 : readPair .lm1
+        (subtractCycle f2.lm0 f2.lm0 f2.lm1 ⟨4, by decide⟩ ⟨12, by decide⟩ ⟨20, by decide⟩)
+        ⟨16, by decide⟩ = readPair .lm1 f2.lm1 ⟨16, by decide⟩ := by
+      simpa [subtractCycle, binaryCycle, parsedFloatAddSmokeOutputAddress] using
+        (writePair_preservesPairOutside _ (parsedFloatAddSmokeOutputAddress 2)
+          (parsedFloatAddSmokeOutputAddress 0)
+          (FloatSubtract.subtractBus
+            (readPair .lm0 _ ⟨4, by decide⟩)
+            (readPair .lm0 _ ⟨12, by decide⟩))
+          (by intro lane; exact
+            parsedFloatAddSmoke_laterWrite_outsideEarlier 2 0 (by decide) lane))
+    rw [hpair2]
+    simp only [f2, commitLM1]
+    have hpair1 : readPair .lm1
+        (subtractCycle f1.lm0 f1.lm0 f1.lm1 ⟨2, by decide⟩ ⟨10, by decide⟩ ⟨18, by decide⟩)
+        ⟨16, by decide⟩ = readPair .lm1 f1.lm1 ⟨16, by decide⟩ := by
+      simpa [subtractCycle, binaryCycle, parsedFloatAddSmokeOutputAddress] using
+        (writePair_preservesPairOutside _ (parsedFloatAddSmokeOutputAddress 1)
+          (parsedFloatAddSmokeOutputAddress 0)
+          (FloatSubtract.subtractBus
+            (readPair .lm0 _ ⟨2, by decide⟩)
+            (readPair .lm0 _ ⟨10, by decide⟩))
+          (by intro lane; exact
+            parsedFloatAddSmoke_laterWrite_outsideEarlier 1 0 (by decide) lane))
+    rw [hpair1]
+    simp only [f1, commitLM1]
+    exact binaryCycle_readback FloatSubtract.subtractBus files.lm0 files.lm0 files.lm1
       ⟨0, by decide⟩ ⟨8, by decide⟩ ⟨16, by decide⟩
 
 theorem executeParsedFloatAddCycle_preservesLM0 (expression : ParsedExpr)
