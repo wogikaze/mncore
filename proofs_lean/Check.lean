@@ -101,6 +101,10 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.ParsedOperand.l1bm_inFiniteEnvelope_iff
 #print axioms ProofsLean.MNCore.Issue.parsedL1bAddressModeSet_inFiniteEnvelope
 #print axioms ProofsLean.MNCore.Issue.parseParsedL1bAddressMode?_full_set
+#print axioms ProofsLean.MNCore.Issue.parsedL1bListSet_inFiniteEnvelope
+#print axioms ProofsLean.MNCore.Issue.parseParsedL1bList?_all
+#print axioms ProofsLean.MNCore.Issue.parseParsedL1bList?_rejects_empty
+#print axioms ProofsLean.MNCore.Issue.parseParsedL1bList?_rejects_eight
 #print axioms ProofsLean.MNCore.Issue.ParsedL1bSet.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.mabdiffInFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.ParsedRrn.inFiniteEnvelope_finite

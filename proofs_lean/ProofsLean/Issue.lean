@@ -1441,6 +1441,85 @@ theorem parseParsedL1bAddressMode?_rejects_address_eight :
 theorem parseParsedL1bAddressMode?_rejects_immode_eight :
     parseParsedL1bAddressMode? "0/8" = none := by decide
 
+/-- Trim the ASCII whitespace accepted around entries by Rust's `str::trim`.
+The L1B list grammar only needs the whitespace characters used by source files. -/
+def parsedL1bTrim (chars : List Char) : List Char :=
+  let whitespace : Char → Bool := fun c => c == ' ' || c == '\t' || c == '\n' || c == '\r'
+  (chars.dropWhile whitespace).reverse.dropWhile whitespace |>.reverse
+
+def parsedL1bListValues? : List (List Char) → Option (List (Fin 8))
+  | [] => none
+  | [entry] => do
+      let value ← parsedMvDecimal? (parsedL1bTrim entry)
+      let bounded ← parsedNatToFin? value 8
+      some [bounded]
+  | entry :: rest => do
+      let value ← parsedMvDecimal? (parsedL1bTrim entry)
+      let bounded ← parsedNatToFin? value 8
+      let tail ← parsedL1bListValues? rest
+      some (bounded :: tail)
+
+def parsedL1bSplitCommaAux : List Char → List Char → List (List Char) → List (List Char)
+  | [], current, reversedEntries => (current.reverse :: reversedEntries).reverse
+  | ',' :: rest, current, reversedEntries =>
+      parsedL1bSplitCommaAux rest [] (current.reverse :: reversedEntries)
+  | char :: rest, current, reversedEntries =>
+      parsedL1bSplitCommaAux rest (char :: current) reversedEntries
+
+def parsedL1bSplitComma (chars : List Char) : List (List Char) :=
+  parsedL1bSplitCommaAux chars [] []
+
+def parsedL1bListMask (values : List (Fin 8)) : BitVec 8 :=
+  values.foldl (fun bits value => bits ||| ((1 : BitVec 8) <<< value.val)) 0
+
+def parsedL1bListImmode (values : List (Fin 8)) : Fin 8 :=
+  match values with
+  | [] => ⟨0, by decide⟩
+  | base :: rest =>
+      let baseBits : BitVec 3 := BitVec.ofNat 3 base.val
+      let difference := rest.foldl (fun bits value =>
+        bits ||| (BitVec.ofNat 3 value.val ^^^ baseBits)) (0 : BitVec 3)
+      ⟨difference.toNat, difference.isLt⟩
+
+def parsedL1bListSet (values : List (Fin 8)) : ParsedL1bSet :=
+  ⟨(parsedL1bListMask values).toFin.val, (parsedL1bListImmode values).val⟩
+
+theorem parsedL1bListSet_inFiniteEnvelope (values : List (Fin 8)) :
+    (parsedL1bListSet values).inFiniteEnvelope := by
+  constructor
+  · exact (parsedL1bListMask values).toFin.isLt
+  · exact (parsedL1bListImmode values).isLt
+
+/-- Parse the manual's bracketed L1B list form. Empty lists and malformed or
+out-of-range members are rejected, matching `L1bSet::parse`. -/
+def parseParsedL1bList? (text : String) :
+    Option {set : ParsedL1bSet // set.inFiniteEnvelope} := do
+  let chars := text.toList
+  let rest ← match chars with
+    | '[' :: rest => some rest
+    | _ => none
+  let reversed ← match rest.reverse with
+    | ']' :: inside => some inside.reverse
+    | _ => none
+  let values ← parsedL1bListValues? (parsedL1bSplitComma reversed)
+  let set := parsedL1bListSet values
+  some ⟨set, parsedL1bListSet_inFiniteEnvelope values⟩
+
+theorem parseParsedL1bList?_all :
+    (parseParsedL1bList? "[0,1,2,3,4,5,6,7]").map Subtype.val = some ⟨255, 7⟩ := by decide
+
+theorem parseParsedL1bList?_singleton :
+    (parseParsedL1bList? "[5]").map Subtype.val = some ⟨32, 0⟩ := by decide
+
+theorem parseParsedL1bList?_rejects_empty :
+    parseParsedL1bList? "[]" = none := by decide
+
+theorem parseParsedL1bList?_rejects_eight :
+    parseParsedL1bList? "[0,8]" = none := by decide
+
+theorem parseParsedL1bList?_trims_entries :
+    (parseParsedL1bList? "[ 0, 7 ]").map Subtype.val = some ⟨129, 7⟩ := by decide
+
 structure ParsedMvParams where
   size : Option (Fin (2 ^ 64)) := none
   tag : Option (Fin 256) := none
