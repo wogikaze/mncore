@@ -72,6 +72,46 @@ theorem binaryCycle_preservesOutside (operation : BitVec 64 → BitVec 64 → Bi
       output target := by
   exact writePair_preservesOutside output outputStart target _ outside
 
+def addressedBinaryCycle (operation : BitVec 64 → BitVec 64 → BitVec 64)
+    (left : PEMemory.Memory .lm0) (right : PEMemory.Memory .lm0)
+    (output : PEMemory.Memory .lm1)
+    (leftSchedule rightSchedule : PEMemory.Schedule)
+    (outputSchedule : PEMemory.Schedule) (cycle : Fin 4) : PEMemory.Memory .lm1 :=
+  binaryCycle operation left right output
+    (PEMemory.address .lm0 .long leftSchedule 0 .direct 0 cycle)
+    (PEMemory.address .lm0 .long rightSchedule 0 .direct 0 cycle)
+    (PEMemory.address .lm1 .long outputSchedule 0 .direct 0 cycle)
+
+theorem addressedBinaryCycle_readback (operation : BitVec 64 → BitVec 64 → BitVec 64)
+    (left : PEMemory.Memory .lm0) (right : PEMemory.Memory .lm0)
+    (output : PEMemory.Memory .lm1)
+    (leftSchedule rightSchedule : PEMemory.Schedule)
+    (outputSchedule : PEMemory.Schedule) (cycle : Fin 4) :
+    readPair .lm1
+        (addressedBinaryCycle operation left right output leftSchedule rightSchedule
+          outputSchedule cycle)
+        (PEMemory.address .lm1 .long outputSchedule 0 .direct 0 cycle) =
+      operation
+        (readPair .lm0 left
+          (PEMemory.address .lm0 .long leftSchedule 0 .direct 0 cycle))
+        (readPair .lm0 right
+          (PEMemory.address .lm0 .long rightSchedule 0 .direct 0 cycle)) := by
+  exact binaryCycle_readback operation left right output _ _ _
+
+theorem flatAddress_zero (cycle : Fin 4) :
+    (PEMemory.address .lm0 .long (.flat (fun _ => 0)) 0 .direct 0 cycle).val = 0 := by
+  simp [PEMemory.address, PEMemory.Schedule.at, PEMemory.baseOffset,
+    PEMemory.Adjustment.offset, PEMemory.count]
+
+theorem flatAddress_output_stride (cycle : Fin 4) :
+    (PEMemory.address .lm1 .long
+      (.flat (fun c => 2 * c.val)) 0 .direct 0 cycle).val = 2 * cycle.val := by
+  have hc := cycle.isLt
+  simp [PEMemory.address, PEMemory.Schedule.at, PEMemory.baseOffset,
+    PEMemory.Adjustment.offset, PEMemory.count, PEMemory.Bank.capacity,
+    PEMemory.Width.words]
+  omega
+
 def addCycle (left : PEMemory.Memory .lm0) (right : PEMemory.Memory .lm0)
     (output : PEMemory.Memory .lm1)
     (leftStart rightStart : Fin (PEMemory.Bank.capacity .lm0))
