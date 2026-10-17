@@ -136,9 +136,8 @@ def main() -> None:
         validate_source(path.read_text(), str(path.relative_to(ROOT)))
     validate_import_closure()
     lake = shutil.which("lake") or str(Path.home() / ".elan/bin/lake")
-    # `lake clean` also deletes dependency builds under .lake/packages/*/.lake/build,
-    # which would discard the fetched Mathlib cache; remove only this package's build dir.
-    shutil.rmtree(ROOT / ".lake" / "build", ignore_errors=True)
+    # Keep the local package build cache. CI starts from a clean checkout, while
+    # developers should not pay for a full parallel rebuild on every audit run.
     for args in ([lake, "build", "proofs_lean", "alu_probe", "untyped_probe", "memory_probe", "dynamic_address_probe", "mask_probe", "forwarding_probe", "lbf_encoded_probe"], [lake, "env", "lean", "Check.lean"]):
         result = subprocess.run(args, cwd=ROOT, capture_output=True, text=True, timeout=300)
         if result.returncode:
