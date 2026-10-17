@@ -46,7 +46,7 @@ Welcome の後は Convert Endian を縦の2問目にする。有限性・範囲�
 7. 3-5: 下限証明が失敗した候補から、探索用の条件と具体的な反例を取り出すインターフェースを設計する。Rustシミュレータ向け候補生成器、判定条件、結果の再現記録は未実装。
 8. Phase 4はWelcomeの後にConvert Endianを扱う。3行解の整数barrel shift→単精度MAU FMA→整数barrel shift→PE destination selectorの値依存を抽象式にし、合成結果が任意64-bit入力のbyte swapになることを証明した。公式judgeとRust simulatorを含む8値の差分は完了。全メモリアクセス・発行・state transitionへの接続は未実装。
    次題1.a-b（A-B）について、`FloatSubtract.lean`に`fvadd x -y`を単位乗算FMAと符号反転加数として表す式、および定数・依存追跡の健全性、3つの具体例を追加した。`check_single_fma_kernel.py --operation fvsub --vectors 128 --seed 1234 --gpfn-runs 1`でLeanカーネル対Rustの128式、および公式gpfn3対Rustの16,384値を照合し、両方不一致0。これは演算器データパスの小さな証明であり、LeanモデルとRustの全域同値、行列アドレス、issue/state遷移、全入力正当性、2行下限は未完了。
-   続いて2.fmul7向けに`FloatMultiply.lean`を追加し、`fvmul`をゼロ加数のFMAとして抽象式へ接続した。7.0を掛ける具体例と定数・依存追跡の健全性を証明した。`check_single_fma_kernel.py --operation fvmul --vectors 128 --seed 2345 --gpfn-runs 1`でLeanカーネル対Rustの128式、および公式gpfn3対Rustの16,384値を照合し、両方不一致0。命令語配置・4行スケジュール、全域同値、全入力正当性と最適性は未完了。
+   続いて2.fmul7向けに`FloatMultiply.lean`を追加し、`fvmul`をゼロ加数のFMAとして抽象式へ接続した。7.0を掛ける具体例と定数・依存追跡の健全性を証明し、64-bit PEバスの上位・下位float laneへの独立適用を証明した。`check_single_fma_kernel.py --operation fvmul --vectors 128 --seed 2345 --gpfn-runs 1`でLeanカーネル対Rustの128式、および公式gpfn3対Rustの16,384値を照合し、両方不一致0。命令語配置・4行スケジュール、全域同値、全入力正当性と最適性は未完了。
 
 ## 実装した定義
 

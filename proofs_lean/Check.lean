@@ -114,6 +114,10 @@ import Lean
 #print axioms ProofsLean.MNCore.FloatMultiply.seven_times_zero
 #print axioms ProofsLean.MNCore.FloatMultiply.seven_times_two
 #print axioms ProofsLean.MNCore.FloatMultiply.abstractMultiply_preserves_dependencies
+#print axioms ProofsLean.MNCore.FloatMultiply.multiplySevenBus_high
+#print axioms ProofsLean.MNCore.FloatMultiply.multiplySevenBus_low
+#print axioms ProofsLean.MNCore.FloatMultiply.abstractMultiplySevenBus_evaluation
+#print axioms ProofsLean.MNCore.FloatMultiply.abstractMultiplySevenBus_dependencies_are_sound
 #print axioms ProofsLean.MNCore.Issue.encodedUniverseMachine_not_complete
 #print axioms ProofsLean.MNCore.Issue.mem_encodedUniverseAlphabet
 #print axioms ProofsLean.MNCore.Issue.encodedUniverseAlphabet_coversBelow
