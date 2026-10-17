@@ -202,7 +202,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   wait tagについては、受理範囲`1..255`とoptionalな同範囲の有限carrierを証明した。
   opcode wait tagと`ParsedLine`/正規化後の`nop`に付くoptional wait tagは`Fin 256`で
   0..255に構造上制限した。0を除く条件は有限envelopeに残している。Lean parser出力が
-  assemblerの受理範囲`1..255`を満たすことの接続証明はまだない。
+  assemblerの受理範囲`1..255`を満たすことの接続証明はまだない。`parseParsedWaitTag?`は
+  Rustと同じhex-u8のtag tokenを`Fin 256`へ変換し、`i00`は構文として保持しつつ、
+  `i100`を拒否する。これはopcode/PE/nop行全体のparserではない。
   L1BMの`mabdiff`はassemble3でDistrib/Gather両方向について明示符号付きの`-255..255`全件を受理し、
   境界の`±256`を両方向で拒否することを確認し、
   `-256 ≤ mabdiff < 256`の部分型が有限であることを証明した。SDMの有用範囲は`0..15`。

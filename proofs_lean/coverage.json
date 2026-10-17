@@ -488,7 +488,7 @@
       "sha256": "9199ddd42af3c403d44ee551ab3ad691cd2473507f6b6525cf43dcff215aaf1e",
       "theorem": "ProofsLean.MNCore.Issue.ParsedL1bSet.inFiniteEnvelope_finite",
       "parser_source": "proofs_lean/ProofsLean/Issue.lean",
-      "parser_source_sha256": "ff82b9dd76ab02e555373e737593422f29b11eeb4a8a90da7a071a8b4d7f2488",
+      "parser_source_sha256": "be69f550ed07bb3b46f7ed10645d065f40c01449004b92a98eb5f96024cb2e84",
       "parser_fragment": "parseParsedL1bSet?, parseParsedL2Opcode?",
       "parser_range_theorem": "ProofsLean.MNCore.Issue.parsedL1bAddressModeSet_inFiniteEnvelope",
       "scope": "Finite carrier for 8-bit L1B membership masks below 256 and immode selectors below 8; Lean parses canonical decimal address[/immode] and bracketed list selectors and covers every `parse_l2_opcode` branch of `ParsedL2Op`.",
@@ -500,7 +500,7 @@
       "sha256": "9199ddd42af3c403d44ee551ab3ad691cd2473507f6b6525cf43dcff215aaf1e",
       "theorem": "ProofsLean.MNCore.Issue.mabdiffInFiniteEnvelope_finite",
       "parser_source": "proofs_lean/ProofsLean/Issue.lean",
-      "parser_source_sha256": "ff82b9dd76ab02e555373e737593422f29b11eeb4a8a90da7a071a8b4d7f2488",
+      "parser_source_sha256": "be69f550ed07bb3b46f7ed10645d065f40c01449004b92a98eb5f96024cb2e84",
       "parser_fragment": "parsedMabdiff?, parseParsedL1Opcode?",
       "parser_range_theorem": "ProofsLean.MNCore.Issue.parsedMabdiff?_boundaries",
       "scope": "Finite subtype for signed L1BM MAB differences in [-255, 255].",
@@ -536,7 +536,7 @@
       "sha256": "9199ddd42af3c403d44ee551ab3ad691cd2473507f6b6525cf43dcff215aaf1e",
       "theorem": "ProofsLean.MNCore.Issue.ParsedL1Op.inFiniteEnvelope_finite",
       "parser_source": "proofs_lean/ProofsLean/Issue.lean",
-      "parser_source_sha256": "ff82b9dd76ab02e555373e737593422f29b11eeb4a8a90da7a071a8b4d7f2488",
+      "parser_source_sha256": "be69f550ed07bb3b46f7ed10645d065f40c01449004b92a98eb5f96024cb2e84",
       "parser_fragment": "parseParsedL1Opcode?",
       "scope": "Finite tagged carrier for all nine ParsedL1Op variants under the observed mab selector, RRN precision and MAB difference envelopes.",
       "evidence": "proofs_lean/evidence/isa-bounds/reference.json: l1bmm/l1bmm4 selectors 0..15, signed mabdiff -255..255 in both gather/distribution operand directions, plus ParsedRrn's explicit ASCII precision envelope and finite opcode set. `Issue.lean` fixtures cover all nine Rust L1 opcode branches, direction-dependent d derived from the first typed operand, u8 selector parsing, signed offsets, RRN parsing, and round suffixes.",
@@ -562,9 +562,13 @@
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
       "sha256": "9199ddd42af3c403d44ee551ab3ad691cd2473507f6b6525cf43dcff215aaf1e",
       "theorem": "ProofsLean.MNCore.Issue.waitTagInFiniteEnvelope_finite",
+      "parser_source": "proofs_lean/ProofsLean/Issue.lean",
+      "parser_source_sha256": "be69f550ed07bb3b46f7ed10645d065f40c01449004b92a98eb5f96024cb2e84",
+      "parser_fragment": "parseParsedWaitTag?",
+      "parser_range_theorem": "ProofsLean.MNCore.Issue.parseParsedWaitTag_value_bounded",
       "scope": "Finite carrier for positive wait tags below 256.",
-      "evidence": "proofs_lean/evidence/isa-bounds/reference.json: i00 and i100 rejected; i01 and iFF accepted, with exhaustive probes for 1..255.",
-      "missing": "ParsedOp.wait now stores Fin 256, but proving the nonzero assembler condition from parsed/legal inputs and bounding optional ParsedLine.nop wait tags remain open."
+      "evidence": "`Issue.lean` parses i01, iFF, and syntactic i00 into Fin 256 and rejects i100; proofs_lean/evidence/isa-bounds/reference.json records assemble3 rejection of i00/i100, acceptance of i01/iFF, and exhaustive acceptance probes for 1..255.",
+      "missing": "Only the wait-tag token parser is modeled, not complete PE/nop line parsing. Proving the nonzero assembler condition for parsed/legal inputs and connecting all parser outputs to the line envelope remain open."
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
@@ -782,7 +786,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/Issue.lean",
-      "sha256": "ff82b9dd76ab02e555373e737593422f29b11eeb4a8a90da7a071a8b4d7f2488",
+      "sha256": "be69f550ed07bb3b46f7ed10645d065f40c01449004b92a98eb5f96024cb2e84",
       "implemented": "Full structural PE Op/Operand payload mirror, issue projection, abstract PE-line rules, and a partial parsed-op to integer-ALU bridge for supported L/I/S integer operations and packbit",
       "scope": "The Rust enum inventory is checked against Lean constructors. A separate partial executor covers supported integer ALU/zero/immediate expressions with direct PE-memory destinations, masks/flush and ordered multiple destinations; this is not full ISA semantics",
       "source_basis": [

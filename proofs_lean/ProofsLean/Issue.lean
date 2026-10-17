@@ -2017,6 +2017,44 @@ theorem parseParsedMvLine_nop_ignores_operands_like_rust :
       some ⟨.nop, ⟨0, by decide⟩, none, none, ⟨0, by decide⟩,
         none, none, "mvnop ignored tokens"⟩ := by decide
 
+def parsedHexDigit? (digit : Char) : Option Nat :=
+  let value := digit.toNat
+  if 48 ≤ value ∧ value ≤ 57 then some (value - 48)
+  else if 65 ≤ value ∧ value ≤ 70 then some (value - 55)
+  else if 97 ≤ value ∧ value ≤ 102 then some (value - 87)
+  else none
+
+def parsedHexValueAux : List Char → Nat → Option Nat
+  | [], value => some value
+  | digit :: rest, value => do
+      let nibble ← parsedHexDigit? digit
+      parsedHexValueAux rest (value * 16 + nibble)
+
+/-- Parse Rust's `i<hex-u8>` wait-tag spelling. Zero is syntactically parsed;
+the assembler rejects it, which remains a separate legality condition. -/
+def parseParsedWaitTag? (text : String) : Option (Fin 256) := do
+  match text.toList with
+  | 'i' :: digits =>
+      if digits.isEmpty then none else do
+        let value ← parsedHexValueAux digits 0
+        parsedNatToFin? value 256
+  | _ => none
+
+theorem parseParsedWaitTag_i01 :
+    parseParsedWaitTag? "i01" = some ⟨1, by decide⟩ := by decide
+
+theorem parseParsedWaitTag_iFF :
+    parseParsedWaitTag? "iFF" = some ⟨255, by decide⟩ := by decide
+
+theorem parseParsedWaitTag_i00_is_syntactic :
+    parseParsedWaitTag? "i00" = some ⟨0, by decide⟩ := by decide
+
+theorem parseParsedWaitTag_rejects_overflow :
+    parseParsedWaitTag? "i100" = none := by decide
+
+theorem parseParsedWaitTag_value_bounded (text : String) (tag : Fin 256)
+    (_parsed : parseParsedWaitTag? text = some tag) : tag.val < 256 := tag.isLt
+
 inductive ParsedLine where
   | pe (expressions : List ParsedExpr)
   | nop (count : Nat) (wait : Option (Fin 256))
