@@ -152,6 +152,9 @@ import Lean
 #print axioms ProofsLean.MNCore.FloatPEMemory.writePair_preservesPairOutside
 #print axioms ProofsLean.MNCore.FloatPEMemory.binaryCycle_readback
 #print axioms ProofsLean.MNCore.FloatPEMemory.binaryCycle_preservesOutside
+#print axioms ProofsLean.MNCore.FloatPEMemory.executeBinaryPlan_preservesPairAt
+#print axioms ProofsLean.MNCore.FloatPEMemory.executeBinaryPlan_head_readback
+#print axioms ProofsLean.MNCore.FloatPEMemory.executeBinaryPlan_readback_at
 #print axioms ProofsLean.MNCore.FloatPEMemory.addressedBinaryCycle_readback
 #print axioms ProofsLean.MNCore.FloatPEMemory.flatAddress_zero
 #print axioms ProofsLean.MNCore.FloatPEMemory.flatAddress_output_stride

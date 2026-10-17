@@ -93,6 +93,88 @@ theorem binaryCycle_preservesOutside (operation : BitVec 64 → BitVec 64 → Bi
       output target := by
   exact writePair_preservesOutside output outputStart target _ outside
 
+abbrev BinaryCycleAccesses :=
+  List (Fin (PEMemory.Bank.capacity .lm0) ×
+    Fin (PEMemory.Bank.capacity .lm0) × Fin (PEMemory.Bank.capacity .lm1))
+
+/-- Execute a sequence of independent binary operations, threading the LM1
+memory after every cycle. LM0 remains the read-only input. -/
+def executeBinaryPlan (operation : BitVec 64 → BitVec 64 → BitVec 64)
+    (left right : PEMemory.Memory .lm0) :
+    PEMemory.Memory .lm1 → BinaryCycleAccesses → PEMemory.Memory .lm1
+  | output, [] => output
+  | output, (access :: rest) =>
+      let (leftStart, rightStart, outputStart) := access
+      executeBinaryPlan operation left right
+        (binaryCycle operation left right output leftStart rightStart outputStart) rest
+
+theorem executeBinaryPlan_preservesPairAt
+    (operation : BitVec 64 → BitVec 64 → BitVec 64)
+    (left right : PEMemory.Memory .lm0) (output : PEMemory.Memory .lm1)
+    (plan : BinaryCycleAccesses) (target : Fin (PEMemory.Bank.capacity .lm1))
+    (outside : ∀ access ∈ plan, ∀ lane : Fin 2,
+      2 ≤ PEMemory.distance .lm1 access.2.2
+        (PEMemory.advance .lm1 target lane.val)) :
+    readPair .lm1 (executeBinaryPlan operation left right output plan) target =
+      readPair .lm1 output target := by
+  induction plan generalizing output with
+  | nil => rfl
+  | cons access rest ih =>
+      obtain ⟨leftStart, rightStart, outputStart⟩ := access
+      change readPair .lm1
+          (executeBinaryPlan operation left right
+            (binaryCycle operation left right output leftStart rightStart outputStart) rest)
+          target = _
+      rw [ih]
+      · exact writePair_preservesPairOutside output outputStart target _ (by
+          intro lane
+          exact outside (leftStart, rightStart, outputStart) (by simp) lane)
+      · intro later member lane
+        exact outside later (by simp [member]) lane
+
+theorem executeBinaryPlan_head_readback
+    (operation : BitVec 64 → BitVec 64 → BitVec 64)
+    (left right : PEMemory.Memory .lm0) (output : PEMemory.Memory .lm1)
+    (leftStart rightStart : Fin (PEMemory.Bank.capacity .lm0))
+    (outputStart : Fin (PEMemory.Bank.capacity .lm1)) (rest : BinaryCycleAccesses)
+    (laterOutside : ∀ access ∈ rest, ∀ lane : Fin 2,
+      2 ≤ PEMemory.distance .lm1 access.2.2
+        (PEMemory.advance .lm1 outputStart lane.val)) :
+    readPair .lm1
+      (executeBinaryPlan operation left right output
+        ((leftStart, rightStart, outputStart) :: rest)) outputStart =
+      operation (readPair .lm0 left leftStart) (readPair .lm0 right rightStart) := by
+  change readPair .lm1
+      (executeBinaryPlan operation left right
+        (binaryCycle operation left right output leftStart rightStart outputStart) rest)
+      outputStart = _
+  rw [executeBinaryPlan_preservesPairAt operation left right
+    (binaryCycle operation left right output leftStart rightStart outputStart)
+    rest outputStart laterOutside]
+  exact binaryCycle_readback operation left right output leftStart rightStart outputStart
+
+theorem executeBinaryPlan_readback_at
+    (operation : BitVec 64 → BitVec 64 → BitVec 64)
+    (left right : PEMemory.Memory .lm0) (output : PEMemory.Memory .lm1)
+    (before after : BinaryCycleAccesses)
+    (leftStart rightStart : Fin (PEMemory.Bank.capacity .lm0))
+    (outputStart : Fin (PEMemory.Bank.capacity .lm1))
+    (laterOutside : ∀ access ∈ after, ∀ lane : Fin 2,
+      2 ≤ PEMemory.distance .lm1 access.2.2
+        (PEMemory.advance .lm1 outputStart lane.val)) :
+    readPair .lm1
+      (executeBinaryPlan operation left right output
+        (before ++ (leftStart, rightStart, outputStart) :: after)) outputStart =
+      operation (readPair .lm0 left leftStart) (readPair .lm0 right rightStart) := by
+  induction before generalizing output with
+  | nil =>
+      simpa using executeBinaryPlan_head_readback operation left right output
+        leftStart rightStart outputStart after laterOutside
+  | cons access rest ih =>
+      obtain ⟨priorLeft, priorRight, priorOutput⟩ := access
+      simpa [executeBinaryPlan] using ih
+        (binaryCycle operation left right output priorLeft priorRight priorOutput)
+
 def addressedBinaryCycle (operation : BitVec 64 → BitVec 64 → BitVec 64)
     (left : PEMemory.Memory .lm0) (right : PEMemory.Memory .lm0)
     (output : PEMemory.Memory .lm1)
