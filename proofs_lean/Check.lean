@@ -518,6 +518,7 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerRegisterStep_succeeds
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerRegisterStep_readback
 #print axioms ProofsLean.MNCore.PEMemory.executeParsedIntegerExpr_readback
+#print axioms ProofsLean.MNCore.PEMemory.executeParsedIntegerExpr_plusOne_cycle_writeback
 #print axioms ProofsLean.MNCore.PEMemory.parsed_iinc_output_eq_incrementPair
 #print axioms ProofsLean.MNCore.PEMemory.parsed_iinc_cycle_matches_plusOne
 #print axioms ProofsLean.MNCore.PEMemory.parsed_iinc_cycle_high_word_matches_plusOne

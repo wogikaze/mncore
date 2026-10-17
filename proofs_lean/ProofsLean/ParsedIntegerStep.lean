@@ -5106,6 +5106,67 @@ theorem executeParsedIntegerExpr_readback (files : IntegerRegisterFiles)
       (unpackALUBus (parsedIntegerRegisterOutput files accesses.sourceX
         accesses.sourceY precision aluOp false).value) index within
 
+theorem executeParsedIntegerExpr_plusOne_cycle_writeback
+    (state : ProofsLean.MNCore.PlusOne.State)
+    (line : ProofsLean.MNCore.PlusOne.Line) (cycle : Fin 4)
+    (expression : ParsedExpr) (accesses : ParsedIntegerAccesses)
+    (lowered : ParsedExpr.toDirectIntegerAccesses? expression 0 cycle 0 0 0 =
+      some accesses)
+    (locations : accesses.locations =
+      (⟨.lm0, .long, plusOneMemoryAddress
+          (ProofsLean.MNCore.PlusOne.cycleHigh line cycle)⟩,
+       ⟨.lm0, .long, plusOneMemoryAddress
+          (ProofsLean.MNCore.PlusOne.cycleHigh line cycle)⟩,
+       ⟨.lm1, .long, plusOneMemoryAddress
+          (ProofsLean.MNCore.PlusOne.cycleHigh line cycle)⟩))
+    (selected : accesses.op.integerRequest =
+      .ok (.integer .word (.arith .inc false)))
+    (index : Fin 4) (indexBound : index.val < 2) :
+    ∃ nextFiles,
+      executeParsedIntegerExpr? (plusOneFiles state) expression 0 cycle 0 0 0 =
+        some (.ok nextFiles) ∧
+      readDirectAccess nextFiles accesses.destination index =
+        (ProofsLean.MNCore.PlusOne.step line state).lm1
+          (if index.val = 0 then
+            ProofsLean.MNCore.PlusOne.cycleHigh line cycle
+          else ProofsLean.MNCore.PlusOne.cycleLow line cycle) := by
+  have parts : accesses.sourceX =
+      ⟨.lm0, .long, plusOneMemoryAddress
+        (ProofsLean.MNCore.PlusOne.cycleHigh line cycle)⟩ ∧
+      accesses.sourceY =
+      ⟨.lm0, .long, plusOneMemoryAddress
+        (ProofsLean.MNCore.PlusOne.cycleHigh line cycle)⟩ ∧
+      accesses.destination =
+      ⟨.lm1, .long, plusOneMemoryAddress
+        (ProofsLean.MNCore.PlusOne.cycleHigh line cycle)⟩ := by
+    simpa [ParsedIntegerAccesses.locations] using locations
+  rcases parts with ⟨sourceX, sourceY, destination⟩
+  have within : index.val < count accesses.destination.bank accesses.destination.width := by
+    rw [destination]
+    simp [count, ProofsLean.MNCore.PEMemory.Width.words]
+    exact indexBound
+  obtain ⟨precision, aluOp, nextFiles, selectedResult, executed, readback⟩ :=
+    executeParsedIntegerExpr_readback (plusOneFiles state) expression 0 cycle 0 0 0
+      accesses lowered index within
+  have params : precision = .word ∧ aluOp = .arith .inc false := by
+    rw [selected] at selectedResult
+    cases selectedResult
+    exact ⟨rfl, rfl⟩
+  rcases params with ⟨rfl, rfl⟩
+  refine ⟨nextFiles, executed, ?_⟩
+  rw [readback, sourceX, sourceY]
+  by_cases high : index.val = 0
+  · have indexZero : index = 0 := Fin.ext high
+    subst index
+    simp
+    simpa [unpackALUBus] using
+      parsed_iinc_cycle_high_word_matches_plusOne state line cycle
+  · have indexOne : index = 1 := Fin.ext (by omega)
+    subst index
+    simp
+    simpa [unpackALUBus] using
+      parsed_iinc_cycle_low_word_matches_plusOne state line cycle
+
 theorem executeParsedIntegerMaskExpr_readback (files : IntegerRegisterFiles)
     (expression : ParsedExpr) (pe cycle : Fin 4) (bar0 bar1 : BitVec 12)
     (tWord : BitVec 32) (directive : ParsedMaskDirective)
