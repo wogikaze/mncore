@@ -141,8 +141,10 @@ noforward付き転送では以前の値を保持する。
 | Lean `FloatMultiply.multiply` vs Rust `float::vfma` with zero accumulator | 128 deterministic vectors, seed 2345; every equation kernel-checked with `by decide` | 0 |
 | Lean `FloatSubtract.subtract` vs Rust `float::vfma` with unit multiplier and sign-flipped addend | 128 deterministic vectors, seed 1234; every equation kernel-checked with `by decide` | 0 |
 | Lean `FloatRelu.relu` vs Rust `frelu` bit predicate | 128 deterministic vectors in finite input domain; every equation kernel-checked with `by decide` | 0 |
+| Lean `FloatAdd.add` vs Rust `float::vfma` with unit multiplier | 128 deterministic vectors, seed 2026; every equation kernel-checked with `by decide` | 0 |
 | `fvmul` / `fvsub` Rust simulator vs official `gpfn3` | 16,384 values each (`difftest_mau` one run) | 0 |
 | `frelu` Rust simulator vs official `gpfn3` | 16,384 values in problem input range | 0 |
+| `fvadd` Rust simulator vs official `gpfn3` | 16,384 values (`difftest_mau` one run) | 0 |
 | `fvmul` / `fvadd` / `fvpassa` | 各約6.5万値 | 0 |
 | `dvfmau` | 約28万値 | 0 |
 | `dvmulu` / `dvadd` / `dvpassa` | 各約3.3万値 | 0 |

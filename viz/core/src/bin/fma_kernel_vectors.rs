@@ -68,6 +68,10 @@ fn main() {
                 SINGLE, SINGLE, float::decode(SINGLE, a as u64),
                 float::decode(SINGLE, b as u64), Val::Zero { neg: false },
             ) as u32,
+            "fvadd" => float::vfma(
+                SINGLE, SINGLE, float::decode(SINGLE, a as u64),
+                float::decode(SINGLE, 0x3f80_0000), float::decode(SINGLE, c as u64),
+            ) as u32,
             "fvsub" => float::vfma(
                 SINGLE, SINGLE, float::decode(SINGLE, a as u64),
                 float::decode(SINGLE, 0x3f80_0000), float::decode(SINGLE, b as u64).negate(),

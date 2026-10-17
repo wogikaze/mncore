@@ -140,6 +140,13 @@ import Lean
 #print axioms ProofsLean.MNCore.FloatRelu.chunkIndex_covers_all_words
 #print axioms ProofsLean.MNCore.FloatRelu.twoLineResult_correct
 #print axioms ProofsLean.MNCore.FloatRelu.twoLineGradResult_correct
+#print axioms ProofsLean.MNCore.FloatAdd.abstractAdd_evaluation
+#print axioms ProofsLean.MNCore.FloatAdd.add_zero_to_one
+#print axioms ProofsLean.MNCore.FloatAdd.add_one_and_two
+#print axioms ProofsLean.MNCore.FloatAdd.abstractAdd_dependencies_are_sound
+#print axioms ProofsLean.MNCore.FloatAdd.chunkIndex_injective
+#print axioms ProofsLean.MNCore.FloatAdd.chunkIndex_covers_all_words
+#print axioms ProofsLean.MNCore.FloatAdd.twoLineResult_correct
 #print axioms ProofsLean.MNCore.Issue.encodedUniverseMachine_not_complete
 #print axioms ProofsLean.MNCore.Issue.mem_encodedUniverseAlphabet
 #print axioms ProofsLean.MNCore.Issue.encodedUniverseAlphabet_coversBelow

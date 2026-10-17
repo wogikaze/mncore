@@ -49,6 +49,7 @@ Welcome の後は Convert Endian を縦の2問目にする。有限性・範囲�
    続いて2.fmul7向けに`FloatMultiply.lean`を追加し、`fvmul`をゼロ加数のFMAとして抽象式へ接続した。7.0を掛ける具体例と定数・依存追跡の健全性を証明し、64-bit PEバスの上位・下位float laneへの独立適用を証明した。さらに、4行×各8語の抽象スケジュールについて各出力語が一意のline/laneに対応し、4行を適用した結果が全32入力語の仕様値と一致することを証明した。`check_single_fma_kernel.py --operation fvmul --vectors 128 --seed 2345 --gpfn-runs 1`でLeanカーネル対Rustの128式、および公式gpfn3対Rustの16,384値を照合し、両方不一致0。assembler出力・実メモリアクセス・stepへの接続、全域同値、全入力正当性と最適性は未完了。
    3.relu向けに`FloatRelu.lean`を追加した。有限入力値に対して正値・±0なら第2オペランドを返し、負値なら−0を返すビット述語を定義し、定数・依存抽象を接続した。2行×8語の抽象スケジュールで16要素すべての出力が正しいことを証明した。`check_single_fma_kernel.py --operation frelu --vectors 128 --seed 777 --gpfn-runs 1`でLeanカーネル対Rust 128式、gpfn3対Rust 16,384値を照合し不一致0。
    同じ演算器を使う4.relu-gradについても第2オペランドを1.0に固定した関数と2行スケジュールのベクトル定理を追加した。実アドレス・命令状態遷移・最適性は両題とも未完了。
+   5.addcol-vec向けに`FloatAdd.lean`を追加した。float加算を単位乗算のFMAとして抽象化し、PEごとの16要素を4要素ベクトルに沿って加算する2行×8語のスケジュール定理を証明した。`check_single_fma_kernel.py --operation fvadd --vectors 128 --seed 2026 --gpfn-runs 1`でLean対Rust 128式とgpfn3対Rust 16,384値を照合し、不一致0。forwarding/T状態と実メモリアドレスへの接続は未完了。
 
 ## 実装した定義
 

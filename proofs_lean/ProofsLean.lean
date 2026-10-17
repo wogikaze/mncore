@@ -35,3 +35,4 @@ import ProofsLean.ConvertEndian
 import ProofsLean.FloatSubtract
 import ProofsLean.FloatMultiply
 import ProofsLean.FloatRelu
+import ProofsLean.FloatAdd
