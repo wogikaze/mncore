@@ -264,6 +264,43 @@ theorem parsedFloatAddSmoke_cycle3_lowers :
       some (⟨6, by decide⟩, ⟨14, by decide⟩, ⟨22, by decide⟩) := by decide
 
 
+
+def parsedFloatAddSmokeOutputAddress (cycle : Fin 4) :
+    Fin (PEMemory.Bank.capacity .lm1) :=
+  ⟨16 + 2 * cycle.val, by have hc := cycle.isLt; change 16 + 2 * cycle.val < 4096; omega⟩
+
+theorem parsedFloatAddSmoke_outputAddress_lowers (cycle : Fin 4) :
+    (PEMemory.address .lm1 .long
+      (.flat (fun c => 16 + 2 * c.val)) 0 .direct 0 cycle) =
+      parsedFloatAddSmokeOutputAddress cycle := by
+  apply Fin.ext
+  simp [PEMemory.address, PEMemory.Schedule.at, PEMemory.baseOffset,
+    PEMemory.Adjustment.offset, PEMemory.count, PEMemory.Bank.capacity,
+    PEMemory.Width.words, parsedFloatAddSmokeOutputAddress]
+  omega
+
+theorem parsedFloatAddSmoke_laterWrite_outsideEarlier
+    (later earlier : Fin 4) (ordered : earlier.val < later.val)
+    (lane : Fin 2) :
+    2 ≤ PEMemory.distance .lm1 (parsedFloatAddSmokeOutputAddress later)
+      (PEMemory.advance .lm1 (parsedFloatAddSmokeOutputAddress earlier) lane.val) := by
+  have hl := later.isLt
+  have he := earlier.isLt
+  have hn := lane.isLt
+  simp [parsedFloatAddSmokeOutputAddress, PEMemory.distance,
+    PEMemory.advance, PEMemory.Bank.capacity]
+  omega
+
+theorem parsedFloatAddSmoke_laterWrite_preservesEarlier
+    (memory : PEMemory.Memory .lm1) (value : BitVec 64)
+    (later earlier : Fin 4) (ordered : earlier.val < later.val)
+    (lane : Fin 2) :
+    writePair memory (parsedFloatAddSmokeOutputAddress later) value
+        (PEMemory.advance .lm1 (parsedFloatAddSmokeOutputAddress earlier) lane.val) =
+      memory (PEMemory.advance .lm1 (parsedFloatAddSmokeOutputAddress earlier) lane.val) := by
+  apply writePair_preservesOutside
+  exact parsedFloatAddSmoke_laterWrite_outsideEarlier later earlier ordered lane
+
 theorem parsedFloatAddSmoke_fourCycles_succeed
     (files : PEMemory.IntegerRegisterFiles) :
     ∃ result, executeParsedFloatAddLine? parsedFloatAddSmoke files 0 0 0 0 =
