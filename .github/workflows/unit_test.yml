@@ -73,8 +73,8 @@ jobs:
         ./haribote_graph_compiler.py test -f unit_tests/train_step/* > pr_test_results.txt 2>&1 || true
         
         # Count PASS and FAIL
-        PR_PASS=$(grep -c "PASS" pr_test_results.txt || echo "0")
-        PR_FAIL=$(grep -c "FAIL" pr_test_results.txt || echo "0")
+        PR_PASS=$(grep -c "PASS" pr_test_results.txt || true)
+        PR_FAIL=$(grep -c "FAIL" pr_test_results.txt || true)
         
         echo "PR Branch Results:"
         echo "  PASS: $PR_PASS"
@@ -208,8 +208,8 @@ jobs:
         ./haribote_graph_compiler.py test -f unit_tests/train_step/* > master_test_output.txt 2>&1 || true
         
         # Count results
-        MASTER_PASS=$(grep -c "PASS" master_test_output.txt || echo "0")
-        MASTER_FAIL=$(grep -c "FAIL" master_test_output.txt || echo "0")
+        MASTER_PASS=$(grep -c "PASS" master_test_output.txt || true)
+        MASTER_FAIL=$(grep -c "FAIL" master_test_output.txt || true)
         
         echo "Generated master baseline:"
         echo "  PASS: $MASTER_PASS"
