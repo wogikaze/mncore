@@ -158,6 +158,69 @@ theorem _root_.ProofsLean.MNCore.partialMachine_legalLinesCostBelow_finite (boun
     (InstructionLine.programIssueAndHazardLegal_line_envelope
       bound program legal line lineMember cost)
 
+/-- The cost-bounded legal line set itself has a Mathlib `Fintype`. This uses
+the program-level local issue and cross-line hazard predicate, not merely the
+single-line envelope. -/
+noncomputable def _root_.ProofsLean.MNCore.partialMachine_legalLineFintype
+    (bound : Nat) :
+    Fintype {line : InstructionLine //
+      line ∈ ProofsLean.PartialMachine.legalLinesCostBelow
+        ProofsLean.MNCore.partialMachine bound} := by
+  letI : Finite {line : InstructionLine //
+      line ∈ ProofsLean.PartialMachine.legalLinesCostBelow
+        ProofsLean.MNCore.partialMachine bound} :=
+    ProofsLean.MNCore.partialMachine_legalLinesCostBelow_finite bound
+  exact Fintype.ofFinite _
+
+/-- Exact bound-specific alphabet for lines occurring in legal, short MN-Core
+programs. Its construction is noncomputable because the finite carrier may be
+astronomically large, but it directly discharges the generic coverage premise. -/
+noncomputable def _root_.ProofsLean.MNCore.partialMachine_legalLineAlphabet
+    (bound : Nat) : List InstructionLine := by
+  let Carrier := {line : InstructionLine //
+    line ∈ ProofsLean.PartialMachine.legalLinesCostBelow
+      ProofsLean.MNCore.partialMachine bound}
+  letI : Fintype Carrier :=
+    ProofsLean.MNCore.partialMachine_legalLineFintype bound
+  exact (Finset.univ : Finset Carrier).toList.map Subtype.val
+
+theorem _root_.ProofsLean.MNCore.partialMachine_legalLineAlphabet_covers
+    (bound : Nat) :
+    ProofsLean.PartialMachine.LegalLinesCoveredBelow
+      ProofsLean.MNCore.partialMachine
+      (ProofsLean.MNCore.partialMachine_legalLineAlphabet bound) bound := by
+  intro program legal short line member
+  have cost : line.cost < bound := by
+    exact lt_of_le_of_lt
+      (ProofsLean.PartialMachine.lineCost_le_score
+        ProofsLean.MNCore.partialMachine program line member)
+      short
+  have occurs : line ∈ ProofsLean.PartialMachine.legalLinesCostBelow
+      ProofsLean.MNCore.partialMachine bound :=
+    ⟨program, legal, member, cost⟩
+  classical
+  let Carrier := {candidate : InstructionLine //
+    candidate ∈ ProofsLean.PartialMachine.legalLinesCostBelow
+      ProofsLean.MNCore.partialMachine bound}
+  letI : Fintype Carrier :=
+    ProofsLean.MNCore.partialMachine_legalLineFintype bound
+  change line ∈ ((Finset.univ : Finset Carrier).toList.map Subtype.val)
+  apply List.mem_map.mpr
+  refine ⟨⟨line, occurs⟩, ?_, rfl⟩
+  exact Finset.mem_toList.mpr (Finset.mem_univ _)
+
+theorem _root_.ProofsLean.MNCore.partialMachine_exactAlphabet_shortPrograms_complete
+    (bound : Nat) (program : ProofsLean.MNCore.partialMachine.Program)
+    (legal : ProofsLean.MNCore.partialMachine.legal program)
+    (short : ProofsLean.MNCore.partialMachine.score program < bound) :
+    program ∈ ProofsLean.PartialMachine.shortPrograms
+      ProofsLean.MNCore.partialMachine
+      (ProofsLean.MNCore.partialMachine_legalLineAlphabet bound) bound :=
+  ProofsLean.PartialMachine.shortPrograms_complete
+    ProofsLean.MNCore.partialMachine
+    (ProofsLean.MNCore.partialMachine_legalLineAlphabet_covers bound)
+    program legal short
+
 theorem _root_.ProofsLean.MNCore.partialMachine_costBelowAlphabet_covers
     (bound : Nat) :
     ProofsLean.PartialMachine.LegalLinesCoveredBelow

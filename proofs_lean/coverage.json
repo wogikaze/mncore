@@ -88,7 +88,7 @@
     "finite_source": "proofs_lean/ProofsLean/FiniteIssue.lean",
     "finite_source_sha256": "3857e27aeb37f5c1a9dc9ea28b54aea9c913b2941836b7552407180f5216cb05",
     "adapter_source": "proofs_lean/ProofsLean/ProgramLegality.lean",
-    "adapter_source_sha256": "fdc0f9e7266e8498a46f22730b8d0419da5ddab92188094965f2988ca6bd49b9",
+    "adapter_source_sha256": "c14069d7144236c9fd9228952c337bb1090e5336d8be7b0b9eab0fea9c6f7d72",
     "line_alphabet": "Sum (BitVec 426) (BitVec 82)",
     "bounded_programs_finite": "ProofsLean.MNCore.Issue.encodedPrograms_lengthBounded_finite",
     "short_program_enumeration_complete": "ProofsLean.MNCore.Issue.encodedUniverse_shortPrograms_complete",
@@ -396,6 +396,16 @@
       "ProofsLean.shortProgramsFintype_complete"
     ],
     "limitation": "A cost-bounded finite-subtype alphabet is available, but the universal MN-Core proof that legal rows lie in the operand envelope and the machine connection remain open."
+  },
+  "partial_machine_bounded_legal_lines": {
+    "source": "proofs_lean/ProofsLean/ProgramLegality.lean",
+    "sha256": "c14069d7144236c9fd9228952c337bb1090e5336d8be7b0b9eab0fea9c6f7d72",
+    "line_type": "ProofsLean.MNCore.Issue.InstructionLine",
+    "fintype": "ProofsLean.MNCore.partialMachine_legalLineFintype",
+    "alphabet_coverage": "ProofsLean.MNCore.partialMachine_legalLineAlphabet_covers",
+    "enumeration_complete": "ProofsLean.MNCore.partialMachine_exactAlphabet_shortPrograms_complete",
+    "scope": "For each score bound, the exact set of lines occurring in programs legal under the current local issue, payload-envelope, and PE/block hazard predicate is finite and can serve as a complete short-program alphabet.",
+    "limitation": "The partial machine step returns unknown, and source parser/assembler completeness into this legality predicate remains unproved; this does not define MNCore.machine or establish ISA-wide completeness."
   },
   "finite_carrier_proofs": [
     {

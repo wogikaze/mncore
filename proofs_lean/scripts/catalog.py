@@ -756,6 +756,16 @@ def coverage_catalog() -> dict:
             ],
             "limitation": "A cost-bounded finite-subtype alphabet is available, but the universal MN-Core proof that legal rows lie in the operand envelope and the machine connection remain open.",
         },
+        "partial_machine_bounded_legal_lines": {
+            "source": "proofs_lean/ProofsLean/ProgramLegality.lean",
+            "sha256": digest(ROOT / "ProofsLean/ProgramLegality.lean"),
+            "line_type": "ProofsLean.MNCore.Issue.InstructionLine",
+            "fintype": "ProofsLean.MNCore.partialMachine_legalLineFintype",
+            "alphabet_coverage": "ProofsLean.MNCore.partialMachine_legalLineAlphabet_covers",
+            "enumeration_complete": "ProofsLean.MNCore.partialMachine_exactAlphabet_shortPrograms_complete",
+            "scope": "For each score bound, the exact set of lines occurring in programs legal under the current local issue, payload-envelope, and PE/block hazard predicate is finite and can serve as a complete short-program alphabet.",
+            "limitation": "The partial machine step returns unknown, and source parser/assembler completeness into this legality predicate remains unproved; this does not define MNCore.machine or establish ISA-wide completeness.",
+        },
         "finite_carrier_proofs": [{
             "source": "proofs_lean/ProofsLean/FiniteRegion.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteRegion.lean"),

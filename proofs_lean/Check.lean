@@ -56,6 +56,9 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.programLegalLinesCostBelow_finite
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.programIssueAndHazardLegal_nil
 #print axioms ProofsLean.MNCore.partialMachine_legalLinesCostBelow_finite
+#print axioms ProofsLean.MNCore.partialMachine_legalLineFintype
+#print axioms ProofsLean.MNCore.partialMachine_legalLineAlphabet_covers
+#print axioms ProofsLean.MNCore.partialMachine_exactAlphabet_shortPrograms_complete
 #print axioms ProofsLean.MNCore.partialMachine_costBelowAlphabet_covers
 #print axioms ProofsLean.MNCore.partialMachine_shortPrograms_complete
 #print axioms ProofsLean.MNCore.partialMachine_not_complete
