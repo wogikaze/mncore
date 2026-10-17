@@ -1596,6 +1596,51 @@ theorem parseParsedL2SelectorOpcode_from_l1b_parser_u8_range :
 theorem parseParsedL2SelectorOpcode_rejects_l1b_u8_overflow :
     parseParsedL2SelectorOpcode? "l2bm@256" false = none := by decide
 
+/-- Full opcode-level mirror of Rust's `parse_l2_opcode`. Operand-dependent
+`fromL2` classification is supplied by the caller, as in the Rust parser. -/
+def parseParsedL2Opcode? (opcode : String) (fromL2 : Bool) : Option ParsedL2Op := do
+  let (head, selectorText) ← match parsedSplitAt? opcode.toList '@' with
+    | none => do
+        let rest ← parsedStripChars? ['l', '2', 'b', 'm'] opcode.toList
+        some (rest, none)
+    | some (whole, selector) => do
+        let rest ← parsedStripChars? ['l', '2', 'b', 'm'] whole
+        some (rest, some (String.ofList selector))
+  let parseSet := do
+    match selectorText with
+    | none => some parsedL1bSetAll
+    | some text => some (← parseParsedL1bSet? text).val
+  if head == ['d', 'a', 'r', 's'] then some .dars
+  else if head == ['d', 'a', 'r', 'w'] then some .darw
+  else if head.take 2 == ['r', '2'] then do
+    let rrn ← parseParsedMvRrn? (head.drop 2)
+    some (.reduce2 rrn)
+  else if head.head? == some 'r' then do
+    let rrn ← parseParsedMvRrn? (head.drop 1)
+    some (.reduce rrn (← parseSet))
+  else parseParsedL2SelectorOpcode? opcode fromL2
+
+theorem parseParsedL2Opcode_reduce_with_list :
+    parseParsedL2Opcode? "l2bmrdfadd@[0,4]" false =
+      some (.reduce ⟨'d', .fadd⟩ ⟨17, 4⟩) := by decide
+
+theorem parseParsedL2Opcode_reduce_default_set :
+    parseParsedL2Opcode? "l2bmrdfadd" false =
+      some (.reduce ⟨'d', .fadd⟩ parsedL1bSetAll) := by decide
+
+theorem parseParsedL2Opcode_reduce2_ignores_selector_like_rust :
+    parseParsedL2Opcode? "l2bmr2dfadd@ignored" false =
+      some (.reduce2 ⟨'d', .fadd⟩) := by decide
+
+theorem parseParsedL2Opcode_dars_ignores_selector_like_rust :
+    parseParsedL2Opcode? "l2bmdars@ignored" false = some .dars := by decide
+
+theorem parseParsedL2Opcode_darw :
+    parseParsedL2Opcode? "l2bmdarw" false = some .darw := by decide
+
+theorem parseParsedL2Opcode_rejects_bad_rrn :
+    parseParsedL2Opcode? "l2bmrdfsub" false = none := by decide
+
 structure ParsedMvParams where
   size : Option (Fin (2 ^ 64)) := none
   tag : Option (Fin 256) := none
