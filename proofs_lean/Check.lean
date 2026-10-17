@@ -134,9 +134,9 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.costBelowEnvelopeAlphabet
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.mem_costBelowEnvelopeAlphabet
 #print axioms ProofsLean.MNCore.Issue.NormalizedMv.sizeInFiniteEnvelope_finite
-#print axioms ProofsLean.MNCore.Issue.mv_size_32704_in_envelope
-#print axioms ProofsLean.MNCore.Issue.mv_size_1_outside_envelope
-#print axioms ProofsLean.MNCore.Issue.mv_size_32768_outside_envelope
+#print axioms ProofsLean.MNCore.Issue.ParsedMv.normalize_sizeInFiniteEnvelope
+#print axioms ProofsLean.MNCore.Issue.mv_size_1_in_envelope
+#print axioms ProofsLean.MNCore.Issue.mv_size_32768_in_envelope
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.legalCostBelowEnvelope_covered
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.legalCostBelowEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.legalCostBelowFintype

@@ -208,8 +208,10 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   BAR幅は`mb`/`lmb`を受理し`llmb`を拒否する既存assemble3 probeから1または2語に制限した。
 - `InstructionLine.inFiniteEnvelope_finite`: PE行の式数を10以下、nop countを任意のbound未満とし、
   wait tagと各正規化式を既存envelope内に制限したline carrierの有限性を証明した。
-  MV転送サイズはassemble3の記録に基づき、0または64の倍数で32704以下に絞った有限subtypeを
-  carrierへ接続した（`mv_size_0`、`mv_size_1`、`mv_size_32704`、`mv_size_32768`で境界を照合）。
+  MV転送サイズはパーサー表現の`u64`全域を保持する。Lean側の`Fin (2^64)`は既に有限なので、
+  assemblerのsize境界をparser出力の前提にせず有限性を得る。別途、SDM 3.5.8.2〜.25の
+  全MV文法について、size 64と32704を受理し32768を拒否するassemble3 probeを記録した。
+  これは単純なゼロアドレスの観測であり、Rust parserからassemblerへの対応証明ではない。
   MVのアドレスなど残りのフィールドは有限な広い型のままである。現状は有限上位集合の証明であり、
   全合法lineが各payload envelopeに入ることや、固定costからnop count boundを得る証明は未接続。
 - `InstructionLine.localIssueLegal`を既存のtop-line checkerへ接続し、bound付きfinite envelope内で
