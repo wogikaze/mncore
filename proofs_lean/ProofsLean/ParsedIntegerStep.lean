@@ -4553,7 +4553,8 @@ theorem parsed_source_lowering_preserves_total_issue_words
               have hrestCost := ih restSource hrest
               rw [parsedMaskedSourceCost_append, hcost]
               simp [parsedMaskedIssueWordTotal?, hscore, hrestCost]
-theorem parsed_nop_line_lowers_to_count_issue_words (count : Nat) (wait : Option Nat) :
+theorem parsed_nop_line_lowers_to_count_issue_words
+    (count : Nat) (wait : Option (Fin 256)) :
     lowerParsedMaskedSource [.nop count wait] =
       some (List.replicate count (.issue ParsedMaskedIssueLine.nop)) := by
   simp [lowerParsedMaskedSource, ParsedLine.toParsedMaskedStatements?]

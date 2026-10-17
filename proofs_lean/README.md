@@ -200,8 +200,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   `fullSelectorMask_inFiniteEnvelope`も回帰定理として残す。
   PE式全体のparserとRust parser出力との全形式の対応はまだない。
   wait tagについては、受理範囲`1..255`とoptionalな同範囲の有限carrierを証明した。
-  opcode tagは`Fin 256`で0..255に構造上制限したが、0がassemblerで拒否される条件を
-  parser/合法性述語へ接続する証明、および`ParsedLine.nop`側のoptional tagの範囲接続は残る。
+  opcode wait tagと`ParsedLine`/正規化後の`nop`に付くoptional wait tagは`Fin 256`で
+  0..255に構造上制限した。0を除く条件は有限envelopeに残している。Lean parser出力が
+  assemblerの受理範囲`1..255`を満たすことの接続証明はまだない。
   L1BMの`mabdiff`はassemble3でDistrib/Gather両方向について明示符号付きの`-255..255`全件を受理し、
   境界の`±256`を両方向で拒否することを確認し、
   `-256 ≤ mabdiff < 256`の部分型が有限であることを証明した。SDMの有用範囲は`0..15`。

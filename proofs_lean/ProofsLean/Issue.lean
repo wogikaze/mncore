@@ -2019,7 +2019,7 @@ theorem parseParsedMvLine_nop_ignores_operands_like_rust :
 
 inductive ParsedLine where
   | pe (expressions : List ParsedExpr)
-  | nop (count : Nat) (wait : Option Nat)
+  | nop (count : Nat) (wait : Option (Fin 256))
   | mv (transfer : ParsedMv)
   | maskDirective (widthWords : Nat) (targets : ParsedMaskTargets) (entry : Nat)
   | debugSet
@@ -2039,7 +2039,7 @@ def ParsedLine.maskDirectiveInFiniteEnvelope : ParsedLine → Prop
 judge-stripped debug/DRAM records. PE expression order is preserved. -/
 inductive NormalizedLine where
   | pe (expressions : List NormalizedExpr)
-  | nop (count : Nat) (wait : Option Nat)
+  | nop (count : Nat) (wait : Option (Fin 256))
   | mv (transfer : NormalizedMv)
   | maskDirective (widthWords : Nat) (targets : ParsedMaskTargets) (entry : Nat)
   deriving DecidableEq, Repr
@@ -2048,7 +2048,7 @@ inductive NormalizedLine where
 state. Nop counts are strictly positive by construction. -/
 inductive InstructionLine where
   | pe (expressions : List NormalizedExpr)
-  | nop (count : {n : Nat // 0 < n}) (wait : Option Nat)
+  | nop (count : {n : Nat // 0 < n}) (wait : Option (Fin 256))
   | mv (transfer : NormalizedMv)
   deriving DecidableEq, Repr
 
@@ -2075,7 +2075,7 @@ def NormalizedLine.toInstruction? : NormalizedLine → Option InstructionLine
 theorem nop_zero_not_instruction :
     NormalizedLine.toInstruction? (.nop 0 none) = none := rfl
 
-theorem normalized_positive_nop_cost (count : Nat) (wait : Option Nat) :
+theorem normalized_positive_nop_cost (count : Nat) (wait : Option (Fin 256)) :
     (NormalizedLine.toInstruction? (.nop (count + 1) wait)).map
       InstructionLine.cost = some (count + 1) := rfl
 

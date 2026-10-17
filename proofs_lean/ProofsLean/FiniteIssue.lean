@@ -1640,8 +1640,8 @@ theorem NormalizedExpr.listInFiniteEnvelope_finite (bound : Nat) :
   exact Finite.of_injective (NormalizedExpr.listFiniteCode bound)
     (NormalizedExpr.listFiniteCode_injective bound)
 
-abbrev InstructionLineWaitFiniteEnvelope (wait : Option Nat) : Prop :=
-  optionWaitTagInFiniteEnvelope wait
+abbrev InstructionLineWaitFiniteEnvelope (wait : Option (Fin 256)) : Prop :=
+  ∀ value, wait = some value → 0 < value.val
 
 def InstructionLine.inFiniteEnvelope (bound : Nat) : InstructionLine → Prop
   | .pe expressions =>
@@ -1652,7 +1652,7 @@ def InstructionLine.inFiniteEnvelope (bound : Nat) : InstructionLine → Prop
 
 abbrev InstructionLineFiniteCode (bound : Nat) :=
   NormalizedExprListFiniteEnvelope 10 ⊕
-    ((Fin bound × {wait : Option Nat // InstructionLineWaitFiniteEnvelope wait}) ⊕
+    ((Fin bound × {wait : Option (Fin 256) // InstructionLineWaitFiniteEnvelope wait}) ⊕
       {transfer : NormalizedMv // transfer.sizeInFiniteEnvelope})
 
 private def InstructionLine.finiteCode (bound : Nat)
@@ -1685,10 +1685,8 @@ theorem InstructionLine.inFiniteEnvelope_finite (bound : Nat) :
   letI : Finite (NormalizedExprListFiniteEnvelope 10) :=
     NormalizedExpr.listInFiniteEnvelope_finite 10
   letI : Fintype (NormalizedExprListFiniteEnvelope 10) := Fintype.ofFinite _
-  letI : Finite {wait : Option Nat // InstructionLineWaitFiniteEnvelope wait} :=
-    optionWaitTagInFiniteEnvelope_finite
-  letI : Fintype {wait : Option Nat // InstructionLineWaitFiniteEnvelope wait} :=
-    Fintype.ofFinite _
+  letI : Fintype {wait : Option (Fin 256) // InstructionLineWaitFiniteEnvelope wait} :=
+    inferInstance
   letI : Finite NormalizedMv := NormalizedMv.finite
   letI : Fintype NormalizedMv := Fintype.ofFinite _
   letI : Finite {transfer : NormalizedMv // transfer.sizeInFiniteEnvelope} :=

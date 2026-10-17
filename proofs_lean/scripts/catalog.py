@@ -936,7 +936,7 @@ def coverage_catalog() -> dict:
             "theorem": "ProofsLean.MNCore.Issue.optionWaitTagInFiniteEnvelope_finite",
             "scope": "Finite optional wait tags whose present value lies in 1..255.",
             "evidence": "Same assemble3 wait-tag boundaries as waitTagInFiniteEnvelope_finite.",
-            "missing": "Proof that all parsed optional nop wait tags obey this range and finite line-carrier composition.",
+            "missing": "ParsedLine and InstructionLine nop wait tags now store Option (Fin 256); proving the nonzero assembler condition for parsed/legal lines remains open.",
         }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
