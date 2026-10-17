@@ -290,7 +290,6 @@ theorem answer_correct : Correct machine problem answer := by
 
 theorem testcaseInput_admissible : problem.admissible testcaseInput := by
   intro i
-  change (testcaseInput i).toNat ≤ 50
   simp only [testcaseInput, BitVec.toNat_ofNat]
   split <;> omega
 

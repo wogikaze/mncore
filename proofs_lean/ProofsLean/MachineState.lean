@@ -17,9 +17,9 @@ structure State where
   /-- Unified cell-addressed store for L2BM, PDM, and DRAM. -/
   blockMemory : MVSemantics.Memory
   /-- ALUF, MAUF, matrix-read forwarding, and L1-to-PE forwarding buses. -/
-  forwarding : Forwarding.Slots
-  /-- Validity is tracked separately from known/poison/unknown bus contents. -/
-  forwardingValid : Forwarding.Unit → Fin 4 → Bool
+  forwarding : PEId → Forwarding.Slots
+  /-- Per-PE validity is separate from known/poison/unknown bus contents. -/
+  forwardingValid : PEId → Forwarding.Unit → Fin 4 → Bool
   /-- Current multiline mask selection. -/
   maskDirective : Issue.ParsedMaskDirective
   /-- Per-PE BAR/T/coordinate context used by address lowering. -/

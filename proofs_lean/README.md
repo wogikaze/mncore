@@ -47,7 +47,7 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
 - `PartialSemantics.lean`: 未実装と既知の実行失敗を分離する。
   全命令・全状態で未実装がないことを証明しない限り、完全モデルへ変換できない。
 - `MachineState.lean`: PE 2048個の5バンクregister files/OMR、L1BM 8バンク、L2BM/PDM/DRAM、
-  ALUF/MAUF/LBF/MREADF busとvalidity、mask directive、PE context、hazard clockをまとめるState型。
+  各PEのALUF/MAUF/LBF/MREADF busとvalidity、mask directive、PE context、hazard clockをまとめるState型。
   一般Stateの初期値ポリシーはまだ仮定しない。Welcomeに必要なPE SRAMはRust emulatorの
   `Words::get`が未割当領域をzeroで読むことを確認した。
 - `Footprint.lean`: 全`InstructionLine`（PE/nop/MV）と全`ParsedOp`の構文footprintを定義し、
