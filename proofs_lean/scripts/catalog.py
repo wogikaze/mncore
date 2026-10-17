@@ -494,7 +494,7 @@ def answer_parser_gap_audit() -> dict:
         "raw_operand_fallback_probes": len(raw_fallbacks),
         "syntax_candidate_raw_operand_slot_probes": len(candidate_raw_probes),
         "syntax_candidate_raw_operand_slots_parsed": True,
-        "syntax_candidate_raw_operand_assembler_acceptance_tested": False,
+        "syntax_candidate_raw_operand_assembler_acceptance_tested": True,
         "unique_opcode_spellings": len(record["parsed_operator_spellings"]),
         "parser_source_destination_arity": dict(sorted(Counter(
             f"{expression['class']}:src{expression['source_count']}:dst{expression['destination_count']}"
@@ -653,6 +653,45 @@ def encoded_word_universe() -> dict:
     }
 
 
+def raw_candidate_assembler_experiment() -> dict:
+    reference = ROOT / "evidence/raw-candidate-assembler/reference.json"
+    record = json.loads(reference.read_text())
+    parser_audit = ROOT / "evidence/parser-gap-audit/answers.json"
+    parser_record = json.loads(parser_audit.read_text())
+    expected = {
+        (probe["spelling"], probe["operand_token_index"])
+        for probe in parser_record["opcode_candidate_raw_operand_probes"]
+    }
+    observed = {
+        (row["spelling"], row["operand_token_index"])
+        for row in record["observations"]
+    }
+    if len(expected) != 1470 or len(observed) != len(record["observations"]) or observed != expected:
+        raise ValueError("Raw-candidate assembler experiment does not cover parser probe slots")
+    for item in record["tool_hashes"]:
+        if digest(REPO / item["path"]) != item["sha256"]:
+            raise ValueError(f"stale Raw-candidate assembler input: {item['path']}")
+    if record["accepted_count"] + record["rejected_count"] != len(expected):
+        raise ValueError("Raw-candidate assembler outcome counts are inconsistent")
+    if (
+        record["accepted_count"] != sum(row["accepted"] for row in record["observations"])
+        or record["rejected_count"] != sum(not row["accepted"] for row in record["observations"])
+        or record["probe_count"] != len(expected)
+    ):
+        raise ValueError("Raw-candidate assembler outcome totals do not match observations")
+    return {
+        "source": reference.relative_to(REPO).as_posix(),
+        "sha256": digest(reference),
+        "generator": "proofs_lean/scripts/check_raw_candidate_assembler_reference.py",
+        "generator_sha256": digest(ROOT / "scripts/check_raw_candidate_assembler_reference.py"),
+        "probes": len(expected),
+        "accepted": record["accepted_count"],
+        "rejected": record["rejected_count"],
+        "scope": record["scope"],
+        "limitations": record["limitations"],
+    }
+
+
 def coverage_catalog() -> dict:
     path = REPO / "mncompile/machine.py"
     tree = ast.parse(path.read_text())
@@ -699,6 +738,7 @@ def coverage_catalog() -> dict:
         "encoded_word_universe": encoded_word_universe(),
         "opcode_destination_arity_experiment": opcode_arity_experiment(),
         "answer_parser_gap_audit": answer_parser_gap_audit(),
+        "raw_candidate_assembler_experiment": raw_candidate_assembler_experiment(),
         "parallel_issue_boundary_experiment": parallel_issue_boundary_experiment(),
         "fintype_bounded_enumeration": {
             "source": "proofs_lean/ProofsLean/Enumeration.lean",

@@ -126,7 +126,7 @@
     "raw_operand_fallback_probes": 5,
     "syntax_candidate_raw_operand_slot_probes": 1470,
     "syntax_candidate_raw_operand_slots_parsed": true,
-    "syntax_candidate_raw_operand_assembler_acceptance_tested": false,
+    "syntax_candidate_raw_operand_assembler_acceptance_tested": true,
     "unique_opcode_spellings": 155,
     "parser_source_destination_arity": {
       "alu:src1:dst7": 49,
@@ -161,6 +161,21 @@
     "other_opcode_occurrences": 0,
     "parse_errors": 0,
     "scope": "Checked-in problems/**/answer.vsm files only; not a complete ISA spelling inventory."
+  },
+  "raw_candidate_assembler_experiment": {
+    "source": "proofs_lean/evidence/raw-candidate-assembler/reference.json",
+    "sha256": "83975e4168498120eb82c340bc541db9459f9053cf33c9e89d7bd4d34af08c4e",
+    "generator": "proofs_lean/scripts/check_raw_candidate_assembler_reference.py",
+    "generator_sha256": "3fc72a075e97ef4c444fcfd2ddda067e6743f06cd48ff960e2e0260dfb623039",
+    "probes": 1470,
+    "accepted": 0,
+    "rejected": 1470,
+    "scope": "Each operand token in one compiler-generated parser-arity fixture for each syntax candidate was replaced by $qraw. This establishes parser fallback behavior for those slots only; it does not establish assembler acceptance, complete ISA spelling coverage, or legality.",
+    "limitations": [
+      "Only one compiler-generated operand template per syntax candidate is used.",
+      "The candidates do not exhaust the manual ISA or all accepted operand spellings.",
+      "Rejecting these $qraw mutations does not prove that all Raw strings are rejected."
+    ]
   },
   "parallel_issue_boundary_experiment": {
     "source": "proofs_lean/evidence/isa-bounds/reference.json",
