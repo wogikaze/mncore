@@ -91,6 +91,8 @@ import Lean
 #print axioms ProofsLean.MNCore.IntegerALU.abstractEvaluate_evaluation
 #print axioms ProofsLean.MNCore.IntegerALU.abstractEvaluate_constants_exact
 #print axioms ProofsLean.MNCore.IntegerALU.abstractEvaluate_dependencies_are_sound
+#print axioms ProofsLean.MNCore.PEMemory.parsedIntegerRegisterOutput_matches_abstract
+#print axioms ProofsLean.MNCore.PEMemory.abstractParsedIntegerRegisterOutput_dependencies
 #print axioms ProofsLean.MNCore.Expr.evaluate_unary
 #print axioms ProofsLean.MNCore.Expr.evaluate_binary
 #print axioms ProofsLean.MNCore.Expr.evaluate_ternary

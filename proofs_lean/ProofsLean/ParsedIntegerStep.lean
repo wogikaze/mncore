@@ -4664,6 +4664,51 @@ def parsedIntegerRegisterOutput (files : IntegerRegisterFiles)
     (pack (readDirectAccess files sourceX))
     (pack (readDirectAccess files sourceY)) reduced
 
+/-- The two values presented by a parsed integer instruction to the ALU. This
+atom type makes the boundary between memory/forwarding resolution and the
+operator abstraction explicit. -/
+inductive ParsedIntegerSource where
+  | x | y
+  deriving DecidableEq, Repr
+
+def parsedIntegerSourceEnvironment (files : IntegerRegisterFiles)
+    (sourceX sourceY : DirectMemoryAccess) :
+    ParsedIntegerSource → IntegerALU.Bus := fun source =>
+  match source with
+  | .x => pack (readDirectAccess files sourceX)
+  | .y => pack (readDirectAccess files sourceY)
+
+def abstractParsedIntegerRegisterOutput
+    (precision : IntegerALU.Precision) (aluOp : IntegerALU.Op)
+    (reduced : Bool) :
+    AbstractComputation ParsedIntegerSource IntegerALU.Bus IntegerALU.BusResult :=
+  IntegerALU.abstractEvaluate precision aluOp reduced
+    (AbstractValue.input UnitKind.integerAlu .x)
+    (AbstractValue.input UnitKind.integerAlu .y)
+
+/-- The machine's parsed integer output is exactly the evaluation of the
+abstract operator node over the two resolved source buses. This is the
+operator-to-execution soundness boundary used by dependence arguments: the
+abstract node wraps the same total `evaluateBus` function as the concrete
+register step. -/
+theorem parsedIntegerRegisterOutput_matches_abstract
+    (files : IntegerRegisterFiles) (sourceX sourceY : DirectMemoryAccess)
+    (precision : IntegerALU.Precision) (aluOp : IntegerALU.Op) (reduced : Bool) :
+    (abstractParsedIntegerRegisterOutput precision aluOp reduced).evaluate
+      (parsedIntegerSourceEnvironment files sourceX sourceY) =
+      parsedIntegerRegisterOutput files sourceX sourceY precision aluOp reduced := by
+  change (IntegerALU.abstractEvaluate precision aluOp reduced
+    (AbstractValue.input UnitKind.integerAlu ParsedIntegerSource.x)
+    (AbstractValue.input UnitKind.integerAlu ParsedIntegerSource.y)).evaluate
+      (parsedIntegerSourceEnvironment files sourceX sourceY) = _
+  rw [IntegerALU.abstractEvaluate_evaluation]
+  rfl
+
+theorem abstractParsedIntegerRegisterOutput_dependencies
+    (precision : IntegerALU.Precision) (aluOp : IntegerALU.Op) (reduced : Bool) :
+    (abstractParsedIntegerRegisterOutput precision aluOp reduced).dependencies = [.x, .y] := by
+  rfl
+
 def parsedIntegerMaskRegisterOutput (files : IntegerRegisterFiles)
     (accesses : ParsedIntegerMaskAccesses) (precision : IntegerALU.Precision)
     (aluOp : IntegerALU.Op) (reduced : Bool) : IntegerALU.BusResult :=
