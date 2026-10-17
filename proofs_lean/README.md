@@ -204,8 +204,8 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   broadcast/write、符号付きMAB差分、direction依存、round付きRRN reductionをfixture化した。
   Rustと同じく最初のtyped operandから`l1bmd`/`l2bmd`の方向を決める薄い入口も加えた。
   selector parserが保持するu8全域とassemble3で有効な0..15は別の範囲として扱う。
-  `ParsedRrn`のprecision文字をASCII範囲に制限した部分型と8個のRRN opcodeの組の有限性は既存だが、
-  RRN parser出力がこのenvelopeに入る一般定理はまだない。
+  `ParsedRrn.precision`自体を`Char`の`<128`部分型に変更し、ASCII precisionの範囲を構造で保持する。
+  RRN parserはこの部分型の値しか生成できず、そこから8個のRRN opcodeの有限carrierへ写す。
   `ParsedL1Op.distrib/gather`からoffset付きvariantだけを取り出す射影を定義し、その結果が有限なtagged carrierに
   入ることを証明した。これも他の`ParsedL1Op` variantや完全なPE行の有限性は含まない。
   `l1bmm@`と`l1bmm4@`のselector 0..15をassemble3で全件確認し、両形式の16が拒否されることも確認した。

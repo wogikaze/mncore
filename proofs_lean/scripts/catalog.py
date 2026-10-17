@@ -848,9 +848,9 @@ def coverage_catalog() -> dict:
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
             "theorem": "ProofsLean.MNCore.Issue.ParsedRrn.inFiniteEnvelope_finite",
-            "scope": "Finite carrier for reduction operation codes and character precision values whose Unicode scalar is below 128.",
-            "evidence": "`ParsedRrnOp` has eight constructors; the precision envelope is an explicit finite ASCII-code envelope.",
-            "missing": "The L1/L2 opcode parsers have representative RRN fixtures, but no general theorem connects their parsed RRN outputs to this envelope or to accepted assembler spellings.",
+            "scope": "Finite carrier for the eight reduction operation codes and RRN precision characters below Unicode scalar 128; `ParsedRrn.precision` carries this bound in its type.",
+            "evidence": "`ParsedRrn.precision` is a subtype with the `<128` proof. `parseParsedMvRrn?` constructs that subtype only after checking the bound and recognizes the documented precision/opcode combinations; finiteCode maps it to `Fin 128 × Fin 8`.",
+            "missing": "Assembler acceptance correspondence for the complete L1/L2 RRN spelling inventory and source-line parser coverage remains unproved.",
         }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),

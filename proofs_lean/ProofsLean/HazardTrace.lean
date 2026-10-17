@@ -17,7 +17,7 @@ def firstMemoryExt : List ParsedOperand → Bool
   | _ => false
 
 def isHalfFloatAdd (rrn : ParsedRrn) : Bool :=
-  rrn.precision == 'h' && rrn.op == .fadd
+  rrn.precision.val == 'h' && rrn.op == .fadd
 
 def parsedL1HazardInfo (op : ParsedL1Op) :
     L1HazardOp × Bool :=

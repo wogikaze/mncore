@@ -545,7 +545,7 @@ inductive ParsedRrnOp where
   deriving DecidableEq, Repr
 
 structure ParsedRrn where
-  precision : Char
+  precision : {precision : Char // precision.toNat < 128}
   op : ParsedRrnOp
   deriving DecidableEq, Repr
 
@@ -744,7 +744,7 @@ theorem ParsedOp.mreadf_at_second_alu_source_is_invalid :
 
 theorem ParsedOp.mreadf_non_alu_source_is_invalid :
     ¬ ParsedOp.forwardingSourcePositionsValid (.l1bm (.reduce
-      ⟨'f', .fadd⟩ false)) [.forward .mreadf false false false] := by
+      ⟨⟨'f', by decide⟩, .fadd⟩ false)) [.forward .mreadf false false false] := by
   simp [ParsedOp.forwardingSourcePositionsValid, ParsedOperand.isMreadf]
 
 theorem ParsedOp.l2bm_dars_source_role (operand : ParsedOperand) :
@@ -1317,9 +1317,11 @@ inductive ParsedMvKind where
 /-- Parse the RRN suffix used by MV reduction opcodes. The precision selects
 the same operation family as `Rrn::parse_prefix` in the Rust parser. -/
 def parseParsedMvRrn? (chars : List Char) : Option ParsedRrn := do
-  let precision ← chars.head?
+  let rawPrecision ← chars.head?
+  let precision ← if h : rawPrecision.toNat < 128 then
+    some ⟨rawPrecision, h⟩ else none
   let opChars := chars.drop 1
-  let op ← match precision, String.ofList opChars with
+  let op ← match precision.val, String.ofList opChars with
     | 'd', "fadd" | 'f', "fadd" | 'h', "fadd" => some .fadd
     | 'd', "max" | 'f', "max" | 'h', "max" => some .max
     | 'd', "min" | 'f', "min" | 'h', "min" => some .min
@@ -1622,15 +1624,15 @@ def parseParsedL2Opcode? (opcode : String) (fromL2 : Bool) : Option ParsedL2Op :
 
 theorem parseParsedL2Opcode_reduce_with_list :
     parseParsedL2Opcode? "l2bmrdfadd@[0,4]" false =
-      some (.reduce ⟨'d', .fadd⟩ ⟨17, 4⟩) := by decide
+      some (.reduce ⟨⟨'d', by decide⟩, .fadd⟩ ⟨17, 4⟩) := by decide
 
 theorem parseParsedL2Opcode_reduce_default_set :
     parseParsedL2Opcode? "l2bmrdfadd" false =
-      some (.reduce ⟨'d', .fadd⟩ parsedL1bSetAll) := by decide
+      some (.reduce ⟨⟨'d', by decide⟩, .fadd⟩ parsedL1bSetAll) := by decide
 
 theorem parseParsedL2Opcode_reduce2_ignores_selector_like_rust :
     parseParsedL2Opcode? "l2bmr2dfadd@ignored" false =
-      some (.reduce2 ⟨'d', .fadd⟩) := by decide
+      some (.reduce2 ⟨⟨'d', by decide⟩, .fadd⟩) := by decide
 
 theorem parseParsedL2Opcode_dars_ignores_selector_like_rust :
     parseParsedL2Opcode? "l2bmdars@ignored" false = some .dars := by decide
@@ -1766,11 +1768,11 @@ theorem parseParsedL1Opcode_mabdiff_rejects_outside_assembler_range :
 
 theorem parseParsedL1Opcode_reduce_rounding :
     parseParsedL1Opcode? "l1bmr4dfaddr" false =
-      some (.reduce4 ⟨'d', .fadd⟩ true) := by decide
+      some (.reduce4 ⟨⟨'d', by decide⟩, .fadd⟩ true) := by decide
 
 theorem parseParsedL1Opcode_reduce_unrounded :
     parseParsedL1Opcode? "l1bmriband" true =
-      some (.reduce ⟨'i', .band⟩ false) := by decide
+      some (.reduce ⟨⟨'i', by decide⟩, .band⟩ false) := by decide
 
 theorem parseParsedL1Opcode_rejects_invalid_round_suffix :
     parseParsedL1Opcode? "l1bmrdfaddrr" false = none := by decide

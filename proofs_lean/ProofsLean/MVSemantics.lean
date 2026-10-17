@@ -539,7 +539,7 @@ def parsedMvR2Plan? (transfer : ParsedMv) : Option (List ReductionPair) := do
 
 def parsedMvReducer? (rrn : ParsedRrn) :
     Option (List (BitVec 64) → BitVec 64) :=
-  match rrn.precision, rrn.op with
+  match rrn.precision.val, rrn.op with
   | 'd', .fadd => some (RRN.reduceLongFloatAddFormat .double)
   | 'f', .fadd => some (RRN.reduceLongFloatAddFormat .single)
   | 'h', .fadd => some (RRN.reduceLongFloatAddFormat .half)

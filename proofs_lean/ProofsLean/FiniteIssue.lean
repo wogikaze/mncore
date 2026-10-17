@@ -156,11 +156,16 @@ private theorem ParsedRrnOp.finiteCode_injective :
   cases a <;> cases b <;> simp [ParsedRrnOp.finiteCode] at equal ⊢
 
 def ParsedRrn.inFiniteEnvelope (rrn : ParsedRrn) : Prop :=
-  rrn.precision.toNat < 128
+  rrn.precision.val.toNat < 128
+
+theorem ParsedRrn.inFiniteEnvelope_of_precision (rrn : ParsedRrn) :
+    rrn.inFiniteEnvelope :=
+  rrn.precision.property
 
 private def ParsedRrn.finiteCode
     (rrn : {rrn : ParsedRrn // rrn.inFiniteEnvelope}) : Fin 128 × Fin 8 :=
-  (⟨rrn.1.precision.toNat, rrn.2⟩, ParsedRrnOp.finiteCode rrn.1.op)
+  (⟨rrn.1.precision.val.toNat, rrn.1.precision.property⟩,
+    ParsedRrnOp.finiteCode rrn.1.op)
 
 private theorem ParsedRrn.finiteCode_injective :
     Function.Injective ParsedRrn.finiteCode := by
@@ -168,10 +173,10 @@ private theorem ParsedRrn.finiteCode_injective :
   apply Subtype.ext
   simp only [ParsedRrn.finiteCode, Prod.mk.injEq, Fin.mk.injEq] at equal
   rcases equal with ⟨charValues, opValues⟩
-  have charNatEqual := congrArg Fin.val charValues
-  have precisionEqual : ap = bp := Char.toNat_inj.mp charNatEqual
+  have precisionEqual : ap.val = bp.val := Char.toNat_inj.mp charValues
+  have boundedPrecisionEqual : ap = bp := Subtype.ext precisionEqual
   have opEqual : ao = bo := ParsedRrnOp.finiteCode_injective opValues
-  cases precisionEqual
+  cases boundedPrecisionEqual
   cases opEqual
   rfl
 
@@ -183,8 +188,19 @@ private theorem ParsedRrn.finiteCode_value_injective
     (a b : ParsedRrn) (ha : a.inFiniteEnvelope) (hb : b.inFiniteEnvelope)
     (equal : ParsedRrn.finiteCode ⟨a, ha⟩ = ParsedRrn.finiteCode ⟨b, hb⟩) :
     a = b := by
-  have subtypeEqual := ParsedRrn.finiteCode_injective equal
-  exact congrArg Subtype.val subtypeEqual
+  cases a with
+  | mk ap ao =>
+    cases b with
+    | mk bp bo =>
+      change ((⟨ap.val.toNat, ap.property⟩ : Fin 128), ParsedRrnOp.finiteCode ao) =
+        ((⟨bp.val.toNat, bp.property⟩ : Fin 128), ParsedRrnOp.finiteCode bo) at equal
+      have precisionValues := congrArg Fin.val (congrArg Prod.fst equal)
+      have operationValues := congrArg Prod.snd equal
+      simp only [ParsedRrn.mk.injEq]
+      constructor
+      · apply Subtype.ext
+        exact Char.toNat_inj.mp precisionValues
+      · exact ParsedRrnOp.finiteCode_injective operationValues
 
 inductive ParsedL1Mabdiff where
   | distrib (offset : Int) | gather (offset : Int)
@@ -364,7 +380,7 @@ private theorem ParsedL1Op.finiteCode_injective :
           exact ParsedRrn.finiteCode_value_injective _ _
             (by simpa [ParsedL1Op.inFiniteEnvelope] using ha)
             (by simpa [ParsedL1Op.inFiniteEnvelope] using hb)
-            (Prod.ext equal.1.1 equal.1.2)
+            (Prod.ext (Fin.ext equal.1.1) equal.1.2)
         try exact congrArg Subtype.val (mabdiffFiniteCode_injective equal)
 
 theorem ParsedL1Op.inFiniteEnvelope_finite :
@@ -949,7 +965,7 @@ theorem char_finite : Finite Char :=
   Finite.of_injective charFiniteCode charFiniteCode_injective
 
 private def ParsedRrn.unrestrictedFiniteCode (rrn : ParsedRrn) : Fin 0x110000 × Fin 8 :=
-  (charFiniteCode rrn.precision, ParsedRrnOp.finiteCode rrn.op)
+  (charFiniteCode rrn.precision.val, ParsedRrnOp.finiteCode rrn.op)
 
 private theorem ParsedRrn.unrestrictedFiniteCode_injective :
     Function.Injective ParsedRrn.unrestrictedFiniteCode := by
@@ -959,10 +975,10 @@ private theorem ParsedRrn.unrestrictedFiniteCode_injective :
     cases b with
     | mk bp bo =>
       simp only [ParsedRrn.unrestrictedFiniteCode, Prod.mk.injEq] at equal
-      have charNatEqual : ap.toNat = bp.toNat := by
+      have charNatEqual : ap.val.toNat = bp.val.toNat := by
         have codeEqual := congrArg Fin.val equal.1
         simpa [charFiniteCode] using codeEqual
-      have precisionEqual := Char.toNat_inj.mp charNatEqual
+      have precisionEqual : ap = bp := Subtype.ext (Char.toNat_inj.mp charNatEqual)
       have opEqual := ParsedRrnOp.finiteCode_injective equal.2
       cases precisionEqual
       cases opEqual
@@ -1264,13 +1280,13 @@ private theorem ParsedL2Op.finiteCode_injective :
           exact ParsedRrn.finiteCode_value_injective _ _
             (by simpa [ParsedL2Op.inFiniteEnvelope] using ha)
             (by simpa [ParsedL2Op.inFiniteEnvelope] using hb)
-            (Prod.ext equal.1 equal.2)
+            (Prod.ext (Fin.ext equal.1) equal.2)
         try
           exact And.intro
             (ParsedRrn.finiteCode_value_injective _ _
               (by simpa [ParsedL2Op.inFiniteEnvelope] using ha.1)
               (by simpa [ParsedL2Op.inFiniteEnvelope] using hb.1)
-              (Prod.ext equal.2.1 equal.2.2))
+              (Prod.ext (Fin.ext equal.2.1) equal.2.2))
             (ParsedL1bSet.values_injective _ _ equal.1)
 
 theorem ParsedL2Op.inFiniteEnvelope_finite :

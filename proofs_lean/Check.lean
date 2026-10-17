@@ -130,6 +130,7 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.ParsedL1bSet.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.mabdiffInFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.ParsedRrn.inFiniteEnvelope_finite
+#print axioms ProofsLean.MNCore.Issue.ParsedRrn.inFiniteEnvelope_of_precision
 #print axioms ProofsLean.MNCore.Issue.ParsedL1Mabdiff.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.ParsedL1Selector.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.ParsedL1Op.inFiniteEnvelope_finite
