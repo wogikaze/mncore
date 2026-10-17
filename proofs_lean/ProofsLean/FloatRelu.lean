@@ -61,4 +61,47 @@ theorem abstractRelu_dependencies_are_sound {Atom : Type}
       (abstractRelu condition value).evaluate rightEnv :=
   AbstractValue.depends_only_on_inputs _ leftEnv rightEnv agree
 
+abbrev Words := Fin 16 → BitVec 32
+
+def chunkIndex (line : Fin 2) (lane : Fin 8) : Fin 16 :=
+  ⟨8 * line.val + lane.val, by
+    have hl := line.isLt
+    have hw := lane.isLt
+    omega⟩
+
+def vectorAnswer (input : Words) : Words := fun index =>
+  relu (input index) (input index)
+
+def writeChunk (input output : Words) (line : Fin 2) : Words := fun index =>
+  if index.val / 8 = line.val then vectorAnswer input index else output index
+
+def twoLineResult (input initialOutput : Words) : Words :=
+  writeChunk input (writeChunk input initialOutput ⟨0, by decide⟩)
+    ⟨1, by decide⟩
+
+theorem chunkIndex_injective (line₁ line₂ : Fin 2) (lane₁ lane₂ : Fin 8)
+    (equal : chunkIndex line₁ lane₁ = chunkIndex line₂ lane₂) :
+    line₁ = line₂ ∧ lane₁ = lane₂ := by
+  have values := congrArg Fin.val equal
+  simp only [chunkIndex, Fin.val_mk] at values
+  have lineEqual : line₁.val = line₂.val := by omega
+  have laneEqual : lane₁.val = lane₂.val := by omega
+  exact ⟨Fin.ext lineEqual, Fin.ext laneEqual⟩
+
+theorem chunkIndex_covers_all_words (index : Fin 16) :
+    ∃ line : Fin 2, ∃ lane : Fin 8, chunkIndex line lane = index := by
+  let line : Fin 2 := ⟨index.val / 8, by have hi := index.isLt; omega⟩
+  let lane : Fin 8 := ⟨index.val % 8, Nat.mod_lt _ (by decide)⟩
+  refine ⟨line, lane, ?_⟩
+  apply Fin.ext
+  simp [chunkIndex, line, lane]
+  omega
+
+theorem twoLineResult_correct (input initialOutput : Words) (index : Fin 16) :
+    twoLineResult input initialOutput index = vectorAnswer input index := by
+  simp only [twoLineResult, writeChunk, vectorAnswer]
+  repeat (first | rfl | split)
+  have hi := index.isLt
+  omega
+
 end ProofsLean.MNCore.FloatRelu
