@@ -387,6 +387,50 @@ def executeParsedFloatSubtractCycle? (expression : ParsedExpr)
     leftAddress rightAddress destinationAddress
   some { files with lm1 := nextLM1 }
 
+def executeParsedFloatSubtractCycles? (expression : ParsedExpr)
+    (files : PEMemory.IntegerRegisterFiles) (pe : Fin 4)
+    (cycles : List (Fin 4)) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
+    Option PEMemory.IntegerRegisterFiles :=
+  match cycles with
+  | [] => some files
+  | cycle :: rest => do
+      let next ← executeParsedFloatSubtractCycle? expression files pe cycle bar0 bar1 tWord
+      executeParsedFloatSubtractCycles? expression next pe rest bar0 bar1 tWord
+
+def executeParsedFloatSubtractLine? (expression : ParsedExpr)
+    (files : PEMemory.IntegerRegisterFiles) (pe : Fin 4)
+    (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
+    Option PEMemory.IntegerRegisterFiles :=
+  executeParsedFloatSubtractCycles? expression files pe (List.finRange 4) bar0 bar1 tWord
+
+theorem executeParsedFloatSubtractCycles_success (expression : ParsedExpr)
+    (files : PEMemory.IntegerRegisterFiles) (pe : Fin 4)
+    (cycles : List (Fin 4)) (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
+    (lowered : ∀ cycle ∈ cycles, ∃ leftAddress rightAddress destinationAddress,
+      lowerParsedFloatSubtract? expression pe cycle bar0 bar1 tWord =
+        some (leftAddress, rightAddress, destinationAddress)) :
+    ∃ result, executeParsedFloatSubtractCycles? expression files pe cycles
+      bar0 bar1 tWord = some result := by
+  induction cycles generalizing files with
+  | nil => exact ⟨files, rfl⟩
+  | cons cycle rest ih =>
+      obtain ⟨leftAddress, rightAddress, destinationAddress, headLowered⟩ :=
+        lowered cycle (by simp)
+      have tailLowered : ∀ next ∈ rest, ∃ leftAddress rightAddress destinationAddress,
+          lowerParsedFloatSubtract? expression pe next bar0 bar1 tWord =
+            some (leftAddress, rightAddress, destinationAddress) := by
+        intro next member
+        exact lowered next (by simp [member])
+      let middle := commitLM1 files
+        (subtractCycle files.lm0 files.lm0 files.lm1
+          leftAddress rightAddress destinationAddress)
+      have firstStep : executeParsedFloatSubtractCycle? expression files pe cycle
+          bar0 bar1 tWord = some middle := by
+        simp [executeParsedFloatSubtractCycle?, headLowered, middle, commitLM1]
+      obtain ⟨result, restSteps⟩ := ih middle tailLowered
+      refine ⟨result, ?_⟩
+      simp [executeParsedFloatSubtractCycles?, firstStep, restSteps]
+
 theorem executeParsedFloatSubtractCycle_success (expression : ParsedExpr)
     (files : PEMemory.IntegerRegisterFiles) (pe cycle : Fin 4)
     (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
@@ -463,6 +507,31 @@ theorem parsedFloatSubtractSmoke_cycle0_lowers :
 theorem parsedFloatSubtractSmoke_cycle3_lowers :
     lowerParsedFloatSubtract? parsedFloatSubtractSmoke 0 3 0 0 0 =
       some (⟨6, by decide⟩, ⟨14, by decide⟩, ⟨22, by decide⟩) := by decide
+
+theorem executeParsedFloatSubtractLine_succeeds
+    (files : PEMemory.IntegerRegisterFiles) :
+    ∃ result, executeParsedFloatSubtractLine? parsedFloatSubtractSmoke files
+      0 0 0 0 = some result := by
+  unfold executeParsedFloatSubtractLine?
+  apply executeParsedFloatSubtractCycles_success
+  intro cycle member
+  have hc := cycle.isLt
+  have cases : cycle.val = 0 ∨ cycle.val = 1 ∨ cycle.val = 2 ∨ cycle.val = 3 := by
+    simp at member
+    omega
+  rcases cases with h | h | h | h
+  · have same : cycle = ⟨0, by decide⟩ := Fin.ext h
+    subst cycle
+    exact ⟨⟨0, by decide⟩, ⟨8, by decide⟩, ⟨16, by decide⟩, by decide⟩
+  · have same : cycle = ⟨1, by decide⟩ := Fin.ext h
+    subst cycle
+    exact ⟨⟨2, by decide⟩, ⟨10, by decide⟩, ⟨18, by decide⟩, by decide⟩
+  · have same : cycle = ⟨2, by decide⟩ := Fin.ext h
+    subst cycle
+    exact ⟨⟨4, by decide⟩, ⟨12, by decide⟩, ⟨20, by decide⟩, by decide⟩
+  · have same : cycle = ⟨3, by decide⟩ := Fin.ext h
+    subst cycle
+    exact ⟨⟨6, by decide⟩, ⟨14, by decide⟩, ⟨22, by decide⟩, by decide⟩
 
 
 
