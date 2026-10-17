@@ -398,6 +398,28 @@ def executeParallelSecondLine (input : BitVec 64) (old : ForwardState) : Forward
 def executeThirdLine (state : ForwardState) : BitVec 64 :=
   selector2103 (sbslWithShift state.aluf state.mauf)
 
+/-- Forwarding slots at the start of the parallel second issue, projected
+from the values carried by the first issue. -/
+def slotsForForwardState (state : ForwardState) :
+    ProofsLean.MNCore.Forwarding.Slots := fun unit _ =>
+  match unit with
+  | .alu => .known ⟨state.aluf, 0⟩
+  | .mau => .known ⟨state.mauf, 0⟩
+  | .matrixRead | .l1ToPE => .unknown
+
+def executeParallelSecondLineParsed? (input : BitVec 64) (old : ForwardState)
+    (cycle : Fin 4) : Option ForwardState := do
+  let fmaOutput ← executeAnswerFloatFma? (slotsForForwardState old) cycle
+  some ⟨ibsl input, fmaOutput⟩
+
+theorem executeParallelSecondLineParsed_matches
+    (input : BitVec 64) (old : ForwardState) (cycle : Fin 4) :
+    executeParallelSecondLineParsed? input old cycle =
+      some (executeParallelSecondLine input old) := by
+  simp [executeParallelSecondLineParsed?, executeParallelSecondLine,
+    executeAnswerFloatFma?, answer_float_fma_uses_three_aluf,
+    slotsForForwardState, packedSingleFma]
+
 def answerProgram (input : BitVec 64) : BitVec 64 :=
   executeThirdLine (executeParallelSecondLine input firstLineState)
 
@@ -406,6 +428,14 @@ theorem answerProgram_eq_answerDatapath (input : BitVec 64) :
   unfold answerProgram executeThirdLine executeParallelSecondLine firstLineState
   rw [packed_fma_produces_shift_bus, mauf_count_selects_byte_rotation]
   rfl
+
+theorem answerProgram_parsed_second_line_readback (input : BitVec 64)
+    (cycle : Fin 4) :
+    (executeParallelSecondLineParsed? input firstLineState cycle).map
+      executeThirdLine = some (byteSwap64 input) := by
+  rw [executeParallelSecondLineParsed_matches]
+  change some (answerProgram input) = some (byteSwap64 input)
+  rw [answerProgram_eq_answerDatapath, answerDatapath_is_byteSwap]
 
 /-- Apply the composed Convert Endian datapath to one 64-bit LM0 element and
 write its result to one 64-bit LM1 element. This connects the bit-level
