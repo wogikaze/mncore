@@ -25,7 +25,7 @@
     },
     {
       "path": "proofs_lean/scripts/check_isa_parser_bounds.py",
-      "sha256": "7908f8d7c34f082416546ca14344dbb6b717416caf29bcfacc78b391b134d28e"
+      "sha256": "e441155f24529bc83b761bfceb0f392807bb5608abbb2b39a2501ac69da12293"
     },
     {
       "path": "docs/mncore_llm/chapters/ch03/section-3.5.8.10__L2BMPDM並列個別転送命令__66b35ffe.md",
@@ -16695,6 +16695,4986 @@
       ],
       "auxiliary_output_kinds": [],
       "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_0",
+      "source": "hbfn/0 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits >= 6' failed!  in to_bf_field at aluop.cc:42 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_0",
+      "source": "hbfe/0 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits >= 6' failed!  in to_bf_field at aluop.cc:42 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_1",
+      "source": "hbfn/1 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits >= 6' failed!  in to_bf_field at aluop.cc:42 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_1",
+      "source": "hbfe/1 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits >= 6' failed!  in to_bf_field at aluop.cc:42 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_2",
+      "source": "hbfn/2 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits >= 6' failed!  in to_bf_field at aluop.cc:42 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_2",
+      "source": "hbfe/2 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits >= 6' failed!  in to_bf_field at aluop.cc:42 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_3",
+      "source": "hbfn/3 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits >= 6' failed!  in to_bf_field at aluop.cc:42 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_3",
+      "source": "hbfe/3 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits >= 6' failed!  in to_bf_field at aluop.cc:42 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_4",
+      "source": "hbfn/4 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits >= 6' failed!  in to_bf_field at aluop.cc:42 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_4",
+      "source": "hbfe/4 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits >= 6' failed!  in to_bf_field at aluop.cc:42 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_12",
+      "source": "hbfn/12 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_12",
+      "source": "hbfe/12 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_13",
+      "source": "hbfn/13 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_13",
+      "source": "hbfe/13 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_14",
+      "source": "hbfn/14 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_14",
+      "source": "hbfe/14 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_15",
+      "source": "hbfn/15 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_15",
+      "source": "hbfe/15 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_16",
+      "source": "hbfn/16 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_16",
+      "source": "hbfe/16 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_17",
+      "source": "hbfn/17 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_17",
+      "source": "hbfe/17 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_18",
+      "source": "hbfn/18 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_18",
+      "source": "hbfe/18 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_19",
+      "source": "hbfn/19 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_19",
+      "source": "hbfe/19 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_20",
+      "source": "hbfn/20 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_20",
+      "source": "hbfe/20 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_21",
+      "source": "hbfn/21 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_21",
+      "source": "hbfe/21 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_22",
+      "source": "hbfn/22 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_22",
+      "source": "hbfe/22 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_23",
+      "source": "hbfn/23 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_23",
+      "source": "hbfe/23 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_24",
+      "source": "hbfn/24 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_24",
+      "source": "hbfe/24 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_25",
+      "source": "hbfn/25 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_25",
+      "source": "hbfe/25 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_26",
+      "source": "hbfn/26 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_26",
+      "source": "hbfe/26 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_27",
+      "source": "hbfn/27 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_27",
+      "source": "hbfe/27 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_28",
+      "source": "hbfn/28 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_28",
+      "source": "hbfe/28 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_29",
+      "source": "hbfn/29 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_29",
+      "source": "hbfe/29 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_30",
+      "source": "hbfn/30 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_30",
+      "source": "hbfe/30 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_31",
+      "source": "hbfn/31 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_31",
+      "source": "hbfe/31 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_32",
+      "source": "hbfn/32 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_32",
+      "source": "hbfe/32 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_33",
+      "source": "hbfn/33 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_33",
+      "source": "hbfe/33 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_34",
+      "source": "hbfn/34 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_34",
+      "source": "hbfe/34 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_35",
+      "source": "hbfn/35 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_35",
+      "source": "hbfe/35 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_36",
+      "source": "hbfn/36 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_36",
+      "source": "hbfe/36 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_37",
+      "source": "hbfn/37 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_37",
+      "source": "hbfe/37 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_38",
+      "source": "hbfn/38 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_38",
+      "source": "hbfe/38 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_39",
+      "source": "hbfn/39 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_39",
+      "source": "hbfe/39 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_40",
+      "source": "hbfn/40 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_40",
+      "source": "hbfe/40 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_41",
+      "source": "hbfn/41 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_41",
+      "source": "hbfe/41 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_42",
+      "source": "hbfn/42 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_42",
+      "source": "hbfe/42 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_43",
+      "source": "hbfn/43 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_43",
+      "source": "hbfe/43 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_44",
+      "source": "hbfn/44 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_44",
+      "source": "hbfe/44 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_45",
+      "source": "hbfn/45 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_45",
+      "source": "hbfe/45 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_46",
+      "source": "hbfn/46 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_46",
+      "source": "hbfe/46 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_47",
+      "source": "hbfn/47 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_47",
+      "source": "hbfe/47 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_48",
+      "source": "hbfn/48 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_48",
+      "source": "hbfe/48 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_49",
+      "source": "hbfn/49 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_49",
+      "source": "hbfe/49 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_50",
+      "source": "hbfn/50 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_50",
+      "source": "hbfe/50 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_51",
+      "source": "hbfn/51 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_51",
+      "source": "hbfe/51 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_52",
+      "source": "hbfn/52 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_52",
+      "source": "hbfe/52 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_53",
+      "source": "hbfn/53 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_53",
+      "source": "hbfe/53 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_54",
+      "source": "hbfn/54 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_54",
+      "source": "hbfe/54 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_55",
+      "source": "hbfn/55 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_55",
+      "source": "hbfe/55 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_56",
+      "source": "hbfn/56 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_56",
+      "source": "hbfe/56 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_57",
+      "source": "hbfn/57 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_57",
+      "source": "hbfe/57 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_58",
+      "source": "hbfn/58 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_58",
+      "source": "hbfe/58 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_59",
+      "source": "hbfn/59 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_59",
+      "source": "hbfe/59 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_60",
+      "source": "hbfn/60 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_60",
+      "source": "hbfe/60 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_61",
+      "source": "hbfn/61 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_61",
+      "source": "hbfe/61 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_62",
+      "source": "hbfn/62 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_62",
+      "source": "hbfe/62 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_63",
+      "source": "hbfn/63 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_63",
+      "source": "hbfe/63 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_64",
+      "source": "hbfn/64 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_64",
+      "source": "hbfe/64 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_65",
+      "source": "hbfn/65 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_65",
+      "source": "hbfe/65 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_66",
+      "source": "hbfn/66 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_66",
+      "source": "hbfe/66 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_67",
+      "source": "hbfn/67 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_67",
+      "source": "hbfe/67 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_68",
+      "source": "hbfn/68 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_68",
+      "source": "hbfe/68 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_69",
+      "source": "hbfn/69 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_69",
+      "source": "hbfe/69 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_70",
+      "source": "hbfn/70 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_70",
+      "source": "hbfe/70 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_71",
+      "source": "hbfn/71 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_71",
+      "source": "hbfe/71 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_72",
+      "source": "hbfn/72 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_72",
+      "source": "hbfe/72 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_73",
+      "source": "hbfn/73 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_73",
+      "source": "hbfe/73 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_74",
+      "source": "hbfn/74 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_74",
+      "source": "hbfe/74 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_75",
+      "source": "hbfn/75 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_75",
+      "source": "hbfe/75 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_76",
+      "source": "hbfn/76 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_76",
+      "source": "hbfe/76 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_77",
+      "source": "hbfn/77 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_77",
+      "source": "hbfe/77 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_78",
+      "source": "hbfn/78 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_78",
+      "source": "hbfe/78 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_79",
+      "source": "hbfn/79 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_79",
+      "source": "hbfe/79 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_80",
+      "source": "hbfn/80 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_80",
+      "source": "hbfe/80 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_81",
+      "source": "hbfn/81 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_81",
+      "source": "hbfe/81 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_82",
+      "source": "hbfn/82 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_82",
+      "source": "hbfe/82 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_83",
+      "source": "hbfn/83 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_83",
+      "source": "hbfe/83 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_84",
+      "source": "hbfn/84 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_84",
+      "source": "hbfe/84 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_85",
+      "source": "hbfn/85 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_85",
+      "source": "hbfe/85 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_86",
+      "source": "hbfn/86 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_86",
+      "source": "hbfe/86 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_87",
+      "source": "hbfn/87 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_87",
+      "source": "hbfe/87 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_88",
+      "source": "hbfn/88 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_88",
+      "source": "hbfe/88 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_89",
+      "source": "hbfn/89 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_89",
+      "source": "hbfe/89 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_90",
+      "source": "hbfn/90 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_90",
+      "source": "hbfe/90 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_91",
+      "source": "hbfn/91 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_91",
+      "source": "hbfe/91 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_92",
+      "source": "hbfn/92 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_92",
+      "source": "hbfe/92 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_93",
+      "source": "hbfn/93 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_93",
+      "source": "hbfe/93 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_94",
+      "source": "hbfn/94 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_94",
+      "source": "hbfe/94 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_95",
+      "source": "hbfn/95 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_95",
+      "source": "hbfe/95 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_96",
+      "source": "hbfn/96 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_96",
+      "source": "hbfe/96 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_97",
+      "source": "hbfn/97 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_97",
+      "source": "hbfe/97 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_98",
+      "source": "hbfn/98 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_98",
+      "source": "hbfe/98 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_99",
+      "source": "hbfn/99 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_99",
+      "source": "hbfe/99 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_100",
+      "source": "hbfn/100 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_100",
+      "source": "hbfe/100 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_101",
+      "source": "hbfn/101 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_101",
+      "source": "hbfe/101 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_102",
+      "source": "hbfn/102 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_102",
+      "source": "hbfe/102 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_103",
+      "source": "hbfn/103 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_103",
+      "source": "hbfe/103 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_104",
+      "source": "hbfn/104 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_104",
+      "source": "hbfe/104 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_105",
+      "source": "hbfn/105 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_105",
+      "source": "hbfe/105 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_106",
+      "source": "hbfn/106 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_106",
+      "source": "hbfe/106 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_107",
+      "source": "hbfn/107 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_107",
+      "source": "hbfe/107 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_108",
+      "source": "hbfn/108 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_108",
+      "source": "hbfe/108 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_109",
+      "source": "hbfn/109 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_109",
+      "source": "hbfe/109 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_110",
+      "source": "hbfn/110 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_110",
+      "source": "hbfe/110 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_111",
+      "source": "hbfn/111 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_111",
+      "source": "hbfe/111 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_112",
+      "source": "hbfn/112 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_112",
+      "source": "hbfe/112 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_113",
+      "source": "hbfn/113 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_113",
+      "source": "hbfe/113 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_114",
+      "source": "hbfn/114 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_114",
+      "source": "hbfe/114 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_115",
+      "source": "hbfn/115 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_115",
+      "source": "hbfe/115 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_116",
+      "source": "hbfn/116 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_116",
+      "source": "hbfe/116 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_117",
+      "source": "hbfn/117 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_117",
+      "source": "hbfe/117 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_118",
+      "source": "hbfn/118 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_118",
+      "source": "hbfe/118 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_119",
+      "source": "hbfn/119 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_119",
+      "source": "hbfe/119 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_120",
+      "source": "hbfn/120 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_120",
+      "source": "hbfe/120 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_121",
+      "source": "hbfn/121 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_121",
+      "source": "hbfe/121 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_122",
+      "source": "hbfn/122 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_122",
+      "source": "hbfe/122 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_123",
+      "source": "hbfn/123 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_123",
+      "source": "hbfe/123 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_124",
+      "source": "hbfn/124 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_124",
+      "source": "hbfe/124 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_125",
+      "source": "hbfn/125 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_125",
+      "source": "hbfe/125 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_126",
+      "source": "hbfn/126 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_126",
+      "source": "hbfe/126 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_127",
+      "source": "hbfn/127 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_127",
+      "source": "hbfe/127 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_128",
+      "source": "hbfn/128 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_128",
+      "source": "hbfe/128 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_129",
+      "source": "hbfn/129 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_129",
+      "source": "hbfe/129 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_130",
+      "source": "hbfn/130 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_130",
+      "source": "hbfe/130 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_131",
+      "source": "hbfn/131 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_131",
+      "source": "hbfe/131 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_132",
+      "source": "hbfn/132 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_132",
+      "source": "hbfe/132 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_133",
+      "source": "hbfn/133 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_133",
+      "source": "hbfe/133 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_134",
+      "source": "hbfn/134 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_134",
+      "source": "hbfe/134 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_135",
+      "source": "hbfn/135 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_135",
+      "source": "hbfe/135 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_136",
+      "source": "hbfn/136 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_136",
+      "source": "hbfe/136 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_137",
+      "source": "hbfn/137 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_137",
+      "source": "hbfe/137 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_138",
+      "source": "hbfn/138 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_138",
+      "source": "hbfe/138 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_139",
+      "source": "hbfn/139 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_139",
+      "source": "hbfe/139 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_140",
+      "source": "hbfn/140 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_140",
+      "source": "hbfe/140 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_141",
+      "source": "hbfn/141 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_141",
+      "source": "hbfe/141 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_142",
+      "source": "hbfn/142 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_142",
+      "source": "hbfe/142 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_143",
+      "source": "hbfn/143 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_143",
+      "source": "hbfe/143 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_144",
+      "source": "hbfn/144 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_144",
+      "source": "hbfe/144 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_145",
+      "source": "hbfn/145 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_145",
+      "source": "hbfe/145 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_146",
+      "source": "hbfn/146 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_146",
+      "source": "hbfe/146 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_147",
+      "source": "hbfn/147 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_147",
+      "source": "hbfe/147 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_148",
+      "source": "hbfn/148 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_148",
+      "source": "hbfe/148 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_149",
+      "source": "hbfn/149 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_149",
+      "source": "hbfe/149 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_150",
+      "source": "hbfn/150 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_150",
+      "source": "hbfe/150 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_151",
+      "source": "hbfn/151 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_151",
+      "source": "hbfe/151 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_152",
+      "source": "hbfn/152 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_152",
+      "source": "hbfe/152 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_153",
+      "source": "hbfn/153 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_153",
+      "source": "hbfe/153 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_154",
+      "source": "hbfn/154 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_154",
+      "source": "hbfe/154 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_155",
+      "source": "hbfn/155 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_155",
+      "source": "hbfe/155 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_156",
+      "source": "hbfn/156 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_156",
+      "source": "hbfe/156 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_157",
+      "source": "hbfn/157 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_157",
+      "source": "hbfe/157 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_158",
+      "source": "hbfn/158 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_158",
+      "source": "hbfe/158 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_159",
+      "source": "hbfn/159 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_159",
+      "source": "hbfe/159 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_160",
+      "source": "hbfn/160 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_160",
+      "source": "hbfe/160 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_161",
+      "source": "hbfn/161 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_161",
+      "source": "hbfe/161 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_162",
+      "source": "hbfn/162 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_162",
+      "source": "hbfe/162 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_163",
+      "source": "hbfn/163 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_163",
+      "source": "hbfe/163 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_164",
+      "source": "hbfn/164 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_164",
+      "source": "hbfe/164 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_165",
+      "source": "hbfn/165 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_165",
+      "source": "hbfe/165 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_166",
+      "source": "hbfn/166 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_166",
+      "source": "hbfe/166 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_167",
+      "source": "hbfn/167 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_167",
+      "source": "hbfe/167 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_168",
+      "source": "hbfn/168 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_168",
+      "source": "hbfe/168 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_169",
+      "source": "hbfn/169 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_169",
+      "source": "hbfe/169 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_170",
+      "source": "hbfn/170 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_170",
+      "source": "hbfe/170 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_171",
+      "source": "hbfn/171 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_171",
+      "source": "hbfe/171 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_172",
+      "source": "hbfn/172 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_172",
+      "source": "hbfe/172 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_173",
+      "source": "hbfn/173 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_173",
+      "source": "hbfe/173 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_174",
+      "source": "hbfn/174 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_174",
+      "source": "hbfe/174 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_175",
+      "source": "hbfn/175 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_175",
+      "source": "hbfe/175 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_176",
+      "source": "hbfn/176 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_176",
+      "source": "hbfe/176 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_177",
+      "source": "hbfn/177 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_177",
+      "source": "hbfe/177 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_178",
+      "source": "hbfn/178 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_178",
+      "source": "hbfe/178 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_179",
+      "source": "hbfn/179 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_179",
+      "source": "hbfe/179 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_180",
+      "source": "hbfn/180 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_180",
+      "source": "hbfe/180 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_181",
+      "source": "hbfn/181 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_181",
+      "source": "hbfe/181 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_182",
+      "source": "hbfn/182 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_182",
+      "source": "hbfe/182 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_183",
+      "source": "hbfn/183 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_183",
+      "source": "hbfe/183 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_184",
+      "source": "hbfn/184 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_184",
+      "source": "hbfe/184 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_185",
+      "source": "hbfn/185 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_185",
+      "source": "hbfe/185 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_186",
+      "source": "hbfn/186 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_186",
+      "source": "hbfe/186 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_187",
+      "source": "hbfn/187 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_187",
+      "source": "hbfe/187 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_188",
+      "source": "hbfn/188 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_188",
+      "source": "hbfe/188 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_189",
+      "source": "hbfn/189 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_189",
+      "source": "hbfe/189 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_190",
+      "source": "hbfn/190 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_190",
+      "source": "hbfe/190 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_191",
+      "source": "hbfn/191 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_191",
+      "source": "hbfe/191 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_192",
+      "source": "hbfn/192 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_192",
+      "source": "hbfe/192 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_193",
+      "source": "hbfn/193 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_193",
+      "source": "hbfe/193 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_194",
+      "source": "hbfn/194 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_194",
+      "source": "hbfe/194 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_195",
+      "source": "hbfn/195 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_195",
+      "source": "hbfe/195 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_196",
+      "source": "hbfn/196 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_196",
+      "source": "hbfe/196 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_197",
+      "source": "hbfn/197 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_197",
+      "source": "hbfe/197 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_198",
+      "source": "hbfn/198 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_198",
+      "source": "hbfe/198 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_199",
+      "source": "hbfn/199 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_199",
+      "source": "hbfe/199 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_200",
+      "source": "hbfn/200 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_200",
+      "source": "hbfe/200 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_201",
+      "source": "hbfn/201 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_201",
+      "source": "hbfe/201 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_202",
+      "source": "hbfn/202 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_202",
+      "source": "hbfe/202 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_203",
+      "source": "hbfn/203 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_203",
+      "source": "hbfe/203 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_204",
+      "source": "hbfn/204 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_204",
+      "source": "hbfe/204 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_205",
+      "source": "hbfn/205 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_205",
+      "source": "hbfe/205 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_206",
+      "source": "hbfn/206 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_206",
+      "source": "hbfe/206 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_207",
+      "source": "hbfn/207 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_207",
+      "source": "hbfe/207 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_208",
+      "source": "hbfn/208 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_208",
+      "source": "hbfe/208 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_209",
+      "source": "hbfn/209 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_209",
+      "source": "hbfe/209 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_210",
+      "source": "hbfn/210 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_210",
+      "source": "hbfe/210 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_211",
+      "source": "hbfn/211 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_211",
+      "source": "hbfe/211 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_212",
+      "source": "hbfn/212 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_212",
+      "source": "hbfe/212 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_213",
+      "source": "hbfn/213 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_213",
+      "source": "hbfe/213 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_214",
+      "source": "hbfn/214 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_214",
+      "source": "hbfe/214 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_215",
+      "source": "hbfn/215 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_215",
+      "source": "hbfe/215 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_216",
+      "source": "hbfn/216 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_216",
+      "source": "hbfe/216 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_217",
+      "source": "hbfn/217 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_217",
+      "source": "hbfe/217 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_218",
+      "source": "hbfn/218 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_218",
+      "source": "hbfe/218 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_219",
+      "source": "hbfn/219 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_219",
+      "source": "hbfe/219 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_220",
+      "source": "hbfn/220 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_220",
+      "source": "hbfe/220 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_221",
+      "source": "hbfn/221 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_221",
+      "source": "hbfe/221 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_222",
+      "source": "hbfn/222 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_222",
+      "source": "hbfe/222 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_223",
+      "source": "hbfn/223 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_223",
+      "source": "hbfe/223 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_224",
+      "source": "hbfn/224 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_224",
+      "source": "hbfe/224 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_225",
+      "source": "hbfn/225 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_225",
+      "source": "hbfe/225 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_226",
+      "source": "hbfn/226 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_226",
+      "source": "hbfe/226 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_227",
+      "source": "hbfn/227 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_227",
+      "source": "hbfe/227 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_228",
+      "source": "hbfn/228 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_228",
+      "source": "hbfe/228 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_229",
+      "source": "hbfn/229 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_229",
+      "source": "hbfe/229 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_230",
+      "source": "hbfn/230 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_230",
+      "source": "hbfe/230 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_231",
+      "source": "hbfn/231 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_231",
+      "source": "hbfe/231 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_232",
+      "source": "hbfn/232 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_232",
+      "source": "hbfe/232 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_233",
+      "source": "hbfn/233 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_233",
+      "source": "hbfe/233 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_234",
+      "source": "hbfn/234 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_234",
+      "source": "hbfe/234 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_235",
+      "source": "hbfn/235 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_235",
+      "source": "hbfe/235 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_236",
+      "source": "hbfn/236 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_236",
+      "source": "hbfe/236 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_237",
+      "source": "hbfn/237 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_237",
+      "source": "hbfe/237 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_238",
+      "source": "hbfn/238 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_238",
+      "source": "hbfe/238 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_239",
+      "source": "hbfn/239 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_239",
+      "source": "hbfe/239 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_240",
+      "source": "hbfn/240 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_240",
+      "source": "hbfe/240 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_241",
+      "source": "hbfn/241 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_241",
+      "source": "hbfe/241 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_242",
+      "source": "hbfn/242 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_242",
+      "source": "hbfe/242 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_243",
+      "source": "hbfn/243 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_243",
+      "source": "hbfe/243 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_244",
+      "source": "hbfn/244 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_244",
+      "source": "hbfe/244 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_245",
+      "source": "hbfn/245 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_245",
+      "source": "hbfe/245 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_246",
+      "source": "hbfn/246 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_246",
+      "source": "hbfe/246 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_247",
+      "source": "hbfn/247 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_247",
+      "source": "hbfe/247 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_248",
+      "source": "hbfn/248 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_248",
+      "source": "hbfe/248 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_249",
+      "source": "hbfn/249 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_249",
+      "source": "hbfe/249 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_250",
+      "source": "hbfn/250 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_250",
+      "source": "hbfe/250 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_251",
+      "source": "hbfn/251 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_251",
+      "source": "hbfe/251 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_252",
+      "source": "hbfn/252 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_252",
+      "source": "hbfe/252 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_253",
+      "source": "hbfn/253 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_253",
+      "source": "hbfe/253 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_254",
+      "source": "hbfn/254 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_254",
+      "source": "hbfe/254 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfn_255",
+      "source": "hbfn/255 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
+      "matches_expected": true
+    },
+    {
+      "case": "hbfe_255",
+      "source": "hbfe/255 $lm0 $ln0",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `bf_nbits <= grape_pfn3::type::HalfWord::significand_bit' failed!  in to_bf_field at aluop.cc:43 with codegen_dir=: ",
       "matches_expected": true
     },
     {
@@ -39247,7 +44227,7 @@
     "Matrix rows 0 through 15 are accepted; row 16 is rejected.",
     "PE destination lists are not sized by source arity: lpassa accepts three outputs across LM1/GRF0/GRF1, and zero accepts LM0/LM1/GRF0/GRF1 plus OMR. The sampled duplicate-bank and nowrite combinations are rejected; this is not an exhaustive output grammar proof.",
     "The issue checker now mirrors the sampled assembler rule that destination banks cannot repeat within one expression and `$nowrite` must be the sole destination.",
-    "hbfe and hbfn accept /6 through /9 and reject /10 in the selected boundary probes.",
+    "Every u8 argument was probed for hbfe and hbfn; both accept exactly /6 through /9.",
     "LM0/LM1 and GRF0/GRF1 accept aligned final addresses at widths 1, 2, and 4; their single-word capacities are respectively 4096 and 512, and the capacity address is rejected.",
     "Each of the four explicit LM0 cycle addresses accepts 4095 and rejects 4096; madpe values 0 through 3 are accepted and 4 is rejected.",
     "All 64 L1B set address/immode pairs in 0..7 are accepted, and address 8 and immode 8 are rejected; `l2bm@<l1b>` accepts 0..7 and rejects 8. Base-address register writes accept widths 1 and 2 but reject width 4.",

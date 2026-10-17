@@ -7,12 +7,12 @@
   "inventory_scope": "Compiler-generated ALU/MAU spelling candidates plus separately scoped source-derived records; not an authoritative complete ISA or legality model.",
   "selected_parser_boundary_experiment": {
     "source": "proofs_lean/evidence/isa-bounds/reference.json",
-    "sha256": "15e799e53d756756b452d73531f6027e58cf80268053cf01aaf1bf3b15912626",
+    "sha256": "abc7983324fb474eface69826c2154f687a6ed015ab6e51d2fba508e2a8007b7",
     "generator": "proofs_lean/scripts/check_isa_parser_bounds.py",
-    "generator_sha256": "7908f8d7c34f082416546ca14344dbb6b717416caf29bcfacc78b391b134d28e",
-    "probes": 2912,
+    "generator_sha256": "e441155f24529bc83b761bfceb0f392807bb5608abbb2b39a2501ac69da12293",
+    "probes": 3410,
     "accepted": 1651,
-    "rejected": 1261,
+    "rejected": 1759,
     "observed_encoded_word_kinds": [
       [
         "j",
@@ -39,7 +39,7 @@
       "Matrix rows 0 through 15 are accepted; row 16 is rejected.",
       "PE destination lists are not sized by source arity: lpassa accepts three outputs across LM1/GRF0/GRF1, and zero accepts LM0/LM1/GRF0/GRF1 plus OMR. The sampled duplicate-bank and nowrite combinations are rejected; this is not an exhaustive output grammar proof.",
       "The issue checker now mirrors the sampled assembler rule that destination banks cannot repeat within one expression and `$nowrite` must be the sole destination.",
-      "hbfe and hbfn accept /6 through /9 and reject /10 in the selected boundary probes.",
+      "Every u8 argument was probed for hbfe and hbfn; both accept exactly /6 through /9.",
       "LM0/LM1 and GRF0/GRF1 accept aligned final addresses at widths 1, 2, and 4; their single-word capacities are respectively 4096 and 512, and the capacity address is rejected.",
       "Each of the four explicit LM0 cycle addresses accepts 4095 and rejects 4096; madpe values 0 through 3 are accepted and 4 is rejected.",
       "All 64 L1B set address/immode pairs in 0..7 are accepted, and address 8 and immode 8 are rejected; `l2bm@<l1b>` accepts 0..7 and rejects 8. Base-address register writes accept widths 1 and 2 but reject width 4.",
@@ -179,7 +179,7 @@
   },
   "parallel_issue_boundary_experiment": {
     "source": "proofs_lean/evidence/isa-bounds/reference.json",
-    "sha256": "15e799e53d756756b452d73531f6027e58cf80268053cf01aaf1bf3b15912626",
+    "sha256": "abc7983324fb474eface69826c2154f687a6ed015ab6e51d2fba508e2a8007b7",
     "manual_sections": [
       "SDM 3.6.1.7",
       "SDM 3.6.1.9",
@@ -579,7 +579,7 @@
       "sha256": "3857e27aeb37f5c1a9dc9ea28b54aea9c913b2941836b7552407180f5216cb05",
       "theorem": "ProofsLean.MNCore.Issue.parsedBfArgInFiniteEnvelope_finite",
       "scope": "Finite optional mantissa-length arguments in the hbfe/hbfn range 6..9.",
-      "evidence": "proofs_lean/evidence/isa-bounds/reference.json: hbfe/hbfn values 6..9 accepted and 5, 10, 11 rejected.",
+      "evidence": "proofs_lean/evidence/isa-bounds/reference.json: exhaustive u8 argument probes for hbfe/hbfn; exactly 6..9 are accepted.",
       "missing": "Connection from parsed hbfe/hbfn expressions to this range and finite composition for all ParsedOp/PE-line fields."
     },
     {

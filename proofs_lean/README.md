@@ -66,7 +66,7 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   合法行集合へMathlib `Fintype`を与え、正確な有限alphabetと短縮列挙完全性まで接続した。
   `step`はunknownのため`Machine`には昇格できず、assembler/parserからこの合法性述語への
   完全性も未証明。
-- `evidence/isa-bounds/reference.json`: 公式`assemble3`の2,912個の選択プローブ。
+- `evidence/isa-bounds/reference.json`: 公式`assemble3`の3,410個の選択プローブ。
   `nop/0`は受理され0語を出力するため正コストの行からは正規化で除外する。
   `$omr`はu8全域0〜255を走査し1〜15だけが受理される。`$imr`と`maskn`/`maskln`/`masklln`の
   selectorもu8全域を走査し、0〜31だけが受理される。これはRustコメントの「1〜15」と不一致。challenge judgeは
@@ -225,7 +225,7 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   `ParsedL2Op.inFiniteEnvelope_finite`も、全10 variantについてL1B set、from-L1B selector、
   RRN payloadを含むbounded subtypeの有限性を証明した。assembler受理集合との包含証明と
   PE行・machineへの合成は引き続き未実装。
-  `hbfe`/`hbfn`のmantissa length引数も、assemble3の`6..9`受理・`5,10,11`拒否を根拠に
+  `hbfe`/`hbfn`のmantissa length引数も、u8全域の走査で`6..9`だけ受理されることを根拠に
   optional payloadの有限carrierを証明した。
   これらのpayload定理から`ParsedOp`/`ParsedLine`全体への合成、他の残存Nat/Int範囲、
   パーサー出力のenvelope健全性はまだ未完了。

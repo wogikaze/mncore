@@ -350,7 +350,7 @@ def isa_bounds_experiment() -> dict:
             raise ValueError(f"stale ISA boundary experiment: {item['path']}")
     if not all(row["matches_expected"] for row in record["observations"]):
         raise ValueError("ISA boundary experiment contains an unexpected assembler result")
-    if len(record["observations"]) != 2912:
+    if len(record["observations"]) != 3410:
         raise ValueError("ISA boundary experiment case count changed")
     observations = {row["case"]: row for row in record["observations"]}
     for entry in range(256):
@@ -367,6 +367,14 @@ def isa_bounds_experiment() -> dict:
             if row is None or row["accepted"] != expected or not row["matches_expected"]:
                 raise ValueError(
                     f"exhaustive mask directive selector evidence is incomplete: {width}/{entry}"
+                )
+        expected_argument = 6 <= entry <= 9
+        for opcode in ("hbfe", "hbfn"):
+            row = observations.get(f"{opcode}_{entry}")
+            if (row is None or row["accepted"] != expected_argument
+                    or not row["matches_expected"]):
+                raise ValueError(
+                    f"exhaustive {opcode} argument evidence is incomplete at {entry}"
                 )
     for row in record["observations"]:
         encoded = row.get("encoded_words", [])
@@ -934,7 +942,7 @@ def coverage_catalog() -> dict:
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
             "theorem": "ProofsLean.MNCore.Issue.parsedBfArgInFiniteEnvelope_finite",
             "scope": "Finite optional mantissa-length arguments in the hbfe/hbfn range 6..9.",
-            "evidence": "proofs_lean/evidence/isa-bounds/reference.json: hbfe/hbfn values 6..9 accepted and 5, 10, 11 rejected.",
+            "evidence": "proofs_lean/evidence/isa-bounds/reference.json: exhaustive u8 argument probes for hbfe/hbfn; exactly 6..9 are accepted.",
             "missing": "Connection from parsed hbfe/hbfn expressions to this range and finite composition for all ParsedOp/PE-line fields.",
         }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
