@@ -25,7 +25,7 @@
     },
     {
       "path": "proofs_lean/scripts/check_isa_parser_bounds.py",
-      "sha256": "f363e3fe0f1d51bb97b5d3d9c11a7e3ea10e1cd0ecf031e9d0797cbd98af408f"
+      "sha256": "452ff03bd73caebded5dc2372d11f01555aafe0a3e0c4a32237cf47a74466c68"
     },
     {
       "path": "docs/mncore_llm/chapters/ch03/section-3.5.8.10__L2BMPDM並列個別転送命令__66b35ffe.md",
@@ -4083,6 +4083,2396 @@
       ],
       "auxiliary_output_kinds": [],
       "diagnostic": "",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_17",
+      "source": "zero $omr17",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 17 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_18",
+      "source": "zero $omr18",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 18 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_19",
+      "source": "zero $omr19",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 19 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_20",
+      "source": "zero $omr20",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 20 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_21",
+      "source": "zero $omr21",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 21 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_22",
+      "source": "zero $omr22",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 22 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_23",
+      "source": "zero $omr23",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 23 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_24",
+      "source": "zero $omr24",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 24 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_25",
+      "source": "zero $omr25",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 25 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_26",
+      "source": "zero $omr26",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 26 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_27",
+      "source": "zero $omr27",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 27 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_28",
+      "source": "zero $omr28",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 28 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_29",
+      "source": "zero $omr29",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 29 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_30",
+      "source": "zero $omr30",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 30 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_31",
+      "source": "zero $omr31",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 31 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_32",
+      "source": "zero $omr32",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 2 vs 0 32 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_33",
+      "source": "zero $omr33",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 2 vs 0 33 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_34",
+      "source": "zero $omr34",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 2 vs 0 34 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_35",
+      "source": "zero $omr35",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 2 vs 0 35 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_36",
+      "source": "zero $omr36",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 2 vs 0 36 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_37",
+      "source": "zero $omr37",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 2 vs 0 37 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_38",
+      "source": "zero $omr38",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 2 vs 0 38 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_39",
+      "source": "zero $omr39",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 2 vs 0 39 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_40",
+      "source": "zero $omr40",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 2 vs 0 40 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_41",
+      "source": "zero $omr41",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 2 vs 0 41 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_42",
+      "source": "zero $omr42",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 2 vs 0 42 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_43",
+      "source": "zero $omr43",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 2 vs 0 43 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_44",
+      "source": "zero $omr44",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 2 vs 0 44 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_45",
+      "source": "zero $omr45",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 2 vs 0 45 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_46",
+      "source": "zero $omr46",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 2 vs 0 46 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_47",
+      "source": "zero $omr47",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 2 vs 0 47 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_48",
+      "source": "zero $omr48",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 3 vs 0 48 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_49",
+      "source": "zero $omr49",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 3 vs 0 49 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_50",
+      "source": "zero $omr50",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 3 vs 0 50 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_51",
+      "source": "zero $omr51",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 3 vs 0 51 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_52",
+      "source": "zero $omr52",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 3 vs 0 52 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_53",
+      "source": "zero $omr53",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 3 vs 0 53 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_54",
+      "source": "zero $omr54",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 3 vs 0 54 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_55",
+      "source": "zero $omr55",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 3 vs 0 55 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_56",
+      "source": "zero $omr56",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 3 vs 0 56 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_57",
+      "source": "zero $omr57",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 3 vs 0 57 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_58",
+      "source": "zero $omr58",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 3 vs 0 58 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_59",
+      "source": "zero $omr59",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 3 vs 0 59 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_60",
+      "source": "zero $omr60",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 3 vs 0 60 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_61",
+      "source": "zero $omr61",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 3 vs 0 61 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_62",
+      "source": "zero $omr62",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 3 vs 0 62 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_63",
+      "source": "zero $omr63",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 3 vs 0 63 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_64",
+      "source": "zero $omr64",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 4 vs 0 64 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_65",
+      "source": "zero $omr65",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 4 vs 0 65 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_66",
+      "source": "zero $omr66",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 4 vs 0 66 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_67",
+      "source": "zero $omr67",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 4 vs 0 67 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_68",
+      "source": "zero $omr68",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 4 vs 0 68 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_69",
+      "source": "zero $omr69",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 4 vs 0 69 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_70",
+      "source": "zero $omr70",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 4 vs 0 70 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_71",
+      "source": "zero $omr71",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 4 vs 0 71 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_72",
+      "source": "zero $omr72",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 4 vs 0 72 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_73",
+      "source": "zero $omr73",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 4 vs 0 73 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_74",
+      "source": "zero $omr74",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 4 vs 0 74 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_75",
+      "source": "zero $omr75",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 4 vs 0 75 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_76",
+      "source": "zero $omr76",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 4 vs 0 76 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_77",
+      "source": "zero $omr77",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 4 vs 0 77 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_78",
+      "source": "zero $omr78",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 4 vs 0 78 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_79",
+      "source": "zero $omr79",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 4 vs 0 79 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_80",
+      "source": "zero $omr80",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 5 vs 0 80 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_81",
+      "source": "zero $omr81",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 5 vs 0 81 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_82",
+      "source": "zero $omr82",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 5 vs 0 82 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_83",
+      "source": "zero $omr83",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 5 vs 0 83 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_84",
+      "source": "zero $omr84",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 5 vs 0 84 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_85",
+      "source": "zero $omr85",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 5 vs 0 85 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_86",
+      "source": "zero $omr86",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 5 vs 0 86 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_87",
+      "source": "zero $omr87",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 5 vs 0 87 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_88",
+      "source": "zero $omr88",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 5 vs 0 88 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_89",
+      "source": "zero $omr89",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 5 vs 0 89 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_90",
+      "source": "zero $omr90",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 5 vs 0 90 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_91",
+      "source": "zero $omr91",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 5 vs 0 91 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_92",
+      "source": "zero $omr92",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 5 vs 0 92 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_93",
+      "source": "zero $omr93",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 5 vs 0 93 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_94",
+      "source": "zero $omr94",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 5 vs 0 94 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_95",
+      "source": "zero $omr95",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 5 vs 0 95 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_96",
+      "source": "zero $omr96",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 6 vs 0 96 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_97",
+      "source": "zero $omr97",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 6 vs 0 97 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_98",
+      "source": "zero $omr98",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 6 vs 0 98 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_99",
+      "source": "zero $omr99",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 6 vs 0 99 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_100",
+      "source": "zero $omr100",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 6 vs 0 100 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_101",
+      "source": "zero $omr101",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 6 vs 0 101 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_102",
+      "source": "zero $omr102",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 6 vs 0 102 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_103",
+      "source": "zero $omr103",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 6 vs 0 103 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_104",
+      "source": "zero $omr104",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 6 vs 0 104 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_105",
+      "source": "zero $omr105",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 6 vs 0 105 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_106",
+      "source": "zero $omr106",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 6 vs 0 106 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_107",
+      "source": "zero $omr107",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 6 vs 0 107 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_108",
+      "source": "zero $omr108",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 6 vs 0 108 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_109",
+      "source": "zero $omr109",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 6 vs 0 109 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_110",
+      "source": "zero $omr110",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 6 vs 0 110 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_111",
+      "source": "zero $omr111",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 6 vs 0 111 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_112",
+      "source": "zero $omr112",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 7 vs 0 112 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_113",
+      "source": "zero $omr113",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 7 vs 0 113 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_114",
+      "source": "zero $omr114",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 7 vs 0 114 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_115",
+      "source": "zero $omr115",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 7 vs 0 115 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_116",
+      "source": "zero $omr116",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 7 vs 0 116 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_117",
+      "source": "zero $omr117",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 7 vs 0 117 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_118",
+      "source": "zero $omr118",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 7 vs 0 118 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_119",
+      "source": "zero $omr119",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 7 vs 0 119 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_120",
+      "source": "zero $omr120",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 7 vs 0 120 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_121",
+      "source": "zero $omr121",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 7 vs 0 121 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_122",
+      "source": "zero $omr122",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 7 vs 0 122 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_123",
+      "source": "zero $omr123",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 7 vs 0 123 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_124",
+      "source": "zero $omr124",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 7 vs 0 124 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_125",
+      "source": "zero $omr125",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 7 vs 0 125 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_126",
+      "source": "zero $omr126",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 7 vs 0 126 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_127",
+      "source": "zero $omr127",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 7 vs 0 127 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_128",
+      "source": "zero $omr128",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 8 vs 0 128 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_129",
+      "source": "zero $omr129",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 8 vs 0 129 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_130",
+      "source": "zero $omr130",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 8 vs 0 130 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_131",
+      "source": "zero $omr131",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 8 vs 0 131 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_132",
+      "source": "zero $omr132",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 8 vs 0 132 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_133",
+      "source": "zero $omr133",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 8 vs 0 133 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_134",
+      "source": "zero $omr134",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 8 vs 0 134 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_135",
+      "source": "zero $omr135",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 8 vs 0 135 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_136",
+      "source": "zero $omr136",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 8 vs 0 136 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_137",
+      "source": "zero $omr137",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 8 vs 0 137 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_138",
+      "source": "zero $omr138",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 8 vs 0 138 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_139",
+      "source": "zero $omr139",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 8 vs 0 139 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_140",
+      "source": "zero $omr140",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 8 vs 0 140 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_141",
+      "source": "zero $omr141",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 8 vs 0 141 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_142",
+      "source": "zero $omr142",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 8 vs 0 142 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_143",
+      "source": "zero $omr143",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 8 vs 0 143 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_144",
+      "source": "zero $omr144",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 9 vs 0 144 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_145",
+      "source": "zero $omr145",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 9 vs 0 145 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_146",
+      "source": "zero $omr146",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 9 vs 0 146 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_147",
+      "source": "zero $omr147",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 9 vs 0 147 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_148",
+      "source": "zero $omr148",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 9 vs 0 148 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_149",
+      "source": "zero $omr149",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 9 vs 0 149 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_150",
+      "source": "zero $omr150",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 9 vs 0 150 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_151",
+      "source": "zero $omr151",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 9 vs 0 151 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_152",
+      "source": "zero $omr152",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 9 vs 0 152 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_153",
+      "source": "zero $omr153",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 9 vs 0 153 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_154",
+      "source": "zero $omr154",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 9 vs 0 154 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_155",
+      "source": "zero $omr155",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 9 vs 0 155 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_156",
+      "source": "zero $omr156",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 9 vs 0 156 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_157",
+      "source": "zero $omr157",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 9 vs 0 157 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_158",
+      "source": "zero $omr158",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 9 vs 0 158 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_159",
+      "source": "zero $omr159",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 9 vs 0 159 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_160",
+      "source": "zero $omr160",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 10 vs 0 160 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_161",
+      "source": "zero $omr161",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 10 vs 0 161 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_162",
+      "source": "zero $omr162",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 10 vs 0 162 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_163",
+      "source": "zero $omr163",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 10 vs 0 163 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_164",
+      "source": "zero $omr164",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 10 vs 0 164 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_165",
+      "source": "zero $omr165",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 10 vs 0 165 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_166",
+      "source": "zero $omr166",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 10 vs 0 166 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_167",
+      "source": "zero $omr167",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 10 vs 0 167 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_168",
+      "source": "zero $omr168",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 10 vs 0 168 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_169",
+      "source": "zero $omr169",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 10 vs 0 169 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_170",
+      "source": "zero $omr170",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 10 vs 0 170 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_171",
+      "source": "zero $omr171",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 10 vs 0 171 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_172",
+      "source": "zero $omr172",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 10 vs 0 172 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_173",
+      "source": "zero $omr173",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 10 vs 0 173 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_174",
+      "source": "zero $omr174",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 10 vs 0 174 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_175",
+      "source": "zero $omr175",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 10 vs 0 175 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_176",
+      "source": "zero $omr176",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 11 vs 0 176 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_177",
+      "source": "zero $omr177",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 11 vs 0 177 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_178",
+      "source": "zero $omr178",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 11 vs 0 178 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_179",
+      "source": "zero $omr179",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 11 vs 0 179 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_180",
+      "source": "zero $omr180",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 11 vs 0 180 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_181",
+      "source": "zero $omr181",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 11 vs 0 181 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_182",
+      "source": "zero $omr182",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 11 vs 0 182 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_183",
+      "source": "zero $omr183",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 11 vs 0 183 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_184",
+      "source": "zero $omr184",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 11 vs 0 184 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_185",
+      "source": "zero $omr185",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 11 vs 0 185 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_186",
+      "source": "zero $omr186",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 11 vs 0 186 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_187",
+      "source": "zero $omr187",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 11 vs 0 187 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_188",
+      "source": "zero $omr188",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 11 vs 0 188 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_189",
+      "source": "zero $omr189",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 11 vs 0 189 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_190",
+      "source": "zero $omr190",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 11 vs 0 190 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_191",
+      "source": "zero $omr191",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 11 vs 0 191 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_192",
+      "source": "zero $omr192",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 12 vs 0 192 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_193",
+      "source": "zero $omr193",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 12 vs 0 193 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_194",
+      "source": "zero $omr194",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 12 vs 0 194 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_195",
+      "source": "zero $omr195",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 12 vs 0 195 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_196",
+      "source": "zero $omr196",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 12 vs 0 196 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_197",
+      "source": "zero $omr197",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 12 vs 0 197 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_198",
+      "source": "zero $omr198",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 12 vs 0 198 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_199",
+      "source": "zero $omr199",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 12 vs 0 199 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_200",
+      "source": "zero $omr200",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 12 vs 0 200 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_201",
+      "source": "zero $omr201",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 12 vs 0 201 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_202",
+      "source": "zero $omr202",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 12 vs 0 202 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_203",
+      "source": "zero $omr203",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 12 vs 0 203 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_204",
+      "source": "zero $omr204",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 12 vs 0 204 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_205",
+      "source": "zero $omr205",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 12 vs 0 205 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_206",
+      "source": "zero $omr206",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 12 vs 0 206 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_207",
+      "source": "zero $omr207",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 12 vs 0 207 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_208",
+      "source": "zero $omr208",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 13 vs 0 208 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_209",
+      "source": "zero $omr209",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 13 vs 0 209 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_210",
+      "source": "zero $omr210",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 13 vs 0 210 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_211",
+      "source": "zero $omr211",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 13 vs 0 211 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_212",
+      "source": "zero $omr212",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 13 vs 0 212 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_213",
+      "source": "zero $omr213",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 13 vs 0 213 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_214",
+      "source": "zero $omr214",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 13 vs 0 214 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_215",
+      "source": "zero $omr215",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 13 vs 0 215 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_216",
+      "source": "zero $omr216",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 13 vs 0 216 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_217",
+      "source": "zero $omr217",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 13 vs 0 217 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_218",
+      "source": "zero $omr218",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 13 vs 0 218 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_219",
+      "source": "zero $omr219",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 13 vs 0 219 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_220",
+      "source": "zero $omr220",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 13 vs 0 220 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_221",
+      "source": "zero $omr221",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 13 vs 0 221 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_222",
+      "source": "zero $omr222",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 13 vs 0 222 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_223",
+      "source": "zero $omr223",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 13 vs 0 223 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_224",
+      "source": "zero $omr224",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 14 vs 0 224 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_225",
+      "source": "zero $omr225",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 14 vs 0 225 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_226",
+      "source": "zero $omr226",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 14 vs 0 226 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_227",
+      "source": "zero $omr227",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 14 vs 0 227 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_228",
+      "source": "zero $omr228",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 14 vs 0 228 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_229",
+      "source": "zero $omr229",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 14 vs 0 229 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_230",
+      "source": "zero $omr230",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 14 vs 0 230 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_231",
+      "source": "zero $omr231",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 14 vs 0 231 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_232",
+      "source": "zero $omr232",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 14 vs 0 232 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_233",
+      "source": "zero $omr233",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 14 vs 0 233 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_234",
+      "source": "zero $omr234",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 14 vs 0 234 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_235",
+      "source": "zero $omr235",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 14 vs 0 235 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_236",
+      "source": "zero $omr236",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 14 vs 0 236 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_237",
+      "source": "zero $omr237",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 14 vs 0 237 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_238",
+      "source": "zero $omr238",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 14 vs 0 238 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_239",
+      "source": "zero $omr239",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 14 vs 0 239 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_240",
+      "source": "zero $omr240",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 15 vs 0 240 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_241",
+      "source": "zero $omr241",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 15 vs 0 241 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_242",
+      "source": "zero $omr242",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 15 vs 0 242 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_243",
+      "source": "zero $omr243",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 15 vs 0 243 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_244",
+      "source": "zero $omr244",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 15 vs 0 244 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_245",
+      "source": "zero $omr245",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 15 vs 0 245 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_246",
+      "source": "zero $omr246",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 15 vs 0 246 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_247",
+      "source": "zero $omr247",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 15 vs 0 247 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_248",
+      "source": "zero $omr248",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 15 vs 0 248 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_249",
+      "source": "zero $omr249",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 15 vs 0 249 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_250",
+      "source": "zero $omr250",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 15 vs 0 250 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_251",
+      "source": "zero $omr251",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 15 vs 0 251 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_252",
+      "source": "zero $omr252",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 15 vs 0 252 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_253",
+      "source": "zero $omr253",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 15 vs 0 253 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_254",
+      "source": "zero $omr254",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 15 vs 0 254 >= 2^4",
+      "matches_expected": true
+    },
+    {
+      "case": "omr_255",
+      "source": "zero $omr255",
+      "accepted": false,
+      "assembler_output_lines": null,
+      "encoded_words": [],
+      "auxiliary_output_kinds": [],
+      "diagnostic": "Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 15 vs 0 255 >= 2^4",
       "matches_expected": true
     },
     {
@@ -26927,7 +29317,7 @@
     "Every observed accepted `j` instruction output is a binary 426-bit word and every `m` instruction output is a binary 82-bit word. Accepted debug/DRAM records use `d`/`r` formats and are tracked separately because the default judge strips them from the scored instruction stream. These probes do not prove the output format for every accepted source line.",
     "nop/0 is accepted and emits zero instruction words; nop/0 with a wait is rejected, so the zero-count no-wait form can be erased during normalization.",
     "wait i00 is rejected; i01 and iFF are accepted; i100 is rejected.",
-    "$omr0 and $omr16 are rejected; $omr1 and $omr15 are accepted.",
+    "Every u8 OMR destination selector was probed: exactly $omr1..$omr15 are accepted; $omr0 and $omr16..$omr255 are rejected.",
     "$imr0, $imr31 are accepted while $imr32 and $imr255 fail encoding. Active `maskn`, `maskln`, and `masklln` directives accept selector 31 and reject 32. This conflicts with the Rust MaskSource comment claiming entries 1 through 15.",
     "Representative unknown `$qraw` operands in ALU source/destination, zero destination, matrix-read source, and L1BM source positions produce no assembler output; assemble3 aborts with return code -6 on these malformed tokens. This is sampled rejection evidence, not a proof over every Raw string.",
     "SDM 3.6.4 requires simultaneous mask applications to use the same width; Section 3.6.2.1 also requires matching variable entry addresses. The same-width pair is accepted, while mixed widths, mixed entries, and a write-mask/zero-flush entry mismatch are rejected.",

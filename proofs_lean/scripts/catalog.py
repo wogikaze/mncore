@@ -350,8 +350,14 @@ def isa_bounds_experiment() -> dict:
             raise ValueError(f"stale ISA boundary experiment: {item['path']}")
     if not all(row["matches_expected"] for row in record["observations"]):
         raise ValueError("ISA boundary experiment contains an unexpected assembler result")
-    if len(record["observations"]) != 1719:
+    if len(record["observations"]) != 1958:
         raise ValueError("ISA boundary experiment case count changed")
+    observations = {row["case"]: row for row in record["observations"]}
+    for entry in range(256):
+        row = observations.get(f"omr_{entry}")
+        expected = 1 <= entry <= 15
+        if row is None or row["accepted"] != expected or not row["matches_expected"]:
+            raise ValueError(f"exhaustive OMR selector evidence is incomplete at {entry}")
     for row in record["observations"]:
         encoded = row.get("encoded_words", [])
         auxiliary = row.get("auxiliary_output_kinds", [])
@@ -967,7 +973,7 @@ def coverage_catalog() -> dict:
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
             "theorem": "ProofsLean.MNCore.Issue.omrEntryInFiniteEnvelope_finite",
             "scope": "Finite subtype for assembler-supported OMR entry values 1 through 15; zero is excluded.",
-            "evidence": "proofs_lean/evidence/isa-bounds/reference.json: omr_0, omr_1, omr_15, omr_16.",
+            "evidence": "proofs_lean/evidence/isa-bounds/reference.json: exhaustive `u8` OMR destination selector probes 0..255; exactly 1..15 are accepted.",
             "missing": "Proof that all assembler-accepted OMR operands parse into this subtype, plus the other operand fields and whole-line finiteness.",
         }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",

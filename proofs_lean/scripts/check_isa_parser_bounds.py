@@ -225,6 +225,8 @@ for index in range(2, 31):
     CASES[f"mask_directive_n_{index}"] = (f"maskn {index}\nlpassa $lm0 $ln0\n", True, 1)
 for index in range(2, 15):
     CASES[f"omr_{index}"] = (f"zero $omr{index}\n", True, 1)
+for index in range(16, 256):
+    CASES[f"omr_{index}"] = (f"zero $omr{index}\n", False, None)
 for index in range(16):
     CASES[f"matrix_row_{index}"] = (f"gmread $lx{index} $nowrite\n", True, 1)
 for index in range(6, 10):
@@ -347,7 +349,7 @@ def main() -> None:
             "Every observed accepted `j` instruction output is a binary 426-bit word and every `m` instruction output is a binary 82-bit word. Accepted debug/DRAM records use `d`/`r` formats and are tracked separately because the default judge strips them from the scored instruction stream. These probes do not prove the output format for every accepted source line.",
             "nop/0 is accepted and emits zero instruction words; nop/0 with a wait is rejected, so the zero-count no-wait form can be erased during normalization.",
             "wait i00 is rejected; i01 and iFF are accepted; i100 is rejected.",
-            "$omr0 and $omr16 are rejected; $omr1 and $omr15 are accepted.",
+            "Every u8 OMR destination selector was probed: exactly $omr1..$omr15 are accepted; $omr0 and $omr16..$omr255 are rejected.",
             "$imr0, $imr31 are accepted while $imr32 and $imr255 fail encoding. Active `maskn`, `maskln`, and `masklln` directives accept selector 31 and reject 32. This conflicts with the Rust MaskSource comment claiming entries 1 through 15.",
             "Representative unknown `$qraw` operands in ALU source/destination, zero destination, matrix-read source, and L1BM source positions produce no assembler output; assemble3 aborts with return code -6 on these malformed tokens. This is sampled rejection evidence, not a proof over every Raw string.",
             "SDM 3.6.4 requires simultaneous mask applications to use the same width; Section 3.6.2.1 also requires matching variable entry addresses. The same-width pair is accepted, while mixed widths, mixed entries, and a write-mask/zero-flush entry mismatch are rejected.",
