@@ -81,11 +81,11 @@ fallback for tokens outside the SDM operand productions and is not a candidate
 in this legal-instruction syntax. -/
 inductive ParsedOperand where
   | mem (access : Access) (neg ext rnd : Bool) (mask : Option ParsedMask)
-  | bar (lm1 : Bool) (width : Nat) (mask : Option ParsedMask)
+  | bar (lm1 : Bool) (width : Fin 5) (mask : Option ParsedMask)
   | forward (kind : ParsedForward) (neg ext rnd : Bool)
   | fixed (kind : ParsedFixed)
   | omr (entry : Fin 256) (mask : Option ParsedMask)
-  | matrix (y : Bool) (width : Nat) (row : Option Nat)
+  | matrix (y : Bool) (width : Fin 5) (row : Option Nat)
   | nowrite
   | l1bm (width : Nat) (address : Option Nat)
   | l2bm (address : Nat) (l2b : Option Nat)
@@ -789,7 +789,7 @@ theorem ParsedOp.l1bm_mwrite_rejects_l1bm_source (mab : Fin 256) (width : Nat)
   simp [ParsedOp.sourceRoleScreen, ParsedOperand.peSourceRole]
 
 theorem ParsedOp.l1bm_mwrite_rejects_base_address_source (mab : Fin 256)
-    (lm1 : Bool) (width : Nat) (mask : Option ParsedMask) :
+    (lm1 : Bool) (width : Fin 5) (mask : Option ParsedMask) :
     ¬ ParsedOp.sourceRoleScreen (.l1bm (.mwrite mab)) [] (.bar lm1 width mask) := by
   simp [ParsedOp.sourceRoleScreen, ParsedOperand.peSourceRole]
 

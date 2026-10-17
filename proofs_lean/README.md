@@ -137,6 +137,7 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   coverageは`partial_datapath_only`のままとする。
 - L1B selectorはマニュアルの8バンク構成に合わせ、membership bitmapを`Fin 256`、immodeを`Fin 8`で保持する。
   リスト形式・address/immode形式のparserがこれらの型を直接生成し、mask/immodeの有限carrier証明も維持する。
+  PEのBARとmatrix operandのアクセス幅も`Fin 5`で保持し、有限 carrier に反映した。合法envelopeはBARを1/2、matrixを1/2/4に絞る。
   L1BMの`mwrite`/`m4write`とL2BMの`fromL1b`も、parserが保持する0〜255を`Fin 256`で表す。
   assemblerの有効範囲（MAB `<16`、L1B `<8`）は別の有限envelopeに保持し、受理範囲との接続は未証明としている。
 - `FiniteRegion.lean`: assemble3境界プローブを根拠に、width 1/2/4、4つのアドレス`< 4096`、

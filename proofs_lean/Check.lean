@@ -99,6 +99,8 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.Access.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.Access.grf_capacity_envelope
 #print axioms ProofsLean.MNCore.Issue.ParsedOperand.inFiniteEnvelope_finite
+#print axioms ProofsLean.MNCore.Issue.parseParsedPEOperand_base_address_registers
+#print axioms ProofsLean.MNCore.Issue.parseParsedPEOperand_matrix_row
 #print axioms ProofsLean.MNCore.Issue.ParsedOperand.bar_inFiniteEnvelope_iff
 #print axioms ProofsLean.MNCore.Issue.ParsedOperand.omr_inFiniteEnvelope_iff
 #print axioms ProofsLean.MNCore.Issue.ParsedOperand.matrix_inFiniteEnvelope_iff

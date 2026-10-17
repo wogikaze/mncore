@@ -742,11 +742,12 @@ theorem optionMaskInFiniteEnvelope_finite :
 
 def ParsedOperand.inFiniteEnvelope : ParsedOperand → Prop
   | .mem access _ _ _ mask => access.inFiniteEnvelope ∧ optionMaskInFiniteEnvelope mask
-  | .bar _ width mask => (width = 1 ∨ width = 2) ∧ optionMaskInFiniteEnvelope mask
+  | .bar _ width mask => (width.val = 1 ∨ width.val = 2) ∧ optionMaskInFiniteEnvelope mask
   | .forward .. => True
   | .fixed .. => True
   | .omr entry mask => 0 < entry.val ∧ entry.val < 16 ∧ optionMaskInFiniteEnvelope mask
-  | .matrix _ width row => (width = 1 ∨ width = 2 ∨ width = 4) ∧ optionNatInFiniteEnvelope 16 row
+  | .matrix _ width row =>
+      (width.val = 1 ∨ width.val = 2 ∨ width.val = 4) ∧ optionNatInFiniteEnvelope 16 row
   | .nowrite => True
   | .l1bm width address => (width = 1 ∨ width = 2 ∨ width = 4) ∧ optionNatInFiniteEnvelope 8192 address
   | .l2bm address l2b => address < 32768 ∧ optionNatInFiniteEnvelope 8 l2b
@@ -757,20 +758,20 @@ theorem ParsedOperand.mem_inFiniteEnvelope_iff (access : Access) (neg ext rnd : 
     ParsedOperand.inFiniteEnvelope (.mem access neg ext rnd mask) ↔
       access.inFiniteEnvelope ∧ optionMaskInFiniteEnvelope mask := Iff.rfl
 
-theorem ParsedOperand.bar_inFiniteEnvelope_iff (lm1 : Bool) (width : Nat)
+theorem ParsedOperand.bar_inFiniteEnvelope_iff (lm1 : Bool) (width : Fin 5)
     (mask : Option ParsedMask) :
     ParsedOperand.inFiniteEnvelope (.bar lm1 width mask) ↔
-      (width = 1 ∨ width = 2) ∧ optionMaskInFiniteEnvelope mask := Iff.rfl
+      (width.val = 1 ∨ width.val = 2) ∧ optionMaskInFiniteEnvelope mask := Iff.rfl
 
 theorem ParsedOperand.omr_inFiniteEnvelope_iff (entry : Fin 256)
     (mask : Option ParsedMask) :
     ParsedOperand.inFiniteEnvelope (.omr entry mask) ↔
       0 < entry.val ∧ entry.val < 16 ∧ optionMaskInFiniteEnvelope mask := Iff.rfl
 
-theorem ParsedOperand.matrix_inFiniteEnvelope_iff (y : Bool) (width : Nat)
+theorem ParsedOperand.matrix_inFiniteEnvelope_iff (y : Bool) (width : Fin 5)
     (row : Option Nat) :
     ParsedOperand.inFiniteEnvelope (.matrix y width row) ↔
-      (width = 1 ∨ width = 2 ∨ width = 4) ∧
+      (width.val = 1 ∨ width.val = 2 ∨ width.val = 4) ∧
         optionNatInFiniteEnvelope 16 row := Iff.rfl
 
 theorem ParsedOperand.l1bm_inFiniteEnvelope_iff (width : Nat) (address : Option Nat) :
@@ -849,8 +850,7 @@ def ParsedOperand.finiteCode
           optionMaskFiniteCode ⟨mask, maskBound⟩)
   | bar lm1 width mask =>
       rcases bounds with ⟨widthBound, maskBound⟩
-      have widthLT : width < 5 := by rcases widthBound with h | h <;> omega
-      exact operandBarCode (lm1, ⟨width, widthLT⟩,
+      exact operandBarCode (lm1, width,
         optionMaskFiniteCode ⟨mask, maskBound⟩)
   | forward kind neg ext rnd =>
       exact operandForwardCode (kind.finiteCode, neg, ext, rnd)
@@ -862,8 +862,7 @@ def ParsedOperand.finiteCode
         optionMaskFiniteCode ⟨mask, maskBound⟩)
   | matrix y width row =>
       rcases bounds with ⟨widthBound, rowBound⟩
-      have widthLT : width < 5 := by rcases widthBound with h | h | h <;> omega
-      exact operandMatrixCode (y, ⟨width, widthLT⟩,
+      exact operandMatrixCode (y, width,
         optionNatFiniteCode 16 ⟨row, rowBound⟩)
   | nowrite => exact operandNowriteCode
   | l1bm width address =>

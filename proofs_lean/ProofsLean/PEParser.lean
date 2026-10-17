@@ -33,7 +33,7 @@ def parseParsedPEMask? (text : String) : Option ParsedMask := do
         else none
     | _ => none
 
-def parsedPEAccessLength : List Char → Nat × List Char
+def parsedPEAccessLength : List Char → Fin 5 × List Char
   | 'l' :: 'l' :: rest => (4, rest)
   | 'l' :: rest => (2, rest)
   | chars => (1, chars)
@@ -184,10 +184,10 @@ def parseParsedPEOperandBody? (body : List Char) (neg : Bool)
     else if rest == ['n','b'] then some (.bar true width mask)
     else match rest with
       | 'b' :: addressChars =>
-          if addressChars == ['i'] then some (.l1bm width none)
+          if addressChars == ['i'] then some (.l1bm width.val none)
           else do
             let address ← parsedPEU32? addressChars
-            some (.l1bm width (some address))
+            some (.l1bm width.val (some address))
       | 'c' :: addressAndSelector => do
           let (addressChars, l2b) ← match parsedSplitAt? addressAndSelector '@' with
             | none => some (addressAndSelector, none)
@@ -204,11 +204,11 @@ def parseParsedPEOperandBody? (body : List Char) (neg : Bool)
       | 'y' :: rowChars => do
           let row ← parsedPEMatrixRow? rowChars
           some (.matrix true width row)
-      | 'm' :: addressChars => parsedPEFinishMemory? .lm0 width neg false false mask addressChars
-      | 'n' :: addressChars => parsedPEFinishMemory? .lm1 width neg false false mask addressChars
-      | 'r' :: addressChars => parsedPEFinishMemory? .grf0 width neg false false mask addressChars
-      | 's' :: addressChars => parsedPEFinishMemory? .grf1 width neg false false mask addressChars
-      | 't' :: suffix => parseParsedPEMemory? .t width neg false false mask suffix
+      | 'm' :: addressChars => parsedPEFinishMemory? .lm0 width.val neg false false mask addressChars
+      | 'n' :: addressChars => parsedPEFinishMemory? .lm1 width.val neg false false mask addressChars
+      | 'r' :: addressChars => parsedPEFinishMemory? .grf0 width.val neg false false mask addressChars
+      | 's' :: addressChars => parsedPEFinishMemory? .grf1 width.val neg false false mask addressChars
+      | 't' :: suffix => parseParsedPEMemory? .t width.val neg false false mask suffix
       | _ => none
 
 /-- Parse the structured PE operand productions from Rust
