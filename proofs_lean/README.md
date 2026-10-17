@@ -215,7 +215,7 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
 - `ParsedExpr.inFiniteEnvelope`から正規化式のenvelopeへの写像を証明した。opcode固有source arityから
   source長3以下を導ける一方、opcode・operand・flushの数値範囲とdestinationの重複なしを、実parser出力に
   対して証明することは引き続きparser/assembler対応の未解決義務である。
-- `evidence/output-roles/reference.json`にassemble3の71件のoperand-role probeを記録した。zero、ALU、
+- `evidence/output-roles/reference.json`にassemble3の74件のoperand-role probeを記録した。zero、ALU、
   MAU、matrix、L1BM、L2BMで代表的な入力/出力位置と重複出力を照合している。opcodeごとの全構文や
   Lean issue checkerとの対応証明ではなく、実parser出力がfinite envelopeのdestination-list条件を満たす
   ことも引き続き未証明である。
@@ -225,7 +225,8 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
 - `ParsedOp.destinationRoleScreen`を導入し、scalar PE出力、matrix read/write、wait/noforwardに加えて、
   L1BM/L2BMの代表opcodeをsourceとopcodeに応じたdestination roleで絞った。finite envelopeには各destinationが
   screenを通る条件を含め、正規化で維持し、bounded expression carrierの有限性に接続した。Rustのoperand roleと
-  assemble3の71 probeを根拠に、転送方向、複数destination/重複拒否、DARSのL2BM source・DAR outputとDARWの無operandを示す
+  assemble3の74 probeを根拠に、転送方向、L2BM opcodeごとのsource bank、複数destination/重複拒否、
+  DARSのL2BM source・DAR outputとDARWの無operandを示す
   代表補題・照合を追加した。DARS/DARWの同時発行規則、全opcodeの受理構文、実assembler出力とscreen/envelopeとの
   完全な対応は未完了。
 - `ParsedExpr.parserSourceArityValid`を追加し、Rust `parse_expr` の通常経路を使うALU/MAU/matrix命令は

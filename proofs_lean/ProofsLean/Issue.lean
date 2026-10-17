@@ -137,6 +137,10 @@ def ParsedOperand.l2bmSourceRole : ParsedOperand → Prop
   | .l2bm .. => True
   | _ => False
 
+def ParsedOperand.l1bmSourceRole : ParsedOperand → Prop
+  | .l1bm .. => True
+  | _ => False
+
 def ParsedOperand.writeMask? : ParsedOperand → Option ParsedMask
   | .mem _ _ _ _ mask | .bar _ _ mask | .omr _ mask => mask
   | _ => none
@@ -688,12 +692,44 @@ theorem ParsedOp.l2bm_darw_has_no_destination_role (operand : ParsedOperand) :
   simp [ParsedOp.destinationRoleScreen]
 
 def ParsedOp.sourceRoleScreen : ParsedOp → ParsedOperand → Prop
-  | .l2bm .dars, operand => operand.l2bmSourceRole
-  | .l2bm .darw, _ => False
+  | .l2bm operation, operand =>
+      match operation with
+      | .bcast .. | .bcast2 .. | .distrib .. | .dars => operand.l2bmSourceRole
+      | .fromL1b .. | .reduce .. | .reduce2 .. | .gather | .imcast .. =>
+          operand.l1bmSourceRole
+      | .darw => False
   | _, _ => True
 
 theorem ParsedOp.l2bm_dars_source_role (operand : ParsedOperand) :
     ParsedOp.sourceRoleScreen (.l2bm .dars) operand = operand.l2bmSourceRole := rfl
+
+theorem ParsedOp.l2bm_broadcast_source_role (set : ParsedL1bSet) :
+    ParsedOp.sourceRoleScreen (.l2bm (.bcast set)) (.l2bm 0 none) := by
+  simp [ParsedOp.sourceRoleScreen, ParsedOperand.l2bmSourceRole]
+
+theorem ParsedOp.l2bm_broadcast_rejects_l1bm_source (set : ParsedL1bSet) :
+    ¬ ParsedOp.sourceRoleScreen (.l2bm (.bcast set)) (.l1bm 2 (some 0)) := by
+  simp [ParsedOp.sourceRoleScreen, ParsedOperand.l2bmSourceRole]
+
+theorem ParsedOp.l2bm_from_l1b_source_role (index : Nat) :
+    ParsedOp.sourceRoleScreen (.l2bm (.fromL1b index)) (.l1bm 2 (some 0)) := by
+  simp [ParsedOp.sourceRoleScreen, ParsedOperand.l1bmSourceRole]
+
+theorem ParsedOp.l2bm_from_l1b_rejects_l2bm_source (index : Nat) :
+    ¬ ParsedOp.sourceRoleScreen (.l2bm (.fromL1b index)) (.l2bm 0 none) := by
+  simp [ParsedOp.sourceRoleScreen, ParsedOperand.l1bmSourceRole]
+
+theorem ParsedOp.l2bm_reduce_source_role (rrn : ParsedRrn) (set : ParsedL1bSet) :
+    ParsedOp.sourceRoleScreen (.l2bm (.reduce rrn set)) (.l1bm 2 (some 0)) := by
+  simp [ParsedOp.sourceRoleScreen, ParsedOperand.l1bmSourceRole]
+
+theorem ParsedOp.l2bm_multicast_source_role (set : ParsedL1bSet) :
+    ParsedOp.sourceRoleScreen (.l2bm (.imcast set)) (.l1bm 2 (some 0)) := by
+  simp [ParsedOp.sourceRoleScreen, ParsedOperand.l1bmSourceRole]
+
+theorem ParsedOp.l2bm_multicast_rejects_l2bm_source (set : ParsedL1bSet) :
+    ¬ ParsedOp.sourceRoleScreen (.l2bm (.imcast set)) (.l2bm 0 none) := by
+  simp [ParsedOp.sourceRoleScreen, ParsedOperand.l1bmSourceRole]
 
 /-- Structural PE-expression AST mirror. Issue and execution interpretations
 are separate functions over this syntax. -/

@@ -9,7 +9,7 @@
     },
     {
       "path": "proofs_lean/scripts/check_output_roles_reference.py",
-      "sha256": "8a7f54902fa6907238dc87ef272046b60bd5fe36a45420c1f143c43b9c5ae9d1"
+      "sha256": "45e5b101868d28ace77e4e8bd10161d99286f9b6e0c3f26b7eba6036f18dc506"
     }
   ],
   "observations": [
@@ -588,6 +588,33 @@
       "returncode": -6,
       "words": null,
       "diagnostic": "L2BM operation must have exactly two operands."
+    },
+    {
+      "case": "l2bm_from_l1b_reversed_source",
+      "source": "l2bm@1 $lc0 $lb0",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "The order of operands doesn't match to the transfer direction L1BM -> L2BM."
+    },
+    {
+      "case": "l2bm_reduce_reversed_source",
+      "source": "l2bmrdfadd $lc0 $lb0",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "The order of operands doesn't match to the transfer direction L1BM -> L2BM."
+    },
+    {
+      "case": "l2bm_multicast_wrong_source",
+      "source": "l2bmi@0/0 $lc0 $lb16",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "Intra broadcast must have two L1BM operands."
     },
     {
       "case": "dars_to_dar",

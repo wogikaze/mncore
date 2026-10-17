@@ -64,6 +64,13 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.ParsedOp.l2bm_dars_rejects_l2bm_destination
 #print axioms ProofsLean.MNCore.Issue.ParsedOp.l2bm_darw_has_no_destination_role
 #print axioms ProofsLean.MNCore.Issue.ParsedOp.l2bm_dars_source_role
+#print axioms ProofsLean.MNCore.Issue.ParsedOp.l2bm_broadcast_source_role
+#print axioms ProofsLean.MNCore.Issue.ParsedOp.l2bm_broadcast_rejects_l1bm_source
+#print axioms ProofsLean.MNCore.Issue.ParsedOp.l2bm_from_l1b_source_role
+#print axioms ProofsLean.MNCore.Issue.ParsedOp.l2bm_from_l1b_rejects_l2bm_source
+#print axioms ProofsLean.MNCore.Issue.ParsedOp.l2bm_reduce_source_role
+#print axioms ProofsLean.MNCore.Issue.ParsedOp.l2bm_multicast_source_role
+#print axioms ProofsLean.MNCore.Issue.ParsedOp.l2bm_multicast_rejects_l2bm_source
 #print axioms ProofsLean.MNCore.Issue.ParsedOp.parserSourceLimit_le_three
 #print axioms ProofsLean.MNCore.Issue.NormalizedExpr.parserSourceArityValid_length_le_three
 #print axioms ProofsLean.MNCore.Issue.ParsedExpr.parserSourceArityValid_length_le_three
