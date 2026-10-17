@@ -128,6 +128,8 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.ParsedExpr.inFiniteEnvelope_sourceRolesPassScreen
 #print axioms ProofsLean.MNCore.Issue.NormalizedExpr.listInFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.NormalizedMv.finite
+#print axioms ProofsLean.MNCore.Issue.AssemblerInstructionWord.finite
+#print axioms ProofsLean.MNCore.Issue.encodedPrograms_lengthBounded_finite
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.pe_inFiniteEnvelope_of_parsed
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.costBelowEnvelope_finite

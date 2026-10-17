@@ -352,6 +352,17 @@ def isa_bounds_experiment() -> dict:
         raise ValueError("ISA boundary experiment contains an unexpected assembler result")
     if len(record["observations"]) != 1206:
         raise ValueError("ISA boundary experiment case count changed")
+    for row in record["observations"]:
+        encoded = row.get("encoded_words", [])
+        auxiliary = row.get("auxiliary_output_kinds", [])
+        if len(encoded) + len(auxiliary) != (row["assembler_output_lines"] or 0):
+            raise ValueError(f"missing encoded-word shape: {row['case']}")
+        if any(kind not in {"d", "r"} for kind in auxiliary):
+            raise ValueError(f"unexpected auxiliary assembler output: {row['case']}")
+        for word in encoded:
+            if (not word["binary"] or
+                    word["bit_width"] != {"j": 426, "m": 82}.get(word["kind"])):
+                raise ValueError(f"unexpected assembler word encoding: {row['case']}")
     return {
         "source": reference.relative_to(REPO).as_posix(),
         "sha256": digest(reference),
@@ -360,6 +371,10 @@ def isa_bounds_experiment() -> dict:
         "probes": len(record["observations"]),
         "accepted": sum(row["accepted"] for row in record["observations"]),
         "rejected": sum(not row["accepted"] for row in record["observations"]),
+        "observed_encoded_word_kinds": sorted({
+            (word["kind"], word["bit_width"])
+            for row in record["observations"] for word in row.get("encoded_words", [])
+        }),
         "findings": record["findings"],
         "scope": record["scope"],
         "formal_isa_completeness_proof": False,

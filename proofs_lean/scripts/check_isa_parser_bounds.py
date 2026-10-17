@@ -296,14 +296,36 @@ def main() -> None:
                 capture_output=True, text=True, timeout=30,
             )
             accepted = result.returncode == 0
-            words = len(result.stdout.splitlines()) if accepted else None
+            output_lines = result.stdout.splitlines() if accepted else []
+            words = len(output_lines) if accepted else None
+            encoded_words = []
+            auxiliary_output_kinds = []
+            output_shape_valid = True
+            for line in output_lines:
+                fields = line.split()
+                kind = fields[0] if fields else ""
+                if kind in {"j", "m"}:
+                    word = {
+                        "kind": kind,
+                        "bit_width": len(fields[1]) if len(fields) == 2 else None,
+                        "binary": len(fields) == 2 and set(fields[1]) <= {"0", "1"},
+                    }
+                    encoded_words.append(word)
+                    output_shape_valid = output_shape_valid and word["binary"] and word["bit_width"] == {"j": 426, "m": 82}[kind]
+                elif kind in {"d", "r"}:
+                    auxiliary_output_kinds.append(kind)
+                else:
+                    output_shape_valid = False
             observation = {
                 "case": name,
                 "source": source.rstrip("\n"),
                 "accepted": accepted,
                 "assembler_output_lines": words,
+                "encoded_words": encoded_words,
+                "auxiliary_output_kinds": auxiliary_output_kinds,
                 "diagnostic": (result.stderr.splitlines() or [""])[0],
-                "matches_expected": accepted == expected_accept and words == expected_words,
+                "matches_expected": accepted == expected_accept and words == expected_words
+                    and (not accepted or output_shape_valid),
             }
             if result.returncode < 0:
                 observation["returncode"] = result.returncode
@@ -318,6 +340,7 @@ def main() -> None:
         "tool_hashes": [{"path": p.relative_to(REPO).as_posix(), "sha256": sha(p)} for p in sources],
         "observations": observations,
         "findings": [
+            "Every observed accepted `j` instruction output is a binary 426-bit word and every `m` instruction output is a binary 82-bit word. Accepted debug/DRAM records use `d`/`r` formats and are tracked separately because the default judge strips them from the scored instruction stream. These probes do not prove the output format for every accepted source line.",
             "nop/0 is accepted and emits zero instruction words; nop/0 with a wait is rejected, so the zero-count no-wait form can be erased during normalization.",
             "wait i00 is rejected; i01 and iFF are accepted; i100 is rejected.",
             "$omr0 and $omr16 are rejected; $omr1 and $omr15 are accepted.",

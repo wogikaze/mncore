@@ -10,6 +10,24 @@ import ProofsLean.FiniteRegion
 
 namespace ProofsLean.MNCore.Issue
 
+/-- Encoded instruction words observed from the official flat assembler:
+PE uses a `j` word and MV uses an `m` word. Their bit widths come from the
+checked assembler-output boundary record; the universal source-to-encoding
+correspondence remains a separate obligation. -/
+abbrev AssemblerInstructionWord := Sum (BitVec 426) (BitVec 82)
+
+private theorem bitVec_finite (width : Nat) : Finite (BitVec width) :=
+  Finite.of_injective BitVec.toFin BitVec.toFin_injective
+
+theorem AssemblerInstructionWord.finite : Finite AssemblerInstructionWord := by
+  letI : Finite (BitVec 426) := bitVec_finite 426
+  letI : Finite (BitVec 82) := bitVec_finite 82
+  letI : Fintype (BitVec 426) := Fintype.ofFinite _
+  letI : Fintype (BitVec 82) := Fintype.ofFinite _
+  exact Finite.of_fintype _
+
+instance : Finite AssemblerInstructionWord := AssemblerInstructionWord.finite
+
 /-- A finite element type has only finitely many lists up to any fixed length.
 This is the container-level finiteness lemma needed when bounded PE expression
 and operand lists are composed into line carriers. -/
@@ -66,6 +84,10 @@ theorem listLengthLE_finite (α : Type) [Finite α] (bound : Nat) :
                   have tailEq : arest = brest := congrArg Subtype.val tails
                   cases tailEq
                   rfl
+
+theorem encodedPrograms_lengthBounded_finite (bound : Nat) :
+    Finite {program : List AssemblerInstructionWord // program.length ≤ bound} :=
+  listLengthLE_finite AssemblerInstructionWord bound
 
 private theorem nodup_length_le_fintype_card {α : Type} [Fintype α] [DecidableEq α]
     (values : List α) (nodup : values.Nodup) : values.length ≤ Fintype.card α := by

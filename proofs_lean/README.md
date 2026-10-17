@@ -162,6 +162,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   合成した`ParsedOp.inFiniteEnvelope`を定義し、全opcode constructorを有限なタグ付きcarrierへ
   単射で写して`ParsedOp.inFiniteEnvelope_finite`を証明した。parser出力がこの範囲に必ず入る
   ことの証明は別途必要であり、ここでは無制限な`ParsedOp`全体の有限性を主張しない。
+  公式assembler probeで観測したPE/MV出力語を`BitVec 426`/`BitVec 82`のsum型に表し、
+  その有限性と長さ上限付き符号語列の有限性をLeanで証明した。これはRaw文字列を有限表現へ
+  受け止める候補carrierであり、すべてのassembler受理ソースがこの符号語へ写ることの証明ではない。
   これをbounded source列、Nodup destination列、flush maskと組み合わせ、`NormalizedExpr`の有限carrierも
   証明した。source上限3はRust parserのopcode arityから従う。合法destinationがNodupか、全payloadが
   assembler受理範囲内かというenvelope包含証明は残る。
