@@ -5106,6 +5106,32 @@ theorem executeParsedIntegerExpr_readback (files : IntegerRegisterFiles)
       (unpackALUBus (parsedIntegerRegisterOutput files accesses.sourceX
         accesses.sourceY precision aluOp false).value) index within
 
+theorem ParsedExpr.toDirectIntegerAccesses?_preserves_op
+    (expression : ParsedExpr) (pe cycle : Fin 4)
+    (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
+    (accesses : ParsedIntegerAccesses)
+    (lowered : ParsedExpr.toDirectIntegerAccesses? expression pe cycle bar0 bar1 tWord =
+      some accesses) :
+    accesses.op = expression.op := by
+  unfold ParsedExpr.toDirectIntegerAccesses? at lowered
+  repeat' (split at lowered <;> simp_all)
+  all_goals
+    rcases lowered with ⟨_, _, haccess⟩
+    cases haccess
+    rfl
+
+theorem plusOneParsedAt_lowering_selects_iinc (base : Nat) (cycle : Fin 4)
+    (accesses : ParsedIntegerAccesses)
+    (lowered : ParsedExpr.toDirectIntegerAccesses?
+      (ProofsLean.MNCore.Issue.plusOneParsedAt base) 0 cycle 0 0 0 = some accesses) :
+    accesses.op.integerRequest = .ok (.integer .word (.arith .inc false)) := by
+  rw [ParsedExpr.toDirectIntegerAccesses?_preserves_op
+    (ProofsLean.MNCore.Issue.plusOneParsedAt base) 0 cycle 0 0 0 accesses lowered]
+  simp [ProofsLean.MNCore.Issue.plusOneParsedAt,
+    ProofsLean.MNCore.Issue.ParsedOp.integerRequest,
+    ParsedAluName.supportsIntegerAt, ParsedAluName.toIntegerOp,
+    ParsedPrecision.laneWidth]
+
 theorem executeParsedIntegerExpr_plusOne_cycle_writeback
     (state : ProofsLean.MNCore.PlusOne.State)
     (line : ProofsLean.MNCore.PlusOne.Line) (cycle : Fin 4)
@@ -5166,6 +5192,98 @@ theorem executeParsedIntegerExpr_plusOne_cycle_writeback
     simp
     simpa [unpackALUBus] using
       parsed_iinc_cycle_low_word_matches_plusOne state line cycle
+
+theorem executePlusOneParsedLine_cycle_writeback
+    (state : ProofsLean.MNCore.PlusOne.State)
+    (line : ProofsLean.MNCore.PlusOne.Line) (cycle : Fin 4)
+    (index : Fin 4) (indexBound : index.val < 2) :
+    ∃ accesses nextFiles,
+      ParsedExpr.toDirectIntegerAccesses?
+        (ProofsLean.MNCore.Issue.plusOneParsedAt (8 * line.val)) 0 cycle 0 0 0 =
+          some accesses ∧
+      executeParsedIntegerExpr? (plusOneFiles state)
+        (ProofsLean.MNCore.Issue.plusOneParsedAt (8 * line.val)) 0 cycle 0 0 0 =
+          some (.ok nextFiles) ∧
+      readDirectAccess nextFiles accesses.destination index =
+        (ProofsLean.MNCore.PlusOne.step line state).lm1
+          (if index.val = 0 then
+            ProofsLean.MNCore.PlusOne.cycleHigh line cycle
+          else ProofsLean.MNCore.PlusOne.cycleLow line cycle) := by
+  cases line using Fin.cases with
+  | zero =>
+      rcases plusOneFirstLine_cycle_lowers cycle with
+        ⟨accesses, lowered, locations⟩
+      have loweredAt : ParsedExpr.toDirectIntegerAccesses?
+          (ProofsLean.MNCore.Issue.plusOneParsedAt (8 * (0 : Fin 2).val))
+          0 cycle 0 0 0 = some accesses := by
+        simpa [ProofsLean.MNCore.Issue.plusOneParsed] using lowered
+      have locationsAt : accesses.locations =
+          (⟨.lm0, .long, plusOneMemoryAddress
+              (ProofsLean.MNCore.PlusOne.cycleHigh (0 : Fin 2) cycle)⟩,
+           ⟨.lm0, .long, plusOneMemoryAddress
+              (ProofsLean.MNCore.PlusOne.cycleHigh (0 : Fin 2) cycle)⟩,
+           ⟨.lm1, .long, plusOneMemoryAddress
+              (ProofsLean.MNCore.PlusOne.cycleHigh (0 : Fin 2) cycle)⟩) := by
+        let raw : Fin Bank.lm0.capacity :=
+          ⟨2 * cycle.val, by have hc := cycle.isLt; change 2 * cycle.val < 4096; omega⟩
+        have rawEq : raw = plusOneMemoryAddress
+            (ProofsLean.MNCore.PlusOne.cycleHigh (0 : Fin 2) cycle) := by
+          apply Fin.ext
+          simp [raw, plusOneMemoryAddress, ProofsLean.MNCore.PlusOne.cycleHigh]
+        have sourceEq : (⟨.lm0, .long, raw⟩ : DirectMemoryAccess) =
+            ⟨.lm0, .long, plusOneMemoryAddress
+              (ProofsLean.MNCore.PlusOne.cycleHigh (0 : Fin 2) cycle)⟩ := by
+          congr 1
+        have destEq : (⟨.lm1, .long, raw⟩ : DirectMemoryAccess) =
+            ⟨.lm1, .long, plusOneMemoryAddress
+              (ProofsLean.MNCore.PlusOne.cycleHigh (0 : Fin 2) cycle)⟩ := by
+          congr 1
+        rw [locations]
+        exact Prod.ext sourceEq (Prod.ext sourceEq destEq)
+      have selected := plusOneParsedAt_lowering_selects_iinc 0 cycle accesses loweredAt
+      obtain ⟨nextFiles, executed, readback⟩ :=
+        executeParsedIntegerExpr_plusOne_cycle_writeback state (0 : Fin 2) cycle
+          (ProofsLean.MNCore.Issue.plusOneParsedAt 0) accesses loweredAt
+          locationsAt selected index indexBound
+      exact ⟨accesses, nextFiles, loweredAt, executed, readback⟩
+  | succ line =>
+      have lineEq : line = 0 := Fin.ext (by have h := line.isLt; omega)
+      subst line
+      rcases plusOneSecondLine_cycle_lowers cycle with
+        ⟨accesses, lowered, locations⟩
+      have loweredAt : ParsedExpr.toDirectIntegerAccesses?
+          (ProofsLean.MNCore.Issue.plusOneParsedAt (8 * (1 : Fin 2).val))
+          0 cycle 0 0 0 = some accesses := by
+        simpa [ProofsLean.MNCore.Issue.plusOneSecondParsed] using lowered
+      have locationsAt : accesses.locations =
+          (⟨.lm0, .long, plusOneMemoryAddress
+              (ProofsLean.MNCore.PlusOne.cycleHigh (1 : Fin 2) cycle)⟩,
+           ⟨.lm0, .long, plusOneMemoryAddress
+              (ProofsLean.MNCore.PlusOne.cycleHigh (1 : Fin 2) cycle)⟩,
+           ⟨.lm1, .long, plusOneMemoryAddress
+              (ProofsLean.MNCore.PlusOne.cycleHigh (1 : Fin 2) cycle)⟩) := by
+        let raw : Fin Bank.lm0.capacity :=
+          ⟨8 + 2 * cycle.val, by have hc := cycle.isLt; change 8 + 2 * cycle.val < 4096; omega⟩
+        have rawEq : raw = plusOneMemoryAddress
+            (ProofsLean.MNCore.PlusOne.cycleHigh (1 : Fin 2) cycle) := by
+          apply Fin.ext
+          simp [raw, plusOneMemoryAddress, ProofsLean.MNCore.PlusOne.cycleHigh]
+        have sourceEq : (⟨.lm0, .long, raw⟩ : DirectMemoryAccess) =
+            ⟨.lm0, .long, plusOneMemoryAddress
+              (ProofsLean.MNCore.PlusOne.cycleHigh (1 : Fin 2) cycle)⟩ := by
+          congr 1
+        have destEq : (⟨.lm1, .long, raw⟩ : DirectMemoryAccess) =
+            ⟨.lm1, .long, plusOneMemoryAddress
+              (ProofsLean.MNCore.PlusOne.cycleHigh (1 : Fin 2) cycle)⟩ := by
+          congr 1
+        rw [locations]
+        exact Prod.ext sourceEq (Prod.ext sourceEq destEq)
+      have selected := plusOneParsedAt_lowering_selects_iinc 8 cycle accesses loweredAt
+      obtain ⟨nextFiles, executed, readback⟩ :=
+        executeParsedIntegerExpr_plusOne_cycle_writeback state (1 : Fin 2) cycle
+          (ProofsLean.MNCore.Issue.plusOneParsedAt 8) accesses loweredAt
+          locationsAt selected index indexBound
+      exact ⟨accesses, nextFiles, loweredAt, executed, readback⟩
 
 theorem executeParsedIntegerMaskExpr_readback (files : IntegerRegisterFiles)
     (expression : ParsedExpr) (pe cycle : Fin 4) (bar0 bar1 : BitVec 12)
