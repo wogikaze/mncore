@@ -51,6 +51,9 @@ import Lean
 #print axioms ProofsLean.MNCore.PlusOne.step_writes_cycle_output_low
 #print axioms ProofsLean.MNCore.PlusOne.increment_numerical
 #print axioms ProofsLean.MNCore.Issue.check_sound
+#print axioms ProofsLean.MNCore.Issue.InstructionLine.programIssueAndHazardLegal_line_envelope
+#print axioms ProofsLean.MNCore.Issue.InstructionLine.programLegalLinesCostBelow_finite
+#print axioms ProofsLean.MNCore.Issue.InstructionLine.programIssueAndHazardLegal_nil
 #print axioms ProofsLean.MNCore.Issue.ParsedOperand.fixed_notKnownSourceOnly
 #print axioms ProofsLean.MNCore.Issue.ParsedOperand.forward_notKnownSourceOnly
 #print axioms ProofsLean.MNCore.Issue.ParsedOp.l1bm_broadcast_from_l1bm_to_pe_role

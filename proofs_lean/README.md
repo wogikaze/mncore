@@ -255,6 +255,12 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   `localIssueLegalCostBelowFintype`と`localIssueLegalCostBelowAlphabet`を構成した。
   alphabetの所属条件も局所合法性とコスト上限の組み合わせに一致する。これは単一行の結果であり、
   命令間hazard、parser/assembler完全性、MNCore全体のmachine合法性を証明したものではない。
+- `ProgramLegality.lean`: normalized line列に対して、各行のlocal issue legality、既存block hazard
+  checker、およびmask制御状態すべてに対するPE hazard checkerの成功を合成した述語を定義した。
+  nopをnop issue列へ、MVをPE hazard時計を進めるnop issueへlowerし、この述語を満たすprogramに現れる
+  cost bound未満の行がMathlib `Fintype`由来の有限alphabetで覆われること、およびその行集合が有限であることを証明した。
+  これはnormalized-line上の有限性射影であり、source parser/assemblerとの対応や、完全な`MNCore.machine`
+  の合法性・実行意味論はまだ接続していない。
 - B3の境界: PE行の同時発行違反は行ごとの`Issue.Legal`、行間hazard違反はプログラム全体の
   静的assembler legalityに含める方針とする。hazardは`step`の実行失敗ではない。Rustの`api::trace`は
   hazardを結果に報告し、`hazard_check`はnopを1 step削った変種のassembler受理と解析結果の一致を照合する。

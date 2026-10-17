@@ -22,4 +22,5 @@ import ProofsLean.HazardTrace
 import ProofsLean.MVSemantics
 import ProofsLean.RRN
 import ProofsLean.ControlNormalization
+import ProofsLean.ProgramLegality
 import ProofsLean.PlusOne

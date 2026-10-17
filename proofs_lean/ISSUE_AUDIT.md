@@ -64,6 +64,16 @@ finite envelope has a finite carrier for every cost bound. This is only
 line-local legality; it does not include cross-line hazards or prove that all
 assembler-accepted source lines normalize into this subtype.
 
+`ProgramLegality.lean` now defines a normalized-line program predicate that
+combines local issue checks, the parsed block-hazard checker, and the PE
+hazard checker for every mask execution control state. Nop rows lower to
+their nop issue count for PE hazard timing; MV rows lower to one timing-only
+PE nop. Every line below a cost bound appearing in a program satisfying this
+predicate is covered by the `Fintype`-derived bounded envelope alphabet, so
+that projected set of lines is finite. This establishes a finite carrier for
+the modeled predicate only. Parser-to-projection correspondence, the full
+assembler legality predicate, and the `MNCore.machine` connection remain open.
+
 SDM 3.6.1.15–3.6.1.18 assign the forward producers as follows: ALU→`$aluf`,
 MAU calculation→`$mauf`, L1BM-to-PE→`$lbf`, and matrix read→`$mreadf`.
 Group uniqueness limits the ALU, MAU-calculation, and matrix-read producers;
