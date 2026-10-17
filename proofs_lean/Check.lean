@@ -239,6 +239,8 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.parseParsedMvOperand_indirect_dram_fixture
 #print axioms ProofsLean.MNCore.Issue.parseParsedMvOperand_direct_dram_fixture
 #print axioms ProofsLean.MNCore.HazardTrace.parsedSourceBlockHazardConstraints
+#print axioms ProofsLean.MNCore.HazardTrace.parsedSourceBlockHazardSafe
+#print axioms ProofsLean.MNCore.HazardTrace.parsedSourceBlockHazardSafe_nil
 #print axioms ProofsLean.MNCore.L1Transfer.m4writeWrites_count
 #print axioms ProofsLean.MNCore.L1Transfer.mwriteFourCycleWrites_count
 #print axioms ProofsLean.MNCore.L1Transfer.m4writeFourCycleWrites_count

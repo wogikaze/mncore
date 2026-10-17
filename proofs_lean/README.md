@@ -249,7 +249,8 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
 - B3の境界: PE行の同時発行違反は行ごとの`Issue.Legal`、行間hazard違反はプログラム全体の
   静的assembler legalityに含める方針とする。hazardは`step`の実行失敗ではない。Rustの`api::trace`は
   hazardを結果に報告し、`hazard_check`はnopを1 step削った変種のassembler受理と解析結果の一致を照合する。
-  LeanにはPE/block hazard constraint生成器があるが、全構文のassembler legalityへの接続・網羅性は未証明。
+  Leanに追加した`parsedSourceBlockHazardSafe`は、生成済みblock hazard制約の全てが距離条件を満たすことを表す。
+  PE/block hazard constraint生成器はあるが、全構文のassembler legalityへの接続・網羅性は未証明。
 - `FiniteExample.lean`: 3命令・4入力の小さな機械で、全候補の反証、2行の最適性、
   限定入力では1行解が存在することを証明する回帰例。**MN-Coreではない。**
 - `PlusOne.lean`: Welcome（`challenge/1.plus-one`）の2行の `iinc` 解について、

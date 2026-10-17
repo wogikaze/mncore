@@ -272,4 +272,20 @@ def parsedSourceBlockHazardConstraints (source : List ParsedLine)
     (startWord : Nat) :=
   collectBlockHazardConstraints (parsedSourceBlockHazardEvents source startWord)
 
+/-- Block-memory hazards are a static whole-program legality condition. They
+do not turn a single-line state transition into a runtime failure. -/
+def blockHazardConstraintSatisfied
+    (constraint : ProofsLean.MNCore.PEMemory.TimedBlockHazardConstraint) : Prop :=
+  constraint.required ≤ constraint.distance
+
+def parsedSourceBlockHazardSafe (source : List ParsedLine) (startWord : Nat) : Prop :=
+  ∀ constraint ∈ parsedSourceBlockHazardConstraints source startWord,
+    blockHazardConstraintSatisfied constraint
+
+theorem parsedSourceBlockHazardSafe_nil (startWord : Nat) :
+    parsedSourceBlockHazardSafe [] startWord := by
+  simp [parsedSourceBlockHazardSafe, parsedSourceBlockHazardConstraints,
+    parsedSourceBlockHazardEvents, collectBlockHazardConstraints,
+    collectBlockHazardConstraintsAux]
+
 end ProofsLean.MNCore.HazardTrace
