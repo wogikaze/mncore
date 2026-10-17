@@ -672,8 +672,9 @@ def encoded_word_universe() -> dict:
         "short_program_enumeration_complete": "ProofsLean.MNCore.Issue.encodedUniverse_shortPrograms_complete",
         "legal_lines_finite": "ProofsLean.MNCore.Issue.encodedUniverse_legalLinesCostBelow_finite",
         "machine_complete": False,
+        "selected_candidate_universe": True,
         "universal_source_to_encoding_correspondence": False,
-        "scope": "All bit patterns in the observed PE/MV word widths; an over-approximation of accepted source output pending universal assembler correspondence.",
+        "scope": "Selected bounded candidate universe: all bit patterns in fixed-width PE/MV words. It over-approximates accepted source output; source-to-word correspondence and step semantics remain open.",
     }
 
 
@@ -760,6 +761,19 @@ def coverage_catalog() -> dict:
         "selected_parser_boundary_experiment": isa_bounds_experiment(),
         "checked_answer_encoding_experiment": answer_encoding_experiment(),
         "encoded_word_universe": encoded_word_universe(),
+        "phase_2_resolution": {
+            "legal_policy": "Successful source normalization defines the candidate domain; operational issue/hazard/disabled-unit errors are step failures.",
+            "normalized_candidate_theorem": "ProofsLean.MNCore.normalizedExecutableLine_legal",
+            "candidate_universe": "ProofsLean.MNCore.Issue.encodedUniverseMachine",
+            "bounded_instruction_line_projection": "ProofsLean.MNCore.boundedIssueMachine",
+            "bounded_projection_used": False,
+            "finite_range_work": "frozen",
+            "remaining": [
+                "Implement issue, PE/block hazard, and disabled-forwarding failures in step.",
+                "Prove universal source-parser/assembler correspondence into fixed-width encoded words.",
+                "Connect encoded words to transition semantics and seal MNCore.machine.",
+            ],
+        },
         "opcode_destination_arity_experiment": opcode_arity_experiment(),
         "answer_parser_gap_audit": answer_parser_gap_audit(),
         "raw_candidate_assembler_experiment": raw_candidate_assembler_experiment(),
@@ -778,17 +792,18 @@ def coverage_catalog() -> dict:
                 "ProofsLean.finiteAlphabetCertificate",
                 "ProofsLean.shortProgramsFintype_complete",
             ],
-            "limitation": "A cost-bounded finite-subtype alphabet is available, but the universal MN-Core proof that legal rows lie in the operand envelope and the machine connection remain open.",
+            "limitation": "The generic finite-subtype theorem remains available, but the InstructionLine operand-envelope route is frozen and excluded from candidate enumeration under the broad legality policy.",
         },
-        "partial_machine_bounded_legal_lines": {
+        "normalized_line_bounded_issue_projection": {
             "source": "proofs_lean/ProofsLean/ProgramLegality.lean",
             "sha256": digest(ROOT / "ProofsLean/ProgramLegality.lean"),
             "line_type": "ProofsLean.MNCore.Issue.InstructionLine",
-            "fintype": "ProofsLean.MNCore.partialMachine_legalLineFintype",
-            "alphabet_coverage": "ProofsLean.MNCore.partialMachine_legalLineAlphabet_covers",
-            "enumeration_complete": "ProofsLean.MNCore.partialMachine_exactAlphabet_shortPrograms_complete",
-            "scope": "For each score bound, the exact set of lines occurring in programs legal under the current local issue, payload-envelope, and PE/block hazard predicate is finite and can serve as a complete short-program alphabet.",
-            "limitation": "The partial machine step returns unknown, and source parser/assembler completeness into this legality predicate remains unproved; this does not define MNCore.machine or establish ISA-wide completeness.",
+            "fintype": "ProofsLean.MNCore.boundedIssueMachine_legalLineFintype",
+            "alphabet_coverage": "ProofsLean.MNCore.boundedIssueMachine_legalLineAlphabet_covers",
+            "enumeration_complete": "ProofsLean.MNCore.boundedIssueMachine_exactAlphabet_shortPrograms_complete",
+            "used_for_candidate_enumeration": False,
+            "scope": "For each score bound, the exact set of lines occurring under the legacy local-issue, payload-envelope, and static-hazard predicate is finite. This is retained as a frozen projection theorem only.",
+            "limitation": "This predicate is not machine legality: issue conflicts, hazards, and disabled-unit errors are intended to become step failures. The projection is excluded from candidate enumeration because its envelope restriction is not justified by normalization success alone.",
         },
         "finite_carrier_proofs": [{
             "source": "proofs_lean/ProofsLean/FiniteRegion.lean",

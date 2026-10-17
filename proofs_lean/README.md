@@ -18,7 +18,8 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
 | --- | --- |
 | 旧73件の判定監査、根拠のない最適性主張の撤回 | 実施済み。`audit.json` |
 | 合法性、実行、入力域、初期状態、出力仕様、スコアを結ぶ定義 | 汎用基盤を実装。MN-Coreとの接続は未実装 |
-| 全短縮プログラムの列挙完全性と、候補の反証から下限を導く定理 | 汎用定理を証明済み |
+| 有限候補宇宙と短縮プログラムの列挙完全性 | 固定幅PE/MV符号語の有限宇宙で達成。全assembler出力との対応は未証明 |
+| 候補の反証から下限を導く定理 | `SymbolicBoundCertificate`を含む汎用定理を証明済み。Welcomeへの適用は未実施 |
 | 全入力と公式テストケース限定の仕様の区別 | 定義と回帰証明を実装済み |
 | 全ISAの合法な命令・オペランド・同時発行のモデル | 未実装。`coverage.json` |
 | メモリ・通信・丸め・素通り・ハザード・初期化の実行意味論 | 未実装 |
@@ -30,12 +31,15 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
 
 ## 次に進める作業
 
-1. マスク付きloweringのdirective有効条件、single-line maskによるdirective取消し、flush幅と
-   フラグ選択をRust実行器と照合し、各規則の定理と回帰観測を追加する。
-2. ParsedExpr実行器へ入力精度変換とアクセス制約を接続し、対象subsetと拒否・unknownの境界を明示する。
-3. forwarding、遅延、ポート競合、同時発行を状態遷移へ追加し、全サイクルのread-before-writeを定式化する。
-4. 完全な命令・オペランド・制御構文のinventoryを確立し、公式仕様／参照実装との対応証拠を積み上げる。
-5. 各問題の入力域・初期状態・出力仕様・スコアを確定して候補列挙へ結び、73問ごとの最適性下限を証明する。
+作業順は `0 → 1 → 2-1 → 2-2 → 2-3 → 2-5 → 3-1 → 2-4 → 3-2 → 3-3 → 3-4 → 4`。
+有限性・範囲付けの証明は凍結し、必要な意味論や対応証明を優先する。
+
+1. Phase 2 を締める。`partialMachine.legal`は正規化済み命令行の全列を許し、issue衝突・PE/block hazard・無効なforwarding読み出しは`step`の失敗へ移す。
+   新しい有限性・範囲証明は追加しない。
+2. 候補列挙の基盤には`encodedUniverseMachine`を採用する。固定幅PE/MV符号語全体の有限性を使い、`InstructionLine`の範囲付き合法性経路は旧projectionとしてのみ残す。
+   assembler sourceから符号語への全域対応は独立した未解決義務として記録する。
+3. Phase 2の状態を`coverage.json`と本READMEへ反映した後、Phase 3の本物のStateと全命令footprintへ進む。
+4. Welcomeの入力域・初期状態・出力仕様を確定し、必要な値意味論を足して正しさ、1行下限、公式emulator差分を順に接続する。
 
 ## 実装した定義
 
@@ -59,13 +63,10 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   被覆は合法プログラムに現れる行に対してのみ必要。さらに上限ごとの
   `LegalLinesCoveredBelow` と `legalLinesCostBelow` を定義し、`nop/n`のような
   無限族をコスト上限で有限化する。固定上限の有限被覆が列挙完全性を与える。
-  抽象的な`nop/n`モデルでは全上限について有限性を証明した。MN-Coreの
-  実際の行型については、アドレス・即値・全オペランド範囲、同時発行と
-  ハザードに基づく有限性が未証明。ただし現在の`partialMachine`の合法性述語
-  （issue、各行のenvelope、PE/blockの行間hazard）に限れば、boundごとの
-  合法行集合へMathlib `Fintype`を与え、正確な有限alphabetと短縮列挙完全性まで接続した。
-  `step`はunknownのため`Machine`には昇格できず、assembler/parserからこの合法性述語への
-  完全性も未証明。
+  抽象的な`nop/n`モデルでは全上限について有限性を証明した。MN-Core用の候補列挙器には
+  `encodedUniverseMachine`の全426-bit PE語／82-bit MV語を選び、有限carrierと短縮列挙完全性を使う。
+  旧`InstructionLine`経路のissue・operand-envelope・静的hazard制約付き`Fintype`は定理として保存するが、
+  新しい合法性の定義や候補列挙には使わない。全assembler出力との符号語対応と遷移意味論は未接続。
 - `evidence/isa-bounds/reference.json`: 公式`assemble3`の3,410個の選択プローブ。
   `nop/0`は受理され0語を出力するため正コストの行からは正規化で除外する。
   `$omr`はu8全域0〜255を走査し1〜15だけが受理される。`$imr`と`maskn`/`maskln`/`masklln`の
@@ -308,24 +309,21 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   `localIssueLegalCostBelowFintype`と`localIssueLegalCostBelowAlphabet`を構成した。
   alphabetの所属条件も局所合法性とコスト上限の組み合わせに一致する。これは単一行の結果であり、
   命令間hazard、parser/assembler完全性、MNCore全体のmachine合法性を証明したものではない。
-- `ProgramLegality.lean`: normalized line列に対して、各行のlocal issue legality、既存block hazard
-  checker、およびmask制御状態すべてに対するPE hazard checkerの成功を合成した述語を定義した。
-  nopをnop issue列へ、MVをPE hazard時計を進めるnop issueへlowerし、この述語を満たすprogramに現れる
-  cost bound未満の行がMathlib `Fintype`由来の有限alphabetで覆われること、およびその行集合が有限であることを証明した。
-  これはnormalized-line上の有限性射影であり、source parser/assemblerとの対応や、完全な`MNCore.machine`
-  の合法性・実行意味論はまだ接続していない。
-- 同ファイルの`MNCore.partialMachine`は、Phase 2の行型・合法性・コストを`PartialMachine`へ接続し、未実装の
-  遷移は`unknown`として明示する。このpartial machineでcost bound未満の合法プログラムに現れる行集合が有限で、
-  `costBelowEnvelopeAlphabet`上の短い候補列挙が完全であることを証明した。意味論未知のため`Machine`へsealできず、
-  ここでいう合法性も正規化行のモデル述語であって、assembler受理との対応は未証明である。
+- `ProgramLegality.lean`: `MNCore.partialMachine.legal`は正規化済み`InstructionLine`列を広く許し、実行時の
+  issue違反・hazard・無効なforwarding読み出しを合法性から除外しない。遷移は引き続き`unknown`で、これらの実行失敗は
+  今後`step`へ実装する。正規化成功後の命令列はこの広い合法性を満たす。
+- 同ファイルの`boundedIssueMachine`は、以前のlocal issue・envelope・PE/block hazard条件による有限性定理を保存する
+  旧projectionであり、機械の合法性や候補列挙には使わない。有限性・範囲付けの証明は凍結する。
+- 候補列挙には`encodedUniverseMachine`を採用し、全426-bit PE語と82-bit MV語の有限carrierを使う。
+  `InstructionLine`のbounded projectionは使わない。符号語の遷移意味論と、全assembler受理sourceからこの符号語型への
+  対応は未証明なので、この選択だけで`MNCore.machine`やISA完全性が得られるわけではない。
 - `scripts/check_manual_alu_inventory.py`: SDM表3.9のALU opcode集合をコンパイラ定義と比較し、精度・符号指定を
   展開した136綴りがparser監査候補に含まれることを検査する。現状はALU opcode表だけの棚卸しであり、
   全命令形式・全operand形・assembler受理の完全性証明ではない。
-- B3の境界: PE行の同時発行違反は行ごとの`Issue.Legal`、行間hazard違反はプログラム全体の
-  静的assembler legalityに含める方針とする。hazardは`step`の実行失敗ではない。Rustの`api::trace`は
-  hazardを結果に報告し、`hazard_check`はnopを1 step削った変種のassembler受理と解析結果の一致を照合する。
-  Leanに追加した`parsedSourceBlockHazardSafe`は、生成済みblock hazard制約の全てが距離条件を満たすことを表す。
-  PE/block hazard constraint生成器はあるが、全構文のassembler legalityへの接続・網羅性は未証明。
+- B3の境界: 本プロジェクトではPE行の同時発行違反、PE/block hazard、無効なforwarding読み出し
+  （例: MAU disabled）をすべて`step`の実行失敗として扱う。assemblerの`Instruction field conflict`は
+  source normalization／assembly段階の失敗として別に扱う。既存のIssue・hazard checkerはstep失敗条件の証明に再利用し、
+  `legal`を狭める根拠にはしない。
 - `FiniteExample.lean`: 3命令・4入力の小さな機械で、全候補の反証、2行の最適性、
   限定入力では1行解が存在することを証明する回帰例。**MN-Coreではない。**
 - `PlusOne.lean`: Welcome（`challenge/1.plus-one`）の2行の `iinc` 解について、
