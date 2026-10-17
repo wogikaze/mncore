@@ -1,7 +1,7 @@
 //! Differential test of MAU vector instructions against the official emulator.
 //!
 //! Usage: difftest_mau <op> [runs] [seed]
-//!   op: fvfma | fvmul | fvadd | fvsub | fvpassa | dvfmau | dvmulu | dvadd | dvpassa
+//!   op: fvfma | fvmul | fvadd | fvsub | frelu | fvpassa | dvfmau | dvmulu | dvadd | dvpassa
 //!
 //! Each run fills LM0 / LM1 / GRF0 of 64 PEs with random operands, executes 32 steps of the
 //! instruction into GRF1, and compares every result bit for bit with `float::vfma`.
@@ -55,6 +55,7 @@ enum Kind {
     Mul,
     Add,
     Sub,
+    Relu,
     Pass,
 }
 
@@ -68,6 +69,7 @@ fn main() {
         "fvmul" => (SINGLE, Kind::Mul, [true; 4]),
         "fvadd" => (SINGLE, Kind::Add, [true; 4]),
         "fvsub" => (SINGLE, Kind::Sub, [true; 4]),
+        "frelu" => (SINGLE, Kind::Relu, [true; 4]),
         "fvpassa" => (SINGLE, Kind::Pass, [true; 4]),
         "dvfmau" => (DOUBLE, Kind::Fma, [true, true, false, false]),
         "dvmulu" => (DOUBLE, Kind::Mul, [true, true, false, false]),
@@ -93,7 +95,14 @@ fn main() {
                 let mut lc = 0;
                 for lane in 0..lanes {
                     let sh = (lanes - 1 - lane) * fmt.width() as usize;
-                    let x = gen_value(&mut rng, fmt);
+                    let x = if matches!(kind, Kind::Relu) {
+                        let sign = (rng.below(2) as u32) << 31;
+                        let exponent = rng.below(137) as u32;
+                        let mantissa = rng.next() as u32 & 0x7f_ffff;
+                        (sign | (exponent << 23) | mantissa) as u64
+                    } else {
+                        gen_value(&mut rng, fmt)
+                    };
                     let y = gen_value(&mut rng, fmt);
                     let mut z = gen_value(&mut rng, fmt);
                     if rng.below(3) == 0 {
@@ -125,6 +134,7 @@ fn main() {
                 Kind::Mul => format!("{op} $lm{w}v $ln{w}v $ls{w}v\n"),
                 Kind::Add => format!("{op} $lm{w}v $lr{w}v $ls{w}v\n"),
                 Kind::Sub => format!("fvadd $lm{w}v -$lr{w}v $ls{w}v\n"),
+                Kind::Relu => format!("frelu $lm{w}v $lr{w}v $ls{w}v\n"),
                 Kind::Pass => format!("{op} $lm{w}v $ls{w}v\n"),
             };
         }
@@ -160,9 +170,15 @@ fn main() {
                         Kind::Mul => (float::decode(fmt, x), float::decode(fmt, y), zero),
                         Kind::Add => (float::decode(fmt, x), one, float::decode(fmt, z)),
                         Kind::Sub => (float::decode(fmt, x), one, float::decode(fmt, z).negate()),
+                        Kind::Relu => (zero, zero, zero),
                         Kind::Pass => (float::decode(fmt, x), one, zero),
                     };
-                    let expect = if mul_pes[pe % 4] {
+                    let relu_expect = (x as u32 & 0x7fff_ffff == 0 || x as u32 & 0x8000_0000 == 0)
+                        .then_some(z as u32 as u64)
+                        .unwrap_or(0x8000_0000);
+                    let expect = if matches!(kind, Kind::Relu) {
+                        relu_expect
+                    } else if mul_pes[pe % 4] {
                         float::vfma(fmt, fmt, va, vb, vc)
                     } else {
                         float::vfma(fmt, fmt, zero, zero, vc)

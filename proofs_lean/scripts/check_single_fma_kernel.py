@@ -31,7 +31,7 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--gpfn-runs", type=int, default=0,
                         help="also run official gpfn3 differential tests; 35 gives 573440 values")
-    parser.add_argument("--operation", choices=["fvfma", "fvmul", "fvsub"], default="fvfma",
+    parser.add_argument("--operation", choices=["fvfma", "fvmul", "fvsub", "frelu"], default="fvfma",
                         help="Lean operation to kernel-check (Rust vectors use the same op)")
     args = parser.parse_args()
 
@@ -56,16 +56,20 @@ def main() -> None:
         elif args.operation == "fvmul":
             proposition = ("ProofsLean.MNCore.FloatMultiply.multiply "
                            f"(BitVec.ofNat 32 {a}) (BitVec.ofNat 32 {b})")
-        else:
+        elif args.operation == "fvsub":
             proposition = ("ProofsLean.MNCore.FloatSubtract.subtract "
                            f"(BitVec.ofNat 32 {a}) (BitVec.ofNat 32 {b})")
+        else:
+            proposition = ("ProofsLean.MNCore.FloatRelu.relu "
+                           f"(BitVec.ofNat 32 {a}) (BitVec.ofNat 32 {c})")
         equations.append(f"example : {proposition} = BitVec.ofNat 32 {expected} := by decide")
     if len(equations) != args.vectors:
         raise SystemExit(f"expected {args.vectors} Rust vectors, got {len(equations)}")
 
     imports = {"fvfma": "ProofsLean.SingleFMA",
                "fvmul": "ProofsLean.FloatMultiply",
-               "fvsub": "ProofsLean.FloatSubtract"}
+               "fvsub": "ProofsLean.FloatSubtract",
+               "frelu": "ProofsLean.FloatRelu"}
     source = f"import {imports[args.operation]}\n\n" + "\n".join(equations) + "\n"
     with tempfile.NamedTemporaryFile("w", suffix=".lean", dir=ROOT,
                                      encoding="utf-8", delete=False) as generated:

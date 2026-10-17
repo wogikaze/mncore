@@ -130,6 +130,12 @@ import Lean
 #print axioms ProofsLean.MNCore.FloatMultiply.chunkIndex_covers_all_words
 #print axioms ProofsLean.MNCore.FloatMultiply.every_word_has_scheduled_answer
 #print axioms ProofsLean.MNCore.FloatMultiply.fourLineResult_correct
+#print axioms ProofsLean.MNCore.FloatRelu.abstractRelu_evaluation
+#print axioms ProofsLean.MNCore.FloatRelu.relu_positive
+#print axioms ProofsLean.MNCore.FloatRelu.relu_negative
+#print axioms ProofsLean.MNCore.FloatRelu.relu_positive_zero
+#print axioms ProofsLean.MNCore.FloatRelu.relu_negative_zero
+#print axioms ProofsLean.MNCore.FloatRelu.abstractRelu_dependencies_are_sound
 #print axioms ProofsLean.MNCore.Issue.encodedUniverseMachine_not_complete
 #print axioms ProofsLean.MNCore.Issue.mem_encodedUniverseAlphabet
 #print axioms ProofsLean.MNCore.Issue.encodedUniverseAlphabet_coversBelow

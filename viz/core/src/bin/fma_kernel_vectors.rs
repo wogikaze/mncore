@@ -49,7 +49,7 @@ fn main() {
             c = 0;
         } else if operation == "fvsub" {
             c = 0;
-        } else if index % 3 == 0 {
+        } else if operation == "fvfma" && index % 3 == 0 {
             let product = float::vfma(
                 SINGLE,
                 SINGLE,
@@ -72,6 +72,9 @@ fn main() {
                 SINGLE, SINGLE, float::decode(SINGLE, a as u64),
                 float::decode(SINGLE, 0x3f80_0000), float::decode(SINGLE, b as u64).negate(),
             ) as u32,
+            "frelu" => {
+                if a & 0x7fff_ffff == 0 || a & 0x8000_0000 == 0 { c } else { 0x8000_0000 }
+            }
             _ => panic!("unknown operation {operation}"),
         };
         println!("{a:08x} {b:08x} {c:08x} {expected:08x}");
