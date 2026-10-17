@@ -2,6 +2,7 @@ import ProofsLean.PEMemory
 import ProofsLean.FloatAdd
 import ProofsLean.FloatSubtract
 import ProofsLean.FloatMultiply
+import ProofsLean.ParsedIntegerStep
 
 /-! A one-cycle connection between the float-add datapath and the existing PE
 memory primitives. It reads two 64-bit inputs (two f32 lanes each), applies
@@ -10,6 +11,7 @@ forwarding and source parsing, which remain obligations for the full machine. -/
 namespace ProofsLean.MNCore.FloatPEMemory
 
 open ProofsLean.MNCore
+open ProofsLean.MNCore.Issue
 
 def readPair (bank : PEMemory.Bank) (memory : PEMemory.Memory bank)
     (start : Fin bank.capacity) : BitVec 64 :=
@@ -117,6 +119,106 @@ def addCycle (left : PEMemory.Memory .lm0) (right : PEMemory.Memory .lm0)
     (leftStart rightStart : Fin (PEMemory.Bank.capacity .lm0))
     (outputStart : Fin (PEMemory.Bank.capacity .lm1)) : PEMemory.Memory .lm1 :=
   binaryCycle FloatAdd.addBus left right output leftStart rightStart outputStart
+
+def lm0LongAddress? (access : PEMemory.DirectMemoryAccess) :
+    Option (Fin (PEMemory.Bank.capacity .lm0)) :=
+  match access with
+  | ⟨.lm0, .long, address⟩ => some address
+  | _ => none
+
+def lm1LongAddress? (access : PEMemory.DirectMemoryAccess) :
+    Option (Fin (PEMemory.Bank.capacity .lm1)) :=
+  match access with
+  | ⟨.lm1, .long, address⟩ => some address
+  | _ => none
+
+/-- Lower the memory-only parsed `fvadd` subset to explicit LM0/LM1 longword
+addresses for one PE cycle. Forwarding, masks, and other banks are left out. -/
+def lowerParsedFloatAdd? (expression : ParsedExpr) (pe cycle : Fin 4)
+    (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
+    Option (Fin (PEMemory.Bank.capacity .lm0) ×
+      Fin (PEMemory.Bank.capacity .lm0) × Fin (PEMemory.Bank.capacity .lm1)) := do
+  match expression.op with
+  | .mau .f false .add none false => pure ()
+  | _ => none
+  match expression.sources, expression.destinations with
+  | [.mem left false false false none, .mem right false false false none],
+      [.mem destination false false false none] =>
+      let leftAccess ← PEMemory.ParsedOperand.toDirectMemoryAccess?
+        (.mem left false false false none) pe cycle bar0 bar1 tWord
+      let rightAccess ← PEMemory.ParsedOperand.toDirectMemoryAccess?
+        (.mem right false false false none) pe cycle bar0 bar1 tWord
+      let destinationAccess ← PEMemory.ParsedOperand.toDirectMemoryAccess?
+        (.mem destination false false false none) pe cycle bar0 bar1 tWord
+      let leftAddress ← lm0LongAddress? leftAccess
+      let rightAddress ← lm0LongAddress? rightAccess
+      let destinationAddress ← lm1LongAddress? destinationAccess
+      some (leftAddress, rightAddress, destinationAddress)
+  | _, _ => none
+
+def executeParsedFloatAddCycle? (expression : ParsedExpr)
+    (files : PEMemory.IntegerRegisterFiles) (pe cycle : Fin 4)
+    (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
+    Option PEMemory.IntegerRegisterFiles := do
+  let (leftAddress, rightAddress, destinationAddress) ←
+    lowerParsedFloatAdd? expression pe cycle bar0 bar1 tWord
+  let nextLM1 := addCycle files.lm0 files.lm0 files.lm1
+    leftAddress rightAddress destinationAddress
+  some { files with lm1 := nextLM1 }
+
+def commitLM1 (files : PEMemory.IntegerRegisterFiles)
+    (memory : PEMemory.Memory .lm1) : PEMemory.IntegerRegisterFiles :=
+  { files with lm1 := memory }
+
+theorem executeParsedFloatAddCycle_success (expression : ParsedExpr)
+    (files : PEMemory.IntegerRegisterFiles) (pe cycle : Fin 4)
+    (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
+    (leftAddress rightAddress : Fin (PEMemory.Bank.capacity .lm0))
+    (destinationAddress : Fin (PEMemory.Bank.capacity .lm1))
+    (lowered : lowerParsedFloatAdd? expression pe cycle bar0 bar1 tWord =
+      some (leftAddress, rightAddress, destinationAddress)) :
+    executeParsedFloatAddCycle? expression files pe cycle bar0 bar1 tWord =
+      some (commitLM1 files
+        (addCycle files.lm0 files.lm0 files.lm1 leftAddress rightAddress destinationAddress)) := by
+  simp [executeParsedFloatAddCycle?, lowered, commitLM1]
+
+theorem executeParsedFloatAddCycle_readback (expression : ParsedExpr)
+    (files : PEMemory.IntegerRegisterFiles) (pe cycle : Fin 4)
+    (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
+    (leftAddress rightAddress : Fin (PEMemory.Bank.capacity .lm0))
+    (destinationAddress : Fin (PEMemory.Bank.capacity .lm1))
+    (lowered : lowerParsedFloatAdd? expression pe cycle bar0 bar1 tWord =
+      some (leftAddress, rightAddress, destinationAddress)) :
+    (executeParsedFloatAddCycle? expression files pe cycle bar0 bar1 tWord).map
+      (fun next => readPair .lm1 next.lm1 destinationAddress) =
+      some (FloatAdd.addBus (readPair .lm0 files.lm0 leftAddress)
+        (readPair .lm0 files.lm0 rightAddress)) := by
+  rw [executeParsedFloatAddCycle_success expression files pe cycle bar0 bar1 tWord
+    leftAddress rightAddress destinationAddress lowered]
+  simp only [Option.map_some, commitLM1, addCycle]
+  exact congrArg some
+    (binaryCycle_readback FloatAdd.addBus files.lm0 files.lm0 files.lm1
+      leftAddress rightAddress destinationAddress)
+
+def flatLongAccess (bank : Issue.Bank) (base : Nat) : Issue.Access :=
+  ⟨bank, ⟨2, base, base + 2, base + 4, base + 6, false, none⟩⟩
+
+def parsedFloatAddSmoke : ParsedExpr where
+  op := .mau .f false .add none false
+  sources :=
+    [.mem (flatLongAccess .lm0 0) false false false none,
+     .mem (flatLongAccess .lm0 8) false false false none]
+  destinations := [.mem (flatLongAccess .lm1 16) false false false none]
+  flush := none
+  text := "fvadd $lm0v $lm8v $ln16v"
+
+theorem parsedFloatAddSmoke_cycle0_lowers :
+    lowerParsedFloatAdd? parsedFloatAddSmoke 0 0 0 0 0 =
+      some (⟨0, by decide⟩, ⟨8, by decide⟩, ⟨16, by decide⟩) := by decide
+
+theorem parsedFloatAddSmoke_cycle3_lowers :
+    lowerParsedFloatAdd? parsedFloatAddSmoke 0 3 0 0 0 =
+      some (⟨6, by decide⟩, ⟨14, by decide⟩, ⟨22, by decide⟩) := by decide
 
 def subtractCycle (left : PEMemory.Memory .lm0) (right : PEMemory.Memory .lm0)
     (output : PEMemory.Memory .lm1)
