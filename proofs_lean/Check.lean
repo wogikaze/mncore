@@ -139,6 +139,7 @@ import Lean
 #print axioms ProofsLean.MNCore.FloatRelu.chunkIndex_injective
 #print axioms ProofsLean.MNCore.FloatRelu.chunkIndex_covers_all_words
 #print axioms ProofsLean.MNCore.FloatRelu.twoLineResult_correct
+#print axioms ProofsLean.MNCore.FloatRelu.twoLineGradResult_correct
 #print axioms ProofsLean.MNCore.Issue.encodedUniverseMachine_not_complete
 #print axioms ProofsLean.MNCore.Issue.mem_encodedUniverseAlphabet
 #print axioms ProofsLean.MNCore.Issue.encodedUniverseAlphabet_coversBelow

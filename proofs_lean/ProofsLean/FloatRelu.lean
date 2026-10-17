@@ -79,6 +79,18 @@ def twoLineResult (input initialOutput : Words) : Words :=
   writeChunk input (writeChunk input initialOutput ⟨0, by decide⟩)
     ⟨1, by decide⟩
 
+def oneWords : Words := fun _ => 0x3F800000
+
+def gradAnswer (input : Words) : Words := fun index =>
+  relu (input index) (oneWords index)
+
+def writeGradChunk (input output : Words) (line : Fin 2) : Words := fun index =>
+  if index.val / 8 = line.val then gradAnswer input index else output index
+
+def twoLineGradResult (input initialOutput : Words) : Words :=
+  writeGradChunk input (writeGradChunk input initialOutput ⟨0, by decide⟩)
+    ⟨1, by decide⟩
+
 theorem chunkIndex_injective (line₁ line₂ : Fin 2) (lane₁ lane₂ : Fin 8)
     (equal : chunkIndex line₁ lane₁ = chunkIndex line₂ lane₂) :
     line₁ = line₂ ∧ lane₁ = lane₂ := by
@@ -100,6 +112,13 @@ theorem chunkIndex_covers_all_words (index : Fin 16) :
 theorem twoLineResult_correct (input initialOutput : Words) (index : Fin 16) :
     twoLineResult input initialOutput index = vectorAnswer input index := by
   simp only [twoLineResult, writeChunk, vectorAnswer]
+  repeat (first | rfl | split)
+  have hi := index.isLt
+  omega
+
+theorem twoLineGradResult_correct (input initialOutput : Words) (index : Fin 16) :
+    twoLineGradResult input initialOutput index = gradAnswer input index := by
+  simp only [twoLineGradResult, writeGradChunk, gradAnswer]
   repeat (first | rfl | split)
   have hi := index.isLt
   omega
