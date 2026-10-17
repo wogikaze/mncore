@@ -4922,6 +4922,36 @@ theorem parsed_iinc_cycle_matches_plusOne
           simpa [ProofsLean.MNCore.PlusOne.cycleOutput] using
             (ProofsLean.MNCore.PlusOne.cycle_alu_output state line cycle).symm
 
+theorem parsed_iinc_cycle_high_word_matches_plusOne
+    (state : ProofsLean.MNCore.PlusOne.State)
+    (line : ProofsLean.MNCore.PlusOne.Line) (cycle : Fin 4) :
+    unpackALUBus (parsedIntegerRegisterOutput (plusOneFiles state)
+      ⟨.lm0, .long, plusOneMemoryAddress
+        (ProofsLean.MNCore.PlusOne.cycleHigh line cycle)⟩
+      ⟨.lm0, .long, plusOneMemoryAddress
+        (ProofsLean.MNCore.PlusOne.cycleHigh line cycle)⟩
+      .word (.arith .inc false) false).value 0 =
+      (ProofsLean.MNCore.PlusOne.step line state).lm1
+        (ProofsLean.MNCore.PlusOne.cycleHigh line cycle) := by
+  rw [unpackALUBus, parsed_iinc_cycle_matches_plusOne]
+  exact (ProofsLean.MNCore.PlusOne.step_writes_cycle_output_high
+    line state cycle).symm
+
+theorem parsed_iinc_cycle_low_word_matches_plusOne
+    (state : ProofsLean.MNCore.PlusOne.State)
+    (line : ProofsLean.MNCore.PlusOne.Line) (cycle : Fin 4) :
+    unpackALUBus (parsedIntegerRegisterOutput (plusOneFiles state)
+      ⟨.lm0, .long, plusOneMemoryAddress
+        (ProofsLean.MNCore.PlusOne.cycleHigh line cycle)⟩
+      ⟨.lm0, .long, plusOneMemoryAddress
+        (ProofsLean.MNCore.PlusOne.cycleHigh line cycle)⟩
+      .word (.arith .inc false) false).value 1 =
+      (ProofsLean.MNCore.PlusOne.step line state).lm1
+        (ProofsLean.MNCore.PlusOne.cycleLow line cycle) := by
+  rw [unpackALUBus, parsed_iinc_cycle_matches_plusOne]
+  exact (ProofsLean.MNCore.PlusOne.step_writes_cycle_output_low
+    line state cycle).symm
+
 
 def plusOneParsedCycleLocations (base : Nat) (cycle : Fin 4) :
     Option (DirectMemoryAccess × DirectMemoryAccess × DirectMemoryAccess) :=
