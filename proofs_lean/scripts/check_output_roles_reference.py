@@ -56,6 +56,22 @@ CASES = [
     ("l1bm_to_regs_reversed", "l1bmm $m0 $lb0", False),
     ("l2bm_to_l1bm_order", "l2bmb $lc0 $lb0", True),
     ("l2bm_to_l1bm_reversed", "l2bmb $lb0 $lc0", False),
+    ("l1bm_to_t", "l1bmm $lb0 $t", True),
+    ("l1bm_to_bar", "l1bmm $lb0 $mb", True),
+    ("l1bm_cannot_write_omr", "l1bmm $lb0 $omr1", False),
+    ("pe_to_l1bm_mwrite", "l1bmm@1 $m0 $lb0", True),
+    ("l1bm_mwrite_wrong_direction", "l1bmm@1 $lb0 $m0", False),
+    ("pe_reduce_to_l1bm", "l1bmrffadd $m0 $lb0", True),
+    ("l1bm_distrib_to_pe", "l1bmd $lb0 $m0", True),
+    ("l1bm_gather_from_pe", "l1bmd $m0 $lb0", True),
+    ("l1bm_distrib_cannot_write_omr", "l1bmd $lb0 $omr1", False),
+    ("l2bm_broadcast_to_l1bm", "l2bmb $lc0 $lb0", True),
+    ("l2bm_broadcast_wrong_destination", "l2bmb $lc0 $m0", False),
+    ("l1bm_gather_to_l2bm", "l2bmd $lb0 $lc0", True),
+    ("l2bm_distribute_to_l1bm", "l2bmd $lc0 $lb0", True),
+    ("l1bm_multicast", "l2bmi@0/0 $lb0 $lb16", True),
+    ("l1bm_reduce_to_l2bm", "l2bmrdfadd $lb0 $lc0", True),
+    ("l1bm_gather_reduce_to_l2bm", "l2bmr2dfadd $lb0 $lc0", True),
 ]
 
 
@@ -92,7 +108,7 @@ def main() -> None:
     report = {
         "schema_version": 1,
         "experiment": "assemble3 operand-role and duplicate-destination validation",
-        "scope": "Focused zero, ALU, MAU, matrix, L1BM, and L2BM probes; not an exhaustive per-opcode operand grammar.",
+        "scope": "Focused zero, ALU, MAU, matrix, L1BM, and L2BM probes, including transfer directions; not an exhaustive per-opcode operand grammar.",
         "tool_hashes": [
             {"path": "judge/judge-py/mncore2_emuenv/assemble3", "sha256": sha(ASSEMBLER)},
             {"path": "proofs_lean/scripts/check_output_roles_reference.py", "sha256": sha(Path(__file__))},

@@ -209,16 +209,18 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
 - `ParsedExpr.inFiniteEnvelope`から正規化式のenvelopeへの写像を証明した。opcode固有source arityから
   source長3以下を導ける一方、opcode・operand・flushの数値範囲とdestinationの重複なしを、実parser出力に
   対して証明することは引き続きparser/assembler対応の未解決義務である。
-- `evidence/output-roles/reference.json`にassemble3の42件のoperand-role probeを記録した。zero、ALU、
+- `evidence/output-roles/reference.json`にassemble3の58件のoperand-role probeを記録した。zero、ALU、
   MAU、matrix、L1BM、L2BMで代表的な入力/出力位置と重複出力を照合している。opcodeごとの全構文や
-  Lean issue checkerとの対応証明ではなく、finite envelopeのdestination-list条件は引き続き未証明である。
+  Lean issue checkerとの対応証明ではなく、実parser出力がfinite envelopeのdestination-list条件を満たす
+  ことも引き続き未証明である。
 - 有限envelopeに`destinationsAvoidKnownSourceOnly`を追加し、source-onlyのfixed identifierとforwarding
   operandをdestination列から除外した。assemble3のzero/ALU代表probeとRust operand型に沿う必要条件で、
   opcode別の十分なdestination role checkerではない。matrix/block operandや重複・値域の対応は未完了。
-- `ParsedOp.destinationRoleScreen`を導入し、scalar PE出力、matrix read/write、wait/noforwardの代表的な
-  opcode class ごとにdestination roleを絞った。finite envelopeには各destinationがscreenを通る条件を含め、
-  正規化で維持し、bounded expression carrierの有限性に接続した。block-memory roleはsource-only除外だけで、
-  opcode別方向制約と全assembler受理構文の対応は未完了。
+- `ParsedOp.destinationRoleScreen`を導入し、scalar PE出力、matrix read/write、wait/noforwardに加えて、
+  L1BM/L2BMの代表opcodeをsourceとopcodeに応じたdestination roleで絞った。finite envelopeには各destinationが
+  screenを通る条件を含め、正規化で維持し、bounded expression carrierの有限性に接続した。Rustのoperand roleと
+  assemble3の58 probeを根拠に、転送方向の代表補題も追加した。DARS/DARW、全opcodeの受理構文、実assembler出力と
+  screen/envelopeとの完全な対応は未完了。
 - `ParsedExpr.parserSourceArityValid`を追加し、Rust `parse_expr` の通常経路を使うALU/MAU/matrix命令は
   source数がopcodeの固定入力数に一致すること、zero-input/block-memory経路はparser上限以下であることを
   構文述語に反映した。parser上限が3以下であることを証明し、finite envelopeにもこの形状条件を含めた。

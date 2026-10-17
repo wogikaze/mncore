@@ -117,6 +117,18 @@ def ParsedOperand.matrixReadDestinationRole : ParsedOperand → Prop
   | .mem .. | .bar .. | .nowrite => True
   | _ => False
 
+def ParsedOperand.l1bmDestinationRole : ParsedOperand → Prop
+  | .l1bm .. => True
+  | _ => False
+
+def ParsedOperand.l1bmToPEDestinationRole : ParsedOperand → Prop
+  | .mem .. | .bar .. | .nowrite => True
+  | _ => False
+
+def ParsedOperand.l2bmDestinationRole : ParsedOperand → Prop
+  | .l2bm .. => True
+  | _ => False
+
 def ParsedOperand.writeMask? : ParsedOperand → Option ParsedMask
   | .mem _ _ _ _ mask | .bar _ _ mask | .omr _ mask => mask
   | _ => none
@@ -585,18 +597,70 @@ theorem ParsedOp.parserSourceLimit_le_three (op : ParsedOp) :
 /-- Opcode-class destination-role screen based on the assembler probes and
 Rust operand roles. It is a necessary filter only; block-memory roles and
 complete per-opcode acceptance remain to be modeled. -/
-def ParsedOp.destinationRoleScreen : ParsedOp → ParsedOperand → Prop
-  | .alu .., operand => operand.scalarPEDestinationRole
-  | .immediate .., operand => operand.scalarPEDestinationRole
-  | .zero, operand => operand.scalarPEDestinationRole
-  | .mau .., operand => operand.scalarPEDestinationRole
-  | .matrixWrite .., .matrix .. => True
-  | .matrixRead .., operand => operand.matrixReadDestinationRole
-  | .l1bm .., operand => operand.notKnownSourceOnly
-  | .l2bm .., operand => operand.notKnownSourceOnly
-  | .wait .., _ => False
-  | .noforward, _ => False
-  | .matrixWrite .., _ => False
+def ParsedOp.destinationRoleScreen : ParsedOp → List ParsedOperand → ParsedOperand → Prop
+  | .alu .., _, operand => operand.scalarPEDestinationRole
+  | .immediate .., _, operand => operand.scalarPEDestinationRole
+  | .zero, _, operand => operand.scalarPEDestinationRole
+  | .mau .., _, operand => operand.scalarPEDestinationRole
+  | .matrixWrite .., _, .matrix .. => True
+  | .matrixWrite .., _, _ => False
+  | .matrixRead .., _, operand => operand.matrixReadDestinationRole
+  | .l1bm operation, sources, operand =>
+      match operation with
+      | .mwrite _ | .m4write _ | .reduce .. | .reduce4 .. | .gather _ =>
+          operand.l1bmDestinationRole
+      | .distrib _ => operand.l1bmToPEDestinationRole
+      | .pbcast | .mbcast | .m4bcast =>
+          match sources with
+          | .l1bm .. :: _ => operand.l1bmToPEDestinationRole
+          | _ => operand.l1bmDestinationRole
+  | .l2bm operation, _, operand =>
+      match operation with
+      | .bcast .. | .bcast2 .. | .distrib .. | .imcast .. =>
+          operand.l1bmDestinationRole
+      | .fromL1b .. | .reduce .. | .reduce2 .. | .gather =>
+          operand.l2bmDestinationRole
+      | .dars | .darw => operand.notKnownSourceOnly
+  | .wait .., _, _ => False
+  | .noforward, _, _ => False
+
+theorem ParsedOp.l1bm_broadcast_from_l1bm_to_pe_role :
+    ParsedOp.destinationRoleScreen (.l1bm .mbcast)
+      [.l1bm 2 (some 0)] (.bar false 1 none) := by
+  simp [ParsedOp.destinationRoleScreen, ParsedOperand.l1bmDestinationRole,
+    ParsedOperand.l1bmToPEDestinationRole]
+
+theorem ParsedOp.l1bm_mwrite_pe_to_l1bm_role (mab : Nat) :
+    ParsedOp.destinationRoleScreen (.l1bm (.mwrite mab))
+      [.forward .mauf false false false] (.l1bm 2 (some 0)) := by
+  simp [ParsedOp.destinationRoleScreen, ParsedOperand.l1bmDestinationRole]
+
+theorem ParsedOp.l1bm_distrib_l1bm_to_pe_role (mabdiff : Int) :
+    ParsedOp.destinationRoleScreen (.l1bm (.distrib mabdiff))
+      [.l1bm 2 (some 0)] (.mem ⟨.lm0, ⟨1, 0, 0, 0, 0, false, none⟩⟩
+        false false false none) := by
+  simp [ParsedOp.destinationRoleScreen, ParsedOperand.l1bmToPEDestinationRole]
+
+theorem ParsedOp.l1bm_gather_pe_to_l1bm_role (mabdiff : Int) :
+    ParsedOp.destinationRoleScreen (.l1bm (.gather mabdiff))
+      [.mem ⟨.lm0, ⟨1, 0, 0, 0, 0, false, none⟩⟩ false false false none]
+      (.l1bm 2 (some 0)) := by
+  simp [ParsedOp.destinationRoleScreen, ParsedOperand.l1bmDestinationRole]
+
+theorem ParsedOp.l2bm_broadcast_to_l1bm_role (set : ParsedL1bSet) :
+    ParsedOp.destinationRoleScreen (.l2bm (.bcast set))
+      [.l2bm 0 none] (.l1bm 2 (some 0)) := by
+  simp [ParsedOp.destinationRoleScreen, ParsedOperand.l1bmDestinationRole]
+
+theorem ParsedOp.l2bm_gather_to_l2bm_role :
+    ParsedOp.destinationRoleScreen (.l2bm .gather)
+      [.l1bm 2 (some 0)] (.l2bm 0 none) := by
+  simp [ParsedOp.destinationRoleScreen, ParsedOperand.l2bmDestinationRole]
+
+theorem ParsedOp.l2bm_multicast_l1bm_role (set : ParsedL1bSet) :
+    ParsedOp.destinationRoleScreen (.l2bm (.imcast set))
+      [.l1bm 2 (some 0)] (.l1bm 2 (some 16)) := by
+  simp [ParsedOp.destinationRoleScreen, ParsedOperand.l1bmDestinationRole]
 
 /-- Structural PE-expression AST mirror. Issue and execution interpretations
 are separate functions over this syntax. -/
@@ -610,7 +674,7 @@ structure ParsedExpr where
 
 def ParsedExpr.destinationsPassRoleScreen (expression : ParsedExpr) : Prop :=
   ∀ operand ∈ expression.destinations,
-    expression.op.destinationRoleScreen operand
+    expression.op.destinationRoleScreen expression.sources operand
 
 def ParsedExpr.maskApplications (expression : ParsedExpr) : List ParsedMask :=
   (expression.sources ++ expression.destinations).filterMap ParsedOperand.writeMask? ++
@@ -670,7 +734,7 @@ structure NormalizedExpr where
 
 def NormalizedExpr.destinationsPassRoleScreen (expression : NormalizedExpr) : Prop :=
   ∀ operand ∈ expression.destinations,
-    expression.op.destinationRoleScreen operand
+    expression.op.destinationRoleScreen expression.sources operand
 
 def ParsedExpr.normalize (expression : ParsedExpr) : NormalizedExpr :=
   ⟨expression.op, expression.sources, expression.destinations, expression.flush⟩

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "experiment": "assemble3 operand-role and duplicate-destination validation",
-  "scope": "Focused zero, ALU, MAU, matrix, L1BM, and L2BM probes; not an exhaustive per-opcode operand grammar.",
+  "scope": "Focused zero, ALU, MAU, matrix, L1BM, and L2BM probes, including transfer directions; not an exhaustive per-opcode operand grammar.",
   "tool_hashes": [
     {
       "path": "judge/judge-py/mncore2_emuenv/assemble3",
@@ -9,7 +9,7 @@
     },
     {
       "path": "proofs_lean/scripts/check_output_roles_reference.py",
-      "sha256": "b80d22b5d13e0dbac3e4778c71409310937169aa971743d627b0b1cb4f9dd9fd"
+      "sha256": "31c049777661d17c50c59a5d4f6d8a90bc16e09c49ab5bb73cab01193c939901"
     }
   ],
   "observations": [
@@ -390,6 +390,150 @@
       "returncode": -6,
       "words": null,
       "diagnostic": "The order of operands doesn't match to the transfer direction L2BM -> L1BM."
+    },
+    {
+      "case": "l1bm_to_t",
+      "source": "l1bmm $lb0 $t",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
+    },
+    {
+      "case": "l1bm_to_bar",
+      "source": "l1bmm $lb0 $mb",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
+    },
+    {
+      "case": "l1bm_cannot_write_omr",
+      "source": "l1bmm $lb0 $omr1",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "Mask register can't be set by L1BM operation."
+    },
+    {
+      "case": "pe_to_l1bm_mwrite",
+      "source": "l1bmm@1 $m0 $lb0",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
+    },
+    {
+      "case": "l1bm_mwrite_wrong_direction",
+      "source": "l1bmm@1 $lb0 $m0",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "First operand of Reg -> L1BM operation must be a T/GRF0/GRF1/LM0/LM1/Fwd location."
+    },
+    {
+      "case": "pe_reduce_to_l1bm",
+      "source": "l1bmrffadd $m0 $lb0",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
+    },
+    {
+      "case": "l1bm_distrib_to_pe",
+      "source": "l1bmd $lb0 $m0",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
+    },
+    {
+      "case": "l1bm_gather_from_pe",
+      "source": "l1bmd $m0 $lb0",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
+    },
+    {
+      "case": "l1bm_distrib_cannot_write_omr",
+      "source": "l1bmd $lb0 $omr1",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "Mask register can't be set by L1BM operation."
+    },
+    {
+      "case": "l2bm_broadcast_to_l1bm",
+      "source": "l2bmb $lc0 $lb0",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
+    },
+    {
+      "case": "l2bm_broadcast_wrong_destination",
+      "source": "l2bmb $lc0 $m0",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "L2BM operation must have one L2BM operand and one L1BM operand."
+    },
+    {
+      "case": "l1bm_gather_to_l2bm",
+      "source": "l2bmd $lb0 $lc0",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
+    },
+    {
+      "case": "l2bm_distribute_to_l1bm",
+      "source": "l2bmd $lc0 $lb0",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
+    },
+    {
+      "case": "l1bm_multicast",
+      "source": "l2bmi@0/0 $lb0 $lb16",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
+    },
+    {
+      "case": "l1bm_reduce_to_l2bm",
+      "source": "l2bmrdfadd $lb0 $lc0",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
+    },
+    {
+      "case": "l1bm_gather_reduce_to_l2bm",
+      "source": "l2bmr2dfadd $lb0 $lc0",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
     }
   ],
   "limitations": [

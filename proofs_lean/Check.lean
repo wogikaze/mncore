@@ -53,6 +53,13 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.check_sound
 #print axioms ProofsLean.MNCore.Issue.ParsedOperand.fixed_notKnownSourceOnly
 #print axioms ProofsLean.MNCore.Issue.ParsedOperand.forward_notKnownSourceOnly
+#print axioms ProofsLean.MNCore.Issue.ParsedOp.l1bm_broadcast_from_l1bm_to_pe_role
+#print axioms ProofsLean.MNCore.Issue.ParsedOp.l1bm_mwrite_pe_to_l1bm_role
+#print axioms ProofsLean.MNCore.Issue.ParsedOp.l1bm_distrib_l1bm_to_pe_role
+#print axioms ProofsLean.MNCore.Issue.ParsedOp.l1bm_gather_pe_to_l1bm_role
+#print axioms ProofsLean.MNCore.Issue.ParsedOp.l2bm_broadcast_to_l1bm_role
+#print axioms ProofsLean.MNCore.Issue.ParsedOp.l2bm_gather_to_l2bm_role
+#print axioms ProofsLean.MNCore.Issue.ParsedOp.l2bm_multicast_l1bm_role
 #print axioms ProofsLean.MNCore.Issue.ParsedOp.parserSourceLimit_le_three
 #print axioms ProofsLean.MNCore.Issue.NormalizedExpr.parserSourceArityValid_length_le_three
 #print axioms ProofsLean.MNCore.Issue.ParsedExpr.parserSourceArityValid_length_le_three
