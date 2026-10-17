@@ -134,6 +134,9 @@ import Lean
 #print axioms ProofsLean.MNCore.ConvertEndian.answer_parsed_line_count
 #print axioms ProofsLean.MNCore.ConvertEndian.answer_integer_shift_lowering_all_cycles
 #print axioms ProofsLean.MNCore.ConvertEndian.answer_byte_shift_lowering_all_cycles
+#print axioms ProofsLean.MNCore.ConvertEndian.answer_float_fma_uses_three_aluf
+#print axioms ProofsLean.MNCore.ConvertEndian.executeAnswerFloatFma_reads_old_aluf
+#print axioms ProofsLean.MNCore.ConvertEndian.executeAnswerFloatFma_immediate_produces_mauf_shift
 #print axioms ProofsLean.MNCore.ConvertEndian.answerMemoryCycle_readback
 #print axioms ProofsLean.MNCore.ConvertEndian.answerMemoryCycle_byteSwap
 #print axioms ProofsLean.MNCore.FloatSubtract.abstractSubtract_evaluation

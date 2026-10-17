@@ -279,6 +279,44 @@ theorem packed_fma_produces_shift_bus :
   rw [BitVec.extractLsb'_append_eq_left, BitVec.extractLsb'_append_eq_right]
   rfl
 
+/-- Evaluate the answer's parsed FMA from its old ALU forwarding slot. The
+three parsed operands are the same `$aluf` source, so one resolved bus feeds
+all three single-precision inputs. -/
+def answerFloatFmaUsesThreeAluf? : Bool :=
+  match answerFloatFmaExpr? with
+  | some expression =>
+      decide (expression.op = .mau .f false .fma none false) &&
+        decide (expression.sources =
+          [.forward .aluf false false false, .forward .aluf false false false,
+            .forward .aluf false false false])
+  | none => false
+
+theorem answer_float_fma_uses_three_aluf : answerFloatFmaUsesThreeAluf? = true := by
+  decide
+
+def executeAnswerFloatFma? (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (cycle : Fin 4) : Option (BitVec 64) := do
+  if answerFloatFmaUsesThreeAluf? then
+    match slots .alu cycle with
+    | .known bus => some (packedSingleFma bus.high bus.high bus.high)
+    | .poison | .unknown => none
+  else none
+
+theorem executeAnswerFloatFma_reads_old_aluf
+    (slots : ProofsLean.MNCore.Forwarding.Slots) (cycle : Fin 4)
+    (bus : IntegerALU.Bus)
+    (oldAluf : slots .alu cycle = .known bus) :
+    executeAnswerFloatFma? slots cycle =
+      some (packedSingleFma bus.high bus.high bus.high) := by
+  simp [executeAnswerFloatFma?, answer_float_fma_uses_three_aluf, oldAluf]
+
+theorem executeAnswerFloatFma_immediate_produces_mauf_shift
+    (slots : ProofsLean.MNCore.Forwarding.Slots) (cycle : Fin 4)
+    (oldAluf : slots .alu cycle = .known ⟨immediateBus, 0⟩) :
+    executeAnswerFloatFma? slots cycle = some mauShiftBus := by
+  rw [executeAnswerFloatFma_reads_old_aluf slots cycle ⟨immediateBus, 0⟩ oldAluf]
+  exact congrArg some packed_fma_produces_shift_bus
+
 theorem mauf_count_selects_byte_rotation (word : BitVec 64) :
     sbslWithShift word mauShiftBus = sbsl word := by
   unfold sbslWithShift sbsl shiftHalfword mauShiftBus mauShiftWord
