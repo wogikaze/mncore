@@ -2065,6 +2065,48 @@ inductive ParsedLine where
   | dramSet
   deriving DecidableEq, Repr
 
+def parseParsedNopOpcode? (opcode : String) : Option Nat :=
+  match opcode.toList with
+  | ['n', 'o', 'p'] => some 1
+  | 'n' :: 'o' :: 'p' :: '/' :: countChars => do
+      let count ← parsedMvDecimal? countChars
+      if count < 2 ^ 32 then some count else none
+  | _ => none
+
+/-- Parse the canonical single-nop/single-wait spelling. This deliberately
+keeps the source syntax separate from legality: `i00` parses, then the
+top-line checker rejects it, matching the assembler boundary probes. -/
+def parseParsedNopLine? (text : String) : Option ParsedLine := do
+  let (nopChars, waitChars) ← match parsedSplitAt? text.toList ';' with
+    | none => some (text.toList, none)
+    | some (before, after) => some (before, some after)
+  let opcode ← match parsedMvSplitWhitespace (String.ofList nopChars) with
+    | [opcode] => some opcode
+    | _ => none
+  let count ← parseParsedNopOpcode? opcode
+  let wait ← match waitChars with
+    | none => some none
+    | some chars => do
+        match parsedMvSplitWhitespace (String.ofList chars) with
+        | ["wait", tagText] => do
+            let tag ← parseParsedWaitTag? tagText
+            some (some tag)
+        | _ => none
+  some (.nop count wait)
+
+theorem parseParsedNopLine_plain :
+    parseParsedNopLine? "nop" = some (.nop 1 none) := by decide
+
+theorem parseParsedNopLine_with_wait :
+    parseParsedNopLine? "nop/7; wait iFF" =
+      some (.nop 7 (some ⟨255, by decide⟩)) := by decide
+
+theorem parseParsedNopLine_rejects_wait_overflow :
+    parseParsedNopLine? "nop; wait i100" = none := by decide
+
+theorem parseParsedNopLine_rejects_nop_u32_overflow :
+    parseParsedNopLine? "nop/4294967296" = none := by decide
+
 /-- A parsed control line is in the mask-directive envelope when it uses an
 assembler-supported width and selector. Other lines leave the mask state
 unchanged. -/
@@ -2242,6 +2284,25 @@ theorem parsed_topline_check_sound (line : ParsedLine)
       exact accepted
   | mv _ | maskDirective _ _ _ | debugSet | debugGet | dramSet => trivial
 
+theorem ParsedLine.checked_nop_wait_positive (count : Nat) (tag : Fin 256)
+    (checked : checkParsedTopLine (.nop count (some tag)) = true) :
+    0 < tag.val := by
+  have legal := parsed_topline_check_sound (.nop count (some tag)) checked
+  change ParsedLine.nopIssueLegalB count (some tag) = true at legal
+  cases count with
+  | zero => simp [ParsedLine.nopIssueLegalB] at legal
+  | succ count =>
+      have positive : decide (0 < tag.val) = true := by
+        simpa [ParsedLine.nopIssueLegalB] using legal
+      exact of_decide_eq_true positive
+
+theorem parseParsedNopLine_checked_wait_positive (text : String)
+    (count : Nat) (tag : Fin 256)
+    (_parsed : parseParsedNopLine? text = some (.nop count (some tag)))
+    (checked : checkParsedTopLine (.nop count (some tag)) = true) :
+    0 < tag.val :=
+  ParsedLine.checked_nop_wait_positive count tag checked
+
 theorem parsed_topline_check_complete (line : ParsedLine) (legal : line.issueLegal) :
     checkParsedTopLine line = true := by
   cases line with
@@ -2259,6 +2320,11 @@ theorem parsed_topline_rejects_zero_nop_with_wait :
 
 theorem parsed_topline_accepts_zero_nop_without_wait :
     checkParsedTopLine (.nop 0 none) = true := by decide
+
+theorem parseParsedNopLine_zero_tag_parses_but_checker_rejects :
+    ∃ line, parseParsedNopLine? "nop; wait i00" = some line ∧
+      checkParsedTopLine line = false := by
+  exact ⟨.nop 1 (some ⟨0, by decide⟩), by decide, rfl⟩
 
 /-- Non-directive source lines retain mask state; directive lines replace it,
 matching `Sim::exec`'s zero-cost state update. -/

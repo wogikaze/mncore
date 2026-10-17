@@ -206,7 +206,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   Rustと同じhex-u8のtag tokenを`Fin 256`へ変換し、`i00`は構文として保持しつつ、
   `i100`を拒否する。top-line checkerは`i00`と`nop/0; wait i01`を拒否し、`nop/0`を
   受理する。assemble3境界証拠と合うが、これはopcode/PE/nop行全体のparserではなく、
-  parserからcheckerまでの対応証明もまだない。
+  `parseParsedNopLine?`は単一の`nop[/count]`と単一の`wait i<hex>`を構造化する部分parserである。
+  その出力をcheckerが受理した場合のtag条件はsoundness theoremから従うが、複数waitや
+  modifierを含むRust `parse_line`全体、およびassemblerとの完全な対応証明はまだない。
   L1BMの`mabdiff`はassemble3でDistrib/Gather両方向について明示符号付きの`-255..255`全件を受理し、
   境界の`±256`を両方向で拒否することを確認し、
   `-256 ≤ mabdiff < 256`の部分型が有限であることを証明した。SDMの有用範囲は`0..15`。
