@@ -104,6 +104,11 @@ import Lean
 #print axioms ProofsLean.MNCore.ConvertEndian.abstractConvertEndian_evaluation
 #print axioms ProofsLean.MNCore.ConvertEndian.abstractConvertEndian_is_byteSwap
 #print axioms ProofsLean.MNCore.ConvertEndian.abstractConvertEndian_dependencies_are_sound
+#print axioms ProofsLean.MNCore.FloatSubtract.abstractSubtract_evaluation
+#print axioms ProofsLean.MNCore.FloatSubtract.subtract_one_zero
+#print axioms ProofsLean.MNCore.FloatSubtract.subtract_positive
+#print axioms ProofsLean.MNCore.FloatSubtract.subtract_negative
+#print axioms ProofsLean.MNCore.FloatSubtract.subtract_preserves_dependencies
 #print axioms ProofsLean.MNCore.Issue.encodedUniverseMachine_not_complete
 #print axioms ProofsLean.MNCore.Issue.mem_encodedUniverseAlphabet
 #print axioms ProofsLean.MNCore.Issue.encodedUniverseAlphabet_coversBelow
