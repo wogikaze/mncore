@@ -175,6 +175,8 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   wait tagについては、受理範囲`1..255`とoptionalな同範囲の有限carrierを証明した。
   L1BMの`mabdiff`はassemble3で明示符号付きの`-255..255`全件を受理し、境界の`±256`を拒否することを確認し、
   `-256 ≤ mabdiff < 256`の部分型が有限であることを証明した。SDMの有用範囲は`0..15`。
+  境界監査でRust側の`i8` parserが受理範囲を狭めていたため、`i16`保持と`[-255,255]`検査へ修正し、
+  同じ境界を回帰確認した。
   この実験はパーサーの全域健全性を証明せず、`ParsedL1Op`やPE行の有限carrierにも未接続。
   `ParsedRrn`のprecision文字をASCII範囲に制限した部分型と8個のRRN opcodeの組の有限性も証明したが、
   parser outputや`ParsedL1Op`全体にはまだ接続していない。

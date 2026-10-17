@@ -120,9 +120,9 @@ pub enum L1Op {
     /// `l1bmr4<rrn>[r]`: 4x4 reduction.
     Reduce4 { rrn: Rrn, round: bool },
     /// `l1bmd[+-n]` from L1BM to PEs: distribution.
-    Distrib { mabdiff: i8 },
+    Distrib { mabdiff: i16 },
     /// `l1bmd[+-n]` from PEs to L1BM: gathering.
-    Gather { mabdiff: i8 },
+    Gather { mabdiff: i16 },
 }
 
 /// An L2BM instruction expression (SDM 3.6.7).
@@ -173,7 +173,10 @@ pub fn parse_l1_opcode(opcode: &str, to_pe: bool) -> Result<L1Op, String> {
         };
     }
     if let Some(r) = rest.strip_prefix('d') {
-        let mabdiff: i8 = if r.is_empty() { 0 } else { r.parse().map_err(|_| bad())? };
+        let mabdiff: i16 = if r.is_empty() { 0 } else { r.parse().map_err(|_| bad())? };
+        if !(-255..=255).contains(&mabdiff) {
+            return Err(bad());
+        }
         return Ok(if to_pe { L1Op::Distrib { mabdiff } } else { L1Op::Gather { mabdiff } });
     }
     if let Some(r) = rest.strip_prefix("r4") {
@@ -258,5 +261,15 @@ mod tests {
         assert!(matches!(parse_l2_opcode("l2bmrdfadd@[0,4]", false).unwrap(), L2Op::Reduce { .. }));
         assert!(matches!(parse_l2_opcode("l2bmd", true).unwrap(), L2Op::Distrib { .. }));
         assert_eq!(parse_l2_opcode("l2bmd", false).unwrap(), L2Op::Gather);
+    }
+
+    #[test]
+    fn l1_mabdiff_matches_assembler_range() {
+        assert_eq!(parse_l1_opcode("l1bmd-255", false).unwrap(),
+            L1Op::Gather { mabdiff: -255 });
+        assert_eq!(parse_l1_opcode("l1bmd+255", true).unwrap(),
+            L1Op::Distrib { mabdiff: 255 });
+        assert!(parse_l1_opcode("l1bmd-256", false).is_err());
+        assert!(parse_l1_opcode("l1bmd+256", true).is_err());
     }
 }
