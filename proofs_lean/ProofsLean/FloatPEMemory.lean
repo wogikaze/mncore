@@ -170,6 +170,9 @@ def commitLM1 (files : PEMemory.IntegerRegisterFiles)
     (memory : PEMemory.Memory .lm1) : PEMemory.IntegerRegisterFiles :=
   { files with lm1 := memory }
 
+@[simp] theorem commitLM1_lm0 (files : PEMemory.IntegerRegisterFiles)
+    (memory : PEMemory.Memory .lm1) : (commitLM1 files memory).lm0 = files.lm0 := rfl
+
 def executeParsedFloatAddCycles? (expression : ParsedExpr)
     (files : PEMemory.IntegerRegisterFiles) (pe : Fin 4)
     (cycles : List (Fin 4)) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
@@ -264,6 +267,15 @@ theorem parsedFloatAddSmoke_cycle3_lowers :
       some (⟨6, by decide⟩, ⟨14, by decide⟩, ⟨22, by decide⟩) := by decide
 
 
+theorem parsedFloatAddSmoke_cycle1_lowers :
+    lowerParsedFloatAdd? parsedFloatAddSmoke 0 1 0 0 0 =
+      some (⟨2, by decide⟩, ⟨10, by decide⟩, ⟨18, by decide⟩) := by decide
+
+theorem parsedFloatAddSmoke_cycle2_lowers :
+    lowerParsedFloatAdd? parsedFloatAddSmoke 0 2 0 0 0 =
+      some (⟨4, by decide⟩, ⟨12, by decide⟩, ⟨20, by decide⟩) := by decide
+
+
 
 def parsedFloatAddSmokeOutputAddress (cycle : Fin 4) :
     Fin (PEMemory.Bank.capacity .lm1) :=
@@ -326,6 +338,45 @@ theorem parsedFloatAddSmoke_fourCycles_succeed
     subst cycle
     exact ⟨⟨6, by decide⟩, ⟨14, by decide⟩, ⟨22, by decide⟩, by decide⟩
 
+
+
+set_option maxRecDepth 1024 in
+theorem parsedFloatAddSmoke_fourCycles_finalReadback
+    (files : PEMemory.IntegerRegisterFiles) :
+    ∃ result,
+      executeParsedFloatAddLine? parsedFloatAddSmoke files 0 0 0 0 = some result ∧
+      readPair .lm1 result.lm1 ⟨22, by decide⟩ =
+        FloatAdd.addBus (readPair .lm0 files.lm0 ⟨6, by decide⟩)
+          (readPair .lm0 files.lm0 ⟨14, by decide⟩) := by
+  let f1 := commitLM1 files (addCycle files.lm0 files.lm0 files.lm1
+    ⟨0, by decide⟩ ⟨8, by decide⟩ ⟨16, by decide⟩)
+  let f2 := commitLM1 f1 (addCycle f1.lm0 f1.lm0 f1.lm1
+    ⟨2, by decide⟩ ⟨10, by decide⟩ ⟨18, by decide⟩)
+  let f3 := commitLM1 f2 (addCycle f2.lm0 f2.lm0 f2.lm1
+    ⟨4, by decide⟩ ⟨12, by decide⟩ ⟨20, by decide⟩)
+  have h0 := executeParsedFloatAddCycle_success parsedFloatAddSmoke files 0 0 0 0 0
+    ⟨0, by decide⟩ ⟨8, by decide⟩ ⟨16, by decide⟩ parsedFloatAddSmoke_cycle0_lowers
+  have h1 := executeParsedFloatAddCycle_success parsedFloatAddSmoke f1 0 1 0 0 0
+    ⟨2, by decide⟩ ⟨10, by decide⟩ ⟨18, by decide⟩ parsedFloatAddSmoke_cycle1_lowers
+  have h2 := executeParsedFloatAddCycle_success parsedFloatAddSmoke f2 0 2 0 0 0
+    ⟨4, by decide⟩ ⟨12, by decide⟩ ⟨20, by decide⟩ parsedFloatAddSmoke_cycle2_lowers
+  have h3 := executeParsedFloatAddCycle_success parsedFloatAddSmoke f3 0 3 0 0 0
+    ⟨6, by decide⟩ ⟨14, by decide⟩ ⟨22, by decide⟩ parsedFloatAddSmoke_cycle3_lowers
+  refine ⟨commitLM1 f3 (addCycle f3.lm0 f3.lm0 f3.lm1
+    ⟨6, by decide⟩ ⟨14, by decide⟩ ⟨22, by decide⟩), ?_, ?_⟩
+  · change executeParsedFloatAddCycles? parsedFloatAddSmoke files 0
+      (List.finRange 4) 0 0 0 = some (commitLM1 f3 (addCycle f3.lm0 f3.lm0 f3.lm1
+        ⟨6, by decide⟩ ⟨14, by decide⟩ ⟨22, by decide⟩))
+    have cycles : List.finRange 4 = ([0, 1, 2, 3] : List (Fin 4)) := by decide
+    rw [cycles]
+    simp only [executeParsedFloatAddCycles?, h0, h1, h2, h3]
+    rfl
+  · simp only [commitLM1]
+    have h3lm : f3.lm0 = files.lm0 := by
+      simp only [f3, f2, f1, commitLM1_lm0]
+    rw [h3lm]
+    exact binaryCycle_readback FloatAdd.addBus files.lm0 files.lm0 f3.lm1
+      ⟨6, by decide⟩ ⟨14, by decide⟩ ⟨22, by decide⟩
 
 theorem executeParsedFloatAddCycle_preservesLM0 (expression : ParsedExpr)
     (files : PEMemory.IntegerRegisterFiles) (pe cycle : Fin 4)
