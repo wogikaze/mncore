@@ -41,6 +41,33 @@ theorem answer_operands_parse_all :
   rcases answer_operands_parse with ⟨h0, h1, h2, h3, h4, h5⟩
   simp [h0, h1, h2, h3, h4, h5]
 
+/-- Opcode slice for the public Convert Endian answer. The immediate payload
+is kept as a separate token, matching the source grammar. This deliberately
+recognizes only the operations used by these three lines. -/
+def parseAnswerOperation? (opcode literal : String) : Option ParsedOp :=
+  match opcode, literal with
+  | "imm", "i\"0x34f80010\"" => some (.immediate 0x34f80010 false)
+  | "ibsl", "" => some (.alu .bsl (some .i) false none)
+  | "fvfma", "" => some (.mau .f false .fma none false)
+  | "sbsl", "" => some (.alu .bsl (some .s) false none)
+  | _, _ => none
+
+theorem answer_operations_parse :
+    parseAnswerOperation? "imm" "i\"0x34f80010\"" =
+        some (.immediate 0x34f80010 false) ∧
+    parseAnswerOperation? "ibsl" "" = some (.alu .bsl (some .i) false none) ∧
+    parseAnswerOperation? "fvfma" "" = some (.mau .f false .fma none false) ∧
+    parseAnswerOperation? "sbsl" "" = some (.alu .bsl (some .s) false none) := by
+  decide
+
+theorem answer_operations_source_arities :
+    (parseAnswerOperation? "imm" "i\"0x34f80010\"").map ParsedOp.parserSourceLimit =
+        some 0 ∧
+    (parseAnswerOperation? "ibsl" "").map ParsedOp.parserSourceLimit = some 2 ∧
+    (parseAnswerOperation? "fvfma" "").map ParsedOp.parserSourceLimit = some 3 ∧
+    (parseAnswerOperation? "sbsl" "").map ParsedOp.parserSourceLimit = some 2 := by
+  decide
+
 def swap32 (word : BitVec 64) : BitVec 64 :=
   (word.extractLsb' 0 32) ++ (word.extractLsb' 32 32)
 
