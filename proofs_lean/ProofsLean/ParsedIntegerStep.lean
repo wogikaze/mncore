@@ -2544,6 +2544,14 @@ def writeDirectAccess (files : IntegerRegisterFiles) (access : DirectMemoryAcces
     (data : WordBus) : IntegerRegisterFiles :=
   writeRegisterBank files access.bank access.width access.address data
 
+theorem writeDirectAccess_lm0_preserved (files : IntegerRegisterFiles)
+    (access : DirectMemoryAccess) (data : WordBus)
+    (destinationLM1 : access.bank = .lm1) :
+    (writeDirectAccess files access data).lm0 = files.lm0 := by
+  cases access with
+  | mk bank width address =>
+      cases bank <;> simp_all [writeDirectAccess, writeRegisterBank]
+
 def writeDirectAccessMasked (files : IntegerRegisterFiles) (access : DirectMemoryAccess)
     (data : WordBus) (selection : PEWordSelection) : IntegerRegisterFiles :=
   writeRegisterBankMasked files access.bank access.width access.address data selection
@@ -5118,6 +5126,25 @@ theorem executeParsedIntegerExpr_readback (files : IntegerRegisterFiles)
       (unpackALUBus (parsedIntegerRegisterOutput files accesses.sourceX
         accesses.sourceY precision aluOp false).value) index within
 
+theorem executeParsedIntegerExpr_lm0_preserved (files : IntegerRegisterFiles)
+    (expression : ParsedExpr) (pe cycle : Fin 4) (bar0 bar1 : BitVec 12)
+    (tWord : BitVec 32) (accesses : ParsedIntegerAccesses)
+    (lowered : ParsedExpr.toDirectIntegerAccesses? expression pe cycle bar0 bar1 tWord =
+      some accesses)
+    (destinationLM1 : accesses.destination.bank = .lm1) :
+    ∃ nextFiles,
+      executeParsedIntegerExpr? files expression pe cycle bar0 bar1 tWord =
+        some (.ok nextFiles) ∧ nextFiles.lm0 = files.lm0 := by
+  obtain ⟨precision, aluOp, selected⟩ := accesses.hasIntegerRequest
+  let nextFiles := writeDirectAccess files accesses.destination
+    (unpackALUBus (parsedIntegerRegisterOutput files accesses.sourceX
+      accesses.sourceY precision aluOp false).value)
+  refine ⟨nextFiles, ?_, ?_⟩
+  · simp [executeParsedIntegerExpr?, lowered, nextFiles,
+      parsedIntegerRegisterStep_succeeds files accesses.sourceX accesses.sourceY
+        accesses.destination accesses.op false precision aluOp selected]
+  · exact writeDirectAccess_lm0_preserved files accesses.destination _ destinationLM1
+
 theorem executeParsedIntegerExprCycles_success (files : IntegerRegisterFiles)
     (expression : ParsedExpr) (pe : Fin 4) (cycles : List (Fin 4))
     (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
@@ -5147,6 +5174,31 @@ theorem executeParsedIntegerExprCycles_success (files : IntegerRegisterFiles)
       obtain ⟨result, restSteps⟩ := ih nextFiles tailLowered
       refine ⟨result, ?_⟩
       simp [executeParsedIntegerExprCycles?, firstStep, restSteps]
+
+theorem executeParsedIntegerExprCycles_lm0_preserved (files : IntegerRegisterFiles)
+    (expression : ParsedExpr) (pe : Fin 4) (cycles : List (Fin 4))
+    (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
+    (lowered : ∀ cycle ∈ cycles, ∃ accesses,
+      ParsedExpr.toDirectIntegerAccesses? expression pe cycle bar0 bar1 tWord =
+        some accesses ∧ accesses.destination.bank = .lm1) :
+    ∃ result, executeParsedIntegerExprCycles? files expression pe cycles
+      bar0 bar1 tWord = some result ∧ result.lm0 = files.lm0 := by
+  induction cycles generalizing files with
+  | nil => exact ⟨files, rfl, rfl⟩
+  | cons cycle rest ih =>
+      obtain ⟨accesses, headLowered, destinationLM1⟩ := lowered cycle (by simp)
+      obtain ⟨middle, firstStep, middleLM0⟩ :=
+        executeParsedIntegerExpr_lm0_preserved files expression pe cycle bar0 bar1 tWord
+          accesses headLowered destinationLM1
+      have tailLowered : ∀ next ∈ rest, ∃ nextAccesses,
+          ParsedExpr.toDirectIntegerAccesses? expression pe next bar0 bar1 tWord =
+            some nextAccesses ∧ nextAccesses.destination.bank = .lm1 := by
+        intro next member
+        exact lowered next (by simp [member])
+      obtain ⟨result, restSteps, resultLM0⟩ := ih middle tailLowered
+      refine ⟨result, ?_, ?_⟩
+      · simp [executeParsedIntegerExprCycles?, firstStep, restSteps]
+      · rw [resultLM0, middleLM0]
 
 theorem ParsedExpr.toDirectIntegerAccesses?_preserves_op
     (expression : ParsedExpr) (pe cycle : Fin 4)
@@ -5331,17 +5383,26 @@ theorem plusOneParsedAt_cycle_lowers
     (line : ProofsLean.MNCore.PlusOne.Line) (cycle : Fin 4) :
     ∃ accesses, ParsedExpr.toDirectIntegerAccesses?
       (ProofsLean.MNCore.Issue.plusOneParsedAt (8 * line.val))
-      0 cycle 0 0 0 = some accesses := by
+      0 cycle 0 0 0 = some accesses ∧ accesses.destination.bank = .lm1 := by
   cases line using Fin.cases with
   | zero =>
-      obtain ⟨accesses, lowered, _⟩ := plusOneFirstLine_cycle_lowers cycle
-      exact ⟨accesses, by simpa [ProofsLean.MNCore.Issue.plusOneParsed] using lowered⟩
+      obtain ⟨accesses, lowered, locations⟩ := plusOneFirstLine_cycle_lowers cycle
+      have destinationLM1 : accesses.destination.bank = .lm1 := by
+        have hbank := congrArg (fun locations => locations.2.2.bank) locations
+        simpa [ParsedIntegerAccesses.locations] using hbank
+      exact ⟨accesses,
+        by simpa [ProofsLean.MNCore.Issue.plusOneParsed] using lowered,
+        destinationLM1⟩
   | succ line =>
       have lineEq : line = 0 := Fin.ext (by have h := line.isLt; omega)
       subst line
-      obtain ⟨accesses, lowered, _⟩ := plusOneSecondLine_cycle_lowers cycle
+      obtain ⟨accesses, lowered, locations⟩ := plusOneSecondLine_cycle_lowers cycle
+      have destinationLM1 : accesses.destination.bank = .lm1 := by
+        have hbank := congrArg (fun locations => locations.2.2.bank) locations
+        simpa [ParsedIntegerAccesses.locations] using hbank
       exact ⟨accesses,
-        by simpa [ProofsLean.MNCore.Issue.plusOneSecondParsed] using lowered⟩
+        by simpa [ProofsLean.MNCore.Issue.plusOneSecondParsed] using lowered,
+        destinationLM1⟩
 
 theorem executePlusOneParsedLine_cycles_succeed
     (files : IntegerRegisterFiles)
@@ -5350,6 +5411,17 @@ theorem executePlusOneParsedLine_cycles_succeed
       (ProofsLean.MNCore.Issue.plusOneParsedAt (8 * line.val)) 0
       (List.finRange 4) 0 0 0 = some result := by
   apply executeParsedIntegerExprCycles_success
+  intro cycle _member
+  obtain ⟨accesses, lowered, _⟩ := plusOneParsedAt_cycle_lowers line cycle
+  exact ⟨accesses, lowered⟩
+
+theorem executePlusOneParsedLine_cycles_preserveLM0
+    (files : IntegerRegisterFiles)
+    (line : ProofsLean.MNCore.PlusOne.Line) :
+    ∃ result, executeParsedIntegerExprCycles? files
+      (ProofsLean.MNCore.Issue.plusOneParsedAt (8 * line.val)) 0
+      (List.finRange 4) 0 0 0 = some result ∧ result.lm0 = files.lm0 := by
+  apply executeParsedIntegerExprCycles_lm0_preserved
   intro cycle _member
   exact plusOneParsedAt_cycle_lowers line cycle
 
@@ -5380,6 +5452,27 @@ theorem executePlusOneParsedAnswer_succeeds (files : IntegerRegisterFiles) :
   unfold executePlusOneParsedAnswer?
   rw [firstLineExecutes']
   exact secondLineExecutes'
+
+theorem executePlusOneParsedAnswer_preservesLM0 (files : IntegerRegisterFiles) :
+    ∃ result, executePlusOneParsedAnswer? files = some result ∧
+      result.lm0 = files.lm0 := by
+  obtain ⟨firstLineFiles, firstLineExecutes, firstLineLM0⟩ :=
+    executePlusOneParsedLine_cycles_preserveLM0 files (0 : Fin 2)
+  obtain ⟨result, secondLineExecutes, resultLM0⟩ :=
+    executePlusOneParsedLine_cycles_preserveLM0 firstLineFiles (1 : Fin 2)
+  have firstLineExecutes' : executeParsedIntegerExprCycles? files
+      (ProofsLean.MNCore.Issue.plusOneParsedAt 0) 0
+      (List.finRange 4) 0 0 0 = some firstLineFiles := by
+    simpa using firstLineExecutes
+  have secondLineExecutes' : executeParsedIntegerExprCycles? firstLineFiles
+      (ProofsLean.MNCore.Issue.plusOneParsedAt 8) 0
+      (List.finRange 4) 0 0 0 = some result := by
+    simpa using secondLineExecutes
+  refine ⟨result, ?_, ?_⟩
+  · unfold executePlusOneParsedAnswer?
+    rw [firstLineExecutes']
+    exact secondLineExecutes'
+  · exact resultLM0.trans firstLineLM0
 
 theorem executeParsedIntegerMaskExpr_readback (files : IntegerRegisterFiles)
     (expression : ParsedExpr) (pe cycle : Fin 4) (bar0 bar1 : BitVec 12)
