@@ -60,6 +60,30 @@
     "scope": "Only listed probes. Acceptance/encoding evidence is not proof of complete ISA ranges or semantics.",
     "formal_isa_completeness_proof": false
   },
+  "checked_answer_encoding_experiment": {
+    "source": "proofs_lean/evidence/answer-encoding/reference.json",
+    "sha256": "9c365c68adc7eb349d5c51c0562939882454d0858603ad61deda6f24037894e3",
+    "generator": "proofs_lean/scripts/check_answer_encoding_reference.py",
+    "generator_sha256": "2c5c393af4e25d4dfdeefcec5498c547233036b7ffde344d8cd79bfb3afbea91",
+    "answers": 73,
+    "encoded_words": 1041,
+    "word_counts_by_kind": {
+      "j": 984,
+      "m": 57
+    },
+    "word_shapes": [
+      [
+        "j",
+        426
+      ],
+      [
+        "m",
+        82
+      ]
+    ],
+    "universal_encoding_claim": false,
+    "formal_isa_completeness_proof": false
+  },
   "opcode_destination_arity_experiment": {
     "source": "proofs_lean/evidence/opcode-arity/reference.json",
     "sha256": "fea36de6b91ab9164099584244f1deac45474f4f8c388cf50659add0392a8c2e",

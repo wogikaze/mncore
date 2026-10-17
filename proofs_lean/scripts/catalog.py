@@ -560,6 +560,48 @@ def parallel_issue_boundary_experiment() -> dict:
     }
 
 
+def answer_encoding_experiment() -> dict:
+    reference = ROOT / "evidence/answer-encoding/reference.json"
+    script = ROOT / "scripts/check_answer_encoding_reference.py"
+    record = json.loads(reference.read_text())
+    if record["answer_count"] != 73 or len(record["observations"]) != 73:
+        raise ValueError("answer encoding evidence must cover all 73 answers")
+    counts = Counter()
+    for row in record["observations"]:
+        source = REPO / row["source"]
+        if digest(source) != row["source_sha256"]:
+            raise ValueError(f"stale answer encoding source: {row['source']}")
+        if len(row["words"]) != row["assembler_output_lines"]:
+            raise ValueError(f"answer output line count mismatch: {row['source']}")
+        for word in row["words"]:
+            if (not word["binary"] or
+                    word["bit_width"] != {"j": 426, "m": 82}.get(word["kind"])):
+                raise ValueError(f"unexpected answer encoding shape: {row['source']}")
+            counts[word["kind"]] += 1
+    if counts != {"j": 984, "m": 57} or sum(counts.values()) != 1041:
+        raise ValueError(f"unexpected answer encoding totals: {counts}")
+    for item in record["tool_hashes"]:
+        path = REPO / item["path"]
+        if item["path"] == "judge/judge-py/mncore2_emuenv/assemble3" and not path.exists():
+            continue
+        if digest(path) != item["sha256"]:
+            raise ValueError(f"stale answer encoding tool: {item['path']}")
+    if record["proves_all_assembler_outputs_have_these_shapes"] or record["proves_isa_completeness"]:
+        raise ValueError("answer corpus evidence cannot prove universal ISA completeness")
+    return {
+        "source": reference.relative_to(REPO).as_posix(),
+        "sha256": digest(reference),
+        "generator": script.relative_to(REPO).as_posix(),
+        "generator_sha256": digest(script),
+        "answers": record["answer_count"],
+        "encoded_words": record["output_word_count"],
+        "word_counts_by_kind": record["word_counts_by_kind"],
+        "word_shapes": [["j", 426], ["m", 82]],
+        "universal_encoding_claim": False,
+        "formal_isa_completeness_proof": False,
+    }
+
+
 def coverage_catalog() -> dict:
     path = REPO / "mncompile/machine.py"
     tree = ast.parse(path.read_text())
@@ -602,6 +644,7 @@ def coverage_catalog() -> dict:
         "compiler_syntax_sha256": digest(path),
         "inventory_scope": "Compiler-generated ALU/MAU spelling candidates plus separately scoped source-derived records; not an authoritative complete ISA or legality model.",
         "selected_parser_boundary_experiment": isa_bounds_experiment(),
+        "checked_answer_encoding_experiment": answer_encoding_experiment(),
         "opcode_destination_arity_experiment": opcode_arity_experiment(),
         "answer_parser_gap_audit": answer_parser_gap_audit(),
         "parallel_issue_boundary_experiment": parallel_issue_boundary_experiment(),

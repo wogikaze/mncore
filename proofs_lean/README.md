@@ -70,6 +70,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   `d set`はjudgeがscore無効として拒否する。`ParsedLine.normalizeForSubmission_cost`は
   正規化後の命令語コストが各ソース行のsubmission costと一致することを証明し、
   `NormalizedLine.instructionCost_eq_toInstruction_cost`は実行命令型へ変換したコストとの一致も示す。
+  `evidence/answer-encoding/reference.json`では全73個のanswer.vsmを公式assemblerで受理し、
+  出力1,041語がPE `j` 426-bitを984語、MV `m` 82-bitを57語含むことを記録した。
+  境界probeと解答コーパスの両方で観測形式は一致するが、未知の全合法sourceへの一般化は未証明。
   実験範囲外の
   構文・意味や完全網羅を証明するものではない。
   Leanではmask directiveの幅を2または4語、selectorを0〜31に制限した有限carrierも

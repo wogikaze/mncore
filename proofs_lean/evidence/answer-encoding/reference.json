@@ -1,0 +1,5741 @@
+{
+  "schema_version": 1,
+  "experiment": "flat assembler output shapes for all checked-in problem answers",
+  "scope": "All 73 answer.vsm files in the repository. This is corpus evidence, not proof that every legal source has these shapes.",
+  "answer_count": 73,
+  "output_word_count": 1041,
+  "word_counts_by_kind": {
+    "j": 984,
+    "m": 57
+  },
+  "tool_hashes": [
+    {
+      "path": "judge/judge-py/mncore2_emuenv/assemble3",
+      "sha256": "5baabcd47a137fbc4c8ec11fd02e23cb79818bbded9d0cb4c02291aaf738b955"
+    },
+    {
+      "path": "proofs_lean/scripts/check_answer_encoding_reference.py",
+      "sha256": "2c5c393af4e25d4dfdeefcec5498c547233036b7ffde344d8cd79bfb3afbea91"
+    }
+  ],
+  "observations": [
+    {
+      "source": "problems/1.a-b/answer.vsm",
+      "source_sha256": "6e968dc924213d3b035ce25fa870659176a31f1a1ec658ce8200fef7b8b7a8d5",
+      "assembler_output_lines": 3,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/10.sumrow/answer.vsm",
+      "source_sha256": "0200bdaf26065093289c9bc51fe1483cf30a2532e4ca4fd9bfba42de51e8f67f",
+      "assembler_output_lines": 16,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/11.maxrow/answer.vsm",
+      "source_sha256": "3e618f6a92aaa9866aeb4c5d8f747042a8f1ed0a462c6dafac947a602d80f5a3",
+      "assembler_output_lines": 20,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/12.divrow-vec/answer.vsm",
+      "source_sha256": "fd30a563ce092e95ea7d6f5004efb95c8c84129d86baf0ccd78002916ffe3833",
+      "assembler_output_lines": 29,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/13.exp-low-prec/answer.vsm",
+      "source_sha256": "ea5d9d639a0a0bf282e368ad343378b72c87ae9736efc1041159b5d341da4f04",
+      "assembler_output_lines": 10,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/14.exp/answer.vsm",
+      "source_sha256": "e9fc2d1a0e7c8b1f804378c97ca5bfba3d740279f94d1c63cb4430f522f9cb0f",
+      "assembler_output_lines": 16,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/15.onehot-mini/answer.vsm",
+      "source_sha256": "e053532abf4cc078b961512799b4a238bbad8782db6dc9b910e4693b1a6faf8c",
+      "assembler_output_lines": 7,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/16.onehot/answer.vsm",
+      "source_sha256": "cc402b64688058901b10b9d7f7ba3cd432ac2421f439e6a6f38657d6f136129f",
+      "assembler_output_lines": 24,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/17.dram-dl-256-16/answer.vsm",
+      "source_sha256": "ef84f2e0257545ef4496e50fafbaede01fe4fc62c19e186d0a64ef548c300f20",
+      "assembler_output_lines": 5,
+      "words": [
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/18.dram-ul-256-16/answer.vsm",
+      "source_sha256": "ac27e6e5cf12caf586b59666021a184e91a67c31847178b4397b501ee6847844",
+      "assembler_output_lines": 6,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/19.dram-dl-256-16p/answer.vsm",
+      "source_sha256": "230695e1b24143c68b4046d39b467b07eca186626687278907b0f85807289b76",
+      "assembler_output_lines": 19,
+      "words": [
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/2.fmul7/answer.vsm",
+      "source_sha256": "5bcc7fa228dce2a4cc7e24aaf2df628173304c7d0095dd761c097a57c3bca158",
+      "assembler_output_lines": 5,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/20.dram-ul-256-16p/answer.vsm",
+      "source_sha256": "6df9feb407e93deea745aff60f146a8949f3f5304765cb8d574359b19506d69c",
+      "assembler_output_lines": 10,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/21.dram-dl-256-16-l2b/answer.vsm",
+      "source_sha256": "c6e69ec842af925ff1cc465b12176d199c8c9acfeace3cacda0bad1b6b68ad55",
+      "assembler_output_lines": 12,
+      "words": [
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/22.dram-dl-1024-16/answer.vsm",
+      "source_sha256": "4e757857e4d76ff7d30a18f29e566dad88059ea4bdfb40227401617bb2f8f809",
+      "assembler_output_lines": 8,
+      "words": [
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/23.dram-dl-256-1024/answer.vsm",
+      "source_sha256": "5f44cd7372dcd0071da984acb03d06b0df5450762e3d0d6476fef8c2735293b5",
+      "assembler_output_lines": 68,
+      "words": [
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/24.dram-dl-16/answer.vsm",
+      "source_sha256": "4a9cb009f90d9fb320bf5395d6717f85bdff23c9aa21525696e3430396cb8cf9",
+      "assembler_output_lines": 5,
+      "words": [
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/25.dram-ul-16/answer.vsm",
+      "source_sha256": "5d831284391664e0d6537e15404a9e00575287d4732d84b75a9b10321a10941f",
+      "assembler_output_lines": 5,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/26.dram-dl-16-1024/answer.vsm",
+      "source_sha256": "a554c1f2444c2875a70ed58e75ffca182b9a8130fdfc4ffadf914b653425beba",
+      "assembler_output_lines": 39,
+      "words": [
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/27.dram-ul-16-1024/answer.vsm",
+      "source_sha256": "0c75ad0f5fff2a9031b049a96f09927fa90e607637ad8b9e0ae6c38c8b8fd868",
+      "assembler_output_lines": 13,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/28.dram-dl-16-16/answer.vsm",
+      "source_sha256": "b5c19326cffb195c9d82de6ddf4c874000a263fbe2d1b7ff399f2523823863d5",
+      "assembler_output_lines": 11,
+      "words": [
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/29.dram-ul-16-16/answer.vsm",
+      "source_sha256": "75af1dc5dc6dccd498c2cba58f71735c378c85713bf9222ee7f0d22a96109993",
+      "assembler_output_lines": 9,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/3.relu/answer.vsm",
+      "source_sha256": "01d353d946abec854aee09f56ae90ba8fe53c22f603716712eb33db4adeb22d7",
+      "assembler_output_lines": 2,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/30.dram-dl-256/answer.vsm",
+      "source_sha256": "2055cc5e6975f260c04cf7101022f2a1e85922ef63e27446c795697b691dd788",
+      "assembler_output_lines": 10,
+      "words": [
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/31.dram-ul-256/answer.vsm",
+      "source_sha256": "a792a3acf49e40ce44a40390944b55f2291a8a965254d53acf3f50ec3a3653a2",
+      "assembler_output_lines": 7,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/32.matmul-trb-mab-lm-4-8-8/answer.vsm",
+      "source_sha256": "2a1adf8214c632b1002bf4ec21ea54995af0df5f2d41501d0d91217c37325456",
+      "assembler_output_lines": 4,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/33.matmul-trb-mab-lm-4-8-16/answer.vsm",
+      "source_sha256": "d9733243b067e118c90ef8e6e38bf59e083cbe20afbc1854037906fbd2c8cf53",
+      "assembler_output_lines": 7,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/34.matmul-trb-mab-lm-4-16-8/answer.vsm",
+      "source_sha256": "5d7ea594bcc7b36c9167381e246482b68aae2966c400a5c17f4b9f3c8b5e6768",
+      "assembler_output_lines": 7,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/35.matmul-trb-mab-lm-4-16-16/answer.vsm",
+      "source_sha256": "a620615758ea8ae06f006270d2cf8cfd7cdfb0a693a763ec829c810963e1340b",
+      "assembler_output_lines": 12,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/36.matmul-trb-pkg-lm-256-16-16/answer.vsm",
+      "source_sha256": "a620615758ea8ae06f006270d2cf8cfd7cdfb0a693a763ec829c810963e1340b",
+      "assembler_output_lines": 12,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/37.matmul-trb-mab-lm-32-8-16/answer.vsm",
+      "source_sha256": "c22d02862ea03663fea30aa5f285d54f330269bc7c3e89a3b25a1696725ac29b",
+      "assembler_output_lines": 17,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/38.matmul-trb-pkg-lm-256-128-16/answer.vsm",
+      "source_sha256": "d33d5db6b1b2bcbc1cb2978ca70d87cd068b92f2f3cb80bdde18b82e9e806eee",
+      "assembler_output_lines": 23,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/39.matmul-trb-pkg-lmdram-256-1024-16/answer.vsm",
+      "source_sha256": "f6c7af799a5712390f2a04b57f0740834f843a2ee0b433383d274ef7d32f4649",
+      "assembler_output_lines": 29,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/4.relu-grad/answer.vsm",
+      "source_sha256": "78435f4d2c72face5c1f4072a1481fe550c138b6f59fe97113d233f78a58de6e",
+      "assembler_output_lines": 3,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/40.matmul-notr-mab-lm-4-8-8/answer.vsm",
+      "source_sha256": "8e44e9bdc2084cc0ab3bb000822564af8e11b19239827c7ad55d12fec7398982",
+      "assembler_output_lines": 7,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/41.matmul-notr-mab-lm-4-16-16/answer.vsm",
+      "source_sha256": "02bfd42a404e5105f73169945a2d56e05fe8229a7087578bf64e0bd9cd25ba0b",
+      "assembler_output_lines": 13,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/42.matmul-notr-pkg-lm-256-16-16/answer.vsm",
+      "source_sha256": "02bfd42a404e5105f73169945a2d56e05fe8229a7087578bf64e0bd9cd25ba0b",
+      "assembler_output_lines": 13,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/43.matmul-tra-mab-lm-8-8-8/answer.vsm",
+      "source_sha256": "839619cd75b8271c99a54343be3b1883006dd46515a3d378930acf397d2bf3d1",
+      "assembler_output_lines": 8,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/44.matmul-tra-mab-lm-16-8-16/answer.vsm",
+      "source_sha256": "009c764d2b86187bc38fbc9dd0ab73000f1ceb778725e2b41e05060444068907",
+      "assembler_output_lines": 15,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/45.matmul-tra-mab-lm-16-4-16/answer.vsm",
+      "source_sha256": "5e5df059f490f5bd9c0be59c6fd8309914b0694919f63878ccd13ffcf0a55bb1",
+      "assembler_output_lines": 15,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/46.matmul-tra-pkg-lmdram-16-256-16/answer.vsm",
+      "source_sha256": "962c53b6b44bd977b8a84ff0b73a4aab710cb7077bffe15d342aa4edf0194dce",
+      "assembler_output_lines": 25,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/47.matmul-tra-mab-lm-16-32-8/answer.vsm",
+      "source_sha256": "c5b6210ba1d7f91ae98de4cdeb080f185b09cd41776209d52e111b90fb35f67d",
+      "assembler_output_lines": 17,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/48.matmul-tra-pkg-lmdram-16-256-1024/answer.vsm",
+      "source_sha256": "016623b8fd2acb346e7718a8cfbf7a96c76c6cd3d7056764612105b6e23caa45",
+      "assembler_output_lines": 61,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/5.addcol-vec/answer.vsm",
+      "source_sha256": "77117303ca72bf94dbad17e4b7d327e377875868ec09eb3296ecda9c1a986ee9",
+      "assembler_output_lines": 3,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/6.subrow-vec/answer.vsm",
+      "source_sha256": "22317f08232db3ceffd79249b8719321bee04c57feb05ef7a381bedbffac47e1",
+      "assembler_output_lines": 24,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/7.sumcol-mini/answer.vsm",
+      "source_sha256": "80b0612f0bda1b13a0753ff6374fdef7fb0fc9896f6b59f7bd64358e328095e6",
+      "assembler_output_lines": 4,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/8.sumcol/answer.vsm",
+      "source_sha256": "576cb9f6f94bf95b0965a57fd054fefb4aeae85a4f92f7979fbdb813127809b4",
+      "assembler_output_lines": 9,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/9.sumrow-mini/answer.vsm",
+      "source_sha256": "8cf8c749fe866e71f8a1b7f49f49fceb047b4a64b6461f9fcdf9cdd3a9702a55",
+      "assembler_output_lines": 6,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/challenge/1.plus-one/answer.vsm",
+      "source_sha256": "23642c9719446766299bfa29817c18d15ed526b38e4fdd8b6c8709e8599112e0",
+      "assembler_output_lines": 2,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/challenge/10.gather-easy/answer.vsm",
+      "source_sha256": "088ed222a968b1512843b20ab45c995ba92b1a9b5da93f5a8ed268f42d456672",
+      "assembler_output_lines": 6,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/challenge/11.square-sum/answer.vsm",
+      "source_sha256": "b87f8190394eba62099d889de8995f5d3da4021b8f85a4b3d28c71593e9885ec",
+      "assembler_output_lines": 11,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/challenge/12.convert-endian/answer.vsm",
+      "source_sha256": "98681f4fc5c397b7a5d27389a59f6cd1cab715d5eb917107a1d2a77b8327dc65",
+      "assembler_output_lines": 3,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/challenge/13.mod3/answer.vsm",
+      "source_sha256": "cc049a34b7764d5c361a745e2d3e6534f9b65c8c0e3be4b2d759ed243dd47128",
+      "assembler_output_lines": 8,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/challenge/14.mat-sq/answer.vsm",
+      "source_sha256": "ed2c1fc3d865e77158a871d9617a0bb179158010c042a785a6d03f0dd86ea1b2",
+      "assembler_output_lines": 10,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/challenge/15.contains/answer.vsm",
+      "source_sha256": "63d17ee631c69b09f0ddb17befc00f06fda6637872d6d18fc5a4dcb5b43c84d7",
+      "assembler_output_lines": 20,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/challenge/16.count-up/answer.vsm",
+      "source_sha256": "6685e0f727e48cc9471d1559b63aa52a0ce82f2d4ed098940a1ea6159a5a8176",
+      "assembler_output_lines": 21,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/challenge/17.transpose-mab/answer.vsm",
+      "source_sha256": "1c10ce378c2788fdb548df540c733fa82b34b3fa7ff3da1f6347c13c034593c4",
+      "assembler_output_lines": 15,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/challenge/18.inversion-small/answer.vsm",
+      "source_sha256": "a7c552352a698ec26d58cb09f649f5056ae45d40b9690229d8bf0b773d23875e",
+      "assembler_output_lines": 9,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/challenge/19.inversion/answer.vsm",
+      "source_sha256": "e6c779384680a39ea2c7071c7db6dadd501caefabddfd58d63c8a21b98822917",
+      "assembler_output_lines": 31,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/challenge/2.plus-two/answer.vsm",
+      "source_sha256": "496624be2538e90367c3c33e81cd2dd2ddbf00f968da7a6e177e86154e7f0d1a",
+      "assembler_output_lines": 5,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/challenge/20.fizzbuzz/answer.vsm",
+      "source_sha256": "2192e6db0dd8d5ce117957c61e1f478b563c44a408b08c182e1ddb7cb054dae1",
+      "assembler_output_lines": 98,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/challenge/21.hello-world/answer.vsm",
+      "source_sha256": "b860a2568444be26300e386269657518bdc7c0b7482aac06cd5c204a5321b408",
+      "assembler_output_lines": 9,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "m",
+          "bit_width": 82,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/challenge/22.bit-reverse/answer.vsm",
+      "source_sha256": "99fa762883f7b2944f7843a0693c95b79f8ef9deba063d78a27a43e353bb249e",
+      "assembler_output_lines": 10,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/challenge/23.fizzbuzz-pe/answer.vsm",
+      "source_sha256": "581436b6d392a542f2d516de0c829dcd522d268955ae09dc58caa0ee568c01ab",
+      "assembler_output_lines": 9,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/challenge/24.log2/answer.vsm",
+      "source_sha256": "336d7fc684d681e3fb1a1a0437479868e212a907f87d9365afd0c78dd96fa9dc",
+      "assembler_output_lines": 7,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/challenge/25.hsv2rgb/answer.vsm",
+      "source_sha256": "cf92c0d752bc60844469537589713ea7b7afd369890c4880aa238dc64bf06d04",
+      "assembler_output_lines": 12,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/challenge/3.a-plus-b/answer.vsm",
+      "source_sha256": "ff7128450ffaad897a28b7285f16bdba61f3115a170671d8b4ccd9d57816d5e4",
+      "assembler_output_lines": 6,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/challenge/4.mul7/answer.vsm",
+      "source_sha256": "1ff2f4f842005ae418d4f111bbf965c3300782884d3c53dc18dde7e405b0e331",
+      "assembler_output_lines": 6,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/challenge/5.abs/answer.vsm",
+      "source_sha256": "5a938646e554c57828b642b13f70fb29b842bb53240fcfbdc60270b5e2cacbbe",
+      "assembler_output_lines": 13,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/challenge/6.fadd-mul/answer.vsm",
+      "source_sha256": "41a19b6499154bf21ccc055bd8b14b47c7a674babf2ccf160ad87da35fce0311",
+      "assembler_output_lines": 14,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/challenge/7.mul2/answer.vsm",
+      "source_sha256": "7cb3256f743070a62bf06922ca646789ce0722a4959e0c3b6c2cf4e87f7a57d3",
+      "assembler_output_lines": 9,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/challenge/8.fle/answer.vsm",
+      "source_sha256": "9994bdd88a5cb795843cee00b49045f51148a05eb0b42de5601c66886fe3f53f",
+      "assembler_output_lines": 4,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    },
+    {
+      "source": "problems/challenge/9.transpose-addr/answer.vsm",
+      "source_sha256": "e6695d62ee0807fd6ccc707ef21a15cf2588b07bdf457791cb38bd3d73aec6ca",
+      "assembler_output_lines": 10,
+      "words": [
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        },
+        {
+          "kind": "j",
+          "bit_width": 426,
+          "binary": true
+        }
+      ]
+    }
+  ],
+  "proves_all_assembler_outputs_have_these_shapes": false,
+  "proves_isa_completeness": false
+}
