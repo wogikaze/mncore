@@ -551,8 +551,13 @@ python3 -m unittest discover -s proofs_lean/tests -v
 RustのVSM/issue列挙型とLean投影型の列挙子の対応も照合する。
 この照合は型の列挙漏れを検出するが、Rustパーサの動作とLean投影の意味対応は証明しない。
 旧モジュールのimport、証拠のない `optimalProven`、`sorry`、独自axiom、
-`unsafe`、`native_decide`、カーネル検査の回避を拒否する。
-カーネル依存は標準の `propext`、`Quot.sound`、`Classical.choice` に限定して検査する。
+`unsafe`、`native_decide`、`decide +native`、カーネル検査の回避を拒否する。
+`bv_decide` は許可し、その証明が依存するLRAT証明書のaxiom
+（`<宣言>._native.bv_decide.ax_*`、Leanコンパイラを信頼境界に含める）も受理する。
+カーネル依存は標準の `propext`、`Quot.sound`、`Classical.choice` と
+このbv_decide証明書axiomに限定して検査する。
+正しさの基準は公式エミュレータであり、Leanで証明した解はVSMとして
+公式judgeで実行して照合し、不一致はモデルまたはLeanのバグとして扱う。
 公開定理だけでなく、プロジェクト各モジュールの全宣言を調べる。
 rootからimportされない証明ファイルも拒否する。rootのGitHub Actionsに同じ検査を設定した。
 この検査はISAの完全なモデル化を代替しない。

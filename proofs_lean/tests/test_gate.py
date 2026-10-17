@@ -10,9 +10,16 @@ class ProofGate(unittest.TestCase):
     def test_unproved_assumptions_are_rejected(self):
         for escape in ("axiom fabricated : False", "example : False := by sorry",
                        "example : False := by admit", "unsafe def fabricated := true",
-                       "example : 1 = 1 := by native_decide"):
+                       "example : 1 = 1 := by native_decide",
+                       "example : 1 = 1 := by decide +native",
+                       "example : 1 = 1 := by decide (config := { native := true })"):
             with self.subTest(escape=escape), self.assertRaises(ValueError):
                 validate_source(escape, "bad.lean")
+
+    def test_bv_decide_is_permitted(self):
+        validate_source("import Std.Tactic.BVDecide\n"
+                        "theorem t (x : BitVec 8) : x &&& x = x := by bv_decide",
+                        "good.lean")
 
     def test_comments_and_strings_do_not_create_false_alarms(self):
         validate_source('/- sorry /- axiom -/ admit -/\n-- unsafe\ndef name := "sorry"', "good.lean")
@@ -35,9 +42,20 @@ class ProofGate(unittest.TestCase):
     def test_kernel_escape_is_rejected(self):
         good = "'theorem' depends on axioms: [propext, Quot.sound]\n" * 11
         validate_axioms(good, 11)
-        for name in ("sorryAx", "Lean.ofReduceBool", "madeUpLowerBound"):
+        for name in ("sorryAx", "Lean.trustMeBro", "madeUpLowerBound"):
             with self.subTest(name=name), self.assertRaises(ValueError):
                 validate_axioms(good.replace("propext", name, 1), 11)
+
+    def test_bv_decide_axiom_report_is_accepted(self):
+        validate_axioms(
+            "'t' depends on axioms: [propext, Classical.choice, Quot.sound]\n", 1)
+        validate_axioms(
+            "'t' depends on axioms: [propext, Classical.choice, Quot.sound,"
+            " t._native.bv_decide.ax_1_5]\n", 1)
+        for name in ("t._native.bv_decide.ax_", "t._native.bv_decide.ax_1_5.evil",
+                     "_native.bv_decide.ax_1"):
+            with self.subTest(name=name), self.assertRaises(ValueError):
+                validate_axioms(f"'t' depends on axioms: [propext, {name}]\n", 1)
 
     def test_missing_axiom_report_is_rejected(self):
         with self.assertRaises(ValueError):

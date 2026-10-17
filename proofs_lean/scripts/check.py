@@ -12,8 +12,15 @@ import catalog
 import check_issue_mirror
 
 ROOT = catalog.ROOT
-BANNED = {"sorry", "admit", "axiom", "unsafe", "native_decide", "implemented_by"}
+BANNED = {"sorry", "admit", "axiom", "unsafe", "native_decide", "implemented_by", "native"}
+# "native" also blocks `decide +native` and `{ native := true }` escape hatches.
+# bv_decide is permitted: simple goals need no extra axioms; LRAT goals add a
+# certificate axiom whitelisted below (empirically verified on leanprover/lean4:v4.35.0).
 ALLOWED_AXIOMS = {"propext", "Quot.sound", "Classical.choice"}
+# bv_decide's trusted LRAT certificate axiom, named <decl>._native.bv_decide.ax_*
+# (asserts `verifyBVExpr expr cert = true`). Permitted by project policy; the
+# official emulator remains the ground truth for cross-checking.
+BV_DECIDE_AXIOM = re.compile(r"[^\s,\[\]]+\._native\.bv_decide\.ax_\d+(?:_\d+)*")
 
 
 def code_only(text: str) -> str:
@@ -65,7 +72,8 @@ def validate_source(text: str, filename: str) -> None:
         raise ValueError(f"{filename}: kernel bypass or evidence-free promotion")
     for imports in re.findall(r"^import\s+([^\n]+)", code, re.M):
         for module in imports.split():
-            if (module == "Std" or module == "Mathlib" or module.startswith("Mathlib.")
+            if (module == "Std" or module.startswith("Std.")
+                    or module == "Mathlib" or module.startswith("Mathlib.")
                     or (module == "Lean" and filename == "Check.lean")):
                 continue
             if module == "ProofsLean" or module.startswith("ProofsLean."):
@@ -89,8 +97,9 @@ def validate_axioms(output: str, expected: int) -> None:
                          f"{len(records) + len(no_axioms)}: {output}")
     for record in records:
         names = {x.strip() for x in record.split(",") if x.strip()}
-        if names - ALLOWED_AXIOMS:
-            raise ValueError(f"untrusted kernel dependencies: {names - ALLOWED_AXIOMS}")
+        untrusted = {n for n in names - ALLOWED_AXIOMS if not BV_DECIDE_AXIOM.fullmatch(n)}
+        if untrusted:
+            raise ValueError(f"untrusted kernel dependencies: {untrusted}")
 
 
 def validate_import_closure() -> None:

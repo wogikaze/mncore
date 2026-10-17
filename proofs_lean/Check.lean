@@ -265,6 +265,7 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.pack_unpackALUBus
 #print axioms ProofsLean.MNCore.PEMemory.readRegisterBank_after_write
 #print axioms ProofsLean.MNCore.PEMemory.readDirectAccessMasked_after_write
+#print axioms ProofsLean.MNCore.byteSwap64_involutive
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerMaskedRegisterStep_success
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerMaskedRegisterStep_masked_readback
 #print axioms ProofsLean.MNCore.PEMemory.parsedIssueCheckedALUProducerLineFourCycleStep_accepted
