@@ -73,6 +73,10 @@ import Lean
 #print axioms ProofsLean.MNCore.partialMachine_not_complete
 #print axioms ProofsLean.MNCore.PEMemory.executeParsedPECycles_empty
 #print axioms ProofsLean.MNCore.PEMemory.executeParsedPEInstructionLine_issue_failure
+#print axioms ProofsLean.MNCore.PEMemory.instructionMachine_legal_all
+#print axioms ProofsLean.MNCore.PEMemory.instructionMachine_issue_failure
+#print axioms ProofsLean.MNCore.PEMemory.instructionMachine_accepted_pe_executes
+#print axioms ProofsLean.MNCore.PEMemory.instructionMachine_nop_advances
 #print axioms ProofsLean.MNCore.Issue.encodedUniverseMachine_not_complete
 #print axioms ProofsLean.MNCore.Issue.mem_encodedUniverseAlphabet
 #print axioms ProofsLean.MNCore.Issue.encodedUniverseAlphabet_coversBelow
