@@ -39,12 +39,17 @@ fn main() {
     let args: Vec<String> = std::env::args().collect();
     let count = args.get(1).and_then(|s| s.parse().ok()).unwrap_or(256usize);
     let seed = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(1u64);
+    let operation = args.get(3).map(String::as_str).unwrap_or("fvfma");
     let mut rng = Rng(seed.wrapping_mul(0x9e37_79b9_7f4a_7c15) | 1);
     for index in 0..count {
         let a = value(&mut rng);
         let b = value(&mut rng);
         let mut c = value(&mut rng);
-        if index % 3 == 0 {
+        if operation == "fvmul" {
+            c = 0;
+        } else if operation == "fvsub" {
+            c = 0;
+        } else if index % 3 == 0 {
             let product = float::vfma(
                 SINGLE,
                 SINGLE,
@@ -54,13 +59,21 @@ fn main() {
             ) as u32;
             c = (product ^ 0x8000_0000).wrapping_add(rng.below(5) as u32);
         }
-        let expected = float::vfma(
-            SINGLE,
-            SINGLE,
-            float::decode(SINGLE, a as u64),
-            float::decode(SINGLE, b as u64),
-            float::decode(SINGLE, c as u64),
-        ) as u32;
+        let expected = match operation {
+            "fvfma" => float::vfma(
+                SINGLE, SINGLE, float::decode(SINGLE, a as u64),
+                float::decode(SINGLE, b as u64), float::decode(SINGLE, c as u64),
+            ) as u32,
+            "fvmul" => float::vfma(
+                SINGLE, SINGLE, float::decode(SINGLE, a as u64),
+                float::decode(SINGLE, b as u64), Val::Zero { neg: false },
+            ) as u32,
+            "fvsub" => float::vfma(
+                SINGLE, SINGLE, float::decode(SINGLE, a as u64),
+                float::decode(SINGLE, 0x3f80_0000), float::decode(SINGLE, b as u64).negate(),
+            ) as u32,
+            _ => panic!("unknown operation {operation}"),
+        };
         println!("{a:08x} {b:08x} {c:08x} {expected:08x}");
     }
 }

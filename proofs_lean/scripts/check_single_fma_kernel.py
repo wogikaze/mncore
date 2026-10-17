@@ -31,30 +31,42 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--gpfn-runs", type=int, default=0,
                         help="also run official gpfn3 differential tests; 35 gives 573440 values")
+    parser.add_argument("--operation", choices=["fvfma", "fvmul", "fvsub"], default="fvfma",
+                        help="Lean operation to kernel-check (Rust vectors use the same op)")
     args = parser.parse_args()
 
     if args.gpfn_runs:
         output = run(["cargo", "run", "--release", "--bin", "difftest_mau", "--",
-                      "fvfma", str(args.gpfn_runs), str(args.seed)], CORE)
+                      args.operation, str(args.gpfn_runs), str(args.seed)], CORE)
         print(output.strip())
 
     vectors = run(["cargo", "run", "--quiet", "--release", "--bin",
-                   "fma_kernel_vectors", "--", str(args.vectors), str(args.seed)], CORE)
+                   "fma_kernel_vectors", "--", str(args.vectors), str(args.seed),
+                   args.operation], CORE)
     equations = []
     for line_number, line in enumerate(vectors.splitlines(), 1):
         fields = line.split()
         if len(fields) != 4:
             raise SystemExit(f"malformed Rust vector line {line_number}: {line!r}")
         a, b, c, expected = (int(field, 16) for field in fields)
-        equations.append(
-            "example : ProofsLean.MNCore.SingleFMA.singleFma "
-            f"(BitVec.ofNat 32 {a}) (BitVec.ofNat 32 {b}) "
-            f"(BitVec.ofNat 32 {c}) = BitVec.ofNat 32 {expected} := by decide"
-        )
+        if args.operation == "fvfma":
+            proposition = ("ProofsLean.MNCore.SingleFMA.singleFma "
+                           f"(BitVec.ofNat 32 {a}) (BitVec.ofNat 32 {b}) "
+                           f"(BitVec.ofNat 32 {c})")
+        elif args.operation == "fvmul":
+            proposition = ("ProofsLean.MNCore.FloatMultiply.multiply "
+                           f"(BitVec.ofNat 32 {a}) (BitVec.ofNat 32 {b})")
+        else:
+            proposition = ("ProofsLean.MNCore.FloatSubtract.subtract "
+                           f"(BitVec.ofNat 32 {a}) (BitVec.ofNat 32 {b})")
+        equations.append(f"example : {proposition} = BitVec.ofNat 32 {expected} := by decide")
     if len(equations) != args.vectors:
         raise SystemExit(f"expected {args.vectors} Rust vectors, got {len(equations)}")
 
-    source = "import ProofsLean.SingleFMA\n\n" + "\n".join(equations) + "\n"
+    imports = {"fvfma": "ProofsLean.SingleFMA",
+               "fvmul": "ProofsLean.FloatMultiply",
+               "fvsub": "ProofsLean.FloatSubtract"}
+    source = f"import {imports[args.operation]}\n\n" + "\n".join(equations) + "\n"
     with tempfile.NamedTemporaryFile("w", suffix=".lean", dir=ROOT,
                                      encoding="utf-8", delete=False) as generated:
         generated.write(source)
@@ -63,7 +75,7 @@ def main() -> None:
         run(["lake", "env", "lean", str(generated_path)], ROOT)
     finally:
         generated_path.unlink(missing_ok=True)
-    print(f"Lean kernel checked {len(equations)} deterministic FMA vectors (seed {args.seed})")
+    print(f"Lean kernel checked {len(equations)} deterministic {args.operation} vectors (seed {args.seed})")
 
 
 if __name__ == "__main__":
