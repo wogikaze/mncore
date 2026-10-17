@@ -1,6 +1,7 @@
 import ProofsLean.ByteSwap
 import ProofsLean.SingleFMA
 import ProofsLean.FloatPEMemory
+import ProofsLean.PEParser
 
 /-! Bit-level datapath reconstruction of the public Convert Endian answer.
 
@@ -10,6 +11,35 @@ precision MAU FMA transforms the immediate bit pattern into the halfword shift
 count used by the next issue word. That barrel shift rotates each 16-bit lane
 by one byte, and the destination selector exchanges the 32-bit lanes again. -/
 namespace ProofsLean.MNCore.ConvertEndian
+
+open ProofsLean.MNCore.Issue
+
+/-! The public answer's operands are first parsed by the repository's VSM
+operand parser. These facts pin down the exact per-cycle addresses and
+forwarding selectors consumed by the execution models below. -/
+
+theorem answer_operands_parse :
+    parseParsedPEOperand? "$r0v" =
+        some (.mem ⟨.grf0, ⟨1, 0, 1, 2, 3, false, none⟩⟩ false false false none) ∧
+    parseParsedPEOperand? "$m0v" =
+        some (.mem ⟨.lm0, ⟨1, 0, 1, 2, 3, false, none⟩⟩ false false false none) ∧
+    parseParsedPEOperand? "$aluf" = some (.forward .aluf false false false) ∧
+    parseParsedPEOperand? "$s0v" =
+        some (.mem ⟨.grf1, ⟨1, 0, 1, 2, 3, false, none⟩⟩ false false false none) ∧
+    parseParsedPEOperand? "$mauf" = some (.forward .mauf false false false) ∧
+    parseParsedPEOperand? "$n[1,0,3,2]" =
+        some (.mem ⟨.lm1, ⟨1, 1, 0, 3, 2, false, none⟩⟩ false false false none) := by
+  decide
+
+theorem answer_operands_parse_all :
+    (parseParsedPEOperand? "$r0v").isSome ∧
+    (parseParsedPEOperand? "$m0v").isSome ∧
+    (parseParsedPEOperand? "$aluf").isSome ∧
+    (parseParsedPEOperand? "$s0v").isSome ∧
+    (parseParsedPEOperand? "$mauf").isSome ∧
+    (parseParsedPEOperand? "$n[1,0,3,2]").isSome := by
+  rcases answer_operands_parse with ⟨h0, h1, h2, h3, h4, h5⟩
+  simp [h0, h1, h2, h3, h4, h5]
 
 def swap32 (word : BitVec 64) : BitVec 64 :=
   (word.extractLsb' 0 32) ++ (word.extractLsb' 32 32)
