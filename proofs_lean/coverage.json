@@ -475,7 +475,7 @@
       "sha256": "05fb3ec4afeba235ee5e68d001068df2d8c56065904157f2291317fe14146412",
       "theorem": "ProofsLean.MNCore.Issue.ParsedL1bSet.inFiniteEnvelope_finite",
       "parser_source": "proofs_lean/ProofsLean/Issue.lean",
-      "parser_source_sha256": "70d3500a7710d2720859be6e406f1ec3cd9f9d9deb5db6580582656c2fc14f12",
+      "parser_source_sha256": "9803be5c387e6329963be37997d7fd13b82597e9d4494cd742a4694b6576d40b",
       "parser_fragment": "parseParsedL1bSet?, parseParsedL2Opcode?",
       "parser_range_theorem": "ProofsLean.MNCore.Issue.parsedL1bAddressModeSet_inFiniteEnvelope",
       "scope": "Finite carrier for 8-bit L1B membership masks below 256 and immode selectors below 8; Lean parses canonical decimal address[/immode] and bracketed list selectors and covers every `parse_l2_opcode` branch of `ParsedL2Op`.",
@@ -496,7 +496,7 @@
       "theorem": "ProofsLean.MNCore.Issue.ParsedRrn.inFiniteEnvelope_finite",
       "scope": "Finite carrier for reduction operation codes and character precision values whose Unicode scalar is below 128.",
       "evidence": "`ParsedRrnOp` has eight constructors; the precision envelope is an explicit finite ASCII-code envelope.",
-      "missing": "The envelope has not been connected to parser output or to the finite carrier proof for complete ParsedL1Op values."
+      "missing": "The L1/L2 opcode parsers have representative RRN fixtures, but no general theorem connects their parsed RRN outputs to this envelope or to accepted assembler spellings."
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
@@ -504,7 +504,7 @@
       "theorem": "ProofsLean.MNCore.Issue.ParsedL1Mabdiff.inFiniteEnvelope_finite",
       "scope": "Finite tagged carrier for the `distrib` and `gather` MAB-offset variants in the observed signed envelope.",
       "evidence": "Shares the exhaustive signed-offset assemble3 probes recorded in `isa-bounds/reference.json`.",
-      "missing": "Only the two MAB-offset variants are represented; complete ParsedL1Op finiteness and parser-to-envelope soundness remain unproved."
+      "missing": "This projection covers only the two MAB-offset variants; no theorem yet connects every L1 parser output to the finite offset envelope."
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
@@ -512,15 +512,18 @@
       "theorem": "ProofsLean.MNCore.Issue.ParsedL1Selector.inFiniteEnvelope_finite",
       "scope": "Finite tagged carrier for L1BM `mwrite` and `m4write` selectors below 16.",
       "evidence": "proofs_lean/evidence/isa-bounds/reference.json: exhaustive acceptance of l1bmm@0..15 and l1bmm4@0..15, with @16 rejected for both.",
-      "missing": "Only the two selector payloads are bounded; complete ParsedL1Op finiteness and parser-to-envelope soundness remain unproved."
+      "missing": "The L1 opcode parser retains Rust's u8 selector range, which is wider than this assembler-valid 0..15 envelope; parser output is not proved to lie in this narrower subset."
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
       "sha256": "05fb3ec4afeba235ee5e68d001068df2d8c56065904157f2291317fe14146412",
       "theorem": "ProofsLean.MNCore.Issue.ParsedL1Op.inFiniteEnvelope_finite",
+      "parser_source": "proofs_lean/ProofsLean/Issue.lean",
+      "parser_source_sha256": "9803be5c387e6329963be37997d7fd13b82597e9d4494cd742a4694b6576d40b",
+      "parser_fragment": "parseParsedL1Opcode?",
       "scope": "Finite tagged carrier for all nine ParsedL1Op variants under the observed mab selector, RRN precision and MAB difference envelopes.",
-      "evidence": "proofs_lean/evidence/isa-bounds/reference.json: l1bmm/l1bmm4 selectors 0..15, signed mabdiff -255..255, plus ParsedRrn's explicit ASCII precision envelope and finite opcode set.",
-      "missing": "The envelope is not yet proved to contain every assembler-accepted ParsedL1Op parse, and no finite PE-line or machine-level carrier is composed from it."
+      "evidence": "proofs_lean/evidence/isa-bounds/reference.json: l1bmm/l1bmm4 selectors 0..15, signed mabdiff -255..255, plus ParsedRrn's explicit ASCII precision envelope and finite opcode set. `Issue.lean` fixtures cover all nine Rust L1 opcode branches, direction-dependent d, u8 selector parsing, signed offsets, RRN parsing, and round suffixes.",
+      "missing": "No theorem yet proves every output of `parseParsedL1Opcode?` lies in the finite envelope (the Rust parser's u8 selector range is wider than the assembler's 0..15 range), and no finite PE-line or machine-level carrier is composed from it."
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
@@ -762,7 +765,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/Issue.lean",
-      "sha256": "70d3500a7710d2720859be6e406f1ec3cd9f9d9deb5db6580582656c2fc14f12",
+      "sha256": "9803be5c387e6329963be37997d7fd13b82597e9d4494cd742a4694b6576d40b",
       "implemented": "Full structural PE Op/Operand payload mirror, issue projection, abstract PE-line rules, and a partial parsed-op to integer-ALU bridge for supported L/I/S integer operations and packbit",
       "scope": "The Rust enum inventory is checked against Lean constructors. A separate partial executor covers supported integer ALU/zero/immediate expressions with direct PE-memory destinations, masks/flush and ordered multiple destinations; this is not full ISA semantics",
       "source_basis": [

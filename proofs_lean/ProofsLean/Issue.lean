@@ -1641,6 +1641,96 @@ theorem parseParsedL2Opcode_darw :
 theorem parseParsedL2Opcode_rejects_bad_rrn :
     parseParsedL2Opcode? "l2bmrdfsub" false = none := by decide
 
+def parsedSignedDecimal? (chars : List Char) : Option Int := do
+  match chars with
+  | '-' :: magnitude =>
+      let value ← parsedMvDecimal? magnitude
+      some (-(Int.ofNat value))
+  | _ =>
+      let value ← parsedMvDecimal? chars
+      some (Int.ofNat value)
+
+def parsedL1RrnRound? (chars : List Char) : Option (ParsedRrn × Bool) := do
+  let (rrnChars, round) := if chars.getLast? == some 'r'
+    then (chars.dropLast, true) else (chars, false)
+  let rrn ← parseParsedMvRrn? rrnChars
+  some (rrn, round)
+
+/-- Mirror Rust's `parse_l1_opcode`. The caller supplies `toPE`, which Rust
+derives from whether the first parsed operand is an L1BM operand. -/
+def parseParsedL1Opcode? (opcode : String) (toPE : Bool) : Option ParsedL1Op := do
+  let rest ← parsedStripChars? ['l', '1', 'b', 'm'] opcode.toList
+  if rest == ['p'] then some .pbcast
+  else if rest.take 2 == ['m', '4'] then
+    let suffix := rest.drop 2
+    match suffix with
+    | '@' :: mabChars => do
+        let mab ← parsedMvDecimal? mabChars
+        let index ← parsedNatToFin? mab 256
+        some (.m4write index.val)
+    | [] => some .m4bcast
+    | _ => none
+  else if rest.head? == some 'm' then
+    let suffix := rest.drop 1
+    match suffix with
+    | '@' :: mabChars => do
+        let mab ← parsedMvDecimal? mabChars
+        let index ← parsedNatToFin? mab 256
+        some (.mwrite index.val)
+    | [] => some .mbcast
+    | _ => none
+  else if rest.head? == some 'd' then
+    let offsetChars := rest.drop 1
+    let offset ← if offsetChars.isEmpty then some 0 else parsedSignedDecimal? offsetChars
+    if -255 ≤ offset && offset ≤ 255 then
+      some (if toPE then .distrib offset else .gather offset)
+    else none
+  else if rest.take 2 == ['r', '4'] then do
+    let (rrn, round) ← parsedL1RrnRound? (rest.drop 2)
+    some (.reduce4 rrn round)
+  else if rest.head? == some 'r' then do
+    let (rrn, round) ← parsedL1RrnRound? (rest.drop 1)
+    some (.reduce rrn round)
+  else none
+
+theorem parseParsedL1Opcode_pbcast :
+    parseParsedL1Opcode? "l1bmp" false = some .pbcast := by decide
+
+theorem parseParsedL1Opcode_mab_writes_parse_u8_range :
+    parseParsedL1Opcode? "l1bmm@255" false = some (.mwrite 255) := by decide
+
+theorem parseParsedL1Opcode_m4write_valid_selector :
+    parseParsedL1Opcode? "l1bmm4@15" true = some (.m4write 15) := by decide
+
+theorem parseParsedL1Opcode_mab_write_rejects_u8_overflow :
+    parseParsedL1Opcode? "l1bmm4@256" false = none := by decide
+
+theorem parseParsedL1Opcode_broadcast_forms :
+    parseParsedL1Opcode? "l1bmm" false = some .mbcast ∧
+      parseParsedL1Opcode? "l1bmm4" false = some .m4bcast := by decide
+
+theorem parseParsedL1Opcode_distribution_direction :
+    parseParsedL1Opcode? "l1bmd-255" true = some (.distrib (-255)) ∧
+      parseParsedL1Opcode? "l1bmd+255" false = some (.gather 255) := by decide
+
+theorem parseParsedL1Opcode_zero_offset_default :
+    parseParsedL1Opcode? "l1bmd" true = some (.distrib 0) := by decide
+
+theorem parseParsedL1Opcode_mabdiff_rejects_outside_assembler_range :
+    parseParsedL1Opcode? "l1bmd-256" true = none ∧
+      parseParsedL1Opcode? "l1bmd+256" false = none := by decide
+
+theorem parseParsedL1Opcode_reduce_rounding :
+    parseParsedL1Opcode? "l1bmr4dfaddr" false =
+      some (.reduce4 ⟨'d', .fadd⟩ true) := by decide
+
+theorem parseParsedL1Opcode_reduce_unrounded :
+    parseParsedL1Opcode? "l1bmriband" true =
+      some (.reduce ⟨'i', .band⟩ false) := by decide
+
+theorem parseParsedL1Opcode_rejects_invalid_round_suffix :
+    parseParsedL1Opcode? "l1bmrdfaddrr" false = none := by decide
+
 structure ParsedMvParams where
   size : Option (Fin (2 ^ 64)) := none
   tag : Option (Fin 256) := none
