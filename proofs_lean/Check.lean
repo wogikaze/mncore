@@ -520,6 +520,9 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.executeParsedIntegerExpr_readback
 #print axioms ProofsLean.MNCore.PEMemory.parsed_iinc_output_eq_incrementPair
 #print axioms ProofsLean.MNCore.PEMemory.parsed_iinc_cycle_matches_plusOne
+#print axioms ProofsLean.MNCore.PEMemory.plusOneFiles_lm1_word
+#print axioms ProofsLean.MNCore.PEMemory.plusOneFirstLine_fourCycleLowering
+#print axioms ProofsLean.MNCore.PEMemory.plusOneSecondLine_fourCycleLowering
 #print axioms ProofsLean.MNCore.PEMemory.integerFlagsVector_bit0
 #print axioms ProofsLean.MNCore.PEMemory.integerFlagsVector_bit1
 #print axioms ProofsLean.MNCore.PEMemory.integerFlagsVector_bit2
