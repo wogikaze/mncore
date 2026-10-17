@@ -774,9 +774,9 @@ def coverage_catalog() -> dict:
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
             "theorem": "ProofsLean.MNCore.Issue.InstructionLine.inFiniteEnvelope_finite",
-            "scope": "Finite carrier for PE rows of at most ten normalized expressions, nop rows with count below the given bound and bounded wait tags, and normalized MV transfers whose size is zero or a multiple of 64 through 32704.",
-            "evidence": "Composes the proved finite carriers for normalized expressions, bounded expression lists, optional wait tags, and MV sizes; the size envelope is checked against the recorded assemble3 cases 0, 1, 64, 32704, and 32768.",
-            "missing": "No proof yet shows that every legal fixed-cost line satisfies these expression payload envelopes, that the nop bound follows from cost, or that all legal line forms embed in this subtype.",
+            "scope": "Finite carrier for PE rows of at most ten normalized expressions, nop rows with count below the given bound and bounded wait tags, and normalized MV transfers whose size is below 32768.",
+            "evidence": "Composes the proved finite carriers for normalized expressions, bounded expression lists, optional wait tags, and MV sizes. The assemble3 boundary probes accept size 32704 and reject 32768 for every documented MV grammar; they do not establish exact interior-size legality.",
+            "missing": "No proof yet shows that every legal fixed-cost line satisfies these expression payload envelopes, that the nop bound follows from cost, or that all legal line forms embed in this subtype. The MV size envelope is an observed upper bound, not exact legality for each size below 32768.",
         }, {
             "source": "proofs_lean/ProofsLean/FiniteInstructionLines.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteInstructionLines.lean"),

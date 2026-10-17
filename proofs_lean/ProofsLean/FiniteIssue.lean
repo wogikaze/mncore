@@ -1086,28 +1086,28 @@ theorem NormalizedMv.finite : Finite NormalizedMv := by
   letI : Fintype NormalizedMvFiniteCode := inferInstance
   exact Finite.of_injective NormalizedMv.finiteCode NormalizedMv.finiteCode_injective
 
-/-- MV sizes need no extra envelope restriction: the parsed representation
-already stores them in `Fin (2^64)`, matching the Rust parser's `u64` field.
-The assembler's stricter accepted sizes are a separate correspondence fact;
-they must not be assumed to prove finiteness of parser-representable lines. -/
+/-- Every documented MV grammar accepts the tested upper value 32704 and
+rejects 32768. We use the observed 15-bit size-field ceiling as an over-approximate
+line envelope; the probes do not establish which interior values are accepted. -/
 def NormalizedMv.sizeInFiniteEnvelope (transfer : NormalizedMv) : Prop :=
-  True
+  transfer.size.val < 32768
 
-theorem ParsedMv.normalize_sizeInFiniteEnvelope (transfer : ParsedMv) :
-    transfer.normalize.sizeInFiniteEnvelope :=
-  True.intro
+theorem ParsedMv.normalize_sizeInFiniteEnvelope_of_bound (transfer : ParsedMv)
+    (sizeBound : transfer.size.val < 32768) :
+    transfer.normalize.sizeInFiniteEnvelope := by
+  simpa [NormalizedMv.sizeInFiniteEnvelope, ParsedMv.normalize] using sizeBound
 
-theorem mv_size_1_in_envelope :
+theorem mv_size_32704_within_envelope :
     NormalizedMv.sizeInFiniteEnvelope
-      ({kind := .copy, size := ⟨1, by decide⟩, tag := none, nd := none,
+      ({kind := .copy, size := ⟨32704, by decide⟩, tag := none, nd := none,
         priority := 0, source := none, destination := none} : NormalizedMv) := by
-  trivial
+  simp [NormalizedMv.sizeInFiniteEnvelope]
 
-theorem mv_size_32768_in_envelope :
-    NormalizedMv.sizeInFiniteEnvelope
+theorem mv_size_32768_outside_envelope :
+    ¬ NormalizedMv.sizeInFiniteEnvelope
       ({kind := .copy, size := ⟨32768, by decide⟩, tag := none, nd := none,
         priority := 0, source := none, destination := none} : NormalizedMv) := by
-  trivial
+  simp [NormalizedMv.sizeInFiniteEnvelope]
 
 theorem NormalizedMv.sizeInFiniteEnvelope_finite :
     Finite {transfer : NormalizedMv // transfer.sizeInFiniteEnvelope} := by
