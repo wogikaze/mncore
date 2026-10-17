@@ -68,6 +68,49 @@ theorem answer_operations_source_arities :
     (parseAnswerOperation? "sbsl" "").map ParsedOp.parserSourceLimit = some 2 := by
   decide
 
+/-- Restricted expression parser used to turn the answer's opcode and operand
+tokens into the same `ParsedExpr` record consumed by the execution lowering.
+Source arity is checked before operands are classified. -/
+def parseAnswerExpr? (opcode literal : String) (sources destinations : List String)
+    (text : String) : Option ParsedExpr := do
+  let operation ← parseAnswerOperation? opcode literal
+  if sources.length != operation.parserSourceLimit then none else
+    let parsedSources ← sources.mapM parseParsedPEOperand?
+    let parsedDestinations ← destinations.mapM parseParsedPEOperand?
+    some ⟨operation, parsedSources, parsedDestinations, none, text⟩
+
+def answerImmediateExpr? : Option ParsedExpr :=
+  parseAnswerExpr? "imm" "i\"0x34f80010\"" [] ["$r0v"]
+    "imm i\"0x34f80010\" $r0v"
+
+def answerIntegerShiftExpr? : Option ParsedExpr :=
+  parseAnswerExpr? "ibsl" "" ["$m0v", "$aluf"] ["$r8v"]
+    "ibsl $m0v $aluf $r8v"
+
+def answerFloatFmaExpr? : Option ParsedExpr :=
+  parseAnswerExpr? "fvfma" "" ["$aluf", "$aluf", "$aluf"] ["$s0v"]
+    "fvfma $aluf $aluf $aluf $s0v"
+
+def answerByteShiftExpr? : Option ParsedExpr :=
+  parseAnswerExpr? "sbsl" "" ["$aluf", "$mauf"] ["$n[1,0,3,2]"]
+    "sbsl $aluf $mauf $n[1,0,3,2]"
+
+theorem answer_expressions_parse :
+    answerImmediateExpr?.isSome ∧ answerIntegerShiftExpr?.isSome ∧
+      answerFloatFmaExpr?.isSome ∧ answerByteShiftExpr?.isSome := by
+  decide
+
+/-- The parallel middle issue contains two independently parsed expressions;
+this preserves the instruction boundary needed by issue checking. -/
+def answerParallelExpressions? : Option (List ParsedExpr) := do
+  let integer ← answerIntegerShiftExpr?
+  let fma ← answerFloatFmaExpr?
+  some [integer, fma]
+
+theorem answer_parallel_expression_count :
+    answerParallelExpressions?.map List.length = some 2 := by
+  decide
+
 def swap32 (word : BitVec 64) : BitVec 64 :=
   (word.extractLsb' 0 32) ++ (word.extractLsb' 32 32)
 

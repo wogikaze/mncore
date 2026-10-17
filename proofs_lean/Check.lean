@@ -123,6 +123,8 @@ import Lean
 #print axioms ProofsLean.MNCore.ConvertEndian.answer_operands_parse_all
 #print axioms ProofsLean.MNCore.ConvertEndian.answer_operations_parse
 #print axioms ProofsLean.MNCore.ConvertEndian.answer_operations_source_arities
+#print axioms ProofsLean.MNCore.ConvertEndian.answer_expressions_parse
+#print axioms ProofsLean.MNCore.ConvertEndian.answer_parallel_expression_count
 #print axioms ProofsLean.MNCore.ConvertEndian.answerMemoryCycle_readback
 #print axioms ProofsLean.MNCore.ConvertEndian.answerMemoryCycle_byteSwap
 #print axioms ProofsLean.MNCore.FloatSubtract.abstractSubtract_evaluation
