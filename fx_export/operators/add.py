@@ -2,7 +2,6 @@
 
 from typing import List, Dict, Any, Optional
 
-from matplotlib import lines
 from . import BaseOperator, register_operator
 
 @register_operator("Add")
