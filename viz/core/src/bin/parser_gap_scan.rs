@@ -59,6 +59,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut parse_errors = Vec::new();
     let mut op_spellings = BTreeSet::new();
     let mut candidate_results = Vec::new();
+    let mut candidate_raw_probes = Vec::new();
     let mut raw_operand_fallback_probes = Vec::new();
     let mut answer_expression_shape_counts = BTreeMap::new();
 
@@ -161,6 +162,58 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }),
             };
             candidate_results.push(json!({ "spelling": spelling, "result": result }));
+
+            // Replace every parsed operand slot in this compiler-generated
+            // candidate fixture with an unrecognized register token. This
+            // records how broadly the parser's Raw fallback applies without
+            // implying that assemble3 accepts any of these spellings.
+            let tokens: Vec<_> = source.split_whitespace().collect();
+            let first_operand = if spelling == "imm" || spelling == "immu" { 2 } else { 1 };
+            for operand_index in first_operand..tokens.len() {
+                let mutated = tokens
+                    .iter()
+                    .enumerate()
+                    .map(|(index, token)| if index == operand_index { "$qraw" } else { token })
+                    .collect::<Vec<_>>()
+                    .join(" ");
+                let probe = match vsm::parse(&mutated) {
+                    Ok(lines) => {
+                        let raw: Vec<_> = lines
+                            .into_iter()
+                            .flat_map(|(_, line)| match line {
+                                Line::Pe(expressions) => expressions,
+                                _ => Vec::new(),
+                            })
+                            .flat_map(|expression| {
+                                let mut raw = Vec::new();
+                                for (index, operand) in expression.srcs.iter().enumerate() {
+                                    if let Some(text) = raw_operand(operand) {
+                                        raw.push(json!({
+                                            "role": "src", "index": index, "operand": text,
+                                        }));
+                                    }
+                                }
+                                for (index, operand) in expression.dsts.iter().enumerate() {
+                                    if let Some(text) = raw_operand(operand) {
+                                        raw.push(json!({
+                                            "role": "dst", "index": index, "operand": text,
+                                        }));
+                                    }
+                                }
+                                raw
+                            })
+                            .collect();
+                        json!({ "parsed": true, "raw_operands": raw })
+                    }
+                    Err(error) => json!({ "parsed": false, "error": error.msg }),
+                };
+                candidate_raw_probes.push(json!({
+                    "spelling": spelling,
+                    "operand_token_index": operand_index - first_operand,
+                    "source": mutated,
+                    "result": probe,
+                }));
+            }
         }
     }
 
@@ -231,6 +284,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "other_opcode_occurrences": other_ops,
         "parse_errors": parse_errors,
         "opcode_candidate_results": candidate_results,
+        "opcode_candidate_raw_operand_probes": candidate_raw_probes,
         "raw_operand_fallback_probes": raw_operand_fallback_probes,
     });
     println!("{}", serde_json::to_string_pretty(&result)?);

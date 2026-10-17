@@ -59,6 +59,26 @@ def main() -> None:
         expected_raw_probes.pop(probe["case"])
     if expected_raw_probes:
         raise ValueError(f"missing Raw fallback fixtures: {sorted(expected_raw_probes)}")
+    candidate_raw_probes = audit.get("opcode_candidate_raw_operand_probes", [])
+    expected_candidate_slots = sum(
+        row["result"]["expressions"][0]["source_count"]
+        + row["result"]["expressions"][0]["destination_count"]
+        for row in audit["opcode_candidate_results"]
+    )
+    if len(candidate_raw_probes) != expected_candidate_slots:
+        raise ValueError(
+            f"expected {expected_candidate_slots} candidate operand probes, "
+            f"got {len(candidate_raw_probes)}"
+        )
+    for probe in candidate_raw_probes:
+        result = probe["result"]
+        raw = result.get("raw_operands", [])
+        if (not result["parsed"] or len(raw) != 1 or raw[0]["operand"] != "$qraw"
+                or raw[0]["role"] not in {"src", "dst"}):
+            raise ValueError(
+                f"candidate Raw fallback changed: {probe['spelling']} "
+                f"operand slot {probe['operand_token_index']}"
+            )
     answers = sorted((REPO / "problems").rglob("answer.vsm"))
     audit["input_hashes"] = [
         {"path": path.relative_to(REPO).as_posix(), "sha256": sha(path)}
@@ -73,6 +93,12 @@ def main() -> None:
         "sha256": sha(SPELLINGS_SOURCE),
         "candidate_count": len(spellings),
     }
+    audit["opcode_candidate_raw_probe_scope"] = (
+        "Each operand token in one compiler-generated parser-arity fixture for "
+        "each syntax candidate was replaced by $qraw. This establishes parser "
+        "fallback behavior for those slots only; it does not establish assembler "
+        "acceptance, complete ISA spelling coverage, or legality."
+    )
     text = json.dumps(audit, indent=2, ensure_ascii=False) + "\n"
     if args.check:
         if not REFERENCE.exists() or REFERENCE.read_text() != text:

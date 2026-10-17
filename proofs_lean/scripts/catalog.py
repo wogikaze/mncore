@@ -432,6 +432,21 @@ def answer_parser_gap_audit() -> dict:
     raw_fallbacks = record.get("raw_operand_fallback_probes", [])
     if len(raw_fallbacks) != 5:
         raise ValueError("Rust Raw operand fallback probes are missing")
+    candidate_raw_probes = record.get("opcode_candidate_raw_operand_probes", [])
+    expected_candidate_raw_slots = sum(
+        expression["source_count"] + expression["destination_count"]
+        for row in record["opcode_candidate_results"]
+        for expression in row["result"].get("expressions", [])
+    )
+    if len(candidate_raw_probes) != expected_candidate_raw_slots:
+        raise ValueError("compiler-candidate Raw operand slot audit is incomplete")
+    if any(
+        not probe["result"].get("parsed")
+        or len(probe["result"].get("raw_operands", [])) != 1
+        or probe["result"]["raw_operands"][0].get("operand") != "$qraw"
+        for probe in candidate_raw_probes
+    ):
+        raise ValueError("compiler-candidate operand slot did not produce exactly one Raw")
     assembler_reference = json.loads(
         (ROOT / "evidence/isa-bounds/reference.json").read_text()
     )
@@ -477,6 +492,9 @@ def answer_parser_gap_audit() -> dict:
             for expression in row["result"].get("expressions", [])
         ),
         "raw_operand_fallback_probes": len(raw_fallbacks),
+        "syntax_candidate_raw_operand_slot_probes": len(candidate_raw_probes),
+        "syntax_candidate_raw_operand_slots_parsed": True,
+        "syntax_candidate_raw_operand_assembler_acceptance_tested": False,
         "unique_opcode_spellings": len(record["parsed_operator_spellings"]),
         "parser_source_destination_arity": dict(sorted(Counter(
             f"{expression['class']}:src{expression['source_count']}:dst{expression['destination_count']}"
