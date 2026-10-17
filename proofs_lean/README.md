@@ -349,6 +349,8 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   testcase-only Problemも作り、2行解の限定モデル上の正しさを証明した。testcaseの出力は
   `n0c0b0m0p0`だけを読むため、このファイルのWordsはそのPE一つをモデル化する。
   Rust `machine.rs`の`Words::get`が未割当PE SRAMをzeroで返す証拠を、初期LM1=0の選択に用いた。
+  `scripts/check_welcome_reference.py`は公式testcaseの入力と期待値を使い、公式assembler/emulatorで
+  2行解を実行して16出力語すべて一致することを確認する。これはtestcaseの実験照合であり、証明ではない。
   次の証明義務は、実際のVSM 2行がこの状態遷移を実現すること、
   全合法な1行命令（他の演算器・転送・同時発行を含む）では16語の+1を実現できないこと、
   ゼロコスト制御文を含む全ソースをスコア付き行へ意味保存で正規化できること。

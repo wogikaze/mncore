@@ -799,6 +799,8 @@ def coverage_catalog() -> dict:
             "all_input_correctness": "ProofsLean.MNCore.PlusOne.answer_correct",
             "testcase_input": [38, 28, 14, 42, 7, 20, 38, 18, 22, 10, 10, 23, 35, 39, 23, 2],
             "testcase_only_correctness": "ProofsLean.MNCore.PlusOne.answer_correct_for_testcase",
+            "official_emulator_check": "scripts/check_welcome_reference.py; matched all 16 output words",
+            "official_emulator_check_scope": "checked-in testcase only; not a universal proof",
             "observed_output_pe": "n0c0b0m0p0",
             "sram_zero_initialization_source": "viz/core/src/machine.rs",
             "sram_zero_initialization_source_sha256": digest(REPO / "viz/core/src/machine.rs"),
