@@ -1177,12 +1177,18 @@ theorem ParsedExpr.destinationsInFiniteEnvelope_finite :
   exact Finite.of_injective ParsedOperand.nodupListFiniteCode
     ParsedOperand.nodupListFiniteCode_injective
 
+/-- `mask` is an eight-bit bitmap of selected L1Bs (so the full set is 255);
+`immode` is the three-bit selector mode. -/
 def ParsedL1bSet.inFiniteEnvelope (set : ParsedL1bSet) : Prop :=
-  set.mask < 8 ∧ set.immode < 8
+  set.mask < 256 ∧ set.immode < 8
 
 def ParsedL1bSet.finiteCode
-    (set : {set : ParsedL1bSet // set.inFiniteEnvelope}) : Fin 8 × Fin 8 :=
+    (set : {set : ParsedL1bSet // set.inFiniteEnvelope}) : Fin 256 × Fin 8 :=
   (⟨set.1.mask, set.2.1⟩, ⟨set.1.immode, set.2.2⟩)
+
+theorem ParsedL1bSet.fullSelectorMask_inFiniteEnvelope :
+    ParsedL1bSet.inFiniteEnvelope ⟨255, 7⟩ := by
+  simp [ParsedL1bSet.inFiniteEnvelope]
 
 theorem ParsedL1bSet.finiteCode_injective : Function.Injective ParsedL1bSet.finiteCode := by
   intro a b equal
@@ -1216,7 +1222,7 @@ private theorem ParsedL1bSet.values_injective (a b : ParsedL1bSet)
       simp_all
 
 abbrev ParsedL2OpFiniteCode :=
-  Fin 10 × (Fin 8 × Fin 8) × (Fin 128 × Fin 8) × Fin 8 × Fin 512
+  Fin 10 × (Fin 256 × Fin 8) × (Fin 128 × Fin 8) × Fin 8 × Fin 512
 
 def ParsedL2Op.inFiniteEnvelope : ParsedL2Op → Prop
   | .bcast set | .bcast2 set | .distrib set | .imcast set => set.inFiniteEnvelope
@@ -1227,7 +1233,7 @@ def ParsedL2Op.inFiniteEnvelope : ParsedL2Op → Prop
 
 private def ParsedL2Op.finiteCode
     (op : {op : ParsedL2Op // op.inFiniteEnvelope}) : ParsedL2OpFiniteCode :=
-  let noSet : Fin 8 × Fin 8 := (0, 0)
+  let noSet : Fin 256 × Fin 8 := (0, 0)
   let noRrn : Fin 128 × Fin 8 := (0, 0)
   let noIndex : Fin 8 := 0
   let noOffset : Fin 512 := 0

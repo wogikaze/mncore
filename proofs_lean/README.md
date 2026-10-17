@@ -186,8 +186,10 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   一致やparser出力からの一般的な範囲保証までは証明していない。
   あわせて`Nat < bound`と、各要素がその範囲内にある`Option Nat`の有限性をbound一般で証明した。
   後者は行列row、L1BM addressなどのoptionalな数値fieldをまとめる部品として使う。
-  `ParsedL1bSet`についても、address/immodeの両方が`< 8`の有限carrierを証明した。
-  全64組の`0..7`は受理され、追加したassemble3境界プローブで各フィールドの8は拒否された。
+  `ParsedL1bSet`についても、8個のL1Bを表すbitmapが`< 256`、immodeが`< 8`の有限carrierを証明した。
+  全選択は`0xff`であり、assemble3は`@0/7`を含む全64組のaddress/immodeを受理し、各入力値8を拒否する。
+  `fullSelectorMask_inFiniteEnvelope`を回帰定理として置いた。Rust parser出力からLeanのbitmap表現への
+  一般的な対応証明はまだない。
   wait tagについては、受理範囲`1..255`とoptionalな同範囲の有限carrierを証明した。
   L1BMの`mabdiff`はassemble3で明示符号付きの`-255..255`全件を受理し、境界の`±256`を拒否することを確認し、
   `-256 ≤ mabdiff < 256`の部分型が有限であることを証明した。SDMの有用範囲は`0..15`。

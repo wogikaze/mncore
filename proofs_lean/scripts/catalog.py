@@ -823,9 +823,9 @@ def coverage_catalog() -> dict:
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
             "theorem": "ProofsLean.MNCore.Issue.ParsedL1bSet.inFiniteEnvelope_finite",
-            "scope": "Finite carrier for L1B sets with address and immode selectors below 8.",
-            "evidence": "proofs_lean/evidence/isa-bounds/reference.json: all 64 set pairs in 0..7 accepted; address 8 and immode 8 rejected.",
-            "missing": "Connection from every accepted L1/L2 operation to this set envelope and finite carriers for remaining operation fields.",
+            "scope": "Finite carrier for 8-bit L1B membership masks below 256 and immode selectors below 8.",
+            "evidence": "Rust `L1bSet.mask` is a u8 bitmap and `L1bSet::ALL` is 0xff; assemble3 accepts the all-eight selector `@0/7`, all 64 address/immode pairs in 0..7, and rejects address 8 and immode 8.",
+            "missing": "A formal parser-to-Lean representation theorem connecting accepted L1/L2 expressions to this bitmap envelope.",
         }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
