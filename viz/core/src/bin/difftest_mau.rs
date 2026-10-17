@@ -1,7 +1,7 @@
 //! Differential test of MAU vector instructions against the official emulator.
 //!
 //! Usage: difftest_mau <op> [runs] [seed]
-//!   op: fvfma | fvmul | fvadd | fvpassa | dvfmau | dvmulu | dvadd | dvpassa
+//!   op: fvfma | fvmul | fvadd | fvsub | fvpassa | dvfmau | dvmulu | dvadd | dvpassa
 //!
 //! Each run fills LM0 / LM1 / GRF0 of 64 PEs with random operands, executes 32 steps of the
 //! instruction into GRF1, and compares every result bit for bit with `float::vfma`.
@@ -54,6 +54,7 @@ enum Kind {
     Fma,
     Mul,
     Add,
+    Sub,
     Pass,
 }
 
@@ -66,6 +67,7 @@ fn main() {
         "fvfma" => (SINGLE, Kind::Fma, [true; 4]),
         "fvmul" => (SINGLE, Kind::Mul, [true; 4]),
         "fvadd" => (SINGLE, Kind::Add, [true; 4]),
+        "fvsub" => (SINGLE, Kind::Sub, [true; 4]),
         "fvpassa" => (SINGLE, Kind::Pass, [true; 4]),
         "dvfmau" => (DOUBLE, Kind::Fma, [true, true, false, false]),
         "dvmulu" => (DOUBLE, Kind::Mul, [true, true, false, false]),
@@ -122,6 +124,7 @@ fn main() {
                 Kind::Fma => format!("{op} $lm{w}v $ln{w}v $lr{w}v $ls{w}v\n"),
                 Kind::Mul => format!("{op} $lm{w}v $ln{w}v $ls{w}v\n"),
                 Kind::Add => format!("{op} $lm{w}v $lr{w}v $ls{w}v\n"),
+                Kind::Sub => format!("fvadd $lm{w}v -$lr{w}v $ls{w}v\n"),
                 Kind::Pass => format!("{op} $lm{w}v $ls{w}v\n"),
             };
         }
@@ -156,6 +159,7 @@ fn main() {
                         Kind::Fma => (float::decode(fmt, x), float::decode(fmt, y), float::decode(fmt, z)),
                         Kind::Mul => (float::decode(fmt, x), float::decode(fmt, y), zero),
                         Kind::Add => (float::decode(fmt, x), one, float::decode(fmt, z)),
+                        Kind::Sub => (float::decode(fmt, x), one, float::decode(fmt, z).negate()),
                         Kind::Pass => (float::decode(fmt, x), one, zero),
                     };
                     let expect = if mul_pes[pe % 4] {
