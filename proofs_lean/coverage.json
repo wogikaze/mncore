@@ -358,7 +358,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteInstructionLines.lean",
-      "sha256": "3a6cd271130a95f7620c80221d79272900c7657df60d7b8ecef68907079904cb",
+      "sha256": "1e7e3c2529594a7feec25d00d752941534532f0d5b3e19d78d9f630eb733179b",
       "theorem": "ProofsLean.MNCore.Issue.InstructionLine.costBelowEnvelope_finite",
       "scope": "Finite subtype of normalized instruction lines whose cost is below a fixed bound and whose payloads satisfy the proved finite envelopes.",
       "evidence": "Subtype of InstructionLine.inFiniteEnvelope_finite; cost is additionally restricted below the same bound.",
@@ -366,7 +366,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteInstructionLines.lean",
-      "sha256": "3a6cd271130a95f7620c80221d79272900c7657df60d7b8ecef68907079904cb",
+      "sha256": "1e7e3c2529594a7feec25d00d752941534532f0d5b3e19d78d9f630eb733179b",
       "theorem": "ProofsLean.MNCore.Issue.InstructionLine.legalCostBelowEnvelope_finite",
       "scope": "Finite subtype of legal normalized instruction lines below a fixed cost bound, conditional on a linewise envelope inclusion premise.",
       "evidence": "Applies the finite bounded carrier through an injective embedding using the supplied legal-line envelope premise.",
@@ -374,7 +374,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteInstructionLines.lean",
-      "sha256": "3a6cd271130a95f7620c80221d79272900c7657df60d7b8ecef68907079904cb",
+      "sha256": "1e7e3c2529594a7feec25d00d752941534532f0d5b3e19d78d9f630eb733179b",
       "theorem": "ProofsLean.MNCore.Issue.InstructionLine.legalCostBelowFinset",
       "scope": "Finset alphabet for exactly the legal normalized instruction lines below a cost bound, under the stated finite-envelope inclusion premise.",
       "evidence": "Builds the subtype Fintype and embeds its values through ProofsLean.finiteSubtypeAlphabet; membership is characterized by legality and cost below the bound.",

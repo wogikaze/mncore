@@ -212,6 +212,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   carrierへ接続した（`mv_size_0`、`mv_size_1`、`mv_size_32704`、`mv_size_32768`で境界を照合）。
   MVのアドレスなど残りのフィールドは有限な広い型のままである。現状は有限上位集合の証明であり、
   全合法lineが各payload envelopeに入ることや、固定costからnop count boundを得る証明は未接続。
+- `InstructionLine.localIssueLegal`を既存のtop-line checkerへ接続し、bound付きfinite envelope内で
+  PE同時発行checkerを通るline subtypeも有限であることを示した。これは局所issue条件だけであり、
+  parserからの包含、MV/operandのassembler対応、行をまたぐhazardを含むprogram legalityは未接続。
 - `ParsedExpr.inFiniteEnvelope`から正規化式のenvelopeへの写像を証明した。opcode固有source arityから
   source長3以下を導ける一方、opcode・operand・flushの数値範囲とdestinationの重複なしを、実parser出力に
   対して証明することは引き続きparser/assembler対応の未解決義務である。

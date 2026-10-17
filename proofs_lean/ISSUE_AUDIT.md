@@ -10,7 +10,7 @@ proof that `assemble3` accepts every modeled line.
 | SDM condition | Current implementation | Status for exhaustive enumeration |
 | --- | --- | --- |
 | At most one expression in each issue group | Rust and Lean group uniqueness checks | Partial: `l2bmdars` has a special assembler exception with another L2BM group, but the checker assigns it the ordinary L2BM group and rejects that case. This omits potentially legal lines. |
-| `nop` may issue only with `wait` | `ParsedLine` represents nop as a separate top-level line; `LegalParsedLine` checks only PE expression lists | Not connected at the top-level line/parser boundary. |
+| `nop` may issue only with `wait` | `ParsedLine`/`InstructionLine` use a dedicated nop-with-optional-wait constructor; PE and MV rows are distinct constructors | Shape and local checker are connected for normalized `InstructionLine`; source parser correspondence and whole-program legality remain open. |
 | At most two MAU groups, same precision | Rust and Lean count calculation, matrix-write, and matrix-read groups and compare precision | Mirrored for represented expression records. |
 | Vector FMA/MUL plus matrix write input agreement | Rust and Lean compare the structured operand at source 2 against the matrix-write source | Mirrored for structured operands; parser correspondence is still open. |
 | Each matrix register side appears at most once | Rust and Lean count X/Y matrix operands in sources and destinations | Mirrored for represented matrix operands. |
@@ -56,6 +56,13 @@ the sampled valid forms. The zero-count nop/wait form is rejected as well.
 This supports modeling nop-with-wait as a dedicated line constructor and MV
 as a separate line form, while parser-to-assembler correspondence remains to
 be proved.
+
+`InstructionLine.toParsed` connects normalized PE/nop/MV lines to the
+existing top-level issue checker. `InstructionLine.localIssueLegal` is
+equivalent to that check, and the subtype that also satisfies the bounded
+finite envelope has a finite carrier for every cost bound. This is only
+line-local legality; it does not include cross-line hazards or prove that all
+assembler-accepted source lines normalize into this subtype.
 
 SDM 3.6.1.15–3.6.1.18 assign the forward producers as follows: ALU→`$aluf`,
 MAU calculation→`$mauf`, L1BM-to-PE→`$lbf`, and matrix read→`$mreadf`.

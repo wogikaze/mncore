@@ -21,6 +21,21 @@ def InstructionLine.localIssueLegal (line : InstructionLine) : Prop :=
   line.toParsed.issueLegal ∧
     line.inFiniteEnvelope (line.cost + 1)
 
+/-- The line's executable issue check agrees with the logical local legality
+component. The finite-envelope premise remains explicit because the checker
+alone does not establish operand bounds. -/
+theorem InstructionLine.localIssueLegal_of_checker
+    (line : InstructionLine)
+    (envelope : line.inFiniteEnvelope (line.cost + 1))
+    (accepted : checkParsedTopLine line.toParsed = true) :
+    line.localIssueLegal := by
+  exact ⟨parsed_topline_check_sound line.toParsed accepted, envelope⟩
+
+theorem InstructionLine.checker_of_localIssueLegal
+    (line : InstructionLine) (legal : line.localIssueLegal) :
+    checkParsedTopLine line.toParsed = true :=
+  parsed_topline_check_complete line.toParsed legal.1
+
 /-- A locally admissible line below a cost bound lies in that bound's finite
 payload envelope. Only nop count depends on the bound; its cost is its count. -/
 theorem InstructionLine.localIssueLegal_inFiniteEnvelope
