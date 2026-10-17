@@ -4637,6 +4637,18 @@ def executeParsedIntegerExpr? (files : IntegerRegisterFiles)
       accesses.sourceY accesses.destination accesses.op false)
   | none => none
 
+def executeParsedIntegerExprCycles? (files : IntegerRegisterFiles)
+    (expression : ParsedExpr) (pe : Fin 4) (cycles : List (Fin 4))
+    (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
+    Option IntegerRegisterFiles :=
+  match cycles with
+  | [] => some files
+  | cycle :: rest =>
+      match executeParsedIntegerExpr? files expression pe cycle bar0 bar1 tWord with
+      | some (.ok nextFiles) =>
+          executeParsedIntegerExprCycles? nextFiles expression pe rest bar0 bar1 tWord
+      | _ => none
+
 def parsedIntegerRegisterOutput (files : IntegerRegisterFiles)
     (sourceX sourceY : DirectMemoryAccess) (precision : IntegerALU.Precision)
     (aluOp : IntegerALU.Op) (reduced : Bool) : IntegerALU.BusResult :=
@@ -5106,6 +5118,36 @@ theorem executeParsedIntegerExpr_readback (files : IntegerRegisterFiles)
       (unpackALUBus (parsedIntegerRegisterOutput files accesses.sourceX
         accesses.sourceY precision aluOp false).value) index within
 
+theorem executeParsedIntegerExprCycles_success (files : IntegerRegisterFiles)
+    (expression : ParsedExpr) (pe : Fin 4) (cycles : List (Fin 4))
+    (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
+    (lowered : ∀ cycle ∈ cycles, ∃ accesses,
+      ParsedExpr.toDirectIntegerAccesses? expression pe cycle bar0 bar1 tWord =
+        some accesses) :
+    ∃ result, executeParsedIntegerExprCycles? files expression pe cycles
+      bar0 bar1 tWord = some result := by
+  induction cycles generalizing files with
+  | nil => exact ⟨files, rfl⟩
+  | cons cycle rest ih =>
+      obtain ⟨accesses, headLowered⟩ := lowered cycle (by simp)
+      obtain ⟨precision, aluOp, selected⟩ := accesses.hasIntegerRequest
+      let nextFiles := writeDirectAccess files accesses.destination
+        (unpackALUBus (parsedIntegerRegisterOutput files accesses.sourceX
+          accesses.sourceY precision aluOp false).value)
+      have firstStep : executeParsedIntegerExpr? files expression pe cycle bar0 bar1 tWord =
+          some (.ok nextFiles) := by
+        simp [executeParsedIntegerExpr?, headLowered, nextFiles,
+          parsedIntegerRegisterStep_succeeds files accesses.sourceX accesses.sourceY
+            accesses.destination accesses.op false precision aluOp selected]
+      have tailLowered : ∀ next ∈ rest, ∃ nextAccesses,
+          ParsedExpr.toDirectIntegerAccesses? expression pe next bar0 bar1 tWord =
+            some nextAccesses := by
+        intro next member
+        exact lowered next (by simp [member])
+      obtain ⟨result, restSteps⟩ := ih nextFiles tailLowered
+      refine ⟨result, ?_⟩
+      simp [executeParsedIntegerExprCycles?, firstStep, restSteps]
+
 theorem ParsedExpr.toDirectIntegerAccesses?_preserves_op
     (expression : ParsedExpr) (pe cycle : Fin 4)
     (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
@@ -5284,6 +5326,18 @@ theorem executePlusOneParsedLine_cycle_writeback
           (ProofsLean.MNCore.Issue.plusOneParsedAt 8) accesses loweredAt
           locationsAt selected index indexBound
       exact ⟨accesses, nextFiles, loweredAt, executed, readback⟩
+
+theorem executePlusOneParsedLine_cycles_succeed
+    (state : ProofsLean.MNCore.PlusOne.State)
+    (line : ProofsLean.MNCore.PlusOne.Line) :
+    ∃ result, executeParsedIntegerExprCycles? (plusOneFiles state)
+      (ProofsLean.MNCore.Issue.plusOneParsedAt (8 * line.val)) 0
+      (List.finRange 4) 0 0 0 = some result := by
+  apply executeParsedIntegerExprCycles_success
+  intro cycle _member
+  obtain ⟨accesses, _, lowered, _, _⟩ :=
+    executePlusOneParsedLine_cycle_writeback state line cycle 0 (by decide)
+  exact ⟨accesses, lowered⟩
 
 theorem executeParsedIntegerMaskExpr_readback (files : IntegerRegisterFiles)
     (expression : ParsedExpr) (pe cycle : Fin 4) (bar0 bar1 : BitVec 12)
