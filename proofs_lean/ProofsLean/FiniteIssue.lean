@@ -741,7 +741,7 @@ def ParsedOperand.inFiniteEnvelope : ParsedOperand → Prop
   | .bar _ width mask => (width = 1 ∨ width = 2) ∧ optionMaskInFiniteEnvelope mask
   | .forward .. => True
   | .fixed .. => True
-  | .omr entry mask => 0 < entry ∧ entry < 16 ∧ optionMaskInFiniteEnvelope mask
+  | .omr entry mask => 0 < entry.val ∧ entry.val < 16 ∧ optionMaskInFiniteEnvelope mask
   | .matrix _ width row => (width = 1 ∨ width = 2 ∨ width = 4) ∧ optionNatInFiniteEnvelope 16 row
   | .nowrite => True
   | .l1bm width address => (width = 1 ∨ width = 2 ∨ width = 4) ∧ optionNatInFiniteEnvelope 8192 address
@@ -758,10 +758,10 @@ theorem ParsedOperand.bar_inFiniteEnvelope_iff (lm1 : Bool) (width : Nat)
     ParsedOperand.inFiniteEnvelope (.bar lm1 width mask) ↔
       (width = 1 ∨ width = 2) ∧ optionMaskInFiniteEnvelope mask := Iff.rfl
 
-theorem ParsedOperand.omr_inFiniteEnvelope_iff (entry : Nat)
+theorem ParsedOperand.omr_inFiniteEnvelope_iff (entry : Fin 256)
     (mask : Option ParsedMask) :
     ParsedOperand.inFiniteEnvelope (.omr entry mask) ↔
-      0 < entry ∧ entry < 16 ∧ optionMaskInFiniteEnvelope mask := Iff.rfl
+      0 < entry.val ∧ entry.val < 16 ∧ optionMaskInFiniteEnvelope mask := Iff.rfl
 
 theorem ParsedOperand.matrix_inFiniteEnvelope_iff (y : Bool) (width : Nat)
     (row : Option Nat) :
@@ -854,7 +854,7 @@ def ParsedOperand.finiteCode
       exact operandFixedCode kind.finiteCode
   | omr entry mask =>
       rcases bounds with ⟨positive, entryBound, maskBound⟩
-      exact operandOmrCode (⟨entry, entryBound⟩,
+      exact operandOmrCode (⟨entry.val, entryBound⟩,
         optionMaskFiniteCode ⟨mask, maskBound⟩)
   | matrix y width row =>
       rcases bounds with ⟨widthBound, rowBound⟩
@@ -905,6 +905,10 @@ theorem ParsedOperand.finiteCode_injective : Function.Injective ParsedOperand.fi
           exact congrArg Subtype.val (optionNatFiniteCode_injective 8192 addressEqual)
         | rcases codeEqual with ⟨addressEqual, l2bEqual⟩
           exact congrArg Subtype.val (optionNatFiniteCode_injective 8 l2bEqual)
+        | rcases codeEqual with ⟨entryValueEqual, maskEqual⟩
+          constructor
+          · exact Fin.ext entryValueEqual
+          · exact congrArg Subtype.val (optionMaskFiniteCode_injective maskEqual)
         | exact congrArg Fin.val codeEqual
 
 theorem ParsedOperand.inFiniteEnvelope_finite :

@@ -192,6 +192,7 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.InstructionLine.mem_localIssueLegalCostBelowAlphabet
 #print axioms ProofsLean.MNCore.Issue.ParsedMask.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.parseParsedPEMask_preserves_u8_selector_boundary
+#print axioms ProofsLean.MNCore.Issue.parseParsedPEOperand_omr_preserves_u8_boundary
 #print axioms ProofsLean.MNCore.Issue.ParsedMaskDirective.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.ParsedLine.updateMaskState_inFiniteEnvelope
 #print axioms ProofsLean.MNCore.Issue.projected_mask_applications_are_parser_masks

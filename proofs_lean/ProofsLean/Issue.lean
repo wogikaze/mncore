@@ -84,7 +84,7 @@ inductive ParsedOperand where
   | bar (lm1 : Bool) (width : Nat) (mask : Option ParsedMask)
   | forward (kind : ParsedForward) (neg ext rnd : Bool)
   | fixed (kind : ParsedFixed)
-  | omr (entry : Nat) (mask : Option ParsedMask)
+  | omr (entry : Fin 256) (mask : Option ParsedMask)
   | matrix (y : Bool) (width : Nat) (row : Option Nat)
   | nowrite
   | l1bm (width : Nat) (address : Option Nat)
@@ -160,7 +160,7 @@ def ParsedOperand.writeMask? : ParsedOperand → Option ParsedMask
   | _ => none
 
 def ParsedOperand.maskRegisterWrite? : ParsedOperand → Option Nat
-  | .omr entry _ => some entry
+  | .omr entry _ => some entry.val
   | _ => none
 
 def ParsedOperand.barWriteBank? : ParsedOperand → Option Bank

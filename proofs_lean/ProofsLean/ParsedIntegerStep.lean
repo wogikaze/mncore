@@ -440,7 +440,8 @@ def ParsedOperand.toUnmaskedDirectDestination? (operand : ParsedOperand)
 def ParsedOperand.toMaskRegisterEntry? (operand : ParsedOperand) : Option (Fin 15) :=
   match operand with
   | .omr entry _ =>
-      if h : 1 ≤ entry ∧ entry < 16 then some ⟨entry - 1, by omega⟩ else none
+      if h : 1 ≤ entry.val ∧ entry.val < 16 then
+        some ⟨entry.val - 1, by omega⟩ else none
   | _ => none
 
 def parsedOperandHasSingleLineWriteMask : ParsedOperand → Bool

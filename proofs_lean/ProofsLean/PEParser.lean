@@ -174,7 +174,7 @@ def parseParsedPEOperandBody? (body : List Char) (neg : Bool)
   else if let some fixed := parseParsedPEFixed? body then some fixed
   else if let some entryChars := parsedStripChars? ['o','m','r'] body then do
     let entry ← parsedPEU8? entryChars
-    some (.omr entry mask)
+    if h : entry < 256 then some (.omr ⟨entry, h⟩ mask) else none
   else if let some addressChars := parsedStripChars? ['d','a','r'] body then do
     let address ← parsedPEU32? addressChars
     some (.dar address)
@@ -237,6 +237,10 @@ theorem parseParsedPEOperand_fixed_and_nowrite :
 theorem parseParsedPEOperand_omr_mask :
     parseParsedPEOperand? "$omr15/ll1000tp" =
       some (.omr 15 (some (.pattern true 8))) := by decide
+
+theorem parseParsedPEOperand_omr_preserves_u8_boundary :
+    parseParsedPEOperand? "$omr255" = some (.omr ⟨255, by decide⟩ none) ∧
+      parseParsedPEOperand? "$omr256" = none := by decide
 
 theorem parseParsedPEMask_preserves_u8_selector_boundary :
     parseParsedPEMask? "$imr255" = some (.entry false ⟨255, by decide⟩) ∧

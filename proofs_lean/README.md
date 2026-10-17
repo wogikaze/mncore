@@ -188,9 +188,10 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   `index.val < 32`の有限部分型へ制限した。PE operand parserは`$imr255`まで保持し`$imr256`を拒否する。
   assemble3では`$imr0..31`が受理され`$imr32`が拒否される一方、OMR entryは別の範囲である。
   parser出力からassemble3の有効範囲への一般証明は未実装。
-  OMR indexについても`entry < 16`の有限部分型を証明し、assemble3の1..15受理・16拒否を根拠に登録した。
-  envelopeは0を除外している。assemblerの境界記録とは一致するが、parser/assemblerの受理集合全体との
-  一致やparser出力からの一般的な範囲保証までは証明していない。
+  OMR indexもRust parserの保持域に合わせて`Fin 256`にし、`1 ≤ entry.val < 16`の有限部分型を
+  証明した。PE operand parserは`$omr255`を保持し`$omr256`を拒否する。assemble3の1..15受理・
+  16拒否を根拠とするが、parser/assemblerの受理集合全体との一致や、OMR 0の拒否を含む
+  parser出力からの一般的な合法性証明までは未接続。
   あわせて`Nat < bound`と、各要素がその範囲内にある`Option Nat`の有限性をbound一般で証明した。
   後者は行列row、L1BM addressなどのoptionalな数値fieldをまとめる部品として使う。
   `ParsedL1bSet`についても、8個のL1Bを表すbitmapが`< 256`、immodeが`< 8`の有限carrierを証明した。

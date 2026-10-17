@@ -846,8 +846,8 @@ def coverage_catalog() -> dict:
             "parser_source": "proofs_lean/ProofsLean/PEParser.lean",
             "parser_source_sha256": digest(ROOT / "ProofsLean/PEParser.lean"),
             "parser_fragment": "parseParsedPEOperand?",
-            "scope": "Finite carrier for structured PE operands under numeric envelopes. The parsed mask selector constructor stores its parser u8 value in Fin 256; the legality envelope narrows it to values below 32. A separate Lean parser fragment handles forwarding/fixed, OMR, BAR, matrix, L1BM, L2BM, DAR, nowrite, and ordinary memory operands.",
-            "evidence": "proofs_lean/evidence/isa-bounds/reference.json: OMR and BAR width boundaries, exhaustive mask selectors 0..255 with exactly 0..31 accepted, matrix rows, L1BM and L2BM addresses/selectors, DAR addresses, memory widths 1/2/4, and PE region bounds. `PEParser.lean` checks `$imr255` is retained and `$imr256` is rejected.",
+            "scope": "Finite carrier for structured PE operands under numeric envelopes. Parsed mask selector and OMR indices store their parser u8 values in Fin 256; legality envelopes narrow them to mask values below 32 and OMR values 1..15. A separate Lean parser fragment handles forwarding/fixed, OMR, BAR, matrix, L1BM, L2BM, DAR, nowrite, and ordinary memory operands.",
+            "evidence": "proofs_lean/evidence/isa-bounds/reference.json: OMR and BAR width boundaries, exhaustive mask selectors 0..255 with exactly 0..31 accepted, matrix rows, L1BM and L2BM addresses/selectors, DAR addresses, memory widths 1/2/4, and PE region bounds. `PEParser.lean` checks `$imr255` and `$omr255` are retained while `$imr256` and `$omr256` are rejected.",
             "missing": "No theorem establishes that Rust/assembler accepted operands all parse inside this envelope; bank/opcode-specific alignment and width legality, finite PE lines, and complete machine-level legality remain open.",
         }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
