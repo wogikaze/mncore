@@ -4951,6 +4951,64 @@ theorem plusOneSecondLine_fourCycleLowering :
        some (⟨.lm0, .long, ⟨14, by decide⟩⟩,
         ⟨.lm0, .long, ⟨14, by decide⟩⟩, ⟨.lm1, .long, ⟨14, by decide⟩⟩)] := by decide
 
+
+theorem parsedIntegerAccesses_exists_of_locations
+    (lowered : Option ParsedIntegerAccesses)
+    (locations : DirectMemoryAccess × DirectMemoryAccess × DirectMemoryAccess)
+    (h : lowered.map ParsedIntegerAccesses.locations = some locations) :
+    ∃ accesses, lowered = some accesses ∧ accesses.locations = locations := by
+  cases lowered with
+  | none => simp at h
+  | some accesses => exact ⟨accesses, rfl, Option.some.inj h⟩
+
+theorem plusOneFirstLine_cycle_lowers (cycle : Fin 4) :
+    ∃ accesses,
+      ParsedExpr.toDirectIntegerAccesses?
+        ProofsLean.MNCore.Issue.plusOneParsed 0 cycle 0 0 0 = some accesses ∧
+      accesses.locations =
+        (⟨.lm0, .long, ⟨2 * cycle.val, by have hc := cycle.isLt; change 2 * cycle.val < 4096; omega⟩⟩,
+         ⟨.lm0, .long, ⟨2 * cycle.val, by have hc := cycle.isLt; change 2 * cycle.val < 4096; omega⟩⟩,
+         ⟨.lm1, .long, ⟨2 * cycle.val, by have hc := cycle.isLt; change 2 * cycle.val < 4096; omega⟩⟩) := by
+  have hc := cycle.isLt
+  have cases : cycle.val = 0 ∨ cycle.val = 1 ∨ cycle.val = 2 ∨ cycle.val = 3 := by omega
+  rcases cases with h0 | h1 | h2 | h3
+  · have same : cycle = 0 := Fin.ext h0
+    subst cycle
+    exact parsedIntegerAccesses_exists_of_locations _ _ (by decide)
+  · have same : cycle = 1 := Fin.ext h1
+    subst cycle
+    exact parsedIntegerAccesses_exists_of_locations _ _ (by decide)
+  · have same : cycle = 2 := Fin.ext h2
+    subst cycle
+    exact parsedIntegerAccesses_exists_of_locations _ _ (by decide)
+  · have same : cycle = 3 := Fin.ext h3
+    subst cycle
+    exact parsedIntegerAccesses_exists_of_locations _ _ (by decide)
+
+theorem plusOneSecondLine_cycle_lowers (cycle : Fin 4) :
+    ∃ accesses,
+      ParsedExpr.toDirectIntegerAccesses?
+        ProofsLean.MNCore.Issue.plusOneSecondParsed 0 cycle 0 0 0 = some accesses ∧
+      accesses.locations =
+        (⟨.lm0, .long, ⟨8 + 2 * cycle.val, by have hc := cycle.isLt; change 8 + 2 * cycle.val < 4096; omega⟩⟩,
+         ⟨.lm0, .long, ⟨8 + 2 * cycle.val, by have hc := cycle.isLt; change 8 + 2 * cycle.val < 4096; omega⟩⟩,
+         ⟨.lm1, .long, ⟨8 + 2 * cycle.val, by have hc := cycle.isLt; change 8 + 2 * cycle.val < 4096; omega⟩⟩) := by
+  have hc := cycle.isLt
+  have cases : cycle.val = 0 ∨ cycle.val = 1 ∨ cycle.val = 2 ∨ cycle.val = 3 := by omega
+  rcases cases with h0 | h1 | h2 | h3
+  · have same : cycle = 0 := Fin.ext h0
+    subst cycle
+    exact parsedIntegerAccesses_exists_of_locations _ _ (by decide)
+  · have same : cycle = 1 := Fin.ext h1
+    subst cycle
+    exact parsedIntegerAccesses_exists_of_locations _ _ (by decide)
+  · have same : cycle = 2 := Fin.ext h2
+    subst cycle
+    exact parsedIntegerAccesses_exists_of_locations _ _ (by decide)
+  · have same : cycle = 3 := Fin.ext h3
+    subst cycle
+    exact parsedIntegerAccesses_exists_of_locations _ _ (by decide)
+
 theorem direct_access_write_readback (files : IntegerRegisterFiles)
     (destination : DirectMemoryAccess) (data : WordBus) (index : Fin 4)
     (within : index.val < count destination.bank destination.width) :

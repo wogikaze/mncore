@@ -523,6 +523,9 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.plusOneFiles_lm1_word
 #print axioms ProofsLean.MNCore.PEMemory.plusOneFirstLine_fourCycleLowering
 #print axioms ProofsLean.MNCore.PEMemory.plusOneSecondLine_fourCycleLowering
+#print axioms ProofsLean.MNCore.PEMemory.parsedIntegerAccesses_exists_of_locations
+#print axioms ProofsLean.MNCore.PEMemory.plusOneFirstLine_cycle_lowers
+#print axioms ProofsLean.MNCore.PEMemory.plusOneSecondLine_cycle_lowers
 #print axioms ProofsLean.MNCore.PEMemory.integerFlagsVector_bit0
 #print axioms ProofsLean.MNCore.PEMemory.integerFlagsVector_bit1
 #print axioms ProofsLean.MNCore.PEMemory.integerFlagsVector_bit2
