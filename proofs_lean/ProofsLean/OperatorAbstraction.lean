@@ -204,6 +204,7 @@ flags produces a `BusResult`). This companion abstraction keeps an evaluator,
 an exact constant result when available, and a conservative dependency set
 without requiring input and output types to be equal. -/
 structure AbstractComputation (Atom : Type u) (Input : Type v) (Output : Type w) where
+  producer : UnitKind
   run : (Atom → Input) → Output
   dependencies : List Atom
   constantValue : Option Output
@@ -212,78 +213,91 @@ namespace AbstractComputation
 
 variable {Atom : Type u} {Input : Type v} {Output : Type w}
 
-def constant (value : Output) : AbstractComputation Atom Input Output :=
-  ⟨fun _ => value, [], some value⟩
+def constant (unit : UnitKind) (value : Output) : AbstractComputation Atom Input Output :=
+  ⟨unit, fun _ => value, [], some value⟩
 
 def evaluate (computation : AbstractComputation Atom Input Output)
     (environment : Atom → Input) : Output :=
   computation.run environment
 
-def binary (operation : Input → Input → Output)
+def binary (unit : UnitKind) (operation : Input → Input → Output)
     (left right : AbstractValue Atom Input) : AbstractComputation Atom Input Output :=
   let folded := match left.expression, right.expression with
     | .constant x, .constant y => some (operation x y)
     | _, _ => none
-  ⟨fun environment => operation (left.evaluate environment) (right.evaluate environment),
+  ⟨unit, fun environment => operation (left.evaluate environment) (right.evaluate environment),
     left.dependencies ++ right.dependencies, folded⟩
 
-def unary (operation : Input → Output) (input : AbstractValue Atom Input) :
+def unary (unit : UnitKind) (operation : Input → Output) (input : AbstractValue Atom Input) :
     AbstractComputation Atom Input Output :=
   let folded := match input.expression with
     | .constant value => some (operation value)
     | _ => none
-  ⟨fun environment => operation (input.evaluate environment), input.dependencies, folded⟩
+  ⟨unit, fun environment => operation (input.evaluate environment), input.dependencies, folded⟩
 
-def ternary (operation : Input → Input → Input → Output)
+def ternary (unit : UnitKind) (operation : Input → Input → Input → Output)
     (first second third : AbstractValue Atom Input) :
     AbstractComputation Atom Input Output :=
   let folded := match first.expression, second.expression, third.expression with
     | .constant x, .constant y, .constant z => some (operation x y z)
     | _, _, _ => none
-  ⟨fun environment => operation (first.evaluate environment)
+  ⟨unit, fun environment => operation (first.evaluate environment)
       (second.evaluate environment) (third.evaluate environment),
     first.dependencies ++ second.dependencies ++ third.dependencies, folded⟩
 
-theorem binary_evaluation (operation : Input → Input → Output)
+theorem binary_records_producer (unit : UnitKind) (operation : Input → Input → Output)
+    (left right : AbstractValue Atom Input) :
+    (binary unit operation left right).producer = unit := rfl
+
+theorem unary_records_producer (unit : UnitKind) (operation : Input → Output)
+    (input : AbstractValue Atom Input) :
+    (unary unit operation input).producer = unit := rfl
+
+theorem ternary_records_producer (unit : UnitKind)
+    (operation : Input → Input → Input → Output)
+    (first second third : AbstractValue Atom Input) :
+    (ternary unit operation first second third).producer = unit := rfl
+
+theorem binary_evaluation (unit : UnitKind) (operation : Input → Input → Output)
     (left right : AbstractValue Atom Input) (environment : Atom → Input) :
-    (binary operation left right).evaluate environment =
+    (binary unit operation left right).evaluate environment =
       operation (left.evaluate environment) (right.evaluate environment) := rfl
 
-theorem unary_evaluation (operation : Input → Output)
+theorem unary_evaluation (unit : UnitKind) (operation : Input → Output)
     (input : AbstractValue Atom Input) (environment : Atom → Input) :
-    (unary operation input).evaluate environment = operation (input.evaluate environment) := rfl
+    (unary unit operation input).evaluate environment = operation (input.evaluate environment) := rfl
 
-theorem ternary_evaluation (operation : Input → Input → Input → Output)
+theorem ternary_evaluation (unit : UnitKind) (operation : Input → Input → Input → Output)
     (first second third : AbstractValue Atom Input) (environment : Atom → Input) :
-    (ternary operation first second third).evaluate environment =
+    (ternary unit operation first second third).evaluate environment =
       operation (first.evaluate environment) (second.evaluate environment)
         (third.evaluate environment) := rfl
 
-theorem binary_constants_exact (operation : Input → Input → Output)
-    (unit : UnitKind) (left right : Input) :
-    (binary operation (AbstractValue.constant (Atom := Atom) unit left)
-      (AbstractValue.constant (Atom := Atom) unit right)).constantValue =
+theorem binary_constants_exact (unit inputUnit : UnitKind)
+    (operation : Input → Input → Output) (left right : Input) :
+    (binary unit operation (AbstractValue.constant (Atom := Atom) inputUnit left)
+      (AbstractValue.constant (Atom := Atom) inputUnit right)).constantValue =
         some (operation left right) := rfl
 
-theorem unary_constants_exact (operation : Input → Output) (unit : UnitKind)
+theorem unary_constants_exact (unit inputUnit : UnitKind) (operation : Input → Output)
     (input : Input) :
-    (unary operation (AbstractValue.constant (Atom := Atom) unit input)).constantValue =
+    (unary unit operation (AbstractValue.constant (Atom := Atom) inputUnit input)).constantValue =
       some (operation input) := rfl
 
-theorem ternary_constants_exact (operation : Input → Input → Input → Output)
-    (unit : UnitKind) (first second third : Input) :
-    (ternary operation (AbstractValue.constant (Atom := Atom) unit first)
-      (AbstractValue.constant (Atom := Atom) unit second)
-      (AbstractValue.constant (Atom := Atom) unit third)).constantValue =
+theorem ternary_constants_exact (unit inputUnit : UnitKind)
+    (operation : Input → Input → Input → Output) (first second third : Input) :
+    (ternary unit operation (AbstractValue.constant (Atom := Atom) inputUnit first)
+      (AbstractValue.constant (Atom := Atom) inputUnit second)
+      (AbstractValue.constant (Atom := Atom) inputUnit third)).constantValue =
         some (operation first second third) := rfl
 
-theorem binary_dependencies_are_sound (operation : Input → Input → Output)
+theorem binary_dependencies_are_sound (unit : UnitKind) (operation : Input → Input → Output)
     (left right : AbstractValue Atom Input)
     (leftEnvironment rightEnvironment : Atom → Input)
-    (agree : ∀ atom, atom ∈ (binary operation left right).dependencies →
+    (agree : ∀ atom, atom ∈ (binary unit operation left right).dependencies →
       leftEnvironment atom = rightEnvironment atom) :
-    (binary operation left right).evaluate leftEnvironment =
-      (binary operation left right).evaluate rightEnvironment := by
+    (binary unit operation left right).evaluate leftEnvironment =
+      (binary unit operation left right).evaluate rightEnvironment := by
   simp only [binary_evaluation]
   congr 1
   · apply left.depends_only_on_inputs leftEnvironment rightEnvironment
@@ -293,26 +307,27 @@ theorem binary_dependencies_are_sound (operation : Input → Input → Output)
     intro atom member
     exact agree atom (by simp [binary, member])
 
-theorem unary_dependencies_are_sound (operation : Input → Output)
+theorem unary_dependencies_are_sound (unit : UnitKind) (operation : Input → Output)
     (input : AbstractValue Atom Input)
     (leftEnvironment rightEnvironment : Atom → Input)
-    (agree : ∀ atom, atom ∈ (unary operation input).dependencies →
+    (agree : ∀ atom, atom ∈ (unary unit operation input).dependencies →
       leftEnvironment atom = rightEnvironment atom) :
-    (unary operation input).evaluate leftEnvironment =
-      (unary operation input).evaluate rightEnvironment := by
+    (unary unit operation input).evaluate leftEnvironment =
+      (unary unit operation input).evaluate rightEnvironment := by
   rw [unary_evaluation, unary_evaluation]
   congr 1
   apply input.depends_only_on_inputs leftEnvironment rightEnvironment
   intro atom member
   exact agree atom (by simpa [unary] using member)
 
-theorem ternary_dependencies_are_sound (operation : Input → Input → Input → Output)
+theorem ternary_dependencies_are_sound (unit : UnitKind)
+    (operation : Input → Input → Input → Output)
     (first second third : AbstractValue Atom Input)
     (leftEnvironment rightEnvironment : Atom → Input)
-    (agree : ∀ atom, atom ∈ (ternary operation first second third).dependencies →
+    (agree : ∀ atom, atom ∈ (ternary unit operation first second third).dependencies →
       leftEnvironment atom = rightEnvironment atom) :
-    (ternary operation first second third).evaluate leftEnvironment =
-      (ternary operation first second third).evaluate rightEnvironment := by
+    (ternary unit operation first second third).evaluate leftEnvironment =
+      (ternary unit operation first second third).evaluate rightEnvironment := by
   have firstAgrees : ∀ atom, atom ∈ first.dependencies →
       leftEnvironment atom = rightEnvironment atom := by
     intro atom member

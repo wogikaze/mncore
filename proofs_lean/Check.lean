@@ -81,10 +81,13 @@ import Lean
 #print axioms ProofsLean.MNCore.UnitKind.mem_all
 #print axioms ProofsLean.MNCore.AbstractComputation.binary_constants_exact
 #print axioms ProofsLean.MNCore.AbstractComputation.binary_dependencies_are_sound
+#print axioms ProofsLean.MNCore.AbstractComputation.binary_records_producer
 #print axioms ProofsLean.MNCore.AbstractComputation.unary_constants_exact
 #print axioms ProofsLean.MNCore.AbstractComputation.unary_dependencies_are_sound
+#print axioms ProofsLean.MNCore.AbstractComputation.unary_records_producer
 #print axioms ProofsLean.MNCore.AbstractComputation.ternary_constants_exact
 #print axioms ProofsLean.MNCore.AbstractComputation.ternary_dependencies_are_sound
+#print axioms ProofsLean.MNCore.AbstractComputation.ternary_records_producer
 #print axioms ProofsLean.MNCore.IntegerALU.abstractEvaluate_evaluation
 #print axioms ProofsLean.MNCore.IntegerALU.abstractEvaluate_constants_exact
 #print axioms ProofsLean.MNCore.IntegerALU.abstractEvaluate_dependencies_are_sound

@@ -128,7 +128,7 @@ def abstractEvaluate {Atom : Type}
     (precision : Precision) (op : Op) (reduced : Bool)
     (x y : ProofsLean.MNCore.AbstractValue Atom Bus) :
     ProofsLean.MNCore.AbstractComputation Atom Bus BusResult :=
-  ProofsLean.MNCore.AbstractComputation.binary
+  ProofsLean.MNCore.AbstractComputation.binary ProofsLean.MNCore.UnitKind.integerAlu
     (fun x y => evaluateBus precision op x y reduced) x y
 
 theorem abstractEvaluate_evaluation {Atom : Type}
@@ -138,6 +138,7 @@ theorem abstractEvaluate_evaluation {Atom : Type}
     (abstractEvaluate precision op reduced x y).evaluate environment =
       evaluateBus precision op (x.evaluate environment) (y.evaluate environment) reduced := by
   exact ProofsLean.MNCore.AbstractComputation.binary_evaluation
+    ProofsLean.MNCore.UnitKind.integerAlu
     (fun (x y : Bus) => evaluateBus precision op x y reduced) x y environment
 
 theorem abstractEvaluate_constants_exact {Atom : Type}
@@ -157,6 +158,7 @@ theorem abstractEvaluate_dependencies_are_sound {Atom : Type}
     (abstractEvaluate precision op reduced x y).evaluate leftEnvironment =
       (abstractEvaluate precision op reduced x y).evaluate rightEnvironment :=
   ProofsLean.MNCore.AbstractComputation.binary_dependencies_are_sound
+    ProofsLean.MNCore.UnitKind.integerAlu
     (fun (x y : Bus) => evaluateBus precision op x y reduced) x y
     leftEnvironment rightEnvironment agree
 
