@@ -261,6 +261,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   cost bound未満の行がMathlib `Fintype`由来の有限alphabetで覆われること、およびその行集合が有限であることを証明した。
   これはnormalized-line上の有限性射影であり、source parser/assemblerとの対応や、完全な`MNCore.machine`
   の合法性・実行意味論はまだ接続していない。
+- `scripts/check_manual_alu_inventory.py`: SDM表3.9のALU opcode集合をコンパイラ定義と比較し、精度・符号指定を
+  展開した136綴りがparser監査候補に含まれることを検査する。現状はALU opcode表だけの棚卸しであり、
+  全命令形式・全operand形・assembler受理の完全性証明ではない。
 - B3の境界: PE行の同時発行違反は行ごとの`Issue.Legal`、行間hazard違反はプログラム全体の
   静的assembler legalityに含める方針とする。hazardは`step`の実行失敗ではない。Rustの`api::trace`は
   hazardを結果に報告し、`hazard_check`はnopを1 step削った変種のassembler受理と解析結果の一致を照合する。
