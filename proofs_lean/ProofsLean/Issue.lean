@@ -151,6 +151,10 @@ def ParsedOperand.peSourceRole : ParsedOperand → Prop
   | .forward .. => True
   | _ => False
 
+def ParsedOperand.isMreadf : ParsedOperand → Bool
+  | .forward .mreadf .. => true
+  | _ => false
+
 def ParsedOperand.writeMask? : ParsedOperand → Option ParsedMask
   | .mem _ _ _ _ mask | .bar _ _ mask | .omr _ mask => mask
   | _ => none
@@ -715,6 +719,30 @@ def ParsedOp.sourceRoleScreen : ParsedOp → List ParsedOperand → ParsedOperan
       | .darw => False
   | _, _, _ => True
 
+/-- SDM 3.6.1.18 permits `$mreadf` only at source position zero of an ALU
+expression. Other forwarding operands have no such position restriction. -/
+def ParsedOp.forwardingSourcePositionsValid (op : ParsedOp)
+    (sources : List ParsedOperand) : Prop :=
+  match op with
+  | .alu .. => ∀ operand ∈ sources.drop 1, operand.isMreadf = false
+  | _ => ∀ operand ∈ sources, operand.isMreadf = false
+
+theorem ParsedOp.mreadf_at_first_alu_source_is_valid :
+    ParsedOp.forwardingSourcePositionsValid (.alu .add none false none)
+      [.forward .mreadf false false false, .mem ⟨.lm0, ⟨1, 0, 0, 0, 0, false, none⟩⟩ false false false none] := by
+  simp [ParsedOp.forwardingSourcePositionsValid, ParsedOperand.isMreadf]
+
+theorem ParsedOp.mreadf_at_second_alu_source_is_invalid :
+    ¬ ParsedOp.forwardingSourcePositionsValid (.alu .add none false none)
+      [.mem ⟨.lm0, ⟨1, 0, 0, 0, 0, false, none⟩⟩ false false false none,
+       .forward .mreadf false false false] := by
+  simp [ParsedOp.forwardingSourcePositionsValid, ParsedOperand.isMreadf]
+
+theorem ParsedOp.mreadf_non_alu_source_is_invalid :
+    ¬ ParsedOp.forwardingSourcePositionsValid (.l1bm (.reduce
+      ⟨'f', .fadd⟩ false)) [.forward .mreadf false false false] := by
+  simp [ParsedOp.forwardingSourcePositionsValid, ParsedOperand.isMreadf]
+
 theorem ParsedOp.l2bm_dars_source_role (operand : ParsedOperand) :
     ParsedOp.sourceRoleScreen (.l2bm .dars) [] operand = operand.l2bmSourceRole := rfl
 
@@ -806,6 +834,9 @@ def ParsedExpr.sourcesPassRoleScreen (expression : ParsedExpr) : Prop :=
   ∀ operand ∈ expression.sources,
     expression.op.sourceRoleScreen expression.sources operand
 
+def ParsedExpr.forwardingSourcePositionsValid (expression : ParsedExpr) : Prop :=
+  expression.op.forwardingSourcePositionsValid expression.sources
+
 def ParsedExpr.maskApplications (expression : ParsedExpr) : List ParsedMask :=
   (expression.sources ++ expression.destinations).filterMap ParsedOperand.writeMask? ++
     expression.flush.toList
@@ -880,6 +911,9 @@ def NormalizedExpr.sourcesPassRoleScreen (expression : NormalizedExpr) : Prop :=
   ∀ operand ∈ expression.sources,
     expression.op.sourceRoleScreen expression.sources operand
 
+def NormalizedExpr.forwardingSourcePositionsValid (expression : NormalizedExpr) : Prop :=
+  expression.op.forwardingSourcePositionsValid expression.sources
+
 def ParsedExpr.normalize (expression : ParsedExpr) : NormalizedExpr :=
   ⟨expression.op, expression.sources, expression.destinations, expression.flush⟩
 
@@ -931,6 +965,12 @@ theorem ParsedExpr.normalize_sourcesPassRoleScreen
     (roles : expression.sourcesPassRoleScreen) :
     expression.normalize.sourcesPassRoleScreen := by
   exact roles
+
+theorem ParsedExpr.normalize_forwardingSourcePositionsValid
+    (expression : ParsedExpr)
+    (positions : expression.forwardingSourcePositionsValid) :
+    expression.normalize.forwardingSourcePositionsValid := by
+  exact positions
 
 theorem NormalizedExpr.parserSourceArityValid_length_le_three
     (expression : NormalizedExpr)

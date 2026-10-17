@@ -1427,6 +1427,7 @@ def NormalizedExpr.inFiniteEnvelope (expression : NormalizedExpr) : Prop :=
   expression.op.inFiniteEnvelope ∧
     expression.parserSourceArityValid ∧
     expression.sourcesPassRoleScreen ∧
+    expression.forwardingSourcePositionsValid ∧
     expression.blockDestinationArityValid ∧
     expression.sources.length ≤ 3 ∧
     (∀ operand ∈ expression.sources, operand.inFiniteEnvelope) ∧
@@ -1444,6 +1445,7 @@ def ParsedExpr.inFiniteEnvelope (expression : ParsedExpr) : Prop :=
   expression.op.inFiniteEnvelope ∧
     expression.parserSourceArityValid ∧
     expression.sourcesPassRoleScreen ∧
+    expression.forwardingSourcePositionsValid ∧
     expression.blockDestinationArityValid ∧
     (∀ operand ∈ expression.sources, operand.inFiniteEnvelope) ∧
     expression.destinations.Nodup ∧
@@ -1455,7 +1457,7 @@ def ParsedExpr.inFiniteEnvelope (expression : ParsedExpr) : Prop :=
 theorem ParsedExpr.inFiniteEnvelope_destinationRolesPassScreen
     (expression : ParsedExpr) (envelope : expression.inFiniteEnvelope) :
     expression.destinationsPassRoleScreen := by
-  rcases envelope with ⟨_, _, _, _, _, _, _, _, roles, _⟩
+  rcases envelope with ⟨_, _, _, _, _, _, _, _, _, roles, _⟩
   exact roles
 
 theorem ParsedExpr.inFiniteEnvelope_sourceRolesPassScreen
@@ -1464,13 +1466,19 @@ theorem ParsedExpr.inFiniteEnvelope_sourceRolesPassScreen
   rcases envelope with ⟨_, _, roles, _, _, _, _, _, _, _⟩
   exact roles
 
+theorem ParsedExpr.inFiniteEnvelope_forwardingSourcePositionsValid
+    (expression : ParsedExpr) (envelope : expression.inFiniteEnvelope) :
+    expression.forwardingSourcePositionsValid := by
+  rcases envelope with ⟨_, _, _, positions, _, _, _, _, _, _, _⟩
+  exact positions
+
 theorem ParsedExpr.normalize_inFiniteEnvelope (expression : ParsedExpr)
     (envelope : expression.inFiniteEnvelope) :
     expression.normalize.inFiniteEnvelope := by
   rcases expression with ⟨op, sources, destinations, flush, text⟩
-  rcases envelope with ⟨opBound, sourceArity, sourceRoles, destinationArity,
-    sourceBound, destinationNodup, destinationRoles, destinationBound, opcodeRoles,
-    flushBound⟩
+  rcases envelope with ⟨opBound, sourceArity, sourceRoles, sourcePositions,
+    destinationArity, sourceBound, destinationNodup, destinationRoles,
+    destinationBound, opcodeRoles, flushBound⟩
   have normalizedArity :
       (NormalizedExpr.mk op sources destinations flush).parserSourceArityValid :=
     sourceArity
@@ -1480,10 +1488,14 @@ theorem ParsedExpr.normalize_inFiniteEnvelope (expression : ParsedExpr)
   have normalizedSourceRoles :
       (NormalizedExpr.mk op sources destinations flush).sourcesPassRoleScreen :=
     sourceRoles
+  have normalizedSourcePositions :
+      (NormalizedExpr.mk op sources destinations flush).forwardingSourcePositionsValid :=
+    sourcePositions
   simp only [ParsedExpr.normalize, NormalizedExpr.inFiniteEnvelope]
   exact ⟨opBound,
     sourceArity,
     normalizedSourceRoles,
+    normalizedSourcePositions,
     normalizedDestinationArity,
     NormalizedExpr.parserSourceArityValid_length_le_three _ normalizedArity,
     sourceBound, destinationNodup, destinationRoles, destinationBound,
@@ -1500,9 +1512,9 @@ private def NormalizedExpr.finiteCode
     NormalizedExprFiniteCode := by
   rcases expression with ⟨expression, bounds⟩
   rcases expression with ⟨op, sources, destinations, flush⟩
-  rcases bounds with ⟨opBound, sourceArity, sourceRoles, destinationArity, sourceLength,
-    sourceBound, destinationNodup, destinationRoles, destinationBound, opcodeRoles,
-    flushBound⟩
+  rcases bounds with ⟨opBound, sourceArity, sourceRoles, sourcePositions,
+    destinationArity, sourceLength, sourceBound, destinationNodup,
+    destinationRoles, destinationBound, opcodeRoles, flushBound⟩
   exact (⟨op, opBound⟩,
     ⟨sources, sourceLength, sourceBound⟩,
     ⟨destinations, destinationNodup, destinationBound⟩,

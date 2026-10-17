@@ -15,7 +15,7 @@ proof that `assemble3` accepts every modeled line.
 | Vector FMA/MUL plus matrix write input agreement | Rust and Lean compare the structured operand at source 2 against the matrix-write source | Mirrored for structured operands; parser correspondence is still open. |
 | Each matrix register side appears at most once | Rust and Lean count X/Y matrix operands in sources and destinations | Mirrored for represented matrix operands. |
 | No two expressions write the same PE operand | PE-memory/BAR bank outputs, OMR writes, and implicit `$lbf` writes have separate uniqueness checks | `$lbf` writes from normal and turnaround L1BM groups and shared LM0/LM1 output banks (including `$mb`/`$nb`) are modeled; broader assembler/parser correspondence remains open. |
-| Reads from one PE operand use one region, including mask-flag reads | Ordinary PE-memory reads compare bank and region; mask reads separately require one width and one variable OMR entry; BAR writes exclude reads from their LM bank | Mask-flag and sampled BAR bank constraints are mirrored and assembler checked. Forwarding reads are not yet explicitly represented. |
+| Reads from one PE operand use one region, including mask-flag reads | Ordinary PE-memory reads compare bank and region; mask reads separately require one width and one variable OMR entry; BAR writes exclude reads from their LM bank | Memory and mask ports are mirrored; forwarding operands are fixed-region read-only values and can repeat. `$mreadf` is separately restricted to source 0 of ALU expressions, matching SDM 3.6.1.18. Parser correspondence remains open. |
 | LM0/LM1 read/write regions agree | Rust and Lean compare projected `.mem` accesses | Mirrored for projected accesses only. |
 | Immediate excludes LM0 access | Rust and Lean check projected `.mem` accesses | Mirrored for projected accesses only. |
 | At most one zero-flush mask | Rust and Lean count expressions with a flush | Mirrored for parser-produced flush metadata. |
@@ -57,6 +57,15 @@ This supports modeling nop-with-wait as a dedicated line constructor and MV
 as a separate line form, while parser-to-assembler correspondence remains to
 be proved.
 
+SDM 3.6.1.15–3.6.1.18 assign the forward producers as follows: ALU→`$aluf`,
+MAU calculation→`$mauf`, L1BM-to-PE→`$lbf`, and matrix read→`$mreadf`.
+Group uniqueness limits the ALU, MAU-calculation, and matrix-read producers;
+the separate `$lbf` check covers the normal and turnaround L1BM groups together.
+`$mreadf` is legal only as the first ALU source. The 84-case assembler-role
+record includes accepted `iadd $mreadf ...`, rejected second-source use, and
+rejected L1BM-reduction use. These are selected syntax probes, not a complete
+operand parser proof.
+
 The assembler accepts `gmfma ... $omr1` and `lpassa $lt $omr1` independently,
 but rejects their simultaneous issue with an `out_maskreg` conflict. The pair
 is also rejected when the destinations are `$omr1` and `$omr2`, which supports
@@ -73,9 +82,8 @@ other output forwarding registers are separated by their producer issue groups.
 
 1. Model the `l2bmdars` simultaneous-issue exception explicitly, or establish
    from the challenge submission contract that it cannot occur in candidate source.
-2. Finish the forwarding-port audit: confirm the implicit `$lbf` projection,
-   verify the `$aluf`, `$mauf`, and `$mreadf` producer mapping, and compare
-   remaining PE-operand reads and writes with `assemble3`.
+2. Compare remaining PE-operand reads and writes with `assemble3`, including
+   full parser-to-projection evidence for forwarding operands and producer mappings.
 3. Connect top-level line parsing, nop/wait combinations, and PE expression
    checking; compare boundary combinations with `assemble3`.
 4. Prove parser-to-projection correspondence before using the predicate in

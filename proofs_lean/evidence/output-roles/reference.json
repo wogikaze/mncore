@@ -9,7 +9,7 @@
     },
     {
       "path": "proofs_lean/scripts/check_output_roles_reference.py",
-      "sha256": "aae543042661e691a82a697d1f7c112510ade0db17ad45d2f0e9bd146f7483c9"
+      "sha256": "955043d92e28b9d3ebe94c0dc115ca132fd10b0ba9b45acd13764bd05dfffeb6"
     }
   ],
   "observations": [
@@ -471,6 +471,33 @@
       "returncode": -6,
       "words": null,
       "diagnostic": "LM0 Base address register can't be used as input."
+    },
+    {
+      "case": "mreadf_at_first_alu_source",
+      "source": "iadd $mreadf $m0 $n0",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
+    },
+    {
+      "case": "mreadf_at_second_alu_source",
+      "source": "iadd $m0 $mreadf $n0",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "invalid forward path code"
+    },
+    {
+      "case": "mreadf_rejected_by_l1bm_reduction",
+      "source": "l1bmrffadd $mreadf $lb0",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "invalid forward path code"
     },
     {
       "case": "l1bm_mwrite_wrong_direction",
