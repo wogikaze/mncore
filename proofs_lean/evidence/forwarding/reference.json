@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "recorded_at": "2026-10-15T17:04:02.697479+00:00",
+  "recorded_at": "2026-10-17T06:18:36.939569+00:00",
   "evidence_kind": "finite_forwarding_values_and_recognized_runtime_errors",
   "scope": "Explicit reference target for ALU/MAU/mread/L1-to-PE forwarding; absent mread output observed as zero; L1-to-PE absence unresolved; normal finite producer values, nop/noforward, discard/chain/write masks and flags-only writes; not full hazards or numerical poison",
   "cases": 42,
@@ -90,7 +90,7 @@
       "unresolved": false,
       "program": "programs/04-alu-disabled-write.vsm",
       "program_sha256": "6d51fcc0ed39c21e2f4524b6e2e97a83bb8e2ac32053cec84891c6c365a9c2e7",
-      "output_sha256": "c965471452dc27c39e21056ae62328f7fdb5beccf0ce3a57906e32228c74535f",
+      "output_sha256": "ed45ab85f83d85f7dd7674cb468e6d8c659e540d56a80f75ec15052e046993b1",
       "diagnostic": "[runtime error exception] : Accessing to IALU forwarding register failed. The error on the previous step is: IALU is disabled"
     },
     {
@@ -154,7 +154,7 @@
       "unresolved": false,
       "program": "programs/08-alu-disabled-chain.vsm",
       "program_sha256": "9184b1b4b1e51b720c9fb99a2b1a77fc4253e314c81b1fb639d9fb73ebff83ec",
-      "output_sha256": "d93d4a9ce663fb88f1987c71af38cffd9c335ebb5a7461b9a3e7fc44bdaeddd2",
+      "output_sha256": "a1c240c50cc10d1fd5a3afe465ac4d7c4ef2da0a8fdf6b4ae838ae62306fb659",
       "diagnostic": "[runtime error exception] : Accessing to IALU forwarding register failed. The error on the previous step is: Accessing to IALU forwarding register failed. The error on the previous step is: IALU is disabled"
     },
     {
@@ -170,7 +170,7 @@
       "unresolved": false,
       "program": "programs/09-alu-disabled-long-off.vsm",
       "program_sha256": "3be3f0289b87cb13f765cb2721635598ca0c1dcd269bcfd473729d42867c8950",
-      "output_sha256": "011bfb804a44dac8a1de48f26c87c8233737d4e389b4c27864e0bcdf12b513d1",
+      "output_sha256": "47ffedfa25c7e62d9e2f5e8496ad8cbe47a0b0343b7305f8dc58ec7809bb5741",
       "diagnostic": "[runtime error exception] : Accessing to IALU forwarding register failed. The error on the previous step is: IALU is disabled"
     },
     {
@@ -186,7 +186,7 @@
       "unresolved": false,
       "program": "programs/10-alu-disabled-flush-off.vsm",
       "program_sha256": "bdcec600125330282666c1c459a2d221bd8c752994551758254752a37b33ff13",
-      "output_sha256": "50869a8482c989fcc2b7723919e16da980156f8bee45ad8976fb95a7742d0bc7",
+      "output_sha256": "d9900373037706b11f478acb97c1a287e41ccc24b6dc18ef1fac55d7ba1fae71",
       "diagnostic": "[runtime error exception] : Accessing to IALU forwarding register failed. The error on the previous step is: IALU is disabled"
     },
     {
@@ -298,7 +298,7 @@
       "unresolved": false,
       "program": "programs/17-mau-disabled-write.vsm",
       "program_sha256": "985ea194b2009dcc376e3bb9bd14f53480b0cf468aa6f46d8a73701be60136d2",
-      "output_sha256": "382e351418d4af7671c5d96dce926367d67dff010356c5412d6583ba8324022b",
+      "output_sha256": "bb0254959b690553a11a3d8d55092d6731f19f71bb9ca9ac1c9fc8b6854db586",
       "diagnostic": "[runtime error exception] : Accessing to MAU forwarding register failed. The error on the previous step is: MAU is disabled"
     },
     {
@@ -362,7 +362,7 @@
       "unresolved": false,
       "program": "programs/21-mau-disabled-chain.vsm",
       "program_sha256": "598d10fa65d17d938bfa30ceca25281320b9185d1c5578facf08ad947d783ac6",
-      "output_sha256": "4ccb8a9c986fb14c4f4524860f2d8224059ea67ef05f54f0fd5c7307c376bf07",
+      "output_sha256": "caa973faeacf0d67a07a31230e155280ee9c4d1c99f4ccbdce1f84c3336ee78e",
       "diagnostic": "[runtime error exception] : Accessing to IALU forwarding register failed. The error on the previous step is: Accessing to MAU forwarding register failed. The error on the previous step is: MAU is disabled"
     },
     {
@@ -690,7 +690,7 @@
   "sources": [
     {
       "path": "proofs_lean/ProofsLean/IntegerALU.lean",
-      "sha256": "e4f0748c8d119a67d232cbaa3891dd072a80062ad474896fc3b952c84a8f5df2"
+      "sha256": "721bc9c529e3b916048f8a5ddb9f1e515f8cd67e8eede18afaff53fb0ce76786"
     },
     {
       "path": "proofs_lean/ProofsLean/Forwarding.lean",

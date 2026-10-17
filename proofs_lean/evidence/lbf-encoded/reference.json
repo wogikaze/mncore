@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "recorded_at": "2026-10-15T17:35:46.448408+00:00",
+  "recorded_at": "2026-10-17T06:18:50.657612+00:00",
   "evidence_kind": "unchanged_encoded_fragment_execution_not_vsm_legality_proof",
   "scope": "LBF retention/replacement across ordinary ALU/MAU/nop/noforward steps; unchanged 426-bit assembler-generated words; same emitted prefix as whole-source assembly; one observed PE/four cycles",
   "cases": 11,
@@ -360,7 +360,7 @@
     },
     {
       "path": "proofs_lean/ProofsLean/IntegerALU.lean",
-      "sha256": "e4f0748c8d119a67d232cbaa3891dd072a80062ad474896fc3b952c84a8f5df2"
+      "sha256": "721bc9c529e3b916048f8a5ddb9f1e515f8cd67e8eede18afaff53fb0ce76786"
     },
     {
       "path": "proofs_lean/lean-toolchain",

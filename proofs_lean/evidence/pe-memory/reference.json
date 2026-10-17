@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "recorded_at": "2026-10-15T15:49:29.784726+00:00",
+  "recorded_at": "2026-10-17T06:16:55.623743+00:00",
   "evidence_kind": "finite_lean_datapath_reference_comparison",
   "scope": "LM0/LM1/GRF0/GRF1/T raw reads via lpassa; 32/64/128-bit accesses; scalar/strided/wrapping/flat addresses; all four cycles; one PE; BAR=0, no indirect/madpe/masks/hazards",
   "programs": 51,
@@ -20,7 +20,7 @@
   "sources": [
     {
       "path": "proofs_lean/ProofsLean/IntegerALU.lean",
-      "sha256": "e4f0748c8d119a67d232cbaa3891dd072a80062ad474896fc3b952c84a8f5df2"
+      "sha256": "721bc9c529e3b916048f8a5ddb9f1e515f8cd67e8eede18afaff53fb0ce76786"
     },
     {
       "path": "proofs_lean/ProofsLean/PEMemory.lean",

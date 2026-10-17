@@ -160,6 +160,17 @@ theorem ibsl_is_32bit_lane_rotate (word : BitVec 64) :
   unfold ibsl swapHalfwordsWithin32
   bv_decide
 
+/-- `ibsl` is the two-word ALU rotate-left operation with the immediate bus
+written by line 1. This connects the answer datapath function to the existing
+integer execution semantics. -/
+theorem integerAlu_ibsl_matches (input : BitVec 64) :
+    (IntegerALU.evaluateBus .word (.shift .rotateLeft)
+      ⟨input, 0⟩ ⟨immediateWord ++ immediateWord, 0⟩ false).value.high = ibsl input := by
+  simp [ibsl, IntegerALU.evaluateBus, IntegerALU.lane,
+    IntegerALU.Precision.lanes, IntegerALU.Precision.width,
+    IntegerALU.evaluateLane, IntegerALU.shift, immediateWord,
+    List.range, List.range.loop]; bv_decide
+
 /-- The `[1,0,3,2]` destination selector exchanges the two 32-bit groups. -/
 def selector2103 (word : BitVec 64) : BitVec 64 := swap32 word
 
@@ -206,6 +217,17 @@ theorem mauf_count_selects_byte_rotation (word : BitVec 64) :
     sbslWithShift word mauShiftBus = sbsl word := by
   unfold sbslWithShift sbsl shiftHalfword mauShiftBus mauShiftWord
   bv_decide
+
+/-- `sbsl` is the four-halfword ALU rotate-left operation driven by the MAUF
+bus produced by the middle-line FMA. -/
+theorem integerAlu_sbsl_matches (input : BitVec 64) :
+    (IntegerALU.evaluateBus .half (.shift .rotateLeft)
+      ⟨input, 0⟩ ⟨mauShiftBus, 0⟩ false).value.high =
+      sbslWithShift input mauShiftBus := by
+  simp [sbslWithShift, shiftHalfword, IntegerALU.evaluateBus,
+    IntegerALU.lane, IntegerALU.Precision.lanes, IntegerALU.Precision.width,
+    IntegerALU.evaluateLane, IntegerALU.shift, mauShiftBus, mauShiftWord,
+    List.range, List.range.loop]; bv_decide
 
 def abstractMauShift {Atom : Type} : AbstractValue Atom (BitVec 64) :=
   let immediate := AbstractValue.constant UnitKind.integerAlu immediateBus

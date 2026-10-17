@@ -114,6 +114,8 @@ import Lean
 #print axioms ProofsLean.MNCore.ConvertEndian.mauf_count_selects_byte_rotation
 #print axioms ProofsLean.MNCore.ConvertEndian.abstractMauShift_evaluation
 #print axioms ProofsLean.MNCore.ConvertEndian.answerDatapath_is_byteSwap
+#print axioms ProofsLean.MNCore.ConvertEndian.integerAlu_ibsl_matches
+#print axioms ProofsLean.MNCore.ConvertEndian.integerAlu_sbsl_matches
 #print axioms ProofsLean.MNCore.ConvertEndian.answerDatapath_involutive
 #print axioms ProofsLean.MNCore.ConvertEndian.abstractConvertEndian_evaluation
 #print axioms ProofsLean.MNCore.ConvertEndian.abstractConvertEndian_is_byteSwap

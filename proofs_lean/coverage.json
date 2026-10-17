@@ -564,7 +564,7 @@
       "sha256": "cd13b07b3e94dceaddb4a8fea1b3bf7728dac5ed301c5c247a7324c495383866",
       "theorem": "ProofsLean.MNCore.Issue.ParsedL1bSet.inFiniteEnvelope_finite",
       "parser_source": "proofs_lean/ProofsLean/Issue.lean",
-      "parser_source_sha256": "1d8e92d9d15e6760eb69c88109cee56a7fb65c73325647502f734ea06eecab43",
+      "parser_source_sha256": "0b10e30ab80088247ab69f7e99db1bbb13ae8605df7fb351da1da7ced708dadd",
       "parser_fragment": "parseParsedL1bSet?, parseParsedL2Opcode?",
       "parser_range_theorem": "ProofsLean.MNCore.Issue.parsedL1bAddressModeSet_inFiniteEnvelope",
       "scope": "L1B membership masks are represented directly by Fin 256 and immode selectors by Fin 8; Lean parses canonical decimal address[/immode] and bracketed list selectors and covers every `parse_l2_opcode` branch of ParsedL2Op.",
@@ -576,7 +576,7 @@
       "sha256": "cd13b07b3e94dceaddb4a8fea1b3bf7728dac5ed301c5c247a7324c495383866",
       "theorem": "ProofsLean.MNCore.Issue.mabdiffInFiniteEnvelope_finite",
       "parser_source": "proofs_lean/ProofsLean/Issue.lean",
-      "parser_source_sha256": "1d8e92d9d15e6760eb69c88109cee56a7fb65c73325647502f734ea06eecab43",
+      "parser_source_sha256": "0b10e30ab80088247ab69f7e99db1bbb13ae8605df7fb351da1da7ced708dadd",
       "parser_fragment": "parsedMabdiff?, parseParsedL1Opcode?",
       "parser_range_theorem": "ProofsLean.MNCore.Issue.parsedMabdiff?_boundaries",
       "scope": "Finite subtype for signed L1BM MAB differences in [-255, 255].",
@@ -612,7 +612,7 @@
       "sha256": "cd13b07b3e94dceaddb4a8fea1b3bf7728dac5ed301c5c247a7324c495383866",
       "theorem": "ProofsLean.MNCore.Issue.ParsedL1Op.inFiniteEnvelope_finite",
       "parser_source": "proofs_lean/ProofsLean/Issue.lean",
-      "parser_source_sha256": "1d8e92d9d15e6760eb69c88109cee56a7fb65c73325647502f734ea06eecab43",
+      "parser_source_sha256": "0b10e30ab80088247ab69f7e99db1bbb13ae8605df7fb351da1da7ced708dadd",
       "parser_fragment": "parseParsedL1Opcode?",
       "scope": "Finite tagged carrier for all nine ParsedL1Op variants under the observed mab selector, RRN precision and MAB difference envelopes; parsed mwrite/m4write selectors use Fin 256.",
       "evidence": "proofs_lean/evidence/isa-bounds/reference.json: l1bmm/l1bmm4 selectors 0..15, signed mabdiff -255..255 in both gather/distribution operand directions, plus ParsedRrn's explicit ASCII precision envelope and finite opcode set. `Issue.lean` fixtures cover all nine Rust L1 opcode branches, direction-dependent d derived from the first typed operand, u8 selector parsing, signed offsets, RRN parsing, and round suffixes.",
@@ -639,7 +639,7 @@
       "sha256": "cd13b07b3e94dceaddb4a8fea1b3bf7728dac5ed301c5c247a7324c495383866",
       "theorem": "ProofsLean.MNCore.Issue.waitTagInFiniteEnvelope_finite",
       "parser_source": "proofs_lean/ProofsLean/Issue.lean",
-      "parser_source_sha256": "1d8e92d9d15e6760eb69c88109cee56a7fb65c73325647502f734ea06eecab43",
+      "parser_source_sha256": "0b10e30ab80088247ab69f7e99db1bbb13ae8605df7fb351da1da7ced708dadd",
       "parser_fragment": "parseParsedWaitTag?, parseParsedNopLine?",
       "parser_range_theorem": "ProofsLean.MNCore.Issue.parseParsedWaitTag_value_bounded",
       "parser_legality_theorem": "ProofsLean.MNCore.Issue.parseParsedNopLine_checked_wait_positive",
@@ -697,7 +697,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/ParsedIntegerStep.lean",
-      "sha256": "bbd0d4350e0f1498352ec347c1904a4df40e60f43dd86e286c4b29488f42960d",
+      "sha256": "5f8d1b74e82b64b29c9453c3b1683186542e7d7d4a3adab1c94f1efd6a1a93d3",
       "theorem": "ProofsLean.MNCore.PEMemory.parseMaskDirectiveOperator_width_inFiniteEnvelope",
       "scope": "The mask operator parser produces only width 2 or 4.",
       "evidence": "Direct case analysis of the operator parser: `ll` selects 4; `l` and the default form select 2.",
@@ -705,7 +705,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/ParsedIntegerStep.lean",
-      "sha256": "bbd0d4350e0f1498352ec347c1904a4df40e60f43dd86e286c4b29488f42960d",
+      "sha256": "5f8d1b74e82b64b29c9453c3b1683186542e7d7d4a3adab1c94f1efd6a1a93d3",
       "theorem": "ProofsLean.MNCore.PEMemory.parseMaskDirective_inFiniteEnvelope",
       "scope": "Every parsed mask directive with assembler-legal selector 0..31 satisfies the finite ParsedLine envelope; parsed selector values are stored in Fin 256 after `% 256`.",
       "evidence": "Lean connects parseMaskDirective? output to the operator-width theorem; the 0..31 selector condition comes from the official assemble3 boundary probes.",
@@ -739,13 +739,13 @@
   "datapath_fragments": [
     {
       "source": "proofs_lean/ProofsLean/IntegerALU.lean",
-      "sha256": "e4f0748c8d119a67d232cbaa3891dd072a80062ad474896fc3b952c84a8f5df2",
+      "sha256": "721bc9c529e3b916048f8a5ddb9f1e515f8cd67e8eede18afaff53fb0ce76786",
       "implemented": "16/32/64-bit inc/dec/add/sub/not/lnot/and/or/xor/integer max/min/passa/lsl/lsr/bsl/bsr/packbit; lane packing, replicated flags and LSB bypass",
       "scope": "Already-read and already-reduced buses only; not VSM instruction execution or legality",
       "missing": "Operand decoding/access/reduction, masks, timing/forwarding, parallel issue, all other ISA operations",
       "reference_experiment": {
         "path": "proofs_lean/evidence/integer-alu/reference.json",
-        "sha256": "94aa33bb853c09f2abc9cfeb7ba072fc585f895a2d5c1892627d3941d7a3dfcf",
+        "sha256": "570b66fd0524094daec975f2ef40d7fd7871cdbc10d55815683d9217e73687c8",
         "cases": 2880,
         "matched_cases": 2880,
         "unresolved_cases": 0,
@@ -761,7 +761,7 @@
       "missing": "Operand access, masks, timing, parallel issue, resolution of rotation LSB discrepancy",
       "reference_experiment": {
         "path": "proofs_lean/evidence/untyped-alu/reference.json",
-        "sha256": "2984e4fbf7c0aafb4a076df4b057085da37672beaad64602c88bc9a6731a08ac",
+        "sha256": "41fb203b74531964a55a8a326b4e4c5ca65eb95e1ddf2bda39186309af8bd52e",
         "cases": 384,
         "matched_cases": 384,
         "unresolved_cases": 0,
@@ -779,7 +779,7 @@
       "missing": "Complete operand decoding/legality, masks, precision conversion, read/write timing, forwarding, parallel-port checks and universal reference conformance",
       "reference_experiment": {
         "path": "proofs_lean/evidence/pe-memory/reference.json",
-        "sha256": "b95a5cacc289d44e401cbfbc1e5513f7f3f1d5c04bd4b502df87040e2fee3b5e",
+        "sha256": "0f0586b97dc10146bc1c5ca35d9a250d92b90c30542e4d637e691aba66096032",
         "cases": 204,
         "matched_cases": 204,
         "unresolved_cases": 0,
@@ -789,7 +789,7 @@
       "additional_reference_experiments": [
         {
           "path": "proofs_lean/evidence/dynamic-address/reference.json",
-          "sha256": "0a8abe15164ff5457f4875d3fe2a2d96324c52db7f5257c7fce923b3a61934bf",
+          "sha256": "8518dd0c4a6d9828a324b911097c6c598f0dd687f527bb63131c6843df400c8e",
           "cases": 1920,
           "matched_cases": 1920,
           "unresolved_cases": 0,
@@ -819,7 +819,7 @@
       "missing": "All masked destinations and width combinations, complete syntax/legality, poisoned values, timing and parallel-issue integration",
       "reference_experiment": {
         "path": "proofs_lean/evidence/masks/reference.json",
-        "sha256": "904679e14747497655a9e84c5e8dc2bfab5075501bbe7b884ff5ee8879912da5",
+        "sha256": "99a9a6b1681b64099387d8310e28c2ce09ded9c59594a16be52fa0319f8f8467",
         "cases": 768,
         "matched_cases": 768,
         "unresolved_cases": 0,
@@ -835,7 +835,7 @@
       "missing": "All initial state/encoding rules, exact memory timing, per-lane numerical poison and full instruction integration",
       "reference_experiment": {
         "path": "proofs_lean/evidence/forwarding/reference.json",
-        "sha256": "2d407e443c2dca6926aef55313c98dc35006f55434a19c3a937fb538429d6768",
+        "sha256": "a2578d7660a04ed6533929c009433f08772f56abf4d2c96b38ccabac3911dda2",
         "cases": 42,
         "matched_cases": 37,
         "unresolved_cases": 5,
@@ -851,7 +851,7 @@
       "missing": "Formal decoding/encoding correspondence and whole VSM legality",
       "reference_experiment": {
         "path": "proofs_lean/evidence/lbf-encoded/reference.json",
-        "sha256": "267123b5ffd7895fbbc6d26e41236e8e04212c873487f4ee706a8994ede51735",
+        "sha256": "9ca30f84e58af71e84b18db32da703ab36c6ed0ab49d3170bb372bebd8022d4e",
         "cases": 11,
         "matched_cases": 11,
         "whole_vsm_rejections": 8,
@@ -863,7 +863,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/Issue.lean",
-      "sha256": "1d8e92d9d15e6760eb69c88109cee56a7fb65c73325647502f734ea06eecab43",
+      "sha256": "0b10e30ab80088247ab69f7e99db1bbb13ae8605df7fb351da1da7ced708dadd",
       "implemented": "Full structural PE Op/Operand payload mirror, issue projection, abstract PE-line rules, and a partial parsed-op to integer-ALU bridge for supported L/I/S integer operations and packbit",
       "scope": "The Rust enum inventory is checked against Lean constructors. A separate partial executor covers supported integer ALU/zero/immediate expressions with direct PE-memory destinations, masks/flush and ordered multiple destinations; this is not full ISA semantics",
       "source_basis": [
@@ -877,7 +877,7 @@
         },
         {
           "source": "proofs_lean/ProofsLean/ParsedIntegerStep.lean",
-          "sha256": "bbd0d4350e0f1498352ec347c1904a4df40e60f43dd86e286c4b29488f42960d"
+          "sha256": "5f8d1b74e82b64b29c9453c3b1683186542e7d7d4a3adab1c94f1efd6a1a93d3"
         }
       ],
       "missing": "VSM parser correspondence, non-PE and matrix destinations, floating/MAU/L1/L2/MV execution, all assembler legality checks outside issue.rs, hardware correspondence and integration with the total instruction transition",
