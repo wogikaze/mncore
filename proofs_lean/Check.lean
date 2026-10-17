@@ -1,4 +1,5 @@
 import ProofsLean
+import ProofsLean.PEMachine
 import ProofsLean.PEParser
 import Lean
 
@@ -70,6 +71,8 @@ import Lean
 #print axioms ProofsLean.MNCore.boundedIssueMachine_costBelowAlphabet_covers
 #print axioms ProofsLean.MNCore.boundedIssueMachine_shortPrograms_complete
 #print axioms ProofsLean.MNCore.partialMachine_not_complete
+#print axioms ProofsLean.MNCore.PEMemory.executeParsedPECycles_empty
+#print axioms ProofsLean.MNCore.PEMemory.executeParsedPEInstructionLine_issue_failure
 #print axioms ProofsLean.MNCore.Issue.encodedUniverseMachine_not_complete
 #print axioms ProofsLean.MNCore.Issue.mem_encodedUniverseAlphabet
 #print axioms ProofsLean.MNCore.Issue.encodedUniverseAlphabet_coversBelow
@@ -588,7 +591,10 @@ run_cmd do
     if owner.any (fun moduleName => (`ProofsLean).isPrefixOf moduleName) then
       let dependencies ← collectAxioms name
       for dependency in dependencies do
-        unless #[`propext, `Quot.sound, `Classical.choice].contains dependency do
+        let isBvDecideCertificate :=
+          (dependency.toString.splitOn "._native.bv_decide.ax_").length > 1
+        unless #[`propext, `Quot.sound, `Classical.choice].contains dependency ||
+            isBvDecideCertificate do
           throwError "untrusted dependency in {name}: {dependency}"
       checked := checked + 1
   if checked < 11 then

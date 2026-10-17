@@ -25,6 +25,7 @@ import ProofsLean.MVSemantics
 import ProofsLean.RRN
 import ProofsLean.ControlNormalization
 import ProofsLean.ProgramLegality
+import ProofsLean.PEMachine
 import ProofsLean.MachineState
 import ProofsLean.Footprint
 import ProofsLean.PlusOne

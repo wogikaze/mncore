@@ -794,6 +794,11 @@ def coverage_catalog() -> dict:
             ],
             "initialization_policy": "unspecified_pending_judge_evidence",
             "connected_to_machine_step": False,
+            "partial_pe_step": {
+                "source": "ProofsLean/PEMachine.lean",
+                "scope": "one PE, four integer-register cycles; MV, forwarding, and hazards remain unknown",
+                "issue_failure_theorem": "ProofsLean.MNCore.PEMemory.executeParsedPEInstructionLine_issue_failure",
+            },
             "limitation": "Footprints are syntactic read/write candidates. The generic store frame lemma is not yet a frame theorem for an integrated instruction transition.",
         },
         "welcome_problem_specification": {
