@@ -53,6 +53,48 @@ def abstractMultiplySevenBus {Atom : Type}
     AbstractValue Atom (BitVec 64) :=
   AbstractValue.unary .floatingMau multiplySevenBus input
 
+abbrev Words := Fin 32 → BitVec 32
+
+/-- The four public `fvmul` lines each cover eight consecutive float words. -/
+def chunkIndex (line : Fin 4) (lane : Fin 8) : Fin 32 :=
+  ⟨8 * line.val + lane.val, by
+    have hl := line.isLt
+    have hw := lane.isLt
+    omega⟩
+
+theorem chunkIndex_injective (line₁ line₂ : Fin 4) (lane₁ lane₂ : Fin 8)
+    (equal : chunkIndex line₁ lane₁ = chunkIndex line₂ lane₂) :
+    line₁ = line₂ ∧ lane₁ = lane₂ := by
+  have values := congrArg Fin.val equal
+  simp only [chunkIndex, Fin.val_mk] at values
+  have lineEqual : line₁.val = line₂.val := by omega
+  have laneEqual : lane₁.val = lane₂.val := by omega
+  exact ⟨Fin.ext lineEqual, Fin.ext laneEqual⟩
+
+def vectorAnswer (input : Words) : Words := fun index =>
+  multiply (input index) seven
+
+def scheduledLane (input : Words) (line : Fin 4) (lane : Fin 8) : BitVec 32 :=
+  multiply (input (chunkIndex line lane)) seven
+
+theorem scheduledLane_correct (input : Words) (line : Fin 4) (lane : Fin 8) :
+    scheduledLane input line lane = vectorAnswer input (chunkIndex line lane) := rfl
+
+theorem chunkIndex_covers_all_words (index : Fin 32) :
+    ∃ line : Fin 4, ∃ lane : Fin 8, chunkIndex line lane = index := by
+  let line : Fin 4 := ⟨index.val / 8, by have hi := index.isLt; omega⟩
+  let lane : Fin 8 := ⟨index.val % 8, Nat.mod_lt _ (by decide)⟩
+  refine ⟨line, lane, ?_⟩
+  apply Fin.ext
+  simp [chunkIndex, line, lane]
+  omega
+
+theorem every_word_has_scheduled_answer (input : Words) (index : Fin 32) :
+    ∃ line : Fin 4, ∃ lane : Fin 8,
+      scheduledLane input line lane = vectorAnswer input index := by
+  obtain ⟨line, lane, covers⟩ := chunkIndex_covers_all_words index
+  exact ⟨line, lane, by rw [scheduledLane_correct, covers]⟩
+
 theorem abstractMultiplySevenBus_evaluation {Atom : Type}
     (input : AbstractValue Atom (BitVec 64))
     (environment : Atom → BitVec 64) :

@@ -122,6 +122,10 @@ import Lean
 #print axioms ProofsLean.MNCore.FloatMultiply.multiplySevenBus_low
 #print axioms ProofsLean.MNCore.FloatMultiply.abstractMultiplySevenBus_evaluation
 #print axioms ProofsLean.MNCore.FloatMultiply.abstractMultiplySevenBus_dependencies_are_sound
+#print axioms ProofsLean.MNCore.FloatMultiply.scheduledLane_correct
+#print axioms ProofsLean.MNCore.FloatMultiply.chunkIndex_injective
+#print axioms ProofsLean.MNCore.FloatMultiply.chunkIndex_covers_all_words
+#print axioms ProofsLean.MNCore.FloatMultiply.every_word_has_scheduled_answer
 #print axioms ProofsLean.MNCore.Issue.encodedUniverseMachine_not_complete
 #print axioms ProofsLean.MNCore.Issue.mem_encodedUniverseAlphabet
 #print axioms ProofsLean.MNCore.Issue.encodedUniverseAlphabet_coversBelow
