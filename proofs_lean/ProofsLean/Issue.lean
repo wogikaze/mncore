@@ -582,7 +582,7 @@ inductive ParsedOp where
       (half : Option Char) (round : Bool)
   | matrixWrite (precision : ParsedPrecision)
   | matrixRead (precision : ParsedPrecision)
-  | wait (tag : Nat)
+  | wait (tag : Fin 256)
   | noforward
   | l1bm (op : ParsedL1Op)
   | l2bm (op : ParsedL2Op)

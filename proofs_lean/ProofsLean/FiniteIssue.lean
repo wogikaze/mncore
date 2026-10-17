@@ -1408,7 +1408,7 @@ private def parsedOpL2bmCode (code : ParsedL2OpFiniteCode) : ParsedOpFiniteCode 
 def ParsedOp.inFiniteEnvelope : ParsedOp → Prop
   | .alu _ _ _ arg => parsedBfArgInFiniteEnvelope arg
   | .immediate .. | .zero | .mau .. | .matrixWrite .. | .matrixRead .. | .noforward => True
-  | .wait tag => waitTagInFiniteEnvelope tag
+  | .wait tag => 0 < tag.val
   | .l1bm op => op.inFiniteEnvelope
   | .l2bm op => op.inFiniteEnvelope
 
@@ -1425,7 +1425,7 @@ private def ParsedOp.finiteCode
       exact parsedOpMauCode (precision, matrix, kind, half, round)
   | matrixWrite precision => exact parsedOpMatrixWriteCode precision
   | matrixRead precision => exact parsedOpMatrixReadCode precision
-  | wait tag => exact parsedOpWaitCode (waitTagFiniteCode ⟨tag, bound⟩)
+  | wait tag => exact parsedOpWaitCode tag
   | noforward => exact parsedOpNoforwardCode
   | l1bm operation => exact parsedOpL1bmCode (ParsedL1Op.finiteCode ⟨operation, bound⟩)
   | l2bm operation => exact parsedOpL2bmCode (ParsedL2Op.finiteCode ⟨operation, bound⟩)

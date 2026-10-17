@@ -929,7 +929,7 @@ def coverage_catalog() -> dict:
             "theorem": "ProofsLean.MNCore.Issue.waitTagInFiniteEnvelope_finite",
             "scope": "Finite carrier for positive wait tags below 256.",
             "evidence": "proofs_lean/evidence/isa-bounds/reference.json: i00 and i100 rejected; i01 and iFF accepted, with exhaustive probes for 1..255.",
-            "missing": "Connection from every parsed wait tag to this envelope and finite carrier composition for ParsedOp/ParsedLine.",
+            "missing": "ParsedOp.wait now stores Fin 256, but proving the nonzero assembler condition from parsed/legal inputs and bounding optional ParsedLine.nop wait tags remain open.",
         }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),

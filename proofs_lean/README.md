@@ -171,7 +171,8 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   opcode本体と同時発行PE行の有限性にはまだ届かない。
   次段階のopcode carrier構成に向け、Leanで既定の`Finite` instanceがない`Char`をUnicode
   code point (`< U+110000`) へ埋め込み有限性を証明し、`ParsedAluName`、`ParsedPrecision`、
-  `CalcKind`の有限符号も定義した。さらにALU引数、wait tag、L1/L2 opの既存範囲条件を
+  `CalcKind`の有限符号も定義した。ALU引数にはRustのu8範囲を反映し、opcodeのwait tagも
+  `Fin 256`で保持するようにした。wait tag、L1/L2 opの既存範囲条件を
   合成した`ParsedOp.inFiniteEnvelope`を定義し、全opcode constructorを有限なタグ付きcarrierへ
   単射で写して`ParsedOp.inFiniteEnvelope_finite`を証明した。parser出力がこの範囲に必ず入る
   ことの証明は別途必要であり、ここでは無制限な`ParsedOp`全体の有限性を主張しない。
@@ -199,6 +200,8 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   `fullSelectorMask_inFiniteEnvelope`も回帰定理として残す。
   PE式全体のparserとRust parser出力との全形式の対応はまだない。
   wait tagについては、受理範囲`1..255`とoptionalな同範囲の有限carrierを証明した。
+  opcode tagは`Fin 256`で0..255に構造上制限したが、0がassemblerで拒否される条件を
+  parser/合法性述語へ接続する証明、および`ParsedLine.nop`側のoptional tagの範囲接続は残る。
   L1BMの`mabdiff`はassemble3でDistrib/Gather両方向について明示符号付きの`-255..255`全件を受理し、
   境界の`±256`を両方向で拒否することを確認し、
   `-256 ≤ mabdiff < 256`の部分型が有限であることを証明した。SDMの有用範囲は`0..15`。

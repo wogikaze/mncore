@@ -4475,13 +4475,13 @@ theorem mask_directive_has_zero_issue_cost (directive : ParsedMaskDirective) :
       ([.directive directive] : List ParsedMaskedSourceStatement) = 0 := rfl
 
 theorem parsed_wait_expression_preserves_register_state
-    (files : IntegerRegisterFiles) (control : ParsedMaskExecutionControl) (tag : Nat) :
+    (files : IntegerRegisterFiles) (control : ParsedMaskExecutionControl)
+    (tag : Fin 256) :
     parsedIntegerMaskedLineStep files
       [{ op := .wait tag, sources := [], destinations := [], flush := none, text := "wait" }]
       control = .ok files := by
-  simp [parsedIntegerMaskedLineStep, prepareParsedMaskedLine,
-    prepareParsedMaskedLine.prepare,
-    commitParsedMaskedWrites]
+  unfold parsedIntegerMaskedLineStep prepareParsedMaskedLine
+  rfl
 
 theorem parsed_nop_preserves_register_state
     (control : ParsedMaskExecutionControl) (files : IntegerRegisterFiles) :
