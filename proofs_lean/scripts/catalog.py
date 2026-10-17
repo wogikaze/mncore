@@ -137,9 +137,10 @@ def datapath_experiment(directory: str, spelling_column: int, allow_unknown: boo
             source = REPO / item["path"]
             optional_tool = item["path"] in (
                 "judge/judge-py/mncore2_emuenv/assemble3",
-                "judge/judge-py/mncore2_emuenv/gpfn3_package_main")
+                "judge/judge-py/mncore2_emuenv/gpfn3_package_main",
+                "judge/judge-py/judge.py")
             if optional_tool and not source.exists():
-                continue  # Official proprietary binaries are not distributed in CI.
+                continue  # Official judge artifacts are not distributed in CI.
             if digest(source) != item["sha256"]:
                 raise ValueError(f"stale datapath comparison: {item['path']}")
         if any(record[key] for key in ("proves_universal_conformance", "proves_isa_completeness", "proves_optimality")):
@@ -167,7 +168,8 @@ def rotation_discrepancy() -> dict:
     for item in record["sources"]:
         source = directory / snapshots[item["path"]] if item["path"] in snapshots else REPO / item["path"]
         if not source.exists() and item["path"] in (
-                "judge/judge-py/mncore2_emuenv/assemble3", "judge/judge-py/mncore2_emuenv/gpfn3_package_main"):
+                "judge/judge-py/mncore2_emuenv/assemble3", "judge/judge-py/mncore2_emuenv/gpfn3_package_main",
+                "judge/judge-py/judge.py"):
             continue
         if digest(source) != item["sha256"]:
             raise ValueError(f"rotation discrepancy source changed: {source}")
@@ -204,7 +206,8 @@ def mask_model_correction() -> dict:
         snapshot = directory / Path(item["path"]).name
         source = snapshot if snapshot.exists() else REPO / item["path"]
         if not source.exists() and item["path"] in (
-                "judge/judge-py/mncore2_emuenv/assemble3", "judge/judge-py/mncore2_emuenv/gpfn3_package_main"):
+                "judge/judge-py/mncore2_emuenv/assemble3", "judge/judge-py/mncore2_emuenv/gpfn3_package_main",
+                "judge/judge-py/judge.py"):
             continue
         if digest(source) != item["sha256"]:
             raise ValueError(f"mask-error source changed: {source}")
@@ -249,7 +252,8 @@ def forwarding_findings() -> dict:
         candidate = directory / Path(item["path"]).name
         source = candidate if candidate.exists() else REPO / item["path"]
         if not source.exists() and item["path"] in (
-                "judge/judge-py/mncore2_emuenv/assemble3", "judge/judge-py/mncore2_emuenv/gpfn3_package_main"):
+                "judge/judge-py/mncore2_emuenv/assemble3", "judge/judge-py/mncore2_emuenv/gpfn3_package_main",
+                "judge/judge-py/judge.py"):
             continue
         if digest(source) != item["sha256"]:
             raise ValueError("changed initial forwarding source")
@@ -323,7 +327,8 @@ def encoded_lbf_experiment() -> dict | None:
     for item in record["sources"]:
         source = REPO / item["path"]
         if not source.exists() and item["path"] in (
-                "judge/judge-py/mncore2_emuenv/assemble3", "judge/judge-py/mncore2_emuenv/gpfn3_package_main"):
+                "judge/judge-py/mncore2_emuenv/assemble3", "judge/judge-py/mncore2_emuenv/gpfn3_package_main",
+                "judge/judge-py/judge.py"):
             continue
         if digest(source) != item["sha256"]:
             raise ValueError(f"stale encoded experiment: {item['path']}")
@@ -344,8 +349,10 @@ def isa_bounds_experiment() -> dict:
     record = json.loads(reference.read_text())
     for item in record["tool_hashes"]:
         path = REPO / item["path"]
-        if item["path"] == "judge/judge-py/mncore2_emuenv/assemble3" and not path.exists():
-            continue  # Official proprietary binaries are not distributed in CI.
+        if (item["path"] in ("judge/judge-py/mncore2_emuenv/assemble3",
+                              "judge/judge-py/mncore2_emuenv/gpfn3_package_main",
+                              "judge/judge-py/judge.py") and not path.exists()):
+            continue  # Official judge tools are not distributed in CI.
         if digest(path) != item["sha256"]:
             raise ValueError(f"stale ISA boundary experiment: {item['path']}")
     if not all(row["matches_expected"] for row in record["observations"]):
@@ -411,7 +418,8 @@ def opcode_arity_experiment() -> dict:
     record = json.loads(reference.read_text())
     for item in record["tool_hashes"]:
         path = REPO / item["path"]
-        if item["path"] == "judge/judge-py/mncore2_emuenv/assemble3" and not path.exists():
+        if (item["path"] in ("judge/judge-py/mncore2_emuenv/assemble3",
+                              "judge/judge-py/judge.py") and not path.exists()):
             continue
         if digest(path) != item["sha256"]:
             raise ValueError(f"stale opcode arity experiment: {item['path']}")
@@ -624,7 +632,8 @@ def answer_encoding_experiment() -> dict:
         raise ValueError(f"unexpected answer encoding totals: {counts}")
     for item in record["tool_hashes"]:
         path = REPO / item["path"]
-        if item["path"] == "judge/judge-py/mncore2_emuenv/assemble3" and not path.exists():
+        if (item["path"] in ("judge/judge-py/mncore2_emuenv/assemble3",
+                              "judge/judge-py/judge.py") and not path.exists()):
             continue
         if digest(path) != item["sha256"]:
             raise ValueError(f"stale answer encoding tool: {item['path']}")
@@ -694,7 +703,12 @@ def raw_candidate_assembler_experiment() -> dict:
     if len(expected) != 1470 or len(observed) != len(record["observations"]) or observed != expected:
         raise ValueError("Raw-candidate assembler experiment does not cover parser probe slots")
     for item in record["tool_hashes"]:
-        if digest(REPO / item["path"]) != item["sha256"]:
+        path = REPO / item["path"]
+        if (item["path"] in ("judge/judge-py/mncore2_emuenv/assemble3",
+                              "judge/judge-py/mncore2_emuenv/gpfn3_package_main",
+                              "judge/judge-py/judge.py") and not path.exists()):
+            continue
+        if digest(path) != item["sha256"]:
             raise ValueError(f"stale Raw-candidate assembler input: {item['path']}")
     if record["accepted_count"] + record["rejected_count"] != len(expected):
         raise ValueError("Raw-candidate assembler outcome counts are inconsistent")
