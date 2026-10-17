@@ -115,6 +115,10 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.parseParsedL1Opcode_mabdiff_rejects_outside_assembler_range
 #print axioms ProofsLean.MNCore.Issue.parseParsedL1Opcode_m4write_valid_selector
 #print axioms ProofsLean.MNCore.Issue.parseParsedL1Opcode_reduce_rounding
+#print axioms ProofsLean.MNCore.Issue.parseParsedL1OpcodeForOperands_l1bm_source_distributes
+#print axioms ProofsLean.MNCore.Issue.parseParsedL1OpcodeForOperands_non_l1bm_source_gathers
+#print axioms ProofsLean.MNCore.Issue.parseParsedL2OpcodeForOperands_l2bm_source_distributes
+#print axioms ProofsLean.MNCore.Issue.parseParsedL2OpcodeForOperands_non_l2bm_source_gathers
 #print axioms ProofsLean.MNCore.Issue.ParsedL1bSet.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.mabdiffInFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.ParsedRrn.inFiniteEnvelope_finite

@@ -1666,8 +1666,7 @@ def parseParsedL1Opcode? (opcode : String) (toPE : Bool) : Option ParsedL1Op := 
     match suffix with
     | '@' :: mabChars => do
         let mab ← parsedMvDecimal? mabChars
-        let index ← parsedNatToFin? mab 256
-        some (.m4write index.val)
+        if mab < 256 then some (.m4write mab) else none
     | [] => some .m4bcast
     | _ => none
   else if rest.head? == some 'm' then
@@ -1675,8 +1674,7 @@ def parseParsedL1Opcode? (opcode : String) (toPE : Bool) : Option ParsedL1Op := 
     match suffix with
     | '@' :: mabChars => do
         let mab ← parsedMvDecimal? mabChars
-        let index ← parsedNatToFin? mab 256
-        some (.mwrite index.val)
+        if mab < 256 then some (.mwrite mab) else none
     | [] => some .mbcast
     | _ => none
   else if rest.head? == some 'd' then
@@ -1692,6 +1690,41 @@ def parseParsedL1Opcode? (opcode : String) (toPE : Bool) : Option ParsedL1Op := 
     let (rrn, round) ← parsedL1RrnRound? (rest.drop 1)
     some (.reduce rrn round)
   else none
+
+/-- Derive the `to_pe` argument exactly as `parse_expr` does: only a first
+operand classified as L1BM makes `l1bmd` a distribution. -/
+def parseParsedL1OpcodeForOperands? (opcode : String) (operands : List ParsedOperand) :
+    Option ParsedL1Op :=
+  parseParsedL1Opcode? opcode (match operands with
+    | .l1bm .. :: _ => true
+    | _ => false)
+
+/-- Derive `from_l2` from Rust's first-operand test before parsing an L2BM
+opcode. -/
+def parseParsedL2OpcodeForOperands? (opcode : String) (operands : List ParsedOperand) :
+    Option ParsedL2Op :=
+  parseParsedL2Opcode? opcode (match operands with
+    | .l2bm .. :: _ => true
+    | _ => false)
+
+theorem parseParsedL1OpcodeForOperands_l1bm_source_distributes :
+    parseParsedL1OpcodeForOperands? "l1bmd+3" [.l1bm 2 (some 0)] =
+      some (.distrib 3) := by decide
+
+theorem parseParsedL1OpcodeForOperands_non_l1bm_source_gathers :
+    parseParsedL1OpcodeForOperands? "l1bmd+3" [.nowrite] =
+      some (.gather 3) := by decide
+
+theorem parseParsedL1OpcodeForOperands_empty_sources_gathers :
+    parseParsedL1OpcodeForOperands? "l1bmd" [] = some (.gather 0) := by decide
+
+theorem parseParsedL2OpcodeForOperands_l2bm_source_distributes :
+    parseParsedL2OpcodeForOperands? "l2bmd@[0,4]" [.l2bm 0 none] =
+      some (.distrib ⟨17, 4⟩) := by decide
+
+theorem parseParsedL2OpcodeForOperands_non_l2bm_source_gathers :
+    parseParsedL2OpcodeForOperands? "l2bmd@[invalid]" [.nowrite] =
+      some .gather := by decide
 
 theorem parseParsedL1Opcode_pbcast :
     parseParsedL1Opcode? "l1bmp" false = some .pbcast := by decide

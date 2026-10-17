@@ -828,8 +828,8 @@ def coverage_catalog() -> dict:
             "parser_fragment": "parseParsedL1bSet?, parseParsedL2Opcode?",
             "parser_range_theorem": "ProofsLean.MNCore.Issue.parsedL1bAddressModeSet_inFiniteEnvelope",
             "scope": "Finite carrier for 8-bit L1B membership masks below 256 and immode selectors below 8; Lean parses canonical decimal address[/immode] and bracketed list selectors and covers every `parse_l2_opcode` branch of `ParsedL2Op`.",
-            "evidence": "`Issue.lean`: both selector parsers and envelope theorems; L2 opcode fixtures cover broadcast list/default, direction-dependent distribution/gather, from-L1B u8 range, RRN reductions/reduce2, dars/darw, and malformed RRN rejection. Selector fixtures cover all-eight, singleton, whitespace, empty-list rejection, and out-of-range rejection. assemble3 accepts the all-eight selector `@0/7`, all 64 address/immode pairs in 0..7, and rejects address 8 and immode 8.",
-            "missing": "Full PE expression parsing and parser correspondence for all L1/L2 expression forms; operand-dependent input classification and parser-to-assembler acceptance correspondence are not established.",
+            "evidence": "`Issue.lean`: both selector parsers and envelope theorems; L2 opcode fixtures cover broadcast list/default, direction-dependent distribution/gather, from-L1B u8 range, RRN reductions/reduce2, dars/darw, and malformed RRN rejection. Typed-operand wrappers derive direction from the first operand. Selector fixtures cover all-eight, singleton, whitespace, empty-list rejection, and out-of-range rejection. assemble3 accepts the all-eight selector `@0/7`, all 64 address/immode pairs in 0..7, and rejects address 8 and immode 8.",
+            "missing": "Full PE expression parsing and parser correspondence for all L1/L2 expression forms; parser-to-assembler acceptance correspondence is not established.",
         }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
@@ -866,7 +866,7 @@ def coverage_catalog() -> dict:
             "parser_source_sha256": digest(ROOT / "ProofsLean/Issue.lean"),
             "parser_fragment": "parseParsedL1Opcode?",
             "scope": "Finite tagged carrier for all nine ParsedL1Op variants under the observed mab selector, RRN precision and MAB difference envelopes.",
-            "evidence": "proofs_lean/evidence/isa-bounds/reference.json: l1bmm/l1bmm4 selectors 0..15, signed mabdiff -255..255, plus ParsedRrn's explicit ASCII precision envelope and finite opcode set. `Issue.lean` fixtures cover all nine Rust L1 opcode branches, direction-dependent d, u8 selector parsing, signed offsets, RRN parsing, and round suffixes.",
+            "evidence": "proofs_lean/evidence/isa-bounds/reference.json: l1bmm/l1bmm4 selectors 0..15, signed mabdiff -255..255, plus ParsedRrn's explicit ASCII precision envelope and finite opcode set. `Issue.lean` fixtures cover all nine Rust L1 opcode branches, direction-dependent d derived from the first typed operand, u8 selector parsing, signed offsets, RRN parsing, and round suffixes.",
             "missing": "No theorem yet proves every output of `parseParsedL1Opcode?` lies in the finite envelope (the Rust parser's u8 selector range is wider than the assembler's 0..15 range), and no finite PE-line or machine-level carrier is composed from it.",
         }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",

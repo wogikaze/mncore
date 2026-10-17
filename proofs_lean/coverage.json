@@ -475,12 +475,12 @@
       "sha256": "05fb3ec4afeba235ee5e68d001068df2d8c56065904157f2291317fe14146412",
       "theorem": "ProofsLean.MNCore.Issue.ParsedL1bSet.inFiniteEnvelope_finite",
       "parser_source": "proofs_lean/ProofsLean/Issue.lean",
-      "parser_source_sha256": "9803be5c387e6329963be37997d7fd13b82597e9d4494cd742a4694b6576d40b",
+      "parser_source_sha256": "be63dee3c37c88ddb3e002ff105c3137997a35d531cefbe1f04e51609ef43f65",
       "parser_fragment": "parseParsedL1bSet?, parseParsedL2Opcode?",
       "parser_range_theorem": "ProofsLean.MNCore.Issue.parsedL1bAddressModeSet_inFiniteEnvelope",
       "scope": "Finite carrier for 8-bit L1B membership masks below 256 and immode selectors below 8; Lean parses canonical decimal address[/immode] and bracketed list selectors and covers every `parse_l2_opcode` branch of `ParsedL2Op`.",
-      "evidence": "`Issue.lean`: both selector parsers and envelope theorems; L2 opcode fixtures cover broadcast list/default, direction-dependent distribution/gather, from-L1B u8 range, RRN reductions/reduce2, dars/darw, and malformed RRN rejection. Selector fixtures cover all-eight, singleton, whitespace, empty-list rejection, and out-of-range rejection. assemble3 accepts the all-eight selector `@0/7`, all 64 address/immode pairs in 0..7, and rejects address 8 and immode 8.",
-      "missing": "Full PE expression parsing and parser correspondence for all L1/L2 expression forms; operand-dependent input classification and parser-to-assembler acceptance correspondence are not established."
+      "evidence": "`Issue.lean`: both selector parsers and envelope theorems; L2 opcode fixtures cover broadcast list/default, direction-dependent distribution/gather, from-L1B u8 range, RRN reductions/reduce2, dars/darw, and malformed RRN rejection. Typed-operand wrappers derive direction from the first operand. Selector fixtures cover all-eight, singleton, whitespace, empty-list rejection, and out-of-range rejection. assemble3 accepts the all-eight selector `@0/7`, all 64 address/immode pairs in 0..7, and rejects address 8 and immode 8.",
+      "missing": "Full PE expression parsing and parser correspondence for all L1/L2 expression forms; parser-to-assembler acceptance correspondence is not established."
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
@@ -519,10 +519,10 @@
       "sha256": "05fb3ec4afeba235ee5e68d001068df2d8c56065904157f2291317fe14146412",
       "theorem": "ProofsLean.MNCore.Issue.ParsedL1Op.inFiniteEnvelope_finite",
       "parser_source": "proofs_lean/ProofsLean/Issue.lean",
-      "parser_source_sha256": "9803be5c387e6329963be37997d7fd13b82597e9d4494cd742a4694b6576d40b",
+      "parser_source_sha256": "be63dee3c37c88ddb3e002ff105c3137997a35d531cefbe1f04e51609ef43f65",
       "parser_fragment": "parseParsedL1Opcode?",
       "scope": "Finite tagged carrier for all nine ParsedL1Op variants under the observed mab selector, RRN precision and MAB difference envelopes.",
-      "evidence": "proofs_lean/evidence/isa-bounds/reference.json: l1bmm/l1bmm4 selectors 0..15, signed mabdiff -255..255, plus ParsedRrn's explicit ASCII precision envelope and finite opcode set. `Issue.lean` fixtures cover all nine Rust L1 opcode branches, direction-dependent d, u8 selector parsing, signed offsets, RRN parsing, and round suffixes.",
+      "evidence": "proofs_lean/evidence/isa-bounds/reference.json: l1bmm/l1bmm4 selectors 0..15, signed mabdiff -255..255, plus ParsedRrn's explicit ASCII precision envelope and finite opcode set. `Issue.lean` fixtures cover all nine Rust L1 opcode branches, direction-dependent d derived from the first typed operand, u8 selector parsing, signed offsets, RRN parsing, and round suffixes.",
       "missing": "No theorem yet proves every output of `parseParsedL1Opcode?` lies in the finite envelope (the Rust parser's u8 selector range is wider than the assembler's 0..15 range), and no finite PE-line or machine-level carrier is composed from it."
     },
     {
@@ -765,7 +765,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/Issue.lean",
-      "sha256": "9803be5c387e6329963be37997d7fd13b82597e9d4494cd742a4694b6576d40b",
+      "sha256": "be63dee3c37c88ddb3e002ff105c3137997a35d531cefbe1f04e51609ef43f65",
       "implemented": "Full structural PE Op/Operand payload mirror, issue projection, abstract PE-line rules, and a partial parsed-op to integer-ALU bridge for supported L/I/S integer operations and packbit",
       "scope": "The Rust enum inventory is checked against Lean constructors. A separate partial executor covers supported integer ALU/zero/immediate expressions with direct PE-memory destinations, masks/flush and ordered multiple destinations; this is not full ISA semantics",
       "source_basis": [
