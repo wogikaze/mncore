@@ -109,6 +109,10 @@ import Lean
 #print axioms ProofsLean.MNCore.FloatSubtract.subtract_positive
 #print axioms ProofsLean.MNCore.FloatSubtract.subtract_negative
 #print axioms ProofsLean.MNCore.FloatSubtract.subtract_preserves_dependencies
+#print axioms ProofsLean.MNCore.FloatSubtract.subtractBus_high
+#print axioms ProofsLean.MNCore.FloatSubtract.subtractBus_low
+#print axioms ProofsLean.MNCore.FloatSubtract.abstractSubtractBus_evaluation
+#print axioms ProofsLean.MNCore.FloatSubtract.abstractSubtractBus_dependencies_are_sound
 #print axioms ProofsLean.MNCore.FloatMultiply.abstractMultiply_evaluation
 #print axioms ProofsLean.MNCore.FloatMultiply.seven_times_one
 #print axioms ProofsLean.MNCore.FloatMultiply.seven_times_zero
