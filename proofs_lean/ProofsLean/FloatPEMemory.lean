@@ -290,6 +290,19 @@ theorem parsedFloatAddSmoke_fourCycles_succeed
     exact ⟨⟨6, by decide⟩, ⟨14, by decide⟩, ⟨22, by decide⟩, by decide⟩
 
 
+theorem executeParsedFloatAddCycle_preservesLM0 (expression : ParsedExpr)
+    (files : PEMemory.IntegerRegisterFiles) (pe cycle : Fin 4)
+    (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
+    (leftAddress rightAddress : Fin (PEMemory.Bank.capacity .lm0))
+    (destinationAddress : Fin (PEMemory.Bank.capacity .lm1))
+    (lowered : lowerParsedFloatAdd? expression pe cycle bar0 bar1 tWord =
+      some (leftAddress, rightAddress, destinationAddress)) :
+    (executeParsedFloatAddCycle? expression files pe cycle bar0 bar1 tWord).map
+      (fun next => next.lm0) = some files.lm0 := by
+  rw [executeParsedFloatAddCycle_success expression files pe cycle bar0 bar1 tWord
+    leftAddress rightAddress destinationAddress lowered]
+  rfl
+
 def subtractCycle (left : PEMemory.Memory .lm0) (right : PEMemory.Memory .lm0)
     (output : PEMemory.Memory .lm1)
     (leftStart rightStart : Fin (PEMemory.Bank.capacity .lm0))

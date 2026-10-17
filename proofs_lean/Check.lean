@@ -156,6 +156,7 @@ import Lean
 #print axioms ProofsLean.MNCore.FloatPEMemory.flatAddress_output_stride
 #print axioms ProofsLean.MNCore.FloatPEMemory.executeParsedFloatAddCycle_success
 #print axioms ProofsLean.MNCore.FloatPEMemory.executeParsedFloatAddCycle_readback
+#print axioms ProofsLean.MNCore.FloatPEMemory.executeParsedFloatAddCycle_preservesLM0
 #print axioms ProofsLean.MNCore.FloatPEMemory.parsedFloatAddSmoke_cycle0_lowers
 #print axioms ProofsLean.MNCore.FloatPEMemory.parsedFloatAddSmoke_cycle3_lowers
 #print axioms ProofsLean.MNCore.FloatPEMemory.parsedFloatAddSmoke_fourCycles_succeed
