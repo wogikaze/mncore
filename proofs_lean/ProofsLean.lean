@@ -36,3 +36,4 @@ import ProofsLean.FloatSubtract
 import ProofsLean.FloatMultiply
 import ProofsLean.FloatRelu
 import ProofsLean.FloatAdd
+import ProofsLean.FloatPEMemory

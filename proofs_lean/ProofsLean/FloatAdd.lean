@@ -28,6 +28,22 @@ theorem add_zero_to_one : add 0x3F800000 0x00000000 = 0x3F800000 := by decide
 
 theorem add_one_and_two : add 0x3F800000 0x40000000 = 0x40400000 := by decide
 
+def addBus (left right : BitVec 64) : BitVec 64 :=
+  add (left.extractLsb' 32 32) (right.extractLsb' 32 32) ++
+    add (left.extractLsb' 0 32) (right.extractLsb' 0 32)
+
+theorem addBus_high (left right : BitVec 64) :
+    (addBus left right).extractLsb' 32 32 =
+      add (left.extractLsb' 32 32) (right.extractLsb' 32 32) := by
+  simp only [addBus]
+  rw [BitVec.extractLsb'_append_eq_left]
+
+theorem addBus_low (left right : BitVec 64) :
+    (addBus left right).extractLsb' 0 32 =
+      add (left.extractLsb' 0 32) (right.extractLsb' 0 32) := by
+  simp only [addBus]
+  rw [BitVec.extractLsb'_append_eq_right]
+
 theorem abstractAdd_dependencies_are_sound {Atom : Type}
     (left right : AbstractValue Atom (BitVec 32))
     (leftEnv rightEnv : Atom → BitVec 32)

@@ -50,6 +50,7 @@ Welcome の後は Convert Endian を縦の2問目にする。有限性・範囲�
    3.relu向けに`FloatRelu.lean`を追加した。有限入力値に対して正値・±0なら第2オペランドを返し、負値なら−0を返すビット述語を定義し、定数・依存抽象を接続した。2行×8語の抽象スケジュールで16要素すべての出力が正しいことを証明した。`check_single_fma_kernel.py --operation frelu --vectors 128 --seed 777 --gpfn-runs 1`でLeanカーネル対Rust 128式、gpfn3対Rust 16,384値を照合し不一致0。
    同じ演算器を使う4.relu-gradについても第2オペランドを1.0に固定した関数と2行スケジュールのベクトル定理を追加した。実アドレス・命令状態遷移・最適性は両題とも未完了。
    5.addcol-vec向けに`FloatAdd.lean`を追加した。float加算を単位乗算のFMAとして抽象化し、PEごとの16要素を4要素ベクトルに沿って加算する2行×8語のスケジュール定理を証明した。`check_single_fma_kernel.py --operation fvadd --vectors 128 --seed 2026 --gpfn-runs 1`でLean対Rust 128式とgpfn3対Rust 16,384値を照合し、不一致0。forwarding/T状態と実メモリアドレスへの接続は未完了。
+   `FloatPEMemory.lean`で既存`PEMemory.readWords/writeWords`にFloatAdd/FloatSubtract/FloatMultiplyの64-bitバスを接続した。2つの32-bit laneを読み、演算してLM1の2語へ書き戻すサイクルのreadbackと、書込み範囲外を保存するframeを証明した。入力アドレスは外から与えるため、ParsedExprのlowering、実forwarding/T状態、hazard、4-cycle issue列との接続は未完了。
 
 ## 実装した定義
 

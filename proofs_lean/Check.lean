@@ -147,6 +147,13 @@ import Lean
 #print axioms ProofsLean.MNCore.FloatAdd.chunkIndex_injective
 #print axioms ProofsLean.MNCore.FloatAdd.chunkIndex_covers_all_words
 #print axioms ProofsLean.MNCore.FloatAdd.twoLineResult_correct
+#print axioms ProofsLean.MNCore.FloatPEMemory.readPair_after_writePair
+#print axioms ProofsLean.MNCore.FloatPEMemory.writePair_preservesOutside
+#print axioms ProofsLean.MNCore.FloatPEMemory.binaryCycle_readback
+#print axioms ProofsLean.MNCore.FloatPEMemory.binaryCycle_preservesOutside
+#print axioms ProofsLean.MNCore.FloatPEMemory.addCycle_readback
+#print axioms ProofsLean.MNCore.FloatPEMemory.subtractCycle_readback
+#print axioms ProofsLean.MNCore.FloatPEMemory.multiplySevenCycle_readback
 #print axioms ProofsLean.MNCore.Issue.encodedUniverseMachine_not_complete
 #print axioms ProofsLean.MNCore.Issue.mem_encodedUniverseAlphabet
 #print axioms ProofsLean.MNCore.Issue.encodedUniverseAlphabet_coversBelow
