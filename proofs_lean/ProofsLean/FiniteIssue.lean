@@ -1177,11 +1177,6 @@ theorem ParsedExpr.destinationsInFiniteEnvelope_finite :
   exact Finite.of_injective ParsedOperand.nodupListFiniteCode
     ParsedOperand.nodupListFiniteCode_injective
 
-/-- `mask` is an eight-bit bitmap of selected L1Bs (so the full set is 255);
-`immode` is the three-bit selector mode. -/
-def ParsedL1bSet.inFiniteEnvelope (set : ParsedL1bSet) : Prop :=
-  set.mask < 256 ∧ set.immode < 8
-
 def ParsedL1bSet.finiteCode
     (set : {set : ParsedL1bSet // set.inFiniteEnvelope}) : Fin 256 × Fin 8 :=
   (⟨set.1.mask, set.2.1⟩, ⟨set.1.immode, set.2.2⟩)

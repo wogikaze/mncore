@@ -554,6 +554,10 @@ structure ParsedL1bSet where
   immode : Nat
   deriving DecidableEq, Repr
 
+/-- Parsed L1B selectors are an 8-bit membership bitmap and a 3-bit mode. -/
+def ParsedL1bSet.inFiniteEnvelope (set : ParsedL1bSet) : Prop :=
+  set.mask < 256 ∧ set.immode < 8
+
 inductive ParsedL1Op where
   | pbcast | mbcast | mwrite (mab : Nat) | m4bcast | m4write (mab : Nat)
   | reduce (rrn : ParsedRrn) (round : Bool)
@@ -1386,6 +1390,56 @@ def parsedMvDecimal? (chars : List Char) : Option Nat := do
   if digits.isEmpty then none else
   let (value, rest) ← parsedMvDigitsPrefix 10 digits 0
   if rest.isEmpty then some value else none
+
+/-- L1B membership bitmap produced by the manual's `<l1badr>/<immode>`
+selector form. The 3-bit comparison selects members; the result is represented
+as an eight-bit bitmap, matching `ParsedL1bSet.mask`. -/
+def parsedL1bAddressModeBitmap (address immode : Fin 8) : BitVec 8 :=
+  let keep : BitVec 3 := (7 : BitVec 3) ^^^ BitVec.ofNat 3 immode.val
+  let addressBits := BitVec.ofNat 3 address.val
+  (List.finRange 8).foldl (fun bits index =>
+    let indexBits := BitVec.ofNat 3 index.val
+    if indexBits &&& keep == addressBits &&& keep then
+      bits ||| ((1 : BitVec 8) <<< index.val)
+    else bits) (0 : BitVec 8)
+
+def parsedL1bAddressModeSet (address immode : Fin 8) : ParsedL1bSet :=
+  ⟨(parsedL1bAddressModeBitmap address immode).toFin.val, immode.val⟩
+
+theorem parsedL1bAddressModeSet_inFiniteEnvelope (address immode : Fin 8) :
+    (parsedL1bAddressModeSet address immode).inFiniteEnvelope := by
+  constructor
+  · exact (parsedL1bAddressModeBitmap address immode).toFin.isLt
+  · exact immode.isLt
+
+def parsedL1bAddressModeSet? (addressValue immodeValue : Nat) :
+    Option {set : ParsedL1bSet // set.inFiniteEnvelope} := do
+  let address ← parsedNatToFin? addressValue 8
+  let immode ← parsedNatToFin? immodeValue 8
+  let set := parsedL1bAddressModeSet address immode
+  some ⟨set, parsedL1bAddressModeSet_inFiniteEnvelope address immode⟩
+
+/-- Parse the canonical decimal `<l1badr>` or `<l1badr>/<immode>` selector
+form. The manual's bracketed list spelling is handled separately by the
+assembler and is not claimed by this parser. -/
+def parseParsedL1bAddressMode? (text : String) :
+    Option {set : ParsedL1bSet // set.inFiniteEnvelope} := do
+  let (addressChars, immodeChars) ← match text.toList.splitOn '/' with
+    | [address] => some (address, ['0'])
+    | [address, immode] => some (address, immode)
+    | _ => none
+  let addressValue ← parsedMvDecimal? addressChars
+  let immodeValue ← parsedMvDecimal? immodeChars
+  parsedL1bAddressModeSet? addressValue immodeValue
+
+theorem parseParsedL1bAddressMode?_full_set :
+    (parseParsedL1bAddressMode? "0/7").map Subtype.val = some ⟨255, 7⟩ := by decide
+
+theorem parseParsedL1bAddressMode?_rejects_address_eight :
+    parseParsedL1bAddressMode? "8/0" = none := by decide
+
+theorem parseParsedL1bAddressMode?_rejects_immode_eight :
+    parseParsedL1bAddressMode? "0/8" = none := by decide
 
 structure ParsedMvParams where
   size : Option (Fin (2 ^ 64)) := none
