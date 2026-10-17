@@ -1,4 +1,5 @@
 import ProofsLean
+import ProofsLean.PEParser
 import Lean
 
 #print axioms ProofsLean.length_le_score
@@ -119,6 +120,10 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.parseParsedL1OpcodeForOperands_non_l1bm_source_gathers
 #print axioms ProofsLean.MNCore.Issue.parseParsedL2OpcodeForOperands_l2bm_source_distributes
 #print axioms ProofsLean.MNCore.Issue.parseParsedL2OpcodeForOperands_non_l2bm_source_gathers
+#print axioms ProofsLean.MNCore.Issue.parseParsedPEOperand_forward_masked_memory_register
+#print axioms ProofsLean.MNCore.Issue.parseParsedPEOperand_omr_mask
+#print axioms ProofsLean.MNCore.Issue.parseParsedPEOperand_block_memory
+#print axioms ProofsLean.MNCore.Issue.parseParsedPEOperand_dar_u32_boundary
 #print axioms ProofsLean.MNCore.Issue.ParsedL1bSet.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.mabdiffInFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.ParsedRrn.inFiniteEnvelope_finite

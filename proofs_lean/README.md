@@ -226,6 +226,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   operand envelopeはregion width 1/2/4/address `< 4096`/madpe `< 4`、BAR width 1または2、mask selector `< 32`、
   OMR entry `1 ≤ entry < 16`、matrix width 1/2/4/row `< 16`、L1BM width 1/2/4/address `< 8192`、
   L2BM address `< 32768`/selector `< 8`、DAR address `< 1024`を含む。
+  `PEParser.lean`にforward/fixed、OMR/BAR、matrix、L1BM/L2BM、DAR、nowriteの構造化operand parserを追加した。
+  Rust parser上のu8/u32範囲を保持するが、通常の`$m/$n/$r/$s/$t`メモリアドレス operand と cycle/address suffix grammarは未対応で、
+  PE式全体やassembler受理集合との対応は主張しない。
   これは境界プローブに基づく有限な上位集合であり、bank/opcode別alignmentや、全assembler-accepted
   operandがenvelopeに入ることの証明ではない。bounded operand carrierは有限だが、これを合法PE行や
   `MNCore.machine`の全行有限性へ接続する作業は未完了。
