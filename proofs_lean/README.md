@@ -22,6 +22,7 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
 | 候補の反証から下限を導く定理 | `SymbolicBoundCertificate`を含む汎用定理を証明済み。Welcomeへの適用は未実施 |
 | 全入力と公式テストケース限定の仕様の区別 | 定義と回帰証明を実装済み |
 | 全ISAの合法な命令・オペランド・同時発行のモデル | 未実装。`coverage.json` |
+| 全演算器の定数・依存抽象とその健全性 | 汎用symbolic expression基盤を実装。各命令形式との網羅的な接続は未実装 |
 | メモリ・通信・丸め・素通り・ハザード・初期化の実行意味論 | 未実装 |
 | ゼロコスト制御文を含む構文と、スコア付き命令列の対応証明 | PE/nop/mask directive subsetのloweringとcost保存を証明。完全なVSM接続は未実装 |
 | モデルと公式仕様・エミュレータの対応、信頼境界の記録 | 未完了 |
@@ -31,15 +32,19 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
 
 ## 次に進める作業
 
-作業順は `0 → 1 → 2-1 → 2-2 → 2-3 → 2-5 → 3-1 → 2-4 → 3-2 → 3-3 → 3-4 → 4`。
-有限性・範囲付けの証明は凍結し、必要な意味論や対応証明を優先する。
+作業順は `0 → 1 → 2-1 → 2-2 → 2-3 → 2-5 → 2-4a → 2-6 → 3-1 → 3-2 → 3-3 → 3-4 → 3-5 → 4`。
+Welcome の後は Convert Endian を縦の2問目にする。有限性・範囲付けの証明は凍結する。
 
 1. Phase 2 を締める。`partialMachine.legal`は正規化済み命令行の全列を許し、issue衝突・PE/block hazard・無効なforwarding読み出しは`step`の失敗へ移す。
    新しい有限性・範囲証明は追加しない。
 2. 候補列挙の基盤には`encodedUniverseMachine`を採用する。固定幅PE/MV符号語全体の有限性を使い、`InstructionLine`の範囲付き合法性経路は旧projectionとしてのみ残す。
    assembler sourceから符号語への全域対応は独立した未解決義務として記録する。
-3. Phase 2は反映済み。Phase 3では本物のStateと全命令footprintの骨格を追加した。次はそのframe条件を実際のstepへ接続する。
-4. Welcomeの入力域・初期状態・出力仕様は限定モデル上で記述済み。次は実VSM行のstep意味論、全合法1行の下限、公式emulator差分を順に接続する。
+3. Phase 2は反映済み。Phase 3では本物のState、全命令footprint、一PEの整数命令部分機械を追加した。全PE状態・forwarding・hazardとstepのframe条件は未接続。
+4. 全演算器に定数と入力依存を追跡する健全な抽象を持たせる。`OperatorAbstraction.lean`の汎用式で定数foldingと依存集合の非干渉健全性を証明した。今後は全命令形式・メモリbank・transfer unitをこのAPIへ接続し、網羅性を確認する。厳密な値の意味論は正しさの上限証明に要る部分だけ追加する。
+5. 2-6: `SingleFMA.lean`にMN-Core単精度FMAをNat/Int/BitVecだけで実装した。SDMの省略部分積補正、測定済みaccumulator alignment/sticky jam、RNE、zero/infinity正規化を含む。SDM例、tie、overflow、cancellationをkernel reductionで証明。Rust `vfma`との大規模なgpfn3差分は573,440値・不一致0（seed 1234）。Lean関数全体とRustコードの機械的同値証明は未実装で、具体的なkernel計算ケースで照合を追加する。
+6. Welcomeは現在、限定された2種類の`iinc`行だけのモデルで証明済み。実VSM行と実状態遷移の接続、全合法1行の下限、公式emulator差分を完了させる。
+7. 3-5: 下限証明が失敗した候補から、探索用の条件と具体的な反例を取り出すインターフェースを設計する。Rustシミュレータ向け候補生成器、判定条件、結果の再現記録は未実装。
+8. Phase 4はWelcomeの後にConvert Endianを扱い、ALU/MAUをまたぐビット変換で定数・依存抽象が健全なことを試す。その後、他の簡単な問題へ広げ、繰り返し使うfootprint・書き込み容量・演算器別制約の補題を共通化する。
 
 ## 実装した定義
 
@@ -362,6 +367,18 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   レーンの分割・結合、4ビットのフラグ複製、下位長語の素通りを実装。
   入力は読み出し・精度縮減済みのバスであり、オペランド読み出しや精度縮減そのもの、
   マスク適用、ハザード、同時発行は未実装。未対応要求は実行失敗ではなく`unknown`を返す。
+- `OperatorAbstraction.lean`: すべての演算器が共有する定数・入力依存のsymbolic expression。
+  定数入力だけのunary/binary/ternary演算は演算関数を正確に評価し、それ以外は入力式を保持する。
+  依存に含まれる入力だけを一致させた2環境では出力が一致する、非干渉性の健全性を証明した。
+  UnitKindは整数ALU、浮動小数点MAU、行列ユニット、L1BM/L2BM、MV転送、PE間転送を列挙する。
+  これは全命令の接続完了を意味せず、今後は各パーサ済み命令と各state locationをこの抽象へ接続する。
+- `SingleFMA.lean`: MN-Core単精度ベクトルFMAのbit-level実装。
+  `vfma`と同じ省略部分積の補正定数、cの格子合わせとsticky、1回のRNE、flush-to-zero/infを整数演算で実装。
+  `decide`でSDMの識別例と境界ケースを検証し、汎用定数・依存抽象のfloating MAU演算としても公開する。
+  `scripts/check_single_fma_kernel.py`はRustモデルから決定的入力を生成し、Lean `by decide`で結果ビットを照合する。
+  公式`gpfn3_package_main`との差分を合わせて実行するコマンドは
+  `python3 scripts/check_single_fma_kernel.py --vectors 128 --seed 1234 --gpfn-runs 35`。
+  Lean/Rustの全域同値証明ではない。
 - `UntypedALU.lean`: zero、imm/immuの2長語出力と、4 PE間のmsl/msrの部分モデル。
   循環転送の下位長語について、マニュアルの一般則を適用する`manualReading`と
   公式バイナリで観測した`referenceBinary`を明示的に分けている。

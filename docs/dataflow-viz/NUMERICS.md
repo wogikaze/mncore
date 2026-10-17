@@ -136,7 +136,8 @@ noforward付き転送では以前の値を保持する。
 
 | 対象 | 規模 | 不一致 |
 |---|---|---|
-| `fvfma` | 約56万値 | 0 |
+| `fvfma` | 573,440値（`difftest_mau fvfma 35 1234`、2026-10-17） | 0 |
+| Lean `SingleFMA.singleFma` vs Rust `float::vfma` | 128 deterministic vectors, seed 1234; every equation kernel-checked with `by decide` | 0 |
 | `fvmul` / `fvadd` / `fvpassa` | 各約6.5万値 | 0 |
 | `dvfmau` | 約28万値 | 0 |
 | `dvmulu` / `dvadd` / `dvpassa` | 各約3.3万値 | 0 |
@@ -144,6 +145,13 @@ noforward付き転送では以前の値を保持する。
 | ランダムな命令列（PE・L1BM・L2BM・MV） | `difftest_fuzz` | 0（記録時点） |
 
 ## 未確認
+
+Lean/Rustの横断比較とgpfn3比較を再実行するには、リポジトリrootから次を実行する。
+
+```sh
+python3 proofs_lean/scripts/check_single_fma_kernel.py \
+  --vectors 128 --seed 1234 --gpfn-runs 35
+```
 
 - 半精度のベクトル演算（`hv*`）と行列積（`hm*`）、拡張表現（`hbfe`）を入力にした行列積（SDM も定義を省略している）
 - DRAM 間接参照（`$di`、`l2bmdars` / `l2bmdarw`）

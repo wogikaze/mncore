@@ -1,6 +1,7 @@
 import ProofsLean
 import ProofsLean.PEMachine
 import ProofsLean.PEParser
+import ProofsLean.OperatorAbstraction
 import Lean
 
 #print axioms ProofsLean.length_le_score
@@ -77,6 +78,22 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.instructionMachine_issue_failure
 #print axioms ProofsLean.MNCore.PEMemory.instructionMachine_accepted_pe_executes
 #print axioms ProofsLean.MNCore.PEMemory.instructionMachine_nop_advances
+#print axioms ProofsLean.MNCore.UnitKind.mem_all
+#print axioms ProofsLean.MNCore.Expr.evaluate_unary
+#print axioms ProofsLean.MNCore.Expr.evaluate_binary
+#print axioms ProofsLean.MNCore.Expr.evaluate_ternary
+#print axioms ProofsLean.MNCore.Expr.depends_only_on_inputs
+#print axioms ProofsLean.MNCore.AbstractValue.depends_only_on_inputs
+#print axioms ProofsLean.MNCore.AbstractValue.unary_evaluation
+#print axioms ProofsLean.MNCore.AbstractValue.binary_evaluation
+#print axioms ProofsLean.MNCore.AbstractValue.ternary_evaluation
+#print axioms ProofsLean.MNCore.SingleFMA.abstractSingleFma_evaluation
+#print axioms ProofsLean.MNCore.SingleFMA.sdm_dropped_partial_product_example
+#print axioms ProofsLean.MNCore.SingleFMA.one_fma_one
+#print axioms ProofsLean.MNCore.SingleFMA.cancellation_is_positive_zero
+#print axioms ProofsLean.MNCore.SingleFMA.overflow_to_infinity
+#print axioms ProofsLean.MNCore.SingleFMA.ties_round_to_even
+#print axioms ProofsLean.MNCore.SingleFMA.ties_round_up_to_odd
 #print axioms ProofsLean.MNCore.Issue.encodedUniverseMachine_not_complete
 #print axioms ProofsLean.MNCore.Issue.mem_encodedUniverseAlphabet
 #print axioms ProofsLean.MNCore.Issue.encodedUniverseAlphabet_coversBelow

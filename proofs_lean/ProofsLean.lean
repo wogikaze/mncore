@@ -29,3 +29,5 @@ import ProofsLean.PEMachine
 import ProofsLean.MachineState
 import ProofsLean.Footprint
 import ProofsLean.PlusOne
+import ProofsLean.OperatorAbstraction
+import ProofsLean.SingleFMA
