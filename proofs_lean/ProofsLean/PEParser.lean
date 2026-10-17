@@ -42,18 +42,28 @@ def parsedPEU32? (chars : List Char) : Option Nat := do
   let value ← parsedMvDecimal? chars
   if value < 2 ^ 32 then some value else none
 
+def parsedPEU32Fin? (chars : List Char) : Option (Fin (2 ^ 32)) := do
+  let value ← parsedMvDecimal? chars
+  if h : value < 2 ^ 32 then some ⟨value, h⟩ else none
+
 def parsedPEU8? (chars : List Char) : Option Nat := do
   let value ← parsedMvDecimal? chars
   if value < 256 then some value else none
 
-def parsedPEMatrixRow? (chars : List Char) : Option (Option Nat) := do
+def parsedPEU8Fin? (chars : List Char) : Option (Fin 256) := do
+  let value ← parsedMvDecimal? chars
+  if h : value < 256 then some ⟨value, h⟩ else none
+
+def parsedPEMatrixRow? (chars : List Char) : Option (Option (Fin (2 ^ 32))) := do
   match chars with
   | [] => some none
   | first :: _ =>
       if (parsedMvDigit? 10 first).isNone then none else do
         let (value, rest) ← parsedMvDigitsPrefix 10 chars 0
         if rest.isEmpty then
-          if value < 2 ^ 64 then some (some (value % (2 ^ 32))) else some none
+          if value < 2 ^ 64 then
+            some (some ⟨value % (2 ^ 32), Nat.mod_lt _ (by decide)⟩)
+          else some none
         else none
 
 def parseParsedPEForward? (token : List Char) (neg : Bool) : Option ParsedOperand :=
@@ -176,7 +186,7 @@ def parseParsedPEOperandBody? (body : List Char) (neg : Bool)
     let entry ← parsedPEU8? entryChars
     if h : entry < 256 then some (.omr ⟨entry, h⟩ mask) else none
   else if let some addressChars := parsedStripChars? ['d','a','r'] body then do
-    let address ← parsedPEU32? addressChars
+    let address ← parsedPEU32Fin? addressChars
     some (.dar address)
   else do
     let (width, rest) := parsedPEAccessLength body
@@ -184,19 +194,19 @@ def parseParsedPEOperandBody? (body : List Char) (neg : Bool)
     else if rest == ['n','b'] then some (.bar true width mask)
     else match rest with
       | 'b' :: addressChars =>
-          if addressChars == ['i'] then some (.l1bm width.val none)
+          if addressChars == ['i'] then some (.l1bm width none)
           else do
-            let address ← parsedPEU32? addressChars
-            some (.l1bm width.val (some address))
+            let address ← parsedPEU32Fin? addressChars
+            some (.l1bm width (some address))
       | 'c' :: addressAndSelector => do
           let (addressChars, l2b) ← match parsedSplitAt? addressAndSelector '@' with
             | none => some (addressAndSelector, none)
             | some (address, '.' :: indexChars) => some (address, some indexChars)
             | _ => none
-          let address ← parsedPEU32? addressChars
+          let address ← parsedPEU32Fin? addressChars
           let l2b ← match l2b with
             | none => some none
-            | some chars => some (some (← parsedPEU8? chars))
+            | some chars => some (some (← parsedPEU8Fin? chars))
           some (.l2bm address l2b)
       | 'x' :: rowChars => do
           let row ← parsedPEMatrixRow? rowChars

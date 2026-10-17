@@ -105,6 +105,7 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.ParsedOperand.omr_inFiniteEnvelope_iff
 #print axioms ProofsLean.MNCore.Issue.ParsedOperand.matrix_inFiniteEnvelope_iff
 #print axioms ProofsLean.MNCore.Issue.ParsedOperand.l1bm_inFiniteEnvelope_iff
+#print axioms ProofsLean.MNCore.Issue.ParsedOperand.l2bm_inFiniteEnvelope_iff
 #print axioms ProofsLean.MNCore.Issue.parsedL1bAddressModeSet_inFiniteEnvelope
 #print axioms ProofsLean.MNCore.Issue.parseParsedL1bAddressMode?_full_set
 #print axioms ProofsLean.MNCore.Issue.parsedL1bListSet_inFiniteEnvelope

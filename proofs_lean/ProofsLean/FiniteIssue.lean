@@ -454,6 +454,39 @@ theorem optionNatBelow_finite (bound : Nat) :
     Finite {value : Option Nat // optionNatInFiniteEnvelope bound value} :=
   Finite.of_injective (optionNatFiniteCode bound) (optionNatFiniteCode_injective bound)
 
+def optionFinInFiniteEnvelope {size : Nat} (bound : Nat) (value : Option (Fin size)) : Prop :=
+  ∀ index, value = some index → index.val < bound
+
+def optionFinFiniteCode {size : Nat} (bound : Nat) :
+    {value : Option (Fin size) // optionFinInFiniteEnvelope bound value} →
+      Option (Fin bound)
+  | ⟨none, _⟩ => none
+  | ⟨some index, property⟩ => some ⟨index.val, property index rfl⟩
+
+theorem optionFinFiniteCode_injective {size : Nat} (bound : Nat) :
+    Function.Injective (@optionFinFiniteCode size bound) := by
+  intro a b equal
+  cases a with
+  | mk a ha =>
+    cases b with
+    | mk b hb =>
+      apply Subtype.ext
+      cases a with
+      | none =>
+          cases b with
+          | none => rfl
+          | some index => simp [optionFinFiniteCode] at equal
+      | some ai =>
+          cases b with
+          | none => simp [optionFinFiniteCode] at equal
+          | some bi =>
+              simp only [optionFinFiniteCode, Option.some.injEq] at equal
+              have valuesEqual : ai.val = bi.val :=
+                congrArg (fun value : Fin bound => value.val) equal
+              have indicesEqual : ai = bi := Fin.ext valuesEqual
+              cases indicesEqual
+              rfl
+
 def waitTagInFiniteEnvelope (tag : Nat) : Prop := 0 < tag ∧ tag < 256
 
 private def waitTagFiniteCode
@@ -747,11 +780,12 @@ def ParsedOperand.inFiniteEnvelope : ParsedOperand → Prop
   | .fixed .. => True
   | .omr entry mask => 0 < entry.val ∧ entry.val < 16 ∧ optionMaskInFiniteEnvelope mask
   | .matrix _ width row =>
-      (width.val = 1 ∨ width.val = 2 ∨ width.val = 4) ∧ optionNatInFiniteEnvelope 16 row
+      (width.val = 1 ∨ width.val = 2 ∨ width.val = 4) ∧ optionFinInFiniteEnvelope 16 row
   | .nowrite => True
-  | .l1bm width address => (width = 1 ∨ width = 2 ∨ width = 4) ∧ optionNatInFiniteEnvelope 8192 address
-  | .l2bm address l2b => address < 32768 ∧ optionNatInFiniteEnvelope 8 l2b
-  | .dar address => address < 1024
+  | .l1bm width address =>
+      (width.val = 1 ∨ width.val = 2 ∨ width.val = 4) ∧ optionFinInFiniteEnvelope 8192 address
+  | .l2bm address l2b => address.val < 32768 ∧ optionFinInFiniteEnvelope 8 l2b
+  | .dar address => address.val < 1024
 
 theorem ParsedOperand.mem_inFiniteEnvelope_iff (access : Access) (neg ext rnd : Bool)
     (mask : Option ParsedMask) :
@@ -769,19 +803,21 @@ theorem ParsedOperand.omr_inFiniteEnvelope_iff (entry : Fin 256)
       0 < entry.val ∧ entry.val < 16 ∧ optionMaskInFiniteEnvelope mask := Iff.rfl
 
 theorem ParsedOperand.matrix_inFiniteEnvelope_iff (y : Bool) (width : Fin 5)
-    (row : Option Nat) :
+    (row : Option (Fin (2 ^ 32))) :
     ParsedOperand.inFiniteEnvelope (.matrix y width row) ↔
       (width.val = 1 ∨ width.val = 2 ∨ width.val = 4) ∧
-        optionNatInFiniteEnvelope 16 row := Iff.rfl
+        optionFinInFiniteEnvelope 16 row := Iff.rfl
 
-theorem ParsedOperand.l1bm_inFiniteEnvelope_iff (width : Nat) (address : Option Nat) :
+theorem ParsedOperand.l1bm_inFiniteEnvelope_iff (width : Fin 5)
+    (address : Option (Fin (2 ^ 32))) :
     ParsedOperand.inFiniteEnvelope (.l1bm width address) ↔
-      (width = 1 ∨ width = 2 ∨ width = 4) ∧
-        optionNatInFiniteEnvelope 8192 address := Iff.rfl
+      (width.val = 1 ∨ width.val = 2 ∨ width.val = 4) ∧
+        optionFinInFiniteEnvelope 8192 address := Iff.rfl
 
-theorem ParsedOperand.l2bm_inFiniteEnvelope_iff (address : Nat) (l2b : Option Nat) :
+theorem ParsedOperand.l2bm_inFiniteEnvelope_iff (address : Fin (2 ^ 32))
+    (l2b : Option (Fin 256)) :
     ParsedOperand.inFiniteEnvelope (.l2bm address l2b) ↔
-      address < 32768 ∧ optionNatInFiniteEnvelope 8 l2b := Iff.rfl
+      address.val < 32768 ∧ optionFinInFiniteEnvelope 8 l2b := Iff.rfl
 
 abbrev OperandMemFiniteCode :=
   (Fin 10 × RegionFiniteCode) × Bool × Bool × Bool × ParsedMaskOptionFiniteCode
@@ -863,19 +899,18 @@ def ParsedOperand.finiteCode
   | matrix y width row =>
       rcases bounds with ⟨widthBound, rowBound⟩
       exact operandMatrixCode (y, width,
-        optionNatFiniteCode 16 ⟨row, rowBound⟩)
+        optionFinFiniteCode 16 ⟨row, rowBound⟩)
   | nowrite => exact operandNowriteCode
   | l1bm width address =>
       rcases bounds with ⟨widthBound, addressBound⟩
-      have widthLT : width < 5 := by rcases widthBound with h | h | h <;> omega
-      exact operandL1bmCode (⟨width, widthLT⟩,
-        optionNatFiniteCode 8192 ⟨address, addressBound⟩)
+      exact operandL1bmCode (width,
+        optionFinFiniteCode 8192 ⟨address, addressBound⟩)
   | l2bm address l2b =>
       rcases bounds with ⟨addressBound, l2bBound⟩
-      exact operandL2bmCode (⟨address, addressBound⟩,
-        optionNatFiniteCode 8 ⟨l2b, l2bBound⟩)
+      exact operandL2bmCode (⟨address.val, addressBound⟩,
+        optionFinFiniteCode 8 ⟨l2b, l2bBound⟩)
   | dar address =>
-      exact operandDarCode ⟨address, bounds⟩
+      exact operandDarCode ⟨address.val, bounds⟩
 
 theorem ParsedOperand.finiteCode_injective : Function.Injective ParsedOperand.finiteCode := by
   intro a b codeEqual
@@ -903,16 +938,22 @@ theorem ParsedOperand.finiteCode_injective : Function.Injective ParsedOperand.fi
           exact ParsedForward.finiteCode_injective kindEqual
         | exact ParsedFixed.finiteCode_injective codeEqual
         | rcases codeEqual with ⟨_, _, rowEqual⟩
-          exact congrArg Subtype.val (optionNatFiniteCode_injective 16 rowEqual)
+          exact congrArg Subtype.val
+            (optionFinFiniteCode_injective (size := 2 ^ 32) 16 rowEqual)
         | rcases codeEqual with ⟨_, addressEqual⟩
-          exact congrArg Subtype.val (optionNatFiniteCode_injective 8192 addressEqual)
+          exact congrArg Subtype.val
+            (optionFinFiniteCode_injective (size := 2 ^ 32) 8192 addressEqual)
         | rcases codeEqual with ⟨addressEqual, l2bEqual⟩
-          exact congrArg Subtype.val (optionNatFiniteCode_injective 8 l2bEqual)
+          constructor
+          · exact Fin.ext addressEqual
+          · exact congrArg Subtype.val
+              (optionFinFiniteCode_injective (size := 256) 8 l2bEqual)
         | rcases codeEqual with ⟨entryValueEqual, maskEqual⟩
           constructor
           · exact Fin.ext entryValueEqual
           · exact congrArg Subtype.val (optionMaskFiniteCode_injective maskEqual)
-        | exact congrArg Fin.val codeEqual
+        | apply Fin.ext
+          exact congrArg (fun value : Fin 1024 => value.val) codeEqual
 
 theorem ParsedOperand.inFiniteEnvelope_finite :
     Finite {operand : ParsedOperand // operand.inFiniteEnvelope} :=

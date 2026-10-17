@@ -85,11 +85,11 @@ inductive ParsedOperand where
   | forward (kind : ParsedForward) (neg ext rnd : Bool)
   | fixed (kind : ParsedFixed)
   | omr (entry : Fin 256) (mask : Option ParsedMask)
-  | matrix (y : Bool) (width : Fin 5) (row : Option Nat)
+  | matrix (y : Bool) (width : Fin 5) (row : Option (Fin (2 ^ 32)))
   | nowrite
-  | l1bm (width : Nat) (address : Option Nat)
-  | l2bm (address : Nat) (l2b : Option Nat)
-  | dar (address : Nat)
+  | l1bm (width : Fin 5) (address : Option (Fin (2 ^ 32)))
+  | l2bm (address : Fin (2 ^ 32)) (l2b : Option (Fin 256))
+  | dar (address : Fin (2 ^ 32))
   deriving DecidableEq, Repr
 
 /-- Fixed identifiers and forwarding values are source-only operand roles.
@@ -783,8 +783,8 @@ theorem ParsedOp.l1bm_mwrite_pe_source (mab : Fin 256) (operand : ParsedOperand)
     ParsedOp.sourceRoleScreen (.l1bm (.mwrite mab)) [] operand := by
   exact role
 
-theorem ParsedOp.l1bm_mwrite_rejects_l1bm_source (mab : Fin 256) (width : Nat)
-    (address : Option Nat) :
+theorem ParsedOp.l1bm_mwrite_rejects_l1bm_source (mab : Fin 256) (width : Fin 5)
+    (address : Option (Fin (2 ^ 32))) :
     ¬ ParsedOp.sourceRoleScreen (.l1bm (.mwrite mab)) [] (.l1bm width address) := by
   simp [ParsedOp.sourceRoleScreen, ParsedOperand.peSourceRole]
 
@@ -793,8 +793,8 @@ theorem ParsedOp.l1bm_mwrite_rejects_base_address_source (mab : Fin 256)
     ¬ ParsedOp.sourceRoleScreen (.l1bm (.mwrite mab)) [] (.bar lm1 width mask) := by
   simp [ParsedOp.sourceRoleScreen, ParsedOperand.peSourceRole]
 
-theorem ParsedOp.l1bm_distrib_l1bm_source (offset : Int) (width : Nat)
-    (address : Option Nat) :
+theorem ParsedOp.l1bm_distrib_l1bm_source (offset : Int) (width : Fin 5)
+    (address : Option (Fin (2 ^ 32))) :
     ParsedOp.sourceRoleScreen (.l1bm (.distrib offset)) [] (.l1bm width address) := by
   simp [ParsedOp.sourceRoleScreen, ParsedOperand.l1bmSourceRole]
 
@@ -805,7 +805,7 @@ theorem ParsedOp.l1bm_distrib_rejects_pe_source (offset : Int)
 
 theorem ParsedOp.l1bm_broadcast_l1bm_source (operation : ParsedL1Op)
     (isBroadcast : operation = .pbcast ∨ operation = .mbcast ∨ operation = .m4bcast)
-    (width : Nat) (address : Option Nat) :
+    (width : Fin 5) (address : Option (Fin (2 ^ 32))) :
     ParsedOp.sourceRoleScreen (.l1bm operation) [.l1bm width address]
       (.l1bm width address) := by
   rcases isBroadcast with h | h | h <;> simp [ParsedOp.sourceRoleScreen, h,
@@ -814,7 +814,7 @@ theorem ParsedOp.l1bm_broadcast_l1bm_source (operation : ParsedL1Op)
 theorem ParsedOp.l1bm_broadcast_rejects_pe_source
     (operation : ParsedL1Op)
     (isBroadcast : operation = .pbcast ∨ operation = .mbcast ∨ operation = .m4bcast)
-    (width : Nat) (address : Option Nat) :
+    (width : Fin 5) (address : Option (Fin (2 ^ 32))) :
     ¬ ParsedOp.sourceRoleScreen (.l1bm operation) [.l1bm width address]
       (.mem ⟨.lm0, ⟨1, 0, 0, 0, 0, false, none⟩⟩ false false false none) := by
   rcases isBroadcast with h | h | h <;> simp [ParsedOp.sourceRoleScreen, h,

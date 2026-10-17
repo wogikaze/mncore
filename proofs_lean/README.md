@@ -138,6 +138,8 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
 - L1B selectorはマニュアルの8バンク構成に合わせ、membership bitmapを`Fin 256`、immodeを`Fin 8`で保持する。
   リスト形式・address/immode形式のparserがこれらの型を直接生成し、mask/immodeの有限carrier証明も維持する。
   PEのBARとmatrix operandのアクセス幅も`Fin 5`で保持し、有限 carrier に反映した。合法envelopeはBARを1/2、matrixを1/2/4に絞る。
+  matrix row、L1BM/L2BM address、DAR addressはparserのu32値を`Fin (2^32)`で保持し、L2B selectorはparserのu8値を`Fin 256`で保持する。
+  合法envelopeはmatrix row `<16`、L1BM address `<8192`、L2BM address `<32768`、DAR address `<1024`、L2B selector `<8`に絞る。parser値から合法範囲への完全な接続は未証明。
   L1BMの`mwrite`/`m4write`とL2BMの`fromL1b`も、parserが保持する0〜255を`Fin 256`で表す。
   assemblerの有効範囲（MAB `<16`、L1B `<8`）は別の有限envelopeに保持し、受理範囲との接続は未証明としている。
 - `FiniteRegion.lean`: assemble3境界プローブを根拠に、width 1/2/4、4つのアドレス`< 4096`、

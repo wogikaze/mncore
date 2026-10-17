@@ -9,7 +9,7 @@ open ProofsLean.MNCore.Issue
 open ProofsLean.MNCore.L1Transfer
 
 def firstL1bm : List ParsedOperand → Option (Nat × Option Nat)
-  | .l1bm width address :: _ => some (width, address)
+  | .l1bm width address :: _ => some (width.val, address.map Fin.val)
   | _ => none
 
 def firstMemoryExt : List ParsedOperand → Bool
@@ -34,8 +34,8 @@ def parsedL1HazardInfo (op : ParsedL1Op) :
 
 def operandBlockAddress (operand : ParsedOperand) : Nat :=
   match operand with
-  | .l1bm _ address => address.getD 0
-  | .l2bm address _ => address
+  | .l1bm _ address => (address.map Fin.val).getD 0
+  | .l2bm address _ => address.val
   | _ => 0
 
 def l1BlockRangeEvents (mask : Nat) (write : Bool)
