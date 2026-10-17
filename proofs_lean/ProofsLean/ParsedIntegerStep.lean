@@ -4835,7 +4835,8 @@ theorem parsed_iinc_output_eq_incrementPair (files : IntegerRegisterFiles)
 
 def plusOneFiles (state : ProofsLean.MNCore.PlusOne.State) : IntegerRegisterFiles where
   lm0 := ProofsLean.MNCore.PlusOne.sourceMemory state
-  lm1 := fun _ => 0
+  lm1 := fun address =>
+    if h : address.val < 16 then state.lm1 ⟨address.val, h⟩ else 0
   grf0 := fun _ => 0
   grf1 := fun _ => 0
   t := fun _ => 0
@@ -4843,6 +4844,12 @@ def plusOneFiles (state : ProofsLean.MNCore.PlusOne.State) : IntegerRegisterFile
 
 theorem plusOneFiles_lm0 (state : ProofsLean.MNCore.PlusOne.State) :
     (plusOneFiles state).lm0 = ProofsLean.MNCore.PlusOne.sourceMemory state := rfl
+
+theorem plusOneFiles_lm1_word (state : ProofsLean.MNCore.PlusOne.State)
+    (address : Fin 16) :
+    (plusOneFiles state).lm1 ⟨address.val, Nat.lt_trans address.isLt (by decide)⟩ =
+      state.lm1 address := by
+  simp [plusOneFiles]
 
 def plusOneMemoryAddress (address : Fin 16) : Fin Bank.lm0.capacity :=
   ⟨address.val, by have h := address.isLt; change address.val < 4096; omega⟩
@@ -4914,6 +4921,35 @@ theorem parsed_iinc_cycle_matches_plusOne
         _ = ProofsLean.MNCore.PlusOne.cycleOutput state line cycle := by
           simpa [ProofsLean.MNCore.PlusOne.cycleOutput] using
             (ProofsLean.MNCore.PlusOne.cycle_alu_output state line cycle).symm
+
+
+def plusOneParsedCycleLocations (base : Nat) (cycle : Fin 4) :
+    Option (DirectMemoryAccess × DirectMemoryAccess × DirectMemoryAccess) :=
+  (ParsedExpr.toDirectIntegerAccesses?
+    (ProofsLean.MNCore.Issue.plusOneParsedAt base) 0 cycle 0 0 0).map
+      ParsedIntegerAccesses.locations
+
+theorem plusOneFirstLine_fourCycleLowering :
+    (List.finRange 4).map (plusOneParsedCycleLocations 0) =
+      [some (⟨.lm0, .long, ⟨0, by decide⟩⟩,
+        ⟨.lm0, .long, ⟨0, by decide⟩⟩, ⟨.lm1, .long, ⟨0, by decide⟩⟩),
+       some (⟨.lm0, .long, ⟨2, by decide⟩⟩,
+        ⟨.lm0, .long, ⟨2, by decide⟩⟩, ⟨.lm1, .long, ⟨2, by decide⟩⟩),
+       some (⟨.lm0, .long, ⟨4, by decide⟩⟩,
+        ⟨.lm0, .long, ⟨4, by decide⟩⟩, ⟨.lm1, .long, ⟨4, by decide⟩⟩),
+       some (⟨.lm0, .long, ⟨6, by decide⟩⟩,
+        ⟨.lm0, .long, ⟨6, by decide⟩⟩, ⟨.lm1, .long, ⟨6, by decide⟩⟩)] := by decide
+
+theorem plusOneSecondLine_fourCycleLowering :
+    (List.finRange 4).map (plusOneParsedCycleLocations 8) =
+      [some (⟨.lm0, .long, ⟨8, by decide⟩⟩,
+        ⟨.lm0, .long, ⟨8, by decide⟩⟩, ⟨.lm1, .long, ⟨8, by decide⟩⟩),
+       some (⟨.lm0, .long, ⟨10, by decide⟩⟩,
+        ⟨.lm0, .long, ⟨10, by decide⟩⟩, ⟨.lm1, .long, ⟨10, by decide⟩⟩),
+       some (⟨.lm0, .long, ⟨12, by decide⟩⟩,
+        ⟨.lm0, .long, ⟨12, by decide⟩⟩, ⟨.lm1, .long, ⟨12, by decide⟩⟩),
+       some (⟨.lm0, .long, ⟨14, by decide⟩⟩,
+        ⟨.lm0, .long, ⟨14, by decide⟩⟩, ⟨.lm1, .long, ⟨14, by decide⟩⟩)] := by decide
 
 theorem direct_access_write_readback (files : IntegerRegisterFiles)
     (destination : DirectMemoryAccess) (data : WordBus) (index : Fin 4)

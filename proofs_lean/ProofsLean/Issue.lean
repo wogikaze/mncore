@@ -2342,18 +2342,29 @@ theorem mask_directive_replaces_state (widthWords : Nat) (targets : ParsedMaskTa
 theorem ordinary_line_preserves_mask_state (state : ParsedMaskDirective) :
     ParsedLine.updateMaskState (.nop 1 none) state = state := rfl
 
-def plusOneRead : ParsedOperand :=
-  .mem ⟨.lm0, ⟨2, 0, 0, 0, 0, false, none⟩⟩ false false false none
+def plusOneAccess (bank : Bank) (base : Nat) : Access :=
+  ⟨bank, ⟨2, base, base + 2, base + 4, base + 6, false, none⟩⟩
 
-def plusOneWrite : ParsedOperand :=
-  .mem ⟨.lm1, ⟨2, 0, 0, 0, 0, false, none⟩⟩ false false false none
+def plusOneReadAt (base : Nat) : ParsedOperand :=
+  .mem (plusOneAccess .lm0 base) false false false none
 
-def plusOneParsed : ParsedExpr where
+def plusOneWriteAt (base : Nat) : ParsedOperand :=
+  .mem (plusOneAccess .lm1 base) false false false none
+
+def plusOneRead : ParsedOperand := plusOneReadAt 0
+
+def plusOneWrite : ParsedOperand := plusOneWriteAt 0
+
+def plusOneParsedAt (base : Nat) : ParsedExpr where
   op := .alu .inc (some .i) false none
-  sources := [plusOneRead]
-  destinations := [plusOneWrite]
+  sources := [plusOneReadAt base]
+  destinations := [plusOneWriteAt base]
   flush := none
-  text := "iinc $lm0v $ln0v"
+  text := "iinc $lm" ++ toString base ++ "v $ln" ++ toString base ++ "v"
+
+def plusOneParsed : ParsedExpr := plusOneParsedAt 0
+
+def plusOneSecondParsed : ParsedExpr := plusOneParsedAt 8
 
 def parsedVectorFma : ParsedExpr where
   op := .mau .f false .fma none false
@@ -2377,7 +2388,7 @@ theorem plusOne_issue_legal : LegalParsedLine [plusOneParsed] := by
     ParsedExpr.maskRegisterWrites ParsedOperand.maskRegisterWrite?
     ParsedExpr.barWrites ParsedOperand.barWriteBank?
     ParsedExpr.writesLbf ParsedExpr.nowriteOutputValid
-    plusOneParsed plusOneRead plusOneWrite
+    plusOneParsed plusOneParsedAt plusOneReadAt plusOneWriteAt plusOneAccess
   simp [Legal, idsUnique, groupsUnique, mauCountBounded, mauExpressions,
     mauPrecisionsAgree, matrixWritePairAgrees, matrixRegistersUnique,
     writesUnique, Expr.writeBanks, barWritesExcludeReads, readsAgree, localReadWriteAgree, immediateExcludesLm0,

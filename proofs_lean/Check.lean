@@ -363,10 +363,10 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.iinc_evaluation_is_integer_alu
 #print axioms ProofsLean.MNCore.Issue.parsed_integer_evaluation_uses_requested_semantics
 #print axioms ProofsLean.MNCore.Issue.parsed_float_rsqrt_is_unknown
+#print axioms ProofsLean.MNCore.byteSwap64_involutive
 #print axioms ProofsLean.MNCore.PEMemory.pack_unpackALUBus
 #print axioms ProofsLean.MNCore.PEMemory.readRegisterBank_after_write
 #print axioms ProofsLean.MNCore.PEMemory.readDirectAccessMasked_after_write
-#print axioms ProofsLean.MNCore.byteSwap64_involutive
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerMaskedRegisterStep_success
 #print axioms ProofsLean.MNCore.PEMemory.parsedIntegerMaskedRegisterStep_masked_readback
 #print axioms ProofsLean.MNCore.PEMemory.parsedIssueCheckedALUProducerLineFourCycleStep_accepted
