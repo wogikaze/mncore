@@ -1,6 +1,5 @@
 from typing import List
 
-from matplotlib import lines
 from .. import BaseOperator
 
 def generate_vsm(operator: BaseOperator) -> List[str]:

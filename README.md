@@ -112,7 +112,7 @@ Run an answer against its official testcases with:
 python3 problems/run_problem.py challenge/12.convert-endian --solution problems/challenge/12.convert-endian/answer.vsm
 ```
 
-The original Challenge's [judge.zip](https://mncore-challenge.preferred.jp/judge.zip)
+The original Challenge's [judge archive](https://mncore-challenge.preferred.jp/judge-mncore-challenge.zip)
 can also be used via `--judge /path/to/judge/judge-py/judge.py`.
 The runner adapts older testcase output separators in a temporary copy.
 
