@@ -768,8 +768,13 @@ def coverage_catalog() -> dict:
             "bounded_instruction_line_projection": "ProofsLean.MNCore.boundedIssueMachine",
             "bounded_projection_used": False,
             "finite_range_work": "frozen",
+            "step_issue_failure": {
+                "checker": "ProofsLean.MNCore.Issue.checkParsedTopLine",
+                "failure_theorem": "ProofsLean.MNCore.partialMachine_issue_failure",
+                "accepted_transition": "unknown pending integrated value semantics",
+            },
             "remaining": [
-                "Implement issue, PE/block hazard, and disabled-forwarding failures in step.",
+                "Implement PE/block hazard and disabled-forwarding failures in step.",
                 "Prove universal source-parser/assembler correspondence into fixed-width encoded words.",
                 "Connect encoded words to transition semantics and seal MNCore.machine.",
             ],

@@ -36,11 +36,12 @@ def InstructionLine.programIssueAndHazardLegal
 result type of successful source normalization, so all values of this line type
 are admitted here. Operational issue and hazard failures will be represented
 by `.failure` in `step` as semantics are connected. -/
-def _root_.ProofsLean.MNCore.partialMachine : ProofsLean.PartialMachine where
+noncomputable def _root_.ProofsLean.MNCore.partialMachine : ProofsLean.PartialMachine where
   Line := InstructionLine
   State := Unit
   Input := Unit
-  step := fun _ _ => .unknown
+  step := fun line _ =>
+    if checkParsedTopLine line.toParsed then .unknown else .failure
   legal := fun _ => True
   lineCost := InstructionLine.cost
   positiveCost := InstructionLine.cost_positive
@@ -76,7 +77,22 @@ def _root_.ProofsLean.MNCore.boundedIssueMachine : ProofsLean.PartialMachine whe
 theorem _root_.ProofsLean.MNCore.partialMachine_not_complete :
     ¬ ProofsLean.MNCore.partialMachine.Complete := by
   apply ProofsLean.unknown_prevents_sealing
-  exact ⟨InstructionLine.pe [], (), rfl⟩
+  refine ⟨InstructionLine.nop ⟨1, by decide⟩ none, (), ?_⟩
+  simp [ProofsLean.MNCore.partialMachine, InstructionLine.toParsed,
+    checkParsedTopLine, ParsedLine.nopIssueLegalB]
+
+/-- A normalized executable row rejected by the local issue checker is a
+known failed step. Accepted rows remain unknown until their value transition
+is connected to the whole-machine state. -/
+theorem _root_.ProofsLean.MNCore.partialMachine_issue_failure
+    (line : InstructionLine) (invalid : checkParsedTopLine line.toParsed = false) :
+    ProofsLean.MNCore.partialMachine.step line () = .failure := by
+  simp [ProofsLean.MNCore.partialMachine, invalid]
+
+theorem _root_.ProofsLean.MNCore.partialMachine_accepted_issue_unknown
+    (line : InstructionLine) (accepted : checkParsedTopLine line.toParsed = true) :
+    ProofsLean.MNCore.partialMachine.step line () = .unknown := by
+  simp [ProofsLean.MNCore.partialMachine, accepted]
 
 theorem _root_.ProofsLean.MNCore.boundedIssueMachine_not_complete :
     ¬ ProofsLean.MNCore.boundedIssueMachine.Complete := by

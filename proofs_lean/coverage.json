@@ -88,7 +88,7 @@
     "finite_source": "proofs_lean/ProofsLean/FiniteIssue.lean",
     "finite_source_sha256": "cd13b07b3e94dceaddb4a8fea1b3bf7728dac5ed301c5c247a7324c495383866",
     "adapter_source": "proofs_lean/ProofsLean/ProgramLegality.lean",
-    "adapter_source_sha256": "7abb1353124497c4e4cd863b145aff44ad2e359b4e9a213dd3b67d41d86ee043",
+    "adapter_source_sha256": "a33375d260733f563abc43188f494ae4ef9e3af9c564efcc0fb8cb0ced7fb0fd",
     "line_alphabet": "Sum (BitVec 426) (BitVec 82)",
     "bounded_programs_finite": "ProofsLean.MNCore.Issue.encodedPrograms_lengthBounded_finite",
     "short_program_enumeration_complete": "ProofsLean.MNCore.Issue.encodedUniverse_shortPrograms_complete",
@@ -105,8 +105,13 @@
     "bounded_instruction_line_projection": "ProofsLean.MNCore.boundedIssueMachine",
     "bounded_projection_used": false,
     "finite_range_work": "frozen",
+    "step_issue_failure": {
+      "checker": "ProofsLean.MNCore.Issue.checkParsedTopLine",
+      "failure_theorem": "ProofsLean.MNCore.partialMachine_issue_failure",
+      "accepted_transition": "unknown pending integrated value semantics"
+    },
     "remaining": [
-      "Implement issue, PE/block hazard, and disabled-forwarding failures in step.",
+      "Implement PE/block hazard and disabled-forwarding failures in step.",
       "Prove universal source-parser/assembler correspondence into fixed-width encoded words.",
       "Connect encoded words to transition semantics and seal MNCore.machine."
     ]
@@ -464,7 +469,7 @@
   },
   "normalized_line_bounded_issue_projection": {
     "source": "proofs_lean/ProofsLean/ProgramLegality.lean",
-    "sha256": "7abb1353124497c4e4cd863b145aff44ad2e359b4e9a213dd3b67d41d86ee043",
+    "sha256": "a33375d260733f563abc43188f494ae4ef9e3af9c564efcc0fb8cb0ced7fb0fd",
     "line_type": "ProofsLean.MNCore.Issue.InstructionLine",
     "fintype": "ProofsLean.MNCore.boundedIssueMachine_legalLineFintype",
     "alphabet_coverage": "ProofsLean.MNCore.boundedIssueMachine_legalLineAlphabet_covers",

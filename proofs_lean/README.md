@@ -143,7 +143,7 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
 - 同時発行条件は [`ISSUE_AUDIT.md`](ISSUE_AUDIT.md) でSDM 3.6.4と照合した。
   現行checkerはOMR/LBF/BAR出力とマスク読み出しの一部をモデル化したが、
   `l2bmdars`の特殊な同時発行条件など未解決の規則が残る。下限列挙に使える完全な合法性述語ではなく、
-  coverageは`partial_datapath_only`のままとする。
+  coverageは`partial_datapath_only`のままとする。候補意味論ではissue conflictもstepの失敗として扱う。
 - L1B selectorはマニュアルの8バンク構成に合わせ、membership bitmapを`Fin 256`、immodeを`Fin 8`で保持する。
   リスト形式・address/immode形式のparserがこれらの型を直接生成し、mask/immodeの有限carrier証明も維持する。
   PEのBARとmatrix operandのアクセス幅も`Fin 5`で保持し、有限 carrier に反映した。合法envelopeはBARを1/2、matrixを1/2/4に絞る。
@@ -317,9 +317,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   `localIssueLegalCostBelowFintype`と`localIssueLegalCostBelowAlphabet`を構成した。
   alphabetの所属条件も局所合法性とコスト上限の組み合わせに一致する。これは単一行の結果であり、
   命令間hazard、parser/assembler完全性、MNCore全体のmachine合法性を証明したものではない。
-- `ProgramLegality.lean`: `MNCore.partialMachine.legal`は正規化済み`InstructionLine`列を広く許し、実行時の
-  issue違反・hazard・無効なforwarding読み出しを合法性から除外しない。遷移は引き続き`unknown`で、これらの実行失敗は
-  今後`step`へ実装する。正規化成功後の命令列はこの広い合法性を満たす。
+- `ProgramLegality.lean`: `MNCore.partialMachine.legal`は正規化済み`InstructionLine`列を広く許す。
+  発行checkerが拒否する行は`step = failure`、checkerを通る行は値遷移が未接続なので`unknown`にする。
+  正規化成功後の命令列はこの広い合法性を満たす。PE/block hazardと無効なforwarding読み出しは未接続。
 - 同ファイルの`boundedIssueMachine`は、以前のlocal issue・envelope・PE/block hazard条件による有限性定理を保存する
   旧projectionであり、機械の合法性や候補列挙には使わない。有限性・範囲付けの証明は凍結する。
 - 候補列挙には`encodedUniverseMachine`を採用し、全426-bit PE語と82-bit MV語の有限carrierを使う。
