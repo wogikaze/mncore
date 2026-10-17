@@ -46,6 +46,7 @@ Welcome の後は Convert Endian を縦の2問目にする。有限性・範囲�
 7. 3-5: 下限証明が失敗した候補から、探索用の条件と具体的な反例を取り出すインターフェースを設計する。Rustシミュレータ向け候補生成器、判定条件、結果の再現記録は未実装。
 8. Phase 4はWelcomeの後にConvert Endianを扱う。3行解の整数barrel shift→単精度MAU FMA→整数barrel shift→PE destination selectorの値依存を抽象式にし、合成結果が任意64-bit入力のbyte swapになることを証明した。公式judgeとRust simulatorを含む8値の差分は完了。全メモリアクセス・発行・state transitionへの接続は未実装。
    次題1.a-b（A-B）について、`FloatSubtract.lean`に`fvadd x -y`を単位乗算FMAと符号反転加数として表す式、および定数・依存追跡の健全性、3つの具体例を追加した。`difftest_mau fvsub 1 1234`で問題の符号付き加算命令を公式gpfn3と16,384値比較し、不一致0。これは演算器データパスの小さな証明であり、LeanモデルとRustの全域同値、行列アドレス、issue/state遷移、全入力正当性、2行下限は未完了。引き続き全メモリアクセス・発行・state transitionへの接続を進める。
+   続いて2.fmul7向けに`FloatMultiply.lean`を追加し、`fvmul`をゼロ加数のFMAとして抽象式へ接続した。7.0を掛ける具体例と定数・依存追跡の健全性を証明した。`difftest_mau fvmul 1 2345`は公式gpfn3との16,384値比較で不一致0。命令語配置・4行スケジュールとの接続、LeanとRustの全域同値、最適性は未完了。
 
 ## 実装した定義
 
