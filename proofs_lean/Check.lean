@@ -70,6 +70,12 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.encodedUniverse_shortPrograms_complete
 #print axioms ProofsLean.MNCore.Issue.encodedUniverse_legalLinesCostBelow_finite
 #print axioms ProofsLean.MNCore.Issue.encodedUniverseMachine_not_complete
+#print axioms ProofsLean.MNCore.every_state_is_currently_admissible
+#print axioms ProofsLean.MNCore.ParsedExpr.source_in_footprint
+#print axioms ProofsLean.MNCore.ParsedExpr.destination_in_read_footprint
+#print axioms ProofsLean.MNCore.ParsedExpr.destination_in_write_footprint
+#print axioms ProofsLean.MNCore.InstructionLine.has_hazard_clock_write
+#print axioms ProofsLean.MNCore.commitOperandWrites_frame
 #print axioms ProofsLean.MNCore.Issue.ParsedOperand.fixed_notKnownSourceOnly
 #print axioms ProofsLean.MNCore.Issue.ParsedOperand.forward_notKnownSourceOnly
 #print axioms ProofsLean.MNCore.Issue.ParsedOp.l1bm_broadcast_from_l1bm_to_pe_role

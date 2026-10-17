@@ -38,7 +38,7 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
    新しい有限性・範囲証明は追加しない。
 2. 候補列挙の基盤には`encodedUniverseMachine`を採用する。固定幅PE/MV符号語全体の有限性を使い、`InstructionLine`の範囲付き合法性経路は旧projectionとしてのみ残す。
    assembler sourceから符号語への全域対応は独立した未解決義務として記録する。
-3. Phase 2の状態を`coverage.json`と本READMEへ反映した後、Phase 3の本物のStateと全命令footprintへ進む。
+3. Phase 2の状態は反映済み。Phase 3では、本物のStateと全命令footprintの骨格を追加した。次にこれをstepへ接続する。
 4. Welcomeの入力域・初期状態・出力仕様を確定し、必要な値意味論を足して正しさ、1行下限、公式emulator差分を順に接続する。
 
 ## 実装した定義
@@ -46,6 +46,13 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
 - `Semantics.lean`: 完全な同時発行行から状態への遷移、失敗する実行、スコア、仕様、正しさ、反証入力。
 - `PartialSemantics.lean`: 未実装と既知の実行失敗を分離する。
   全命令・全状態で未実装がないことを証明しない限り、完全モデルへ変換できない。
+- `MachineState.lean`: PE 2048個の5バンクregister files/OMR、L1BM 8バンク、L2BM/PDM/DRAM、
+  ALUF/MAUF/LBF/MREADF busとvalidity、mask directive、PE context、hazard clockをまとめるState型。
+  初期値ポリシーはまだ仮定しない。
+- `Footprint.lean`: 全`InstructionLine`（PE/nop/MV）と全`ParsedOp`の構文footprintを定義し、
+  operand source/destination、functional unit、clockのread/write候補を記録する。
+  destination readはmasked writeのpreserve可能性を含む保守的な記録。
+  generic operand-storeのframe lemmaはあるが、実際のmachine stepがこのpatch APIだけを使う定理は未接続。
 - `ControlNormalization.lean`: データを直接変更せず後続命令の制御状態だけを更新する
   ゼロコスト制御文について、制御状態付き命令列への変換が実行結果とスコアを保存する
   汎用定理。変換後の列を既存の `Machine` 証明基盤に接続した。
