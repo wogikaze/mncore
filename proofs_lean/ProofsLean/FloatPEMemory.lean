@@ -221,6 +221,12 @@ def addCycle (left : PEMemory.Memory .lm0) (right : PEMemory.Memory .lm0)
     (outputStart : Fin (PEMemory.Bank.capacity .lm1)) : PEMemory.Memory .lm1 :=
   binaryCycle FloatAdd.addBus left right output leftStart rightStart outputStart
 
+def subtractCycle (left : PEMemory.Memory .lm0) (right : PEMemory.Memory .lm0)
+    (output : PEMemory.Memory .lm1)
+    (leftStart rightStart : Fin (PEMemory.Bank.capacity .lm0))
+    (outputStart : Fin (PEMemory.Bank.capacity .lm1)) : PEMemory.Memory .lm1 :=
+  binaryCycle FloatSubtract.subtractBus left right output leftStart rightStart outputStart
+
 def lm0LongAddress? (access : PEMemory.DirectMemoryAccess) :
     Option (Fin (PEMemory.Bank.capacity .lm0)) :=
   match access with
@@ -347,6 +353,71 @@ theorem executeParsedFloatAddCycle_readback (expression : ParsedExpr)
     (binaryCycle_readback FloatAdd.addBus files.lm0 files.lm0 files.lm1
       leftAddress rightAddress destinationAddress)
 
+/-- Lower the direct-memory `fvadd x -y` form. The sign bit changes the
+floating-point operation but does not change the address used to read `y`. -/
+def lowerParsedFloatSubtract? (expression : ParsedExpr) (pe cycle : Fin 4)
+    (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
+    Option (Fin (PEMemory.Bank.capacity .lm0) ×
+      Fin (PEMemory.Bank.capacity .lm0) × Fin (PEMemory.Bank.capacity .lm1)) := do
+  match expression.op with
+  | .mau .f false .add none false => pure ()
+  | _ => none
+  match expression.sources, expression.destinations with
+  | [.mem left false false false none, .mem right true false false none],
+      [.mem destination false false false none] =>
+      let leftAccess ← PEMemory.ParsedOperand.toDirectMemoryAccess?
+        (.mem left false false false none) pe cycle bar0 bar1 tWord
+      let rightAccess ← PEMemory.ParsedOperand.toDirectMemoryAccess?
+        (.mem right false false false none) pe cycle bar0 bar1 tWord
+      let destinationAccess ← PEMemory.ParsedOperand.toDirectMemoryAccess?
+        (.mem destination false false false none) pe cycle bar0 bar1 tWord
+      let leftAddress ← lm0LongAddress? leftAccess
+      let rightAddress ← lm0LongAddress? rightAccess
+      let destinationAddress ← lm1LongAddress? destinationAccess
+      some (leftAddress, rightAddress, destinationAddress)
+  | _, _ => none
+
+def executeParsedFloatSubtractCycle? (expression : ParsedExpr)
+    (files : PEMemory.IntegerRegisterFiles) (pe cycle : Fin 4)
+    (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
+    Option PEMemory.IntegerRegisterFiles := do
+  let (leftAddress, rightAddress, destinationAddress) ←
+    lowerParsedFloatSubtract? expression pe cycle bar0 bar1 tWord
+  let nextLM1 := subtractCycle files.lm0 files.lm0 files.lm1
+    leftAddress rightAddress destinationAddress
+  some { files with lm1 := nextLM1 }
+
+theorem executeParsedFloatSubtractCycle_success (expression : ParsedExpr)
+    (files : PEMemory.IntegerRegisterFiles) (pe cycle : Fin 4)
+    (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
+    (leftAddress rightAddress : Fin (PEMemory.Bank.capacity .lm0))
+    (destinationAddress : Fin (PEMemory.Bank.capacity .lm1))
+    (lowered : lowerParsedFloatSubtract? expression pe cycle bar0 bar1 tWord =
+      some (leftAddress, rightAddress, destinationAddress)) :
+    executeParsedFloatSubtractCycle? expression files pe cycle bar0 bar1 tWord =
+      some (commitLM1 files
+        (subtractCycle files.lm0 files.lm0 files.lm1
+          leftAddress rightAddress destinationAddress)) := by
+  simp [executeParsedFloatSubtractCycle?, lowered, commitLM1]
+
+theorem executeParsedFloatSubtractCycle_readback (expression : ParsedExpr)
+    (files : PEMemory.IntegerRegisterFiles) (pe cycle : Fin 4)
+    (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
+    (leftAddress rightAddress : Fin (PEMemory.Bank.capacity .lm0))
+    (destinationAddress : Fin (PEMemory.Bank.capacity .lm1))
+    (lowered : lowerParsedFloatSubtract? expression pe cycle bar0 bar1 tWord =
+      some (leftAddress, rightAddress, destinationAddress)) :
+    (executeParsedFloatSubtractCycle? expression files pe cycle bar0 bar1 tWord).map
+      (fun next => readPair .lm1 next.lm1 destinationAddress) =
+      some (FloatSubtract.subtractBus (readPair .lm0 files.lm0 leftAddress)
+        (readPair .lm0 files.lm0 rightAddress)) := by
+  rw [executeParsedFloatSubtractCycle_success expression files pe cycle bar0 bar1 tWord
+    leftAddress rightAddress destinationAddress lowered]
+  simp only [Option.map_some, commitLM1, subtractCycle]
+  exact congrArg some
+    (binaryCycle_readback FloatSubtract.subtractBus files.lm0 files.lm0 files.lm1
+      leftAddress rightAddress destinationAddress)
+
 def flatLongAccess (bank : Issue.Bank) (base : Nat) : Issue.Access :=
   ⟨bank, ⟨2, base, base + 2, base + 4, base + 6, false, none⟩⟩
 
@@ -375,6 +446,23 @@ theorem parsedFloatAddSmoke_cycle1_lowers :
 theorem parsedFloatAddSmoke_cycle2_lowers :
     lowerParsedFloatAdd? parsedFloatAddSmoke 0 2 0 0 0 =
       some (⟨4, by decide⟩, ⟨12, by decide⟩, ⟨20, by decide⟩) := by decide
+
+def parsedFloatSubtractSmoke : ParsedExpr where
+  op := .mau .f false .add none false
+  sources :=
+    [.mem (flatLongAccess .lm0 0) false false false none,
+     .mem (flatLongAccess .lm0 8) true false false none]
+  destinations := [.mem (flatLongAccess .lm1 16) false false false none]
+  flush := none
+  text := "fvadd $lm0v -$lm8v $ln16v"
+
+theorem parsedFloatSubtractSmoke_cycle0_lowers :
+    lowerParsedFloatSubtract? parsedFloatSubtractSmoke 0 0 0 0 0 =
+      some (⟨0, by decide⟩, ⟨8, by decide⟩, ⟨16, by decide⟩) := by decide
+
+theorem parsedFloatSubtractSmoke_cycle3_lowers :
+    lowerParsedFloatSubtract? parsedFloatSubtractSmoke 0 3 0 0 0 =
+      some (⟨6, by decide⟩, ⟨14, by decide⟩, ⟨22, by decide⟩) := by decide
 
 
 
@@ -591,12 +679,6 @@ theorem executeParsedFloatAddCycle_preservesLM0 (expression : ParsedExpr)
   rw [executeParsedFloatAddCycle_success expression files pe cycle bar0 bar1 tWord
     leftAddress rightAddress destinationAddress lowered]
   rfl
-
-def subtractCycle (left : PEMemory.Memory .lm0) (right : PEMemory.Memory .lm0)
-    (output : PEMemory.Memory .lm1)
-    (leftStart rightStart : Fin (PEMemory.Bank.capacity .lm0))
-    (outputStart : Fin (PEMemory.Bank.capacity .lm1)) : PEMemory.Memory .lm1 :=
-  binaryCycle FloatSubtract.subtractBus left right output leftStart rightStart outputStart
 
 def multiplySevenCycle (input : PEMemory.Memory .lm0)
     (output : PEMemory.Memory .lm1)
