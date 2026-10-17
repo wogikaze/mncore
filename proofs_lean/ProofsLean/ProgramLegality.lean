@@ -47,6 +47,55 @@ theorem _root_.ProofsLean.MNCore.partialMachine_not_complete :
   apply ProofsLean.unknown_prevents_sealing
   exact ⟨InstructionLine.pe [], (), rfl⟩
 
+/-- Partial bridge from the finite assembler-word carrier to bounded
+enumeration. Every encoded word is admitted, so this is an over-approximation
+of legal assembler output; the source-to-word and word-to-semantics relations
+are intentionally not claimed here. -/
+def encodedUniverseMachine : ProofsLean.PartialMachine where
+  Line := AssemblerInstructionWord
+  State := Unit
+  Input := Unit
+  step := fun _ _ => .unknown
+  legal := fun _ => True
+  lineCost := fun _ => 1
+  positiveCost := by intro _; decide
+
+noncomputable def encodedUniverseAlphabet : List AssemblerInstructionWord := by
+  classical
+  exact Finset.univ.toList
+
+theorem mem_encodedUniverseAlphabet (line : AssemblerInstructionWord) :
+    line ∈ encodedUniverseAlphabet := by
+  classical
+  change line ∈ (Finset.univ : Finset AssemblerInstructionWord).toList
+  exact Finset.mem_toList.mpr (Finset.mem_univ line)
+
+theorem encodedUniverseAlphabet_coversBelow (bound : Nat) :
+    encodedUniverseMachine.LegalLinesCoveredBelow encodedUniverseAlphabet bound := by
+  classical
+  intro program legal short line member
+  exact mem_encodedUniverseAlphabet (line : AssemblerInstructionWord)
+
+theorem encodedUniverse_shortPrograms_complete {bound : Nat}
+    (program : encodedUniverseMachine.Program)
+    (legal : encodedUniverseMachine.legal program)
+    (short : encodedUniverseMachine.score program < bound) :
+    program ∈ encodedUniverseMachine.shortPrograms encodedUniverseAlphabet bound :=
+  encodedUniverseMachine.shortPrograms_complete
+    (encodedUniverseAlphabet_coversBelow bound) program legal short
+
+theorem encodedUniverse_legalLinesCostBelow_finite (bound : Nat) :
+    (encodedUniverseMachine.legalLinesCostBelow bound).Finite := by
+  classical
+  apply Set.Finite.subset (List.finite_toSet encodedUniverseAlphabet)
+  intro line member
+  exact mem_encodedUniverseAlphabet (line : AssemblerInstructionWord)
+
+theorem encodedUniverseMachine_not_complete :
+    ¬ encodedUniverseMachine.Complete := by
+  apply ProofsLean.unknown_prevents_sealing
+  exact ⟨Sum.inl (0 : BitVec 426), (), rfl⟩
+
 
 theorem InstructionLine.programIssueAndHazardLegal_line_local
     (program : List InstructionLine)

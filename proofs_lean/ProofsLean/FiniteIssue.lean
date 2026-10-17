@@ -28,6 +28,8 @@ theorem AssemblerInstructionWord.finite : Finite AssemblerInstructionWord := by
 
 instance : Finite AssemblerInstructionWord := AssemblerInstructionWord.finite
 
+noncomputable instance : Fintype AssemblerInstructionWord := Fintype.ofFinite _
+
 /-- A finite element type has only finitely many lists up to any fixed length.
 This is the container-level finiteness lemma needed when bounded PE expression
 and operand lists are composed into line carriers. -/

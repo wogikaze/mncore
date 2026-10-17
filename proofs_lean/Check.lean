@@ -58,6 +58,12 @@ import Lean
 #print axioms ProofsLean.MNCore.partialMachine_costBelowAlphabet_covers
 #print axioms ProofsLean.MNCore.partialMachine_shortPrograms_complete
 #print axioms ProofsLean.MNCore.partialMachine_not_complete
+#print axioms ProofsLean.MNCore.Issue.encodedUniverseMachine_not_complete
+#print axioms ProofsLean.MNCore.Issue.mem_encodedUniverseAlphabet
+#print axioms ProofsLean.MNCore.Issue.encodedUniverseAlphabet_coversBelow
+#print axioms ProofsLean.MNCore.Issue.encodedUniverse_shortPrograms_complete
+#print axioms ProofsLean.MNCore.Issue.encodedUniverse_legalLinesCostBelow_finite
+#print axioms ProofsLean.MNCore.Issue.encodedUniverseMachine_not_complete
 #print axioms ProofsLean.MNCore.Issue.ParsedOperand.fixed_notKnownSourceOnly
 #print axioms ProofsLean.MNCore.Issue.ParsedOperand.forward_notKnownSourceOnly
 #print axioms ProofsLean.MNCore.Issue.ParsedOp.l1bm_broadcast_from_l1bm_to_pe_role

@@ -602,6 +602,39 @@ def answer_encoding_experiment() -> dict:
     }
 
 
+def encoded_word_universe() -> dict:
+    finite_source = ROOT / "ProofsLean/FiniteIssue.lean"
+    adapter_source = ROOT / "ProofsLean/ProgramLegality.lean"
+    required_finite = (
+        "AssemblerInstructionWord.finite",
+        "encodedPrograms_lengthBounded_finite",
+    )
+    required_adapter = (
+        "encodedUniverseMachine",
+        "encodedUniverseAlphabet_coversBelow",
+        "encodedUniverse_shortPrograms_complete",
+        "encodedUniverse_legalLinesCostBelow_finite",
+        "encodedUniverseMachine_not_complete",
+    )
+    if any(name not in finite_source.read_text() for name in required_finite):
+        raise ValueError("finite assembler-word carrier theorem is missing")
+    if any(name not in adapter_source.read_text() for name in required_adapter):
+        raise ValueError("assembler-word enumeration adapter theorem is missing")
+    return {
+        "finite_source": finite_source.relative_to(REPO).as_posix(),
+        "finite_source_sha256": digest(finite_source),
+        "adapter_source": adapter_source.relative_to(REPO).as_posix(),
+        "adapter_source_sha256": digest(adapter_source),
+        "line_alphabet": "Sum (BitVec 426) (BitVec 82)",
+        "bounded_programs_finite": "ProofsLean.MNCore.Issue.encodedPrograms_lengthBounded_finite",
+        "short_program_enumeration_complete": "ProofsLean.MNCore.Issue.encodedUniverse_shortPrograms_complete",
+        "legal_lines_finite": "ProofsLean.MNCore.Issue.encodedUniverse_legalLinesCostBelow_finite",
+        "machine_complete": False,
+        "universal_source_to_encoding_correspondence": False,
+        "scope": "All bit patterns in the observed PE/MV word widths; an over-approximation of accepted source output pending universal assembler correspondence.",
+    }
+
+
 def coverage_catalog() -> dict:
     path = REPO / "mncompile/machine.py"
     tree = ast.parse(path.read_text())
@@ -645,6 +678,7 @@ def coverage_catalog() -> dict:
         "inventory_scope": "Compiler-generated ALU/MAU spelling candidates plus separately scoped source-derived records; not an authoritative complete ISA or legality model.",
         "selected_parser_boundary_experiment": isa_bounds_experiment(),
         "checked_answer_encoding_experiment": answer_encoding_experiment(),
+        "encoded_word_universe": encoded_word_universe(),
         "opcode_destination_arity_experiment": opcode_arity_experiment(),
         "answer_parser_gap_audit": answer_parser_gap_audit(),
         "parallel_issue_boundary_experiment": parallel_issue_boundary_experiment(),

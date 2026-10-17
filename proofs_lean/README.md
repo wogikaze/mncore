@@ -152,6 +152,12 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   1件が62候補、2件が104候補、3件が15候補だった。その分布はparser-gap監査と`coverage.json`に記録し、
   正規化でopcode別source arity条件が保存され、そこから3以下が従う補題を追加した。
   これはopcode綴りの網羅やassembler受理性の証明ではない。
+  `AssemblerInstructionWord := Sum (BitVec 426) (BitVec 82)`をPE/MV符号語の有限carrierとし、
+  その上のcost-bounded program列の有限性、全符号語を含むalphabetによる
+  `PartialMachine.shortPrograms_complete`への接続、およびbounded legal-line有限性を証明した。
+  このadapterは全bit patternを合法として受け入れる部分モデルで、実MN-Core機械ではない。
+  全assembler受理sourceがこのcarrierへ写ることと、符号語のstep意味論が未接続なので、
+  `encodedUniverseMachine`はunknown stepのままである。
   operandごとに既存の有限envelopeを要求するsource列のcarrierを追加し、長さ3以下の
   source列全体が有限であることを`ParsedExpr.sourcesInFiniteEnvelope_finite`で証明した。
   destination列は、要素がoperand envelope内でListが`Nodup`なら、その長さが有限operand型のcardinality
