@@ -2,6 +2,7 @@ import ProofsLean.ByteSwap
 import ProofsLean.SingleFMA
 import ProofsLean.FloatPEMemory
 import ProofsLean.PEParser
+import ProofsLean.ParsedOpAbstraction
 
 /-! Bit-level datapath reconstruction of the public Convert Endian answer.
 
@@ -66,6 +67,17 @@ theorem answer_operations_source_arities :
     (parseAnswerOperation? "ibsl" "").map ParsedOp.parserSourceLimit = some 2 ∧
     (parseAnswerOperation? "fvfma" "").map ParsedOp.parserSourceLimit = some 3 ∧
     (parseAnswerOperation? "sbsl" "").map ParsedOp.parserSourceLimit = some 2 := by
+  decide
+
+theorem answer_operations_producer_units :
+    (parseAnswerOperation? "imm" "i\"0x34f80010\"").map ParsedOp.producerUnit? =
+        some (some UnitKind.integerAlu) ∧
+    (parseAnswerOperation? "ibsl" "").map ParsedOp.producerUnit? =
+        some (some UnitKind.integerAlu) ∧
+    (parseAnswerOperation? "fvfma" "").map ParsedOp.producerUnit? =
+        some (some UnitKind.floatingMau) ∧
+    (parseAnswerOperation? "sbsl" "").map ParsedOp.producerUnit? =
+        some (some UnitKind.integerAlu) := by
   decide
 
 /-- Restricted expression parser used to turn the answer's opcode and operand

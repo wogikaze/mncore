@@ -79,6 +79,8 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.instructionMachine_accepted_pe_executes
 #print axioms ProofsLean.MNCore.PEMemory.instructionMachine_nop_advances
 #print axioms ProofsLean.MNCore.UnitKind.mem_all
+#print axioms ProofsLean.MNCore.Issue.ParsedOp.producerUnit?_of_alu
+#print axioms ProofsLean.MNCore.Issue.ParsedOp.producerUnit?_of_mau
 #print axioms ProofsLean.MNCore.AbstractComputation.binary_constants_exact
 #print axioms ProofsLean.MNCore.AbstractComputation.binary_dependencies_are_sound
 #print axioms ProofsLean.MNCore.AbstractComputation.binary_records_producer
@@ -125,6 +127,7 @@ import Lean
 #print axioms ProofsLean.MNCore.ConvertEndian.answer_operands_parse_all
 #print axioms ProofsLean.MNCore.ConvertEndian.answer_operations_parse
 #print axioms ProofsLean.MNCore.ConvertEndian.answer_operations_source_arities
+#print axioms ProofsLean.MNCore.ConvertEndian.answer_operations_producer_units
 #print axioms ProofsLean.MNCore.ConvertEndian.answer_expressions_parse
 #print axioms ProofsLean.MNCore.ConvertEndian.answer_parallel_expression_count
 #print axioms ProofsLean.MNCore.ConvertEndian.answer_expression_line_shapes
