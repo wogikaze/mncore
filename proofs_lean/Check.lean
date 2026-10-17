@@ -94,6 +94,16 @@ import Lean
 #print axioms ProofsLean.MNCore.SingleFMA.overflow_to_infinity
 #print axioms ProofsLean.MNCore.SingleFMA.ties_round_to_even
 #print axioms ProofsLean.MNCore.SingleFMA.ties_round_up_to_odd
+#print axioms ProofsLean.MNCore.ConvertEndian.immediate_fma_generates_shift_word
+#print axioms ProofsLean.MNCore.ConvertEndian.ibsl_is_32bit_lane_rotate
+#print axioms ProofsLean.MNCore.ConvertEndian.packed_fma_produces_shift_bus
+#print axioms ProofsLean.MNCore.ConvertEndian.mauf_count_selects_byte_rotation
+#print axioms ProofsLean.MNCore.ConvertEndian.abstractMauShift_evaluation
+#print axioms ProofsLean.MNCore.ConvertEndian.answerDatapath_is_byteSwap
+#print axioms ProofsLean.MNCore.ConvertEndian.answerDatapath_involutive
+#print axioms ProofsLean.MNCore.ConvertEndian.abstractConvertEndian_evaluation
+#print axioms ProofsLean.MNCore.ConvertEndian.abstractConvertEndian_is_byteSwap
+#print axioms ProofsLean.MNCore.ConvertEndian.abstractConvertEndian_dependencies_are_sound
 #print axioms ProofsLean.MNCore.Issue.encodedUniverseMachine_not_complete
 #print axioms ProofsLean.MNCore.Issue.mem_encodedUniverseAlphabet
 #print axioms ProofsLean.MNCore.Issue.encodedUniverseAlphabet_coversBelow

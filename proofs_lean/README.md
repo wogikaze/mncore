@@ -44,7 +44,7 @@ Welcome の後は Convert Endian を縦の2問目にする。有限性・範囲�
 5. 2-6: `SingleFMA.lean`にMN-Core単精度FMAをNat/Int/BitVecだけで実装した。SDMの省略部分積補正、測定済みaccumulator alignment/sticky jam、RNE、zero/infinity正規化を含む。SDM例、tie、overflow、cancellationをkernel reductionで証明。Rust `vfma`との大規模なgpfn3差分は573,440値・不一致0（seed 1234）。Lean関数全体とRustコードの機械的同値証明は未実装で、具体的なkernel計算ケースで照合を追加する。
 6. Welcomeは現在、限定された2種類の`iinc`行だけのモデルで証明済み。実VSM行と実状態遷移の接続、全合法1行の下限、公式emulator差分を完了させる。
 7. 3-5: 下限証明が失敗した候補から、探索用の条件と具体的な反例を取り出すインターフェースを設計する。Rustシミュレータ向け候補生成器、判定条件、結果の再現記録は未実装。
-8. Phase 4はWelcomeの後にConvert Endianを扱い、ALU/MAUをまたぐビット変換で定数・依存抽象が健全なことを試す。その後、他の簡単な問題へ広げ、繰り返し使うfootprint・書き込み容量・演算器別制約の補題を共通化する。
+8. Phase 4はWelcomeの後にConvert Endianを扱う。3行解の整数barrel shift→単精度MAU FMA→整数barrel shift→PE destination selectorの値依存を抽象式にし、合成結果が任意64-bit入力のbyte swapになることを証明した。公式judgeとRust simulatorを含む8値の差分は完了。全メモリアクセス・発行・state transitionへの接続は未実装であり、次はそこを接続して他の簡単な問題へ広げる。
 
 ## 実装した定義
 
@@ -379,6 +379,12 @@ Welcome の後は Convert Endian を縦の2問目にする。有限性・範囲�
   公式`gpfn3_package_main`との差分を合わせて実行するコマンドは
   `python3 scripts/check_single_fma_kernel.py --vectors 128 --seed 1234 --gpfn-runs 35`。
   Lean/Rustの全域同値証明ではない。
+- `ConvertEndian.lean`: Convert Endian公開解答のALU/MAU横断変換を抽象式へ接続した。
+  公式3行解では`ibsl`が32-bit各lane内の16-bit halvesを交換し、単精度FMAが定数shift laneを生成し、
+  `sbsl`が各16-bit laneをbyte rotateし、`[1,0,3,2]` destination selectorが32-bit群を交換する。
+  合成関数が全64-bit入力で`byteSwap64`と一致し、入力依存が抽象のdependency集合だけに限られることを証明した。
+  `scripts/check_convert_endian_reference.py`は公式judge上の正解確認とRust simulator対gpfn3差分を行う。
+  現在のseed 0xC0FFEEでは8値すべて一致する。命令のメモリアドレス解決・正規化・実状態遷移との対応は未証明。
 - `UntypedALU.lean`: zero、imm/immuの2長語出力と、4 PE間のmsl/msrの部分モデル。
   循環転送の下位長語について、マニュアルの一般則を適用する`manualReading`と
   公式バイナリで観測した`referenceBinary`を明示的に分けている。
