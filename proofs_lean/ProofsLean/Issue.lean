@@ -575,7 +575,7 @@ inductive ParsedL2Op where
 
 inductive ParsedOp where
   | alu (name : ParsedAluName) (precision : Option ParsedPrecision)
-      (unsigned : Bool) (arg : Option Nat)
+      (unsigned : Bool) (arg : Option (Fin 256))
   | immediate (value : BitVec 32) (unsigned : Bool)
   | zero
   | mau (precision : ParsedPrecision) (matrix : Bool) (kind : CalcKind)

@@ -491,29 +491,41 @@ theorem optionWaitTagInFiniteEnvelope_finite :
     Finite {tag : Option Nat // optionWaitTagInFiniteEnvelope tag} :=
   Finite.of_injective optionWaitTagFiniteCode optionWaitTagFiniteCode_injective
 
-def parsedBfArgInFiniteEnvelope (arg : Option Nat) : Prop :=
-  ∀ value, arg = some value → 6 ≤ value ∧ value < 10
+def parsedBfArgInFiniteEnvelope (arg : Option (Fin 256)) : Prop :=
+  ∀ value, arg = some value → 6 ≤ value.val ∧ value.val < 10
 
 private def parsedBfArgFiniteCode
-    (arg : {arg : Option Nat // parsedBfArgInFiniteEnvelope arg}) : Option (Fin 10) :=
-  optionNatFiniteCode 10 ⟨arg.1, fun value equal => (arg.2 value equal).2⟩
+    (arg : {arg : Option (Fin 256) // parsedBfArgInFiniteEnvelope arg}) :
+    Option (Fin 10) :=
+  match arg with
+  | ⟨none, _⟩ => none
+  | ⟨some value, property⟩ =>
+      some ⟨value.val, (property value rfl).2⟩
 
 private theorem parsedBfArgFiniteCode_injective :
     Function.Injective parsedBfArgFiniteCode := by
   intro a b equal
   apply Subtype.ext
-  let a' : {value : Option Nat // optionNatInFiniteEnvelope 10 value} :=
-    ⟨a.1, fun value h => (a.2 value h).2⟩
-  let b' : {value : Option Nat // optionNatInFiniteEnvelope 10 value} :=
-    ⟨b.1, fun value h => (b.2 value h).2⟩
-  have codeEq : optionNatFiniteCode 10 a' = optionNatFiniteCode 10 b' := equal
-  have valueEq : a'.1 = b'.1 :=
-    congrArg (fun value : {value : Option Nat // optionNatInFiniteEnvelope 10 value} => value.1)
-      (optionNatFiniteCode_injective 10 codeEq)
-  exact valueEq
+  rcases a with ⟨a, ha⟩
+  rcases b with ⟨b, hb⟩
+  cases a with
+  | none =>
+      cases b with
+      | none => rfl
+      | some value => simp [parsedBfArgFiniteCode] at equal
+  | some av =>
+      cases b with
+      | none => simp [parsedBfArgFiniteCode] at equal
+      | some bv =>
+          simp only [parsedBfArgFiniteCode, Option.some.injEq] at equal
+          have valuesEqual : av.val = bv.val :=
+            congrArg (fun value : Fin 10 => value.val) equal
+          have boundedEqual : av = bv := Fin.ext valuesEqual
+          cases boundedEqual
+          rfl
 
 theorem parsedBfArgInFiniteEnvelope_finite :
-    Finite {arg : Option Nat // parsedBfArgInFiniteEnvelope arg} :=
+    Finite {arg : Option (Fin 256) // parsedBfArgInFiniteEnvelope arg} :=
   Finite.of_injective parsedBfArgFiniteCode parsedBfArgFiniteCode_injective
 
 def ParsedMask.inFiniteEnvelope : ParsedMask → Prop

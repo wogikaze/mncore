@@ -225,8 +225,10 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   `ParsedL2Op.inFiniteEnvelope_finite`も、全10 variantについてL1B set、from-L1B selector、
   RRN payloadを含むbounded subtypeの有限性を証明した。assembler受理集合との包含証明と
   PE行・machineへの合成は引き続き未実装。
-  `hbfe`/`hbfn`のmantissa length引数も、u8全域の走査で`6..9`だけ受理されることを根拠に
-  optional payloadの有限carrierを証明した。
+  `ParsedOp.alu`のmantissa length引数をparserの型に合わせて`Option (Fin 256)`で表し、
+  u8全域の走査で`hbfe`/`hbfn`は`6..9`だけ受理される観測をもとに、optional payloadの
+  `[6,10)` envelopeが有限carrierであることを証明した。Lean parser自体がopcodeを解析して
+  このenvelopeを保証する証明はまだない。
   これらのpayload定理から`ParsedOp`/`ParsedLine`全体への合成、他の残存Nat/Int範囲、
   パーサー出力のenvelope健全性はまだ未完了。
   operand envelopeはregion width 1/2/4/address `< 4096`/madpe `< 4`、BAR width 1または2、mask selector `< 32`、
