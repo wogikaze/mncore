@@ -5327,17 +5327,59 @@ theorem executePlusOneParsedLine_cycle_writeback
           locationsAt selected index indexBound
       exact ⟨accesses, nextFiles, loweredAt, executed, readback⟩
 
+theorem plusOneParsedAt_cycle_lowers
+    (line : ProofsLean.MNCore.PlusOne.Line) (cycle : Fin 4) :
+    ∃ accesses, ParsedExpr.toDirectIntegerAccesses?
+      (ProofsLean.MNCore.Issue.plusOneParsedAt (8 * line.val))
+      0 cycle 0 0 0 = some accesses := by
+  cases line using Fin.cases with
+  | zero =>
+      obtain ⟨accesses, lowered, _⟩ := plusOneFirstLine_cycle_lowers cycle
+      exact ⟨accesses, by simpa [ProofsLean.MNCore.Issue.plusOneParsed] using lowered⟩
+  | succ line =>
+      have lineEq : line = 0 := Fin.ext (by have h := line.isLt; omega)
+      subst line
+      obtain ⟨accesses, lowered, _⟩ := plusOneSecondLine_cycle_lowers cycle
+      exact ⟨accesses,
+        by simpa [ProofsLean.MNCore.Issue.plusOneSecondParsed] using lowered⟩
+
 theorem executePlusOneParsedLine_cycles_succeed
-    (state : ProofsLean.MNCore.PlusOne.State)
+    (files : IntegerRegisterFiles)
     (line : ProofsLean.MNCore.PlusOne.Line) :
-    ∃ result, executeParsedIntegerExprCycles? (plusOneFiles state)
+    ∃ result, executeParsedIntegerExprCycles? files
       (ProofsLean.MNCore.Issue.plusOneParsedAt (8 * line.val)) 0
       (List.finRange 4) 0 0 0 = some result := by
   apply executeParsedIntegerExprCycles_success
   intro cycle _member
-  obtain ⟨accesses, _, lowered, _, _⟩ :=
-    executePlusOneParsedLine_cycle_writeback state line cycle 0 (by decide)
-  exact ⟨accesses, lowered⟩
+  exact plusOneParsedAt_cycle_lowers line cycle
+
+def executePlusOneParsedAnswer? (files : IntegerRegisterFiles) :
+    Option IntegerRegisterFiles :=
+  match executeParsedIntegerExprCycles? files
+      (ProofsLean.MNCore.Issue.plusOneParsedAt 0) 0 (List.finRange 4) 0 0 0 with
+  | some firstLineFiles =>
+      executeParsedIntegerExprCycles? firstLineFiles
+        (ProofsLean.MNCore.Issue.plusOneParsedAt 8) 0 (List.finRange 4) 0 0 0
+  | none => none
+
+theorem executePlusOneParsedAnswer_succeeds (files : IntegerRegisterFiles) :
+    ∃ result, executePlusOneParsedAnswer? files = some result := by
+  obtain ⟨firstLineFiles, firstLineExecutes⟩ :=
+    executePlusOneParsedLine_cycles_succeed files (0 : Fin 2)
+  obtain ⟨result, secondLineExecutes⟩ :=
+    executePlusOneParsedLine_cycles_succeed firstLineFiles (1 : Fin 2)
+  have firstLineExecutes' : executeParsedIntegerExprCycles? files
+      (ProofsLean.MNCore.Issue.plusOneParsedAt 0) 0
+      (List.finRange 4) 0 0 0 = some firstLineFiles := by
+    simpa using firstLineExecutes
+  have secondLineExecutes' : executeParsedIntegerExprCycles? firstLineFiles
+      (ProofsLean.MNCore.Issue.plusOneParsedAt 8) 0
+      (List.finRange 4) 0 0 0 = some result := by
+    simpa using secondLineExecutes
+  refine ⟨result, ?_⟩
+  unfold executePlusOneParsedAnswer?
+  rw [firstLineExecutes']
+  exact secondLineExecutes'
 
 theorem executeParsedIntegerMaskExpr_readback (files : IntegerRegisterFiles)
     (expression : ParsedExpr) (pe cycle : Fin 4) (bar0 bar1 : BitVec 12)
