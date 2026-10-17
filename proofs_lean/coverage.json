@@ -7,12 +7,12 @@
   "inventory_scope": "Compiler-generated ALU/MAU spelling candidates plus separately scoped source-derived records; not an authoritative complete ISA or legality model.",
   "selected_parser_boundary_experiment": {
     "source": "proofs_lean/evidence/isa-bounds/reference.json",
-    "sha256": "7b9a64ef6b7089a7ee5e21a914d3c016e6dd1e9c7a585ca59faf9093eb88acdd",
+    "sha256": "7626cdf8a68c883ac76711fe2ecc849b6543b70dbb56fa14fac74ebca2d97623",
     "generator": "proofs_lean/scripts/check_isa_parser_bounds.py",
-    "generator_sha256": "a00318a88054e787d83b21d99e52da76f626947c5c0ca4a0b34456708bb95087",
-    "probes": 1206,
-    "accepted": 1077,
-    "rejected": 129,
+    "generator_sha256": "f363e3fe0f1d51bb97b5d3d9c11a7e3ea10e1cd0ecf031e9d0797cbd98af408f",
+    "probes": 1719,
+    "accepted": 1588,
+    "rejected": 131,
     "observed_encoded_word_kinds": [
       [
         "j",
@@ -49,7 +49,7 @@
       "Matrix rows 0..15 were checked using gmread. The tested matrix operand widths are instruction-specific: gmread/gmwrite accept width 2 and reject width 4, while gmmul accepts widths 2 and 4.",
       "$lb8188 is accepted while $lb8192 fails the 13-bit encoding field; the L1BM address must also be 4-word aligned. Every l1bmm@ and l1bmm4@ selector 0..15 is accepted, and @16 is rejected for both forms.",
       "DAR address 1023 is accepted and 1024 is rejected; `$lc...@.<l2b>` accepts selectors 0 and 1 and rejects 2.",
-      "For l1bmd, every explicit signed offset from -255 through +255 was accepted, while -256 and +256 were rejected. The manual documents useful offsets 0..15. The Rust visualizer parser now stores the value in i16 and enforces this experimentally established assembler range; its boundary regression is separate from this assembler-only probe. Neither check proves global parser completeness.",
+      "For l1bmd, each explicit signed offset from -255 through +255 was accepted in both operand directions (PE-to-L1BM gather and L1BM-to-PE distribution); -256 and +256 were rejected in both directions. The manual documents useful offsets 0..15. The Rust visualizer parser now stores the value in i16 and enforces this experimentally established assembler range; its boundary regression is separate from this assembler-only probe. Neither check proves global parser completeness.",
       "The assembler accepts d set, d get and r input records, but the challenge judge's default solution sanitizer retains only j/m instruction rows; these records are filtered before execution. The scored program therefore excludes debug and DRAM initialization records.",
       "A zero instruction with one destination in each of LM0, LM1, GRF0, GRF1, T and OMR is accepted; duplicate destinations within each of those six categories are rejected. This bounds observed destination categories for these probes, but Rust's VSM parser itself still stores all tokens after the fixed source prefix as destinations, and the assembler probes are not a universal parser-to-encoding theorem.",
       "Same-expression destination checks reject duplicate output classes even when the operand values differ (LM0 at two addresses, two OMR entries), reject repeated nowrite, and reject multiple matrix-write destinations. A single nowrite destination is accepted. These checks support finite destination arity for the sampled opcodes but do not establish a bound for every opcode spelling.",
@@ -179,7 +179,7 @@
   },
   "parallel_issue_boundary_experiment": {
     "source": "proofs_lean/evidence/isa-bounds/reference.json",
-    "sha256": "7b9a64ef6b7089a7ee5e21a914d3c016e6dd1e9c7a585ca59faf9093eb88acdd",
+    "sha256": "7626cdf8a68c883ac76711fe2ecc849b6543b70dbb56fa14fac74ebca2d97623",
     "manual_sections": [
       "SDM 3.6.1.7",
       "SDM 3.6.1.9",
@@ -490,8 +490,8 @@
       "sha256": "6303e8fc36c7a66a1da949a500dc6e909a134c612888f8b881d409c3fa8c4b98",
       "theorem": "ProofsLean.MNCore.Issue.mabdiffInFiniteEnvelope_finite",
       "scope": "Finite subtype for signed L1BM MAB differences in [-255, 255].",
-      "evidence": "proofs_lean/evidence/isa-bounds/reference.json: explicit signed offsets -255..255 accepted; -256 and +256 rejected. The SDM documents useful values 0..15.",
-      "missing": "A universal parser soundness result establishing that every assembler-accepted `mabdiff` lies in this envelope; the offset field is not yet bounded in `ParsedL1Op` or composed into finite PE-line carriers."
+      "evidence": "proofs_lean/evidence/isa-bounds/reference.json: explicit signed offsets -255..255 accepted and -256/+256 rejected in both PE-to-L1BM gather and L1BM-to-PE distribution operand directions. The SDM documents useful values 0..15.",
+      "missing": "A universal parser soundness result establishing that every assembler-accepted `mabdiff` lies in this envelope; the ambient `ParsedL1Op` type still admits arbitrary Int values, and its bounded subtype is not yet composed through complete PE parsing into the line carrier."
     },
     {
       "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
@@ -525,7 +525,7 @@
       "parser_source_sha256": "be63dee3c37c88ddb3e002ff105c3137997a35d531cefbe1f04e51609ef43f65",
       "parser_fragment": "parseParsedL1Opcode?",
       "scope": "Finite tagged carrier for all nine ParsedL1Op variants under the observed mab selector, RRN precision and MAB difference envelopes.",
-      "evidence": "proofs_lean/evidence/isa-bounds/reference.json: l1bmm/l1bmm4 selectors 0..15, signed mabdiff -255..255, plus ParsedRrn's explicit ASCII precision envelope and finite opcode set. `Issue.lean` fixtures cover all nine Rust L1 opcode branches, direction-dependent d derived from the first typed operand, u8 selector parsing, signed offsets, RRN parsing, and round suffixes.",
+      "evidence": "proofs_lean/evidence/isa-bounds/reference.json: l1bmm/l1bmm4 selectors 0..15, signed mabdiff -255..255 in both gather/distribution operand directions, plus ParsedRrn's explicit ASCII precision envelope and finite opcode set. `Issue.lean` fixtures cover all nine Rust L1 opcode branches, direction-dependent d derived from the first typed operand, u8 selector parsing, signed offsets, RRN parsing, and round suffixes.",
       "missing": "No theorem yet proves every output of `parseParsedL1Opcode?` lies in the finite envelope (the Rust parser's u8 selector range is wider than the assembler's 0..15 range), and no finite PE-line or machine-level carrier is composed from it."
     },
     {

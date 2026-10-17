@@ -262,6 +262,10 @@ for entry in range(16):
 for offset in range(-255, 256):
     opcode = f"l1bmd{offset:+d}" if offset else "l1bmd+0"
     CASES[f"mabdiff_{offset:+d}"] = (f"{opcode} $lm0 $lb0\n", True, 1)
+    CASES[f"mabdiff_distrib_{offset:+d}"] = (
+        f"{opcode} $lb0 $lr0v\n", True, 1)
+CASES["mabdiff_distrib_minus256"] = ("l1bmd-256 $lb0 $lr0v\n", False, None)
+CASES["mabdiff_distrib_plus256"] = ("l1bmd+256 $lb0 $lr0v\n", False, None)
 for width, expected in [("mb", True), ("lmb", True), ("llmb", False)]:
     CASES[f"bar_width_{width}"] = (
         f"lpassa $n0 ${width}\n", expected, 1 if expected else None)
@@ -365,7 +369,7 @@ def main() -> None:
             "Matrix rows 0..15 were checked using gmread. The tested matrix operand widths are instruction-specific: gmread/gmwrite accept width 2 and reject width 4, while gmmul accepts widths 2 and 4.",
             "$lb8188 is accepted while $lb8192 fails the 13-bit encoding field; the L1BM address must also be 4-word aligned. Every l1bmm@ and l1bmm4@ selector 0..15 is accepted, and @16 is rejected for both forms.",
             "DAR address 1023 is accepted and 1024 is rejected; `$lc...@.<l2b>` accepts selectors 0 and 1 and rejects 2.",
-            "For l1bmd, every explicit signed offset from -255 through +255 was accepted, while -256 and +256 were rejected. The manual documents useful offsets 0..15. The Rust visualizer parser now stores the value in i16 and enforces this experimentally established assembler range; its boundary regression is separate from this assembler-only probe. Neither check proves global parser completeness.",
+            "For l1bmd, each explicit signed offset from -255 through +255 was accepted in both operand directions (PE-to-L1BM gather and L1BM-to-PE distribution); -256 and +256 were rejected in both directions. The manual documents useful offsets 0..15. The Rust visualizer parser now stores the value in i16 and enforces this experimentally established assembler range; its boundary regression is separate from this assembler-only probe. Neither check proves global parser completeness.",
             "The assembler accepts d set, d get and r input records, but the challenge judge's default solution sanitizer retains only j/m instruction rows; these records are filtered before execution. The scored program therefore excludes debug and DRAM initialization records.",
             "A zero instruction with one destination in each of LM0, LM1, GRF0, GRF1, T and OMR is accepted; duplicate destinations within each of those six categories are rejected. This bounds observed destination categories for these probes, but Rust's VSM parser itself still stores all tokens after the fixed source prefix as destinations, and the assembler probes are not a universal parser-to-encoding theorem.",
             "Same-expression destination checks reject duplicate output classes even when the operand values differ (LM0 at two addresses, two OMR entries), reject repeated nowrite, and reject multiple matrix-write destinations. A single nowrite destination is accepted. These checks support finite destination arity for the sampled opcodes but do not establish a bound for every opcode spelling.",

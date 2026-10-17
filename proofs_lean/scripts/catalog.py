@@ -350,7 +350,7 @@ def isa_bounds_experiment() -> dict:
             raise ValueError(f"stale ISA boundary experiment: {item['path']}")
     if not all(row["matches_expected"] for row in record["observations"]):
         raise ValueError("ISA boundary experiment contains an unexpected assembler result")
-    if len(record["observations"]) != 1206:
+    if len(record["observations"]) != 1719:
         raise ValueError("ISA boundary experiment case count changed")
     for row in record["observations"]:
         encoded = row.get("encoded_words", [])
@@ -838,8 +838,8 @@ def coverage_catalog() -> dict:
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
             "theorem": "ProofsLean.MNCore.Issue.mabdiffInFiniteEnvelope_finite",
             "scope": "Finite subtype for signed L1BM MAB differences in [-255, 255].",
-            "evidence": "proofs_lean/evidence/isa-bounds/reference.json: explicit signed offsets -255..255 accepted; -256 and +256 rejected. The SDM documents useful values 0..15.",
-            "missing": "A universal parser soundness result establishing that every assembler-accepted `mabdiff` lies in this envelope; the offset field is not yet bounded in `ParsedL1Op` or composed into finite PE-line carriers.",
+            "evidence": "proofs_lean/evidence/isa-bounds/reference.json: explicit signed offsets -255..255 accepted and -256/+256 rejected in both PE-to-L1BM gather and L1BM-to-PE distribution operand directions. The SDM documents useful values 0..15.",
+            "missing": "A universal parser soundness result establishing that every assembler-accepted `mabdiff` lies in this envelope; the ambient `ParsedL1Op` type still admits arbitrary Int values, and its bounded subtype is not yet composed through complete PE parsing into the line carrier.",
         }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
@@ -869,7 +869,7 @@ def coverage_catalog() -> dict:
             "parser_source_sha256": digest(ROOT / "ProofsLean/Issue.lean"),
             "parser_fragment": "parseParsedL1Opcode?",
             "scope": "Finite tagged carrier for all nine ParsedL1Op variants under the observed mab selector, RRN precision and MAB difference envelopes.",
-            "evidence": "proofs_lean/evidence/isa-bounds/reference.json: l1bmm/l1bmm4 selectors 0..15, signed mabdiff -255..255, plus ParsedRrn's explicit ASCII precision envelope and finite opcode set. `Issue.lean` fixtures cover all nine Rust L1 opcode branches, direction-dependent d derived from the first typed operand, u8 selector parsing, signed offsets, RRN parsing, and round suffixes.",
+            "evidence": "proofs_lean/evidence/isa-bounds/reference.json: l1bmm/l1bmm4 selectors 0..15, signed mabdiff -255..255 in both gather/distribution operand directions, plus ParsedRrn's explicit ASCII precision envelope and finite opcode set. `Issue.lean` fixtures cover all nine Rust L1 opcode branches, direction-dependent d derived from the first typed operand, u8 selector parsing, signed offsets, RRN parsing, and round suffixes.",
             "missing": "No theorem yet proves every output of `parseParsedL1Opcode?` lies in the finite envelope (the Rust parser's u8 selector range is wider than the assembler's 0..15 range), and no finite PE-line or machine-level carrier is composed from it.",
         }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
