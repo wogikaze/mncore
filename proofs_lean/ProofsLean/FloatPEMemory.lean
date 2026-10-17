@@ -560,6 +560,15 @@ theorem subtractCycle_readback (left : PEMemory.Memory .lm0) (right : PEMemory.M
   exact binaryCycle_readback FloatSubtract.subtractBus left right output leftStart rightStart
     outputStart
 
+theorem subtractCycle_preservesOutside (left : PEMemory.Memory .lm0)
+    (right : PEMemory.Memory .lm0) (output : PEMemory.Memory .lm1)
+    (leftStart rightStart : Fin (PEMemory.Bank.capacity .lm0))
+    (outputStart target : Fin (PEMemory.Bank.capacity .lm1))
+    (outside : 2 ≤ PEMemory.distance .lm1 outputStart target) :
+    subtractCycle left right output leftStart rightStart outputStart target = output target := by
+  exact binaryCycle_preservesOutside FloatSubtract.subtractBus left right output
+    leftStart rightStart outputStart target outside
+
 theorem multiplySevenCycle_readback (input : PEMemory.Memory .lm0)
     (output : PEMemory.Memory .lm1)
     (inputStart : Fin (PEMemory.Bank.capacity .lm0))
