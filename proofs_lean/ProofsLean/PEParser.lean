@@ -1,9 +1,9 @@
 import ProofsLean.Issue
 
 /-! A structured subset of Rust `vsm.rs::parse_operand`. This parser covers
-forwarding/fixed operands, OMR, BAR, matrix, L1BM, L2BM, DAR, and `$nowrite`.
-Ordinary PE-memory address operands are intentionally left to a later parser
-fragment; this module does not claim complete PE expression parsing. -/
+forwarding/fixed operands, OMR, BAR, matrix, L1BM, L2BM, DAR, `$nowrite`, and
+ordinary PE-memory operands. This module does not claim complete PE expression
+parsing (for example, it does not parse complete lines or opcodes). -/
 
 namespace ProofsLean.MNCore.Issue
 
@@ -52,7 +52,8 @@ def parsedPEMatrixRow? (chars : List Char) : Option (Option Nat) := do
   | first :: _ =>
       if (parsedMvDigit? 10 first).isNone then none else do
         let (value, rest) ← parsedMvDigitsPrefix 10 chars 0
-        if rest.isEmpty && value < 2 ^ 64 then some (some (value % (2 ^ 32)))
+        if rest.isEmpty then
+          if value < 2 ^ 64 then some (some (value % (2 ^ 32))) else some none
         else none
 
 def parseParsedPEForward? (token : List Char) (neg : Bool) : Option ParsedOperand :=
@@ -79,6 +80,92 @@ def parseParsedPEFixed? : List Char → Option ParsedOperand
   | ['s','u','b','p','e','i','d'] => some (.fixed .subpeid)
   | ['m','s','b','1'] => some (.fixed .msb1)
   | _ => none
+
+def parsedPETakeDigitsAux : List Char → Nat → Nat × List Char
+  | char :: rest, value =>
+      if (parsedMvDigit? 10 char).isSome then
+        parsedPETakeDigitsAux rest (value * 10 + (parsedMvDigit? 10 char).getD 0)
+      else (value, char :: rest)
+  | [], value => (value, [])
+
+/-- Rust `take_num`: consume the complete initial decimal run, but represent a
+u64 overflow as `none` while still returning the unconsumed suffix. -/
+def parsedPETakeNum (chars : List Char) : Option Nat × List Char :=
+  let (value, rest) := parsedPETakeDigitsAux chars 0
+  if rest == chars then (none, chars)
+  else (if value < 2 ^ 64 then some value else none, rest)
+
+def parsedPESplitCommaAux : List Char → List Char → List (List Char) → List (List Char)
+  | [], current, reversedEntries => (current.reverse :: reversedEntries).reverse
+  | ',' :: rest, current, reversedEntries =>
+      parsedPESplitCommaAux rest [] (current.reverse :: reversedEntries)
+  | char :: rest, current, reversedEntries =>
+      parsedPESplitCommaAux rest (char :: current) reversedEntries
+
+def parsedPEFlatAddresses? (chars : List Char) : Option (Nat × Nat × Nat × Nat) := do
+  let values := parsedPESplitCommaAux chars [] []
+  match values with
+  | [a, b, c, d] => do
+      let a ← parsedPEU32? (parsedL1bTrim a)
+      let b ← parsedPEU32? (parsedL1bTrim b)
+      let c ← parsedPEU32? (parsedL1bTrim c)
+      let d ← parsedPEU32? (parsedL1bTrim d)
+      some (a, b, c, d)
+  | _ => none
+
+def parsedPENatToU32 (value : Nat) : Nat := value % (2 ^ 32)
+
+def parsedPEAddressRegion? (width : Nat) (tIndirect : Bool) (chars : List Char) :
+    Option (Region × List Char) := do
+  let (a0, a1, a2, a3, rest) ← match chars with
+    | '[' :: afterOpen => do
+        let (inside, suffix) ← parsedSplitAt? afterOpen ']'
+        let (first, second, third, fourth) ← parsedPEFlatAddresses? inside
+        some (first, second, third, fourth, suffix)
+    | _ =>
+        let (base?, afterBase) := parsedPETakeNum chars
+        let base := parsedPENatToU32 (base?.getD 0)
+        let (increment, suffix) := match afterBase with
+          | 'v' :: afterV =>
+              let (increment?, tail) := parsedPETakeNum afterV
+              (parsedPENatToU32 (increment?.getD width), tail)
+          | _ => (0, afterBase)
+        some (base, parsedPENatToU32 (base + increment),
+          parsedPENatToU32 (base + 2 * increment),
+          parsedPENatToU32 (base + 3 * increment), suffix)
+  some (⟨width, a0, a1, a2, a3, tIndirect, none⟩, rest)
+
+def parsedPEFinishMemory? (bank : Bank) (width : Nat) (neg ext rnd : Bool)
+    (mask : Option ParsedMask) (chars : List Char) : Option ParsedOperand := do
+  let (tIndirect, addressChars) :=
+    if bank == .lm0 then
+      match chars with
+      | 't' :: rest => (true, rest)
+      | _ => (false, chars)
+    else (false, chars)
+  let (region, suffix0) ← parsedPEAddressRegion? width tIndirect addressChars
+  let (region, suffix) ← match suffix0 with
+    | 'j' :: afterJ => do
+        let (index?, tail) := parsedPETakeNum afterJ
+        let index ← index?
+        some ({ region with madpe := some (index % 256) }, tail)
+    | _ => some (region, suffix0)
+  let (extended, rounded) ← match suffix with
+    | [] => some (ext, rnd)
+    | ['e'] => some (true, false)
+    | ['r'] => some (false, true)
+    | _ => none
+  some (.mem ⟨bank, region⟩ neg extended rounded mask)
+
+def parseParsedPEMemory? (bank : Bank) (width : Nat) (neg ext rnd : Bool)
+    (mask : Option ParsedMask) (chars : List Char) : Option ParsedOperand :=
+  if bank == .t then
+    match chars with
+    | [] => some (.mem ⟨.t, ⟨4, 0, 0, 0, 0, false, none⟩⟩ neg ext rnd mask)
+    | ['e'] => some (.mem ⟨.t, ⟨4, 0, 0, 0, 0, false, none⟩⟩ neg true false mask)
+    | ['r'] => some (.mem ⟨.t, ⟨4, 0, 0, 0, 0, false, none⟩⟩ neg false true mask)
+    | _ => none
+  else parsedPEFinishMemory? bank width neg ext rnd mask chars
 
 def parseParsedPEOperandBody? (body : List Char) (neg : Bool)
     (mask : Option ParsedMask) : Option ParsedOperand := do
@@ -117,11 +204,16 @@ def parseParsedPEOperandBody? (body : List Char) (neg : Bool)
       | 'y' :: rowChars => do
           let row ← parsedPEMatrixRow? rowChars
           some (.matrix true width row)
+      | 'm' :: addressChars => parsedPEFinishMemory? .lm0 width neg false false mask addressChars
+      | 'n' :: addressChars => parsedPEFinishMemory? .lm1 width neg false false mask addressChars
+      | 'r' :: addressChars => parsedPEFinishMemory? .grf0 width neg false false mask addressChars
+      | 's' :: addressChars => parsedPEFinishMemory? .grf1 width neg false false mask addressChars
+      | 't' :: suffix => parseParsedPEMemory? .t width neg false false mask suffix
       | _ => none
 
-/-- Parse the structured non-memory PE operand productions from Rust
-`parse_operand`. Unknown memory banks and ordinary `$m/$n/$r/$s` addressed
-memory forms remain unsupported by this fragment. -/
+/-- Parse the structured PE operand productions from Rust
+`parse_operand`. Unknown memory banks still return `none`, matching the
+distinction between structured candidates and Rust's diagnostic `Raw` fallback. -/
 def parseParsedPEOperand? (text : String) : Option ParsedOperand := do
   let (rawBody, mask) ← match parsedSplitAt? text.toList '/' with
     | none => some (text.toList, none)
@@ -162,5 +254,22 @@ theorem parseParsedPEOperand_block_memory :
 theorem parseParsedPEOperand_dar_u32_boundary :
     parseParsedPEOperand? "$dar4294967295" = some (.dar 4294967295) ∧
       parseParsedPEOperand? "$dar4294967296" = none := by decide
+
+theorem parseParsedPEOperand_memory_forms :
+    parseParsedPEOperand? "$r0" =
+      some (.mem ⟨.grf0, ⟨1, 0, 0, 0, 0, false, none⟩⟩ false false false none) ∧
+      parseParsedPEOperand? "$lm0v4" =
+      some (.mem ⟨.lm0, ⟨2, 0, 4, 8, 12, false, none⟩⟩ false false false none) ∧
+      parseParsedPEOperand? "$mt0v" =
+      some (.mem ⟨.lm0, ⟨1, 0, 1, 2, 3, true, none⟩⟩ false false false none) ∧
+      parseParsedPEOperand? "$llm[1, 2, 3, 4]j5e" =
+      some (.mem ⟨.lm0, ⟨4, 1, 2, 3, 4, false, some 5⟩⟩ false true false none) ∧
+      parseParsedPEOperand? "$te" =
+      some (.mem ⟨.t, ⟨4, 0, 0, 0, 0, false, none⟩⟩ false true false none) := by decide
+
+theorem parseParsedPEOperand_memory_rejects_malformed_forms :
+    parseParsedPEOperand? "$r0junk" = none ∧
+      parseParsedPEOperand? "$m[1,2,3]" = none ∧
+      parseParsedPEOperand? "$tx" = none := by decide
 
 end ProofsLean.MNCore.Issue

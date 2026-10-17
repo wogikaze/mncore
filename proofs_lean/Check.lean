@@ -124,6 +124,8 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.parseParsedPEOperand_omr_mask
 #print axioms ProofsLean.MNCore.Issue.parseParsedPEOperand_block_memory
 #print axioms ProofsLean.MNCore.Issue.parseParsedPEOperand_dar_u32_boundary
+#print axioms ProofsLean.MNCore.Issue.parseParsedPEOperand_memory_forms
+#print axioms ProofsLean.MNCore.Issue.parseParsedPEOperand_memory_rejects_malformed_forms
 #print axioms ProofsLean.MNCore.Issue.ParsedL1bSet.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.mabdiffInFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.ParsedRrn.inFiniteEnvelope_finite
