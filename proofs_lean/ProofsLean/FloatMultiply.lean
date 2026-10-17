@@ -77,6 +77,25 @@ def vectorAnswer (input : Words) : Words := fun index =>
 def scheduledLane (input : Words) (line : Fin 4) (lane : Fin 8) : BitVec 32 :=
   multiply (input (chunkIndex line lane)) seven
 
+def writeChunk (input output : Words) (line : Fin 4) : Words := fun index =>
+  if index.val / 8 = line.val then vectorAnswer input index else output index
+
+def fourLineResult (input initialOutput : Words) : Words :=
+  writeChunk input
+    (writeChunk input
+      (writeChunk input
+        (writeChunk input initialOutput ⟨0, by decide⟩)
+        ⟨1, by decide⟩)
+      ⟨2, by decide⟩)
+    ⟨3, by decide⟩
+
+theorem fourLineResult_correct (input initialOutput : Words) (index : Fin 32) :
+    fourLineResult input initialOutput index = vectorAnswer input index := by
+  simp only [fourLineResult, writeChunk, vectorAnswer]
+  repeat (first | rfl | split)
+  have hi := index.isLt
+  omega
+
 theorem scheduledLane_correct (input : Words) (line : Fin 4) (lane : Fin 8) :
     scheduledLane input line lane = vectorAnswer input (chunkIndex line lane) := rfl
 
