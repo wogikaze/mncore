@@ -199,4 +199,61 @@ theorem ternary_evaluation (unit : UnitKind)
 
 end AbstractValue
 
+/-! Cross-unit operators can change representation (for example, a bus plus
+flags produces a `BusResult`). This companion abstraction keeps an evaluator,
+an exact constant result when available, and a conservative dependency set
+without requiring input and output types to be equal. -/
+structure AbstractComputation (Atom : Type u) (Input : Type v) (Output : Type w) where
+  run : (Atom → Input) → Output
+  dependencies : List Atom
+  constantValue : Option Output
+
+namespace AbstractComputation
+
+variable {Atom : Type u} {Input : Type v} {Output : Type w}
+
+def constant (value : Output) : AbstractComputation Atom Input Output :=
+  ⟨fun _ => value, [], some value⟩
+
+def evaluate (computation : AbstractComputation Atom Input Output)
+    (environment : Atom → Input) : Output :=
+  computation.run environment
+
+def binary (operation : Input → Input → Output)
+    (left right : AbstractValue Atom Input) : AbstractComputation Atom Input Output :=
+  let folded := match left.expression, right.expression with
+    | .constant x, .constant y => some (operation x y)
+    | _, _ => none
+  ⟨fun environment => operation (left.evaluate environment) (right.evaluate environment),
+    left.dependencies ++ right.dependencies, folded⟩
+
+theorem binary_evaluation (operation : Input → Input → Output)
+    (left right : AbstractValue Atom Input) (environment : Atom → Input) :
+    (binary operation left right).evaluate environment =
+      operation (left.evaluate environment) (right.evaluate environment) := rfl
+
+theorem binary_constants_exact (operation : Input → Input → Output)
+    (unit : UnitKind) (left right : Input) :
+    (binary operation (AbstractValue.constant (Atom := Atom) unit left)
+      (AbstractValue.constant (Atom := Atom) unit right)).constantValue =
+        some (operation left right) := rfl
+
+theorem binary_dependencies_are_sound (operation : Input → Input → Output)
+    (left right : AbstractValue Atom Input)
+    (leftEnvironment rightEnvironment : Atom → Input)
+    (agree : ∀ atom, atom ∈ (binary operation left right).dependencies →
+      leftEnvironment atom = rightEnvironment atom) :
+    (binary operation left right).evaluate leftEnvironment =
+      (binary operation left right).evaluate rightEnvironment := by
+  simp only [binary_evaluation]
+  congr 1
+  · apply left.depends_only_on_inputs leftEnvironment rightEnvironment
+    intro atom member
+    exact agree atom (by simp [binary, member])
+  · apply right.depends_only_on_inputs leftEnvironment rightEnvironment
+    intro atom member
+    exact agree atom (by simp [binary, member])
+
+end AbstractComputation
+
 end ProofsLean.MNCore

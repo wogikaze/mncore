@@ -1,4 +1,5 @@
 import ProofsLean.PartialSemantics
+import ProofsLean.OperatorAbstraction
 
 /- MN-Core 2 manual (2026-06-02), §3.6.12 and tables 3.9–3.11.
 This is an ALU datapath fragment, not a machine step or an exhaustive ISA.
@@ -119,6 +120,45 @@ def partialEvaluate (request : Request) (x y : Bus) (reduced : Bool) : StepResul
   match request with
   | .integer p op => .ok (evaluateBus p op x y reduced)
   | .unimplemented _ => .unknown
+
+/-- Constant/dependency abstraction for every constructor of `IntegerALU.Op`.
+The operation is supplied by the total `evaluateBus` semantics above, so this
+wrapper covers arithmetic, logic, shifts, packbit, and passa uniformly. -/
+def abstractEvaluate {Atom : Type}
+    (precision : Precision) (op : Op) (reduced : Bool)
+    (x y : ProofsLean.MNCore.AbstractValue Atom Bus) :
+    ProofsLean.MNCore.AbstractComputation Atom Bus BusResult :=
+  ProofsLean.MNCore.AbstractComputation.binary
+    (fun x y => evaluateBus precision op x y reduced) x y
+
+theorem abstractEvaluate_evaluation {Atom : Type}
+    (precision : Precision) (op : Op) (reduced : Bool)
+    (x y : ProofsLean.MNCore.AbstractValue Atom Bus)
+    (environment : Atom → Bus) :
+    (abstractEvaluate precision op reduced x y).evaluate environment =
+      evaluateBus precision op (x.evaluate environment) (y.evaluate environment) reduced := by
+  exact ProofsLean.MNCore.AbstractComputation.binary_evaluation
+    (fun (x y : Bus) => evaluateBus precision op x y reduced) x y environment
+
+theorem abstractEvaluate_constants_exact {Atom : Type}
+    (precision : Precision) (op : Op) (reduced : Bool) (x y : Bus) :
+    (abstractEvaluate (Atom := Atom) precision op reduced
+      (ProofsLean.MNCore.AbstractValue.constant ProofsLean.MNCore.UnitKind.integerAlu x)
+      (ProofsLean.MNCore.AbstractValue.constant ProofsLean.MNCore.UnitKind.integerAlu y)).constantValue =
+      some (evaluateBus precision op x y reduced) := by
+  rfl
+
+theorem abstractEvaluate_dependencies_are_sound {Atom : Type}
+    (precision : Precision) (op : Op) (reduced : Bool)
+    (x y : ProofsLean.MNCore.AbstractValue Atom Bus)
+    (leftEnvironment rightEnvironment : Atom → Bus)
+    (agree : ∀ atom, atom ∈ (abstractEvaluate precision op reduced x y).dependencies →
+      leftEnvironment atom = rightEnvironment atom) :
+    (abstractEvaluate precision op reduced x y).evaluate leftEnvironment =
+      (abstractEvaluate precision op reduced x y).evaluate rightEnvironment :=
+  ProofsLean.MNCore.AbstractComputation.binary_dependencies_are_sound
+    (fun (x y : Bus) => evaluateBus precision op x y reduced) x y
+    leftEnvironment rightEnvironment agree
 
 theorem unsupported_is_unknown (encoding : Nat) (x y : Bus) (reduced : Bool) :
     partialEvaluate (.unimplemented encoding) x y reduced = .unknown := rfl

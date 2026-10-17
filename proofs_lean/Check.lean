@@ -79,6 +79,9 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.instructionMachine_accepted_pe_executes
 #print axioms ProofsLean.MNCore.PEMemory.instructionMachine_nop_advances
 #print axioms ProofsLean.MNCore.UnitKind.mem_all
+#print axioms ProofsLean.MNCore.IntegerALU.abstractEvaluate_evaluation
+#print axioms ProofsLean.MNCore.IntegerALU.abstractEvaluate_constants_exact
+#print axioms ProofsLean.MNCore.IntegerALU.abstractEvaluate_dependencies_are_sound
 #print axioms ProofsLean.MNCore.Expr.evaluate_unary
 #print axioms ProofsLean.MNCore.Expr.evaluate_binary
 #print axioms ProofsLean.MNCore.Expr.evaluate_ternary
