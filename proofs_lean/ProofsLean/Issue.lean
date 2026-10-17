@@ -1510,6 +1510,16 @@ def ParsedLine.normalizeForSubmission? : ParsedLine → Option (List NormalizedL
 theorem nop_zero_normalizes_empty :
     ParsedLine.normalizeForSubmission? (.nop 0 none) = some [] := rfl
 
+/-- The standard judge strips source/debug records before running and scoring
+the submitted instruction stream. These records therefore contribute no
+instruction line to the normalized submission. -/
+theorem source_records_normalize_empty :
+    ParsedLine.normalizeForSubmission? .debugSet = some [] ∧
+    ParsedLine.normalizeForSubmission? .debugGet = some [] ∧
+    ParsedLine.normalizeForSubmission? .dramSet = some [] ∧
+    ParsedLine.normalizeForSubmission? (.nop 0 none) = some [] := by
+  exact ⟨rfl, rfl, rfl, rfl⟩
+
 def ParsedLine.issueLegal : ParsedLine → Prop
   | .pe expressions => LegalParsedLine expressions
   | .nop _ _ | .mv _ | .maskDirective _ _ _ | .debugSet | .debugGet | .dramSet => True
