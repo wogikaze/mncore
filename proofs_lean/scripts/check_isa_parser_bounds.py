@@ -66,6 +66,7 @@ CASES = {
     "hbfn_5": ("hbfn/5 $lm0 $ln0\n", False, None),
     "hbfn_11": ("hbfn/11 $lm0 $ln0\n", False, None),
     "imr_selector_0": ("lpassa $lm0 $ln0/$imr0\n", True, 1),
+    "imr_selector_1": ("lpassa $lm0 $ln0/$imr1\n", True, 1),
     "imr_selector_31": ("lpassa $lm0 $ln0/$imr31\n", True, 1),
     "imr_selector_32": ("lpassa $lm0 $ln0/$imr32\n", False, None),
     "imr_selector_255": ("lpassa $lm0 $ln0/$imr255\n", False, None),
@@ -223,6 +224,17 @@ for selector in range(2):
 for index in range(2, 31):
     CASES[f"imr_selector_{index}"] = (f"lpassa $lm0 $ln0/$imr{index}\n", True, 1)
     CASES[f"mask_directive_n_{index}"] = (f"maskn {index}\nlpassa $lm0 $ln0\n", True, 1)
+for index in range(33, 255):
+    CASES[f"imr_selector_{index}"] = (f"lpassa $lm0 $ln0/$imr{index}\n", False, None)
+for index in range(33, 256):
+    CASES[f"mask_directive_n_{index}"] = (
+        f"maskn {index}\nlpassa $lm0 $ln0\n", False, None)
+for index in [*range(31), *range(33, 256)]:
+    accepted = index < 32
+    CASES[f"mask_directive_l_{index}"] = (
+        f"maskln {index}\nlpassa $lm0 $ln0\n", accepted, 1 if accepted else None)
+    CASES[f"mask_directive_ll_{index}"] = (
+        f"masklln {index}\nlpassa $lm0 $ln0\n", accepted, 1 if accepted else None)
 for index in range(2, 15):
     CASES[f"omr_{index}"] = (f"zero $omr{index}\n", True, 1)
 for index in range(16, 256):
@@ -350,7 +362,7 @@ def main() -> None:
             "nop/0 is accepted and emits zero instruction words; nop/0 with a wait is rejected, so the zero-count no-wait form can be erased during normalization.",
             "wait i00 is rejected; i01 and iFF are accepted; i100 is rejected.",
             "Every u8 OMR destination selector was probed: exactly $omr1..$omr15 are accepted; $omr0 and $omr16..$omr255 are rejected.",
-            "$imr0, $imr31 are accepted while $imr32 and $imr255 fail encoding. Active `maskn`, `maskln`, and `masklln` directives accept selector 31 and reject 32. This conflicts with the Rust MaskSource comment claiming entries 1 through 15.",
+            "Every u8 mask-read selector was probed: $imr0..$imr31 are accepted and $imr32..$imr255 are rejected. Every u8 selector was also probed for maskn, maskln, and masklln directives; each accepts 0..31 and rejects 32..255. This conflicts with the Rust MaskSource comment claiming entries 1 through 15.",
             "Representative unknown `$qraw` operands in ALU source/destination, zero destination, matrix-read source, and L1BM source positions produce no assembler output; assemble3 aborts with return code -6 on these malformed tokens. This is sampled rejection evidence, not a proof over every Raw string.",
             "SDM 3.6.4 requires simultaneous mask applications to use the same width; Section 3.6.2.1 also requires matching variable entry addresses. The same-width pair is accepted, while mixed widths, mixed entries, and a write-mask/zero-flush entry mismatch are rejected.",
             "Mask-flag reads and OMR writes use distinct issue ports: a masked lpassa can issue with gmfma writing either the same or a different OMR entry. Multiple variable mask reads still require one shared entry, as shown by the accepted and rejected mask-application pair probes.",

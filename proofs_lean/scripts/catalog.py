@@ -350,7 +350,7 @@ def isa_bounds_experiment() -> dict:
             raise ValueError(f"stale ISA boundary experiment: {item['path']}")
     if not all(row["matches_expected"] for row in record["observations"]):
         raise ValueError("ISA boundary experiment contains an unexpected assembler result")
-    if len(record["observations"]) != 1958:
+    if len(record["observations"]) != 2912:
         raise ValueError("ISA boundary experiment case count changed")
     observations = {row["case"]: row for row in record["observations"]}
     for entry in range(256):
@@ -358,6 +358,16 @@ def isa_bounds_experiment() -> dict:
         expected = 1 <= entry <= 15
         if row is None or row["accepted"] != expected or not row["matches_expected"]:
             raise ValueError(f"exhaustive OMR selector evidence is incomplete at {entry}")
+        row = observations.get(f"imr_selector_{entry}")
+        expected = entry < 32
+        if row is None or row["accepted"] != expected or not row["matches_expected"]:
+            raise ValueError(f"exhaustive IMR selector evidence is incomplete at {entry}")
+        for width in ("n", "l", "ll"):
+            row = observations.get(f"mask_directive_{width}_{entry}")
+            if row is None or row["accepted"] != expected or not row["matches_expected"]:
+                raise ValueError(
+                    f"exhaustive mask directive selector evidence is incomplete: {width}/{entry}"
+                )
     for row in record["observations"]:
         encoded = row.get("encoded_words", [])
         auxiliary = row.get("auxiliary_output_kinds", [])
@@ -938,14 +948,14 @@ def coverage_catalog() -> dict:
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
             "theorem": "ProofsLean.MNCore.Issue.ParsedMask.inFiniteEnvelope_finite",
             "scope": "Finite subtype for ParsedMask patterns and entry selectors below 32.",
-            "evidence": "proofs_lean/evidence/isa-bounds/reference.json: imr_selector_0, imr_selector_31, imr_selector_32; these are IMR mask selectors, not OMR entries.",
+            "evidence": "proofs_lean/evidence/isa-bounds/reference.json: exhaustive u8 IMR selector probes 0..255; exactly 0..31 are accepted. These are mask selectors, not OMR entries.",
             "missing": "Proof that all assembler-accepted PE masks parse into this subtype, plus other operand fields and whole-line finiteness.",
         }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
             "theorem": "ProofsLean.MNCore.Issue.ParsedMaskDirective.inFiniteEnvelope_finite",
             "scope": "Finite carrier for control-state mask directives with width 2 or 4 and selector below 32.",
-            "evidence": "proofs_lean/evidence/isa-bounds/reference.json: maskn, maskln, and masklln selectors 31 accepted and 32 rejected; width alternatives follow these directive spellings.",
+            "evidence": "proofs_lean/evidence/isa-bounds/reference.json: exhaustive u8 selectors 0..255 for maskn, maskln, and masklln; each accepts exactly 0..31. Width alternatives follow these directive spellings.",
             "missing": "Complete proof relating every parsed directive spelling to widthWords 2 or 4 and selector below 32, plus whole-machine finite composition.",
         }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",

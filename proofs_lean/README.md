@@ -66,10 +66,10 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   合法行集合へMathlib `Fintype`を与え、正確な有限alphabetと短縮列挙完全性まで接続した。
   `step`はunknownのため`Machine`には昇格できず、assembler/parserからこの合法性述語への
   完全性も未証明。
-- `evidence/isa-bounds/reference.json`: 公式`assemble3`の1,958個の選択プローブ。
+- `evidence/isa-bounds/reference.json`: 公式`assemble3`の2,912個の選択プローブ。
   `nop/0`は受理され0語を出力するため正コストの行からは正規化で除外する。
-  `$omr`はu8全域0〜255を走査し1〜15だけが受理される。`$imr`と有効なマスク指令のselectorは0〜31が受理され、
-  32は拒否された。後者はRustコメントの「1〜15」と不一致。challenge judgeは
+  `$omr`はu8全域0〜255を走査し1〜15だけが受理される。`$imr`と`maskn`/`maskln`/`masklln`の
+  selectorもu8全域を走査し、0〜31だけが受理される。これはRustコメントの「1〜15」と不一致。challenge judgeは
   既定で解答から`d get`/`d set`/`r`記録を実行列から除外する。`--enable-set`で残した
   `d set`はjudgeがscore無効として拒否する。`ParsedLine.normalizeForSubmission_cost`は
   正規化後の命令語コストが各ソース行のsubmission costと一致することを証明し、

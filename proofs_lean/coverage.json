@@ -7,12 +7,12 @@
   "inventory_scope": "Compiler-generated ALU/MAU spelling candidates plus separately scoped source-derived records; not an authoritative complete ISA or legality model.",
   "selected_parser_boundary_experiment": {
     "source": "proofs_lean/evidence/isa-bounds/reference.json",
-    "sha256": "15e5a38ee2e3d19653155d3ad122af7541545de418a9de5f6ecc492eacfb4bd6",
+    "sha256": "15e799e53d756756b452d73531f6027e58cf80268053cf01aaf1bf3b15912626",
     "generator": "proofs_lean/scripts/check_isa_parser_bounds.py",
-    "generator_sha256": "452ff03bd73caebded5dc2372d11f01555aafe0a3e0c4a32237cf47a74466c68",
-    "probes": 1958,
-    "accepted": 1588,
-    "rejected": 370,
+    "generator_sha256": "7908f8d7c34f082416546ca14344dbb6b717416caf29bcfacc78b391b134d28e",
+    "probes": 2912,
+    "accepted": 1651,
+    "rejected": 1261,
     "observed_encoded_word_kinds": [
       [
         "j",
@@ -28,7 +28,7 @@
       "nop/0 is accepted and emits zero instruction words; nop/0 with a wait is rejected, so the zero-count no-wait form can be erased during normalization.",
       "wait i00 is rejected; i01 and iFF are accepted; i100 is rejected.",
       "Every u8 OMR destination selector was probed: exactly $omr1..$omr15 are accepted; $omr0 and $omr16..$omr255 are rejected.",
-      "$imr0, $imr31 are accepted while $imr32 and $imr255 fail encoding. Active `maskn`, `maskln`, and `masklln` directives accept selector 31 and reject 32. This conflicts with the Rust MaskSource comment claiming entries 1 through 15.",
+      "Every u8 mask-read selector was probed: $imr0..$imr31 are accepted and $imr32..$imr255 are rejected. Every u8 selector was also probed for maskn, maskln, and masklln directives; each accepts 0..31 and rejects 32..255. This conflicts with the Rust MaskSource comment claiming entries 1 through 15.",
       "Representative unknown `$qraw` operands in ALU source/destination, zero destination, matrix-read source, and L1BM source positions produce no assembler output; assemble3 aborts with return code -6 on these malformed tokens. This is sampled rejection evidence, not a proof over every Raw string.",
       "SDM 3.6.4 requires simultaneous mask applications to use the same width; Section 3.6.2.1 also requires matching variable entry addresses. The same-width pair is accepted, while mixed widths, mixed entries, and a write-mask/zero-flush entry mismatch are rejected.",
       "Mask-flag reads and OMR writes use distinct issue ports: a masked lpassa can issue with gmfma writing either the same or a different OMR entry. Multiple variable mask reads still require one shared entry, as shown by the accepted and rejected mask-application pair probes.",
@@ -179,7 +179,7 @@
   },
   "parallel_issue_boundary_experiment": {
     "source": "proofs_lean/evidence/isa-bounds/reference.json",
-    "sha256": "15e5a38ee2e3d19653155d3ad122af7541545de418a9de5f6ecc492eacfb4bd6",
+    "sha256": "15e799e53d756756b452d73531f6027e58cf80268053cf01aaf1bf3b15912626",
     "manual_sections": [
       "SDM 3.6.1.7",
       "SDM 3.6.1.9",
@@ -595,7 +595,7 @@
       "sha256": "3857e27aeb37f5c1a9dc9ea28b54aea9c913b2941836b7552407180f5216cb05",
       "theorem": "ProofsLean.MNCore.Issue.ParsedMask.inFiniteEnvelope_finite",
       "scope": "Finite subtype for ParsedMask patterns and entry selectors below 32.",
-      "evidence": "proofs_lean/evidence/isa-bounds/reference.json: imr_selector_0, imr_selector_31, imr_selector_32; these are IMR mask selectors, not OMR entries.",
+      "evidence": "proofs_lean/evidence/isa-bounds/reference.json: exhaustive u8 IMR selector probes 0..255; exactly 0..31 are accepted. These are mask selectors, not OMR entries.",
       "missing": "Proof that all assembler-accepted PE masks parse into this subtype, plus other operand fields and whole-line finiteness."
     },
     {
@@ -603,7 +603,7 @@
       "sha256": "3857e27aeb37f5c1a9dc9ea28b54aea9c913b2941836b7552407180f5216cb05",
       "theorem": "ProofsLean.MNCore.Issue.ParsedMaskDirective.inFiniteEnvelope_finite",
       "scope": "Finite carrier for control-state mask directives with width 2 or 4 and selector below 32.",
-      "evidence": "proofs_lean/evidence/isa-bounds/reference.json: maskn, maskln, and masklln selectors 31 accepted and 32 rejected; width alternatives follow these directive spellings.",
+      "evidence": "proofs_lean/evidence/isa-bounds/reference.json: exhaustive u8 selectors 0..255 for maskn, maskln, and masklln; each accepts exactly 0..31. Width alternatives follow these directive spellings.",
       "missing": "Complete proof relating every parsed directive spelling to widthWords 2 or 4 and selector below 32, plus whole-machine finite composition."
     },
     {
