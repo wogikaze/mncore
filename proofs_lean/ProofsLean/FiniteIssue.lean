@@ -559,7 +559,7 @@ theorem ParsedMaskTargets.finite : Finite ParsedMaskTargets := by
     ParsedMaskTargets.finiteCode_injective
 
 def ParsedMaskDirective.inFiniteEnvelope (directive : ParsedMaskDirective) : Prop :=
-  (directive.widthWords = 2 ∨ directive.widthWords = 4) ∧ directive.entry < 32
+  (directive.widthWords = 2 ∨ directive.widthWords = 4) ∧ directive.entry.val < 32
 
 abbrev ParsedMaskDirectiveFiniteCode := Fin 5 × ParsedMaskTargets × Fin 32
 
@@ -568,7 +568,7 @@ private def ParsedMaskDirective.finiteCode
     ParsedMaskDirectiveFiniteCode :=
   (⟨directive.1.widthWords, by
       rcases directive.2.1 with widthEq | widthEq <;> omega⟩,
-    directive.1.targets, ⟨directive.1.entry, directive.2.2⟩)
+    directive.1.targets, ⟨directive.1.entry.val, directive.2.2⟩)
 
 private theorem ParsedMaskDirective.finiteCode_injective :
     Function.Injective ParsedMaskDirective.finiteCode := by
@@ -579,7 +579,8 @@ private theorem ParsedMaskDirective.finiteCode_injective :
   rcases equal with ⟨widthEq, targetsEq, entryEq⟩
   cases widthEq
   cases targetsEq
-  cases entryEq
+  have entryFinEq : aentry = bentry := Fin.ext entryEq
+  cases entryFinEq
   rfl
 
 theorem ParsedMaskDirective.inFiniteEnvelope_finite :

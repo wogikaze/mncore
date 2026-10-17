@@ -967,9 +967,9 @@ def coverage_catalog() -> dict:
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
             "theorem": "ProofsLean.MNCore.Issue.ParsedMaskDirective.inFiniteEnvelope_finite",
-            "scope": "Finite carrier for control-state mask directives with width 2 or 4 and selector below 32.",
+            "scope": "Finite carrier for control-state mask directives with width 2 or 4 and selector below 32; parsed selectors are Fin 256 after Rust-compatible u8 casting.",
             "evidence": "proofs_lean/evidence/isa-bounds/reference.json: exhaustive u8 selectors 0..255 for maskn, maskln, and masklln; each accepts exactly 0..31. Width alternatives follow these directive spellings.",
-            "missing": "Complete proof relating every parsed directive spelling to widthWords 2 or 4 and selector below 32, plus whole-machine finite composition.",
+            "missing": "Prove that every assembler-accepted parsed directive has selector below 32, plus whole-machine finite composition.",
         }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
@@ -988,9 +988,9 @@ def coverage_catalog() -> dict:
             "source": "proofs_lean/ProofsLean/ParsedIntegerStep.lean",
             "sha256": digest(ROOT / "ProofsLean/ParsedIntegerStep.lean"),
             "theorem": "ProofsLean.MNCore.PEMemory.parseMaskDirective_inFiniteEnvelope",
-            "scope": "Every parsed mask directive with assembler-legal selector 0..31 satisfies the finite ParsedLine envelope.",
+            "scope": "Every parsed mask directive with assembler-legal selector 0..31 satisfies the finite ParsedLine envelope; parsed selector values are stored in Fin 256 after `% 256`.",
             "evidence": "Lean connects parseMaskDirective? output to the operator-width theorem; the 0..31 selector condition comes from the official assemble3 boundary probes.",
-            "missing": "The selector-range premise is not proved for arbitrary parser outputs because the parser preserves u8-cast values through 255; connect this legal subset to the full machine semantics.",
+            "missing": "The selector-range premise is not proved for arbitrary parser outputs (Fin 256 permits values through 255); connect this legal subset to the full machine semantics.",
         }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),

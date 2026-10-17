@@ -1306,7 +1306,7 @@ structure ParsedMaskTargets where
 structure ParsedMaskDirective where
   widthWords : Nat := 2
   targets : ParsedMaskTargets := {}
-  entry : Nat := 0
+  entry : Fin 256 := 0
   deriving DecidableEq, Repr
 
 inductive ParsedMvKind where
@@ -2059,7 +2059,7 @@ inductive ParsedLine where
   | pe (expressions : List ParsedExpr)
   | nop (count : Nat) (wait : Option (Fin 256))
   | mv (transfer : ParsedMv)
-  | maskDirective (widthWords : Nat) (targets : ParsedMaskTargets) (entry : Nat)
+  | maskDirective (widthWords : Nat) (targets : ParsedMaskTargets) (entry : Fin 256)
   | debugSet
   | debugGet
   | dramSet
@@ -2112,7 +2112,7 @@ assembler-supported width and selector. Other lines leave the mask state
 unchanged. -/
 def ParsedLine.maskDirectiveInFiniteEnvelope : ParsedLine → Prop
   | .maskDirective widthWords _ entry =>
-      (widthWords = 2 ∨ widthWords = 4) ∧ entry < 32
+      (widthWords = 2 ∨ widthWords = 4) ∧ entry.val < 32
   | _ => True
 
 /-- Candidate instruction lines after removing presentation-only fields and
@@ -2121,7 +2121,7 @@ inductive NormalizedLine where
   | pe (expressions : List NormalizedExpr)
   | nop (count : Nat) (wait : Option (Fin 256))
   | mv (transfer : NormalizedMv)
-  | maskDirective (widthWords : Nat) (targets : ParsedMaskTargets) (entry : Nat)
+  | maskDirective (widthWords : Nat) (targets : ParsedMaskTargets) (entry : Fin 256)
   deriving DecidableEq, Repr
 
 /-- Executable issue words after zero-cost directives are folded into control
@@ -2335,7 +2335,7 @@ def ParsedLine.updateMaskState (line : ParsedLine) (state : ParsedMaskDirective)
   | _ => state
 
 theorem mask_directive_replaces_state (widthWords : Nat) (targets : ParsedMaskTargets)
-    (entry : Nat) (state : ParsedMaskDirective) :
+    (entry : Fin 256) (state : ParsedMaskDirective) :
     ParsedLine.updateMaskState (.maskDirective widthWords targets entry) state =
       ⟨widthWords, targets, entry⟩ := rfl
 

@@ -570,7 +570,7 @@ def parseMaskDirective? (text : String) : Option ParsedLine := do
   let [operator, address] := tokens | none
   let (widthWords, targets) ← parseMaskDirectiveOperator? operator
   let entry ← parseMaskDirectiveNumber? address
-  some (.maskDirective widthWords targets (entry % 256))
+  some (.maskDirective widthWords targets ⟨entry % 256, Nat.mod_lt _ (by decide)⟩)
 
 /-- The mask operator parser can only produce the two instruction widths used
 by the directive syntax, so its width component is already in a finite range. -/
@@ -592,10 +592,10 @@ operator. The selector bound is an explicit legality premise because the
 syntax parser casts to u8 while the assembler accepts only selectors 0..31. -/
 theorem parseMaskDirective_inFiniteEnvelope
     (text : String) (widthWords : Nat) (targets : ParsedMaskTargets)
-    (entry : Nat)
+    (entry : Fin 256)
     (parsed : parseMaskDirective? text =
       some (.maskDirective widthWords targets entry))
-    (entryBound : entry < 32) :
+    (entryBound : entry.val < 32) :
     (.maskDirective widthWords targets entry : ParsedLine).maskDirectiveInFiniteEnvelope := by
   unfold parseMaskDirective? at parsed
   cases tokensEq : splitMaskDirectiveWhitespace text.toList [] [] with
@@ -725,7 +725,7 @@ def resolveOmrDirectiveSelection? (directive : ParsedMaskDirective)
     Option (BitVec 4) :=
   if directive.targets.maskRegister && directive.entry != 0 then
     resolveParsedMaskFlags? (.entry (directive.widthWords == 4)
-      ⟨directive.entry % 256, Nat.mod_lt _ (by decide)⟩)
+      directive.entry)
       registers cycle
   else none
 
@@ -741,7 +741,7 @@ def resolveMemoryDirectiveSelection? (directive : ParsedMaskDirective) (bank : B
     Option PEWordSelection :=
   if directiveTargetsBank directive.targets bank && directive.entry != 0 then
     resolveParsedMaskSelection? (.entry (directive.widthWords == 4)
-      ⟨directive.entry % 256, Nat.mod_lt _ (by decide)⟩)
+      directive.entry)
       registers cycle
   else none
 

@@ -79,12 +79,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   境界probeと解答コーパスの両方で観測形式は一致するが、未知の全合法sourceへの一般化は未証明。
   実験範囲外の
   構文・意味や完全網羅を証明するものではない。
-  Leanではmask directiveの幅を2または4語、selectorを0〜31に制限した有限carrierも
-  証明した。指令適用後も制御状態がその範囲を保つ補題を追加した。
+  Leanではmask directiveのselectorを`Fin 256`（Rust parserのu8 castと同じ値域）で表し、幅を2または4語、合法selectorを0〜31に制限した有限carrierを証明した。指令適用後も制御状態がその範囲を保つ補題を追加した。
   Leanのmask operator parserが幅2または4だけを生成する補題も追加した。
-  selectorがassemble3の受理範囲にある場合、完全なmask directive parse結果が
-  有限envelopeに属することもLeanで接続した。parser単体はu8値を255まで保持するため、
-  0〜31の条件は合法性の前提として明示している。
+  selectorはパーサで`% 256`して`Fin 256`に格納する。assemble3の受理範囲である0〜31を別途仮定すれば、完全なmask directive parse結果が有限envelopeに属することもLeanで接続できる。
   `maskln`/`masklln`の境界probeがこれらの幅の字句形式を確認する。
   同じ5個の未知operand fixture（`$qraw`）でRust parserが`Raw`へ落とし、assemble3は命令を出力せず
   異常終了した。これは標本証拠であり、全Raw文字列や未知opcodeの不存在を証明するものではない。
