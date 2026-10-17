@@ -113,6 +113,9 @@ import Lean
 #print axioms ProofsLean.MNCore.FloatSubtract.subtractBus_low
 #print axioms ProofsLean.MNCore.FloatSubtract.abstractSubtractBus_evaluation
 #print axioms ProofsLean.MNCore.FloatSubtract.abstractSubtractBus_dependencies_are_sound
+#print axioms ProofsLean.MNCore.FloatSubtract.chunkIndex_injective
+#print axioms ProofsLean.MNCore.FloatSubtract.chunkIndex_covers_all_words
+#print axioms ProofsLean.MNCore.FloatSubtract.twoLineResult_correct
 #print axioms ProofsLean.MNCore.FloatMultiply.abstractMultiply_evaluation
 #print axioms ProofsLean.MNCore.FloatMultiply.seven_times_one
 #print axioms ProofsLean.MNCore.FloatMultiply.seven_times_zero

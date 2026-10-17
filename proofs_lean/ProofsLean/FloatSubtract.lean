@@ -34,6 +34,50 @@ def abstractSubtractBus {Atom : Type}
     AbstractValue Atom (BitVec 64) :=
   AbstractValue.binary .floatingMau subtractBus left right
 
+abbrev Words := Fin 16 → BitVec 32
+
+/-- The public Mat Sub answer writes eight float words in each MAU line. -/
+def chunkIndex (line : Fin 2) (lane : Fin 8) : Fin 16 :=
+  ⟨8 * line.val + lane.val, by
+    have hl := line.isLt
+    have hw := lane.isLt
+    omega⟩
+
+def vectorAnswer (left right : Words) : Words := fun index =>
+  subtract (left index) (right index)
+
+def writeChunk (left right output : Words) (line : Fin 2) : Words := fun index =>
+  if index.val / 8 = line.val then vectorAnswer left right index else output index
+
+def twoLineResult (left right initialOutput : Words) : Words :=
+  writeChunk left right (writeChunk left right initialOutput ⟨0, by decide⟩)
+    ⟨1, by decide⟩
+
+theorem chunkIndex_injective (line₁ line₂ : Fin 2) (lane₁ lane₂ : Fin 8)
+    (equal : chunkIndex line₁ lane₁ = chunkIndex line₂ lane₂) :
+    line₁ = line₂ ∧ lane₁ = lane₂ := by
+  have values := congrArg Fin.val equal
+  simp only [chunkIndex, Fin.val_mk] at values
+  have lineEqual : line₁.val = line₂.val := by omega
+  have laneEqual : lane₁.val = lane₂.val := by omega
+  exact ⟨Fin.ext lineEqual, Fin.ext laneEqual⟩
+
+theorem chunkIndex_covers_all_words (index : Fin 16) :
+    ∃ line : Fin 2, ∃ lane : Fin 8, chunkIndex line lane = index := by
+  let line : Fin 2 := ⟨index.val / 8, by have hi := index.isLt; omega⟩
+  let lane : Fin 8 := ⟨index.val % 8, Nat.mod_lt _ (by decide)⟩
+  refine ⟨line, lane, ?_⟩
+  apply Fin.ext
+  simp [chunkIndex, line, lane]
+  omega
+
+theorem twoLineResult_correct (left right initialOutput : Words) (index : Fin 16) :
+    twoLineResult left right initialOutput index = vectorAnswer left right index := by
+  simp only [twoLineResult, writeChunk, vectorAnswer]
+  repeat (first | rfl | split)
+  have hi := index.isLt
+  omega
+
 theorem abstractSubtractBus_evaluation {Atom : Type}
     (left right : AbstractValue Atom (BitVec 64))
     (environment : Atom → BitVec 64) :

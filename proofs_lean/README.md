@@ -45,7 +45,7 @@ Welcome の後は Convert Endian を縦の2問目にする。有限性・範囲�
 6. Welcomeは現在、限定された2種類の`iinc`行だけのモデルで証明済み。実VSM行と実状態遷移の接続、全合法1行の下限、公式emulator差分を完了させる。
 7. 3-5: 下限証明が失敗した候補から、探索用の条件と具体的な反例を取り出すインターフェースを設計する。Rustシミュレータ向け候補生成器、判定条件、結果の再現記録は未実装。
 8. Phase 4はWelcomeの後にConvert Endianを扱う。3行解の整数barrel shift→単精度MAU FMA→整数barrel shift→PE destination selectorの値依存を抽象式にし、合成結果が任意64-bit入力のbyte swapになることを証明した。公式judgeとRust simulatorを含む8値の差分は完了。全メモリアクセス・発行・state transitionへの接続は未実装。
-   次題1.a-b（A-B）について、`FloatSubtract.lean`に`fvadd x -y`を単位乗算FMAと符号反転加数として表す式、および定数・依存追跡の健全性、3つの具体例を追加した。64-bit PEバスで上下float laneへ独立に適用する補題もある。`check_single_fma_kernel.py --operation fvsub --vectors 128 --seed 1234 --gpfn-runs 1`でLeanカーネル対Rustの128式、および公式gpfn3対Rustの16,384値を照合し、両方不一致0。これは演算器データパスの小さな証明であり、LeanモデルとRustの全域同値、行列アドレス、issue/state遷移、全入力正当性、2行下限は未完了。
+   次題1.a-b（A-B）について、`FloatSubtract.lean`に`fvadd x -y`を単位乗算FMAと符号反転加数として表す式、および定数・依存追跡の健全性、3つの具体例を追加した。64-bit PEバスで上下float laneへ独立に適用し、2行×8要素が16要素を重複なく覆って2行実行後に全出力が仕様値になる抽象ベクトル定理もある。`check_single_fma_kernel.py --operation fvsub --vectors 128 --seed 1234 --gpfn-runs 1`でLeanカーネル対Rustの128式、および公式gpfn3対Rustの16,384値を照合し、両方不一致0。これは演算器・抽象ベクトル層の証明であり、LeanモデルとRustの全域同値、実行メモリアドレス、issue/state遷移、全入力正当性、2行下限は未完了。
    続いて2.fmul7向けに`FloatMultiply.lean`を追加し、`fvmul`をゼロ加数のFMAとして抽象式へ接続した。7.0を掛ける具体例と定数・依存追跡の健全性を証明し、64-bit PEバスの上位・下位float laneへの独立適用を証明した。さらに、4行×各8語の抽象スケジュールについて各出力語が一意のline/laneに対応し、4行を適用した結果が全32入力語の仕様値と一致することを証明した。`check_single_fma_kernel.py --operation fvmul --vectors 128 --seed 2345 --gpfn-runs 1`でLeanカーネル対Rustの128式、および公式gpfn3対Rustの16,384値を照合し、両方不一致0。assembler出力・実メモリアクセス・stepへの接続、全域同値、全入力正当性と最適性は未完了。
 
 ## 実装した定義
