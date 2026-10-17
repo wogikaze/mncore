@@ -198,13 +198,14 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   L1BMの`mabdiff`はassemble3でDistrib/Gather両方向について明示符号付きの`-255..255`全件を受理し、
   境界の`±256`を両方向で拒否することを確認し、
   `-256 ≤ mabdiff < 256`の部分型が有限であることを証明した。SDMの有用範囲は`0..15`。
+  Leanの`parsedMabdiff?`は値をこの範囲付きsubtypeで返し、L1 opcode parserはその値からのみDistrib/Gatherを構成する。
   境界監査でRust側の`i8` parserが受理範囲を狭めていたため、`i16`保持と`[-255,255]`検査へ修正し、
   同じ境界を回帰確認した。LeanにRust `parse_l1_opcode`の全variantを構造化`ParsedL1Op`へ写すopcode parserを加え、
   broadcast/write、符号付きMAB差分、direction依存、round付きRRN reductionをfixture化した。
   Rustと同じく最初のtyped operandから`l1bmd`/`l2bmd`の方向を決める薄い入口も加えた。
   selector parserが保持するu8全域とassemble3で有効な0..15は別の範囲として扱う。
   `ParsedRrn`のprecision文字をASCII範囲に制限した部分型と8個のRRN opcodeの組の有限性は既存だが、
-  parser出力が各finite envelopeに必ず入る一般定理はまだない。
+  RRN parser出力がこのenvelopeに入る一般定理はまだない。
   `ParsedL1Op.distrib/gather`からoffset付きvariantだけを取り出す射影を定義し、その結果が有限なtagged carrierに
   入ることを証明した。これも他の`ParsedL1Op` variantや完全なPE行の有限性は含まない。
   `l1bmm@`と`l1bmm4@`のselector 0..15をassemble3で全件確認し、両形式の16が拒否されることも確認した。

@@ -1650,6 +1650,18 @@ def parsedSignedDecimal? (chars : List Char) : Option Int := do
       let value ← parsedMvDecimal? chars
       some (Int.ofNat value)
 
+/-- Parse an L1BM MAB offset directly into its bounded range subtype. -/
+def parsedMabdiff? (chars : List Char) :
+    Option {offset : Int // -255 ≤ offset ∧ offset ≤ 255} := do
+  let offset ← parsedSignedDecimal? chars
+  if h : -255 ≤ offset ∧ offset ≤ 255 then some ⟨offset, h⟩ else none
+
+theorem parsedMabdiff?_boundaries :
+    parsedMabdiff? ['-','2','5','5'] = some ⟨-255, by omega⟩ ∧
+      parsedMabdiff? ['+','2','5','5'] = some ⟨255, by omega⟩ ∧
+      parsedMabdiff? ['-','2','5','6'] = none ∧
+      parsedMabdiff? ['+','2','5','6'] = none := by decide
+
 def parsedL1RrnRound? (chars : List Char) : Option (ParsedRrn × Bool) := do
   let (rrnChars, round) := if chars.getLast? == some 'r'
     then (chars.dropLast, true) else (chars, false)
@@ -1679,10 +1691,9 @@ def parseParsedL1Opcode? (opcode : String) (toPE : Bool) : Option ParsedL1Op := 
     | _ => none
   else if rest.head? == some 'd' then
     let offsetChars := rest.drop 1
-    let offset ← if offsetChars.isEmpty then some 0 else parsedSignedDecimal? offsetChars
-    if -255 ≤ offset && offset ≤ 255 then
-      some (if toPE then .distrib offset else .gather offset)
-    else none
+    let offset ← if offsetChars.isEmpty then some ⟨0, by omega⟩
+      else parsedMabdiff? offsetChars
+    some (if toPE then .distrib offset.val else .gather offset.val)
   else if rest.take 2 == ['r', '4'] then do
     let (rrn, round) ← parsedL1RrnRound? (rest.drop 2)
     some (.reduce4 rrn round)
