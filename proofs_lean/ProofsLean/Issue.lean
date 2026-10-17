@@ -1420,8 +1420,7 @@ def parsedL1bAddressModeSet? (addressValue immodeValue : Nat) :
   some ⟨set, parsedL1bAddressModeSet_inFiniteEnvelope address immode⟩
 
 /-- Parse the canonical decimal `<l1badr>` or `<l1badr>/<immode>` selector
-form. The manual's bracketed list spelling is handled separately by the
-assembler and is not claimed by this parser. -/
+form. -/
 def parseParsedL1bAddressMode? (text : String) :
     Option {set : ParsedL1bSet // set.inFiniteEnvelope} := do
   let (addressChars, immodeChars) ← match text.toList.splitOn '/' with
@@ -1519,6 +1518,83 @@ theorem parseParsedL1bList?_rejects_eight :
 
 theorem parseParsedL1bList?_trims_entries :
     (parseParsedL1bList? "[ 0, 7 ]").map Subtype.val = some ⟨129, 7⟩ := by decide
+
+/-- Unified L1B selector parser used by the `l2bm` opcode parser. -/
+def parseParsedL1bSet? (text : String) :
+    Option {set : ParsedL1bSet // set.inFiniteEnvelope} :=
+  match text.toList with
+  | '[' :: _ => parseParsedL1bList? text
+  | _ => parseParsedL1bAddressMode? text
+
+def parsedL1bSetAll : ParsedL1bSet := ⟨255, 7⟩
+
+theorem parsedL1bSetAll_inFiniteEnvelope : parsedL1bSetAll.inFiniteEnvelope := by
+  constructor <;> decide
+
+def parsedSplitAt? : List Char → Char → Option (List Char × List Char)
+  | [], _ => none
+  | separator :: rest, delimiter =>
+      if separator == delimiter then some ([], rest) else do
+        let (before, suffix) ← parsedSplitAt? rest delimiter
+        some (separator :: before, suffix)
+
+def parsedStripChars? : List Char → List Char → Option (List Char)
+  | [], input => some input
+  | first :: restPrefix, input =>
+      match input with
+      | char :: restInput =>
+          if first == char then parsedStripChars? restPrefix restInput else none
+      | [] => none
+
+/-- Mirror the selector-bearing `l2bm` opcode forms in Rust's
+`parse_l2_opcode`: broadcast, broadcast2, internal multicast, and the
+direction-dependent `d` operation. The final Boolean records whether the
+first operand is L2BM, as in the Rust parser. -/
+def parseParsedL2SelectorOpcode? (opcode : String) (fromL2 : Bool) :
+    Option ParsedL2Op := do
+  let (head, selectorText) ← match parsedSplitAt? opcode.toList '@' with
+    | none =>
+        let rest ← parsedStripChars? ['l', '2', 'b', 'm'] opcode.toList
+        some (rest, none)
+    | some (whole, selector) => do
+        let rest ← parsedStripChars? ['l', '2', 'b', 'm'] whole
+        some (rest, some (String.ofList selector))
+  let parseSet := do
+    match selectorText with
+    | none => some parsedL1bSetAll
+    | some text => some (← parseParsedL1bSet? text).val
+  match head with
+  | ['b'] => some (.bcast (← parseSet))
+  | ['b', '2'] => some (.bcast2 (← parseSet))
+  | ['i'] => some (.imcast (← parseSet))
+  | ['d'] => if fromL2 then some (.distrib (← parseSet)) else some .gather
+  | [] => do
+      let text ← selectorText
+      let value ← parsedMvDecimal? text.toList
+      let l1b ← parsedNatToFin? value 256
+      some (.fromL1b l1b.val)
+  | _ => none
+
+theorem parseParsedL2SelectorOpcode_broadcast_list :
+    parseParsedL2SelectorOpcode? "l2bmb@[0,2,4,6]" false =
+      some (.bcast ⟨85, 6⟩) := by decide
+
+theorem parseParsedL2SelectorOpcode_broadcast_default :
+    parseParsedL2SelectorOpcode? "l2bmb" false =
+      some (.bcast parsedL1bSetAll) := by decide
+
+theorem parseParsedL2SelectorOpcode_distribution_list :
+    parseParsedL2SelectorOpcode? "l2bmd@[1,3,5,7]" true =
+      some (.distrib ⟨170, 6⟩) := by decide
+
+theorem parseParsedL2SelectorOpcode_gather_ignores_selector_like_rust :
+    parseParsedL2SelectorOpcode? "l2bmd@not-a-selector" false = some .gather := by decide
+
+theorem parseParsedL2SelectorOpcode_from_l1b_parser_u8_range :
+    parseParsedL2SelectorOpcode? "l2bm@255" false = some (.fromL1b 255) := by decide
+
+theorem parseParsedL2SelectorOpcode_rejects_l1b_u8_overflow :
+    parseParsedL2SelectorOpcode? "l2bm@256" false = none := by decide
 
 structure ParsedMvParams where
   size : Option (Fin (2 ^ 64)) := none

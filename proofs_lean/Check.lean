@@ -105,6 +105,9 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.parseParsedL1bList?_all
 #print axioms ProofsLean.MNCore.Issue.parseParsedL1bList?_rejects_empty
 #print axioms ProofsLean.MNCore.Issue.parseParsedL1bList?_rejects_eight
+#print axioms ProofsLean.MNCore.Issue.parseParsedL2SelectorOpcode_broadcast_list
+#print axioms ProofsLean.MNCore.Issue.parseParsedL2SelectorOpcode_distribution_list
+#print axioms ProofsLean.MNCore.Issue.parseParsedL2SelectorOpcode_from_l1b_parser_u8_range
 #print axioms ProofsLean.MNCore.Issue.ParsedL1bSet.inFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.mabdiffInFiniteEnvelope_finite
 #print axioms ProofsLean.MNCore.Issue.ParsedRrn.inFiniteEnvelope_finite

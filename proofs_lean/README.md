@@ -190,7 +190,9 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   全選択は`0xff`であり、assemble3は`@0/7`を含む全64組のaddress/immodeを受理し、各入力値8を拒否する。
   `Issue.lean`にcanonical decimalの`<l1badr>[/<immode>]` parserとManualのbracketed list parserを加え、
   bitmap生成関数と、出力が有限envelopeに入る定理およびall/singleton/whitespace/invalid-entryのfixtureを置いた。
-  `fullSelectorMask_inFiniteEnvelope`も回帰定理として残す。PE式全体のparserとRust parser出力との全形式の対応はまだない。
+  L2BMの`b`/`b2`/`i`/`d` opcode selectorを`ParsedL2Op`へ写すparserも接続し、既定all-set、分配/収集の向き、
+  `fromL1b`のRust parser上のu8範囲をfixture化した。`fullSelectorMask_inFiniteEnvelope`も回帰定理として残す。
+  PE式全体のparserとRust parser出力との全形式の対応はまだない。
   wait tagについては、受理範囲`1..255`とoptionalな同範囲の有限carrierを証明した。
   L1BMの`mabdiff`はassemble3で明示符号付きの`-255..255`全件を受理し、境界の`±256`を拒否することを確認し、
   `-256 ≤ mabdiff < 256`の部分型が有限であることを証明した。SDMの有用範囲は`0..15`。
