@@ -79,6 +79,12 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.instructionMachine_accepted_pe_executes
 #print axioms ProofsLean.MNCore.PEMemory.instructionMachine_nop_advances
 #print axioms ProofsLean.MNCore.UnitKind.mem_all
+#print axioms ProofsLean.MNCore.AbstractComputation.binary_constants_exact
+#print axioms ProofsLean.MNCore.AbstractComputation.binary_dependencies_are_sound
+#print axioms ProofsLean.MNCore.AbstractComputation.unary_constants_exact
+#print axioms ProofsLean.MNCore.AbstractComputation.unary_dependencies_are_sound
+#print axioms ProofsLean.MNCore.AbstractComputation.ternary_constants_exact
+#print axioms ProofsLean.MNCore.AbstractComputation.ternary_dependencies_are_sound
 #print axioms ProofsLean.MNCore.IntegerALU.abstractEvaluate_evaluation
 #print axioms ProofsLean.MNCore.IntegerALU.abstractEvaluate_constants_exact
 #print axioms ProofsLean.MNCore.IntegerALU.abstractEvaluate_dependencies_are_sound
@@ -734,8 +740,14 @@ run_cmd do
     if owner.any (fun moduleName => (`ProofsLean).isPrefixOf moduleName) then
       let dependencies ← collectAxioms name
       for dependency in dependencies do
+        -- `bv_decide`'s LRAT certificate axiom has the shape
+        -- `<decl>._native.bv_decide.ax_<n>` with an `ax_`-rooted suffix.
         let isBvDecideCertificate :=
-          (dependency.toString.splitOn "._native.bv_decide.ax_").length > 1
+          match dependency with
+          | .str (.str (.str _ "_native") "bv_decide") suffix =>
+              suffix.startsWith "ax_" &&
+                (suffix.toList.drop 3).all fun c => c.isDigit || c == '_'
+          | _ => false
         unless #[`propext, `Quot.sound, `Classical.choice].contains dependency ||
             isBvDecideCertificate do
           throwError "untrusted dependency in {name}: {dependency}"
