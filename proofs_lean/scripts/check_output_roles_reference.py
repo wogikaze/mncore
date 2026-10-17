@@ -72,6 +72,12 @@ CASES = [
     ("l1bm_multicast", "l2bmi@0/0 $lb0 $lb16", True),
     ("l1bm_reduce_to_l2bm", "l2bmrdfadd $lb0 $lc0", True),
     ("l1bm_gather_reduce_to_l2bm", "l2bmr2dfadd $lb0 $lc0", True),
+    ("distinct_bar_destinations", "zero $mb $nb", True),
+    ("duplicate_omr_destination", "zero $omr1 $omr1", False),
+    ("distinct_but_conflicting_bar_destinations", "iadd $m0 $n0 $mb $nb", False),
+    ("l1bm_duplicate_pe_destination", "l1bmm $lb0 $m0 $m0", False),
+    ("l1bm_distinct_bar_destinations", "l1bmm $lb0 $mb $nb", True),
+    ("l2bm_extra_destination", "l2bmb $lc0 $lb0 $lb16", False),
 ]
 
 

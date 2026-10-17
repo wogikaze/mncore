@@ -9,7 +9,7 @@
     },
     {
       "path": "proofs_lean/scripts/check_output_roles_reference.py",
-      "sha256": "31c049777661d17c50c59a5d4f6d8a90bc16e09c49ab5bb73cab01193c939901"
+      "sha256": "c23aee40c98c6f8bb14a541bed0ef5fc79218dc1d45170c51d076aee072268ec"
     }
   ],
   "observations": [
@@ -534,6 +534,60 @@
       "returncode": 0,
       "words": 1,
       "diagnostic": ""
+    },
+    {
+      "case": "distinct_bar_destinations",
+      "source": "zero $mb $nb",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
+    },
+    {
+      "case": "duplicate_omr_destination",
+      "source": "zero $omr1 $omr1",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "Mask register used twice as output."
+    },
+    {
+      "case": "distinct_but_conflicting_bar_destinations",
+      "source": "iadd $m0 $n0 $mb $nb",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "Instruction field conflict detected between `in_lm0` and `out_lm0`."
+    },
+    {
+      "case": "l1bm_duplicate_pe_destination",
+      "source": "l1bmm $lb0 $m0 $m0",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "LM0 used twice as output."
+    },
+    {
+      "case": "l1bm_distinct_bar_destinations",
+      "source": "l1bmm $lb0 $mb $nb",
+      "expected_accepted": true,
+      "accepted": true,
+      "returncode": 0,
+      "words": 1,
+      "diagnostic": ""
+    },
+    {
+      "case": "l2bm_extra_destination",
+      "source": "l2bmb $lc0 $lb0 $lb16",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "L2BM operation must have exactly two operands."
     }
   ],
   "limitations": [
