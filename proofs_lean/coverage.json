@@ -317,7 +317,7 @@
   },
   "fintype_bounded_enumeration": {
     "source": "proofs_lean/ProofsLean/Enumeration.lean",
-    "sha256": "71088f0d714895bbd93cbe3dffcf42400db291cb4e4dcc68bbce4b1990b4e7bb",
+    "sha256": "f84b3a2077818016d8cf68230ab4e94141d744eb30ddc3f727793a663d3b758c",
     "finite_candidate_set": "programsUpToFinset",
     "bound_specific_certificate": "ProofsLean.finiteAlphabetCertificate",
     "fintype_specialization": "programsUpToFintype",

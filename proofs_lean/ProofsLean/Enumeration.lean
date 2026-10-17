@@ -1,4 +1,5 @@
 import ProofsLean.Optimality
+import ProofsLean.PartialSemantics
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.Finset.Union
@@ -126,6 +127,68 @@ theorem legalLinesCoveredBelow_of_covered {m : Machine} {alphabet : List m.Line}
 MN-Core: unbounded `nop/n` lines are excluded at each fixed bound. -/
 def legalLinesCostBelow (m : Machine) (bound : Nat) : Set m.Line :=
   {line | ∃ p, m.legal p ∧ line ∈ p ∧ m.lineCost line < bound}
+
+/-- Program type for a machine whose instruction semantics are still partial. -/
+abbrev PartialMachine.Program (m : PartialMachine) := List m.Line
+
+/-- Cost of a program for a partial machine. It is independent of whether the
+currently modeled semantics knows how to execute each line. -/
+def PartialMachine.score (m : PartialMachine) : m.Program → Nat
+  | [] => 0
+  | line :: rest => m.lineCost line + m.score rest
+
+/-- Legal lines of bounded individual cost that occur in a legal program of a
+partial machine. This is the enumeration target available before its step
+semantics are complete. -/
+def PartialMachine.legalLinesCostBelow (m : PartialMachine) (bound : Nat) :
+    Set m.Line :=
+  {line | ∃ program : m.Program, m.legal program ∧ line ∈ program ∧
+    m.lineCost line < bound}
+
+def PartialMachine.LegalLinesCoveredBelow (m : PartialMachine)
+    (alphabet : List m.Line) (bound : Nat) : Prop :=
+  ∀ program, m.legal program → m.score program < bound →
+    ∀ line ∈ program, line ∈ alphabet
+
+def PartialMachine.shortPrograms (m : PartialMachine)
+    (alphabet : List m.Line) (bound : Nat) : List m.Program :=
+  (programsUpTo alphabet (bound - 1)).filter
+    (fun program => decide (m.score program < bound))
+
+theorem PartialMachine.lineCost_le_score (m : PartialMachine)
+    (program : m.Program) (line : m.Line) (member : line ∈ program) :
+    m.lineCost line ≤ m.score program := by
+  induction program generalizing line with
+  | nil => simp at member
+  | cons head tail ih =>
+    simp only [List.mem_cons] at member
+    simp only [PartialMachine.score]
+    rcases member with same | inTail
+    · subst head
+      omega
+    · have tailBound := ih line inTail
+      omega
+
+theorem PartialMachine.length_le_score (m : PartialMachine)
+    (program : m.Program) : program.length ≤ m.score program := by
+  induction program with
+  | nil => simp [PartialMachine.score]
+  | cons line rest ih =>
+    have positive := m.positiveCost line
+    simp only [List.length_cons, PartialMachine.score]
+    omega
+
+theorem PartialMachine.shortPrograms_complete (m : PartialMachine)
+    {alphabet : List m.Line} {bound : Nat}
+    (covers : m.LegalLinesCoveredBelow alphabet bound)
+    (program : m.Program) (legal : m.legal program)
+    (short : m.score program < bound) :
+    program ∈ m.shortPrograms alphabet bound := by
+  have member := programsUpTo_complete alphabet (bound - 1) program
+    (covers program legal short) (by
+      have length := m.length_le_score program
+      omega)
+  simp [PartialMachine.shortPrograms, List.mem_filter, member, short]
 
 def LegalLinesCostCovered (m : Machine) (alphabet : List m.Line) (bound : Nat) : Prop :=
   ∀ line ∈ legalLinesCostBelow m bound, line ∈ alphabet

@@ -1,6 +1,7 @@
 import ProofsLean.FiniteInstructionLines
 import ProofsLean.HazardTrace
 import ProofsLean.ParsedIntegerStep
+import ProofsLean.PartialSemantics
 
 /-! Program-level legality projection for normalized MN-Core instruction rows.
 This combines local issue checks with the existing PE and block hazard
@@ -28,6 +29,24 @@ def InstructionLine.programIssueAndHazardLegal
     ∀ control : ParsedMaskExecutionControl,
       parsedSourcePEHazardViolations?
         (InstructionLine.programToParsedMaskedSource program) control = some []
+
+/-- Phase-2 program domain with the established normalized-line legality and
+cost model. Its transition remains explicitly unknown until instruction
+semantics are integrated; it cannot be sealed as a total `Machine` yet. -/
+def _root_.ProofsLean.MNCore.partialMachine : ProofsLean.PartialMachine where
+  Line := InstructionLine
+  State := Unit
+  Input := Unit
+  step := fun _ _ => .unknown
+  legal := InstructionLine.programIssueAndHazardLegal
+  lineCost := InstructionLine.cost
+  positiveCost := InstructionLine.cost_positive
+
+theorem _root_.ProofsLean.MNCore.partialMachine_not_complete :
+    ¬ ProofsLean.MNCore.partialMachine.Complete := by
+  apply ProofsLean.unknown_prevents_sealing
+  exact ⟨InstructionLine.pe [], (), rfl⟩
+
 
 theorem InstructionLine.programIssueAndHazardLegal_line_local
     (program : List InstructionLine)
@@ -78,5 +97,43 @@ theorem InstructionLine.programIssueAndHazardLegal_nil :
       ProofsLean.ControlNormalization.compileAdvancing,
       collectPEHazardConstraints, collectPEHazardConstraintsAux,
       violatingPEHazardConstraints]
+
+theorem _root_.ProofsLean.MNCore.partialMachine_legalLinesCostBelow_finite (bound : Nat) :
+    (ProofsLean.PartialMachine.legalLinesCostBelow
+      ProofsLean.MNCore.partialMachine bound).Finite := by
+  apply Set.Finite.subset (List.finite_toSet
+    (InstructionLine.costBelowEnvelopeAlphabet bound))
+  intro line member
+  rcases member with ⟨program, legal, lineMember, cost⟩
+  exact InstructionLine.mem_costBelowEnvelopeAlphabet bound line cost
+    (InstructionLine.programIssueAndHazardLegal_line_envelope
+      bound program legal line lineMember cost)
+
+theorem _root_.ProofsLean.MNCore.partialMachine_costBelowAlphabet_covers
+    (bound : Nat) :
+    ProofsLean.PartialMachine.LegalLinesCoveredBelow
+      ProofsLean.MNCore.partialMachine
+      (InstructionLine.costBelowEnvelopeAlphabet bound) bound := by
+  intro program legal short line member
+  have cost : line.cost < bound := by
+    exact lt_of_le_of_lt
+      (ProofsLean.PartialMachine.lineCost_le_score
+        ProofsLean.MNCore.partialMachine program line member)
+      short
+  exact InstructionLine.mem_costBelowEnvelopeAlphabet bound line cost
+    (InstructionLine.programIssueAndHazardLegal_line_envelope
+      bound program legal line member cost)
+
+theorem _root_.ProofsLean.MNCore.partialMachine_shortPrograms_complete
+    (bound : Nat) (program : ProofsLean.MNCore.partialMachine.Program)
+    (legal : ProofsLean.MNCore.partialMachine.legal program)
+    (short : ProofsLean.MNCore.partialMachine.score program < bound) :
+    program ∈ ProofsLean.PartialMachine.shortPrograms
+      ProofsLean.MNCore.partialMachine
+      (InstructionLine.costBelowEnvelopeAlphabet bound) bound :=
+  ProofsLean.PartialMachine.shortPrograms_complete
+    ProofsLean.MNCore.partialMachine
+    (ProofsLean.MNCore.partialMachine_costBelowAlphabet_covers bound)
+    program legal short
 
 end ProofsLean.MNCore.Issue

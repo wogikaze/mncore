@@ -261,6 +261,10 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   cost bound未満の行がMathlib `Fintype`由来の有限alphabetで覆われること、およびその行集合が有限であることを証明した。
   これはnormalized-line上の有限性射影であり、source parser/assemblerとの対応や、完全な`MNCore.machine`
   の合法性・実行意味論はまだ接続していない。
+- 同ファイルの`MNCore.partialMachine`は、Phase 2の行型・合法性・コストを`PartialMachine`へ接続し、未実装の
+  遷移は`unknown`として明示する。このpartial machineでcost bound未満の合法プログラムに現れる行集合が有限で、
+  `costBelowEnvelopeAlphabet`上の短い候補列挙が完全であることを証明した。意味論未知のため`Machine`へsealできず、
+  ここでいう合法性も正規化行のモデル述語であって、assembler受理との対応は未証明である。
 - `scripts/check_manual_alu_inventory.py`: SDM表3.9のALU opcode集合をコンパイラ定義と比較し、精度・符号指定を
   展開した136綴りがparser監査候補に含まれることを検査する。現状はALU opcode表だけの棚卸しであり、
   全命令形式・全operand形・assembler受理の完全性証明ではない。
