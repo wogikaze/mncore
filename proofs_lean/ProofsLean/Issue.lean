@@ -1689,6 +1689,26 @@ theorem normalized_positive_nop_cost (count : Nat) (wait : Option Nat) :
     (NormalizedLine.toInstruction? (.nop (count + 1) wait)).map
       InstructionLine.cost = some (count + 1) := rfl
 
+/-- Scored instruction words contributed by a normalized executable line.
+Control directives have zero cost and are handled by the control trace. -/
+def NormalizedLine.instructionCost : NormalizedLine → Nat
+  | .pe _ | .mv _ => 1
+  | .nop count _ => count
+  | .maskDirective .. => 0
+
+theorem NormalizedLine.instructionCost_eq_toInstruction_cost
+    (line : NormalizedLine) :
+    line.toInstruction?.map InstructionLine.cost =
+      if line.instructionCost = 0 then none else some line.instructionCost := by
+  cases line with
+  | pe expressions => rfl
+  | nop count wait =>
+      cases count with
+      | zero => rfl
+      | succ count => rfl
+  | mv transfer => rfl
+  | maskDirective widthWords targets entry => rfl
+
 def NormalizedLine.toParsed : NormalizedLine → ParsedLine
   | .pe expressions => .pe (expressions.map NormalizedExpr.toParsed)
   | .nop count wait => .nop count wait
@@ -1708,13 +1728,6 @@ def ParsedLine.normalizeForSubmission? : ParsedLine → Option (List NormalizedL
   | .maskDirective widthWords targets entry =>
       some [.maskDirective widthWords targets entry]
   | .debugSet | .debugGet | .dramSet => some []
-
-/-- Scored instruction words contributed by a normalized executable line.
-Control directives have zero cost and are handled by the control trace. -/
-def NormalizedLine.instructionCost : NormalizedLine → Nat
-  | .pe _ | .mv _ => 1
-  | .nop count _ => count
-  | .maskDirective .. => 0
 
 /-- Cost after the judge's solution sanitization. A zero-count nop with a wait
 is rejected by the assembler; source/debug records and control directives do

@@ -68,7 +68,8 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
   32は拒否された。後者はRustコメントの「1〜15」と不一致。challenge judgeは
   既定で解答から`d get`/`d set`/`r`記録を実行列から除外する。`--enable-set`で残した
   `d set`はjudgeがscore無効として拒否する。`ParsedLine.normalizeForSubmission_cost`は
-  正規化後の命令語コストが各ソース行のsubmission costと一致することを証明する。
+  正規化後の命令語コストが各ソース行のsubmission costと一致することを証明し、
+  `NormalizedLine.instructionCost_eq_toInstruction_cost`は実行命令型へ変換したコストとの一致も示す。
   実験範囲外の
   構文・意味や完全網羅を証明するものではない。
   Leanではmask directiveの幅を2または4語、selectorを0〜31に制限した有限carrierも
