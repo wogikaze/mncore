@@ -443,6 +443,9 @@ import Lean
 #print axioms ProofsLean.MNCore.Issue.immediate_execution_ignores_inputs
 #print axioms ProofsLean.MNCore.Issue.parsed_topline_check_sound
 #print axioms ProofsLean.MNCore.Issue.parsed_topline_check_complete
+#print axioms ProofsLean.MNCore.Issue.parsed_topline_rejects_zero_wait_tag
+#print axioms ProofsLean.MNCore.Issue.parsed_topline_rejects_zero_nop_with_wait
+#print axioms ProofsLean.MNCore.Issue.parsed_topline_accepts_zero_nop_without_wait
 #print axioms ProofsLean.MNCore.Issue.mask_directive_replaces_state
 #print axioms ProofsLean.MNCore.Issue.ordinary_line_preserves_mask_state
 #print axioms ProofsLean.ControlNormalization.compile_length

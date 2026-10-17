@@ -2214,25 +2214,51 @@ theorem source_records_normalize_empty :
     ParsedLine.normalizeForSubmission? (.nop 0 none) = some [] := by
   exact ⟨rfl, rfl, rfl, rfl⟩
 
+def ParsedLine.nopIssueLegalB (count : Nat) (wait : Option (Fin 256)) : Bool :=
+  match count, wait with
+  | 0, some _ => false
+  | _, some tag => decide (0 < tag.val)
+  | _, none => true
+
+def ParsedLine.nopIssueLegal (count : Nat) (wait : Option (Fin 256)) : Prop :=
+  ParsedLine.nopIssueLegalB count wait = true
+
 def ParsedLine.issueLegal : ParsedLine → Prop
   | .pe expressions => LegalParsedLine expressions
-  | .nop _ _ | .mv _ | .maskDirective _ _ _ | .debugSet | .debugGet | .dramSet => True
+  | .nop count wait => ParsedLine.nopIssueLegal count wait
+  | .mv _ | .maskDirective _ _ _ | .debugSet | .debugGet | .dramSet => True
 
 noncomputable def checkParsedTopLine : ParsedLine → Bool
   | .pe expressions => checkParsedLine expressions
-  | .nop _ _ | .mv _ | .maskDirective _ _ _ | .debugSet | .debugGet | .dramSet => true
+  | .nop count wait => ParsedLine.nopIssueLegalB count wait
+  | .mv _ | .maskDirective _ _ _ | .debugSet | .debugGet | .dramSet => true
 
 theorem parsed_topline_check_sound (line : ParsedLine)
     (accepted : checkParsedTopLine line = true) : line.issueLegal := by
   cases line with
   | pe expressions => exact parsed_check_sound expressions accepted
-  | nop _ _ | mv _ | maskDirective _ _ _ | debugSet | debugGet | dramSet => trivial
+  | nop count wait =>
+      change ParsedLine.nopIssueLegalB count wait = true
+      exact accepted
+  | mv _ | maskDirective _ _ _ | debugSet | debugGet | dramSet => trivial
 
 theorem parsed_topline_check_complete (line : ParsedLine) (legal : line.issueLegal) :
     checkParsedTopLine line = true := by
   cases line with
   | pe expressions => exact parsed_check_complete expressions legal
-  | nop _ _ | mv _ | maskDirective _ _ _ | debugSet | debugGet | dramSet => rfl
+  | nop count wait =>
+      change ParsedLine.nopIssueLegal count wait at legal
+      exact legal
+  | mv _ | maskDirective _ _ _ | debugSet | debugGet | dramSet => rfl
+
+theorem parsed_topline_rejects_zero_wait_tag :
+    checkParsedTopLine (.nop 1 (some ⟨0, by decide⟩)) = false := by decide
+
+theorem parsed_topline_rejects_zero_nop_with_wait :
+    checkParsedTopLine (.nop 0 (some ⟨1, by decide⟩)) = false := by decide
+
+theorem parsed_topline_accepts_zero_nop_without_wait :
+    checkParsedTopLine (.nop 0 none) = true := by decide
 
 /-- Non-directive source lines retain mask state; directive lines replace it,
 matching `Sim::exec`'s zero-cost state update. -/

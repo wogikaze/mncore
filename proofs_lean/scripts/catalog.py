@@ -933,14 +933,14 @@ def coverage_catalog() -> dict:
             "parser_range_theorem": "ProofsLean.MNCore.Issue.parseParsedWaitTag_value_bounded",
             "scope": "Finite carrier for positive wait tags below 256.",
             "evidence": "`Issue.lean` parses i01, iFF, and syntactic i00 into Fin 256 and rejects i100; proofs_lean/evidence/isa-bounds/reference.json records assemble3 rejection of i00/i100, acceptance of i01/iFF, and exhaustive acceptance probes for 1..255.",
-            "missing": "Only the wait-tag token parser is modeled, not complete PE/nop line parsing. Proving the nonzero assembler condition for parsed/legal inputs and connecting all parser outputs to the line envelope remain open.",
+            "missing": "Only the wait-tag token parser is modeled, not complete PE/nop line parsing. The top-line checker enforces the observed nonzero rule, but parser-to-checker and full assembler correspondence remain open.",
         }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
             "theorem": "ProofsLean.MNCore.Issue.optionWaitTagInFiniteEnvelope_finite",
             "scope": "Finite optional wait tags whose present value lies in 1..255.",
             "evidence": "Same assemble3 wait-tag boundaries as waitTagInFiniteEnvelope_finite.",
-            "missing": "ParsedLine and InstructionLine nop wait tags now store Option (Fin 256); proving the nonzero assembler condition for parsed/legal lines remains open.",
+            "missing": "ParsedLine and InstructionLine nop wait tags store Option (Fin 256), and the top-line checker enforces nonzero tags; complete parser-to-checker and assembler correspondence remain open.",
         }, {
             "source": "proofs_lean/ProofsLean/FiniteIssue.lean",
             "sha256": digest(ROOT / "ProofsLean/FiniteIssue.lean"),
