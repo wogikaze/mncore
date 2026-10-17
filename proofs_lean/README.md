@@ -215,7 +215,7 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
 - `ParsedExpr.inFiniteEnvelope`から正規化式のenvelopeへの写像を証明した。opcode固有source arityから
   source長3以下を導ける一方、opcode・operand・flushの数値範囲とdestinationの重複なしを、実parser出力に
   対して証明することは引き続きparser/assembler対応の未解決義務である。
-- `evidence/output-roles/reference.json`にassemble3の80件のoperand-role probeを記録した。zero、ALU、
+- `evidence/output-roles/reference.json`にassemble3の81件のoperand-role probeを記録した。zero、ALU、
   MAU、matrix、L1BM、L2BMで代表的な入力/出力位置と重複出力を照合している。opcodeごとの全構文や
   Lean issue checkerとの対応証明ではなく、実parser出力がfinite envelopeのdestination-list条件を満たす
   ことも引き続き未証明である。
@@ -225,7 +225,7 @@ Accepted は正しく実行できる解が存在するという上限の証拠�
 - `ParsedOp.destinationRoleScreen`を導入し、scalar PE出力、matrix read/write、wait/noforwardに加えて、
   L1BM/L2BMの代表opcodeをsourceとopcodeに応じたdestination roleで絞った。finite envelopeには各destinationが
   screenを通る条件を含め、正規化で維持し、bounded expression carrierの有限性に接続した。Rustのoperand roleと
-  assemble3の80 probeを根拠に、転送方向、L1BM/L2BM opcodeごとのsource bank、複数destination/重複拒否、
+  assemble3の81 probeを根拠に、転送方向、L1BM/L2BM opcodeごとのsource bank、複数destination/重複拒否、
   DARSのL2BM source・DAR outputとDARWの無operandを示す
   代表補題・照合を追加した。DARS/DARWの同時発行規則、全opcodeの受理構文、実assembler出力とscreen/envelopeとの
   完全な対応は未完了。
@@ -479,7 +479,7 @@ rootからimportされない証明ファイルも拒否する。rootのGitHub Ac
 `ALUProbe.lean`はこの整数データパスから期待値を出力する実験用プログラム。
 72綴り×30組の共通入力に加え、各シフト命令に48組の境界入力を与え、
 公式アセンブラ・エミュレータと比較した。上位・下位64ビットと
-4サイクルのマスクフラグが2880件すべて一致した。対象は1 PE、マスクなし、精度縮減なし、
+4サイクルのマスクフラグが2881件すべて一致した。対象は1 PE、マスクなし、精度縮減なし、
 GRFのスカラアクセスのみ。全入力に対する対応証明や全ISAの網羅性ではない。
 シフト量は0、1、語長−1、語長、語長+1、2×語長−1、2×語長、2×語長+1を
 各レーンに独立に配置し、上位ビット無視・打ち切り・循環の境界を確認した。

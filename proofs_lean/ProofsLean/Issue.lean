@@ -141,10 +141,14 @@ def ParsedOperand.l1bmSourceRole : ParsedOperand → Prop
   | .l1bm .. => True
   | _ => False
 
-/-- PE-side values accepted as sources of L1BM transfers. Block-memory and
-DAR operands belong to the block-to-block paths instead. -/
+/-- PE memory, forwarding values, accepted as sources of L1BM transfers.
+Base-address, mask, matrix, block-memory, fixed-ID, and DAR operands are not
+L1BM transfer sources. -/
 def ParsedOperand.peSourceRole : ParsedOperand → Prop
-  | .mem .. | .bar .. | .forward .. => True
+  | .mem access .. =>
+      access.bank = .grf0 ∨ access.bank = .grf1 ∨ access.bank = .lm0 ∨
+        access.bank = .lm1 ∨ access.bank = .t
+  | .forward .. => True
   | _ => False
 
 def ParsedOperand.writeMask? : ParsedOperand → Option ParsedMask
@@ -750,6 +754,11 @@ theorem ParsedOp.l1bm_mwrite_pe_source (mab : Nat) (operand : ParsedOperand)
 theorem ParsedOp.l1bm_mwrite_rejects_l1bm_source (mab width : Nat)
     (address : Option Nat) :
     ¬ ParsedOp.sourceRoleScreen (.l1bm (.mwrite mab)) [] (.l1bm width address) := by
+  simp [ParsedOp.sourceRoleScreen, ParsedOperand.peSourceRole]
+
+theorem ParsedOp.l1bm_mwrite_rejects_base_address_source (mab : Nat)
+    (lm1 : Bool) (width : Nat) (mask : Option ParsedMask) :
+    ¬ ParsedOp.sourceRoleScreen (.l1bm (.mwrite mab)) [] (.bar lm1 width mask) := by
   simp [ParsedOp.sourceRoleScreen, ParsedOperand.peSourceRole]
 
 theorem ParsedOp.l1bm_distrib_l1bm_source (offset : Int) (width : Nat)

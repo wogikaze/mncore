@@ -9,7 +9,7 @@
     },
     {
       "path": "proofs_lean/scripts/check_output_roles_reference.py",
-      "sha256": "4a2995dde3aa05dee3e3bfee21a2a9f62810fed1507365b1faacae18ace713f6"
+      "sha256": "aae543042661e691a82a697d1f7c112510ade0db17ad45d2f0e9bd146f7483c9"
     }
   ],
   "observations": [
@@ -462,6 +462,15 @@
       "returncode": -6,
       "words": null,
       "diagnostic": "First operand of Reg -> L1BM operation must be a T/GRF0/GRF1/LM0/LM1/Fwd location."
+    },
+    {
+      "case": "base_address_register_cannot_source_l1bm",
+      "source": "l1bmm@1 $mb $lb0",
+      "expected_accepted": false,
+      "accepted": false,
+      "returncode": -6,
+      "words": null,
+      "diagnostic": "LM0 Base address register can't be used as input."
     },
     {
       "case": "l1bm_mwrite_wrong_direction",

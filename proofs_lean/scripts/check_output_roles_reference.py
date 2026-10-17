@@ -64,6 +64,7 @@ CASES = [
     ("forward_to_l1bm_mwrite", "l1bmm@1 $aluf $lb0", True),
     ("matrix_register_cannot_source_l1bm", "l1bmm@1 $lx0 $lb0", False),
     ("omr_cannot_source_l1bm", "l1bmm@1 $omr1 $lb0", False),
+    ("base_address_register_cannot_source_l1bm", "l1bmm@1 $mb $lb0", False),
     ("l1bm_mwrite_wrong_direction", "l1bmm@1 $lb0 $m0", False),
     ("pe_to_l1bm_m4write", "l1bmm4@1 $m0 $lb0", True),
     ("pe_reduce_to_l1bm", "l1bmrffadd $m0 $lb0", True),
