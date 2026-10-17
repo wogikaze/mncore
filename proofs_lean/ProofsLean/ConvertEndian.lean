@@ -137,6 +137,31 @@ theorem abstractConvertEndian_dependencies_are_sound {Atom : Type}
       (abstractConvertEndian input).evaluate rightEnvironment :=
   AbstractValue.depends_only_on_inputs _ leftEnvironment rightEnvironment agree
 
+/-- Forwarding values carried between the three public answer lines. The
+second line reads the old ALUF value for both parallel instructions, then
+produces the next ALUF and MAUF values together. -/
+structure ForwardState where
+  aluf : BitVec 64
+  mauf : BitVec 64
+
+def firstLineState : ForwardState :=
+  ⟨immediateBus, 0⟩
+
+def executeParallelSecondLine (input : BitVec 64) (old : ForwardState) : ForwardState :=
+  ⟨ibsl input, packedSingleFma old.aluf old.aluf old.aluf⟩
+
+def executeThirdLine (state : ForwardState) : BitVec 64 :=
+  selector2103 (sbslWithShift state.aluf state.mauf)
+
+def answerProgram (input : BitVec 64) : BitVec 64 :=
+  executeThirdLine (executeParallelSecondLine input firstLineState)
+
+theorem answerProgram_eq_answerDatapath (input : BitVec 64) :
+    answerProgram input = answerDatapath input := by
+  unfold answerProgram executeThirdLine executeParallelSecondLine firstLineState
+  rw [packed_fma_produces_shift_bus, mauf_count_selects_byte_rotation]
+  rfl
+
 /-- Apply the composed Convert Endian datapath to one 64-bit LM0 element and
 write its result to one 64-bit LM1 element. This connects the bit-level
 datapath to the repository's physical two-word memory layout. -/
@@ -144,7 +169,7 @@ def answerMemoryCycle (input : PEMemory.Memory .lm0) (output : PEMemory.Memory .
     (inputAddress : Fin (PEMemory.Bank.capacity .lm0))
     (outputAddress : Fin (PEMemory.Bank.capacity .lm1)) : PEMemory.Memory .lm1 :=
   FloatPEMemory.writePair output outputAddress
-    (answerDatapath (FloatPEMemory.readPair .lm0 input inputAddress))
+    (answerProgram (FloatPEMemory.readPair .lm0 input inputAddress))
 
 theorem answerMemoryCycle_readback (input : PEMemory.Memory .lm0)
     (output : PEMemory.Memory .lm1)
@@ -153,7 +178,9 @@ theorem answerMemoryCycle_readback (input : PEMemory.Memory .lm0)
     FloatPEMemory.readPair .lm1
       (answerMemoryCycle input output inputAddress outputAddress) outputAddress =
       answerDatapath (FloatPEMemory.readPair .lm0 input inputAddress) := by
-  exact FloatPEMemory.readPair_after_writePair output outputAddress _
+  unfold answerMemoryCycle
+  rw [FloatPEMemory.readPair_after_writePair]
+  exact answerProgram_eq_answerDatapath _
 
 theorem answerMemoryCycle_byteSwap (input : PEMemory.Memory .lm0)
     (output : PEMemory.Memory .lm1)
