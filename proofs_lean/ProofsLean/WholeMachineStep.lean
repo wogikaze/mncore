@@ -2032,7 +2032,7 @@ def executeL1MwriteCyclesAtBank (readState currentState : State)
 def executeParsedL1MwriteAtAllBanks (readState currentState : State)
     (expression : ParsedExpr) (updateTurnaround : Bool) : ProofsLean.StepResult State :=
   match lowerParsedL1Mwrite? expression with
-  | none => .unknown
+  | none => .failure
   | some access =>
       let rec run : List (Fin 64) → State → ProofsLean.StepResult State
         | [], state => .ok state
@@ -2047,6 +2047,13 @@ def executeParsedL1MwriteAtAllBanks (readState currentState : State)
                     if other = bank then turnaround else state.l1bmTurnaround other }
                 run rest next
       run (List.finRange 64) currentState
+
+theorem executeParsedL1MwriteAtAllBanks_lowering_failure
+    (readState currentState : State) (expression : ParsedExpr) (updateTurnaround : Bool)
+    (notLowered : lowerParsedL1Mwrite? expression = none) :
+    executeParsedL1MwriteAtAllBanks readState currentState expression updateTurnaround =
+      .failure := by
+  simp [executeParsedL1MwriteAtAllBanks, notLowered]
 
 structure ParsedL1GatherAccess where
   source : ParsedOperand
@@ -2114,7 +2121,7 @@ def executeL1GatherCyclesAtBank (readState currentState : State)
 def executeParsedL1GatherAtAllBanks (readState currentState : State)
     (expression : ParsedExpr) (updateTurnaround : Bool) : ProofsLean.StepResult State :=
   match lowerParsedL1Gather? expression with
-  | none => .unknown
+  | none => .failure
   | some access =>
       let rec run : List (Fin 64) → State → ProofsLean.StepResult State
         | [], state => .ok state
@@ -2129,6 +2136,13 @@ def executeParsedL1GatherAtAllBanks (readState currentState : State)
                     if other = bank then turnaround else state.l1bmTurnaround other }
                 run rest next
       run (List.finRange 64) currentState
+
+theorem executeParsedL1GatherAtAllBanks_lowering_failure
+    (readState currentState : State) (expression : ParsedExpr) (updateTurnaround : Bool)
+    (notLowered : lowerParsedL1Gather? expression = none) :
+    executeParsedL1GatherAtAllBanks readState currentState expression updateTurnaround =
+      .failure := by
+  simp [executeParsedL1GatherAtAllBanks, notLowered]
 
 structure ParsedL1ReduceAccess where
   source : ParsedOperand
@@ -2287,7 +2301,7 @@ def executeL1ReduceCyclesAtBank (readState currentState : State)
       | .ok buses =>
         match parsedL1ReduceWritesAtCycle access
             (access.address.getD ⟨0, by decide⟩) cycle buses with
-        | none => .unknown
+        | none => .failure
         | some (writes, turnWrites) =>
             let writes := match access.address with | none => [] | some _ => writes
             let turnWrites := if updateTurnaround then turnWrites else []
@@ -2298,7 +2312,7 @@ def executeL1ReduceCyclesAtBank (readState currentState : State)
 def executeParsedL1ReduceAtAllBanks (readState currentState : State)
     (expression : ParsedExpr) (updateTurnaround : Bool) : ProofsLean.StepResult State :=
   match lowerParsedL1Reduce? expression with
-  | none => .unknown
+  | none => .failure
   | some access =>
       let rec run : List (Fin 64) → State → ProofsLean.StepResult State
         | [], state => .ok state
@@ -2313,6 +2327,13 @@ def executeParsedL1ReduceAtAllBanks (readState currentState : State)
                     if other = bank then turnaround else state.l1bmTurnaround other }
                 run rest next
       run (List.finRange 64) currentState
+
+theorem executeParsedL1ReduceAtAllBanks_lowering_failure
+    (readState currentState : State) (expression : ParsedExpr) (updateTurnaround : Bool)
+    (notLowered : lowerParsedL1Reduce? expression = none) :
+    executeParsedL1ReduceAtAllBanks readState currentState expression updateTurnaround =
+      .failure := by
+  simp [executeParsedL1ReduceAtAllBanks, notLowered]
 
 def parsedExprIsL1ReduceProducer (expression : ParsedExpr) : Bool :=
   match expression.op with
