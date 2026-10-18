@@ -5778,7 +5778,132 @@ def executeParsedMatrixMAUProducer (readState currentState : State)
       | .failure => .failure
       | .unknown => .unknown
       | .ok next => .ok (propagateParsedMatrixMAUPoison next)
-  | _ => .unknown
+  | _ => .failure
+
+theorem executeParsedMatrixMAUProducer_known_never_unknown
+    (readState currentState : State) (expressions : List ParsedExpr)
+    (noForward hasSingleLineMask : Bool)
+    (known : ∀ expression ∈ expressions.filter parsedExprIsMatrixMAUProducer,
+      executeParsedMatrixMAUAtMABs readState currentState expression allMABCoordinates
+        noForward hasSingleLineMask ≠ .unknown) :
+    executeParsedMatrixMAUProducer readState currentState expressions
+      noForward hasSingleLineMask ≠ .unknown := by
+  cases filtered : expressions.filter parsedExprIsMatrixMAUProducer with
+  | nil => simp [executeParsedMatrixMAUProducer, filtered]
+  | cons expression rest =>
+      cases rest with
+      | nil =>
+          have expressionKnown := known expression (by simp [filtered])
+          cases execution : executeParsedMatrixMAUAtMABs readState currentState expression
+              allMABCoordinates noForward hasSingleLineMask with
+          | failure => simp [executeParsedMatrixMAUProducer, filtered, execution]
+          | unknown => exact (expressionKnown execution).elim
+          | ok next => simp [executeParsedMatrixMAUProducer, filtered, execution]
+      | cons second remaining =>
+          simp [executeParsedMatrixMAUProducer, filtered]
+
+theorem executeParsedMatrixMAUProducer_mul_lowered_never_unknown
+    (readState currentState : State) (expressions : List ParsedExpr)
+    (expression : ParsedExpr)
+    (noForward hasSingleLineMask : Bool)
+    (precision : ParsedPrecision) (half : Option Char) (round : Bool)
+    (sideY : Bool) (width : Fin 5) (source : ParsedOperand)
+    (format : RRN.FloatPrecision)
+    (expressionShape : expression = ({ op := .mau precision true .mul half round, sources := [.matrix sideY width none, source], destinations := [], flush := none, text := "" } : ParsedExpr))
+    (filterResult : expressions.filter parsedExprIsMatrixMAUProducer = [expression])
+    (formatLowered : parsedMatrixMAUFloatFormat precision = some format)
+    (lowered : ∀ coordinate, coordinate ∈ allMABCoordinates → ∀ cycle : Fin 4,
+      parsedFloatMAUSourceLoweredAtMAB readState coordinate source cycle)
+    (resolved : forwardingSourceResolved readState) :
+    executeParsedMatrixMAUProducer readState currentState expressions
+      noForward hasSingleLineMask ≠ .unknown := by
+  subst expression
+  apply executeParsedMatrixMAUProducer_known_never_unknown
+  intro selected member
+  rw [filterResult] at member
+  simp only [List.mem_singleton] at member
+  subst selected
+  exact executeParsedMatrixMAUAtMABs_mul_lowered_never_unknown
+    readState currentState allMABCoordinates precision half round sideY width source
+    noForward hasSingleLineMask format formatLowered lowered resolved
+
+theorem executeParsedMatrixMAUProducer_add_lowered_never_unknown
+    (readState currentState : State) (expressions : List ParsedExpr)
+    (expression : ParsedExpr)
+    (noForward hasSingleLineMask : Bool)
+    (precision : ParsedPrecision) (half : Option Char) (round : Bool)
+    (sideY : Bool) (width : Fin 5) (source : ParsedOperand)
+    (format : RRN.FloatPrecision)
+    (expressionShape : expression = ({ op := .mau precision true .add half round, sources := [.matrix sideY width none, source], destinations := [], flush := none, text := "" } : ParsedExpr))
+    (filterResult : expressions.filter parsedExprIsMatrixMAUProducer = [expression])
+    (formatLowered : parsedMatrixMAUFloatFormat precision = some format)
+    (lowered : ∀ coordinate, coordinate ∈ allMABCoordinates → ∀ cycle : Fin 4,
+      parsedFloatMAUSourceLoweredAtMAB readState coordinate source cycle)
+    (resolved : forwardingSourceResolved readState) :
+    executeParsedMatrixMAUProducer readState currentState expressions
+      noForward hasSingleLineMask ≠ .unknown := by
+  subst expression
+  apply executeParsedMatrixMAUProducer_known_never_unknown
+  intro selected member
+  rw [filterResult] at member
+  simp only [List.mem_singleton] at member
+  subst selected
+  exact executeParsedMatrixMAUAtMABs_add_lowered_never_unknown
+    readState currentState allMABCoordinates precision half round sideY width source
+    noForward hasSingleLineMask format formatLowered lowered resolved
+
+theorem executeParsedMatrixMAUProducer_passa_lowered_never_unknown
+    (readState currentState : State) (expressions : List ParsedExpr)
+    (expression : ParsedExpr)
+    (noForward hasSingleLineMask : Bool)
+    (precision : ParsedPrecision) (half : Option Char) (round : Bool)
+    (sideY : Bool) (width : Fin 5) (source : ParsedOperand)
+    (format : RRN.FloatPrecision)
+    (expressionShape : expression = ({ op := .mau precision true .passa half round, sources := [.matrix sideY width none, source], destinations := [], flush := none, text := "" } : ParsedExpr))
+    (filterResult : expressions.filter parsedExprIsMatrixMAUProducer = [expression])
+    (formatLowered : parsedMatrixMAUFloatFormat precision = some format)
+    (lowered : ∀ coordinate, coordinate ∈ allMABCoordinates → ∀ cycle : Fin 4,
+      parsedFloatMAUSourceLoweredAtMAB readState coordinate source cycle)
+    (resolved : forwardingSourceResolved readState) :
+    executeParsedMatrixMAUProducer readState currentState expressions
+      noForward hasSingleLineMask ≠ .unknown := by
+  subst expression
+  apply executeParsedMatrixMAUProducer_known_never_unknown
+  intro selected member
+  rw [filterResult] at member
+  simp only [List.mem_singleton] at member
+  subst selected
+  exact executeParsedMatrixMAUAtMABs_passa_lowered_never_unknown
+    readState currentState allMABCoordinates precision half round sideY width source
+    noForward hasSingleLineMask format formatLowered lowered resolved
+
+theorem executeParsedMatrixMAUProducer_fma_lowered_never_unknown
+    (readState currentState : State) (expressions : List ParsedExpr)
+    (expression : ParsedExpr)
+    (noForward hasSingleLineMask : Bool)
+    (precision : ParsedPrecision) (half : Option Char) (round : Bool)
+    (sideY : Bool) (width : Fin 5) (vectorSource accumulatorSource : ParsedOperand)
+    (format : RRN.FloatPrecision)
+    (expressionShape : expression = ({ op := .mau precision true .fma half round, sources := [.matrix sideY width none, vectorSource, accumulatorSource], destinations := [], flush := none, text := "" } : ParsedExpr))
+    (filterResult : expressions.filter parsedExprIsMatrixMAUProducer = [expression])
+    (formatLowered : parsedMatrixMAUFloatFormat precision = some format)
+    (vectorLowered : ∀ coordinate, coordinate ∈ allMABCoordinates → ∀ cycle : Fin 4,
+      parsedFloatMAUSourceLoweredAtMAB readState coordinate vectorSource cycle)
+    (accumulatorLowered : ∀ coordinate, coordinate ∈ allMABCoordinates → ∀ cycle : Fin 4,
+      parsedFloatMAUSourceLoweredAtMAB readState coordinate accumulatorSource cycle)
+    (resolved : forwardingSourceResolved readState) :
+    executeParsedMatrixMAUProducer readState currentState expressions
+      noForward hasSingleLineMask ≠ .unknown := by
+  subst expression
+  apply executeParsedMatrixMAUProducer_known_never_unknown
+  intro selected member
+  rw [filterResult] at member
+  simp only [List.mem_singleton] at member
+  subst selected
+  exact executeParsedMatrixMAUAtMABs_fma_lowered_never_unknown
+    readState currentState allMABCoordinates precision half round sideY width vectorSource
+    accumulatorSource noForward hasSingleLineMask format formatLowered vectorLowered
+    accumulatorLowered resolved
 
 theorem executeParsedMatrixMAUProducer_preserves_matrix_registers
     (readState currentState next : State) (expressions : List ParsedExpr)
