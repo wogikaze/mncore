@@ -67,6 +67,15 @@ def parsedFloatMAUSourceSigned? (operand : ParsedOperand)
         context.tWord).map (fun input => (input, neg))
   | _ => none
 
+def parsedFloatMAUSourceAttrs? (operand : ParsedOperand)
+    (context : ParsedIntegerContext) : Option (ParsedIntegerInput × Bool × Bool) :=
+  match operand with
+  | .mem _ neg ext false none | .forward _ neg ext false =>
+      (ParsedOperand.toParsedIntegerInput? operand .long context.group context.l2b
+        context.l1b context.mab context.pe context.cycle context.bar0 context.bar1
+        context.tWord).map (fun input => (input, neg, ext))
+  | _ => none
+
 structure ParsedFloatFmaAccesses where
   sourceA : ParsedIntegerInput
   sourceB : ParsedIntegerInput
@@ -98,10 +107,29 @@ structure ParsedFloatMultiplyAccesses where
   sourceB : ParsedIntegerInput
   negateA : Bool
   negateB : Bool
+  extendA : Bool
+  extendB : Bool
   destination : Fin (Bank.capacity .lm1)
 
 def negateSingleBus (bus : BitVec 64) : BitVec 64 :=
   bus ^^^ (BitVec.ofNat 64 (2 ^ 63 + 2 ^ 31))
+
+def extendHalfPairToSingleBus (bus : BitVec 64) : BitVec 64 :=
+  BitVec.ofNat 32 (RRN.extendFloatBits .half .single
+    (bus.extractLsb' 48 16).toNat) ++
+  BitVec.ofNat 32 (RRN.extendFloatBits .half .single
+    (bus.extractLsb' 32 16).toNat)
+
+theorem extendHalfPairToSingleBus_lane_order :
+    extendHalfPairToSingleBus
+      (BitVec.ofNat 16 0x3e00 ++ BitVec.ofNat 16 0xc000 ++
+        BitVec.ofNat 16 0 ++ BitVec.ofNat 16 0) =
+      (BitVec.ofNat 32 0x3f800000 ++ BitVec.ofNat 32 0xc0000000) := by
+  decide
+
+def prepareSingleMAUSource (bus : BitVec 64) (negate extend : Bool) : BitVec 64 :=
+  let extended := if extend then extendHalfPairToSingleBus bus else bus
+  if negate then negateSingleBus extended else extended
 
 def lowerParsedFloatMultiply? (expression : ParsedExpr) (context : ParsedIntegerContext) :
     Option ParsedFloatMultiplyAccesses := do
@@ -110,13 +138,13 @@ def lowerParsedFloatMultiply? (expression : ParsedExpr) (context : ParsedInteger
   | _ => none
   match expression.sources, expression.destinations with
   | [sourceA, sourceB], [.mem access false false false none] =>
-      let (sourceA, negateA) ← parsedFloatMAUSourceSigned? sourceA context
-      let (sourceB, negateB) ← parsedFloatMAUSourceSigned? sourceB context
+      let (sourceA, negateA, extendA) ← parsedFloatMAUSourceAttrs? sourceA context
+      let (sourceB, negateB, extendB) ← parsedFloatMAUSourceAttrs? sourceB context
       let destinationAccess ← ParsedOperand.toDirectMemoryAccess?
         (.mem access false false false none) context.pe context.cycle
         context.bar0 context.bar1 context.tWord
       let destination ← FloatPEMemory.lm1LongAddress? destinationAccess
-      some ⟨sourceA, sourceB, negateA, negateB, destination⟩
+      some ⟨sourceA, sourceB, negateA, negateB, extendA, extendB, destination⟩
   | _, _ => none
 
 structure ParsedFloatAddAccesses where
@@ -166,10 +194,12 @@ theorem parsedFloatMAUSource?_forward
 theorem lowerParsedFloatMultiply?_fvmul
     (sourceA sourceB : ParsedOperand) (destinationAccess : Access)
     (context : ParsedIntegerContext) (inputA inputB : ParsedIntegerInput)
-    (negateA negateB : Bool)
+    (negateA negateB extendA extendB : Bool)
     (destinationAddress : Fin (Bank.capacity .lm1))
-    (sourceALowered : parsedFloatMAUSourceSigned? sourceA context = some (inputA, negateA))
-    (sourceBLowered : parsedFloatMAUSourceSigned? sourceB context = some (inputB, negateB))
+    (sourceALowered : parsedFloatMAUSourceAttrs? sourceA context =
+      some (inputA, negateA, extendA))
+    (sourceBLowered : parsedFloatMAUSourceAttrs? sourceB context =
+      some (inputB, negateB, extendB))
     (destinationLowered : ParsedOperand.toDirectMemoryAccess?
       (.mem destinationAccess false false false none) context.pe context.cycle
       context.bar0 context.bar1 context.tWord =
@@ -177,7 +207,8 @@ theorem lowerParsedFloatMultiply?_fvmul
     lowerParsedFloatMultiply?
       ⟨.mau .f false .mul none false,
         [sourceA, sourceB], [.mem destinationAccess false false false none], none, "fvmul"⟩
-      context = some ⟨inputA, inputB, negateA, negateB, destinationAddress⟩ := by
+      context = some ⟨inputA, inputB, negateA, negateB, extendA, extendB,
+        destinationAddress⟩ := by
   simp [lowerParsedFloatMultiply?, sourceALowered, sourceBLowered, destinationLowered,
     FloatPEMemory.lm1LongAddress?]
 
@@ -223,8 +254,8 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
         | .failure => .failure
         | .unknown => .unknown
         | .ok sourceB =>
-          let left := if accesses.negateA then negateSingleBus sourceA.high else sourceA.high
-          let right := if accesses.negateB then negateSingleBus sourceB.high else sourceB.high
+          let left := prepareSingleMAUSource sourceA.high accesses.negateA accesses.extendA
+          let right := prepareSingleMAUSource sourceB.high accesses.negateB accesses.extendB
           let output := FloatMultiply.multiplyBus left right
           let nextLM1 := FloatPEMemory.writePair currentFiles.lm1 accesses.destination output
           .ok ({ currentFiles with lm1 := nextLM1 }, ⟨output, 0⟩)
@@ -277,8 +308,8 @@ theorem executeParsedFloatMAUCycleAtPE_mul_success
     (readB : ParsedIntegerInput.readWithForwarding readFiles oldSlots cycle accesses.sourceB =
       .ok busB) :
     let output := FloatMultiply.multiplyBus
-      (if accesses.negateA then negateSingleBus busA.high else busA.high)
-      (if accesses.negateB then negateSingleBus busB.high else busB.high)
+      (prepareSingleMAUSource busA.high accesses.negateA accesses.extendA)
+      (prepareSingleMAUSource busB.high accesses.negateB accesses.extendB)
     executeParsedFloatMAUCycleAtPE readFiles currentFiles oldSlots expression context cycle =
       .ok ({ currentFiles with lm1 :=
         (FloatPEMemory.writePair currentFiles.lm1 accesses.destination output) },
