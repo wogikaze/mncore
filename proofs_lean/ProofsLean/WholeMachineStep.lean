@@ -2091,12 +2091,10 @@ def l1M4writeTurnaroundWrites (twoLongWords : Bool)
             (buses group pe).low)]
         else []
 
-def executeL1MwriteCyclesAtBank (readState currentState : State)
-    (access : ParsedL1MwriteAccess)
-    (bank : Fin 64) (updateTurnaround : Bool) : ProofsLean.StepResult
-      (L1Transfer.L1Bank × L1Transfer.L1Turnaround) :=
-  let rec run : List (Fin 4) → L1Transfer.L1Bank → L1Transfer.L1Turnaround →
-      ProofsLean.StepResult (L1Transfer.L1Bank × L1Transfer.L1Turnaround)
+def executeL1MwriteCycleList (readState : State) (access : ParsedL1MwriteAccess)
+    (bank : Fin 64) (updateTurnaround : Bool) : List (Fin 4) →
+      L1Transfer.L1Bank → L1Transfer.L1Turnaround → ProofsLean.StepResult
+        (L1Transfer.L1Bank × L1Transfer.L1Turnaround)
     | [], memory, turnaround => .ok (memory, turnaround)
     | cycle :: rest, memory, turnaround =>
         let writeCycle (buses : Fin 4 → IntegerALU.Bus) :=
@@ -2120,15 +2118,71 @@ def executeL1MwriteCyclesAtBank (readState currentState : State)
           | .unknown => .unknown
           | .ok buses =>
               let next := writeM4Cycle buses
-              run rest next.1 next.2
+              executeL1MwriteCycleList readState access bank updateTurnaround rest
+                next.1 next.2
         else
           match readL1MwriteBusesAtBank readState access bank access.selectedMab cycle with
           | .failure => .failure
           | .unknown => .unknown
           | .ok buses =>
               let next := writeCycle buses
-              run rest next.1 next.2
-  run [0, 1, 2, 3] (currentState.l1bm bank) (readState.l1bmTurnaround bank)
+              executeL1MwriteCycleList readState access bank updateTurnaround rest
+                next.1 next.2
+
+theorem executeL1MwriteCycleList_direct_memory_never_unknown
+    (readState : State) (access : ParsedL1MwriteAccess) (bank : Fin 64)
+    (updateTurnaround : Bool) (cycles : List (Fin 4))
+    (memory : L1Transfer.L1Bank) (turnaround : L1Transfer.L1Turnaround)
+    (operandAccess : Access) (negated extended rounded : Bool)
+    (mask : Option ParsedMask)
+    (source : access.source = .mem operandAccess negated extended rounded mask) :
+    executeL1MwriteCycleList readState access bank updateTurnaround cycles memory
+      turnaround ≠ .unknown := by
+  induction cycles generalizing memory turnaround with
+  | nil => simp [executeL1MwriteCycleList]
+  | cons cycle rest ih =>
+      simp only [executeL1MwriteCycleList]
+      cases hFour : access.fourMabs with
+      | true =>
+          cases read : readL1M4writeBusesAtBank readState access bank cycle with
+          | failure => simp [hFour, read]
+          | unknown =>
+              exact (readL1M4writeBusesAtBank_direct_memory_never_unknown
+                readState access operandAccess negated extended rounded mask bank
+                cycle source read).elim
+          | ok buses =>
+              simp only [hFour, read]
+              exact ih _ _
+      | false =>
+          cases read : readL1MwriteBusesAtBank readState access bank
+              access.selectedMab cycle with
+          | failure => simp [hFour, read]
+          | unknown =>
+              exact (readL1MwriteBusesAtBank_direct_memory_never_unknown
+                readState access operandAccess negated extended rounded mask bank
+                access.selectedMab cycle source read).elim
+          | ok buses =>
+              simp only [hFour, read]
+              exact ih _ _
+
+def executeL1MwriteCyclesAtBank (readState currentState : State)
+    (access : ParsedL1MwriteAccess)
+    (bank : Fin 64) (updateTurnaround : Bool) : ProofsLean.StepResult
+      (L1Transfer.L1Bank × L1Transfer.L1Turnaround) :=
+  executeL1MwriteCycleList readState access bank updateTurnaround [0, 1, 2, 3]
+    (currentState.l1bm bank) (readState.l1bmTurnaround bank)
+
+theorem executeL1MwriteCyclesAtBank_direct_memory_never_unknown
+    (readState currentState : State) (access : ParsedL1MwriteAccess)
+    (bank : Fin 64) (updateTurnaround : Bool)
+    (operandAccess : Access) (negated extended rounded : Bool)
+    (mask : Option ParsedMask)
+    (source : access.source = .mem operandAccess negated extended rounded mask) :
+    executeL1MwriteCyclesAtBank readState currentState access bank updateTurnaround ≠
+      .unknown := by
+  exact executeL1MwriteCycleList_direct_memory_never_unknown readState access bank
+    updateTurnaround [0, 1, 2, 3] (currentState.l1bm bank)
+    (readState.l1bmTurnaround bank) operandAccess negated extended rounded mask source
 
 def executeParsedL1MwriteAtAllBanks (readState currentState : State)
     (expression : ParsedExpr) (updateTurnaround : Bool) : ProofsLean.StepResult State :=
