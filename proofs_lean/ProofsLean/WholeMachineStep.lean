@@ -7157,7 +7157,7 @@ theorem parsedExpr_supported_stage_input_is_candidate
           rw [notL2BM] at hTrue
           cases hTrue
 
-def executeIntegerProducerLineAtPE (expressions : List ParsedExpr)
+def executeIntegerProducerLineAtPECore (expressions : List ParsedExpr)
     (state : State) (pe : PEId) : ProofsLean.StepResult State :=
   let oldContext := state.peContext pe
   let coordinates := PEMemory.ParsedIntegerContext.ofLinearIndex pe
@@ -7218,6 +7218,22 @@ def executeIntegerProducerLineAtPE (expressions : List ParsedExpr)
             peContext := fun other =>
               if other = pe then { oldContext with bar0 := nextBar0, bar1 := nextBar1 }
               else state.peContext other }
+
+def parsedExprIsIntegerBARWriter (expression : ParsedExpr) : Bool :=
+  match expression.op with
+  | .alu .. => expression.destinations.any fun destination =>
+      match destination with | .bar .. => true | _ => false
+  | _ => false
+
+/-- Integer ALU BAR writes are connected for a single-expression issue line.
+The Rust executor computes all outputs before writing them, but applies BAR
+updates during the ordered write pass; mixed-expression address re-resolution
+is kept unsupported until that write-order model is connected. -/
+def executeIntegerProducerLineAtPE (expressions : List ParsedExpr)
+    (state : State) (pe : PEId) : ProofsLean.StepResult State :=
+  if expressions.any parsedExprIsIntegerBARWriter && expressions.length != 1 then
+    .unknown
+  else executeIntegerProducerLineAtPECore expressions state pe
 
 def executeIntegerProducerLineAtPEs (expressions : List ParsedExpr)
     (pes : List PEId) (state : State) : ProofsLean.StepResult State :=
