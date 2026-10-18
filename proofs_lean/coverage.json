@@ -1787,10 +1787,11 @@
           "source": "proofs_lean/ProofsLean/WholeMachineStep.lean"
         },
         "known_failure_classification": {
-          "behavior": "A matrix-MAU calculation with a missing or non-matrix first source, or a missing required vector/accumulator source, returns failure instead of unknown.",
+          "behavior": "A matrix-MAU calculation with a missing, non-matrix, or row-selected first source, or a missing required vector/accumulator source, returns failure instead of unknown.",
           "lean_theorems": [
             "ProofsLean.MNCore.executeParsedMatrixMAUCalculationAtMAB_missing_matrix_operand_fails",
             "ProofsLean.MNCore.executeParsedMatrixMAUCalculationAtMAB_wrong_matrix_operand_fails",
+            "ProofsLean.MNCore.executeParsedMatrixMAUCalculationAtMAB_row_selected_matrix_operand_fails",
             "ProofsLean.MNCore.executeParsedMatrixMAUCalculationAtMAB_missing_vector_operand_fails",
             "ProofsLean.MNCore.executeParsedMatrixMAUCalculationAtMAB_missing_accumulator_operand_fails"
           ],

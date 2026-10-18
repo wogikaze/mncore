@@ -1719,6 +1719,18 @@ theorem executeParsedMatrixMAUCalculationAtMAB_wrong_matrix_operand_fails
         text := "" } cycle = .failure := by
   simp [executeParsedMatrixMAUCalculationAtMAB]
 
+theorem executeParsedMatrixMAUCalculationAtMAB_row_selected_matrix_operand_fails
+    (state : State) (coordinate : MABCoordinate) (cycle : Fin 4)
+    (precision : ParsedPrecision) (kind : CalcKind) (half : Option Char)
+    (round : Bool) (row : Fin (2 ^ 32)) :
+    executeParsedMatrixMAUCalculationAtMAB state coordinate
+      { op := .mau precision true kind half round
+        sources := [.matrix false ⟨2, by decide⟩ (some row)]
+        destinations := []
+        flush := none
+        text := "" } cycle = .failure := by
+  simp [executeParsedMatrixMAUCalculationAtMAB]
+
 theorem executeParsedMatrixMAUCalculationAtMAB_missing_vector_operand_fails
     (state : State) (coordinate : MABCoordinate) (cycle : Fin 4)
     (precision : ParsedPrecision) (kind : CalcKind) (half : Option Char)
