@@ -4291,6 +4291,64 @@ theorem completePendingMvTagAll_success_completes_tag
   exact completePendingMvTagFuel_success_completes_tag
     (state.pendingMv.length + 1) state next tag completed
 
+theorem completePendingMvTag_success_matches_pending_queue
+    (state next : State) (tag : Fin 256)
+    (initiallyIncomplete : state.mvCompletedTags tag = false)
+    (completed : completePendingMvTag state tag = some next) :
+    next.mvCompletedTags tag = !pendingMvContainsTag tag next.pendingMv := by
+  cases removed : removePendingMvTag tag state.pendingMv with
+  | none => simp [completePendingMvTag, initiallyIncomplete, removed] at completed
+  | some result =>
+      rcases result with ⟨pending, remaining⟩
+      simp [completePendingMvTag, initiallyIncomplete, removed] at completed
+      cases completed
+      simp [pendingMvContainsTag]
+
+theorem completePendingMvTagFuel_of_tag_completed
+    (fuel : Nat) (state : State) (tag : Fin 256)
+    (completed : state.mvCompletedTags tag = true) :
+    completePendingMvTagFuel fuel state tag = some state := by
+  induction fuel with
+  | zero => simp [completePendingMvTagFuel, completed]
+  | succ fuel ih => simp [completePendingMvTagFuel, completed]
+
+theorem completePendingMvTagFuel_success_clears_tag_queue
+    (fuel : Nat) (state next : State) (tag : Fin 256)
+    (initiallyIncomplete : state.mvCompletedTags tag = false)
+    (completed : completePendingMvTagFuel fuel state tag = some next) :
+    pendingMvContainsTag tag next.pendingMv = false := by
+  induction fuel generalizing state next with
+  | zero => simp [completePendingMvTagFuel, initiallyIncomplete] at completed
+  | succ fuel ih =>
+      cases step : completePendingMvTag state tag with
+      | none => simp [completePendingMvTagFuel, initiallyIncomplete, step] at completed
+      | some intermediate =>
+          have queueFlag := completePendingMvTag_success_matches_pending_queue
+            state intermediate tag initiallyIncomplete step
+          simp [completePendingMvTagFuel, initiallyIncomplete, step] at completed
+          by_cases finished : intermediate.mvCompletedTags tag = true
+          · have sameIntermediate : completePendingMvTagFuel fuel intermediate tag =
+                some intermediate :=
+              completePendingMvTagFuel_of_tag_completed fuel intermediate tag finished
+            rw [sameIntermediate] at completed
+            injection completed with equal
+            subst next
+            have noTag : pendingMvContainsTag tag intermediate.pendingMv = false := by
+              rw [finished] at queueFlag
+              simpa using queueFlag
+            exact noTag
+          · have unfinished : intermediate.mvCompletedTags tag = false := by
+              cases h : intermediate.mvCompletedTags tag <;> simp_all
+            exact ih intermediate next unfinished completed
+
+theorem completePendingMvTagAll_success_clears_tag_queue
+    (state next : State) (tag : Fin 256)
+    (initiallyIncomplete : state.mvCompletedTags tag = false)
+    (completed : completePendingMvTagAll state tag = some next) :
+    pendingMvContainsTag tag next.pendingMv = false := by
+  exact completePendingMvTagFuel_success_clears_tag_queue
+    (state.pendingMv.length + 1) state next tag initiallyIncomplete completed
+
 theorem completePendingMvTagAll_completes_two_same_tag
     (state : State) (tag : Fin 256)
     (firstWrites secondWrites : List (MVSemantics.Cell × BitVec 64)) :
@@ -5095,27 +5153,33 @@ theorem executeHazardAwareNormalizedLine_drains_tag_then_wait_nop
     (state : HazardAwareState) (next : State) (count : Nat) (tag : Fin 256)
     (notStalled : state.stalledPEIssue = none)
     (accepted : checkParsedTopLine (.nop (count + 1) (some tag)) = true)
+    (initiallyIncomplete : state.machine.mvCompletedTags tag = false)
     (drained : completePendingMvTagAll state.machine tag = some next) :
-    executeHazardAwareNormalizedLine (.nop (count + 1) (some tag)) state =
+    (executeHazardAwareNormalizedLine (.nop (count + 1) (some tag)) state =
       .ok { state with
         machine := { next with hazardClock := next.hazardClock + (count + 1) }
         peHistory := fun pe => (state.peHistory pe).filter fun event =>
           event.startWord + 4 ≥ next.hazardClock + (count + 1)
         blockHistory := state.blockHistory.filter fun event =>
-          event.startWord + 4 ≥ next.hazardClock + (count + 1) } := by
-  have tagCompleted := completePendingMvTagAll_success_completes_tag
-    state.machine next tag drained
-  have core := executeHazardAwareNormalizedLineCore_completed_wait_nop
-    { state with machine := next } count tag accepted tagCompleted
-  simp [executeHazardAwareNormalizedLine, normalizedLineWaitTag?, notStalled,
-    drained]
-  have sameDrained : { state with machine := next, stalledPEIssue := none } =
-      { state with machine := next } := by
-    cases state with
-    | mk machine peHistory blockHistory stalled => simp_all
-  rw [sameDrained, core]
-  simp
-  exact notStalled
+          event.startWord + 4 ≥ next.hazardClock + (count + 1) }) ∧
+      pendingMvContainsTag tag next.pendingMv = false := by
+  constructor
+  ·
+      have tagCompleted := completePendingMvTagAll_success_completes_tag
+        state.machine next tag drained
+      have core := executeHazardAwareNormalizedLineCore_completed_wait_nop
+        { state with machine := next } count tag accepted tagCompleted
+      simp [executeHazardAwareNormalizedLine, normalizedLineWaitTag?, notStalled,
+        drained]
+      have sameDrained : { state with machine := next, stalledPEIssue := none } =
+          { state with machine := next } := by
+        cases state with
+        | mk machine peHistory blockHistory stalled => simp_all
+      rw [sameDrained, core]
+      simp
+      exact notStalled
+  · exact completePendingMvTagAll_success_clears_tag_queue
+      state.machine next tag initiallyIncomplete drained
 
 theorem executeScheduledProgram_wait_nop_releases_after_completion
     (machine next : State) (count : Nat) (tag : Fin 256)

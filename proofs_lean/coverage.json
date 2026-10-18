@@ -166,13 +166,14 @@
         "scheduled_program_theorem": "ProofsLean.MNCore.executeScheduledProgram_wait_nop_releases_after_completion",
         "scope": "A positive nop with a valid wait tag, scheduled after an incomplete tag and then resumed after completion of the final operation with that tag.",
         "effect": "The scheduled run enters the stalled state, completes the named MV, resumes the nop, advances hazardClock by its count, emits no hazard events, prunes PE/block history, and clears the stalled marker.",
-        "remaining": "The proof establishes tag completion on successful drain, not a separate invariant that no matching pending entry remains in arbitrary inconsistent machine states. General PE wait-line effects and Rust conformance remain open.",
+        "remaining": "Preservation of all unrelated pending operations across arbitrary drains, general PE wait-line effects, and Rust conformance remain open.",
         "intermediate_completion_theorem": "ProofsLean.MNCore.executeScheduledEvent_incomplete_tag_completion_preserves_stall",
         "two_completion_program_theorem": "ProofsLean.MNCore.executeScheduledProgram_wait_nop_releases_after_two_completions",
         "two_completion_scope": "Two individually scheduled completions with the same tag; after the first, the tag remains incomplete and the PE stays stalled; after the second, the tag is complete and the nop resumes.",
         "arbitrary_queue_drain_theorem": "ProofsLean.MNCore.completePendingMvTagAll_success_completes_tag",
         "deterministic_runner_drain_theorem": "ProofsLean.MNCore.executeHazardAwareNormalizedLine_drains_tag_then_wait_nop",
-        "drain_scope": "For any successful completePendingMvTagAll result, the resulting tag bit is proved complete, and the deterministic runner then executes the wait nop with the integrated clock/history transition. This composes for queues of any finite length admitted by the fuel bound."
+        "drain_scope": "If the tag is initially incomplete and completePendingMvTagAll succeeds, the result both marks the tag complete and contains no pending entry with that tag. The deterministic runner then executes the wait nop with the integrated clock/history transition, for any finite queue length within the fuel bound.",
+        "queue_clear_theorem": "ProofsLean.MNCore.completePendingMvTagAll_success_clears_tag_queue"
       }
     },
     "remaining": [
@@ -197,7 +198,8 @@
       "ProofsLean.MNCore.executeHazardAwareNormalizedLineCore_positive_nop",
       "ProofsLean.MNCore.executeScheduledProgram_wait_nop_releases_after_completion",
       "ProofsLean.MNCore.executeScheduledProgram_wait_nop_releases_after_two_completions",
-      "ProofsLean.MNCore.executeHazardAwareNormalizedLine_drains_tag_then_wait_nop"
+      "ProofsLean.MNCore.executeHazardAwareNormalizedLine_drains_tag_then_wait_nop",
+      "ProofsLean.MNCore.completePendingMvTagAll_success_clears_tag_queue"
     ],
     "initialization_policy": "unspecified_pending_judge_evidence",
     "connected_to_machine_step": false,
@@ -234,8 +236,9 @@
       "wait_nop_arbitrary_tag_drain": {
         "drain_theorem": "ProofsLean.MNCore.completePendingMvTagAll_success_completes_tag",
         "runner_theorem": "ProofsLean.MNCore.executeHazardAwareNormalizedLine_drains_tag_then_wait_nop",
-        "scope": "Any successful finite completePendingMvTagAll run; no fixed number of pending transfers.",
-        "effect": "Proves the drain result marks the tag complete, then executes the wait nop, advances clock, and prunes hazard histories."
+        "scope": "When the tag starts incomplete, any successful finite completePendingMvTagAll run leaves no pending operation carrying that tag.",
+        "effect": "After such a successful drain, the deterministic runner executes the wait nop, advances clock, and prunes hazard histories.",
+        "queue_clear_theorem": "ProofsLean.MNCore.completePendingMvTagAll_success_clears_tag_queue"
       }
     }
   },
