@@ -440,16 +440,64 @@ def matrixWriteGroupContext (state : State) (coordinate : MABCoordinate) :
     bar1 := fun pe => state.peContext (physicalPEId coordinate pe) |>.bar1
     tWord := fun pe => state.peContext (physicalPEId coordinate pe) |>.tWord }
 
-def parsedMatrixWriteSource? (expression : ParsedExpr)
-    (context : ParsedIntegerContext) : Option ParsedIntegerInput :=
-  match expression.op with
-  | .matrixWrite .d =>
-      (ParsedExpr.toDirectDoubleMatrixWriteAccesses? expression context).map
-        ParsedDoubleMatrixWriteAccesses.source
-  | .matrixWrite .f | .matrixWrite .g =>
-      (ParsedExpr.toDirectSingleMatrixWriteAccesses? expression context).map
-        ParsedSingleMatrixWriteAccesses.source
-  | _ => none
+structure ParsedMatrixWriteAccesses where
+  source : ParsedIntegerInput
+  sideY : Bool
+  row : Nat
+  negate : Bool
+  extend : Bool
+  round : Bool
+
+def lowerParsedMatrixWrite? (expression : ParsedExpr) (context : ParsedIntegerContext) :
+    Option ParsedMatrixWriteAccesses := do
+  match expression.op, expression.sources, expression.destinations with
+  | .matrixWrite _, [source], [.matrix sideY _ (some row)] =>
+      let (rawSource, negate, extend, round) ← match source with
+        | .mem access negate extend round _ =>
+            some (.mem access false false false none, negate, extend, round)
+        | .forward kind negate extend round =>
+            some (.forward kind false false false, negate, extend, round)
+        | _ => none
+      let source ← ParsedOperand.toParsedIntegerInput? rawSource .long
+        context.group context.l2b context.l1b context.mab context.pe context.cycle
+        context.bar0 context.bar1 context.tWord
+      some ⟨source, sideY, row.val, negate, extend, round⟩
+  | _, _, _ => none
+
+def prepareMatrixWriteBus (precision : ParsedPrecision) (bus : IntegerALU.Bus)
+    (negate extend round : Bool) : ProofsLean.StepResult IntegerALU.Bus :=
+  let converted := match precision with
+    | .d =>
+        if extend then
+          IntegerALU.Bus.mk
+            (BitVec.ofNat 64 (RRN.extendFloatBits .single .double
+              (bus.high.extractLsb' 32 32).toNat)) 0
+        else bus
+    | .f | .g =>
+        if extend then ⟨extendHalfPairToSingleBus bus.high, 0⟩
+        else if round then ⟨roundDoublePairToSingleBus bus, 0⟩
+        else bus
+    | _ => bus
+  if precision == .d && round && !extend then .failure
+  else if negate then
+    match precision with
+    | .d => .ok { converted with high := converted.high ^^^ (BitVec.ofNat 64 (2 ^ 63)) }
+    | .f | .g => .ok { converted with high := negateSingleBus converted.high }
+    | _ => .ok converted
+  else .ok converted
+
+theorem prepareMatrixWriteBus_f_extended_lane_order :
+    prepareMatrixWriteBus .f
+      ⟨BitVec.ofNat 16 0x3e00 ++ BitVec.ofNat 16 0xc000 ++
+        BitVec.ofNat 16 0 ++ BitVec.ofNat 16 0, 0⟩ false true false =
+      .ok ⟨BitVec.ofNat 32 0x3f800000 ++ BitVec.ofNat 32 0xc0000000, 0⟩ := by
+  rfl
+
+theorem prepareMatrixWriteBus_d_extended_lane_order :
+    prepareMatrixWriteBus .d
+      ⟨BitVec.ofNat 32 0x3f800000 ++ BitVec.ofNat 32 0, 0⟩ false true false =
+      .ok ⟨BitVec.ofNat 64 0x3ff0000000000000, 0⟩ := by
+  rfl
 
 def readParsedMatrixWriteBuses (state : State) (coordinate : MABCoordinate)
     (expression : ParsedExpr) (cycle : Fin 4) :
@@ -461,15 +509,22 @@ def readParsedMatrixWriteBuses (state : State) (coordinate : MABCoordinate)
     | [] => .ok buses
     | pe :: rest =>
         let context := groupContext.at pe cycle
-        match parsedMatrixWriteSource? expression context with
+        match lowerParsedMatrixWrite? expression context with
         | none => .unknown
-        | some source =>
+        | some accesses =>
             match ParsedIntegerInput.readWithForwarding
                 (state.peRegisters (physicalPEId coordinate pe))
-                (state.forwarding (physicalPEId coordinate pe)) cycle source with
+                (state.forwarding (physicalPEId coordinate pe)) cycle accesses.source with
             | .failure => .failure
             | .unknown => .unknown
-            | .ok bus => readPEs rest (fun index => if index = pe then bus else buses index)
+            | .ok bus =>
+              match prepareMatrixWriteBus
+                  (match expression.op with | .matrixWrite precision => precision | _ => .f)
+                  bus accesses.negate accesses.extend accesses.round with
+              | .failure => .failure
+              | .unknown => .unknown
+              | .ok converted =>
+                readPEs rest (fun index => if index = pe then converted else buses index)
   readPEs parsedMatrixWritePEs (fun _ => ⟨0, 0⟩)
 
 def executeParsedMatrixWriteCycle (state : State) (coordinate : MABCoordinate)
@@ -478,8 +533,7 @@ def executeParsedMatrixWriteCycle (state : State) (coordinate : MABCoordinate)
   let groupContext := matrixWriteGroupContext state coordinate
   match expression.op with
   | .matrixWrite .d =>
-      match ParsedExpr.toDirectDoubleMatrixWriteAccesses? expression
-          (groupContext.at 0 cycle) with
+      match lowerParsedMatrixWrite? expression (groupContext.at 0 cycle) with
       | none => .unknown
       | some accesses =>
           match readParsedMatrixWriteBuses state coordinate expression cycle with
@@ -489,8 +543,7 @@ def executeParsedMatrixWriteCycle (state : State) (coordinate : MABCoordinate)
               .ok (writeParsedDoubleMatrixStoreRow store coordinate.mab accesses.sideY
                 (doubleMatrixWriteRowAt accesses.row cycle) (fun pe => (buses pe).high))
   | .matrixWrite .f | .matrixWrite .g =>
-      match ParsedExpr.toDirectSingleMatrixWriteAccesses? expression
-          (groupContext.at 0 cycle) with
+      match lowerParsedMatrixWrite? expression (groupContext.at 0 cycle) with
       | none => .unknown
       | some accesses =>
           match readParsedMatrixWriteBuses state coordinate expression cycle with
