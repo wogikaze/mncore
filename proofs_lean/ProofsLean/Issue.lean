@@ -611,6 +611,10 @@ theorem ParsedAluName.inputCount_le_two (name : ParsedAluName) :
     name.inputCount ≤ 2 := by
   cases name <;> decide
 
+theorem ParsedAluName.inputCount_eq_one_or_two (name : ParsedAluName) :
+    name.inputCount = 1 ∨ name.inputCount = 2 := by
+  cases name <;> simp [ParsedAluName.inputCount]
+
 theorem ParsedOp.parserSourceLimit_le_three (op : ParsedOp) :
     op.parserSourceLimit ≤ 3 := by
   cases op with
@@ -1008,6 +1012,21 @@ theorem NormalizedExpr.alu_binary_sources_of_parser_arity
     expression.sources (expression.alu_source_count_of_parser_arity name precision unsigned
       arg opShape arity |>.trans inputCount)
   exact ⟨sourceX, sourceY, sourcesShape⟩
+
+theorem NormalizedExpr.alu_sources_shape_of_parser_arity
+    (expression : NormalizedExpr) (name : ParsedAluName)
+    (precision : Option ParsedPrecision) (unsigned : Bool) (arg : Option (Fin 256))
+    (opShape : expression.op = .alu name precision unsigned arg)
+    (arity : expression.parserSourceArityValid) :
+    (∃ source, expression.sources = [source]) ∨
+      (∃ sourceX sourceY, expression.sources = [sourceX, sourceY]) := by
+  rcases name.inputCount_eq_one_or_two with inputCount | inputCount
+  · obtain ⟨source, sourcesShape⟩ := expression.alu_unary_sources_of_parser_arity
+      name precision unsigned arg opShape inputCount arity
+    exact Or.inl ⟨source, sourcesShape⟩
+  · obtain ⟨sourceX, sourceY, sourcesShape⟩ := expression.alu_binary_sources_of_parser_arity
+      name precision unsigned arg opShape inputCount arity
+    exact Or.inr ⟨sourceX, sourceY, sourcesShape⟩
 
 def NormalizedExpr.blockDestinationArityValid (expression : NormalizedExpr) : Prop :=
   match expression.op with
