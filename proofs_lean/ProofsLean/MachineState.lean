@@ -40,4 +40,47 @@ def InitialStateUnspecified : State → Prop := fun _ => True
 theorem every_state_is_currently_admissible (state : State) :
     InitialStateUnspecified state := trivial
 
+/-- Zeroed PE register files used by `viz/core/src/machine.rs::Machine::new`.
+Untouched LM/GRF/T and mask-register locations all read as zero there. -/
+def zeroInitialPERegisterFiles : PEMemory.IntegerRegisterFiles where
+  lm0 := fun _ => 0
+  lm1 := fun _ => 0
+  grf0 := fun _ => 0
+  grf1 := fun _ => 0
+  t := fun _ => 0
+  maskRegisters := fun _ _ => 0
+
+/-- Concrete initial state of the Rust whole-machine simulator. PE memories,
+matrix registers, L1BM/L2BM/PDM/DRAM, BAR/T, and forwarding payloads start at
+zero. Forwarding and turnaround validity start false, matching the simulator's
+uninitialized-forwarding and unwritten-`$lbi` errors. The Rust default mask
+width is zero with every target disabled. -/
+def rustSimulatorInitialState : State where
+  peRegisters := fun _ => zeroInitialPERegisterFiles
+  l1bm := fun _ _ => 0
+  l1bmTurnaround := fun _ _ _ => 0
+  l1bmTurnaroundValid := false
+  blockMemory := fun _ => 0
+  matrixRegisters := fun _ _ _ _ _ _ => 0
+  forwarding := fun _ unit _ => .known (match unit with
+    | .alu | .mau | .matrixRead | .l1ToPE => ⟨0, 0⟩)
+  forwardingValid := fun _ _ _ => false
+  maskDirective :=
+    { widthWords := 0, targets := {}, entry := ⟨0, by decide⟩ }
+  peContext := fun pe => PEMemory.ParsedIntegerContext.ofLinearIndex pe
+  hazardClock := 0
+
+theorem rustSimulatorInitialState_pe_registers_zero (pe : PEId) :
+    rustSimulatorInitialState.peRegisters pe = zeroInitialPERegisterFiles := rfl
+
+theorem rustSimulatorInitialState_forwarding_invalid (pe : PEId)
+    (unit : Forwarding.Unit) (cycle : Fin 4) :
+    rustSimulatorInitialState.forwardingValid pe unit cycle = false := rfl
+
+theorem rustSimulatorInitialState_l1bm_turnaround_invalid :
+    rustSimulatorInitialState.l1bmTurnaroundValid = false := rfl
+
+theorem rustSimulatorInitialState_clock_zero :
+    rustSimulatorInitialState.hazardClock = 0 := rfl
+
 end ProofsLean.MNCore
