@@ -1,0 +1,4620 @@
+# VSM (MN-Core Assembly) Code
+# Generated from ONNX model
+#
+# ONNX Model: mn_model.onnx
+# Graph Name: ForwardBackwardOptimizer_mncore
+
+# ====== Graph Inputs ======
+# Input: input, shape=[256, 1024], dtype=float32
+# Input: target, shape=[256], dtype=float32
+# Input: fc1_weight, shape=[16, 1024], dtype=float32
+# Input: fc1_bias, shape=[16], dtype=float32
+# Input: fc2_weight, shape=[16, 16], dtype=float32
+# Input: fc2_bias, shape=[16], dtype=float32
+
+# ====== Graph Outputs ======
+# Output: output, shape=[256, 16], dtype=float32
+# Output: grad_fc1_weight, shape=[16, 1024], dtype=float32
+# Output: grad_fc1_bias, shape=[16], dtype=float32
+# Output: grad_fc2_weight, shape=[16, 16], dtype=float32
+# Output: grad_fc2_bias, shape=[16], dtype=float32
+# Output: updated_fc1_weight, shape=[16, 1024], dtype=float32
+# Output: updated_fc1_bias, shape=[16], dtype=float32
+# Output: updated_fc2_weight, shape=[16, 16], dtype=float32
+# Output: updated_fc2_bias, shape=[16], dtype=float32
+
+# ====== Initializers (Constants) ======
+# Initializer: scale_256, shape=[], dtype=float32
+# Initializer: depth, shape=[], dtype=int32
+# Initializer: values, shape=[2], dtype=float32
+# Initializer: zero_relu_backward_13, shape=[], dtype=float32
+# Initializer: lr_sgd_update_17, shape=[], dtype=float32
+# Initializer: lr_sgd_update_18, shape=[], dtype=float32
+# Initializer: lr_sgd_update_15, shape=[], dtype=float32
+# Initializer: lr_sgd_update_16, shape=[], dtype=float32
+
+# ====== Operations ======
+
+# --- Operation 1: DL ---
+# Node name: fc1_pre_gemm_DL_0
+# Input0: input, shape=[256, 1024], type=tensor, addr=0, layout=((4_L2B:2, 64:512), (512:1, 2_W:1)), len=32768, location=DRAM, tag=DRAM
+# Output0: fc1_pre_gemm_DL_0_out, shape=[256, 1024], addr=0, layout=((8_L2B:1, 32:1), (8_MAB:2, 8_L1B:1, 2_MAB:1, 4_PE:1, 2_W:1)), len=64, location=LM0, tag=default
+
+mvp/n16384i9f $d0 $lc0@.0
+nop; wait i9f  # Auto-tagged
+mvp/n16384i9f $d16384 $lc0@.1
+nop; wait i9f  # Auto-tagged
+l2bmd $lc0 $lb0
+l2bmd $lc256 $lb32
+l2bmd $lc512 $lb64
+l2bmd $lc768 $lb96
+l2bmd $lc1024 $lb128
+l2bmd $lc1280 $lb160
+l2bmd $lc1536 $lb192
+l2bmd $lc1792 $lb224
+l2bmd $lc2048 $lb256
+l2bmd $lc2304 $lb288
+l2bmd $lc2560 $lb320
+l2bmd $lc2816 $lb352
+l2bmd $lc3072 $lb384
+l2bmd $lc3328 $lb416
+l2bmd $lc3584 $lb448
+l2bmd $lc3840 $lb480
+l2bmd $lc4096 $lb512
+l2bmd $lc4352 $lb544
+l2bmd $lc4608 $lb576
+l2bmd $lc4864 $lb608
+l2bmd $lc5120 $lb640
+l2bmd $lc5376 $lb672
+l2bmd $lc5632 $lb704
+l2bmd $lc5888 $lb736
+l2bmd $lc6144 $lb768
+l2bmd $lc6400 $lb800
+l2bmd $lc6656 $lb832
+l2bmd $lc6912 $lb864
+l2bmd $lc7168 $lb896
+l2bmd $lc7424 $lb928
+l2bmd $lc7680 $lb960
+l2bmd $lc7936 $lb992
+l2bmd $lc8192 $lb1024
+l2bmd $lc8448 $lb1056
+l2bmd $lc8704 $lb1088
+l2bmd $lc8960 $lb1120
+l2bmd $lc9216 $lb1152
+l2bmd $lc9472 $lb1184
+l2bmd $lc9728 $lb1216
+l2bmd $lc9984 $lb1248
+l2bmd $lc10240 $lb1280
+l2bmd $lc10496 $lb1312
+l2bmd $lc10752 $lb1344
+l2bmd $lc11008 $lb1376
+l2bmd $lc11264 $lb1408
+l2bmd $lc11520 $lb1440
+l2bmd $lc11776 $lb1472
+l2bmd $lc12032 $lb1504
+l2bmd $lc12288 $lb1536
+l2bmd $lc12544 $lb1568
+l2bmd $lc12800 $lb1600
+l2bmd $lc13056 $lb1632
+l2bmd $lc13312 $lb1664
+l2bmd $lc13568 $lb1696
+l2bmd $lc13824 $lb1728
+l2bmd $lc14080 $lb1760
+l2bmd $lc14336 $lb1792
+l2bmd $lc14592 $lb1824
+l2bmd $lc14848 $lb1856
+l2bmd $lc15104 $lb1888
+l2bmd $lc15360 $lb1920
+l2bmd $lc15616 $lb1952
+l2bmd $lc15872 $lb1984
+l2bmd $lc16128 $lb2016
+l1bmd $lb0 $lm0v
+l1bmd $lb256 $lm8v
+l1bmd $lb512 $lm16v
+l1bmd $lb768 $lm24v
+l1bmd $lb1024 $lm32v
+l1bmd $lb1280 $lm40v
+l1bmd $lb1536 $lm48v
+l1bmd $lb1792 $lm56v
+
+nop/3
+# --- Operation 2: DL ---
+# Node name: fc1_pre_gemm_DL_1
+# Input0: fc1_weight, shape=[16, 1024], type=tensor, addr=48000, layout=((4_L2B:2, 4:512), (512:1, 2_W:1)), len=2048, location=DRAM, tag=DRAM
+# Output0: fc1_pre_gemm_DL_1_out, shape=[16, 1024], addr=64, layout=((16:1), (8_MAB:2, 8_L1B:1, 2_MAB:1, 4_PE:1, 2_W:1)), len=32, location=LM0, tag=default
+
+mvp/n2048i9f $d48000@0 $p0@0
+nop; wait i9f  # Auto-tagged
+mvp/n2048i9f $d48000@1 $p2048@0
+nop; wait i9f  # Auto-tagged
+mvp/n2048i9f $d48000@2 $p4096@0
+nop; wait i9f  # Auto-tagged
+mvp/n2048i9f $d48000@3 $p6144@0
+nop; wait i9f  # Auto-tagged
+mvb/n8192i9f $p0@0 $lc0
+nop; wait i9f  # Auto-tagged
+l2bmd $lc0 $lb0
+l2bmd $lc256 $lb32
+l2bmd $lc512 $lb64
+l2bmd $lc768 $lb96
+l2bmd $lc1024 $lb128
+l2bmd $lc1280 $lb160
+l2bmd $lc1536 $lb192
+l2bmd $lc1792 $lb224
+l2bmd $lc2048 $lb256
+l2bmd $lc2304 $lb288
+l2bmd $lc2560 $lb320
+l2bmd $lc2816 $lb352
+l2bmd $lc3072 $lb384
+l2bmd $lc3328 $lb416
+l2bmd $lc3584 $lb448
+l2bmd $lc3840 $lb480
+l2bmd $lc4096 $lb512
+l2bmd $lc4352 $lb544
+l2bmd $lc4608 $lb576
+l2bmd $lc4864 $lb608
+l2bmd $lc5120 $lb640
+l2bmd $lc5376 $lb672
+l2bmd $lc5632 $lb704
+l2bmd $lc5888 $lb736
+l2bmd $lc6144 $lb768
+l2bmd $lc6400 $lb800
+l2bmd $lc6656 $lb832
+l2bmd $lc6912 $lb864
+l2bmd $lc7168 $lb896
+l2bmd $lc7424 $lb928
+l2bmd $lc7680 $lb960
+l2bmd $lc7936 $lb992
+l1bmd $lb0 $lm64v
+l1bmd $lb256 $lm72v
+l1bmd $lb512 $lm80v
+l1bmd $lb768 $lm88v
+
+nop/3
+# --- Operation 3: Gemm ---
+# Node name: fc1_pre_gemm
+# Attr: transB=1
+# Attr: upload=0
+# Attr: var_name=fc1_pre_matmul
+# Input0: fc1_pre_gemm_DL_0_out, shape=[256, 1024], type=tensor, addr=0, layout=((8_L2B:1, 32:1), (8_MAB:2, 8_L1B:1, 2_MAB:1, 4_PE:1, 2_W:1)), len=64, location=LM0, tag=default
+# Input1: fc1_pre_gemm_DL_1_out, shape=[16, 1024], type=tensor, addr=64, layout=((16:1), (8_MAB:2, 8_L1B:1, 2_MAB:1, 4_PE:1, 2_W:1)), len=32, location=LM0, tag=default
+# Output0: fc1_pre_matmul_UL_out, shape=[256, 16], addr=80000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
+
+gbfn $lm64v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm72v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm0v $nowrite
+gmmul $ly $aluf $ln0v4
+gbfn $lm80v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm88v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm0v $nowrite
+gmmul $ly $aluf $ln2v4
+gbfn $lm64v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm72v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm8v $nowrite
+gmmul $ly $aluf $ln16v4
+gbfn $lm80v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm88v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm8v $nowrite
+gmmul $ly $aluf $ln18v4
+gbfn $lm64v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm72v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm16v $nowrite
+gmmul $ly $aluf $ln32v4
+gbfn $lm80v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm88v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm16v $nowrite
+gmmul $ly $aluf $ln34v4
+gbfn $lm64v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm72v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm24v $nowrite
+gmmul $ly $aluf $ln48v4
+gbfn $lm80v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm88v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm24v $nowrite
+gmmul $ly $aluf $ln50v4
+gbfn $lm64v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm72v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm32v $nowrite
+gmmul $ly $aluf $ln64v4
+gbfn $lm80v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm88v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm32v $nowrite
+gmmul $ly $aluf $ln66v4
+gbfn $lm64v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm72v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm40v $nowrite
+gmmul $ly $aluf $ln80v4
+gbfn $lm80v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm88v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm40v $nowrite
+gmmul $ly $aluf $ln82v4
+gbfn $lm64v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm72v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm48v $nowrite
+gmmul $ly $aluf $ln96v4
+gbfn $lm80v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm88v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm48v $nowrite
+gmmul $ly $aluf $ln98v4
+gbfn $lm64v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm72v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm56v $nowrite
+gmmul $ly $aluf $ln112v4
+gbfn $lm80v $nowrite
+gmwrite $aluf $ly0
+gbfn $lm88v $nowrite
+gmwrite $aluf $ly4
+gbfn $lm56v $nowrite
+gmmul $ly $aluf $ln114v4
+nop
+nop
+l1bmrffadd $ln0v $lb0
+l1bmrffadd $ln8v $lb16
+l1bmrffadd $ln16v $lb32
+l1bmrffadd $ln24v $lb48
+l1bmrffadd $ln32v $lb64
+l1bmrffadd $ln40v $lb80
+l1bmrffadd $ln48v $lb96
+l1bmrffadd $ln56v $lb112
+l1bmrffadd $ln64v $lb128
+l1bmrffadd $ln72v $lb144
+l1bmrffadd $ln80v $lb160
+l1bmrffadd $ln88v $lb176
+l1bmrffadd $ln96v $lb192
+l1bmrffadd $ln104v $lb208
+l1bmrffadd $ln112v $lb224
+l1bmrffadd $ln120v $lb240
+nop
+nop
+l2bmrffadd $lb0 $lc0
+l2bmrffadd $lb64 $lc64
+l2bmrffadd $lb128 $lc128
+l2bmrffadd $lb192 $lc192
+nop
+mvp/n256i9f $lc0@.0 $d80000
+nop; wait i9f  # Auto-tagged
+mvp/n256i9f $lc0@.1 $d80256
+nop; wait i9f  # Auto-tagged
+
+nop/3
+# --- Operation 4: DL ---
+# Node name: fc1_pre_add_bias_DL_0
+# Input0: fc1_pre_matmul_UL_out, shape=[256, 16], type=tensor, addr=80000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
+# Output0: fc1_pre_add_bias_DL_0_out, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
+
+mvp/n256i9f $d80000 $lc0@.0
+nop; wait i9f  # Auto-tagged
+mvp/n256i9f $d80256 $lc0@.1
+nop; wait i9f  # Auto-tagged
+l2bmd $lc0 $lb0
+nop
+l1bmm $llb0 $llm0v
+
+nop/3
+# --- Operation 5: DL ---
+# Node name: fc1_pre_add_bias_DL_1
+# Input0: fc1_bias, shape=[16], type=tensor, addr=56000, layout=((8:1, 2_W:1)), len=8, location=DRAM, tag=DRAM
+# Output0: fc1_pre_add_bias_DL_1_out, shape=[16], addr=16, layout=((2:1, 4_PE:1, 2_W:1)), len=4, location=LM0, tag=default
+
+mvp/n64i9f $d56000@0 $p0@0
+nop; wait i9f  # Auto-tagged
+mvb/n64i9f $p0@0 $lc0
+nop; wait i9f  # Auto-tagged
+l2bmb $lc0 $lb0
+nop
+l1bmm $llb0 $llm16v
+
+nop/3
+# --- Operation 6: Add ---
+# Node name: fc1_pre_add_bias
+# Attr: var_name=fc1_pre
+# Input0: fc1_pre_add_bias_DL_0_out, shape=[256, 16], type=tensor, addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
+# Input1: fc1_pre_add_bias_DL_1_out, shape=[16], type=tensor, addr=16, layout=((2:1, 4_PE:1, 2_W:1)), len=4, location=LM0, tag=default
+# Output0: fc1_pre, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM1, tag=default
+
+fvpassa $m16v $r0v
+fvadd $m0v $mauf $n0v
+fvadd $m4v $r0v $n4v
+fvadd $m8v $r0v $n8v
+fvadd $m12v $r0v $n12v
+
+nop/3
+# --- Operation 7: UL ---
+# Node name: fc1_pre_UL
+# Input0: fc1_pre, shape=[256, 16], type=tensor, addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM1, tag=default
+# Output0: fc1_pre_UL_out, shape=[256, 16], addr=88000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
+
+l1bmm@0 $lln0v $llb0
+nop
+nop
+l2bmd $lb0 $lc0
+mvp/n256i9f $lc0@.0 $d88000
+nop; wait i9f  # Auto-tagged
+mvp/n256i9f $lc0@.1 $d88256
+nop; wait i9f  # Auto-tagged
+
+nop/3
+# --- Operation 8: DL ---
+# Node name: fc1_relu_DL_0
+# Input0: fc1_pre_UL_out, shape=[256, 16], type=tensor, addr=88000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
+# Output0: fc1_relu_DL_0_out, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
+
+mvp/n256i9f $d88000 $lc0@.0
+nop; wait i9f  # Auto-tagged
+mvp/n256i9f $d88256 $lc0@.1
+nop; wait i9f  # Auto-tagged
+l2bmd $lc0 $lb0
+nop
+l1bmm $llb0 $llm0v
+
+nop/3
+# --- Operation 9: Relu ---
+# Node name: fc1_relu
+# Attr: var_name=fc1
+# Input0: fc1_relu_DL_0_out, shape=[256, 16], type=tensor, addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
+# Output0: fc1, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM1, tag=default
+
+frelu $m0v $m0v $n0v
+frelu $m8v $m8v $n8v
+
+nop/3
+# --- Operation 10: UL ---
+# Node name: fc1_UL
+# Input0: fc1, shape=[256, 16], type=tensor, addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM1, tag=default
+# Output0: fc1_UL_out, shape=[256, 16], addr=96000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
+
+l1bmm@0 $lln0v $llb0
+nop
+nop
+l2bmd $lb0 $lc0
+mvp/n256i9f $lc0@.0 $d96000
+nop; wait i9f  # Auto-tagged
+mvp/n256i9f $lc0@.1 $d96256
+nop; wait i9f  # Auto-tagged
+
+nop/3
+# --- Operation 11: DL ---
+# Node name: fc2_pre_gemm_DL_0
+# Input0: fc1_UL_out, shape=[256, 16], type=tensor, addr=96000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
+# Output0: fc2_pre_gemm_DL_0_out, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
+
+mvp/n256i9f $d96000 $lc0@.0
+nop; wait i9f  # Auto-tagged
+mvp/n256i9f $d96256 $lc0@.1
+nop; wait i9f  # Auto-tagged
+l2bmd $lc0 $lb0
+nop
+l1bmm $llb0 $llm0v
+
+nop/3
+# --- Operation 12: DL ---
+# Node name: fc2_pre_gemm_DL_1
+# Input0: fc2_weight, shape=[16, 16], type=tensor, addr=64000, layout=((4_L2B:2, 4:8), (8:1, 2_W:1)), len=32, location=DRAM, tag=DRAM
+# Output0: fc2_pre_gemm_DL_1_out, shape=[16, 16], addr=16, layout=((16:2), (2:1, 4_PE:1, 2_W:1)), len=64, location=LM0, tag=default
+
+mvp/n64i9f $d64000@0 $p0@0
+nop; wait i9f  # Auto-tagged
+mvp/n64i9f $d64000@1 $p64@0
+nop; wait i9f  # Auto-tagged
+mvp/n64i9f $d64000@2 $p128@0
+nop; wait i9f  # Auto-tagged
+mvp/n64i9f $d64000@3 $p192@0
+nop; wait i9f  # Auto-tagged
+mvb/n256i9f $p0@0 $lc0
+nop; wait i9f  # Auto-tagged
+l2bmb $lc0 $lb0
+l2bmb $lc64 $lb32
+l2bmb $lc128 $lb64
+l2bmb $lc192 $lb96
+nop
+l1bmm $llb0 $llm16v
+l1bmm $llb32 $llm32v
+l1bmm $llb64 $llm48v
+l1bmm $llb96 $llm64v
+
+nop/3
+# --- Operation 13: Gemm ---
+# Node name: fc2_pre_gemm
+# Attr: transB=1
+# Attr: var_name=fc2_pre_matmul
+# Input0: fc2_pre_gemm_DL_0_out, shape=[256, 16], type=tensor, addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
+# Input1: fc2_pre_gemm_DL_1_out, shape=[16, 16], type=tensor, addr=16, layout=((16:2), (2:1, 4_PE:1, 2_W:1)), len=64, location=LM0, tag=default
+# Output0: fc2_pre_matmul, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM1, tag=default
+
+gbfn    $lm16v4 $nowrite
+gmwrite $aluf $ly0
+gbfn $lm32v4 $nowrite
+gmwrite $aluf $ly4
+gbfn $lm0v4 $nowrite
+gmmul $ly $aluf $ls0v4
+gbfn $lm18v4 $nowrite
+gmwrite $aluf $ly0
+gbfn $lm34v4 $nowrite
+gmwrite $aluf $ly4
+gbfn $lm2v4 $nowrite
+gmfma $ly $aluf $ls0v4 $ln0v4
+gbfn $lm48v4 $nowrite
+gmwrite $aluf $ly0
+gbfn $lm64v4 $nowrite
+gmwrite $aluf $ly4
+gbfn $lm0v4 $nowrite
+gmmul $ly $aluf $ls0v4
+gbfn $lm50v4 $nowrite
+gmwrite $aluf $ly0
+gbfn $lm66v4 $nowrite
+gmwrite $aluf $ly4
+gbfn $lm2v4 $nowrite
+gmfma $ly $aluf $ls0v4 $ln2v4
+
+nop/3
+# --- Operation 14: UL ---
+# Node name: fc2_pre_matmul_UL
+# Input0: fc2_pre_matmul, shape=[256, 16], type=tensor, addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM1, tag=default
+# Output0: fc2_pre_matmul_UL_out, shape=[256, 16], addr=104000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
+
+l1bmm@0 $lln0v $llb0
+nop
+nop
+l2bmd $lb0 $lc0
+mvp/n256i9f $lc0@.0 $d104000
+nop; wait i9f  # Auto-tagged
+mvp/n256i9f $lc0@.1 $d104256
+nop; wait i9f  # Auto-tagged
+
+nop/3
+# --- Operation 15: DL ---
+# Node name: fc2_pre_add_bias_DL_0
+# Input0: fc2_pre_matmul_UL_out, shape=[256, 16], type=tensor, addr=104000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
+# Output0: fc2_pre_add_bias_DL_0_out, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
+
+mvp/n256i9f $d104000 $lc0@.0
+nop; wait i9f  # Auto-tagged
+mvp/n256i9f $d104256 $lc0@.1
+nop; wait i9f  # Auto-tagged
+l2bmd $lc0 $lb0
+nop
+l1bmm $llb0 $llm0v
+
+nop/3
+# --- Operation 16: DL ---
+# Node name: fc2_pre_add_bias_DL_1
+# Input0: fc2_bias, shape=[16], type=tensor, addr=72000, layout=((8:1, 2_W:1)), len=8, location=DRAM, tag=DRAM
+# Output0: fc2_pre_add_bias_DL_1_out, shape=[16], addr=16, layout=((2:1, 4_PE:1, 2_W:1)), len=4, location=LM0, tag=default
+
+mvp/n64i9f $d72000@0 $p0@0
+nop; wait i9f  # Auto-tagged
+mvb/n64i9f $p0@0 $lc0
+nop; wait i9f  # Auto-tagged
+l2bmb $lc0 $lb0
+nop
+l1bmm $llb0 $llm16v
+
+nop/3
+# --- Operation 17: Add ---
+# Node name: fc2_pre_add_bias
+# Attr: var_name=fc2_pre
+# Input0: fc2_pre_add_bias_DL_0_out, shape=[256, 16], type=tensor, addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
+# Input1: fc2_pre_add_bias_DL_1_out, shape=[16], type=tensor, addr=16, layout=((2:1, 4_PE:1, 2_W:1)), len=4, location=LM0, tag=default
+# Output0: fc2_pre, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM1, tag=default
+
+fvpassa $m16v $r0v
+fvadd $m0v $mauf $n0v
+fvadd $m4v $r0v $n4v
+fvadd $m8v $r0v $n8v
+fvadd $m12v $r0v $n12v
+
+nop/3
+# --- Operation 18: UL ---
+# Node name: fc2_pre_UL
+# Input0: fc2_pre, shape=[256, 16], type=tensor, addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM1, tag=default
+# Output0: fc2_pre_UL_out, shape=[256, 16], addr=112000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
+
+l1bmm@0 $lln0v $llb0
+nop
+nop
+l2bmd $lb0 $lc0
+mvp/n256i9f $lc0@.0 $d112000
+nop; wait i9f  # Auto-tagged
+mvp/n256i9f $lc0@.1 $d112256
+nop; wait i9f  # Auto-tagged
+
+nop/3
+# --- Operation 19: DL ---
+# Node name: _reducemax_DL_0
+# Input0: fc2_pre_UL_out, shape=[256, 16], type=tensor, addr=112000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
+# Output0: _reducemax_DL_0_out, shape=[256, 16], addr=0, layout=((4_L2B:2, 64:2), (2:1, 4_PE:1, 2_W:1)), len=256, location=LM0, tag=PE
+
+mvb2/n512i9f $d112000 $lc0
+nop; wait i9f  # Auto-tagged
+l2bmb $lc0 $lb0
+l2bmb $lc64 $lb64
+l2bmb $lc128 $lb128
+l2bmb $lc192 $lb192
+l2bmb $lc256 $lb256
+l2bmb $lc320 $lb320
+l2bmb $lc384 $lb384
+l2bmb $lc448 $lb448
+nop
+l1bmm $llb0 $llm0v
+l1bmm $llb32 $llm16v
+l1bmm $llb64 $llm32v
+l1bmm $llb96 $llm48v
+l1bmm $llb128 $llm64v
+l1bmm $llb160 $llm80v
+l1bmm $llb192 $llm96v
+l1bmm $llb224 $llm112v
+l1bmm $llb256 $llm128v
+l1bmm $llb288 $llm144v
+l1bmm $llb320 $llm160v
+l1bmm $llb352 $llm176v
+l1bmm $llb384 $llm192v
+l1bmm $llb416 $llm208v
+l1bmm $llb448 $llm224v
+l1bmm $llb480 $llm240v
+
+nop/3
+# --- Operation 20: ReduceMax ---
+# Node name: _reducemax
+# Attr: axes=[-1]
+# Attr: keepdims=0
+# Attr: var_name=_max
+# Input0: _reducemax_DL_0_out, shape=[256, 16], type=tensor, addr=0, layout=((4_L2B:2, 64:2), (2:1, 4_PE:1, 2_W:1)), len=256, location=LM0, tag=PE
+# Output0: _max, shape=[256], addr=0, layout=((4_L2B:2, 32:1, 2_W:1)), len=64, location=LM1, tag=default
+
+
+fvpassa $m0v4 $nowrite
+fmax $m1v4 $mauf $nowrite
+fmax $m2v4 $aluf $nowrite
+fmax $m3v4 $aluf $r0v
+msr $aluf $s0v
+fmax $aluf $r0v $r0v
+msr $s0v $s0v
+fmax $aluf $r0v $r0v
+msr $s0v $s0v
+fmax $aluf $r0v $n0v;fvpassa $m16v4 $nowrite
+fmax $m17v4 $mauf $nowrite
+fmax $m18v4 $aluf $nowrite
+fmax $m19v4 $aluf $r0v
+msr $aluf $s0v
+fmax $aluf $r0v $r0v
+msr $s0v $s0v
+fmax $aluf $r0v $r0v
+msr $s0v $s0v
+fmax $aluf $r0v $n4v;fvpassa $m32v4 $nowrite
+fmax $m33v4 $mauf $nowrite
+fmax $m34v4 $aluf $nowrite
+fmax $m35v4 $aluf $r0v
+msr $aluf $s0v
+fmax $aluf $r0v $r0v
+msr $s0v $s0v
+fmax $aluf $r0v $r0v
+msr $s0v $s0v
+fmax $aluf $r0v $n8v;fvpassa $m48v4 $nowrite
+fmax $m49v4 $mauf $nowrite
+fmax $m50v4 $aluf $nowrite
+fmax $m51v4 $aluf $r0v
+msr $aluf $s0v
+fmax $aluf $r0v $r0v
+msr $s0v $s0v
+fmax $aluf $r0v $r0v
+msr $s0v $s0v
+fmax $aluf $r0v $n12v;fvpassa $m64v4 $nowrite
+fmax $m65v4 $mauf $nowrite
+fmax $m66v4 $aluf $nowrite
+fmax $m67v4 $aluf $r0v
+msr $aluf $s0v
+fmax $aluf $r0v $r0v
+msr $s0v $s0v
+fmax $aluf $r0v $r0v
+msr $s0v $s0v
+fmax $aluf $r0v $n16v;fvpassa $m80v4 $nowrite
+fmax $m81v4 $mauf $nowrite
+fmax $m82v4 $aluf $nowrite
+fmax $m83v4 $aluf $r0v
+msr $aluf $s0v
+fmax $aluf $r0v $r0v
+msr $s0v $s0v
+fmax $aluf $r0v $r0v
+msr $s0v $s0v
+fmax $aluf $r0v $n20v;fvpassa $m96v4 $nowrite
+fmax $m97v4 $mauf $nowrite
+fmax $m98v4 $aluf $nowrite
+fmax $m99v4 $aluf $r0v
+msr $aluf $s0v
+fmax $aluf $r0v $r0v
+msr $s0v $s0v
+fmax $aluf $r0v $r0v
+msr $s0v $s0v
+fmax $aluf $r0v $n24v;fvpassa $m112v4 $nowrite
+fmax $m113v4 $mauf $nowrite
+fmax $m114v4 $aluf $nowrite
+fmax $m115v4 $aluf $r0v
+msr $aluf $s0v
+fmax $aluf $r0v $r0v
+msr $s0v $s0v
+fmax $aluf $r0v $r0v
+msr $s0v $s0v
+fmax $aluf $r0v $n28v;fvpassa $m128v4 $nowrite
+fmax $m129v4 $mauf $nowrite
+fmax $m130v4 $aluf $nowrite
+fmax $m131v4 $aluf $r0v
+msr $aluf $s0v
+fmax $aluf $r0v $r0v
+msr $s0v $s0v
+fmax $aluf $r0v $r0v
+msr $s0v $s0v
+fmax $aluf $r0v $n32v;fvpassa $m144v4 $nowrite
+fmax $m145v4 $mauf $nowrite
+fmax $m146v4 $aluf $nowrite
+fmax $m147v4 $aluf $r0v
+msr $aluf $s0v
+fmax $aluf $r0v $r0v
+msr $s0v $s0v
+fmax $aluf $r0v $r0v
+msr $s0v $s0v
+fmax $aluf $r0v $n36v;fvpassa $m160v4 $nowrite
+fmax $m161v4 $mauf $nowrite
+fmax $m162v4 $aluf $nowrite
+fmax $m163v4 $aluf $r0v
+msr $aluf $s0v
+fmax $aluf $r0v $r0v
+msr $s0v $s0v
+fmax $aluf $r0v $r0v
+msr $s0v $s0v
+fmax $aluf $r0v $n40v;fvpassa $m176v4 $nowrite
+fmax $m177v4 $mauf $nowrite
+fmax $m178v4 $aluf $nowrite
+fmax $m179v4 $aluf $r0v
+msr $aluf $s0v
+fmax $aluf $r0v $r0v
+msr $s0v $s0v
+fmax $aluf $r0v $r0v
+msr $s0v $s0v
+fmax $aluf $r0v $n44v;fvpassa $m192v4 $nowrite
+fmax $m193v4 $mauf $nowrite
+fmax $m194v4 $aluf $nowrite
+fmax $m195v4 $aluf $r0v
+msr $aluf $s0v
+fmax $aluf $r0v $r0v
+msr $s0v $s0v
+fmax $aluf $r0v $r0v
+msr $s0v $s0v
+fmax $aluf $r0v $n48v;fvpassa $m208v4 $nowrite
+fmax $m209v4 $mauf $nowrite
+fmax $m210v4 $aluf $nowrite
+fmax $m211v4 $aluf $r0v
+msr $aluf $s0v
+fmax $aluf $r0v $r0v
+msr $s0v $s0v
+fmax $aluf $r0v $r0v
+msr $s0v $s0v
+fmax $aluf $r0v $n52v;fvpassa $m224v4 $nowrite
+fmax $m225v4 $mauf $nowrite
+fmax $m226v4 $aluf $nowrite
+fmax $m227v4 $aluf $r0v
+msr $aluf $s0v
+fmax $aluf $r0v $r0v
+msr $s0v $s0v
+fmax $aluf $r0v $r0v
+msr $s0v $s0v
+fmax $aluf $r0v $n56v;fvpassa $m240v4 $nowrite
+fmax $m241v4 $mauf $nowrite
+fmax $m242v4 $aluf $nowrite
+fmax $m243v4 $aluf $r0v
+msr $aluf $s0v
+fmax $aluf $r0v $r0v
+msr $s0v $s0v
+fmax $aluf $r0v $r0v
+msr $s0v $s0v
+fmax $aluf $r0v $n60v
+
+
+nop/3
+# --- Operation 21: UL ---
+# Node name: _max_UL
+# Input0: _max, shape=[256], type=tensor, addr=0, layout=((4_L2B:2, 32:1, 2_W:1)), len=64, location=LM1, tag=default
+# Output0: _max_UL_out, shape=[256], addr=120000, layout=((4_L2B:2, 32:1, 2_W:1)), len=32, location=DRAM, tag=DRAM
+
+dmwrite $ln0v $lx0
+dmread $lx0 $lr0v
+nop
+l1bmm@0 $lr0v $lb0
+dmwrite $ln8v $lx0
+dmread $lx0 $lr0v
+nop
+l1bmm@0 $lr0v $lb4
+dmwrite $ln16v $lx0
+dmread $lx0 $lr0v
+nop
+l1bmm@0 $lr0v $lb8
+dmwrite $ln24v $lx0
+dmread $lx0 $lr0v
+nop
+l1bmm@0 $lr0v $lb12
+dmwrite $ln32v $lx0
+dmread $lx0 $lr0v
+nop
+l1bmm@0 $lr0v $lb16
+dmwrite $ln40v $lx0
+dmread $lx0 $lr0v
+nop
+l1bmm@0 $lr0v $lb20
+dmwrite $ln48v $lx0
+dmread $lx0 $lr0v
+nop
+l1bmm@0 $lr0v $lb24
+dmwrite $ln56v $lx0
+dmread $lx0 $lr0v
+nop
+l1bmm@0 $lr0v $lb28
+nop
+nop
+nop
+l2bm@0 $lb0 $lc0
+nop
+mvp/n64i9f $lc0@.0 $d120000
+nop; wait i9f  # Auto-tagged
+
+nop/3
+# --- Operation 22: DL ---
+# Node name: _sub_DL_0
+# Input0: fc2_pre_UL_out, shape=[256, 16], type=tensor, addr=112000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
+# Output0: _sub_DL_0_out, shape=[256, 16], addr=0, layout=((4_L2B:2, 64:2), (2:1, 4_PE:1, 2_W:1)), len=256, location=LM0, tag=PE
+
+mvb2/n512i9f $d112000 $lc0
+nop; wait i9f  # Auto-tagged
+l2bmb $lc0 $lb0
+l2bmb $lc64 $lb64
+l2bmb $lc128 $lb128
+l2bmb $lc192 $lb192
+l2bmb $lc256 $lb256
+l2bmb $lc320 $lb320
+l2bmb $lc384 $lb384
+l2bmb $lc448 $lb448
+nop
+l1bmm $llb0 $llm0v
+l1bmm $llb32 $llm16v
+l1bmm $llb64 $llm32v
+l1bmm $llb96 $llm48v
+l1bmm $llb128 $llm64v
+l1bmm $llb160 $llm80v
+l1bmm $llb192 $llm96v
+l1bmm $llb224 $llm112v
+l1bmm $llb256 $llm128v
+l1bmm $llb288 $llm144v
+l1bmm $llb320 $llm160v
+l1bmm $llb352 $llm176v
+l1bmm $llb384 $llm192v
+l1bmm $llb416 $llm208v
+l1bmm $llb448 $llm224v
+l1bmm $llb480 $llm240v
+
+nop/3
+# --- Operation 23: DL ---
+# Node name: _sub_DL_1
+# Input0: _max_UL_out, shape=[256], type=tensor, addr=120000, layout=((4_L2B:2, 32:1, 2_W:1)), len=32, location=DRAM, tag=DRAM
+# Output0: _sub_DL_1_out, shape=[256], addr=256, layout=((4_L2B:2, 32:1, 2_W:1)), len=64, location=LM0, tag=default
+
+mvb2/n64i9f $d120000 $lc0
+nop; wait i9f  # Auto-tagged
+l2bmb $lc0 $lb0
+nop
+l1bmp $lb0 $lm256v
+l1bmp $lb4 $lm264v
+l1bmp $lb8 $lm272v
+l1bmp $lb12 $lm280v
+l1bmp $lb16 $lm288v
+l1bmp $lb20 $lm296v
+l1bmp $lb24 $lm304v
+l1bmp $lb28 $lm312v
+
+nop/3
+# --- Operation 24: Sub ---
+# Node name: _sub
+# Attr: var_name=_sub
+# Input0: _sub_DL_0_out, shape=[256, 16], type=tensor, addr=0, layout=((4_L2B:2, 64:2), (2:1, 4_PE:1, 2_W:1)), len=256, location=LM0, tag=PE
+# Input1: _sub_DL_1_out, shape=[256], type=tensor, addr=256, layout=((4_L2B:2, 32:1, 2_W:1)), len=64, location=LM0, tag=default
+# Output0: _sub, shape=[256, 16], addr=0, layout=((4_L2B:2, 64:2), (2:1, 4_PE:1, 2_W:1)), len=256, location=LM1, tag=PE
+
+
+fvpassa $m[256,257,258,259] $r[0,2,4,6]
+fvpassa $m[256,257,258,259] $r[1,3,5,7]
+fvpassa $m[260,261,262,263] $s[0,2,4,6]
+fvpassa $m[260,261,262,263] $s[1,3,5,7]
+fvadd $llm0v -$lr[0,2,4,6] $lln[0,4,8,12]
+fvadd $lm[2,6,10,14] -$lr[0,2,4,6] $ln[2,6,10,14]
+fvpassa $m[264,265,266,267] $r[0,2,4,6]
+fvpassa $m[264,265,266,267] $r[1,3,5,7]
+fvadd $llm16v -$ls[0,2,4,6] $lln[16,20,24,28]
+fvadd $lm[18,22,26,30] -$ls[0,2,4,6] $ln[18,22,26,30]
+fvpassa $m[268,269,270,271] $s[0,2,4,6]
+fvpassa $m[268,269,270,271] $s[1,3,5,7]
+fvadd $llm32v -$lr[0,2,4,6] $lln[32,36,40,44]
+fvadd $lm[34,38,42,46] -$lr[0,2,4,6] $ln[34,38,42,46]
+fvpassa $m[272,273,274,275] $r[0,2,4,6]
+fvpassa $m[272,273,274,275] $r[1,3,5,7]
+fvadd $llm48v -$ls[0,2,4,6] $lln[48,52,56,60]
+fvadd $lm[50,54,58,62] -$ls[0,2,4,6] $ln[50,54,58,62]
+fvpassa $m[276,277,278,279] $s[0,2,4,6]
+fvpassa $m[276,277,278,279] $s[1,3,5,7]
+fvadd $llm64v -$lr[0,2,4,6] $lln[64,68,72,76]
+fvadd $lm[66,70,74,78] -$lr[0,2,4,6] $ln[66,70,74,78]
+fvpassa $m[280,281,282,283] $r[0,2,4,6]
+fvpassa $m[280,281,282,283] $r[1,3,5,7]
+fvadd $llm80v -$ls[0,2,4,6] $lln[80,84,88,92]
+fvadd $lm[82,86,90,94] -$ls[0,2,4,6] $ln[82,86,90,94]
+fvpassa $m[284,285,286,287] $s[0,2,4,6]
+fvpassa $m[284,285,286,287] $s[1,3,5,7]
+fvadd $llm96v -$lr[0,2,4,6] $lln[96,100,104,108]
+fvadd $lm[98,102,106,110] -$lr[0,2,4,6] $ln[98,102,106,110]
+fvpassa $m[288,289,290,291] $r[0,2,4,6]
+fvpassa $m[288,289,290,291] $r[1,3,5,7]
+fvadd $llm112v -$ls[0,2,4,6] $lln[112,116,120,124]
+fvadd $lm[114,118,122,126] -$ls[0,2,4,6] $ln[114,118,122,126]
+fvpassa $m[292,293,294,295] $s[0,2,4,6]
+fvpassa $m[292,293,294,295] $s[1,3,5,7]
+fvadd $llm128v -$lr[0,2,4,6] $lln[128,132,136,140]
+fvadd $lm[130,134,138,142] -$lr[0,2,4,6] $ln[130,134,138,142]
+fvpassa $m[296,297,298,299] $r[0,2,4,6]
+fvpassa $m[296,297,298,299] $r[1,3,5,7]
+fvadd $llm144v -$ls[0,2,4,6] $lln[144,148,152,156]
+fvadd $lm[146,150,154,158] -$ls[0,2,4,6] $ln[146,150,154,158]
+fvpassa $m[300,301,302,303] $s[0,2,4,6]
+fvpassa $m[300,301,302,303] $s[1,3,5,7]
+fvadd $llm160v -$lr[0,2,4,6] $lln[160,164,168,172]
+fvadd $lm[162,166,170,174] -$lr[0,2,4,6] $ln[162,166,170,174]
+fvpassa $m[304,305,306,307] $r[0,2,4,6]
+fvpassa $m[304,305,306,307] $r[1,3,5,7]
+fvadd $llm176v -$ls[0,2,4,6] $lln[176,180,184,188]
+fvadd $lm[178,182,186,190] -$ls[0,2,4,6] $ln[178,182,186,190]
+fvpassa $m[308,309,310,311] $s[0,2,4,6]
+fvpassa $m[308,309,310,311] $s[1,3,5,7]
+fvadd $llm192v -$lr[0,2,4,6] $lln[192,196,200,204]
+fvadd $lm[194,198,202,206] -$lr[0,2,4,6] $ln[194,198,202,206]
+fvpassa $m[312,313,314,315] $r[0,2,4,6]
+fvpassa $m[312,313,314,315] $r[1,3,5,7]
+fvadd $llm208v -$ls[0,2,4,6] $lln[208,212,216,220]
+fvadd $lm[210,214,218,222] -$ls[0,2,4,6] $ln[210,214,218,222]
+fvpassa $m[316,317,318,319] $s[0,2,4,6]
+fvpassa $m[316,317,318,319] $s[1,3,5,7]
+fvadd $llm224v -$lr[0,2,4,6] $lln[224,228,232,236]
+fvadd $lm[226,230,234,238] -$lr[0,2,4,6] $ln[226,230,234,238]
+fvadd $llm240v -$ls[0,2,4,6] $lln[240,244,248,252]
+fvadd $lm[242,246,250,254] -$ls[0,2,4,6] $ln[242,246,250,254]
+
+
+nop/3
+# --- Operation 25: UL ---
+# Node name: _sub_UL
+# Input0: _sub, shape=[256, 16], type=tensor, addr=0, layout=((4_L2B:2, 64:2), (2:1, 4_PE:1, 2_W:1)), len=256, location=LM1, tag=PE
+# Output0: _sub_UL_out, shape=[256, 16], addr=128000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
+
+l1bmm@0 $lln0v $llb0
+l1bmm@0 $lln16v $llb32
+l1bmm@0 $lln32v $llb64
+l1bmm@0 $lln48v $llb96
+l1bmm@0 $lln64v $llb128
+l1bmm@0 $lln80v $llb160
+l1bmm@0 $lln96v $llb192
+l1bmm@0 $lln112v $llb224
+l1bmm@0 $lln128v $llb256
+l1bmm@0 $lln144v $llb288
+l1bmm@0 $lln160v $llb320
+l1bmm@0 $lln176v $llb352
+l1bmm@0 $lln192v $llb384
+l1bmm@0 $lln208v $llb416
+l1bmm@0 $lln224v $llb448
+l1bmm@0 $lln240v $llb480
+nop
+l2bm@0 $lb0 $lc0
+l2bm@0 $lb64 $lc64
+l2bm@0 $lb128 $lc128
+l2bm@0 $lb192 $lc192
+l2bm@0 $lb256 $lc256
+l2bm@0 $lb320 $lc320
+l2bm@0 $lb384 $lc384
+l2bm@0 $lb448 $lc448
+nop
+mvp/n512i9f $lc0@.0 $d128000
+nop; wait i9f  # Auto-tagged
+
+nop/3
+# --- Operation 26: DL ---
+# Node name: _exp_DL_0
+# Input0: _sub_UL_out, shape=[256, 16], type=tensor, addr=128000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
+# Output0: _exp_DL_0_out, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
+
+mvp/n256i9f $d128000 $lc0@.0
+nop; wait i9f  # Auto-tagged
+mvp/n256i9f $d128256 $lc0@.1
+nop; wait i9f  # Auto-tagged
+l2bmd $lc0 $lb0
+nop
+l1bmm $llb0 $llm0v
+
+nop/3
+# --- Operation 27: Exp ---
+# Node name: _exp
+# Attr: var_name=_exp
+# Input0: _exp_DL_0_out, shape=[256, 16], type=tensor, addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
+# Output0: _exp, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM1, tag=default
+
+
+imm f"1.4426950408889634" $t
+imm f"0.5" $r0v
+imm f"0.5" $r4v
+imm f"0.5" $r8v
+imm f"0.5" $r12v
+fvfma $m0v $t $r0v $r0v
+fvfma $m4v $t $r4v $r4v
+fvfma $m8v $t $r8v $r8v
+fvfma $m12v $t $r12v $r12v
+ffloor $r0v $r0v
+ffloor $r4v $r4v
+ffloor $r8v $r8v
+ffloor $r12v $r12v
+
+fvpassa $r0v $s0v
+fvpassa $r4v $s4v
+fvpassa $r8v $s8v
+fvpassa $r12v $s12v
+
+imm f"-0.6931471805599453" $t
+fvfma $s0v $aluf $m0v $r0v
+fvfma $s4v $t $m4v $r4v
+fvfma $s8v $t $m8v $r8v
+fvfma $s12v $t $m12v $r12v
+
+fftoi $s0v $s0v
+fftoi $s4v $s4v
+fftoi $s8v $s8v
+fftoi $s12v $s12v
+imm i"23" $t
+ilsl $s0v $aluf $s0v
+ilsl $s4v $t $s4v
+ilsl $s8v $t $s8v
+ilsl $s12v $t $s12v
+
+fvpassa $r0v $n0v
+fvpassa $r4v $n4v
+fvpassa $r8v $n8v
+fvpassa $r12v $n12v
+
+imm f"0.0001984126984126984" $r0v
+imm f"0.0001984126984126984" $r4v
+imm f"0.0001984126984126984" $r8v
+imm f"0.0001984126984126984" $r12v
+imm f"0.001388888888888889" $t
+fvfma $r0v $n0v $aluf $r0v
+fvfma $r4v $n4v $t $r4v
+fvfma $r8v $n8v $t $r8v
+fvfma $r12v $n12v $t $r12v
+
+imm f"0.008333333333333333" $t
+fvfma $r0v $n0v $aluf $r0v
+fvfma $r4v $n4v $t $r4v
+fvfma $r8v $n8v $t $r8v
+fvfma $r12v $n12v $t $r12v
+
+imm f"0.041666666666666664" $t
+fvfma $r0v $n0v $aluf $r0v
+fvfma $r4v $n4v $t $r4v
+fvfma $r8v $n8v $t $r8v
+fvfma $r12v $n12v $t $r12v
+
+imm f"0.16666666666666666" $t
+fvfma $r0v $n0v $aluf $r0v
+fvfma $r4v $n4v $t $r4v
+fvfma $r8v $n8v $t $r8v
+fvfma $r12v $n12v $t $r12v
+
+imm f"0.5" $t
+fvfma $r0v $n0v $aluf $r0v
+fvfma $r4v $n4v $t $r4v
+fvfma $r8v $n8v $t $r8v
+fvfma $r12v $n12v $t $r12v
+
+imm f"1.0" $t
+fvfma $r0v $n0v $aluf $r0v
+fvfma $r4v $n4v $t $r4v
+fvfma $r8v $n8v $t $r8v
+fvfma $r12v $n12v $t $r12v
+fvfma $r0v $n0v $t $r0v
+fvfma $r4v $n4v $t $r4v
+fvfma $r8v $n8v $t $r8v
+fvfma $r12v $n12v $t $r12v
+
+iadd $r0v $s0v $r0v
+iadd $r4v $s4v $r4v
+iadd $r8v $s8v $r8v
+iadd $r12v $s12v $r12v
+
+imm f"14.0" $t
+fvadd $m0v $aluf $s0v
+fvadd $m4v $t $s4v
+fvadd $m8v $t $s8v
+fvadd $m12v $t $s12v
+frelu $s0v $r0v $n0v
+frelu $s4v $r4v $n4v
+frelu $s8v $r8v $n8v
+frelu $s12v $r12v $n12v
+
+
+nop/3
+# --- Operation 28: UL ---
+# Node name: _exp_UL
+# Input0: _exp, shape=[256, 16], type=tensor, addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM1, tag=default
+# Output0: _exp_UL_out, shape=[256, 16], addr=136000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
+
+l1bmm@0 $lln0v $llb0
+nop
+nop
+l2bmd $lb0 $lc0
+mvp/n256i9f $lc0@.0 $d136000
+nop; wait i9f  # Auto-tagged
+mvp/n256i9f $lc0@.1 $d136256
+nop; wait i9f  # Auto-tagged
+
+nop/3
+# --- Operation 29: DL ---
+# Node name: _reducesum_DL_0
+# Input0: _exp_UL_out, shape=[256, 16], type=tensor, addr=136000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
+# Output0: _reducesum_DL_0_out, shape=[256, 16], addr=0, layout=((4_L2B:2, 64:2), (2:1, 4_PE:1, 2_W:1)), len=256, location=LM0, tag=PE
+
+mvb2/n512i9f $d136000 $lc0
+nop; wait i9f  # Auto-tagged
+l2bmb $lc0 $lb0
+l2bmb $lc64 $lb64
+l2bmb $lc128 $lb128
+l2bmb $lc192 $lb192
+l2bmb $lc256 $lb256
+l2bmb $lc320 $lb320
+l2bmb $lc384 $lb384
+l2bmb $lc448 $lb448
+nop
+l1bmm $llb0 $llm0v
+l1bmm $llb32 $llm16v
+l1bmm $llb64 $llm32v
+l1bmm $llb96 $llm48v
+l1bmm $llb128 $llm64v
+l1bmm $llb160 $llm80v
+l1bmm $llb192 $llm96v
+l1bmm $llb224 $llm112v
+l1bmm $llb256 $llm128v
+l1bmm $llb288 $llm144v
+l1bmm $llb320 $llm160v
+l1bmm $llb352 $llm176v
+l1bmm $llb384 $llm192v
+l1bmm $llb416 $llm208v
+l1bmm $llb448 $llm224v
+l1bmm $llb480 $llm240v
+
+nop/3
+# --- Operation 30: ReduceSum ---
+# Node name: _reducesum
+# Attr: axes=[-1]
+# Attr: keepdims=0
+# Attr: var_name=_sum
+# Input0: _reducesum_DL_0_out, shape=[256, 16], type=tensor, addr=0, layout=((4_L2B:2, 64:2), (2:1, 4_PE:1, 2_W:1)), len=256, location=LM0, tag=PE
+# Output0: _sum, shape=[256], addr=0, layout=((4_L2B:2, 32:1, 2_W:1)), len=64, location=LM1, tag=default
+
+
+                    fvpassa $m0v4 $nowrite
+                    fvadd $m1v4 $mauf $nowrite
+                    fvadd $m2v4 $mauf $nowrite
+                    fvadd $m3v4 $mauf $r0v
+                    msr $mauf $s0v
+                    fvadd $aluf $r0v $r0v
+                    msr $s0v $s0v
+                    fvadd $aluf $r0v $r0v
+                    msr $s0v $s0v
+                    fvadd $aluf $r0v $n0v
+                    fvpassa $m16v4 $nowrite
+                    fvadd $m17v4 $mauf $nowrite
+                    fvadd $m18v4 $mauf $nowrite
+                    fvadd $m19v4 $mauf $r0v
+                    msr $mauf $s0v
+                    fvadd $aluf $r0v $r0v
+                    msr $s0v $s0v
+                    fvadd $aluf $r0v $r0v
+                    msr $s0v $s0v
+                    fvadd $aluf $r0v $n4v
+                    fvpassa $m32v4 $nowrite
+                    fvadd $m33v4 $mauf $nowrite
+                    fvadd $m34v4 $mauf $nowrite
+                    fvadd $m35v4 $mauf $r0v
+                    msr $mauf $s0v
+                    fvadd $aluf $r0v $r0v
+                    msr $s0v $s0v
+                    fvadd $aluf $r0v $r0v
+                    msr $s0v $s0v
+                    fvadd $aluf $r0v $n8v
+                    fvpassa $m48v4 $nowrite
+                    fvadd $m49v4 $mauf $nowrite
+                    fvadd $m50v4 $mauf $nowrite
+                    fvadd $m51v4 $mauf $r0v
+                    msr $mauf $s0v
+                    fvadd $aluf $r0v $r0v
+                    msr $s0v $s0v
+                    fvadd $aluf $r0v $r0v
+                    msr $s0v $s0v
+                    fvadd $aluf $r0v $n12v
+                    fvpassa $m64v4 $nowrite
+                    fvadd $m65v4 $mauf $nowrite
+                    fvadd $m66v4 $mauf $nowrite
+                    fvadd $m67v4 $mauf $r0v
+                    msr $mauf $s0v
+                    fvadd $aluf $r0v $r0v
+                    msr $s0v $s0v
+                    fvadd $aluf $r0v $r0v
+                    msr $s0v $s0v
+                    fvadd $aluf $r0v $n16v
+                    fvpassa $m80v4 $nowrite
+                    fvadd $m81v4 $mauf $nowrite
+                    fvadd $m82v4 $mauf $nowrite
+                    fvadd $m83v4 $mauf $r0v
+                    msr $mauf $s0v
+                    fvadd $aluf $r0v $r0v
+                    msr $s0v $s0v
+                    fvadd $aluf $r0v $r0v
+                    msr $s0v $s0v
+                    fvadd $aluf $r0v $n20v
+                    fvpassa $m96v4 $nowrite
+                    fvadd $m97v4 $mauf $nowrite
+                    fvadd $m98v4 $mauf $nowrite
+                    fvadd $m99v4 $mauf $r0v
+                    msr $mauf $s0v
+                    fvadd $aluf $r0v $r0v
+                    msr $s0v $s0v
+                    fvadd $aluf $r0v $r0v
+                    msr $s0v $s0v
+                    fvadd $aluf $r0v $n24v
+                    fvpassa $m112v4 $nowrite
+                    fvadd $m113v4 $mauf $nowrite
+                    fvadd $m114v4 $mauf $nowrite
+                    fvadd $m115v4 $mauf $r0v
+                    msr $mauf $s0v
+                    fvadd $aluf $r0v $r0v
+                    msr $s0v $s0v
+                    fvadd $aluf $r0v $r0v
+                    msr $s0v $s0v
+                    fvadd $aluf $r0v $n28v
+                    fvpassa $m128v4 $nowrite
+                    fvadd $m129v4 $mauf $nowrite
+                    fvadd $m130v4 $mauf $nowrite
+                    fvadd $m131v4 $mauf $r0v
+                    msr $mauf $s0v
+                    fvadd $aluf $r0v $r0v
+                    msr $s0v $s0v
+                    fvadd $aluf $r0v $r0v
+                    msr $s0v $s0v
+                    fvadd $aluf $r0v $n32v
+                    fvpassa $m144v4 $nowrite
+                    fvadd $m145v4 $mauf $nowrite
+                    fvadd $m146v4 $mauf $nowrite
+                    fvadd $m147v4 $mauf $r0v
+                    msr $mauf $s0v
+                    fvadd $aluf $r0v $r0v
+                    msr $s0v $s0v
+                    fvadd $aluf $r0v $r0v
+                    msr $s0v $s0v
+                    fvadd $aluf $r0v $n36v
+                    fvpassa $m160v4 $nowrite
+                    fvadd $m161v4 $mauf $nowrite
+                    fvadd $m162v4 $mauf $nowrite
+                    fvadd $m163v4 $mauf $r0v
+                    msr $mauf $s0v
+                    fvadd $aluf $r0v $r0v
+                    msr $s0v $s0v
+                    fvadd $aluf $r0v $r0v
+                    msr $s0v $s0v
+                    fvadd $aluf $r0v $n40v
+                    fvpassa $m176v4 $nowrite
+                    fvadd $m177v4 $mauf $nowrite
+                    fvadd $m178v4 $mauf $nowrite
+                    fvadd $m179v4 $mauf $r0v
+                    msr $mauf $s0v
+                    fvadd $aluf $r0v $r0v
+                    msr $s0v $s0v
+                    fvadd $aluf $r0v $r0v
+                    msr $s0v $s0v
+                    fvadd $aluf $r0v $n44v
+                    fvpassa $m192v4 $nowrite
+                    fvadd $m193v4 $mauf $nowrite
+                    fvadd $m194v4 $mauf $nowrite
+                    fvadd $m195v4 $mauf $r0v
+                    msr $mauf $s0v
+                    fvadd $aluf $r0v $r0v
+                    msr $s0v $s0v
+                    fvadd $aluf $r0v $r0v
+                    msr $s0v $s0v
+                    fvadd $aluf $r0v $n48v
+                    fvpassa $m208v4 $nowrite
+                    fvadd $m209v4 $mauf $nowrite
+                    fvadd $m210v4 $mauf $nowrite
+                    fvadd $m211v4 $mauf $r0v
+                    msr $mauf $s0v
+                    fvadd $aluf $r0v $r0v
+                    msr $s0v $s0v
+                    fvadd $aluf $r0v $r0v
+                    msr $s0v $s0v
+                    fvadd $aluf $r0v $n52v
+                    fvpassa $m224v4 $nowrite
+                    fvadd $m225v4 $mauf $nowrite
+                    fvadd $m226v4 $mauf $nowrite
+                    fvadd $m227v4 $mauf $r0v
+                    msr $mauf $s0v
+                    fvadd $aluf $r0v $r0v
+                    msr $s0v $s0v
+                    fvadd $aluf $r0v $r0v
+                    msr $s0v $s0v
+                    fvadd $aluf $r0v $n56v
+                    fvpassa $m240v4 $nowrite
+                    fvadd $m241v4 $mauf $nowrite
+                    fvadd $m242v4 $mauf $nowrite
+                    fvadd $m243v4 $mauf $r0v
+                    msr $mauf $s0v
+                    fvadd $aluf $r0v $r0v
+                    msr $s0v $s0v
+                    fvadd $aluf $r0v $r0v
+                    msr $s0v $s0v
+                    fvadd $aluf $r0v $n60v
+
+
+nop/3
+# --- Operation 31: UL ---
+# Node name: _sum_UL
+# Input0: _sum, shape=[256], type=tensor, addr=0, layout=((4_L2B:2, 32:1, 2_W:1)), len=64, location=LM1, tag=default
+# Output0: _sum_UL_out, shape=[256], addr=144000, layout=((4_L2B:2, 32:1, 2_W:1)), len=32, location=DRAM, tag=DRAM
+
+dmwrite $ln0v $lx0
+dmread $lx0 $lr0v
+nop
+l1bmm@0 $lr0v $lb0
+dmwrite $ln8v $lx0
+dmread $lx0 $lr0v
+nop
+l1bmm@0 $lr0v $lb4
+dmwrite $ln16v $lx0
+dmread $lx0 $lr0v
+nop
+l1bmm@0 $lr0v $lb8
+dmwrite $ln24v $lx0
+dmread $lx0 $lr0v
+nop
+l1bmm@0 $lr0v $lb12
+dmwrite $ln32v $lx0
+dmread $lx0 $lr0v
+nop
+l1bmm@0 $lr0v $lb16
+dmwrite $ln40v $lx0
+dmread $lx0 $lr0v
+nop
+l1bmm@0 $lr0v $lb20
+dmwrite $ln48v $lx0
+dmread $lx0 $lr0v
+nop
+l1bmm@0 $lr0v $lb24
+dmwrite $ln56v $lx0
+dmread $lx0 $lr0v
+nop
+l1bmm@0 $lr0v $lb28
+nop
+nop
+nop
+l2bm@0 $lb0 $lc0
+nop
+mvp/n64i9f $lc0@.0 $d144000
+nop; wait i9f  # Auto-tagged
+
+nop/3
+# --- Operation 32: DL ---
+# Node name: _div_DL_0
+# Input0: _exp_UL_out, shape=[256, 16], type=tensor, addr=136000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
+# Output0: _div_DL_0_out, shape=[256, 16], addr=0, layout=((4_L2B:2, 64:2), (2:1, 4_PE:1, 2_W:1)), len=256, location=LM0, tag=PE
+
+mvb2/n512i9f $d136000 $lc0
+nop; wait i9f  # Auto-tagged
+l2bmb $lc0 $lb0
+l2bmb $lc64 $lb64
+l2bmb $lc128 $lb128
+l2bmb $lc192 $lb192
+l2bmb $lc256 $lb256
+l2bmb $lc320 $lb320
+l2bmb $lc384 $lb384
+l2bmb $lc448 $lb448
+nop
+l1bmm $llb0 $llm0v
+l1bmm $llb32 $llm16v
+l1bmm $llb64 $llm32v
+l1bmm $llb96 $llm48v
+l1bmm $llb128 $llm64v
+l1bmm $llb160 $llm80v
+l1bmm $llb192 $llm96v
+l1bmm $llb224 $llm112v
+l1bmm $llb256 $llm128v
+l1bmm $llb288 $llm144v
+l1bmm $llb320 $llm160v
+l1bmm $llb352 $llm176v
+l1bmm $llb384 $llm192v
+l1bmm $llb416 $llm208v
+l1bmm $llb448 $llm224v
+l1bmm $llb480 $llm240v
+
+nop/3
+# --- Operation 33: DL ---
+# Node name: _div_DL_1
+# Input0: _sum_UL_out, shape=[256], type=tensor, addr=144000, layout=((4_L2B:2, 32:1, 2_W:1)), len=32, location=DRAM, tag=DRAM
+# Output0: _div_DL_1_out, shape=[256], addr=256, layout=((4_L2B:2, 32:1, 2_W:1)), len=64, location=LM0, tag=default
+
+mvb2/n64i9f $d144000 $lc0
+nop; wait i9f  # Auto-tagged
+l2bmb $lc0 $lb0
+nop
+l1bmp $lb0 $lm256v
+l1bmp $lb4 $lm264v
+l1bmp $lb8 $lm272v
+l1bmp $lb12 $lm280v
+l1bmp $lb16 $lm288v
+l1bmp $lb20 $lm296v
+l1bmp $lb24 $lm304v
+l1bmp $lb28 $lm312v
+
+nop/3
+# --- Operation 34: Div ---
+# Node name: _div
+# Attr: var_name=probs
+# Input0: _div_DL_0_out, shape=[256, 16], type=tensor, addr=0, layout=((4_L2B:2, 64:2), (2:1, 4_PE:1, 2_W:1)), len=256, location=LM0, tag=PE
+# Input1: _div_DL_1_out, shape=[256], type=tensor, addr=256, layout=((4_L2B:2, 32:1, 2_W:1)), len=64, location=LM0, tag=default
+# Output0: probs, shape=[256, 16], addr=0, layout=((4_L2B:2, 64:2), (2:1, 4_PE:1, 2_W:1)), len=256, location=LM1, tag=PE
+
+
+imm f"2.0" $t
+frsqrt $m256 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m256 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m256 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m0v $mauf $n0v
+frsqrt $m257 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m257 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m257 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m4v $mauf $n4v
+frsqrt $m258 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m258 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m258 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m8v $mauf $n8v
+frsqrt $m259 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m259 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m259 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m12v $mauf $n12v
+frsqrt $m260 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m260 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m260 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m16v $mauf $n16v
+frsqrt $m261 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m261 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m261 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m20v $mauf $n20v
+frsqrt $m262 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m262 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m262 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m24v $mauf $n24v
+frsqrt $m263 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m263 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m263 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m28v $mauf $n28v
+frsqrt $m264 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m264 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m264 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m32v $mauf $n32v
+frsqrt $m265 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m265 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m265 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m36v $mauf $n36v
+frsqrt $m266 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m266 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m266 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m40v $mauf $n40v
+frsqrt $m267 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m267 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m267 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m44v $mauf $n44v
+frsqrt $m268 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m268 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m268 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m48v $mauf $n48v
+frsqrt $m269 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m269 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m269 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m52v $mauf $n52v
+frsqrt $m270 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m270 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m270 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m56v $mauf $n56v
+frsqrt $m271 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m271 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m271 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m60v $mauf $n60v
+frsqrt $m272 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m272 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m272 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m64v $mauf $n64v
+frsqrt $m273 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m273 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m273 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m68v $mauf $n68v
+frsqrt $m274 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m274 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m274 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m72v $mauf $n72v
+frsqrt $m275 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m275 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m275 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m76v $mauf $n76v
+frsqrt $m276 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m276 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m276 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m80v $mauf $n80v
+frsqrt $m277 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m277 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m277 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m84v $mauf $n84v
+frsqrt $m278 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m278 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m278 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m88v $mauf $n88v
+frsqrt $m279 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m279 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m279 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m92v $mauf $n92v
+frsqrt $m280 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m280 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m280 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m96v $mauf $n96v
+frsqrt $m281 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m281 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m281 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m100v $mauf $n100v
+frsqrt $m282 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m282 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m282 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m104v $mauf $n104v
+frsqrt $m283 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m283 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m283 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m108v $mauf $n108v
+frsqrt $m284 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m284 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m284 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m112v $mauf $n112v
+frsqrt $m285 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m285 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m285 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m116v $mauf $n116v
+frsqrt $m286 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m286 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m286 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m120v $mauf $n120v
+frsqrt $m287 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m287 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m287 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m124v $mauf $n124v
+frsqrt $m288 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m288 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m288 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m128v $mauf $n128v
+frsqrt $m289 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m289 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m289 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m132v $mauf $n132v
+frsqrt $m290 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m290 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m290 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m136v $mauf $n136v
+frsqrt $m291 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m291 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m291 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m140v $mauf $n140v
+frsqrt $m292 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m292 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m292 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m144v $mauf $n144v
+frsqrt $m293 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m293 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m293 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m148v $mauf $n148v
+frsqrt $m294 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m294 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m294 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m152v $mauf $n152v
+frsqrt $m295 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m295 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m295 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m156v $mauf $n156v
+frsqrt $m296 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m296 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m296 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m160v $mauf $n160v
+frsqrt $m297 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m297 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m297 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m164v $mauf $n164v
+frsqrt $m298 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m298 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m298 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m168v $mauf $n168v
+frsqrt $m299 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m299 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m299 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m172v $mauf $n172v
+frsqrt $m300 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m300 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m300 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m176v $mauf $n176v
+frsqrt $m301 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m301 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m301 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m180v $mauf $n180v
+frsqrt $m302 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m302 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m302 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m184v $mauf $n184v
+frsqrt $m303 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m303 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m303 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m188v $mauf $n188v
+frsqrt $m304 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m304 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m304 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m192v $mauf $n192v
+frsqrt $m305 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m305 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m305 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m196v $mauf $n196v
+frsqrt $m306 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m306 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m306 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m200v $mauf $n200v
+frsqrt $m307 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m307 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m307 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m204v $mauf $n204v
+frsqrt $m308 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m308 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m308 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m208v $mauf $n208v
+frsqrt $m309 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m309 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m309 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m212v $mauf $n212v
+frsqrt $m310 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m310 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m310 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m216v $mauf $n216v
+frsqrt $m311 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m311 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m311 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m220v $mauf $n220v
+frsqrt $m312 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m312 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m312 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m224v $mauf $n224v
+frsqrt $m313 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m313 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m313 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m228v $mauf $n228v
+frsqrt $m314 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m314 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m314 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m232v $mauf $n232v
+frsqrt $m315 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m315 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m315 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m236v $mauf $n236v
+frsqrt $m316 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m316 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m316 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m240v $mauf $n240v
+frsqrt $m317 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m317 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m317 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m244v $mauf $n244v
+frsqrt $m318 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m318 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m318 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m248v $mauf $n248v
+frsqrt $m319 $nowrite
+fvmul $aluf $aluf $r0
+fvfma -$m319 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvfma -$m319 $mauf $t $nowrite
+nop
+fvmul $r0 $mauf $r0
+fvmul $m252v $mauf $n252v
+
+
+nop/3
+# --- Operation 35: UL ---
+# Node name: probs_UL
+# Input0: probs, shape=[256, 16], type=tensor, addr=0, layout=((4_L2B:2, 64:2), (2:1, 4_PE:1, 2_W:1)), len=256, location=LM1, tag=PE
+# Output0: probs_UL_out, shape=[256, 16], addr=152000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
+
+l1bmm@0 $lln0v $llb0
+l1bmm@0 $lln16v $llb32
+l1bmm@0 $lln32v $llb64
+l1bmm@0 $lln48v $llb96
+l1bmm@0 $lln64v $llb128
+l1bmm@0 $lln80v $llb160
+l1bmm@0 $lln96v $llb192
+l1bmm@0 $lln112v $llb224
+l1bmm@0 $lln128v $llb256
+l1bmm@0 $lln144v $llb288
+l1bmm@0 $lln160v $llb320
+l1bmm@0 $lln176v $llb352
+l1bmm@0 $lln192v $llb384
+l1bmm@0 $lln208v $llb416
+l1bmm@0 $lln224v $llb448
+l1bmm@0 $lln240v $llb480
+nop
+l2bm@0 $lb0 $lc0
+l2bm@0 $lb64 $lc64
+l2bm@0 $lb128 $lc128
+l2bm@0 $lb192 $lc192
+l2bm@0 $lb256 $lc256
+l2bm@0 $lb320 $lc320
+l2bm@0 $lb384 $lc384
+l2bm@0 $lb448 $lc448
+nop
+mvp/n512i9f $lc0@.0 $d152000
+nop; wait i9f  # Auto-tagged
+
+nop/3
+# --- Operation 36: DL ---
+# Node name: OneHot_11_DL_0
+# Input0: target, shape=[256], type=tensor, addr=40000, layout=((4_L2B:2, 32:1, 2_W:1)), len=32, location=DRAM, tag=DRAM
+# Output0: OneHot_11_DL_0_out, shape=[256], addr=0, layout=((4_L2B:2, 32:1, 2_W:1)), len=64, location=LM0, tag=default
+
+mvb2/n64i9f $d40000 $lc0
+nop; wait i9f  # Auto-tagged
+l2bmb $lc0 $lb0
+nop
+l1bmp $lb0 $lm0v
+l1bmp $lb4 $lm8v
+l1bmp $lb8 $lm16v
+l1bmp $lb12 $lm24v
+l1bmp $lb16 $lm32v
+l1bmp $lb20 $lm40v
+l1bmp $lb24 $lm48v
+l1bmp $lb28 $lm56v
+
+nop/3
+# --- Operation 37: OneHot ---
+# Node name: OneHot_11
+# Attr: axis=1
+# Attr: depth=16
+# Attr: var_name=target_onehot
+# Input0: OneHot_11_DL_0_out, shape=[256], type=tensor, addr=0, layout=((4_L2B:2, 32:1, 2_W:1)), len=64, location=LM0, tag=default
+# Input1: depth, shape=N/A, type=initializer, tag=default
+# Input2: values, shape=N/A, type=initializer, tag=default
+# Output0: target_onehot, shape=[256, 16], addr=0, layout=((4_L2B:2, 64:2), (2:1, 4_PE:1, 2_W:1)), len=256, location=LM1, tag=PE
+
+
+lpassa $subpeid $r2
+nop
+nop
+iadd $subpeid $r2 $r3
+nop
+nop
+iadd $subpeid $r3 $r0
+imm i"1" $s12
+imm i"8" $s14
+nop
+nop
+iadd $r0 $s12 $r4
+iadd $r0 $s14 $r6
+nop
+nop
+iadd $r6 $s12 $r10
+imm f"1.0" $r8
+zero $ln0v
+zero $ln8v
+zero $ln16v
+zero $ln24v
+zero $ln32v
+zero $ln40v
+zero $ln48v
+zero $ln56v
+zero $ln64v
+zero $ln72v
+zero $ln80v
+zero $ln88v
+zero $ln96v
+zero $ln104v
+zero $ln112v
+zero $ln120v
+zero $ln128v
+zero $ln136v
+zero $ln144v
+zero $ln152v
+zero $ln160v
+zero $ln168v
+zero $ln176v
+zero $ln184v
+zero $ln192v
+zero $ln200v
+zero $ln208v
+zero $ln216v
+zero $ln224v
+zero $ln232v
+zero $ln240v
+zero $ln248v
+nop
+ixor $m0 $r0 $omr1
+maskn 1
+fpassa $r8 $n0
+mask 0
+ixor $m0 $r4 $omr1
+maskn 1
+fpassa $r8 $n1
+mask 0
+ixor $m0 $r6 $omr1
+maskn 1
+fpassa $r8 $n2
+mask 0
+ixor $m0 $r10 $omr1
+maskn 1
+fpassa $r8 $n3
+mask 0
+ixor $m1 $r0 $omr1
+maskn 1
+fpassa $r8 $n4
+mask 0
+ixor $m1 $r4 $omr1
+maskn 1
+fpassa $r8 $n5
+mask 0
+ixor $m1 $r6 $omr1
+maskn 1
+fpassa $r8 $n6
+mask 0
+ixor $m1 $r10 $omr1
+maskn 1
+fpassa $r8 $n7
+mask 0
+ixor $m2 $r0 $omr1
+maskn 1
+fpassa $r8 $n8
+mask 0
+ixor $m2 $r4 $omr1
+maskn 1
+fpassa $r8 $n9
+mask 0
+ixor $m2 $r6 $omr1
+maskn 1
+fpassa $r8 $n10
+mask 0
+ixor $m2 $r10 $omr1
+maskn 1
+fpassa $r8 $n11
+mask 0
+ixor $m3 $r0 $omr1
+maskn 1
+fpassa $r8 $n12
+mask 0
+ixor $m3 $r4 $omr1
+maskn 1
+fpassa $r8 $n13
+mask 0
+ixor $m3 $r6 $omr1
+maskn 1
+fpassa $r8 $n14
+mask 0
+ixor $m3 $r10 $omr1
+maskn 1
+fpassa $r8 $n15
+mask 0
+ixor $m4 $r0 $omr1
+maskn 1
+fpassa $r8 $n16
+mask 0
+ixor $m4 $r4 $omr1
+maskn 1
+fpassa $r8 $n17
+mask 0
+ixor $m4 $r6 $omr1
+maskn 1
+fpassa $r8 $n18
+mask 0
+ixor $m4 $r10 $omr1
+maskn 1
+fpassa $r8 $n19
+mask 0
+ixor $m5 $r0 $omr1
+maskn 1
+fpassa $r8 $n20
+mask 0
+ixor $m5 $r4 $omr1
+maskn 1
+fpassa $r8 $n21
+mask 0
+ixor $m5 $r6 $omr1
+maskn 1
+fpassa $r8 $n22
+mask 0
+ixor $m5 $r10 $omr1
+maskn 1
+fpassa $r8 $n23
+mask 0
+ixor $m6 $r0 $omr1
+maskn 1
+fpassa $r8 $n24
+mask 0
+ixor $m6 $r4 $omr1
+maskn 1
+fpassa $r8 $n25
+mask 0
+ixor $m6 $r6 $omr1
+maskn 1
+fpassa $r8 $n26
+mask 0
+ixor $m6 $r10 $omr1
+maskn 1
+fpassa $r8 $n27
+mask 0
+ixor $m7 $r0 $omr1
+maskn 1
+fpassa $r8 $n28
+mask 0
+ixor $m7 $r4 $omr1
+maskn 1
+fpassa $r8 $n29
+mask 0
+ixor $m7 $r6 $omr1
+maskn 1
+fpassa $r8 $n30
+mask 0
+ixor $m7 $r10 $omr1
+maskn 1
+fpassa $r8 $n31
+mask 0
+ixor $m8 $r0 $omr1
+maskn 1
+fpassa $r8 $n32
+mask 0
+ixor $m8 $r4 $omr1
+maskn 1
+fpassa $r8 $n33
+mask 0
+ixor $m8 $r6 $omr1
+maskn 1
+fpassa $r8 $n34
+mask 0
+ixor $m8 $r10 $omr1
+maskn 1
+fpassa $r8 $n35
+mask 0
+ixor $m9 $r0 $omr1
+maskn 1
+fpassa $r8 $n36
+mask 0
+ixor $m9 $r4 $omr1
+maskn 1
+fpassa $r8 $n37
+mask 0
+ixor $m9 $r6 $omr1
+maskn 1
+fpassa $r8 $n38
+mask 0
+ixor $m9 $r10 $omr1
+maskn 1
+fpassa $r8 $n39
+mask 0
+ixor $m10 $r0 $omr1
+maskn 1
+fpassa $r8 $n40
+mask 0
+ixor $m10 $r4 $omr1
+maskn 1
+fpassa $r8 $n41
+mask 0
+ixor $m10 $r6 $omr1
+maskn 1
+fpassa $r8 $n42
+mask 0
+ixor $m10 $r10 $omr1
+maskn 1
+fpassa $r8 $n43
+mask 0
+ixor $m11 $r0 $omr1
+maskn 1
+fpassa $r8 $n44
+mask 0
+ixor $m11 $r4 $omr1
+maskn 1
+fpassa $r8 $n45
+mask 0
+ixor $m11 $r6 $omr1
+maskn 1
+fpassa $r8 $n46
+mask 0
+ixor $m11 $r10 $omr1
+maskn 1
+fpassa $r8 $n47
+mask 0
+ixor $m12 $r0 $omr1
+maskn 1
+fpassa $r8 $n48
+mask 0
+ixor $m12 $r4 $omr1
+maskn 1
+fpassa $r8 $n49
+mask 0
+ixor $m12 $r6 $omr1
+maskn 1
+fpassa $r8 $n50
+mask 0
+ixor $m12 $r10 $omr1
+maskn 1
+fpassa $r8 $n51
+mask 0
+ixor $m13 $r0 $omr1
+maskn 1
+fpassa $r8 $n52
+mask 0
+ixor $m13 $r4 $omr1
+maskn 1
+fpassa $r8 $n53
+mask 0
+ixor $m13 $r6 $omr1
+maskn 1
+fpassa $r8 $n54
+mask 0
+ixor $m13 $r10 $omr1
+maskn 1
+fpassa $r8 $n55
+mask 0
+ixor $m14 $r0 $omr1
+maskn 1
+fpassa $r8 $n56
+mask 0
+ixor $m14 $r4 $omr1
+maskn 1
+fpassa $r8 $n57
+mask 0
+ixor $m14 $r6 $omr1
+maskn 1
+fpassa $r8 $n58
+mask 0
+ixor $m14 $r10 $omr1
+maskn 1
+fpassa $r8 $n59
+mask 0
+ixor $m15 $r0 $omr1
+maskn 1
+fpassa $r8 $n60
+mask 0
+ixor $m15 $r4 $omr1
+maskn 1
+fpassa $r8 $n61
+mask 0
+ixor $m15 $r6 $omr1
+maskn 1
+fpassa $r8 $n62
+mask 0
+ixor $m15 $r10 $omr1
+maskn 1
+fpassa $r8 $n63
+mask 0
+ixor $m16 $r0 $omr1
+maskn 1
+fpassa $r8 $n64
+mask 0
+ixor $m16 $r4 $omr1
+maskn 1
+fpassa $r8 $n65
+mask 0
+ixor $m16 $r6 $omr1
+maskn 1
+fpassa $r8 $n66
+mask 0
+ixor $m16 $r10 $omr1
+maskn 1
+fpassa $r8 $n67
+mask 0
+ixor $m17 $r0 $omr1
+maskn 1
+fpassa $r8 $n68
+mask 0
+ixor $m17 $r4 $omr1
+maskn 1
+fpassa $r8 $n69
+mask 0
+ixor $m17 $r6 $omr1
+maskn 1
+fpassa $r8 $n70
+mask 0
+ixor $m17 $r10 $omr1
+maskn 1
+fpassa $r8 $n71
+mask 0
+ixor $m18 $r0 $omr1
+maskn 1
+fpassa $r8 $n72
+mask 0
+ixor $m18 $r4 $omr1
+maskn 1
+fpassa $r8 $n73
+mask 0
+ixor $m18 $r6 $omr1
+maskn 1
+fpassa $r8 $n74
+mask 0
+ixor $m18 $r10 $omr1
+maskn 1
+fpassa $r8 $n75
+mask 0
+ixor $m19 $r0 $omr1
+maskn 1
+fpassa $r8 $n76
+mask 0
+ixor $m19 $r4 $omr1
+maskn 1
+fpassa $r8 $n77
+mask 0
+ixor $m19 $r6 $omr1
+maskn 1
+fpassa $r8 $n78
+mask 0
+ixor $m19 $r10 $omr1
+maskn 1
+fpassa $r8 $n79
+mask 0
+ixor $m20 $r0 $omr1
+maskn 1
+fpassa $r8 $n80
+mask 0
+ixor $m20 $r4 $omr1
+maskn 1
+fpassa $r8 $n81
+mask 0
+ixor $m20 $r6 $omr1
+maskn 1
+fpassa $r8 $n82
+mask 0
+ixor $m20 $r10 $omr1
+maskn 1
+fpassa $r8 $n83
+mask 0
+ixor $m21 $r0 $omr1
+maskn 1
+fpassa $r8 $n84
+mask 0
+ixor $m21 $r4 $omr1
+maskn 1
+fpassa $r8 $n85
+mask 0
+ixor $m21 $r6 $omr1
+maskn 1
+fpassa $r8 $n86
+mask 0
+ixor $m21 $r10 $omr1
+maskn 1
+fpassa $r8 $n87
+mask 0
+ixor $m22 $r0 $omr1
+maskn 1
+fpassa $r8 $n88
+mask 0
+ixor $m22 $r4 $omr1
+maskn 1
+fpassa $r8 $n89
+mask 0
+ixor $m22 $r6 $omr1
+maskn 1
+fpassa $r8 $n90
+mask 0
+ixor $m22 $r10 $omr1
+maskn 1
+fpassa $r8 $n91
+mask 0
+ixor $m23 $r0 $omr1
+maskn 1
+fpassa $r8 $n92
+mask 0
+ixor $m23 $r4 $omr1
+maskn 1
+fpassa $r8 $n93
+mask 0
+ixor $m23 $r6 $omr1
+maskn 1
+fpassa $r8 $n94
+mask 0
+ixor $m23 $r10 $omr1
+maskn 1
+fpassa $r8 $n95
+mask 0
+ixor $m24 $r0 $omr1
+maskn 1
+fpassa $r8 $n96
+mask 0
+ixor $m24 $r4 $omr1
+maskn 1
+fpassa $r8 $n97
+mask 0
+ixor $m24 $r6 $omr1
+maskn 1
+fpassa $r8 $n98
+mask 0
+ixor $m24 $r10 $omr1
+maskn 1
+fpassa $r8 $n99
+mask 0
+ixor $m25 $r0 $omr1
+maskn 1
+fpassa $r8 $n100
+mask 0
+ixor $m25 $r4 $omr1
+maskn 1
+fpassa $r8 $n101
+mask 0
+ixor $m25 $r6 $omr1
+maskn 1
+fpassa $r8 $n102
+mask 0
+ixor $m25 $r10 $omr1
+maskn 1
+fpassa $r8 $n103
+mask 0
+ixor $m26 $r0 $omr1
+maskn 1
+fpassa $r8 $n104
+mask 0
+ixor $m26 $r4 $omr1
+maskn 1
+fpassa $r8 $n105
+mask 0
+ixor $m26 $r6 $omr1
+maskn 1
+fpassa $r8 $n106
+mask 0
+ixor $m26 $r10 $omr1
+maskn 1
+fpassa $r8 $n107
+mask 0
+ixor $m27 $r0 $omr1
+maskn 1
+fpassa $r8 $n108
+mask 0
+ixor $m27 $r4 $omr1
+maskn 1
+fpassa $r8 $n109
+mask 0
+ixor $m27 $r6 $omr1
+maskn 1
+fpassa $r8 $n110
+mask 0
+ixor $m27 $r10 $omr1
+maskn 1
+fpassa $r8 $n111
+mask 0
+ixor $m28 $r0 $omr1
+maskn 1
+fpassa $r8 $n112
+mask 0
+ixor $m28 $r4 $omr1
+maskn 1
+fpassa $r8 $n113
+mask 0
+ixor $m28 $r6 $omr1
+maskn 1
+fpassa $r8 $n114
+mask 0
+ixor $m28 $r10 $omr1
+maskn 1
+fpassa $r8 $n115
+mask 0
+ixor $m29 $r0 $omr1
+maskn 1
+fpassa $r8 $n116
+mask 0
+ixor $m29 $r4 $omr1
+maskn 1
+fpassa $r8 $n117
+mask 0
+ixor $m29 $r6 $omr1
+maskn 1
+fpassa $r8 $n118
+mask 0
+ixor $m29 $r10 $omr1
+maskn 1
+fpassa $r8 $n119
+mask 0
+ixor $m30 $r0 $omr1
+maskn 1
+fpassa $r8 $n120
+mask 0
+ixor $m30 $r4 $omr1
+maskn 1
+fpassa $r8 $n121
+mask 0
+ixor $m30 $r6 $omr1
+maskn 1
+fpassa $r8 $n122
+mask 0
+ixor $m30 $r10 $omr1
+maskn 1
+fpassa $r8 $n123
+mask 0
+ixor $m31 $r0 $omr1
+maskn 1
+fpassa $r8 $n124
+mask 0
+ixor $m31 $r4 $omr1
+maskn 1
+fpassa $r8 $n125
+mask 0
+ixor $m31 $r6 $omr1
+maskn 1
+fpassa $r8 $n126
+mask 0
+ixor $m31 $r10 $omr1
+maskn 1
+fpassa $r8 $n127
+mask 0
+ixor $m32 $r0 $omr1
+maskn 1
+fpassa $r8 $n128
+mask 0
+ixor $m32 $r4 $omr1
+maskn 1
+fpassa $r8 $n129
+mask 0
+ixor $m32 $r6 $omr1
+maskn 1
+fpassa $r8 $n130
+mask 0
+ixor $m32 $r10 $omr1
+maskn 1
+fpassa $r8 $n131
+mask 0
+ixor $m33 $r0 $omr1
+maskn 1
+fpassa $r8 $n132
+mask 0
+ixor $m33 $r4 $omr1
+maskn 1
+fpassa $r8 $n133
+mask 0
+ixor $m33 $r6 $omr1
+maskn 1
+fpassa $r8 $n134
+mask 0
+ixor $m33 $r10 $omr1
+maskn 1
+fpassa $r8 $n135
+mask 0
+ixor $m34 $r0 $omr1
+maskn 1
+fpassa $r8 $n136
+mask 0
+ixor $m34 $r4 $omr1
+maskn 1
+fpassa $r8 $n137
+mask 0
+ixor $m34 $r6 $omr1
+maskn 1
+fpassa $r8 $n138
+mask 0
+ixor $m34 $r10 $omr1
+maskn 1
+fpassa $r8 $n139
+mask 0
+ixor $m35 $r0 $omr1
+maskn 1
+fpassa $r8 $n140
+mask 0
+ixor $m35 $r4 $omr1
+maskn 1
+fpassa $r8 $n141
+mask 0
+ixor $m35 $r6 $omr1
+maskn 1
+fpassa $r8 $n142
+mask 0
+ixor $m35 $r10 $omr1
+maskn 1
+fpassa $r8 $n143
+mask 0
+ixor $m36 $r0 $omr1
+maskn 1
+fpassa $r8 $n144
+mask 0
+ixor $m36 $r4 $omr1
+maskn 1
+fpassa $r8 $n145
+mask 0
+ixor $m36 $r6 $omr1
+maskn 1
+fpassa $r8 $n146
+mask 0
+ixor $m36 $r10 $omr1
+maskn 1
+fpassa $r8 $n147
+mask 0
+ixor $m37 $r0 $omr1
+maskn 1
+fpassa $r8 $n148
+mask 0
+ixor $m37 $r4 $omr1
+maskn 1
+fpassa $r8 $n149
+mask 0
+ixor $m37 $r6 $omr1
+maskn 1
+fpassa $r8 $n150
+mask 0
+ixor $m37 $r10 $omr1
+maskn 1
+fpassa $r8 $n151
+mask 0
+ixor $m38 $r0 $omr1
+maskn 1
+fpassa $r8 $n152
+mask 0
+ixor $m38 $r4 $omr1
+maskn 1
+fpassa $r8 $n153
+mask 0
+ixor $m38 $r6 $omr1
+maskn 1
+fpassa $r8 $n154
+mask 0
+ixor $m38 $r10 $omr1
+maskn 1
+fpassa $r8 $n155
+mask 0
+ixor $m39 $r0 $omr1
+maskn 1
+fpassa $r8 $n156
+mask 0
+ixor $m39 $r4 $omr1
+maskn 1
+fpassa $r8 $n157
+mask 0
+ixor $m39 $r6 $omr1
+maskn 1
+fpassa $r8 $n158
+mask 0
+ixor $m39 $r10 $omr1
+maskn 1
+fpassa $r8 $n159
+mask 0
+ixor $m40 $r0 $omr1
+maskn 1
+fpassa $r8 $n160
+mask 0
+ixor $m40 $r4 $omr1
+maskn 1
+fpassa $r8 $n161
+mask 0
+ixor $m40 $r6 $omr1
+maskn 1
+fpassa $r8 $n162
+mask 0
+ixor $m40 $r10 $omr1
+maskn 1
+fpassa $r8 $n163
+mask 0
+ixor $m41 $r0 $omr1
+maskn 1
+fpassa $r8 $n164
+mask 0
+ixor $m41 $r4 $omr1
+maskn 1
+fpassa $r8 $n165
+mask 0
+ixor $m41 $r6 $omr1
+maskn 1
+fpassa $r8 $n166
+mask 0
+ixor $m41 $r10 $omr1
+maskn 1
+fpassa $r8 $n167
+mask 0
+ixor $m42 $r0 $omr1
+maskn 1
+fpassa $r8 $n168
+mask 0
+ixor $m42 $r4 $omr1
+maskn 1
+fpassa $r8 $n169
+mask 0
+ixor $m42 $r6 $omr1
+maskn 1
+fpassa $r8 $n170
+mask 0
+ixor $m42 $r10 $omr1
+maskn 1
+fpassa $r8 $n171
+mask 0
+ixor $m43 $r0 $omr1
+maskn 1
+fpassa $r8 $n172
+mask 0
+ixor $m43 $r4 $omr1
+maskn 1
+fpassa $r8 $n173
+mask 0
+ixor $m43 $r6 $omr1
+maskn 1
+fpassa $r8 $n174
+mask 0
+ixor $m43 $r10 $omr1
+maskn 1
+fpassa $r8 $n175
+mask 0
+ixor $m44 $r0 $omr1
+maskn 1
+fpassa $r8 $n176
+mask 0
+ixor $m44 $r4 $omr1
+maskn 1
+fpassa $r8 $n177
+mask 0
+ixor $m44 $r6 $omr1
+maskn 1
+fpassa $r8 $n178
+mask 0
+ixor $m44 $r10 $omr1
+maskn 1
+fpassa $r8 $n179
+mask 0
+ixor $m45 $r0 $omr1
+maskn 1
+fpassa $r8 $n180
+mask 0
+ixor $m45 $r4 $omr1
+maskn 1
+fpassa $r8 $n181
+mask 0
+ixor $m45 $r6 $omr1
+maskn 1
+fpassa $r8 $n182
+mask 0
+ixor $m45 $r10 $omr1
+maskn 1
+fpassa $r8 $n183
+mask 0
+ixor $m46 $r0 $omr1
+maskn 1
+fpassa $r8 $n184
+mask 0
+ixor $m46 $r4 $omr1
+maskn 1
+fpassa $r8 $n185
+mask 0
+ixor $m46 $r6 $omr1
+maskn 1
+fpassa $r8 $n186
+mask 0
+ixor $m46 $r10 $omr1
+maskn 1
+fpassa $r8 $n187
+mask 0
+ixor $m47 $r0 $omr1
+maskn 1
+fpassa $r8 $n188
+mask 0
+ixor $m47 $r4 $omr1
+maskn 1
+fpassa $r8 $n189
+mask 0
+ixor $m47 $r6 $omr1
+maskn 1
+fpassa $r8 $n190
+mask 0
+ixor $m47 $r10 $omr1
+maskn 1
+fpassa $r8 $n191
+mask 0
+ixor $m48 $r0 $omr1
+maskn 1
+fpassa $r8 $n192
+mask 0
+ixor $m48 $r4 $omr1
+maskn 1
+fpassa $r8 $n193
+mask 0
+ixor $m48 $r6 $omr1
+maskn 1
+fpassa $r8 $n194
+mask 0
+ixor $m48 $r10 $omr1
+maskn 1
+fpassa $r8 $n195
+mask 0
+ixor $m49 $r0 $omr1
+maskn 1
+fpassa $r8 $n196
+mask 0
+ixor $m49 $r4 $omr1
+maskn 1
+fpassa $r8 $n197
+mask 0
+ixor $m49 $r6 $omr1
+maskn 1
+fpassa $r8 $n198
+mask 0
+ixor $m49 $r10 $omr1
+maskn 1
+fpassa $r8 $n199
+mask 0
+ixor $m50 $r0 $omr1
+maskn 1
+fpassa $r8 $n200
+mask 0
+ixor $m50 $r4 $omr1
+maskn 1
+fpassa $r8 $n201
+mask 0
+ixor $m50 $r6 $omr1
+maskn 1
+fpassa $r8 $n202
+mask 0
+ixor $m50 $r10 $omr1
+maskn 1
+fpassa $r8 $n203
+mask 0
+ixor $m51 $r0 $omr1
+maskn 1
+fpassa $r8 $n204
+mask 0
+ixor $m51 $r4 $omr1
+maskn 1
+fpassa $r8 $n205
+mask 0
+ixor $m51 $r6 $omr1
+maskn 1
+fpassa $r8 $n206
+mask 0
+ixor $m51 $r10 $omr1
+maskn 1
+fpassa $r8 $n207
+mask 0
+ixor $m52 $r0 $omr1
+maskn 1
+fpassa $r8 $n208
+mask 0
+ixor $m52 $r4 $omr1
+maskn 1
+fpassa $r8 $n209
+mask 0
+ixor $m52 $r6 $omr1
+maskn 1
+fpassa $r8 $n210
+mask 0
+ixor $m52 $r10 $omr1
+maskn 1
+fpassa $r8 $n211
+mask 0
+ixor $m53 $r0 $omr1
+maskn 1
+fpassa $r8 $n212
+mask 0
+ixor $m53 $r4 $omr1
+maskn 1
+fpassa $r8 $n213
+mask 0
+ixor $m53 $r6 $omr1
+maskn 1
+fpassa $r8 $n214
+mask 0
+ixor $m53 $r10 $omr1
+maskn 1
+fpassa $r8 $n215
+mask 0
+ixor $m54 $r0 $omr1
+maskn 1
+fpassa $r8 $n216
+mask 0
+ixor $m54 $r4 $omr1
+maskn 1
+fpassa $r8 $n217
+mask 0
+ixor $m54 $r6 $omr1
+maskn 1
+fpassa $r8 $n218
+mask 0
+ixor $m54 $r10 $omr1
+maskn 1
+fpassa $r8 $n219
+mask 0
+ixor $m55 $r0 $omr1
+maskn 1
+fpassa $r8 $n220
+mask 0
+ixor $m55 $r4 $omr1
+maskn 1
+fpassa $r8 $n221
+mask 0
+ixor $m55 $r6 $omr1
+maskn 1
+fpassa $r8 $n222
+mask 0
+ixor $m55 $r10 $omr1
+maskn 1
+fpassa $r8 $n223
+mask 0
+ixor $m56 $r0 $omr1
+maskn 1
+fpassa $r8 $n224
+mask 0
+ixor $m56 $r4 $omr1
+maskn 1
+fpassa $r8 $n225
+mask 0
+ixor $m56 $r6 $omr1
+maskn 1
+fpassa $r8 $n226
+mask 0
+ixor $m56 $r10 $omr1
+maskn 1
+fpassa $r8 $n227
+mask 0
+ixor $m57 $r0 $omr1
+maskn 1
+fpassa $r8 $n228
+mask 0
+ixor $m57 $r4 $omr1
+maskn 1
+fpassa $r8 $n229
+mask 0
+ixor $m57 $r6 $omr1
+maskn 1
+fpassa $r8 $n230
+mask 0
+ixor $m57 $r10 $omr1
+maskn 1
+fpassa $r8 $n231
+mask 0
+ixor $m58 $r0 $omr1
+maskn 1
+fpassa $r8 $n232
+mask 0
+ixor $m58 $r4 $omr1
+maskn 1
+fpassa $r8 $n233
+mask 0
+ixor $m58 $r6 $omr1
+maskn 1
+fpassa $r8 $n234
+mask 0
+ixor $m58 $r10 $omr1
+maskn 1
+fpassa $r8 $n235
+mask 0
+ixor $m59 $r0 $omr1
+maskn 1
+fpassa $r8 $n236
+mask 0
+ixor $m59 $r4 $omr1
+maskn 1
+fpassa $r8 $n237
+mask 0
+ixor $m59 $r6 $omr1
+maskn 1
+fpassa $r8 $n238
+mask 0
+ixor $m59 $r10 $omr1
+maskn 1
+fpassa $r8 $n239
+mask 0
+ixor $m60 $r0 $omr1
+maskn 1
+fpassa $r8 $n240
+mask 0
+ixor $m60 $r4 $omr1
+maskn 1
+fpassa $r8 $n241
+mask 0
+ixor $m60 $r6 $omr1
+maskn 1
+fpassa $r8 $n242
+mask 0
+ixor $m60 $r10 $omr1
+maskn 1
+fpassa $r8 $n243
+mask 0
+ixor $m61 $r0 $omr1
+maskn 1
+fpassa $r8 $n244
+mask 0
+ixor $m61 $r4 $omr1
+maskn 1
+fpassa $r8 $n245
+mask 0
+ixor $m61 $r6 $omr1
+maskn 1
+fpassa $r8 $n246
+mask 0
+ixor $m61 $r10 $omr1
+maskn 1
+fpassa $r8 $n247
+mask 0
+ixor $m62 $r0 $omr1
+maskn 1
+fpassa $r8 $n248
+mask 0
+ixor $m62 $r4 $omr1
+maskn 1
+fpassa $r8 $n249
+mask 0
+ixor $m62 $r6 $omr1
+maskn 1
+fpassa $r8 $n250
+mask 0
+ixor $m62 $r10 $omr1
+maskn 1
+fpassa $r8 $n251
+mask 0
+ixor $m63 $r0 $omr1
+maskn 1
+fpassa $r8 $n252
+mask 0
+ixor $m63 $r4 $omr1
+maskn 1
+fpassa $r8 $n253
+mask 0
+ixor $m63 $r6 $omr1
+maskn 1
+fpassa $r8 $n254
+mask 0
+ixor $m63 $r10 $omr1
+maskn 1
+fpassa $r8 $n255
+mask 0
+
+
+nop/3
+# --- Operation 38: UL ---
+# Node name: target_onehot_UL
+# Input0: target_onehot, shape=[256, 16], type=tensor, addr=0, layout=((4_L2B:2, 64:2), (2:1, 4_PE:1, 2_W:1)), len=256, location=LM1, tag=PE
+# Output0: target_onehot_UL_out, shape=[256, 16], addr=160000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
+
+l1bmm@0 $lln0v $llb0
+l1bmm@0 $lln16v $llb32
+l1bmm@0 $lln32v $llb64
+l1bmm@0 $lln48v $llb96
+l1bmm@0 $lln64v $llb128
+l1bmm@0 $lln80v $llb160
+l1bmm@0 $lln96v $llb192
+l1bmm@0 $lln112v $llb224
+l1bmm@0 $lln128v $llb256
+l1bmm@0 $lln144v $llb288
+l1bmm@0 $lln160v $llb320
+l1bmm@0 $lln176v $llb352
+l1bmm@0 $lln192v $llb384
+l1bmm@0 $lln208v $llb416
+l1bmm@0 $lln224v $llb448
+l1bmm@0 $lln240v $llb480
+nop
+l2bm@0 $lb0 $lc0
+l2bm@0 $lb64 $lc64
+l2bm@0 $lb128 $lc128
+l2bm@0 $lb192 $lc192
+l2bm@0 $lb256 $lc256
+l2bm@0 $lb320 $lc320
+l2bm@0 $lb384 $lc384
+l2bm@0 $lb448 $lc448
+nop
+mvp/n512i9f $lc0@.0 $d160000
+nop; wait i9f  # Auto-tagged
+
+nop/3
+# --- Operation 39: DL ---
+# Node name: Sub_12_DL_0
+# Input0: probs_UL_out, shape=[256, 16], type=tensor, addr=152000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
+# Output0: Sub_12_DL_0_out, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
+
+mvp/n256i9f $d152000 $lc0@.0
+nop; wait i9f  # Auto-tagged
+mvp/n256i9f $d152256 $lc0@.1
+nop; wait i9f  # Auto-tagged
+l2bmd $lc0 $lb0
+nop
+l1bmm $llb0 $llm0v
+
+nop/3
+# --- Operation 40: DL ---
+# Node name: Sub_12_DL_1
+# Input0: target_onehot_UL_out, shape=[256, 16], type=tensor, addr=160000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
+# Output0: Sub_12_DL_1_out, shape=[256, 16], addr=16, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
+
+mvp/n256i9f $d160000 $lc0@.0
+nop; wait i9f  # Auto-tagged
+mvp/n256i9f $d160256 $lc0@.1
+nop; wait i9f  # Auto-tagged
+l2bmd $lc0 $lb0
+nop
+l1bmm $llb0 $llm16v
+
+nop/3
+# --- Operation 41: Sub ---
+# Node name: Sub_12
+# Attr: var_name=grad_before_scale
+# Input0: Sub_12_DL_0_out, shape=[256, 16], type=tensor, addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
+# Input1: Sub_12_DL_1_out, shape=[256, 16], type=tensor, addr=16, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
+# Output0: grad_before_scale, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM1, tag=default
+
+ipassa $lm16v $nowrite
+fvadd $lm0v -$aluf $ln0v
+ipassa $lm24v $nowrite
+fvadd $lm8v -$aluf $ln8v
+
+nop/3
+# --- Operation 42: UL ---
+# Node name: grad_before_scale_UL
+# Input0: grad_before_scale, shape=[256, 16], type=tensor, addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM1, tag=default
+# Output0: grad_before_scale_UL_out, shape=[256, 16], addr=168000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
+
+l1bmm@0 $lln0v $llb0
+nop
+nop
+l2bmd $lb0 $lc0
+mvp/n256i9f $lc0@.0 $d168000
+nop; wait i9f  # Auto-tagged
+mvp/n256i9f $lc0@.1 $d168256
+nop; wait i9f  # Auto-tagged
+
+nop/3
+# --- Operation 43: DL ---
+# Node name: Mul_13_DL_0
+# Input0: grad_before_scale_UL_out, shape=[256, 16], type=tensor, addr=168000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
+# Output0: Mul_13_DL_0_out, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
+
+mvp/n256i9f $d168000 $lc0@.0
+nop; wait i9f  # Auto-tagged
+mvp/n256i9f $d168256 $lc0@.1
+nop; wait i9f  # Auto-tagged
+l2bmd $lc0 $lb0
+nop
+l1bmm $llb0 $llm0v
+
+nop/3
+# --- Operation 44: Mul ---
+# Node name: Mul_13
+# Attr: var_name=grad_output
+# Input0: Mul_13_DL_0_out, shape=[256, 16], type=tensor, addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
+# Input1: scale_256, shape=N/A, type=initializer, tag=default
+# Output0: grad_output, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM1, tag=default
+
+imm f"0.00390625" $t
+fvmul $aluf $lm0v $ln0v
+fvmul $t $lm8v $ln8v
+
+nop/3
+# --- Operation 45: UL ---
+# Node name: grad_output_UL
+# Input0: grad_output, shape=[256, 16], type=tensor, addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM1, tag=default
+# Output0: grad_output_UL_out, shape=[256, 16], addr=176000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
+
+l1bmm@0 $lln0v $llb0
+nop
+nop
+l2bmd $lb0 $lc0
+mvp/n256i9f $lc0@.0 $d176000
+nop; wait i9f  # Auto-tagged
+mvp/n256i9f $lc0@.1 $d176256
+nop; wait i9f  # Auto-tagged
+
+nop/3
+# --- Operation 46: DL ---
+# Node name: grad_fc2_weight_gemm_DL_0
+# Input0: grad_output_UL_out, shape=[256, 16], type=tensor, addr=176000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
+# Output0: grad_fc2_weight_gemm_DL_0_out, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
+
+mvp/n256i9f $d176000 $lc0@.0
+nop; wait i9f  # Auto-tagged
+mvp/n256i9f $d176256 $lc0@.1
+nop; wait i9f  # Auto-tagged
+l2bmd $lc0 $lb0
+nop
+l1bmm $llb0 $llm0v
+
+nop/3
+# --- Operation 47: DL ---
+# Node name: grad_fc2_weight_gemm_DL_1
+# Input0: fc1_UL_out, shape=[256, 16], type=tensor, addr=96000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
+# Output0: grad_fc2_weight_gemm_DL_1_out, shape=[256, 16], addr=16, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
+
+mvp/n256i9f $d96000 $lc0@.0
+nop; wait i9f  # Auto-tagged
+mvp/n256i9f $d96256 $lc0@.1
+nop; wait i9f  # Auto-tagged
+l2bmd $lc0 $lb0
+nop
+l1bmm $llb0 $llm16v
+
+nop/3
+# --- Operation 48: Gemm ---
+# Node name: grad_fc2_weight_gemm
+# Attr: transA=1
+# Attr: upload=0
+# Attr: var_name=grad_fc2_weight
+# Input0: grad_fc2_weight_gemm_DL_0_out, shape=[256, 16], type=tensor, addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
+# Input1: grad_fc2_weight_gemm_DL_1_out, shape=[256, 16], type=tensor, addr=16, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
+# Output0: grad_fc2_weight_UL_out, shape=[16, 16], addr=184000, layout=((4_L2B:2, 4:8), (8:1, 2_W:1)), len=32, location=DRAM, tag=DRAM
+
+zero $nowrite;gmwrite $lm0v4 $lx0
+gmread $lx0 $lr0v4
+gmread $lx4 $lr16v4
+gmwrite $lm2v4 $lx0
+gmread $lx0 $lr2v4
+gmread $lx4 $lr18v4
+gmwrite $lm16v4 $lx0
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmwrite $aluf $ly0;gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmwrite $aluf $ly4;gbfn $lr0v4 $nowrite
+gmmul $ly $aluf $ln0v4;gbfn $lr16v4 $nowrite
+gmmul $ly $aluf $ln16v4;gbfn $lr2v4 $nowrite
+gmmul $ly $aluf $ln32v4;gbfn $lr18v4 $nowrite
+gmmul $ly $aluf $ln48v4;gmwrite $lm18v4 $lx0
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmwrite $aluf $ly0;gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmwrite $aluf $ly4;gbfn $lr0v4 $nowrite
+gmmul $ly $aluf $ln2v4;gbfn $lr16v4 $nowrite
+gmmul $ly $aluf $ln18v4;gbfn $lr2v4 $nowrite
+gmmul $ly $aluf $ln34v4;gbfn $lr18v4 $nowrite
+gmmul $ly $aluf $ln50v4
+nop
+nop
+l1bmm@0 $lln0v $llb0
+l1bmm@0 $lln16v $llb32
+l1bmm@0 $lln32v $llb64
+l1bmm@0 $lln48v $llb96
+l2bmrffadd $lb0 $lc0
+l2bmrffadd $lb32 $lc64
+l2bmrffadd $lb64 $lc128
+l2bmrffadd $lb96 $lc192
+nop
+mvrffadd/n64i9f $lc0 $p0@0
+nop; wait i9f  # Auto-tagged
+mvrffadd/n64i9f $lc64 $p64@0
+nop; wait i9f  # Auto-tagged
+mvrffadd/n64i9f $lc128 $p128@0
+nop; wait i9f  # Auto-tagged
+mvrffadd/n64i9f $lc192 $p192@0
+nop; wait i9f  # Auto-tagged
+mvp/n64i9f $p0@0 $d184000@0
+nop; wait i9f  # Auto-tagged
+mvp/n64i9f $p64@0 $d184000@1
+nop; wait i9f  # Auto-tagged
+mvp/n64i9f $p128@0 $d184000@2
+nop; wait i9f  # Auto-tagged
+mvp/n64i9f $p192@0 $d184000@3
+nop; wait i9f  # Auto-tagged
+
+nop/3
+# --- Operation 49: DL ---
+# Node name: ReduceSum_15_DL_0
+# Input0: grad_output_UL_out, shape=[256, 16], type=tensor, addr=176000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
+# Output0: ReduceSum_15_DL_0_out, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
+
+mvp/n256i9f $d176000 $lc0@.0
+nop; wait i9f  # Auto-tagged
+mvp/n256i9f $d176256 $lc0@.1
+nop; wait i9f  # Auto-tagged
+l2bmd $lc0 $lb0
+nop
+l1bmm $llb0 $llm0v
+
+nop/3
+# --- Operation 50: ReduceSum ---
+# Node name: ReduceSum_15
+# Attr: axes=[0]
+# Attr: upload=0
+# Attr: var_name=grad_fc2_bias
+# Input0: ReduceSum_15_DL_0_out, shape=[256, 16], type=tensor, addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
+# Output0: grad_fc2_bias_UL_out, shape=[16], addr=192000, layout=((8:1, 2_W:1)), len=8, location=DRAM, tag=DRAM
+
+fvpassa $lm[0,2,0,2] $nowrite
+fvadd $lm[4,6,4,6] $mauf $nowrite
+fvadd $lm[8,10,8,10] $mauf $nowrite
+fvadd $lm[12,14,12,14] $mauf $lr0v
+
+nop
+l1bmm@0 $lr0v $lb0
+nop/3
+l2bmrffadd $lb0 $lc0
+mvrffadd/n64i9f $lc0 $d192000
+nop; wait i9f  # Auto-tagged
+
+nop/3
+# --- Operation 51: DL ---
+# Node name: Gemm_16_DL_0
+# Input0: grad_output_UL_out, shape=[256, 16], type=tensor, addr=176000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
+# Output0: Gemm_16_DL_0_out, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
+
+mvp/n256i9f $d176000 $lc0@.0
+nop; wait i9f  # Auto-tagged
+mvp/n256i9f $d176256 $lc0@.1
+nop; wait i9f  # Auto-tagged
+l2bmd $lc0 $lb0
+nop
+l1bmm $llb0 $llm0v
+
+nop/3
+# --- Operation 52: DL ---
+# Node name: Gemm_16_DL_1
+# Input0: fc2_weight, shape=[16, 16], type=tensor, addr=64000, layout=((4_L2B:2, 4:8), (8:1, 2_W:1)), len=32, location=DRAM, tag=DRAM
+# Output0: Gemm_16_DL_1_out, shape=[16, 16], addr=16, layout=((16:2), (2:1, 4_PE:1, 2_W:1)), len=64, location=LM0, tag=default
+
+mvp/n64i9f $d64000@0 $p0@0
+nop; wait i9f  # Auto-tagged
+mvp/n64i9f $d64000@1 $p64@0
+nop; wait i9f  # Auto-tagged
+mvp/n64i9f $d64000@2 $p128@0
+nop; wait i9f  # Auto-tagged
+mvp/n64i9f $d64000@3 $p192@0
+nop; wait i9f  # Auto-tagged
+mvb/n256i9f $p0@0 $lc0
+nop; wait i9f  # Auto-tagged
+l2bmb $lc0 $lb0
+l2bmb $lc64 $lb32
+l2bmb $lc128 $lb64
+l2bmb $lc192 $lb96
+nop
+l1bmm $llb0 $llm16v
+l1bmm $llb32 $llm32v
+l1bmm $llb64 $llm48v
+l1bmm $llb96 $llm64v
+
+nop/3
+# --- Operation 53: Gemm ---
+# Node name: Gemm_16
+# Attr: alpha=1.0
+# Attr: beta=0.0
+# Attr: transA=0
+# Attr: transB=0
+# Attr: var_name=grad_fc2_input
+# Input0: Gemm_16_DL_0_out, shape=[256, 16], type=tensor, addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
+# Input1: Gemm_16_DL_1_out, shape=[16, 16], type=tensor, addr=16, layout=((16:2), (2:1, 4_PE:1, 2_W:1)), len=64, location=LM0, tag=default
+# Output0: grad_fc2_input, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM1, tag=default
+
+gmwrite $lm16v4 $ly0
+gmwrite $lm32v4 $ly4
+gmread $ly0 $lr16v4
+gmread $ly4 $lr32v4
+gmwrite $lm18v4 $ly0
+gmwrite $lm34v4 $ly4
+gmread $ly0 $lr48v4
+gmread $ly4 $lr64v4
+gmwrite $lm48v4 $ly0
+gmwrite $lm64v4 $ly4
+gmread $ly0 $lr18v4
+gmread $ly4 $lr34v4
+gmwrite $lm50v4 $ly0
+gmwrite $lm66v4 $ly4
+gmread $ly0 $lr50v4
+gmread $ly4 $lr66v4
+gbfn $lr16v4 $nowrite
+gmwrite $aluf $ly0
+gbfn $lr32v4 $nowrite
+gmwrite $aluf $ly4
+gbfn $lm0v4 $nowrite
+gmmul $ly $aluf $ls0v4
+gbfn $lr18v4 $nowrite
+gmwrite $aluf $ly0
+gbfn $lr34v4 $nowrite
+gmwrite $aluf $ly4
+gbfn $lm2v4 $nowrite
+gmfma $ly $aluf $ls0v4 $ln0v4
+gbfn $lr48v4 $nowrite
+gmwrite $aluf $ly0
+gbfn $lr64v4 $nowrite
+gmwrite $aluf $ly4
+gbfn $lm0v4 $nowrite
+gmmul $ly $aluf $ls0v4
+gbfn $lr50v4 $nowrite
+gmwrite $aluf $ly0
+gbfn $lr66v4 $nowrite
+gmwrite $aluf $ly4
+gbfn $lm2v4 $nowrite
+gmfma $ly $aluf $ls0v4 $ln2v4
+
+nop/3
+# --- Operation 54: UL ---
+# Node name: grad_fc2_input_UL
+# Input0: grad_fc2_input, shape=[256, 16], type=tensor, addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM1, tag=default
+# Output0: grad_fc2_input_UL_out, shape=[256, 16], addr=200000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
+
+l1bmm@0 $lln0v $llb0
+nop
+nop
+l2bmd $lb0 $lc0
+mvp/n256i9f $lc0@.0 $d200000
+nop; wait i9f  # Auto-tagged
+mvp/n256i9f $lc0@.1 $d200256
+nop; wait i9f  # Auto-tagged
+
+nop/3
+# --- Operation 55: DL ---
+# Node name: Greater_17_DL_0
+# Input0: fc1_pre_UL_out, shape=[256, 16], type=tensor, addr=88000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
+# Output0: Greater_17_DL_0_out, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
+
+mvp/n256i9f $d88000 $lc0@.0
+nop; wait i9f  # Auto-tagged
+mvp/n256i9f $d88256 $lc0@.1
+nop; wait i9f  # Auto-tagged
+l2bmd $lc0 $lb0
+nop
+l1bmm $llb0 $llm0v
+
+nop/3
+# --- Operation 56: Greater ---
+# Node name: Greater_17
+# Attr: var_name=relu_mask_fc1_pre
+# Input0: Greater_17_DL_0_out, shape=[256, 16], type=tensor, addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
+# Input1: zero_relu_backward_13, shape=N/A, type=initializer, tag=default
+# Output0: mask_relu_backward_13, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM1, tag=default
+
+imm f"1.0" $t
+frelu $lm0v $aluf $ln0v
+frelu $lm8v $t $ln8v
+
+nop/3
+# --- Operation 57: UL ---
+# Node name: relu_mask_fc1_pre_UL
+# Input0: mask_relu_backward_13, shape=[256, 16], type=tensor, addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM1, tag=default
+# Output0: relu_mask_fc1_pre_UL_out, shape=[256, 16], addr=208000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
+
+l1bmm@0 $lln0v $llb0
+nop
+nop
+l2bmd $lb0 $lc0
+mvp/n256i9f $lc0@.0 $d208000
+nop; wait i9f  # Auto-tagged
+mvp/n256i9f $lc0@.1 $d208256
+nop; wait i9f  # Auto-tagged
+
+nop/3
+# --- Operation 58: DL ---
+# Node name: Mul_19_DL_0
+# Input0: grad_fc2_input_UL_out, shape=[256, 16], type=tensor, addr=200000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
+# Output0: Mul_19_DL_0_out, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
+
+mvp/n256i9f $d200000 $lc0@.0
+nop; wait i9f  # Auto-tagged
+mvp/n256i9f $d200256 $lc0@.1
+nop; wait i9f  # Auto-tagged
+l2bmd $lc0 $lb0
+nop
+l1bmm $llb0 $llm0v
+
+nop/3
+# --- Operation 59: DL ---
+# Node name: Mul_19_DL_1
+# Input0: relu_mask_fc1_pre_UL_out, shape=[256, 16], type=tensor, addr=208000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
+# Output0: Mul_19_DL_1_out, shape=[256, 16], addr=16, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
+
+mvp/n256i9f $d208000 $lc0@.0
+nop; wait i9f  # Auto-tagged
+mvp/n256i9f $d208256 $lc0@.1
+nop; wait i9f  # Auto-tagged
+l2bmd $lc0 $lb0
+nop
+l1bmm $llb0 $llm16v
+
+nop/3
+# --- Operation 60: Mul ---
+# Node name: Mul_19
+# Attr: var_name=grad_fc1
+# Input0: Mul_19_DL_0_out, shape=[256, 16], type=tensor, addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
+# Input1: Mul_19_DL_1_out, shape=[256, 16], type=tensor, addr=16, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
+# Output0: grad_fc1, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM1, tag=default
+
+ipassa $lm16v $nowrite
+fvmul  $lm0v $aluf $ln0v
+ipassa $lm24v $nowrite
+fvmul  $lm8v $aluf $ln8v
+
+nop/3
+# --- Operation 61: UL ---
+# Node name: grad_fc1_UL
+# Input0: grad_fc1, shape=[256, 16], type=tensor, addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM1, tag=default
+# Output0: grad_fc1_UL_out, shape=[256, 16], addr=216000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
+
+l1bmm@0 $lln0v $llb0
+nop
+nop
+l2bmd $lb0 $lc0
+mvp/n256i9f $lc0@.0 $d216000
+nop; wait i9f  # Auto-tagged
+mvp/n256i9f $lc0@.1 $d216256
+nop; wait i9f  # Auto-tagged
+
+nop/3
+# --- Operation 62: DL ---
+# Node name: Mul_20_DL_0
+# Input0: grad_fc2_weight_UL_out, shape=[16, 16], type=tensor, addr=184000, layout=((4_L2B:2, 4:8), (8:1, 2_W:1)), len=32, location=DRAM, tag=DRAM
+# Output0: Mul_20_DL_0_out, shape=[16, 16], addr=0, layout=((16:2), (2:1, 4_PE:1, 2_W:1)), len=64, location=LM0, tag=default
+
+mvp/n64i9f $d184000@0 $p0@0
+nop; wait i9f  # Auto-tagged
+mvp/n64i9f $d184000@1 $p64@0
+nop; wait i9f  # Auto-tagged
+mvp/n64i9f $d184000@2 $p128@0
+nop; wait i9f  # Auto-tagged
+mvp/n64i9f $d184000@3 $p192@0
+nop; wait i9f  # Auto-tagged
+mvb/n256i9f $p0@0 $lc0
+nop; wait i9f  # Auto-tagged
+l2bmb $lc0 $lb0
+l2bmb $lc64 $lb32
+l2bmb $lc128 $lb64
+l2bmb $lc192 $lb96
+nop
+l1bmm $llb0 $llm0v
+l1bmm $llb32 $llm16v
+l1bmm $llb64 $llm32v
+l1bmm $llb96 $llm48v
+
+nop/3
+# --- Operation 63: Mul ---
+# Node name: Mul_20
+# Attr: var_name=grad_fc2_weight_scaled
+# Input0: Mul_20_DL_0_out, shape=[16, 16], type=tensor, addr=0, layout=((16:2), (2:1, 4_PE:1, 2_W:1)), len=64, location=LM0, tag=default
+# Input1: lr_sgd_update_17, shape=N/A, type=initializer, tag=default
+# Output0: grad_fc2_weight_scaled, shape=[16, 16], addr=0, layout=((16:2), (2:1, 4_PE:1, 2_W:1)), len=64, location=LM1, tag=default
+
+imm f"0.009999845176935196" $t
+fvmul $aluf $lm0v $ln0v
+fvmul $t $lm8v $ln8v
+fvmul $t $lm16v $ln16v
+fvmul $t $lm24v $ln24v
+fvmul $t $lm32v $ln32v
+fvmul $t $lm40v $ln40v
+fvmul $t $lm48v $ln48v
+fvmul $t $lm56v $ln56v
+
+nop/3
+# --- Operation 64: UL ---
+# Node name: grad_fc2_weight_scaled_UL
+# Input0: grad_fc2_weight_scaled, shape=[16, 16], type=tensor, addr=0, layout=((16:2), (2:1, 4_PE:1, 2_W:1)), len=64, location=LM1, tag=default
+# Output0: grad_fc2_weight_scaled_UL_out, shape=[16, 16], addr=224000, layout=((4_L2B:2, 4:8), (8:1, 2_W:1)), len=32, location=DRAM, tag=DRAM
+
+l1bmm@0 $lln0v $llb0
+l1bmm@0 $lln16v $llb32
+l1bmm@0 $lln32v $llb64
+l1bmm@0 $lln48v $llb96
+nop
+l2bm@0 $lb0 $lc0
+l2bm@0 $lb32 $lc64
+l2bm@0 $lb64 $lc128
+l2bm@0 $lb96 $lc192
+nop
+mvp/n64i9f $lc0@0.0 $d224000@0
+nop; wait i9f  # Auto-tagged
+mvp/n64i9f $lc64@0.0 $d224000@1
+nop; wait i9f  # Auto-tagged
+mvp/n64i9f $lc128@0.0 $d224000@2
+nop; wait i9f  # Auto-tagged
+mvp/n64i9f $lc192@0.0 $d224000@3
+nop; wait i9f  # Auto-tagged
+
+nop/3
+# --- Operation 65: DL ---
+# Node name: Sub_21_DL_0
+# Input0: fc2_weight, shape=[16, 16], type=tensor, addr=64000, layout=((4_L2B:2, 4:8), (8:1, 2_W:1)), len=32, location=DRAM, tag=DRAM
+# Output0: Sub_21_DL_0_out, shape=[16, 16], addr=0, layout=((16:2), (2:1, 4_PE:1, 2_W:1)), len=64, location=LM0, tag=default
+
+mvp/n64i9f $d64000@0 $p0@0
+nop; wait i9f  # Auto-tagged
+mvp/n64i9f $d64000@1 $p64@0
+nop; wait i9f  # Auto-tagged
+mvp/n64i9f $d64000@2 $p128@0
+nop; wait i9f  # Auto-tagged
+mvp/n64i9f $d64000@3 $p192@0
+nop; wait i9f  # Auto-tagged
+mvb/n256i9f $p0@0 $lc0
+nop; wait i9f  # Auto-tagged
+l2bmb $lc0 $lb0
+l2bmb $lc64 $lb32
+l2bmb $lc128 $lb64
+l2bmb $lc192 $lb96
+nop
+l1bmm $llb0 $llm0v
+l1bmm $llb32 $llm16v
+l1bmm $llb64 $llm32v
+l1bmm $llb96 $llm48v
+
+nop/3
+# --- Operation 66: DL ---
+# Node name: Sub_21_DL_1
+# Input0: grad_fc2_weight_scaled_UL_out, shape=[16, 16], type=tensor, addr=224000, layout=((4_L2B:2, 4:8), (8:1, 2_W:1)), len=32, location=DRAM, tag=DRAM
+# Output0: Sub_21_DL_1_out, shape=[16, 16], addr=64, layout=((16:2), (2:1, 4_PE:1, 2_W:1)), len=64, location=LM0, tag=default
+
+mvp/n64i9f $d224000@0 $p0@0
+nop; wait i9f  # Auto-tagged
+mvp/n64i9f $d224000@1 $p64@0
+nop; wait i9f  # Auto-tagged
+mvp/n64i9f $d224000@2 $p128@0
+nop; wait i9f  # Auto-tagged
+mvp/n64i9f $d224000@3 $p192@0
+nop; wait i9f  # Auto-tagged
+mvb/n256i9f $p0@0 $lc0
+nop; wait i9f  # Auto-tagged
+l2bmb $lc0 $lb0
+l2bmb $lc64 $lb32
+l2bmb $lc128 $lb64
+l2bmb $lc192 $lb96
+nop
+l1bmm $llb0 $llm64v
+l1bmm $llb32 $llm80v
+l1bmm $llb64 $llm96v
+l1bmm $llb96 $llm112v
+
+nop/3
+# --- Operation 67: Sub ---
+# Node name: Sub_21
+# Attr: inplace_input=fc2_weight
+# Attr: var_name=updated_fc2_weight
+# Input0: Sub_21_DL_0_out, shape=[16, 16], type=tensor, addr=0, layout=((16:2), (2:1, 4_PE:1, 2_W:1)), len=64, location=LM0, tag=default
+# Input1: Sub_21_DL_1_out, shape=[16, 16], type=tensor, addr=64, layout=((16:2), (2:1, 4_PE:1, 2_W:1)), len=64, location=LM0, tag=default
+# Output0: updated_fc2_weight_compute_out, shape=[16, 16], addr=0, layout=((16:2), (2:1, 4_PE:1, 2_W:1)), len=64, location=LM1, tag=default
+
+ipassa $lm64v $nowrite
+fvadd $lm0v -$aluf $ln0v
+ipassa $lm72v $nowrite
+fvadd $lm8v -$aluf $ln8v
+ipassa $lm80v $nowrite
+fvadd $lm16v -$aluf $ln16v
+ipassa $lm88v $nowrite
+fvadd $lm24v -$aluf $ln24v
+ipassa $lm96v $nowrite
+fvadd $lm32v -$aluf $ln32v
+ipassa $lm104v $nowrite
+fvadd $lm40v -$aluf $ln40v
+ipassa $lm112v $nowrite
+fvadd $lm48v -$aluf $ln48v
+ipassa $lm120v $nowrite
+fvadd $lm56v -$aluf $ln56v
+
+nop/3
+# --- Operation 68: UL ---
+# Node name: updated_fc2_weight_UL
+# Attr: inplace_input=fc2_weight
+# Input0: updated_fc2_weight_compute_out, shape=[16, 16], type=tensor, addr=0, layout=((16:2), (2:1, 4_PE:1, 2_W:1)), len=64, location=LM1, tag=default
+# Output0: updated_fc2_weight_UL_out, shape=[16, 16], addr=64000, layout=((4_L2B:2, 4:8), (8:1, 2_W:1)), len=32, location=DRAM, tag=DRAM
+
+l1bmm@0 $lln0v $llb0
+l1bmm@0 $lln16v $llb32
+l1bmm@0 $lln32v $llb64
+l1bmm@0 $lln48v $llb96
+nop
+l2bm@0 $lb0 $lc0
+l2bm@0 $lb32 $lc64
+l2bm@0 $lb64 $lc128
+l2bm@0 $lb96 $lc192
+nop
+mvp/n64i9f $lc0@0.0 $d64000@0
+nop; wait i9f  # Auto-tagged
+mvp/n64i9f $lc64@0.0 $d64000@1
+nop; wait i9f  # Auto-tagged
+mvp/n64i9f $lc128@0.0 $d64000@2
+nop; wait i9f  # Auto-tagged
+mvp/n64i9f $lc192@0.0 $d64000@3
+nop; wait i9f  # Auto-tagged
+
+nop/3
+# --- Operation 69: DL ---
+# Node name: Mul_22_DL_0
+# Input0: grad_fc2_bias_UL_out, shape=[16], type=tensor, addr=192000, layout=((8:1, 2_W:1)), len=8, location=DRAM, tag=DRAM
+# Output0: Mul_22_DL_0_out, shape=[16], addr=0, layout=((2:1, 4_PE:1, 2_W:1)), len=4, location=LM0, tag=default
+
+mvp/n64i9f $d192000@0 $p0@0
+nop; wait i9f  # Auto-tagged
+mvb/n64i9f $p0@0 $lc0
+nop; wait i9f  # Auto-tagged
+l2bmb $lc0 $lb0
+nop
+l1bmm $llb0 $llm0v
+
+nop/3
+# --- Operation 70: Mul ---
+# Node name: Mul_22
+# Attr: var_name=grad_fc2_bias_scaled
+# Input0: Mul_22_DL_0_out, shape=[16], type=tensor, addr=0, layout=((2:1, 4_PE:1, 2_W:1)), len=4, location=LM0, tag=default
+# Input1: lr_sgd_update_18, shape=N/A, type=initializer, tag=default
+# Output0: grad_fc2_bias_scaled, shape=[16], addr=0, layout=((2:1, 4_PE:1, 2_W:1)), len=4, location=LM1, tag=default
+
+imm f"0.009999845176935196" $t
+fvmul $aluf $lm0v $ln0v
+
+nop/3
+# --- Operation 71: UL ---
+# Node name: grad_fc2_bias_scaled_UL
+# Input0: grad_fc2_bias_scaled, shape=[16], type=tensor, addr=0, layout=((2:1, 4_PE:1, 2_W:1)), len=4, location=LM1, tag=default
+# Output0: grad_fc2_bias_scaled_UL_out, shape=[16], addr=232000, layout=((8:1, 2_W:1)), len=8, location=DRAM, tag=DRAM
+
+l1bmm@0 $ln0v $lb0
+nop
+nop
+nop
+l2bm@0 $lb0 $lc0
+nop
+mvp/n64i9f $lc0@0.0 $d232000@0
+nop; wait i9f  # Auto-tagged
+
+nop/3
+# --- Operation 72: DL ---
+# Node name: Sub_23_DL_0
+# Input0: fc2_bias, shape=[16], type=tensor, addr=72000, layout=((8:1, 2_W:1)), len=8, location=DRAM, tag=DRAM
+# Output0: Sub_23_DL_0_out, shape=[16], addr=0, layout=((2:1, 4_PE:1, 2_W:1)), len=4, location=LM0, tag=default
+
+mvp/n64i9f $d72000@0 $p0@0
+nop; wait i9f  # Auto-tagged
+mvb/n64i9f $p0@0 $lc0
+nop; wait i9f  # Auto-tagged
+l2bmb $lc0 $lb0
+nop
+l1bmm $llb0 $llm0v
+
+nop/3
+# --- Operation 73: DL ---
+# Node name: Sub_23_DL_1
+# Input0: grad_fc2_bias_scaled_UL_out, shape=[16], type=tensor, addr=232000, layout=((8:1, 2_W:1)), len=8, location=DRAM, tag=DRAM
+# Output0: Sub_23_DL_1_out, shape=[16], addr=4, layout=((2:1, 4_PE:1, 2_W:1)), len=4, location=LM0, tag=default
+
+mvp/n64i9f $d232000@0 $p0@0
+nop; wait i9f  # Auto-tagged
+mvb/n64i9f $p0@0 $lc0
+nop; wait i9f  # Auto-tagged
+l2bmb $lc0 $lb0
+nop
+l1bmm $llb0 $llm4v
+
+nop/3
+# --- Operation 74: Sub ---
+# Node name: Sub_23
+# Attr: inplace_input=fc2_bias
+# Attr: var_name=updated_fc2_bias
+# Input0: Sub_23_DL_0_out, shape=[16], type=tensor, addr=0, layout=((2:1, 4_PE:1, 2_W:1)), len=4, location=LM0, tag=default
+# Input1: Sub_23_DL_1_out, shape=[16], type=tensor, addr=4, layout=((2:1, 4_PE:1, 2_W:1)), len=4, location=LM0, tag=default
+# Output0: updated_fc2_bias_compute_out, shape=[16], addr=0, layout=((2:1, 4_PE:1, 2_W:1)), len=4, location=LM1, tag=default
+
+ipassa $lm4v $nowrite
+fvadd $lm0v -$aluf $ln0v
+
+nop/3
+# --- Operation 75: UL ---
+# Node name: updated_fc2_bias_UL
+# Attr: inplace_input=fc2_bias
+# Input0: updated_fc2_bias_compute_out, shape=[16], type=tensor, addr=0, layout=((2:1, 4_PE:1, 2_W:1)), len=4, location=LM1, tag=default
+# Output0: updated_fc2_bias_UL_out, shape=[16], addr=72000, layout=((8:1, 2_W:1)), len=8, location=DRAM, tag=DRAM
+
+l1bmm@0 $ln0v $lb0
+nop
+nop
+nop
+l2bm@0 $lb0 $lc0
+nop
+mvp/n64i9f $lc0@0.0 $d72000@0
+nop; wait i9f  # Auto-tagged
+
+nop/3
+# --- Operation 76: DL ---
+# Node name: grad_fc1_weight_gemm_DL_0
+# Input0: grad_fc1_UL_out, shape=[256, 16], type=tensor, addr=216000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
+# Output0: grad_fc1_weight_gemm_DL_0_out, shape=[256, 16], addr=0, layout=((8_L2B:1, 32:2), (2:1, 4_PE:1, 2_W:1)), len=128, location=LM0, tag=L2B
+
+mvp/n256i9f $d216000 $lc0@.0
+nop; wait i9f  # Auto-tagged
+mvp/n256i9f $d216256 $lc0@.1
+nop; wait i9f  # Auto-tagged
+l2bmb $lc0 $lb0
+l2bmb $lc64 $lb64
+l2bmb $lc128 $lb128
+l2bmb $lc192 $lb192
+l1bmm $llb0 $llm0v
+l1bmm $llb32 $llm16v
+l1bmm $llb64 $llm32v
+l1bmm $llb96 $llm48v
+l1bmm $llb128 $llm64v
+l1bmm $llb160 $llm80v
+l1bmm $llb192 $llm96v
+l1bmm $llb224 $llm112v
+
+nop/3
+# --- Operation 77: DL ---
+# Node name: grad_fc1_weight_gemm_DL_1
+# Input0: input, shape=[256, 1024], type=tensor, addr=0, layout=((4_L2B:2, 64:512), (512:1, 2_W:1)), len=32768, location=DRAM, tag=DRAM
+# Output0: grad_fc1_weight_gemm_DL_1_out, shape=[256, 1024], addr=128, layout=((8_L2B:1, 32:1), (8_MAB:2, 8_L1B:1, 2_MAB:1, 4_PE:1, 2_W:1)), len=64, location=LM0, tag=default
+
+mvp/n16384i9f $d0 $lc0@.0
+nop; wait i9f  # Auto-tagged
+mvp/n16384i9f $d16384 $lc0@.1
+nop; wait i9f  # Auto-tagged
+l2bmd $lc0 $lb0
+l2bmd $lc256 $lb32
+l2bmd $lc512 $lb64
+l2bmd $lc768 $lb96
+l2bmd $lc1024 $lb128
+l2bmd $lc1280 $lb160
+l2bmd $lc1536 $lb192
+l2bmd $lc1792 $lb224
+l2bmd $lc2048 $lb256
+l2bmd $lc2304 $lb288
+l2bmd $lc2560 $lb320
+l2bmd $lc2816 $lb352
+l2bmd $lc3072 $lb384
+l2bmd $lc3328 $lb416
+l2bmd $lc3584 $lb448
+l2bmd $lc3840 $lb480
+l2bmd $lc4096 $lb512
+l2bmd $lc4352 $lb544
+l2bmd $lc4608 $lb576
+l2bmd $lc4864 $lb608
+l2bmd $lc5120 $lb640
+l2bmd $lc5376 $lb672
+l2bmd $lc5632 $lb704
+l2bmd $lc5888 $lb736
+l2bmd $lc6144 $lb768
+l2bmd $lc6400 $lb800
+l2bmd $lc6656 $lb832
+l2bmd $lc6912 $lb864
+l2bmd $lc7168 $lb896
+l2bmd $lc7424 $lb928
+l2bmd $lc7680 $lb960
+l2bmd $lc7936 $lb992
+l2bmd $lc8192 $lb1024
+l2bmd $lc8448 $lb1056
+l2bmd $lc8704 $lb1088
+l2bmd $lc8960 $lb1120
+l2bmd $lc9216 $lb1152
+l2bmd $lc9472 $lb1184
+l2bmd $lc9728 $lb1216
+l2bmd $lc9984 $lb1248
+l2bmd $lc10240 $lb1280
+l2bmd $lc10496 $lb1312
+l2bmd $lc10752 $lb1344
+l2bmd $lc11008 $lb1376
+l2bmd $lc11264 $lb1408
+l2bmd $lc11520 $lb1440
+l2bmd $lc11776 $lb1472
+l2bmd $lc12032 $lb1504
+l2bmd $lc12288 $lb1536
+l2bmd $lc12544 $lb1568
+l2bmd $lc12800 $lb1600
+l2bmd $lc13056 $lb1632
+l2bmd $lc13312 $lb1664
+l2bmd $lc13568 $lb1696
+l2bmd $lc13824 $lb1728
+l2bmd $lc14080 $lb1760
+l2bmd $lc14336 $lb1792
+l2bmd $lc14592 $lb1824
+l2bmd $lc14848 $lb1856
+l2bmd $lc15104 $lb1888
+l2bmd $lc15360 $lb1920
+l2bmd $lc15616 $lb1952
+l2bmd $lc15872 $lb1984
+l2bmd $lc16128 $lb2016
+l1bmd $lb0 $lm128v
+l1bmd $lb256 $lm136v
+l1bmd $lb512 $lm144v
+l1bmd $lb768 $lm152v
+l1bmd $lb1024 $lm160v
+l1bmd $lb1280 $lm168v
+l1bmd $lb1536 $lm176v
+l1bmd $lb1792 $lm184v
+
+nop/3
+# --- Operation 78: Gemm ---
+# Node name: grad_fc1_weight_gemm
+# Attr: transA=1
+# Attr: upload=0
+# Attr: var_name=grad_fc1_weight
+# Input0: grad_fc1_weight_gemm_DL_0_out, shape=[256, 16], type=tensor, addr=0, layout=((8_L2B:1, 32:2), (2:1, 4_PE:1, 2_W:1)), len=128, location=LM0, tag=L2B
+# Input1: grad_fc1_weight_gemm_DL_1_out, shape=[256, 1024], type=tensor, addr=128, layout=((8_L2B:1, 32:1), (8_MAB:2, 8_L1B:1, 2_MAB:1, 4_PE:1, 2_W:1)), len=64, location=LM0, tag=default
+# Output0: grad_fc1_weight_UL_out, shape=[16, 1024], addr=240000, layout=((4_L2B:2, 4:512), (512:1, 2_W:1)), len=2048, location=DRAM, tag=DRAM
+
+gmwrite $lm128v $lx0
+gmwrite $lm136v $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmwrite $aluf $ly0
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmwrite $aluf $ly4
+gmwrite $lm0v4 $lx0
+gmwrite $lm16v4 $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmmul $ly $aluf $ln0v
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmmul $ly $aluf $ln8v
+gmwrite $lm2v4 $lx0
+gmwrite $lm18v4 $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmmul $ly $aluf $ln16v
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmmul $ly $aluf $ln24v
+gmwrite $lm144v $lx0
+gmwrite $lm152v $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmwrite $aluf $ly0
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmwrite $aluf $ly4
+gmwrite $lm32v4 $lx0
+gmwrite $lm48v4 $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln0v $ln0v
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln8v $ln8v
+gmwrite $lm34v4 $lx0
+gmwrite $lm50v4 $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln16v $ln16v
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln24v $ln24v
+gmwrite $lm160v $lx0
+gmwrite $lm168v $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmwrite $aluf $ly0
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmwrite $aluf $ly4
+gmwrite $lm64v4 $lx0
+gmwrite $lm80v4 $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln0v $ln0v
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln8v $ln8v
+gmwrite $lm66v4 $lx0
+gmwrite $lm82v4 $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln16v $ln16v
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln24v $ln24v
+gmwrite $lm176v $lx0
+gmwrite $lm184v $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmwrite $aluf $ly0
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmwrite $aluf $ly4
+gmwrite $lm96v4 $lx0
+gmwrite $lm112v4 $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln0v $ln0v
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln8v $ln8v
+gmwrite $lm98v4 $lx0
+gmwrite $lm114v4 $lx4
+gmread $lx0 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln16v $ln16v
+gmread $lx4 $nowrite
+gbfn $mreadf $nowrite
+gmfma $ly $aluf $ln24v $ln24v
+nop/8
+l1bmd $ln0v $lb0
+l1bmd $ln8v $lb256
+l1bmd $ln16v $lb512
+l1bmd $ln24v $lb768
+nop/4
+l2bmd $lb0 $lc0
+l2bmd $lb32 $lc256
+l2bmd $lb64 $lc512
+l2bmd $lb96 $lc768
+l2bmd $lb128 $lc1024
+l2bmd $lb160 $lc1280
+l2bmd $lb192 $lc1536
+l2bmd $lb224 $lc1792
+l2bmd $lb256 $lc2048
+l2bmd $lb288 $lc2304
+l2bmd $lb320 $lc2560
+l2bmd $lb352 $lc2816
+l2bmd $lb384 $lc3072
+l2bmd $lb416 $lc3328
+l2bmd $lb448 $lc3584
+l2bmd $lb480 $lc3840
+l2bmd $lb512 $lc4096
+l2bmd $lb544 $lc4352
+l2bmd $lb576 $lc4608
+l2bmd $lb608 $lc4864
+l2bmd $lb640 $lc5120
+l2bmd $lb672 $lc5376
+l2bmd $lb704 $lc5632
+l2bmd $lb736 $lc5888
+l2bmd $lb768 $lc6144
+l2bmd $lb800 $lc6400
+l2bmd $lb832 $lc6656
+l2bmd $lb864 $lc6912
+l2bmd $lb896 $lc7168
+l2bmd $lb928 $lc7424
+l2bmd $lb960 $lc7680
+l2bmd $lb992 $lc7936
+nop/4
+mvrffadd/n8192i9f $lc0 $p0@0
+nop; wait i9f  # Auto-tagged
+mvp/n2048i9f $p0@0 $d240000@0
+nop; wait i9f  # Auto-tagged
+mvp/n2048i9f $p2048@0 $d240000@1
+nop; wait i9f  # Auto-tagged
+mvp/n2048i9f $p4096@0 $d240000@2
+nop; wait i9f  # Auto-tagged
+mvp/n2048i9f $p6144@0 $d240000@3
+nop; wait i9f  # Auto-tagged
+
+nop/3
+# --- Operation 79: DL ---
+# Node name: ReduceSum_25_DL_0
+# Input0: grad_fc1_UL_out, shape=[256, 16], type=tensor, addr=216000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
+# Output0: ReduceSum_25_DL_0_out, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
+
+mvp/n256i9f $d216000 $lc0@.0
+nop; wait i9f  # Auto-tagged
+mvp/n256i9f $d216256 $lc0@.1
+nop; wait i9f  # Auto-tagged
+l2bmd $lc0 $lb0
+nop
+l1bmm $llb0 $llm0v
+
+nop/3
+# --- Operation 80: ReduceSum ---
+# Node name: ReduceSum_25
+# Attr: axes=[0]
+# Attr: upload=0
+# Attr: var_name=grad_fc1_bias
+# Input0: ReduceSum_25_DL_0_out, shape=[256, 16], type=tensor, addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
+# Output0: grad_fc1_bias_UL_out, shape=[16], addr=248000, layout=((8:1, 2_W:1)), len=8, location=DRAM, tag=DRAM
+
+fvpassa $lm[0,2,0,2] $nowrite
+fvadd $lm[4,6,4,6] $mauf $nowrite
+fvadd $lm[8,10,8,10] $mauf $nowrite
+fvadd $lm[12,14,12,14] $mauf $lr0v
+
+nop
+l1bmm@0 $lr0v $lb0
+nop/3
+l2bmrffadd $lb0 $lc0
+mvrffadd/n64i9f $lc0 $d248000
+nop; wait i9f  # Auto-tagged
+
+nop/3
+# --- Operation 81: DL ---
+# Node name: Mul_26_DL_0
+# Input0: grad_fc1_weight_UL_out, shape=[16, 1024], type=tensor, addr=240000, layout=((4_L2B:2, 4:512), (512:1, 2_W:1)), len=2048, location=DRAM, tag=DRAM
+# Output0: Mul_26_DL_0_out, shape=[16, 1024], addr=0, layout=((16:1), (8_MAB:2, 8_L1B:1, 2_MAB:1, 4_PE:1, 2_W:1)), len=32, location=LM0, tag=default
+
+mvp/n2048i9f $d240000@0 $p0@0
+nop; wait i9f  # Auto-tagged
+mvp/n2048i9f $d240000@1 $p2048@0
+nop; wait i9f  # Auto-tagged
+mvp/n2048i9f $d240000@2 $p4096@0
+nop; wait i9f  # Auto-tagged
+mvp/n2048i9f $d240000@3 $p6144@0
+nop; wait i9f  # Auto-tagged
+mvb/n8192i9f $p0@0 $lc0
+nop; wait i9f  # Auto-tagged
+l2bmd $lc0 $lb0
+l2bmd $lc256 $lb32
+l2bmd $lc512 $lb64
+l2bmd $lc768 $lb96
+l2bmd $lc1024 $lb128
+l2bmd $lc1280 $lb160
+l2bmd $lc1536 $lb192
+l2bmd $lc1792 $lb224
+l2bmd $lc2048 $lb256
+l2bmd $lc2304 $lb288
+l2bmd $lc2560 $lb320
+l2bmd $lc2816 $lb352
+l2bmd $lc3072 $lb384
+l2bmd $lc3328 $lb416
+l2bmd $lc3584 $lb448
+l2bmd $lc3840 $lb480
+l2bmd $lc4096 $lb512
+l2bmd $lc4352 $lb544
+l2bmd $lc4608 $lb576
+l2bmd $lc4864 $lb608
+l2bmd $lc5120 $lb640
+l2bmd $lc5376 $lb672
+l2bmd $lc5632 $lb704
+l2bmd $lc5888 $lb736
+l2bmd $lc6144 $lb768
+l2bmd $lc6400 $lb800
+l2bmd $lc6656 $lb832
+l2bmd $lc6912 $lb864
+l2bmd $lc7168 $lb896
+l2bmd $lc7424 $lb928
+l2bmd $lc7680 $lb960
+l2bmd $lc7936 $lb992
+l1bmd $lb0 $lm0v
+l1bmd $lb256 $lm8v
+l1bmd $lb512 $lm16v
+l1bmd $lb768 $lm24v
+
+nop/3
+# --- Operation 82: Mul ---
+# Node name: Mul_26
+# Attr: var_name=grad_fc1_weight_scaled
+# Input0: Mul_26_DL_0_out, shape=[16, 1024], type=tensor, addr=0, layout=((16:1), (8_MAB:2, 8_L1B:1, 2_MAB:1, 4_PE:1, 2_W:1)), len=32, location=LM0, tag=default
+# Input1: lr_sgd_update_15, shape=N/A, type=initializer, tag=default
+# Output0: grad_fc1_weight_scaled, shape=[16, 1024], addr=0, layout=((16:1), (8_MAB:2, 8_L1B:1, 2_MAB:1, 4_PE:1, 2_W:1)), len=32, location=LM1, tag=default
+
+imm f"0.009999845176935196" $t
+fvmul $aluf $lm0v $ln0v
+fvmul $t $lm8v $ln8v
+fvmul $t $lm16v $ln16v
+fvmul $t $lm24v $ln24v
+
+nop/3
+# --- Operation 83: UL ---
+# Node name: grad_fc1_weight_scaled_UL
+# Input0: grad_fc1_weight_scaled, shape=[16, 1024], type=tensor, addr=0, layout=((16:1), (8_MAB:2, 8_L1B:1, 2_MAB:1, 4_PE:1, 2_W:1)), len=32, location=LM1, tag=default
+# Output0: grad_fc1_weight_scaled_UL_out, shape=[16, 1024], addr=256000, layout=((4_L2B:2, 4:512), (512:1, 2_W:1)), len=2048, location=DRAM, tag=DRAM
+
+l1bmd $ln0v  $lb0
+l1bmd $ln8v $lb256
+l1bmd $ln16v $lb512
+l1bmd $ln24v $lb768
+nop
+nop
+l2bmd $lb0 $lc0
+l2bmd $lb32 $lc256
+l2bmd $lb64 $lc512
+l2bmd $lb96 $lc768
+l2bmd $lb128 $lc1024
+l2bmd $lb160 $lc1280
+l2bmd $lb192 $lc1536
+l2bmd $lb224 $lc1792
+l2bmd $lb256 $lc2048
+l2bmd $lb288 $lc2304
+l2bmd $lb320 $lc2560
+l2bmd $lb352 $lc2816
+l2bmd $lb384 $lc3072
+l2bmd $lb416 $lc3328
+l2bmd $lb448 $lc3584
+l2bmd $lb480 $lc3840
+l2bmd $lb512 $lc4096
+l2bmd $lb544 $lc4352
+l2bmd $lb576 $lc4608
+l2bmd $lb608 $lc4864
+l2bmd $lb640 $lc5120
+l2bmd $lb672 $lc5376
+l2bmd $lb704 $lc5632
+l2bmd $lb736 $lc5888
+l2bmd $lb768 $lc6144
+l2bmd $lb800 $lc6400
+l2bmd $lb832 $lc6656
+l2bmd $lb864 $lc6912
+l2bmd $lb896 $lc7168
+l2bmd $lb928 $lc7424
+l2bmd $lb960 $lc7680
+l2bmd $lb992 $lc7936
+nop
+mvp/n2048i9f $lc0@0.0 $d256000@0
+nop; wait i9f  # Auto-tagged
+mvp/n2048i9f $lc2048@0.0 $d256000@1
+nop; wait i9f  # Auto-tagged
+mvp/n2048i9f $lc4096@0.0 $d256000@2
+nop; wait i9f  # Auto-tagged
+mvp/n2048i9f $lc6144@0.0 $d256000@3
+nop; wait i9f  # Auto-tagged
+
+nop/3
+# --- Operation 84: DL ---
+# Node name: Sub_27_DL_0
+# Input0: fc1_weight, shape=[16, 1024], type=tensor, addr=48000, layout=((4_L2B:2, 4:512), (512:1, 2_W:1)), len=2048, location=DRAM, tag=DRAM
+# Output0: Sub_27_DL_0_out, shape=[16, 1024], addr=0, layout=((16:1), (8_MAB:2, 8_L1B:1, 2_MAB:1, 4_PE:1, 2_W:1)), len=32, location=LM0, tag=default
+
+mvp/n2048i9f $d48000@0 $p0@0
+nop; wait i9f  # Auto-tagged
+mvp/n2048i9f $d48000@1 $p2048@0
+nop; wait i9f  # Auto-tagged
+mvp/n2048i9f $d48000@2 $p4096@0
+nop; wait i9f  # Auto-tagged
+mvp/n2048i9f $d48000@3 $p6144@0
+nop; wait i9f  # Auto-tagged
+mvb/n8192i9f $p0@0 $lc0
+nop; wait i9f  # Auto-tagged
+l2bmd $lc0 $lb0
+l2bmd $lc256 $lb32
+l2bmd $lc512 $lb64
+l2bmd $lc768 $lb96
+l2bmd $lc1024 $lb128
+l2bmd $lc1280 $lb160
+l2bmd $lc1536 $lb192
+l2bmd $lc1792 $lb224
+l2bmd $lc2048 $lb256
+l2bmd $lc2304 $lb288
+l2bmd $lc2560 $lb320
+l2bmd $lc2816 $lb352
+l2bmd $lc3072 $lb384
+l2bmd $lc3328 $lb416
+l2bmd $lc3584 $lb448
+l2bmd $lc3840 $lb480
+l2bmd $lc4096 $lb512
+l2bmd $lc4352 $lb544
+l2bmd $lc4608 $lb576
+l2bmd $lc4864 $lb608
+l2bmd $lc5120 $lb640
+l2bmd $lc5376 $lb672
+l2bmd $lc5632 $lb704
+l2bmd $lc5888 $lb736
+l2bmd $lc6144 $lb768
+l2bmd $lc6400 $lb800
+l2bmd $lc6656 $lb832
+l2bmd $lc6912 $lb864
+l2bmd $lc7168 $lb896
+l2bmd $lc7424 $lb928
+l2bmd $lc7680 $lb960
+l2bmd $lc7936 $lb992
+l1bmd $lb0 $lm0v
+l1bmd $lb256 $lm8v
+l1bmd $lb512 $lm16v
+l1bmd $lb768 $lm24v
+
+nop/3
+# --- Operation 85: DL ---
+# Node name: Sub_27_DL_1
+# Input0: grad_fc1_weight_scaled_UL_out, shape=[16, 1024], type=tensor, addr=256000, layout=((4_L2B:2, 4:512), (512:1, 2_W:1)), len=2048, location=DRAM, tag=DRAM
+# Output0: Sub_27_DL_1_out, shape=[16, 1024], addr=32, layout=((16:1), (8_MAB:2, 8_L1B:1, 2_MAB:1, 4_PE:1, 2_W:1)), len=32, location=LM0, tag=default
+
+mvp/n2048i9f $d256000@0 $p0@0
+nop; wait i9f  # Auto-tagged
+mvp/n2048i9f $d256000@1 $p2048@0
+nop; wait i9f  # Auto-tagged
+mvp/n2048i9f $d256000@2 $p4096@0
+nop; wait i9f  # Auto-tagged
+mvp/n2048i9f $d256000@3 $p6144@0
+nop; wait i9f  # Auto-tagged
+mvb/n8192i9f $p0@0 $lc0
+nop; wait i9f  # Auto-tagged
+l2bmd $lc0 $lb0
+l2bmd $lc256 $lb32
+l2bmd $lc512 $lb64
+l2bmd $lc768 $lb96
+l2bmd $lc1024 $lb128
+l2bmd $lc1280 $lb160
+l2bmd $lc1536 $lb192
+l2bmd $lc1792 $lb224
+l2bmd $lc2048 $lb256
+l2bmd $lc2304 $lb288
+l2bmd $lc2560 $lb320
+l2bmd $lc2816 $lb352
+l2bmd $lc3072 $lb384
+l2bmd $lc3328 $lb416
+l2bmd $lc3584 $lb448
+l2bmd $lc3840 $lb480
+l2bmd $lc4096 $lb512
+l2bmd $lc4352 $lb544
+l2bmd $lc4608 $lb576
+l2bmd $lc4864 $lb608
+l2bmd $lc5120 $lb640
+l2bmd $lc5376 $lb672
+l2bmd $lc5632 $lb704
+l2bmd $lc5888 $lb736
+l2bmd $lc6144 $lb768
+l2bmd $lc6400 $lb800
+l2bmd $lc6656 $lb832
+l2bmd $lc6912 $lb864
+l2bmd $lc7168 $lb896
+l2bmd $lc7424 $lb928
+l2bmd $lc7680 $lb960
+l2bmd $lc7936 $lb992
+l1bmd $lb0 $lm32v
+l1bmd $lb256 $lm40v
+l1bmd $lb512 $lm48v
+l1bmd $lb768 $lm56v
+
+nop/3
+# --- Operation 86: Sub ---
+# Node name: Sub_27
+# Attr: inplace_input=fc1_weight
+# Attr: var_name=updated_fc1_weight
+# Input0: Sub_27_DL_0_out, shape=[16, 1024], type=tensor, addr=0, layout=((16:1), (8_MAB:2, 8_L1B:1, 2_MAB:1, 4_PE:1, 2_W:1)), len=32, location=LM0, tag=default
+# Input1: Sub_27_DL_1_out, shape=[16, 1024], type=tensor, addr=32, layout=((16:1), (8_MAB:2, 8_L1B:1, 2_MAB:1, 4_PE:1, 2_W:1)), len=32, location=LM0, tag=default
+# Output0: updated_fc1_weight_compute_out, shape=[16, 1024], addr=0, layout=((16:1), (8_MAB:2, 8_L1B:1, 2_MAB:1, 4_PE:1, 2_W:1)), len=32, location=LM1, tag=default
+
+ipassa $lm32v $nowrite
+fvadd $lm0v -$aluf $ln0v
+ipassa $lm40v $nowrite
+fvadd $lm8v -$aluf $ln8v
+ipassa $lm48v $nowrite
+fvadd $lm16v -$aluf $ln16v
+ipassa $lm56v $nowrite
+fvadd $lm24v -$aluf $ln24v
+
+nop/3
+# --- Operation 87: UL ---
+# Node name: updated_fc1_weight_UL
+# Attr: inplace_input=fc1_weight
+# Input0: updated_fc1_weight_compute_out, shape=[16, 1024], type=tensor, addr=0, layout=((16:1), (8_MAB:2, 8_L1B:1, 2_MAB:1, 4_PE:1, 2_W:1)), len=32, location=LM1, tag=default
+# Output0: updated_fc1_weight_UL_out, shape=[16, 1024], addr=48000, layout=((4_L2B:2, 4:512), (512:1, 2_W:1)), len=2048, location=DRAM, tag=DRAM
+
+l1bmd $ln0v  $lb0
+l1bmd $ln8v $lb256
+l1bmd $ln16v $lb512
+l1bmd $ln24v $lb768
+nop
+nop
+l2bmd $lb0 $lc0
+l2bmd $lb32 $lc256
+l2bmd $lb64 $lc512
+l2bmd $lb96 $lc768
+l2bmd $lb128 $lc1024
+l2bmd $lb160 $lc1280
+l2bmd $lb192 $lc1536
+l2bmd $lb224 $lc1792
+l2bmd $lb256 $lc2048
+l2bmd $lb288 $lc2304
+l2bmd $lb320 $lc2560
+l2bmd $lb352 $lc2816
+l2bmd $lb384 $lc3072
+l2bmd $lb416 $lc3328
+l2bmd $lb448 $lc3584
+l2bmd $lb480 $lc3840
+l2bmd $lb512 $lc4096
+l2bmd $lb544 $lc4352
+l2bmd $lb576 $lc4608
+l2bmd $lb608 $lc4864
+l2bmd $lb640 $lc5120
+l2bmd $lb672 $lc5376
+l2bmd $lb704 $lc5632
+l2bmd $lb736 $lc5888
+l2bmd $lb768 $lc6144
+l2bmd $lb800 $lc6400
+l2bmd $lb832 $lc6656
+l2bmd $lb864 $lc6912
+l2bmd $lb896 $lc7168
+l2bmd $lb928 $lc7424
+l2bmd $lb960 $lc7680
+l2bmd $lb992 $lc7936
+nop
+mvp/n2048i9f $lc0@0.0 $d48000@0
+nop; wait i9f  # Auto-tagged
+mvp/n2048i9f $lc2048@0.0 $d48000@1
+nop; wait i9f  # Auto-tagged
+mvp/n2048i9f $lc4096@0.0 $d48000@2
+nop; wait i9f  # Auto-tagged
+mvp/n2048i9f $lc6144@0.0 $d48000@3
+nop; wait i9f  # Auto-tagged
+
+nop/3
+# --- Operation 88: DL ---
+# Node name: Mul_28_DL_0
+# Input0: grad_fc1_bias_UL_out, shape=[16], type=tensor, addr=248000, layout=((8:1, 2_W:1)), len=8, location=DRAM, tag=DRAM
+# Output0: Mul_28_DL_0_out, shape=[16], addr=0, layout=((2:1, 4_PE:1, 2_W:1)), len=4, location=LM0, tag=default
+
+mvp/n64i9f $d248000@0 $p0@0
+nop; wait i9f  # Auto-tagged
+mvb/n64i9f $p0@0 $lc0
+nop; wait i9f  # Auto-tagged
+l2bmb $lc0 $lb0
+nop
+l1bmm $llb0 $llm0v
+
+nop/3
+# --- Operation 89: Mul ---
+# Node name: Mul_28
+# Attr: var_name=grad_fc1_bias_scaled
+# Input0: Mul_28_DL_0_out, shape=[16], type=tensor, addr=0, layout=((2:1, 4_PE:1, 2_W:1)), len=4, location=LM0, tag=default
+# Input1: lr_sgd_update_16, shape=N/A, type=initializer, tag=default
+# Output0: grad_fc1_bias_scaled, shape=[16], addr=0, layout=((2:1, 4_PE:1, 2_W:1)), len=4, location=LM1, tag=default
+
+imm f"0.009999845176935196" $t
+fvmul $aluf $lm0v $ln0v
+
+nop/3
+# --- Operation 90: UL ---
+# Node name: grad_fc1_bias_scaled_UL
+# Input0: grad_fc1_bias_scaled, shape=[16], type=tensor, addr=0, layout=((2:1, 4_PE:1, 2_W:1)), len=4, location=LM1, tag=default
+# Output0: grad_fc1_bias_scaled_UL_out, shape=[16], addr=264000, layout=((8:1, 2_W:1)), len=8, location=DRAM, tag=DRAM
+
+l1bmm@0 $ln0v $lb0
+nop
+nop
+nop
+l2bm@0 $lb0 $lc0
+nop
+mvp/n64i9f $lc0@0.0 $d264000@0
+nop; wait i9f  # Auto-tagged
+
+nop/3
+# --- Operation 91: DL ---
+# Node name: Sub_29_DL_0
+# Input0: fc1_bias, shape=[16], type=tensor, addr=56000, layout=((8:1, 2_W:1)), len=8, location=DRAM, tag=DRAM
+# Output0: Sub_29_DL_0_out, shape=[16], addr=0, layout=((2:1, 4_PE:1, 2_W:1)), len=4, location=LM0, tag=default
+
+mvp/n64i9f $d56000@0 $p0@0
+nop; wait i9f  # Auto-tagged
+mvb/n64i9f $p0@0 $lc0
+nop; wait i9f  # Auto-tagged
+l2bmb $lc0 $lb0
+nop
+l1bmm $llb0 $llm0v
+
+nop/3
+# --- Operation 92: DL ---
+# Node name: Sub_29_DL_1
+# Input0: grad_fc1_bias_scaled_UL_out, shape=[16], type=tensor, addr=264000, layout=((8:1, 2_W:1)), len=8, location=DRAM, tag=DRAM
+# Output0: Sub_29_DL_1_out, shape=[16], addr=4, layout=((2:1, 4_PE:1, 2_W:1)), len=4, location=LM0, tag=default
+
+mvp/n64i9f $d264000@0 $p0@0
+nop; wait i9f  # Auto-tagged
+mvb/n64i9f $p0@0 $lc0
+nop; wait i9f  # Auto-tagged
+l2bmb $lc0 $lb0
+nop
+l1bmm $llb0 $llm4v
+
+nop/3
+# --- Operation 93: Sub ---
+# Node name: Sub_29
+# Attr: inplace_input=fc1_bias
+# Attr: var_name=updated_fc1_bias
+# Input0: Sub_29_DL_0_out, shape=[16], type=tensor, addr=0, layout=((2:1, 4_PE:1, 2_W:1)), len=4, location=LM0, tag=default
+# Input1: Sub_29_DL_1_out, shape=[16], type=tensor, addr=4, layout=((2:1, 4_PE:1, 2_W:1)), len=4, location=LM0, tag=default
+# Output0: updated_fc1_bias_compute_out, shape=[16], addr=0, layout=((2:1, 4_PE:1, 2_W:1)), len=4, location=LM1, tag=default
+
+ipassa $lm4v $nowrite
+fvadd $lm0v -$aluf $ln0v
+
+nop/3
+# --- Operation 94: UL ---
+# Node name: updated_fc1_bias_UL
+# Attr: inplace_input=fc1_bias
+# Input0: updated_fc1_bias_compute_out, shape=[16], type=tensor, addr=0, layout=((2:1, 4_PE:1, 2_W:1)), len=4, location=LM1, tag=default
+# Output0: updated_fc1_bias_UL_out, shape=[16], addr=56000, layout=((8:1, 2_W:1)), len=8, location=DRAM, tag=DRAM
+
+l1bmm@0 $ln0v $lb0
+nop
+nop
+nop
+l2bm@0 $lb0 $lc0
+nop
+mvp/n64i9f $lc0@0.0 $d56000@0
+nop; wait i9f  # Auto-tagged
+
+nop/3
+# --- Operation 95: Identity ---
+# Node name: output_alias
+# Attr: var_name=output
+# Input0: fc2_pre_UL_out, shape=[256, 16], type=tensor
+# Output0: output, shape=[256, 16]
+
+
+nop/3
+# --- Operation 96: Identity ---
+# Node name: grad_fc1_weight_alias
+# Attr: var_name=grad_fc1_weight
+# Input0: grad_fc1_weight_UL_out, shape=[16, 1024], type=tensor
+# Output0: grad_fc1_weight, shape=[16, 1024]
+
+
+nop/3
+# --- Operation 97: Identity ---
+# Node name: grad_fc1_bias_alias
+# Attr: var_name=grad_fc1_bias
+# Input0: grad_fc1_bias_UL_out, shape=[16], type=tensor
+# Output0: grad_fc1_bias, shape=[16]
+
+
+nop/3
+# --- Operation 98: Identity ---
+# Node name: grad_fc2_weight_alias
+# Attr: var_name=grad_fc2_weight
+# Input0: grad_fc2_weight_UL_out, shape=[16, 16], type=tensor
+# Output0: grad_fc2_weight, shape=[16, 16]
+
+
+nop/3
+# --- Operation 99: Identity ---
+# Node name: grad_fc2_bias_alias
+# Attr: var_name=grad_fc2_bias
+# Input0: grad_fc2_bias_UL_out, shape=[16], type=tensor
+# Output0: grad_fc2_bias, shape=[16]
+
+
+nop/3
+# --- Operation 100: Identity ---
+# Node name: updated_fc1_weight_alias
+# Attr: var_name=updated_fc1_weight
+# Input0: updated_fc1_weight_UL_out, shape=[16, 1024], type=tensor
+# Output0: updated_fc1_weight, shape=[16, 1024]
+
+
+nop/3
+# --- Operation 101: Identity ---
+# Node name: updated_fc1_bias_alias
+# Attr: var_name=updated_fc1_bias
+# Input0: updated_fc1_bias_UL_out, shape=[16], type=tensor
+# Output0: updated_fc1_bias, shape=[16]
+
+
+nop/3
+# --- Operation 102: Identity ---
+# Node name: updated_fc2_weight_alias
+# Attr: var_name=updated_fc2_weight
+# Input0: updated_fc2_weight_UL_out, shape=[16, 16], type=tensor
+# Output0: updated_fc2_weight, shape=[16, 16]
+
+
+nop/3
+# --- Operation 103: Identity ---
+# Node name: updated_fc2_bias_alias
+# Attr: var_name=updated_fc2_bias
+# Input0: updated_fc2_bias_UL_out, shape=[16], type=tensor
+# Output0: updated_fc2_bias, shape=[16]
+
+
+# ====== End of VSM Code ======

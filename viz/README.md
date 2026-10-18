@@ -47,7 +47,10 @@ cargo run --release --bin difftest_prog -- ../../problems/39.matmul-trb-pkg-lmdr
 cargo run --release --bin difftest_fuzz -- 10 1 40   # ランダムな命令列で比較
 cargo run --release --bin hazard_check -- ../../problems/*/main.vsm   # ハザード解析をアセンブラと照合
 cargo run --release --bin viz_trace -- ../../problems/3.relu > trace.json   # 可視化用の記録
+cargo run --release --bin bench_sim -- benchmarks/mnist_train_step.vsm 3 --official   # スループット測定
 ```
+
+MNIST 学習 1 step での実測値と測定条件は [docs/simulator-throughput.md](../docs/simulator-throughput.md) にある。
 
 ## ハザード解析の限界
 
