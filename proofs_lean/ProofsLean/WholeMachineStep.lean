@@ -1707,6 +1707,11 @@ theorem parsedMatrixMAUCalculateRows_double_zero_store :
       false .d .mul none false [0, 0, 0, 0] [] = some [0, 0, 0, 0] := by
   decide
 
+def parsedMatrixMAUAccumulatorFormat (precision : ParsedPrecision) : RRN.FloatPrecision :=
+  match precision with
+  | .d => RRN.FloatPrecision.double
+  | _ => RRN.FloatPrecision.single
+
 def executeParsedMatrixMAUCalculationAtMAB (state : State) (coordinate : MABCoordinate)
     (expression : ParsedExpr) (cycle : Fin 4) :
     ProofsLean.StepResult (List Nat × Bool × Bool) := Id.run do
@@ -1731,9 +1736,7 @@ def executeParsedMatrixMAUCalculationAtMAB (state : State) (coordinate : MABCoor
   let accumulatorValues ← match accumulator with
     | none => pure []
     | some source =>
-      let accumulatorFormat := match precision with
-        | .d => RRN.FloatPrecision.double
-        | _ => RRN.FloatPrecision.single
+      let accumulatorFormat := parsedMatrixMAUAccumulatorFormat precision
       match readParsedMatrixMAUSourceAtMAB state coordinate source accumulatorFormat
           (parsedMatrixMAUAccumulatorLanesPerPE precision) cycle with
       | .failure => return .failure
@@ -1751,6 +1754,124 @@ def executeParsedMatrixMAUCalculationAtMAB (state : State) (coordinate : MABCoor
       vectorValues accumulatorValues with
   | none => return .failure
   | some rows => return .ok (rows, vectorInvalid || matrixInvalid, false)
+
+theorem executeParsedMatrixMAUCalculationAtMAB_mul_read_known_never_unknown
+    (state : State) (coordinate : MABCoordinate) (precision : ParsedPrecision)
+    (half : Option Char) (round : Bool) (sideY : Bool) (width : Fin 5)
+    (vectorSource : ParsedOperand) (cycle : Fin 4)
+    (format : RRN.FloatPrecision)
+    (formatLowered : parsedMatrixMAUFloatFormat precision = some format)
+    (vectorReadKnown : readParsedMatrixMAUSourceAtMAB state coordinate vectorSource
+      format (parsedMatrixMAUVectorLanesPerPE precision) cycle ≠ .unknown) :
+    executeParsedMatrixMAUCalculationAtMAB state coordinate
+      { op := .mau precision true .mul half round
+        sources := [.matrix sideY width none, vectorSource]
+        destinations := []
+        flush := none
+        text := "" } cycle ≠ .unknown := by
+  cases vectorRead : readParsedMatrixMAUSourceAtMAB state coordinate vectorSource
+      format (parsedMatrixMAUVectorLanesPerPE precision) cycle with
+  | failure => simp [executeParsedMatrixMAUCalculationAtMAB, formatLowered, vectorRead]
+  | unknown => exact (vectorReadKnown vectorRead).elim
+  | ok vectorValues =>
+      cases calculation : parsedMatrixMAUCalculateRows?
+          (state.matrixRegisters coordinate.group coordinate.l2b coordinate.l1b)
+          coordinate sideY precision .mul half round vectorValues [] with
+      | none => simp [executeParsedMatrixMAUCalculationAtMAB, formatLowered,
+          vectorRead, calculation]
+      | some rows => simp [executeParsedMatrixMAUCalculationAtMAB, formatLowered,
+          vectorRead, calculation]
+
+theorem executeParsedMatrixMAUCalculationAtMAB_add_read_known_never_unknown
+    (state : State) (coordinate : MABCoordinate) (precision : ParsedPrecision)
+    (half : Option Char) (round : Bool) (sideY : Bool) (width : Fin 5)
+    (vectorSource : ParsedOperand) (cycle : Fin 4)
+    (format : RRN.FloatPrecision)
+    (formatLowered : parsedMatrixMAUFloatFormat precision = some format)
+    (vectorReadKnown : readParsedMatrixMAUSourceAtMAB state coordinate vectorSource
+      format (parsedMatrixMAUVectorLanesPerPE precision) cycle ≠ .unknown) :
+    executeParsedMatrixMAUCalculationAtMAB state coordinate
+      { op := .mau precision true .add half round
+        sources := [.matrix sideY width none, vectorSource]
+        destinations := []
+        flush := none
+        text := "" } cycle ≠ .unknown := by
+  cases vectorRead : readParsedMatrixMAUSourceAtMAB state coordinate vectorSource
+      format (parsedMatrixMAUVectorLanesPerPE precision) cycle with
+  | failure => simp [executeParsedMatrixMAUCalculationAtMAB, formatLowered, vectorRead]
+  | unknown => exact (vectorReadKnown vectorRead).elim
+  | ok vectorValues =>
+      cases calculation : parsedMatrixMAUCalculateRows?
+          (state.matrixRegisters coordinate.group coordinate.l2b coordinate.l1b)
+          coordinate sideY precision .add half round vectorValues [] with
+      | none => simp [executeParsedMatrixMAUCalculationAtMAB, formatLowered,
+          vectorRead, calculation]
+      | some rows => simp [executeParsedMatrixMAUCalculationAtMAB, formatLowered,
+          vectorRead, calculation]
+
+theorem executeParsedMatrixMAUCalculationAtMAB_passa_read_known_never_unknown
+    (state : State) (coordinate : MABCoordinate) (precision : ParsedPrecision)
+    (half : Option Char) (round : Bool) (sideY : Bool) (width : Fin 5)
+    (vectorSource : ParsedOperand) (cycle : Fin 4)
+    (format : RRN.FloatPrecision)
+    (formatLowered : parsedMatrixMAUFloatFormat precision = some format)
+    (vectorReadKnown : readParsedMatrixMAUSourceAtMAB state coordinate vectorSource
+      format (parsedMatrixMAUVectorLanesPerPE precision) cycle ≠ .unknown) :
+    executeParsedMatrixMAUCalculationAtMAB state coordinate
+      { op := .mau precision true .passa half round
+        sources := [.matrix sideY width none, vectorSource]
+        destinations := []
+        flush := none
+        text := "" } cycle ≠ .unknown := by
+  cases vectorRead : readParsedMatrixMAUSourceAtMAB state coordinate vectorSource
+      format (parsedMatrixMAUVectorLanesPerPE precision) cycle with
+  | failure => simp [executeParsedMatrixMAUCalculationAtMAB, formatLowered, vectorRead]
+  | unknown => exact (vectorReadKnown vectorRead).elim
+  | ok vectorValues =>
+      cases calculation : parsedMatrixMAUCalculateRows?
+          (state.matrixRegisters coordinate.group coordinate.l2b coordinate.l1b)
+          coordinate sideY precision .passa half round vectorValues [] with
+      | none => simp [executeParsedMatrixMAUCalculationAtMAB, formatLowered,
+          vectorRead, calculation]
+      | some rows => simp [executeParsedMatrixMAUCalculationAtMAB, formatLowered,
+          vectorRead, calculation]
+
+theorem executeParsedMatrixMAUCalculationAtMAB_fma_reads_known_never_unknown
+    (state : State) (coordinate : MABCoordinate) (precision : ParsedPrecision)
+    (half : Option Char) (round : Bool) (sideY : Bool) (width : Fin 5)
+    (vectorSource accumulatorSource : ParsedOperand) (cycle : Fin 4)
+    (format : RRN.FloatPrecision)
+    (formatLowered : parsedMatrixMAUFloatFormat precision = some format)
+    (vectorReadKnown : readParsedMatrixMAUSourceAtMAB state coordinate vectorSource
+      format (parsedMatrixMAUVectorLanesPerPE precision) cycle ≠ .unknown)
+    (accumulatorReadKnown : readParsedMatrixMAUSourceAtMAB state coordinate
+      accumulatorSource (parsedMatrixMAUAccumulatorFormat precision)
+      (parsedMatrixMAUAccumulatorLanesPerPE precision) cycle ≠ .unknown) :
+    executeParsedMatrixMAUCalculationAtMAB state coordinate
+      { op := .mau precision true .fma half round
+        sources := [.matrix sideY width none, vectorSource, accumulatorSource]
+        destinations := []
+        flush := none
+        text := "" } cycle ≠ .unknown := by
+  cases vectorRead : readParsedMatrixMAUSourceAtMAB state coordinate vectorSource
+      format (parsedMatrixMAUVectorLanesPerPE precision) cycle with
+  | failure => simp [executeParsedMatrixMAUCalculationAtMAB, formatLowered, vectorRead]
+  | unknown => exact (vectorReadKnown vectorRead).elim
+  | ok vectorValues =>
+      cases accumulatorRead : readParsedMatrixMAUSourceAtMAB state coordinate
+          accumulatorSource (parsedMatrixMAUAccumulatorFormat precision)
+          (parsedMatrixMAUAccumulatorLanesPerPE precision) cycle with
+      | failure => simp [executeParsedMatrixMAUCalculationAtMAB, formatLowered,
+          vectorRead, accumulatorRead]
+      | unknown => exact (accumulatorReadKnown accumulatorRead).elim
+      | ok accumulatorValues =>
+          cases calculation : parsedMatrixMAUCalculateRows?
+              (state.matrixRegisters coordinate.group coordinate.l2b coordinate.l1b)
+              coordinate sideY precision .fma half round vectorValues accumulatorValues with
+          | none => simp [executeParsedMatrixMAUCalculationAtMAB, formatLowered,
+              vectorRead, accumulatorRead, calculation]
+          | some rows => simp [executeParsedMatrixMAUCalculationAtMAB, formatLowered,
+              vectorRead, accumulatorRead, calculation]
 
 theorem executeParsedMatrixMAUCalculationAtMAB_missing_matrix_operand_fails
     (state : State) (coordinate : MABCoordinate) (cycle : Fin 4)

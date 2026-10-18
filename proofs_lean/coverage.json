@@ -1920,9 +1920,16 @@
           "aggregation_composition_theorem": "ProofsLean.MNCore.readParsedMatrixMAUSourcePEs_resolved_never_unknown",
           "aggregation_equivalence_theorem": "ProofsLean.MNCore.readParsedMatrixMAUSourcePEs_eq_loop",
           "mab_scope": "When the same successful memory/forwarding source-lowering condition holds for each of the four participating PEs, the source-ordered MAB reader cannot return .unknown. Its recursive proof runner is proved equal to the original loop-based accumulation, including failure/unknown short-circuiting and lane order.",
-          "connection_limit": "Connect successful lowered memory/forward inputs to the parsed matrix-MAU expression grammar, then prove the full calculation/execution transition unknown-free under resolved forwarding.",
+          "connection_limit": "Compose these executor theorems with the MAB source no-unknown theorem and prove corresponding conditions from parser-produced expressions; then connect calculation results through PE destination commit and the whole instruction-line transition.",
           "lowering_miss_theorem": "ProofsLean.MNCore.readParsedMatrixMAUSourcePE_lowering_miss_fails",
-          "lowering_miss_behavior": "A memory/forward source that cannot be lowered is a known execution failure, matching Rust compute_mat read_raw_elems errors; .unknown is reserved for unresolved forwarding state."
+          "lowering_miss_behavior": "A memory/forward source that cannot be lowered is a known execution failure, matching Rust compute_mat read_raw_elems errors; .unknown is reserved for unresolved forwarding state.",
+          "calculation_executor_theorems": [
+            "ProofsLean.MNCore.executeParsedMatrixMAUCalculationAtMAB_mul_read_known_never_unknown",
+            "ProofsLean.MNCore.executeParsedMatrixMAUCalculationAtMAB_add_read_known_never_unknown",
+            "ProofsLean.MNCore.executeParsedMatrixMAUCalculationAtMAB_passa_read_known_never_unknown",
+            "ProofsLean.MNCore.executeParsedMatrixMAUCalculationAtMAB_fma_reads_known_never_unknown"
+          ],
+          "calculation_scope": "For each matrix-MAU kind and its parser-arity source list, if the MAB vector read is known and (for fma) the accumulator read is known, the calculation executor cannot return .unknown. The fma accumulator format is explicitly double for D and single otherwise."
         },
         "remaining": "Run command-level Rust differentials for source operands, matrix layout, row masks, PE packing, flags, poison, and forwarding; the arithmetic-only comparison does not establish compute_mat or whole-machine conformance.",
         "source_mask_lowering": "parsedFloatMAUSourceAttrs? accepts masked and unmasked memory operands, then lowers the same mask-free memory input. Rust read_raw_untraced ignores the operand mask during reads.",
