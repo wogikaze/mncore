@@ -3202,6 +3202,44 @@ theorem parsedMatrixMAU_poison_does_not_block_mask_flag_writes
     parsedMatrixMAUDestinationDataPoisonApplies poison (.omr entry mask) = false := by
   rfl
 
+def commitParsedMatrixMAUPEState (coordinates : List (Fin 4)) (currentState : State)
+    (coordinate : MABCoordinate)
+    (noForward : Bool) (files : Fin 4 → PEMemory.IntegerRegisterFiles)
+    (bar0 bar1 : Fin 4 → BitVec 12)
+    (outputs : Fin 4 → Fin 4 → IntegerALU.Bus) (poisoned : Fin 4 → Bool) : State :=
+  List.foldl (fun nextState pe =>
+    let peId := physicalPEId coordinate pe
+    let forwarding : Forwarding.Slots := fun unit cycle =>
+      if noForward then nextState.forwarding peId unit cycle
+      else if unit == .mau then
+        if poisoned cycle then .poison else .known (outputs pe cycle)
+      else nextState.forwarding peId unit cycle
+    let valid : Forwarding.Unit → Fin 4 → Bool := fun unit cycle =>
+      if noForward then nextState.forwardingValid peId unit cycle
+      else if unit == .mau then true
+      else nextState.forwardingValid peId unit cycle
+    { nextState with
+      peRegisters := fun other => if other == peId then files pe else nextState.peRegisters other
+      forwarding := fun other => if other == peId then forwarding else nextState.forwarding other
+      forwardingValid := fun other => if other == peId then valid else nextState.forwardingValid other
+      peContext := fun other => if other == peId then
+        { nextState.peContext other with bar0 := bar0 pe, bar1 := bar1 pe }
+        else nextState.peContext other }) currentState coordinates
+
+theorem commitParsedMatrixMAUPEState_preserves_matrix_registers
+    (coordinates : List (Fin 4)) (currentState : State)
+    (coordinate : MABCoordinate) (noForward : Bool)
+    (files : Fin 4 → PEMemory.IntegerRegisterFiles) (bar0 bar1 : Fin 4 → BitVec 12)
+    (outputs : Fin 4 → Fin 4 → IntegerALU.Bus) (poisoned : Fin 4 → Bool) :
+    (commitParsedMatrixMAUPEState coordinates currentState coordinate noForward files bar0 bar1
+      outputs poisoned).matrixRegisters = currentState.matrixRegisters := by
+  simp only [commitParsedMatrixMAUPEState]
+  induction coordinates generalizing currentState with
+  | nil => rfl
+  | cons pe rest ih =>
+      simp only [List.foldl_cons]
+      rw [ih]
+
 def executeParsedMatrixMAUTransitionAtMAB (readState currentState : State)
     (expression : ParsedExpr) (coordinate : MABCoordinate)
     (noForward hasSingleLineMask : Bool) : ProofsLean.StepResult State := Id.run do
@@ -3269,26 +3307,8 @@ def executeParsedMatrixMAUTransitionAtMAB (readState currentState : State)
             outputs := fun index slot =>
               if index == pe && slot == cycle then output else outputs index slot
             poisoned := fun slot => if slot == cycle then poison else poisoned slot
-  let mut nextState := currentState
-  for pe in List.finRange 4 do
-    let peId := physicalPEId coordinate pe
-    let forwarding : Forwarding.Slots := fun unit cycle =>
-      if noForward then nextState.forwarding peId unit cycle
-      else if unit == .mau then
-        if poisoned cycle then .poison else .known (outputs pe cycle)
-      else nextState.forwarding peId unit cycle
-    let valid : Forwarding.Unit → Fin 4 → Bool := fun unit cycle =>
-      if noForward then nextState.forwardingValid peId unit cycle
-      else if unit == .mau then true
-      else nextState.forwardingValid peId unit cycle
-    nextState := { nextState with
-      peRegisters := fun other => if other == peId then files pe else nextState.peRegisters other
-      forwarding := fun other => if other == peId then forwarding else nextState.forwarding other
-      forwardingValid := fun other => if other == peId then valid else nextState.forwardingValid other
-      peContext := fun other => if other == peId then
-        { nextState.peContext other with bar0 := bar0 pe, bar1 := bar1 pe }
-        else nextState.peContext other }
-  return .ok nextState
+  return .ok (commitParsedMatrixMAUPEState (List.finRange 4) currentState coordinate noForward
+    files bar0 bar1 outputs poisoned)
 
 def executeParsedMatrixMAUAtMABs (readState currentState : State)
     (expression : ParsedExpr) (coordinates : List MABCoordinate)

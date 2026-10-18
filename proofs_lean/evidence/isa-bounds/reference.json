@@ -9,7 +9,7 @@
     },
     {
       "path": "viz/core/src/vsm.rs",
-      "sha256": "cf5a6a7e4d3e393c78181318a8dd800b55dd3e68fe40edcee09c9e094b80413e"
+      "sha256": "3a8e2a7a33a33bc618eb98c7b146ef3e01d4cf71f595bc5c2a5cb41bc55b3c12"
     },
     {
       "path": "viz/core/src/mv.rs",
@@ -21,7 +21,7 @@
     },
     {
       "path": "judge/judge-py/judge.py",
-      "sha256": "4dfe730de218edbe806caec1bf276f8e574e61d72123f368dedc09494ac0088a"
+      "sha256": "83a35ba0f1cdd35378a23b728a6934c3884fbe8fdc4231954c2707cce92bdc16"
     },
     {
       "path": "proofs_lean/scripts/check_isa_parser_bounds.py",

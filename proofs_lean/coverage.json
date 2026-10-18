@@ -1763,6 +1763,12 @@
           "scope": "The matrix-write commit stage preserves PE registers, forwarding payloads and validity, and PE context. Combined with pre-issue source snapshots, this establishes that the matrix-write/PE-destination commit order cannot overwrite one another's state fields.",
           "issue_source": "viz/core/src/issue.rs:check rejects duplicate PE memory-bank writers and multiple mask-register writers in one issue line."
         },
+        "mau_commit_frame": {
+          "lean_executor": "ProofsLean.MNCore.commitParsedMatrixMAUPEState",
+          "theorem": "ProofsLean.MNCore.commitParsedMatrixMAUPEState_preserves_matrix_registers",
+          "scope": "For any PE commit sequence, MAU PE register, forwarding, validity, and BAR context updates preserve the matrix-register function. This proves the commit helper frame; successful whole-transition result extraction and all-MAB composition remain unproved.",
+          "source": "proofs_lean/ProofsLean/WholeMachineStep.lean"
+        },
         "remaining": "Run and preserve command/precision/row-mask/rounding/poison/forwarding differential vectors against the reference executor, then prove the Lean model covers those cases."
       }
     },

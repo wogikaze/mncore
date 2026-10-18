@@ -183,14 +183,14 @@ def validate_parser_source_limits() -> None:
     rust, lean = compact(rust_match.group(1)), compact(lean_match.group(1))
     rust_rules = (
         "Op::Alu{name,..}=>name.inputs(),",
-        "Op::Mau{matrix,kind,..}=>match(matrix,kind){(_,MauKind::Fma)=>3,(_,MauKind::Mul)|(false,MauKind::Add)=>2,_=>1,},",
+        "Op::Mau{matrix,kind,..}=>match(matrix,kind){(_,MauKind::Fma)=>3,(_,MauKind::Mul)|(false,MauKind::Add)|(true,MauKind::Add|MauKind::Passa)=>2,_=>1,},",
         "Op::MatWrite{..}|Op::MatRead{..}=>1,",
         "_=>0,",
     )
     lean_rules = (
         "|.aluname..=>name.inputCount",
         "|.immediate..|.zero|.wait..|.noforward=>0",
-        "|.mau_matrixkind..=>matchmatrix,kindwith|_,.fma=>3|_,.mul=>2|false,.add=>2|_,_=>1",
+        "|.mau_matrixkind..=>matchmatrix,kindwith|_,.fma=>3|_,.mul=>2|false,.add=>2|true,.add|true,.passa=>2|_,_=>1",
         "|.matrixWrite..|.matrixRead..=>1",
         "|.l1bm..|.l2bm.dars=>1",
         "|.l2bm.darw=>0",
