@@ -3896,6 +3896,32 @@ theorem executeParsedSharedBlockExpression_l2bm_never_unknown
   exact executeParsedL2BlockExpression_l2bm_never_unknown
     readState currentState expression operation isL2
 
+theorem executeParsedSharedBlockExpression_resolved_never_unknown
+    (readState currentState : State) (expression : ParsedExpr)
+    (updateTurnaround : Bool) (resolved : forwardingSourceResolved readState) :
+    executeParsedSharedBlockExpression readState currentState expression
+      updateTurnaround ≠ .unknown := by
+  cases hOp : expression.op with
+  | l1bm operation =>
+      cases operation with
+      | mwrite _ | m4write _ | gather _ | reduce _ _ | reduce4 _ _ =>
+          simp only [executeParsedSharedBlockExpression, hOp]
+          exact executeParsedL1PEToL1Expression_resolved_never_unknown
+            readState currentState expression updateTurnaround resolved
+      | pbcast | mbcast | m4bcast | distrib _ =>
+          simp [executeParsedSharedBlockExpression, hOp]
+  | l2bm operation =>
+      exact executeParsedSharedBlockExpression_l2bm_never_unknown
+        readState currentState expression operation updateTurnaround hOp
+  | alu _ _ _ _ => simp [executeParsedSharedBlockExpression, hOp]
+  | immediate _ _ => simp [executeParsedSharedBlockExpression, hOp]
+  | zero => simp [executeParsedSharedBlockExpression, hOp]
+  | mau _ _ _ _ _ => simp [executeParsedSharedBlockExpression, hOp]
+  | matrixWrite _ => simp [executeParsedSharedBlockExpression, hOp]
+  | matrixRead _ => simp [executeParsedSharedBlockExpression, hOp]
+  | «wait» _ => simp [executeParsedSharedBlockExpression, hOp]
+  | noforward => simp [executeParsedSharedBlockExpression, hOp]
+
 def executeParsedSharedBlockProducerList (readState : State) (updateTurnaround : Bool)
     : List ParsedExpr → State → ProofsLean.StepResult State
   | [], state => .ok state
@@ -3951,6 +3977,16 @@ theorem executeParsedSharedBlockProducers_never_unknown
       updateTurnaround ≠ .unknown := by
   exact executeParsedSharedBlockProducerList_never_unknown readState
     updateTurnaround expressions currentState known
+
+theorem executeParsedSharedBlockProducers_resolved_never_unknown
+    (readState currentState : State) (expressions : List ParsedExpr)
+    (updateTurnaround : Bool) (resolved : forwardingSourceResolved readState) :
+    executeParsedSharedBlockProducers readState currentState expressions
+      updateTurnaround ≠ .unknown := by
+  apply executeParsedSharedBlockProducers_never_unknown
+  intro expression _ state
+  exact executeParsedSharedBlockExpression_resolved_never_unknown
+    readState state expression updateTurnaround resolved
 
 /-- Any list consisting solely of L2BM expressions is unknown-free under the
 shared source-order runner, regardless of intermediate memory contents. -/

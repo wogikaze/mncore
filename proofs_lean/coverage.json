@@ -2016,19 +2016,20 @@
         "rust_evidence": "viz/core/src/issue.rs:group,check; viz/core/src/machine.rs:330-360; viz/core/src/blocks.rs:146-365",
         "lean_executor": "ProofsLean.MNCore.executeParsedSharedBlockProducers",
         "supporting_theorem": "ProofsLean.MNCore.executeParsedSharedBlockProducerList_two_success",
-        "scope_limit": "L2BM-only shared block lists are proved unknown-free. PE-to-L1BM mwrite/m4write/gather/reduce/reduce4 executors are separately proved unknown-free for every bank and participating read under forwardingSourceResolved, for arbitrary parsed source operands; these results have not yet been composed through the shared mixed-list executor. Whole-command Rust differential conformance remains open.",
+        "scope_limit": "Arbitrary mixed shared block producer lists are proved unknown-free when forwardingSourceResolved holds for the pre-issue read state. PE-to-L1BM mwrite/m4write/gather/reduce/reduce4 support arbitrary parsed source operands; unsupported dispatches are no-ops and invalid lowering remains a known failure. Whole-command Rust differential conformance remains open.",
         "unknown_composition": {
           "theorem": "ProofsLean.MNCore.executeParsedSharedBlockProducers_never_unknown",
           "scope": "For arbitrary source-ordered mixed L1BM/L2BM producer lists, if each per-expression transition is unknown-free for every intermediate state, the composed producer runner cannot return unknown. Failure results are preserved; success of each expression is not assumed.",
           "l1_expression_theorem": "ProofsLean.MNCore.executeParsedL1PEToL1Expression_resolved_never_unknown",
           "l1_scope": "mwrite/m4write/gather/reduce/reduce4 dispatched PE-to-L1BM expression transitions cannot return .unknown when forwardingSourceResolved holds for the pre-issue read state. Invalid lowering remains a known failure.",
-          "remaining": "Connect the resolved L1 expression theorem and existing L2 theorem to a single per-expression premise for mixed shared producer lists; derive forwardingSourceResolved from the modeled forwarding lifecycle and establish command-level Rust differential conformance."
+          "resolved_mixed_list_theorem": "ProofsLean.MNCore.executeParsedSharedBlockProducers_resolved_never_unknown",
+          "remaining": "Derive forwardingSourceResolved from the modeled forwarding lifecycle and establish command-level Rust differential conformance."
         },
         "l2bm_list_semantics": {
           "expression_theorem": "ProofsLean.MNCore.executeParsedSharedBlockExpression_l2bm_never_unknown",
           "list_theorem": "ProofsLean.MNCore.executeParsedSharedBlockProducerList_l2bm_never_unknown",
           "scope": "Any source-ordered list whose expressions all have ParsedOp.l2bm dispatches through the shared block executor without returning .unknown, for every initial/intermediate State. Each expression may still fail.",
-          "remaining": "Extend unknown-free reasoning to accepted L1BM producer expressions and prove Rust whole-command conformance."
+          "remaining": "Establish command-level Rust whole-command conformance; L1BM expression and mixed-list unknown-freedom are recorded under unknown_composition."
         }
       },
       "malformed_rrn_guard": {
