@@ -43,7 +43,7 @@
       "LM0/LM1 and GRF0/GRF1 accept aligned final addresses at widths 1, 2, and 4; their single-word capacities are respectively 4096 and 512, and the capacity address is rejected.",
       "Each of the four explicit LM0 cycle addresses accepts 4095 and rejects 4096; madpe values 0 through 3 are accepted and 4 is rejected.",
       "All 64 L1B set address/immode pairs in 0..7 are accepted, and address 8 and immode 8 are rejected; `l2bm@<l1b>` accepts 0..7 and rejects 8. Base-address register writes accept widths 1 and 2 but reject width 4.",
-      "For every documented MV grammar in Sections 3.5.8.2–3.5.8.25, generated zero-address probes accept sizes 64 and 32704 and reject 32768. The simple operand combinations are sampled evidence, not a proof of all accepted operands. The separate mvp probes show size zero is accepted, size one is rejected, and the size-field overflow at 32768 is rejected.",
+      "For every documented MV grammar in Sections 3.5.8.2\u20133.5.8.25, generated zero-address probes accept sizes 64 and 32704 and reject 32768. The simple operand combinations are sampled evidence, not a proof of all accepted operands. The separate mvp probes show size zero is accepted, size one is rejected, and the size-field overflow at 32768 is rejected.",
       "L1BM width-2 addresses require 4-word alignment and width-4 addresses require 8-word alignment, within the 8192-long-word capacity. The L2BM transfer source accepts 16-aligned addresses through 32752 and rejects 32760 (alignment) and 32768 (range).",
       "Wait tags 1 through 255 are accepted; 0 and 256 are rejected.",
       "Matrix rows 0..15 were checked using gmread. The tested matrix operand widths are instruction-specific: gmread/gmwrite accept width 2 and reject width 4, while gmmul accepts widths 2 and 4.",
@@ -693,7 +693,7 @@
       "sha256": "cd13b07b3e94dceaddb4a8fea1b3bf7728dac5ed301c5c247a7324c495383866",
       "theorem": "ProofsLean.MNCore.Issue.ParsedRrn.inFiniteEnvelope_finite",
       "scope": "Finite carrier for the eight reduction operation codes and RRN precision characters below Unicode scalar 128; `ParsedRrn.precision` carries this bound in its type.",
-      "evidence": "`ParsedRrn.precision` is a subtype with the `<128` proof. `parseParsedMvRrn?` constructs that subtype only after checking the bound and recognizes the documented precision/opcode combinations; finiteCode maps it to `Fin 128 × Fin 8`.",
+      "evidence": "`ParsedRrn.precision` is a subtype with the `<128` proof. `parseParsedMvRrn?` constructs that subtype only after checking the bound and recognizes the documented precision/opcode combinations; finiteCode maps it to `Fin 128 \u00d7 Fin 8`.",
       "missing": "Assembler acceptance correspondence for the complete L1/L2 RRN spelling inventory and source-line parser coverage remains unproved."
     },
     {
@@ -2015,7 +2015,7 @@
         "mau_and_matrix_write_scope": "The MAU producer/write stage composes without unknown when the producer is known and forwarding sources are resolved, including nonempty matrix-write producer lists. The empty-filter theorem remains a weaker special case.",
         "whole_line_no_unknown_composition": {
           "theorem": "ProofsLean.MNCore.executeIntegerProducerInstructionLine_pe_never_unknown_of_stages",
-          "behavior": "For a top-level accepted PE instruction line with supported producers, no unsupported Rust ALU, and completed waits, the ordered whole-line transition cannot return .unknown when each selected producer stage is itself known for every possible preceding state. The shared-block stage condition is derived directly from forwardingSourceResolved using the existing per-expression and source-order composition proofs. The 4096-PE prefix is itself composed from a per-PE unknown-free premise using source-order induction. The float-ReLU issue stage is reduced from a whole-stage condition to a per-selected-expression, per-PE, per-intermediate-state condition and composed over 4096 PEs. The MSL/MSR stage is now reduced to per-selected-expression/per-PE/per-intermediate-state conditions and composed across its 4096-PE traversal. The block-float stage is reduced to per-selected-expression/per-MAB/per-intermediate-state conditions and composed over the complete MAB coordinate list. The matrix-MAU/write command stage now derives its matrix-write/MAB traversal premise from resolved forwarding and retains only matrix-MAU producer knownness as an explicit stage condition. The matrix-MAU producer premise is further reduced to each selected expression’s transition at each MAB and every intermediate state; the MAB traversal and producer filter are composed using existing generic theorems. The matrix-MAU MAB condition now sits at the cycle calculation boundary; the destination/forwarding write loop and the MAB state commit are discharged by composition. The remaining matrix-MAU cycle-calculation premise is characterized by one of mul/add/passa/fma, a recognized precision format, and lowered vector sources (plus the accumulator source for fma); resolved forwarding then proves the calculation known. The per-PE forwarding update is independently proved unknown-free because it only supplies supported issue summaries to the reference update function.",
+          "behavior": "For a top-level accepted PE instruction line with supported producers, no unsupported Rust ALU, and completed waits, the ordered whole-line transition cannot return .unknown when each selected producer stage is itself known for every possible preceding state. The shared-block stage condition is derived directly from forwardingSourceResolved using the existing per-expression and source-order composition proofs. The 4096-PE prefix is itself composed from a per-PE unknown-free premise using source-order induction. The float-ReLU issue stage is reduced from a whole-stage condition to a per-selected-expression, per-PE, per-intermediate-state condition and composed over 4096 PEs. The MSL/MSR stage is now reduced to per-selected-expression/per-PE/per-intermediate-state conditions and composed across its 4096-PE traversal. The block-float stage is reduced to per-selected-expression/per-MAB/per-intermediate-state conditions and composed over the complete MAB coordinate list. The matrix-MAU/write command stage now derives its matrix-write/MAB traversal premise from resolved forwarding and retains only matrix-MAU producer knownness as an explicit stage condition. The matrix-MAU producer premise is further reduced to each selected expression\u2019s transition at each MAB and every intermediate state; the MAB traversal and producer filter are composed using existing generic theorems. The matrix-MAU MAB condition now sits at the cycle calculation boundary; the destination/forwarding write loop and the MAB state commit are discharged by composition. The remaining matrix-MAU cycle-calculation premise is characterized by one of mul/add/passa/fma, a recognized precision format, and lowered vector sources (plus the accumulator source for fma); resolved forwarding then proves the calculation known. The per-PE forwarding update is independently proved unknown-free because it only supplies supported issue summaries to the reference update function.",
           "composed_stages": [
             "PE producers",
             "MSL/MSR",
@@ -2025,7 +2025,7 @@
             "shared-block producers",
             "L1-to-PE producers"
           ],
-          "scope_limit": "The matrix-MAU calculation condition is now an explicit format/source-lowering predicate per selected expression/MAB/cycle plus resolved forwarding. A matrix-read expression's four-cycle transition is known when operand lowering and flush selection resolve at each cycle. Integer ALU four-cycle execution is known from per-cycle lowering and source-read knownness. For a single zero/immediate memory destination, lowering is proved to select memory sources, so its reads are known; lifting this property through the full destination list and resolving all flush selections remains open. Composing producer expressions into the PE line, float-MAU cycles, full Rust/Lean equivalence, and other line forms also remain open.",
+          "scope_limit": "The matrix-MAU calculation condition is now an explicit format/source-lowering predicate per selected expression/MAB/cycle plus resolved forwarding. A matrix-read expression four-cycle transition is known when operand lowering and flush selection resolve at each cycle. Integer ALU four-cycle execution is known from per-cycle lowering and source-read knownness. For zero/immediate producers, the public destination lowerer proves every memory target has known source reads; only resolving all flush selections remains explicit. Composing producer expressions into the PE line, float-MAU cycles, full Rust/Lean equivalence, and other line forms also remain open.",
           "derived_premises": [
             "ProofsLean.MNCore.executeParsedSharedBlockProducers_resolved_never_unknown",
             "ProofsLean.MNCore.executeParsedMatrixMAUAndWrites_resolved_never_unknown",
@@ -2040,6 +2040,9 @@
             "ProofsLean.MNCore.PEMemory.prepareParsedMaskedConstantWrites_never_unknown_of_reads",
             "ProofsLean.MNCore.PEMemory.ParsedExpr.toDirectMaskedIntegerAccessesInLine_constant_sources_are_memory",
             "ProofsLean.MNCore.PEMemory.ParsedExpr.toDirectMaskedIntegerAccessesInLine_constant_reads_known",
+            "ProofsLean.MNCore.PEMemory.ParsedExpr.toDirectMaskedConstantDestination_memory_reads_known",
+            "ProofsLean.MNCore.PEMemory.ParsedExpr.toDirectMaskedConstantDestinations_reads_known",
+            "ProofsLean.MNCore.PEMemory.ParsedExpr.toDirectMaskedConstantWrites_reads_known",
             "ProofsLean.MNCore.PEMemory.prepareParsedIntegerALUExprCycle_constant_never_unknown_of_resolved"
           ],
           "theorems": [
@@ -2066,6 +2069,9 @@
             "ProofsLean.MNCore.PEMemory.parsedIntegerALUExprFourCycleStep_never_unknown",
             "ProofsLean.MNCore.PEMemory.prepareParsedIntegerALUExprCycle_alu_never_unknown_of_resolved",
             "ProofsLean.MNCore.PEMemory.parsedIntegerALUExprFourCycleStep_alu_never_unknown_of_resolved",
+            "ProofsLean.MNCore.PEMemory.ParsedExpr.toDirectMaskedConstantDestination_memory_reads_known",
+            "ProofsLean.MNCore.PEMemory.ParsedExpr.toDirectMaskedConstantDestinations_reads_known",
+            "ProofsLean.MNCore.PEMemory.ParsedExpr.toDirectMaskedConstantWrites_reads_known",
             "ProofsLean.MNCore.PEMemory.parsedIntegerALUExprFourCycleStep_constant_never_unknown_of_resolved"
           ]
         }

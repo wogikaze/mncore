@@ -1066,6 +1066,40 @@ inductive ParsedConstantDestination where
   | maskRegister (entry : Fin 15)
   | noWrite
 
+def ParsedExpr.toDirectMaskedConstantDestination? (expression : ParsedExpr)
+    (registers : ProofsLean.MNCore.Masks.RegisterFile)
+    (directive : ParsedMaskDirective) (hasSingleLineMask : Bool)
+    (group : Fin 4) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
+    (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
+    (destination : ParsedOperand) : Option ParsedConstantDestination :=
+  match destination with
+  | .nowrite => some .noWrite
+  | .omr _ _ => do
+      let entry ← ParsedOperand.toMaskRegisterEntry? destination
+      let _ ← ParsedOperand.resolveOmrWriteSelection? destination registers cycle
+        directive hasSingleLineMask
+      some (.maskRegister entry)
+  | _ => do
+      let oneDestination := { expression with destinations := [destination] }
+      let lowered ← ParsedExpr.toDirectMaskedIntegerAccessesInLine? oneDestination
+        registers directive hasSingleLineMask group l2b l1b mab pe cycle bar0 bar1 tWord
+      some (.memory lowered)
+
+/-- Lower all zero/imm/immu destinations in source order. -/
+def ParsedExpr.toDirectMaskedConstantDestinations? (expression : ParsedExpr)
+    (registers : ProofsLean.MNCore.Masks.RegisterFile)
+    (directive : ParsedMaskDirective) (hasSingleLineMask : Bool)
+    (group : Fin 4) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
+    (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
+    List ParsedOperand → Option (List ParsedConstantDestination)
+  | [] => some []
+  | destination :: rest => do
+      let first ← ParsedExpr.toDirectMaskedConstantDestination? expression registers directive
+        hasSingleLineMask group l2b l1b mab pe cycle bar0 bar1 tWord destination
+      let tail ← ParsedExpr.toDirectMaskedConstantDestinations? expression registers directive
+        hasSingleLineMask group l2b l1b mab pe cycle bar0 bar1 tWord rest
+      some (first :: tail)
+
 /-- Lower each destination of zero/imm/immu independently, as the Rust executor
 writes the same computed bus to every destination in source order. -/
 def ParsedExpr.toDirectMaskedConstantWrites? (expression : ParsedExpr)
@@ -1075,20 +1109,9 @@ def ParsedExpr.toDirectMaskedConstantWrites? (expression : ParsedExpr)
     (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
     Option (List ParsedConstantDestination) :=
   match expression.op with
-  | .zero | .immediate .. => do
-      expression.destinations.mapM fun destination =>
-        match destination with
-        | .nowrite => some .noWrite
-        | .omr _ _ => do
-            let entry ← ParsedOperand.toMaskRegisterEntry? destination
-            let _ ← ParsedOperand.resolveOmrWriteSelection? destination registers cycle
-              directive hasSingleLineMask
-            some (.maskRegister entry)
-        | _ => do
-            let oneDestination := { expression with destinations := [destination] }
-            let lowered ← ParsedExpr.toDirectMaskedIntegerAccessesInLine? oneDestination
-              registers directive hasSingleLineMask group l2b l1b mab pe cycle bar0 bar1 tWord
-            some (.memory lowered)
+  | .zero | .immediate .. =>
+      ParsedExpr.toDirectMaskedConstantDestinations? expression registers directive
+        hasSingleLineMask group l2b l1b mab pe cycle bar0 bar1 tWord expression.destinations
   | _ => none
 
 theorem ParsedExpr.toDirectMaskedIntegerAccessesInLine_constant_sources_are_memory
@@ -1398,6 +1421,120 @@ theorem ParsedExpr.toDirectMaskedIntegerAccessesInLine_constant_reads_known
       expression registers directive hasSingleLineMask group l2b l1b mab pe cycle bar0 bar1
       tWord isConstant accesses lowered
   simp [sourceX, sourceY, ParsedIntegerInput.read]
+
+theorem ParsedExpr.toDirectMaskedConstantDestination_memory_reads_known
+    (expression : ParsedExpr) (files : IntegerRegisterFiles)
+    (registers : ProofsLean.MNCore.Masks.RegisterFile)
+    (directive : ParsedMaskDirective) (hasSingleLineMask : Bool)
+    (group : Fin 4) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
+    (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
+    (isConstant : expression.op = .zero ∨
+      ∃ payload sparse, expression.op = .immediate payload sparse)
+    (destination : ParsedOperand) (accesses : ParsedMaskedIntegerAccesses)
+    (lowered : ParsedExpr.toDirectMaskedConstantDestination? expression registers
+      directive hasSingleLineMask group l2b l1b mab pe cycle bar0 bar1 tWord destination =
+        some (.memory accesses)) :
+    ParsedIntegerInput.read files accesses.sourceX ≠ .unknown ∧
+      ParsedIntegerInput.read files accesses.sourceY ≠ .unknown := by
+  let oneDestination := { expression with destinations := [destination] }
+  have directLowered : ParsedExpr.toDirectMaskedIntegerAccessesInLine? oneDestination
+      registers directive hasSingleLineMask group l2b l1b mab pe cycle bar0 bar1 tWord =
+        some accesses := by
+    cases destination
+    all_goals
+      try simp [ParsedExpr.toDirectMaskedConstantDestination?, Option.bind_eq_some_iff]
+        at lowered
+      all_goals
+        cases direct : ParsedExpr.toDirectMaskedIntegerAccessesInLine? oneDestination
+            registers directive hasSingleLineMask group l2b l1b mab pe cycle bar0 bar1 tWord with
+        | none => simp [oneDestination, direct,
+            ParsedExpr.toDirectMaskedConstantDestination?] at lowered
+        | some directAccess =>
+            have memoryEq : ParsedConstantDestination.memory directAccess =
+                ParsedConstantDestination.memory accesses := by
+              simpa [oneDestination, direct, ParsedExpr.toDirectMaskedConstantDestination?]
+                using lowered
+            injection memoryEq with accessEq
+            cases accessEq
+            simpa [oneDestination] using direct
+  exact ParsedExpr.toDirectMaskedIntegerAccessesInLine_constant_reads_known oneDestination
+    files registers directive hasSingleLineMask group l2b l1b mab pe cycle bar0 bar1 tWord
+    (by simpa [oneDestination] using isConstant) accesses (by simpa [oneDestination] using directLowered)
+
+theorem ParsedExpr.toDirectMaskedConstantDestinations_reads_known
+    (expression : ParsedExpr) (files : IntegerRegisterFiles)
+    (registers : ProofsLean.MNCore.Masks.RegisterFile)
+    (directive : ParsedMaskDirective) (hasSingleLineMask : Bool)
+    (group : Fin 4) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
+    (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
+    (destinations : List ParsedOperand)
+    (isConstant : expression.op = .zero ∨
+      ∃ payload sparse, expression.op = .immediate payload sparse)
+    (targets : List ParsedConstantDestination)
+    (lowered : ParsedExpr.toDirectMaskedConstantDestinations? expression registers
+      directive hasSingleLineMask group l2b l1b mab pe cycle bar0 bar1 tWord destinations =
+        some targets) :
+    ∀ target, target ∈ targets → ∀ accesses, target = .memory accesses →
+      ParsedIntegerInput.read files accesses.sourceX ≠ .unknown ∧
+      ParsedIntegerInput.read files accesses.sourceY ≠ .unknown := by
+  induction destinations generalizing targets with
+  | nil =>
+      simp [ParsedExpr.toDirectMaskedConstantDestinations?] at lowered
+      subst targets
+      simp
+  | cons destination rest ih =>
+      cases firstReady : ParsedExpr.toDirectMaskedConstantDestination? expression
+          registers directive hasSingleLineMask group l2b l1b mab pe cycle
+          bar0 bar1 tWord destination with
+      | none => simp [ParsedExpr.toDirectMaskedConstantDestinations?, firstReady] at lowered
+      | some first =>
+          cases tailReady : ParsedExpr.toDirectMaskedConstantDestinations? expression
+              registers directive hasSingleLineMask group l2b l1b mab pe cycle
+              bar0 bar1 tWord rest with
+          | none => simp [ParsedExpr.toDirectMaskedConstantDestinations?, firstReady, tailReady]
+              at lowered
+          | some tail =>
+              have targetsEq : first :: tail = targets := by
+                simpa [ParsedExpr.toDirectMaskedConstantDestinations?, firstReady, tailReady]
+                  using lowered
+              subst targets
+              intro target member accesses isMemory
+              simp only [List.mem_cons] at member
+              rcases member with same | member
+              · have firstIsMemory : first = .memory accesses := by
+                  simpa [same] using isMemory
+                exact ParsedExpr.toDirectMaskedConstantDestination_memory_reads_known expression
+                  files registers directive hasSingleLineMask group l2b l1b mab pe cycle
+                  bar0 bar1 tWord isConstant destination accesses (by
+                    rw [firstReady]
+                    exact congrArg some firstIsMemory)
+              · exact ih tail tailReady target member accesses isMemory
+
+theorem ParsedExpr.toDirectMaskedConstantWrites_reads_known
+    (expression : ParsedExpr) (files : IntegerRegisterFiles)
+    (registers : ProofsLean.MNCore.Masks.RegisterFile)
+    (directive : ParsedMaskDirective) (hasSingleLineMask : Bool)
+    (group : Fin 4) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
+    (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
+    (isConstant : expression.op = .zero ∨
+      ∃ payload sparse, expression.op = .immediate payload sparse)
+    (targets : List ParsedConstantDestination)
+    (lowered : ParsedExpr.toDirectMaskedConstantWrites? expression registers directive
+      hasSingleLineMask group l2b l1b mab pe cycle bar0 bar1 tWord = some targets) :
+    ∀ target, target ∈ targets → ∀ accesses, target = .memory accesses →
+      ParsedIntegerInput.read files accesses.sourceX ≠ .unknown ∧
+      ParsedIntegerInput.read files accesses.sourceY ≠ .unknown := by
+  rcases isConstant with isZero | ⟨payload, sparse, isImmediate⟩
+  · have destinationLowered := by
+      simpa [ParsedExpr.toDirectMaskedConstantWrites?, isZero] using lowered
+    exact ParsedExpr.toDirectMaskedConstantDestinations_reads_known expression files registers
+      directive hasSingleLineMask group l2b l1b mab pe cycle bar0 bar1 tWord
+      expression.destinations (Or.inl isZero) targets destinationLowered
+  · have destinationLowered := by
+      simpa [ParsedExpr.toDirectMaskedConstantWrites?, isImmediate] using lowered
+    exact ParsedExpr.toDirectMaskedConstantDestinations_reads_known expression files registers
+      directive hasSingleLineMask group l2b l1b mab pe cycle bar0 bar1 tWord
+      expression.destinations (Or.inr ⟨payload, sparse, isImmediate⟩) targets destinationLowered
 
 def ParsedIntegerInput.readWithForwarding (files : IntegerRegisterFiles)
     (slots : ProofsLean.MNCore.Forwarding.Slots) (cycle : Fin 4)
@@ -4739,19 +4876,19 @@ theorem prepareParsedIntegerALUExprCycle_constant_never_unknown_of_resolved
       control.directive hasSingleLineMask control.context.group control.context.l2b
       control.context.l1b control.context.mab control.context.pe cycle
       control.context.bar0 control.context.bar1 control.context.tWord = some targets)
-    (targetReadsKnown : ∀ target, target ∈ targets → ∀ accesses,
-      target = .memory accesses →
-        ParsedIntegerInput.read files accesses.sourceX ≠ .unknown ∧
-        ParsedIntegerInput.read files accesses.sourceY ≠ .unknown)
     (flushSelection : Option PEWordSelection)
     (flushResolved : resolveFlushSelection? expression.flush files.maskRegisters cycle =
       some flushSelection) :
     prepareParsedIntegerALUExprCycle files oldSlots nextSlots expression control
       hasSingleLineMask noForward reduced cycle ≠ .unknown := by
+  have targetReadsKnown := ParsedExpr.toDirectMaskedConstantWrites_reads_known expression files
+    files.maskRegisters control.directive hasSingleLineMask control.context.group
+    control.context.l2b control.context.l1b control.context.mab control.context.pe cycle
+    control.context.bar0 control.context.bar1 control.context.tWord isConstant targets lowered
+  have targetsKnown := prepareParsedMaskedConstantWrites_never_unknown_of_reads
+    files cycle targets targetReadsKnown
   rcases isConstant with isZero | ⟨payload, sparse, isImmediate⟩
-  · have targetsKnown := prepareParsedMaskedConstantWrites_never_unknown_of_reads
-      files cycle targets targetReadsKnown
-    unfold prepareParsedIntegerALUExprCycle
+  · unfold prepareParsedIntegerALUExprCycle
     simp only [isZero, lowered]
     cases prepared : prepareParsedMaskedConstantWrites files cycle targets with
     | failure => simp [prepared]
@@ -4760,9 +4897,7 @@ theorem prepareParsedIntegerALUExprCycle_constant_never_unknown_of_resolved
         rw [flushResolved]
         cases noForward <;>
           simp [updateParsedIntegerALUForwardingCycle, ParsedOp.executionRequest]
-  · have targetsKnown := prepareParsedMaskedConstantWrites_never_unknown_of_reads
-      files cycle targets targetReadsKnown
-    unfold prepareParsedIntegerALUExprCycle
+  · unfold prepareParsedIntegerALUExprCycle
     simp only [isImmediate, lowered]
     cases prepared : prepareParsedMaskedConstantWrites files cycle targets with
     | failure => simp [prepared]
@@ -4909,9 +5044,6 @@ theorem parsedIntegerALUExprFourCycleStep_constant_never_unknown_of_resolved
           control.directive hasSingleLineMask control.context.group control.context.l2b
           control.context.l1b control.context.mab control.context.pe cycle
           control.context.bar0 control.context.bar1 control.context.tWord = some targets ∧
-        (∀ target, target ∈ targets → ∀ accesses, target = .memory accesses →
-          ParsedIntegerInput.read files accesses.sourceX ≠ .unknown ∧
-          ParsedIntegerInput.read files accesses.sourceY ≠ .unknown) ∧
         ∃ flushSelection,
           resolveFlushSelection? expression.flush files.maskRegisters cycle =
             some flushSelection) :
@@ -4919,11 +5051,11 @@ theorem parsedIntegerALUExprFourCycleStep_constant_never_unknown_of_resolved
       hasSingleLineMask noForward reduced ≠ .unknown := by
   apply parsedIntegerALUExprFourCycleStep_never_unknown
   intro cycle member outputSlots
-  obtain ⟨targets, lowered, targetReadsKnown, flushSelection, flushResolved⟩ :=
+  obtain ⟨targets, lowered, flushSelection, flushResolved⟩ :=
     resolved cycle member
   exact prepareParsedIntegerALUExprCycle_constant_never_unknown_of_resolved files slots
     outputSlots expression control hasSingleLineMask noForward reduced cycle isConstant targets
-    lowered targetReadsKnown flushSelection flushResolved
+    lowered flushSelection flushResolved
 
 /-- Four-cycle issue-line transition for integer ALU, zero, and immediate
 producers. All
