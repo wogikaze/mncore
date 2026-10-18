@@ -15,22 +15,29 @@ def parsedExprIsIntegerProducer (expression : ParsedExpr) : Bool :=
   | .alu .. | .zero | .immediate .. => true
   | _ => false
 
-def parsedExprIsIntegerLineSupported (expression : ParsedExpr) : Bool :=
+def parsedExprIsSupportedPELineProducer (expression : ParsedExpr) : Bool :=
   match expression.op with
-  | .alu .. | .zero | .immediate .. | .wait .. | .noforward => true
+  | .alu .. | .zero | .immediate .. | .matrixRead .. | .wait .. | .noforward => true
+  | _ => false
+
+def parsedExprIsMatrixReadProducer (expression : ParsedExpr) : Bool :=
+  match expression.op with
+  | .matrixRead .. => true
   | _ => false
 
 def forwardingValueValid : Forwarding.Value IntegerALU.Bus → Bool
   | .known _ => true
   | .poison | .unknown => false
 
-def updateIntegerLineForwarding (old prepared : Forwarding.Slots)
-    (noForward hasIntegerProducer : Bool) :
+def updateSupportedPELineForwarding (old prepared : Forwarding.Slots)
+    (noForward hasALUProducer hasMatrixReadProducer : Bool) :
     ProofsLean.StepResult Forwarding.Slots :=
   match Forwarding.advanceReference old (.issue noForward fun unit =>
       match unit with
-      | .alu => if hasIntegerProducer then some fun cycle => prepared .alu cycle else none
-      | .mau | .matrixRead | .l1ToPE => none) with
+      | .alu => if hasALUProducer then some fun cycle => prepared .alu cycle else none
+      | .matrixRead =>
+          if hasMatrixReadProducer then some fun cycle => prepared .matrixRead cycle else none
+      | .mau | .l1ToPE => none) with
   | .failure => .failure
   | .unknown => .unknown
   | .ok advanced =>
@@ -59,8 +66,9 @@ def executeIntegerProducerLineAtPE (expressions : List ParsedExpr)
       context := context
       elapsedWords := state.hazardClock }
   let oldSlots := state.forwarding pe
-  match parsedALUProducerLineFourCycleStep (state.peRegisters pe) oldSlots
-      expressions control false with
+  let matrixStore := state.matrixRegisters context.group context.l2b context.l1b
+  match parsedIntegerMatrixReadLineFourCycleStep (state.peRegisters pe) oldSlots
+      matrixStore expressions control false with
   | .failure => .failure
   | .unknown => .unknown
   | .ok (registers, preparedSlots) =>
@@ -68,9 +76,10 @@ def executeIntegerProducerLineAtPE (expressions : List ParsedExpr)
         match expression.op with
         | .noforward => true
         | _ => false
-      let hasIntegerProducer := expressions.any parsedExprIsIntegerProducer
-      match updateIntegerLineForwarding oldSlots preparedSlots
-          noForward hasIntegerProducer with
+      let hasALUProducer := expressions.any parsedExprIsIntegerProducer
+      let hasMatrixReadProducer := expressions.any parsedExprIsMatrixReadProducer
+      match updateSupportedPELineForwarding oldSlots preparedSlots
+          noForward hasALUProducer hasMatrixReadProducer with
       | .failure => .failure
       | .unknown => .unknown
       | .ok forwarding =>
@@ -95,8 +104,9 @@ def executeIntegerProducerLineAtPEs (expressions : List ParsedExpr)
       | .ok next => executeIntegerProducerLineAtPEs expressions rest next
 
 /-- Whole-machine line transition for parsed integer ALU, zero, immediate,
-wait, and noforward expressions. Reads and prepared writes use the existing
-per-PE transactional semantics; the PE traversal is pure, so a failure or
+matrix-read, wait, and noforward expressions. Reads and prepared writes use the
+existing per-PE transactional semantics; matrix data is read from the PE's
+physical group/L2B/L1B MAB bank. The PE traversal is pure, so a failure or
 unknown on any PE returns no partially updated state. -/
 noncomputable def executeIntegerProducerInstructionLine
     (line : InstructionLine) (state : State) : ProofsLean.StepResult State :=
@@ -105,7 +115,7 @@ noncomputable def executeIntegerProducerInstructionLine
     match line with
     | .pe normalizedExpressions =>
         let expressions := normalizedExpressions.map NormalizedExpr.toParsed
-        if expressions.all parsedExprIsIntegerLineSupported then
+        if expressions.all parsedExprIsSupportedPELineProducer then
           match executeIntegerProducerLineAtPEs expressions (List.finRange 4096) state with
           | .failure => .failure
           | .unknown => .unknown
@@ -133,7 +143,7 @@ theorem executeIntegerProducerInstructionLine_pe_success
     (accepted : checkParsedTopLine
       (InstructionLine.pe normalizedExpressions).toParsed = true)
     (supported : (normalizedExpressions.map NormalizedExpr.toParsed).all
-      parsedExprIsIntegerLineSupported = true)
+      parsedExprIsSupportedPELineProducer = true)
     (executed : executeIntegerProducerLineAtPEs
       (normalizedExpressions.map NormalizedExpr.toParsed) (List.finRange 4096) state =
         .ok next) :

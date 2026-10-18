@@ -16,6 +16,8 @@ structure State where
   l1bm : Fin 64 → L1Transfer.L1Bank
   /-- Unified cell-addressed store for L2BM, PDM, and DRAM. -/
   blockMemory : MVSemantics.Memory
+  /-- Matrix registers, indexed by physical group/L2B/L1B and local MAB. -/
+  matrixRegisters : Fin 4 → Fin 2 → Fin 8 → PEMemory.ParsedMatrixReadStore
   /-- ALUF, MAUF, matrix-read forwarding, and L1-to-PE forwarding buses. -/
   forwarding : PEId → Forwarding.Slots
   /-- Per-PE validity is separate from known/poison/unknown bus contents. -/

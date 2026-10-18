@@ -61,12 +61,12 @@ Welcome の後は Convert Endian を縦の2問目にする。有限性・範囲�
 - `PEMachine.lean`: 1つのPEについて、整数ALU/zero/immediateラインを既存の4-cycle prepare-then-commit stepperへ接続する。
   各cycle/式の読み出しは旧register filesと旧forwarding slotsを使い、ALUF出力を含む書込みを準備後にコミットする。
   Issue checker拒否は`failure`、OMR混在宛先・MV/待ち制御/他演算器は`unknown`。全PE状態、block転送、hazard clock、footprint frameとは未接続。
-- `MachineState.lean`: Rust machine定数に合わせたPE 4096個（4×2×8×16×4）の5バンクregister files/OMR、L1BM 64バンク、L2BM/PDM/DRAM、
+- `MachineState.lean`: Rust machine定数に合わせたPE 4096個（4×2×8×16×4）の5バンクregister files/OMR、L1BM 64バンク、MAB 1024個、L2BM/PDM/DRAM、
   各PEのALUF/MAUF/LBF/MREADF busとvalidity、mask directive、PE context、hazard clockをまとめるState型。
   一般Stateの初期値ポリシーはまだ仮定しない。Welcomeに必要なPE SRAMはRust emulatorの
   `Words::get`が未割当領域をzeroで読むことを確認した。
-- `WholeMachineStep.lean`: 4096 PEすべてに整数ALU/zero/immediateラインを適用する全State遷移。
-  ALUF結果、MAU disabled、MREADFのzero、LBF保持のforwarding挙動も更新する。
+- `WholeMachineStep.lean`: 4096 PEすべてに整数ALU/zero/immediate/matrixReadラインを適用する全State遷移。
+  ALUF/MREADF結果、MAU disabled、MREADFのzero、LBF保持のforwarding挙動も更新する。
   他producer unit、MV/block転送、PE/block hazard履歴、OMR混在宛先は未接続で`.unknown`。
 - `Footprint.lean`: 全`InstructionLine`（PE/nop/MV）と全`ParsedOp`の構文footprintを定義し、
   operand source/destination、functional unit、clockのread/write候補を記録する。
