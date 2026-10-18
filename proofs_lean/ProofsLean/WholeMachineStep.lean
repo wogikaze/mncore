@@ -4655,6 +4655,29 @@ theorem executeHazardAwareNormalizedLine_rejects_issue_while_stalled
     executeHazardAwareNormalizedLine line state = .failure := by
   simp [executeHazardAwareNormalizedLine, stalled]
 
+/-- A mask directive updates only the machine mask-control field in the
+hazard-aware state; PE/block histories and the stalled-issue marker are
+preserved, and the underlying instruction clock is unchanged. -/
+theorem executeHazardAwareNormalizedLineCore_maskDirective
+    (state : HazardAwareState) (widthWords : Nat)
+    (targets : ParsedMaskTargets) (entry : Fin 256) :
+    executeHazardAwareNormalizedLineCore
+      (.maskDirective widthWords targets entry) state =
+      .ok { state with machine :=
+        { state.machine with maskDirective := ⟨widthWords, targets, entry⟩ } } := by
+  simp [executeHazardAwareNormalizedLineCore, executeNormalizedLine]
+
+theorem executeHazardAwareNormalizedLine_maskDirective
+    (state : HazardAwareState) (widthWords : Nat)
+    (targets : ParsedMaskTargets) (entry : Fin 256)
+    (notStalled : state.stalledPEIssue = none) :
+    executeHazardAwareNormalizedLine
+      (.maskDirective widthWords targets entry) state =
+      .ok { state with machine :=
+        { state.machine with maskDirective := ⟨widthWords, targets, entry⟩ } } := by
+  simp [executeHazardAwareNormalizedLine, normalizedLineWaitTag?, notStalled,
+    executeHazardAwareNormalizedLineCore_maskDirective]
+
 inductive ScheduledEvent where
   | issue (line : NormalizedLine)
   | completeMv (tag : Fin 256)

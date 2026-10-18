@@ -147,7 +147,13 @@
         "ProofsLean.MNCore.updateSupportedPELineForwarding_absent_l1ToPE_preserves"
       ],
       "scope_limit": "Source-parser correspondence for PE address modes remains unproved; five forwarding experiment programs remain assembler-rejected and lack whole-program conformance evidence",
-      "reference_conformance": false
+      "reference_conformance": false,
+      "mask_directive_state_connection": {
+        "core_theorem": "ProofsLean.MNCore.executeHazardAwareNormalizedLineCore_maskDirective",
+        "runner_theorem": "ProofsLean.MNCore.executeHazardAwareNormalizedLine_maskDirective",
+        "condition": "No PE issue is already stalled for the public deterministic runner.",
+        "effect": "Only machine maskDirective changes; PE/block histories, stalled marker, and hazardClock are preserved."
+      }
     },
     "remaining": [
       "Prove PE/block hazard extraction total for every accepted source form and prove noforward/disabled-producer lifecycle against the reference executor for all forwarding units.",
@@ -176,7 +182,15 @@
       "scope": "one PE, four integer-register cycles; MV, forwarding, and hazards remain unknown",
       "issue_failure_theorem": "ProofsLean.MNCore.PEMemory.executeParsedPEInstructionLine_issue_failure"
     },
-    "limitation": "Footprints are syntactic read/write candidates. The new theorem aligns each emitted normalized line with the exact InstructionLine passed to execution, but no general theorem yet proves successful integrated transitions modify only resources in that footprint."
+    "limitation": "Footprints are syntactic read/write candidates. Normalized executable lines align with InstructionLine footprints, and the mask-directive hazard-aware transition is connected exactly; general successful integrated instruction transitions still lack a footprint frame theorem.",
+    "hazard_aware_transition_cases": {
+      "mask_directive": {
+        "core_theorem": "ProofsLean.MNCore.executeHazardAwareNormalizedLineCore_maskDirective",
+        "runner_theorem": "ProofsLean.MNCore.executeHazardAwareNormalizedLine_maskDirective",
+        "footprint": "normalizedLineFootprint marks maskControl and omits hazardClock",
+        "proved_effect": "Updates only State.maskDirective within the machine; preserves PE history, block history, stalled-issue marker, and machine hazard clock. The public deterministic runner requires no pre-existing stalled PE issue."
+      }
+    }
   },
   "welcome_problem_specification": {
     "problem_source": "problems/challenge/1.plus-one/problem.md",
