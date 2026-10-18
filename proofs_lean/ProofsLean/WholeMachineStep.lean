@@ -2766,7 +2766,7 @@ structure ParsedFloatReluAccesses where
   unsigned : Bool
   sourceA : ParsedIntegerInput
   sourceB : Option ParsedIntegerInput
-  destination : ParsedOperand
+  destinations : List ParsedOperand
 
 def lowerParsedFloatRelu? (expression : ParsedExpr) (context : ParsedIntegerContext) :
     Option ParsedFloatReluAccesses := do
@@ -2779,28 +2779,28 @@ def lowerParsedFloatRelu? (expression : ParsedExpr) (context : ParsedIntegerCont
         some (name, precision, unsigned)
     | _ => none
   match expression.sources, expression.destinations with
-  | [sourceA], [destination] => do
+  | [sourceA], destinations@(_ :: _) => do
       guard (name == .passa || name == .rsqrt || name == .floor || name == .ftoi)
+      guard (destinations.all fun destination => match destination with
+        | .mem .. | .bar .. | .omr .. | .nowrite => true
+        | _ => false)
       let sourceA ← ParsedOperand.toParsedIntegerInput? sourceA precision.laneWidth
         context.group context.l2b context.l1b context.mab context.pe context.cycle
         context.bar0 context.bar1 context.tWord
-      match destination with
-      | .mem .. | .bar .. | .omr .. | .nowrite => some ⟨precision, name, unsigned, sourceA, none,
-          destination⟩
-      | _ => none
-  | [sourceA, sourceB], [destination] => do
+      some ⟨precision, name, unsigned, sourceA, none, destinations⟩
+  | [sourceA, sourceB], destinations@(_ :: _) => do
       guard (name == .max || name == .min || name == .relu || name == .relu0 ||
         name == .relu1 || name == .relu2 || name == .relu3)
+      guard (destinations.all fun destination => match destination with
+        | .mem .. | .bar .. | .omr .. | .nowrite => true
+        | _ => false)
       let sourceA ← ParsedOperand.toParsedIntegerInput? sourceA precision.laneWidth
         context.group context.l2b context.l1b context.mab context.pe context.cycle
         context.bar0 context.bar1 context.tWord
       let sourceB ← ParsedOperand.toParsedIntegerInput? sourceB precision.laneWidth
         context.group context.l2b context.l1b context.mab context.pe context.cycle
         context.bar0 context.bar1 context.tWord
-      match destination with
-      | .mem .. | .bar .. | .omr .. | .nowrite => some ⟨precision, name, unsigned, sourceA, some sourceB,
-          destination⟩
-      | _ => none
+      some ⟨precision, name, unsigned, sourceA, some sourceB, destinations⟩
   | _, _ => none
 
 structure ParsedMslMsrDestinationWrite where
@@ -3345,19 +3345,28 @@ def executeParsedFloatReluAtPE (readState currentState : State)
             | none => .unknown
             | some flushSelection =>
               let output := parsedOutputAfterFlush flushSelection rawOutput
-              let destinationContext := { coordinates with cycle := cycle, bar0 := bar0, bar1 := bar1 }
-              match writeParsedMslMsrDestination? files accesses.destination destinationContext
-                  output flags cycle currentState.maskDirective hasSingleLineMask with
+              let rec writeDestinations : List ParsedOperand → PEMemory.IntegerRegisterFiles →
+                  BitVec 12 → BitVec 12 → Option
+                    (PEMemory.IntegerRegisterFiles × BitVec 12 × BitVec 12)
+                | [], currentFiles, currentBar0, currentBar1 =>
+                    some (currentFiles, currentBar0, currentBar1)
+                | destination :: remaining, currentFiles, currentBar0, currentBar1 => do
+                    let destinationContext := { coordinates with cycle := cycle, bar0 := currentBar0, bar1 := currentBar1 }
+                    let write ← writeParsedMslMsrDestination? currentFiles destination
+                      destinationContext output flags cycle currentState.maskDirective
+                      hasSingleLineMask
+                    let nextBar0 := match write.barUpdate with
+                      | some (false, value) => value
+                      | _ => currentBar0
+                    let nextBar1 := match write.barUpdate with
+                      | some (true, value) => value
+                      | _ => currentBar1
+                    writeDestinations remaining write.files nextBar0 nextBar1
+              match writeDestinations accesses.destinations files bar0 bar1 with
               | none => .unknown
-              | some write =>
-                let nextBar0 := match write.barUpdate with
-                  | some (false, value) => value
-                  | _ => bar0
-                let nextBar1 := match write.barUpdate with
-                  | some (true, value) => value
-                  | _ => bar1
-                runCycles rest write.files nextBar0 nextBar1
-                  (fun index => if index = cycle then output else outputs index)
+              | some (nextFiles, nextBar0, nextBar1) =>
+                  runCycles rest nextFiles nextBar0 nextBar1
+                    (fun index => if index = cycle then output else outputs index)
   match runCycles [0, 1, 2, 3] (currentState.peRegisters pe)
       oldContext.bar0 oldContext.bar1 (fun _ => ⟨0, 0⟩) with
   | .failure => return .failure
