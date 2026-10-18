@@ -21,7 +21,7 @@ def parsedExprIsSupportedPELineProducer (expression : ParsedExpr) : Bool :=
   match expression.op with
   | .alu .. | .zero | .immediate .. | .matrixRead .. | .wait .. | .noforward => true
   | .mau .f false .add none false | .mau .f false .mul none false
-  | .mau .f false .fma none false => true
+  | .mau .f false .fma none false | .mau .f false .passa none false => true
   | .matrixWrite .d | .matrixWrite .f | .matrixWrite .g | .matrixWrite .h => true
   | .l1bm (.mwrite _) | .l1bm (.m4write _) => true
   | .l1bm .pbcast | .l1bm .mbcast | .l1bm .m4bcast | .l1bm (.distrib _) => true
@@ -62,7 +62,7 @@ def parsedExprIsNoForwardProducer (expression : ParsedExpr) : Bool :=
 def parsedExprIsSupportedFloatMAUProducer (expression : ParsedExpr) : Bool :=
   match expression.op with
   | .mau .f false .add none false | .mau .f false .mul none false
-  | .mau .f false .fma none false => true
+  | .mau .f false .fma none false | .mau .f false .passa none false => true
   | _ => false
 
 def parsedFloatMAUSource? (operand : ParsedOperand) (context : ParsedIntegerContext) :
@@ -219,6 +219,21 @@ def lowerParsedFloatAddMachine? (expression : ParsedExpr) (context : ParsedInteg
         destination⟩
   | _, _ => none
 
+def lowerParsedFloatPassa? (expression : ParsedExpr) (context : ParsedIntegerContext) :
+    Option (ParsedIntegerInput × Bool × Bool × Bool × Fin (Bank.capacity .lm1)) := do
+  match expression.op with
+  | .mau .f false .passa none false => pure ()
+  | _ => none
+  match expression.sources, expression.destinations with
+  | [source], [.mem access false false false none] =>
+      let (source, negate, extend, round) ← parsedFloatMAUSourceAttrs? source context
+      let destinationAccess ← ParsedOperand.toDirectMemoryAccess?
+        (.mem access false false false none) context.pe context.cycle
+        context.bar0 context.bar1 context.tWord
+      let destination ← FloatPEMemory.lm1LongAddress? destinationAccess
+      some (source, negate, extend, round, destination)
+  | _, _ => none
+
 def singleFmaBus (left right accumulator : BitVec 64) : BitVec 64 :=
   SingleFMA.singleFma (left.extractLsb' 32 32) (right.extractLsb' 32 32)
       (accumulator.extractLsb' 32 32) ++
@@ -316,6 +331,18 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
           let output := FloatAdd.addBus left right
           let nextLM1 := FloatPEMemory.writePair currentFiles.lm1 accesses.destination output
           .ok ({ currentFiles with lm1 := nextLM1 }, ⟨output, 0⟩)
+  | .mau .f false .passa none false =>
+    let cycleContext := { context with cycle := cycle }
+    match lowerParsedFloatPassa? expression cycleContext with
+    | none => .unknown
+    | some (source, negate, extend, round, destination) =>
+      match ParsedIntegerInput.readWithForwarding readFiles oldSlots cycle source with
+      | .failure => .failure
+      | .unknown => .unknown
+      | .ok sourceBus =>
+        let output := prepareSingleMAUSource sourceBus negate extend round
+        let nextLM1 := FloatPEMemory.writePair currentFiles.lm1 destination output
+        .ok ({ currentFiles with lm1 := nextLM1 }, ⟨output, 0⟩)
   | _ => match FloatPEMemory.lowerParsedFloatAdd? expression context.pe cycle context.bar0
       context.bar1 context.tWord with
   | none =>
