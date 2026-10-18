@@ -20,7 +20,7 @@ inductive OperandRef where
 
 inductive UnitResource where
   | alu | mau | matrix | l1bm | l2bm | mv
-  | forwarding | issueControl | hazardClock
+  | forwarding | issueControl | maskRegisters | bar | lbf | hazardClock
   deriving DecidableEq, Repr
 
 structure Footprint where
@@ -59,7 +59,10 @@ def parsedExprFootprint (expression : ParsedExpr) : Footprint :=
     operandWrites := expression.destinations.map
       (fun operand => (.destinationWrite, .pe operand))
     unitReads := parsedOpUnitReads expression.op
-    unitWrites := parsedOpUnitWrites expression.op }
+    unitWrites := parsedOpUnitWrites expression.op ++
+      (if expression.maskRegisterWrites.isEmpty then [] else [.maskRegisters]) ++
+      (if expression.barWrites.isEmpty then [] else [.bar]) ++
+      (if expression.writesLbf then [.lbf] else []) }
 
 def normalizedMvFootprint (transfer : NormalizedMv) : Footprint :=
   { emptyFootprint with
@@ -157,6 +160,21 @@ theorem ParsedExpr.destination_in_write_footprint (expression : ParsedExpr)
     (OperandRole.destinationWrite, OperandRef.pe operand) ∈
       (parsedExprFootprint expression).operandWrites := by
   simp [parsedExprFootprint, member]
+
+theorem ParsedExpr.mask_register_write_in_footprint (expression : ParsedExpr)
+    (written : expression.maskRegisterWrites ≠ []) :
+    UnitResource.maskRegisters ∈ (parsedExprFootprint expression).unitWrites := by
+  simp [parsedExprFootprint, written]
+
+theorem ParsedExpr.bar_write_in_footprint (expression : ParsedExpr)
+    (written : expression.barWrites ≠ []) :
+    UnitResource.bar ∈ (parsedExprFootprint expression).unitWrites := by
+  simp [parsedExprFootprint, written]
+
+theorem ParsedExpr.lbf_write_in_footprint (expression : ParsedExpr)
+    (written : expression.writesLbf = true) :
+    UnitResource.lbf ∈ (parsedExprFootprint expression).unitWrites := by
+  simp [parsedExprFootprint, written]
 
 theorem InstructionLine.has_hazard_clock_write (line : InstructionLine) :
     UnitResource.hazardClock ∈ (instructionLineFootprint line).unitWrites := by
