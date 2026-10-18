@@ -897,6 +897,48 @@ impl Machine {
                 poison: None,
             });
         }
+        if self.tracer.borrow().is_none() && matches!(name, AluOp::Msl | AluOp::Msr) {
+            // msl/msr pair PEs inside one MAB; MABs are independent.
+            let mut bus = vec![[[0u32; 4]; 4]; PES];
+            let mut flags = vec![[0u8; 4]; PES];
+            let pes = &self.pes;
+            let fwd_error = &self.fwd_error;
+            let src = &e.srcs[0];
+            let msl = name == AluOp::Msl;
+            bus.par_chunks_mut(4)
+                .zip(flags.par_chunks_mut(4))
+                .enumerate()
+                .try_for_each(|(mab, (bc, fc))| -> Result<(), ExecError> {
+                    let mut ins = [[[0u32; 4]; 4]; 4];
+                    for p in 0..4 {
+                        for c in 0..4 {
+                            ins[p][c] = read_alu_input_pe(
+                                &pes[mab * 4 + p],
+                                fwd_error,
+                                mab * 4 + p,
+                                src,
+                                prec,
+                                c,
+                            )?;
+                        }
+                    }
+                    for p in 0..4 {
+                        let from = if msl { (p + 3) % 4 } else { (p + 1) % 4 };
+                        for c in 0..4 {
+                            let v = ins[from][c];
+                            bc[p][c] = [v[0], v[1], 0, 0];
+                            fc[p][c] = 0;
+                        }
+                    }
+                    Ok(())
+                })?;
+            return Ok(Output {
+                bus,
+                flags,
+                fwd: Some(FwdKind::Aluf),
+                poison: None,
+            });
+        }
         let n = name.inputs();
         let mut ins: Vec<Vec<[Bus; 4]>> = vec![vec![[[0; 4]; 4]; PES]; n];
         for (i, op) in e.srcs.iter().enumerate().take(n) {
@@ -1845,6 +1887,59 @@ impl Machine {
         let f = prec_fmt(prec);
         let (rows, _) = mat_shape(prec);
         let mut bus = vec![[[0u32; 4]; 4]; PES];
+        if self.tracer.borrow().is_none() {
+            let mats = &self.mats;
+            bus.par_chunks_mut(4)
+                .enumerate()
+                .try_for_each(|(mab, chunk)| -> Result<(), ExecError> {
+                    for c in 0..4 {
+                        for p in 0..4 {
+                            let vals: Vec<u64> = match prec {
+                                Prec::D => vec![mat_get_face(
+                                    &mats[mab],
+                                    side,
+                                    prec,
+                                    p,
+                                    (*addr as usize + c) % rows,
+                                )],
+                                Prec::H => {
+                                    let c0 = (*addr as usize + 2 * c) % rows;
+                                    let mut v: Vec<u64> = (0..4)
+                                        .map(|k| {
+                                            mat_get_face(&mats[mab], side, prec, 4 * p + k, c0)
+                                        })
+                                        .collect();
+                                    v.extend((0..4).map(|k| {
+                                        mat_get_face(
+                                            &mats[mab],
+                                            side,
+                                            prec,
+                                            4 * p + k,
+                                            (c0 + 1) % rows,
+                                        )
+                                    }));
+                                    v
+                                }
+                                _ => {
+                                    let col = (*addr as usize + c) % rows;
+                                    vec![
+                                        mat_get_face(&mats[mab], side, prec, 2 * p, col),
+                                        mat_get_face(&mats[mab], side, prec, 2 * p + 1, col),
+                                    ]
+                                }
+                            };
+                            chunk[p][c] = pack(&vals, f.width());
+                        }
+                    }
+                    Ok(())
+                })?;
+            return Ok(Output {
+                bus,
+                flags: vec![[0; 4]; PES],
+                fwd: Some(FwdKind::Mreadf),
+                poison: None,
+            });
+        }
         for mab in 0..PES / 4 {
             for c in 0..4 {
                 for p in 0..4 {
@@ -2639,4 +2734,15 @@ fn run_fast_pe(
         }
     }
     Ok(())
+}
+
+/// Reads one matrix element from a MAB's faces.
+fn mat_get_face(face: &[MatFace; 2], side: usize, prec: Prec, row: usize, col: usize) -> u64 {
+    let (_, step) = mat_shape(prec);
+    let r = &face[side][row * step];
+    match prec {
+        Prec::D => ((r[2 * col] as u64) << 32) | r[2 * col + 1] as u64,
+        Prec::H => ((r[col / 2] >> if col % 2 == 0 { 16 } else { 0 }) & 0xffff) as u64,
+        _ => r[col] as u64,
+    }
 }
