@@ -1581,6 +1581,20 @@ def ParsedIntegerInput.readWithForwarding (files : IntegerRegisterFiles)
       | .unknown => .unknown
   | _ => read files input
 
+theorem ParsedIntegerInput.readWithForwarding_never_unknown_of_slots_resolved
+    (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (cycle : Fin 4) (input : ParsedIntegerInput)
+    (resolved : ∀ unit, slots unit cycle ≠ .unknown) :
+    readWithForwarding files slots cycle input ≠ .unknown := by
+  cases input with
+  | memory access rounded => simp [readWithForwarding, read]
+  | fixed value => simp [readWithForwarding, read]
+  | forward kind rounded =>
+      cases slot : slots (forwardUnit kind) cycle with
+      | known bus => simp [readWithForwarding, slot]
+      | poison => simp [readWithForwarding, slot]
+      | unknown => exact (resolved (forwardUnit kind) slot).elim
+
 def ParsedIntegerInput.resolveForwarding? (slots : ProofsLean.MNCore.Forwarding.Slots)
     (cycle : Fin 4) (input : ParsedIntegerInput) : Option ParsedIntegerInput :=
   match input with
@@ -4899,6 +4913,29 @@ theorem prepareParsedIntegerALUExprCycle_alu_never_unknown_of_resolved
       cases noForward <;>
         simp [isAlu, lowered, prepared, updateParsedIntegerALUForwardingCycle]
 
+theorem prepareParsedIntegerALUExprCycle_alu_never_unknown_of_lowered_and_slots_resolved
+    (files : IntegerRegisterFiles) (oldSlots nextSlots : ProofsLean.MNCore.Forwarding.Slots)
+    (expression : ParsedExpr) (control : ParsedMaskExecutionControl)
+    (hasSingleLineMask noForward reduced : Bool) (cycle : Fin 4)
+    (isAlu : ∃ name precision unsigned arg,
+      expression.op = .alu name precision unsigned arg)
+    (accesses : ParsedMaskedIntegerAccesses)
+    (lowered : ParsedExpr.toDirectMaskedIntegerAccessesInLine? expression
+      files.maskRegisters control.directive hasSingleLineMask
+      control.context.group control.context.l2b control.context.l1b control.context.mab
+      control.context.pe cycle control.context.bar0 control.context.bar1 control.context.tWord =
+        some accesses)
+    (slotsResolved : ∀ unit, oldSlots unit cycle ≠ .unknown) :
+    prepareParsedIntegerALUExprCycle files oldSlots nextSlots expression control
+      hasSingleLineMask noForward reduced cycle ≠ .unknown := by
+  have readXKnown := ParsedIntegerInput.readWithForwarding_never_unknown_of_slots_resolved
+    files oldSlots cycle accesses.sourceX slotsResolved
+  have readYKnown := ParsedIntegerInput.readWithForwarding_never_unknown_of_slots_resolved
+    files oldSlots cycle accesses.sourceY slotsResolved
+  exact prepareParsedIntegerALUExprCycle_alu_never_unknown_of_resolved files oldSlots
+    nextSlots expression control hasSingleLineMask noForward reduced cycle isAlu accesses
+    lowered readXKnown readYKnown
+
 theorem prepareParsedIntegerALUExprCycle_constant_never_unknown_of_lowered
     (files : IntegerRegisterFiles) (oldSlots nextSlots : ProofsLean.MNCore.Forwarding.Slots)
     (expression : ParsedExpr) (control : ParsedMaskExecutionControl)
@@ -5064,6 +5101,29 @@ theorem parsedIntegerALUExprFourCycleStep_alu_never_unknown_of_resolved
   exact prepareParsedIntegerALUExprCycle_alu_never_unknown_of_resolved files slots
     outputSlots expression control hasSingleLineMask noForward reduced cycle isAlu accesses
     lowered readXKnown readYKnown
+
+theorem parsedIntegerALUExprFourCycleStep_alu_never_unknown_of_lowered_and_slots_resolved
+    (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (expression : ParsedExpr) (control : ParsedMaskExecutionControl)
+    (hasSingleLineMask noForward reduced : Bool)
+    (isAlu : ∃ name precision unsigned arg,
+      expression.op = .alu name precision unsigned arg)
+    (lowered : ∀ cycle, cycle ∈ parsedIntegerALUCycles →
+      ∃ accesses,
+        ParsedExpr.toDirectMaskedIntegerAccessesInLine? expression files.maskRegisters
+          control.directive hasSingleLineMask control.context.group control.context.l2b
+          control.context.l1b control.context.mab control.context.pe cycle
+          control.context.bar0 control.context.bar1 control.context.tWord = some accesses)
+    (slotsResolved : ∀ cycle, cycle ∈ parsedIntegerALUCycles → ∀ unit,
+      slots unit cycle ≠ .unknown) :
+    parsedIntegerALUExprFourCycleStep files slots expression control
+      hasSingleLineMask noForward reduced ≠ .unknown := by
+  apply parsedIntegerALUExprFourCycleStep_never_unknown
+  intro cycle member outputSlots
+  obtain ⟨accesses, accessesLowered⟩ := lowered cycle member
+  exact prepareParsedIntegerALUExprCycle_alu_never_unknown_of_lowered_and_slots_resolved
+    files slots outputSlots expression control hasSingleLineMask noForward reduced cycle isAlu
+    accesses accessesLowered (slotsResolved cycle member)
 
 theorem parsedIntegerALUExprFourCycleStep_constant_never_unknown_of_lowered
     (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)
