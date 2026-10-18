@@ -1762,7 +1762,14 @@
     },
     {
       "area": "l1bm_transfers_turnaround_and_reductions",
-      "status": "partial_datapath_only"
+      "status": "partial_whole_machine_transition",
+      "combined_pe_to_l1_writes": {
+        "newly_connected_case": "A normal L1BM write and an L1BM-turnaround write can occupy distinct issue groups in one PE issue line; both producer outputs now commit in source order while every source is read from the pre-issue state.",
+        "rust_evidence": "viz/core/src/issue.rs:group and viz/core/src/machine.rs:330-360",
+        "lean_executor": "ProofsLean.MNCore.executeParsedL1MwriteProducerList",
+        "supporting_theorem": "ProofsLean.MNCore.executeParsedL1MwriteProducers_two_success",
+        "scope_limit": "The composition theorem assumes each individual producer succeeds; L1BM memory layout and source operand behavior still require command-level differential conformance."
+      }
     },
     {
       "area": "l2bm_transfers_and_reductions",

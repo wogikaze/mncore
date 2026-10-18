@@ -1925,13 +1925,32 @@ def executeParsedL1MwriteAtAllBanks (readState currentState : State)
                 run rest next
       run (List.finRange 64) currentState
 
+def executeParsedL1MwriteProducerList (readState : State) (updateTurnaround : Bool)
+    : List ParsedExpr → State → ProofsLean.StepResult State
+  | [], state => .ok state
+  | expression :: rest, state =>
+      match executeParsedL1MwriteAtAllBanks readState state expression updateTurnaround with
+      | .failure => .failure
+      | .unknown => .unknown
+      | .ok next => executeParsedL1MwriteProducerList readState updateTurnaround rest next
+
 def executeParsedL1MwriteProducers (readState currentState : State)
     (expressions : List ParsedExpr) (updateTurnaround : Bool) : ProofsLean.StepResult State :=
-  match expressions.filter parsedExprIsL1MwriteProducer with
-  | [] => .ok currentState
-  | [expression] =>
-      executeParsedL1MwriteAtAllBanks readState currentState expression updateTurnaround
-  | _ => .unknown
+  executeParsedL1MwriteProducerList readState updateTurnaround
+    (expressions.filter parsedExprIsL1MwriteProducer) currentState
+
+theorem executeParsedL1MwriteProducers_two_success
+    (readState state : State) (first second : ParsedExpr) (updateTurnaround : Bool)
+    (firstProducer : parsedExprIsL1MwriteProducer first = true)
+    (secondProducer : parsedExprIsL1MwriteProducer second = true)
+    (firstResult : executeParsedL1MwriteAtAllBanks readState state first
+      updateTurnaround = .ok stateAfterFirst)
+    (secondResult : executeParsedL1MwriteAtAllBanks readState stateAfterFirst second
+      updateTurnaround = .ok stateAfterSecond) :
+    executeParsedL1MwriteProducers readState state [first, second] updateTurnaround =
+      .ok stateAfterSecond := by
+  simp [executeParsedL1MwriteProducers, executeParsedL1MwriteProducerList,
+    firstProducer, secondProducer, firstResult, secondResult]
 
 structure ParsedL1GatherAccess where
   source : ParsedOperand
