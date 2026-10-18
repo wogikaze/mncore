@@ -3472,6 +3472,21 @@ theorem executeNormalizedLine_maskDirective_updates_state
       .ok { state with maskDirective := ⟨widthWords, targets, entry⟩ } := by
   rfl
 
+theorem executeNormalizedProgram_maskDirective_updates_state
+    (state : State) (widthWords : Nat) (targets : ParsedMaskTargets)
+    (entry : Fin 256) :
+    executeNormalizedProgram [.maskDirective widthWords targets entry] state =
+      .ok { state with maskDirective := ⟨widthWords, targets, entry⟩ } := by
+  simp [executeNormalizedProgram, executeNormalizedLine]
+
+theorem executeParsedProgram_maskDirective_updates_state
+    (state : State) (widthWords : Nat) (targets : ParsedMaskTargets)
+    (entry : Fin 256) :
+    executeParsedProgram [.maskDirective widthWords targets entry] state =
+      .ok { state with maskDirective := ⟨widthWords, targets, entry⟩ } := by
+  simp [executeParsedProgram, ParsedLine.normalizeForSubmission?,
+    executeNormalizedProgram, executeNormalizedLine]
+
 noncomputable def integerProducerMachine : ProofsLean.PartialMachine where
   Line := InstructionLine
   State := State
