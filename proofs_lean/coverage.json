@@ -1024,6 +1024,21 @@
       "evidence": "proofs_lean/evidence/masks/initial-simulator-assumption/reference.json",
       "snapshot_manifest_sha256": "a44cf4d978462cf8332519f981210946ed85a3a476ec89160796bd355729f106",
       "corrected_simulator_source_sha256": "cc62a4f9752f070b5d4e22887770f187f30c90763e15b746c245d9d7624c5378"
+    },
+    {
+      "operations": [
+        "matrix MAU block-float dot accumulation"
+      ],
+      "status": "corrected_local_simulator",
+      "error": "The exact adder assumed the significand top bit was at most 125 and cast a negative normalization shift to u32 when accumulation carried into bit 126 or 127, panicking during matrix bf_dot.",
+      "regression_test": "mncore_sim::float::tests::matrix_dot_add_normalizes_a_carry_above_the_adder_top_bit",
+      "arithmetic_differential": {
+        "evidence": "proofs_lean/evidence/matrix-bf/reference.json",
+        "cases": 584,
+        "matched": 584,
+        "scope": "D/F/G/H matrix block-float dot and accumulator FMA arithmetic; not whole-machine conformance."
+      },
+      "corrected_source_sha256": "dc73b658fbd57c8b6e9baa28e03a6aeb3f2ba8e7c5c2d3158704cb9468f757e2"
     }
   ],
   "forwarding_findings": {
@@ -1896,6 +1911,11 @@
           ],
           "rust_reference": "viz/core/src/machine.rs::Machine::compute_mat explicitly rejects a non-matrix first source; viz/core/src/vsm.rs::parse_expr rejects too few operands before Machine::step.",
           "scope": "For direct Lean AST inputs, malformed missing sources are classified as failure; parser-produced instructions reject insufficient source counts before execution. This does not establish complete Rust/Lean command conformance for valid matrix-MAU instructions."
+        },
+        "source_unknown_classification": {
+          "theorem": "ProofsLean.MNCore.readParsedMatrixMAUSourcePE_resolved_never_unknown",
+          "scope": "For one participating PE, when parsedFloatMAUSourceAttrs? successfully lowers the operand to a direct-memory or forwarding input, the MAU source reader cannot return .unknown if every valid forwarding slot in the state is resolved. Disabled forwarding and invalid lane decoding remain known failures.",
+          "connection_limit": "The four-PE MAB source aggregation and complete matrix-MAU producer still need this premise connected across every participating PE and source."
         },
         "remaining": "Run command-level Rust differentials for source operands, matrix layout, row masks, PE packing, flags, poison, and forwarding; the arithmetic-only comparison does not establish compute_mat or whole-machine conformance."
       }

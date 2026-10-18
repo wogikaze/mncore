@@ -1979,6 +1979,62 @@ def forwardingSourceResolved (state : State) : Prop :=
     state.forwardingValid pe unit cycle = false ∨
       stateForwardingSlots state pe unit cycle ≠ .unknown
 
+theorem readParsedMatrixMAUSourcePE_resolved_never_unknown
+    (state : State) (coordinate : MABCoordinate) (operand : ParsedOperand)
+    (precision : RRN.FloatPrecision) (count : Nat) (pe cycle : Fin 4)
+    (attrs : (∃ access rounded negate extend round,
+      parsedFloatMAUSourceAttrs? operand
+        ({ ParsedIntegerContext.ofLinearIndex (physicalPEId coordinate pe) with
+          cycle := cycle
+          bar0 := (state.peContext (physicalPEId coordinate pe)).bar0
+          bar1 := (state.peContext (physicalPEId coordinate pe)).bar1
+          tWord := (state.peContext (physicalPEId coordinate pe)).tWord }) =
+        some (.memory access rounded, negate, extend, round)) ∨
+      (∃ kind rounded negate extend round,
+        parsedFloatMAUSourceAttrs? operand
+          ({ ParsedIntegerContext.ofLinearIndex (physicalPEId coordinate pe) with
+            cycle := cycle
+            bar0 := (state.peContext (physicalPEId coordinate pe)).bar0
+            bar1 := (state.peContext (physicalPEId coordinate pe)).bar1
+            tWord := (state.peContext (physicalPEId coordinate pe)).tWord }) =
+          some (.forward kind rounded, negate, extend, round)))
+    (resolved : forwardingSourceResolved state) :
+    readParsedMatrixMAUSourcePE state coordinate operand precision count pe cycle ≠
+      .unknown := by
+  rcases attrs with
+    ⟨access, rounded, negate, extend, round, lowered⟩ |
+    ⟨kind, rounded, negate, extend, round, lowered⟩
+  · simp only [readParsedMatrixMAUSourcePE, lowered,
+      ParsedIntegerInput.readWithForwarding, ParsedIntegerInput.read]
+    cases decode : parsedMatrixMAUDecodeLanes? precision count
+        (ParsedIntegerInput.applyRounding rounded
+          (pack (readDirectAccess (state.peRegisters (physicalPEId coordinate pe)) access)))
+        negate extend round <;> simp [decode]
+  · by_cases valid : state.forwardingValid (physicalPEId coordinate pe)
+        (ParsedIntegerInput.forwardUnit kind) cycle
+    · cases slot : state.forwarding (physicalPEId coordinate pe)
+          (ParsedIntegerInput.forwardUnit kind) cycle with
+      | known bus =>
+          simp only [readParsedMatrixMAUSourcePE, lowered, valid, slot,
+            ParsedIntegerInput.readWithForwarding]
+          cases decode : parsedMatrixMAUDecodeLanes? precision count
+              (ParsedIntegerInput.applyRounding rounded bus) negate extend round <;>
+            simp [decode]
+      | poison =>
+          simp [readParsedMatrixMAUSourcePE, lowered, valid, slot,
+            ParsedIntegerInput.readWithForwarding]
+      | unknown =>
+          have slotResolved := resolved (physicalPEId coordinate pe)
+            (ParsedIntegerInput.forwardUnit kind) cycle
+          rw [stateForwardingSlots_valid_preserves_payload state
+            (physicalPEId coordinate pe) (ParsedIntegerInput.forwardUnit kind)
+            cycle valid] at slotResolved
+          rcases slotResolved with invalid | notUnknown
+          · simp [valid] at invalid
+          · exact (notUnknown slot).elim
+    · simp [readParsedMatrixMAUSourcePE, lowered, valid,
+        ParsedIntegerInput.readWithForwarding]
+
 theorem readRawL1MwriteBus_resolved_never_unknown
     (state : State) (source : ParsedOperand) (pe : PEId) (cycle : Fin 4)
     (resolved : forwardingSourceResolved state) :

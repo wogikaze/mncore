@@ -18,9 +18,9 @@
     "proofs_lean/MatrixBFProbe.lean": "ec78afd30c08c8fec6d05e466e0ac39245c8286459691c3ed437592886422037",
     "proofs_lean/lakefile.toml": "c25119e085f286174596a653d62438f86fc48d4c701d4d14c6c097ed2958ac37",
     "proofs_lean/scripts/check_matrix_bf_reference.py": "a9f8578382a7e1f661b034e3196b21d0642dfe52950b5817bb5d1f1c7845f0b0",
-    "viz/core/src/float.rs": "269e9f4c5e79715cf72d36c2c33641c23b32a577fd4e5a913ea43426e876a97e",
+    "viz/core/src/float.rs": "dc73b658fbd57c8b6e9baa28e03a6aeb3f2ba8e7c5c2d3158704cb9468f757e2",
     "viz/core/src/bin/matrix_bf_probe.rs": "b0160baaa21a7218668abf4966c3c34a403e538d09e95314640616dc05396679",
-    "viz/core/Cargo.toml": "eae4b015c8557a6af7000a458e78af8e2ba9594c8079c1dc7aadfc9d5b714703"
+    "viz/core/Cargo.toml": "4dec19ccc65479c4af8cebe1464e5984571cff8d5ca1b50a16f583e1babf0b4c"
   },
   "vectors_sha256": "808f70345c9013877bbd2cbd6b18c460a92637c6d736c441b65be9e8852be018",
   "proves_universal_conformance": false,

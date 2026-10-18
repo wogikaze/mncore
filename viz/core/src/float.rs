@@ -155,7 +155,17 @@ fn add_exact(a: Val, b: Val) -> Val {
             const TOP: i32 = 125;
             let norm = |sig: u128, exp: i32| {
                 let p = 127 - sig.leading_zeros() as i32;
-                (sig << (TOP - p) as u32, exp - (TOP - p))
+                if p <= TOP {
+                    let shift = (TOP - p) as u32;
+                    (sig << shift, exp - shift as i32)
+                } else {
+                    // A sum may set bit 126 (or 127). Keep the top `TOP` bit
+                    // and jam every discarded bit into the LSB before aligning
+                    // the operands on the adder grid.
+                    let shift = (p - TOP) as u32;
+                    let sticky = sig & ((1u128 << shift) - 1) != 0;
+                    ((sig >> shift) | sticky as u128, exp + shift as i32)
+                }
             };
             let (sa, ea) = norm(sa, ea);
             let (sb, eb) = norm(sb, eb);
@@ -445,5 +455,14 @@ mod tests {
     fn half_one_is_3e00() {
         let one = decode(HALF, 0x3e00);
         assert_eq!(vfma(HALF, HALF, one, one, Val::Zero { neg: false }), 0x3e00);
+    }
+
+    #[test]
+    fn matrix_dot_add_normalizes_a_carry_above_the_adder_top_bit() {
+        let result = add_exact(
+            Val::Fin { neg: false, sig: 1u128 << 126, exp: 0 },
+            Val::Fin { neg: false, sig: 1, exp: -126 },
+        );
+        assert_eq!(result, Val::Fin { neg: false, sig: (1u128 << 125) | 1, exp: 1 });
     }
 }
