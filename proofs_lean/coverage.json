@@ -1672,11 +1672,11 @@
     },
     {
       "area": "floating_16_32_64_rounding_and_special_values",
-      "status": "unimplemented"
+      "status": "partial_datapath_only"
     },
     {
       "area": "block_floating_conversion_and_mantissa_width",
-      "status": "unimplemented"
+      "status": "partial_datapath_only"
     },
     {
       "area": "wide_access_and_lsb_passthrough",
