@@ -1391,7 +1391,7 @@ theorem parsedMatrixMAUCalculateRows_double_zero_store :
 
 def executeParsedMatrixMAUCalculationAtMAB (state : State) (coordinate : MABCoordinate)
     (expression : ParsedExpr) (cycle : Fin 4) :
-    ProofsLean.StepResult (List Nat) := Id.run do
+    ProofsLean.StepResult (List Nat × Bool) := Id.run do
   let (.mau precision true kind half round) := expression.op | return .unknown
   let matrixSide ← match expression.sources with
     | .matrix sideY _ none :: _ => pure sideY
@@ -1420,10 +1420,17 @@ def executeParsedMatrixMAUCalculationAtMAB (state : State) (coordinate : MABCoor
       | .unknown => return .unknown
       | .ok values => pure values
   let store := state.matrixRegisters coordinate.group coordinate.l2b coordinate.l1b
+  let vectorInvalid := !RRN.blockFloatExponentValid vectorFormat vectorValues
+  let matrixInvalid := (List.range (parsedMatrixMAURowCount precision)).any fun row =>
+    if parsedMatrixMAURowActive half row then
+      match PEMemory.parsedMatrixMAUProductRow? store coordinate.mab matrixSide precision row with
+      | none => true
+      | some elements => !RRN.blockFloatExponentValid vectorFormat elements
+    else false
   match parsedMatrixMAUCalculateRows? store coordinate matrixSide precision kind half round
       vectorValues accumulatorValues with
   | none => return .failure
-  | some rows => return .ok rows
+  | some rows => return .ok (rows, vectorInvalid || matrixInvalid)
 
 def parsedMatrixMAURowsPerPE : ParsedPrecision → Nat
   | .d => 1
@@ -1478,11 +1485,11 @@ def parsedMatrixMAUPEOutput? (precision : ParsedPrecision) (round : Bool)
 
 def executeParsedMatrixMAUAtMAB (state : State) (coordinate : MABCoordinate)
     (expression : ParsedExpr) (cycle : Fin 4) :
-    ProofsLean.StepResult ((Fin 4 → IntegerALU.Bus) × (Fin 4 → BitVec 4)) := Id.run do
+    ProofsLean.StepResult ((Fin 4 → IntegerALU.Bus) × (Fin 4 → BitVec 4) × Bool) := Id.run do
   match executeParsedMatrixMAUCalculationAtMAB state coordinate expression cycle with
   | .failure => return .failure
   | .unknown => return .unknown
-  | .ok rows =>
+  | .ok (rows, poison) =>
     let (.mau precision true _ _ round) := expression.op | return .unknown
     let mut buses : Fin 4 → IntegerALU.Bus := fun _ => ⟨0, 0⟩
     let mut flags : Fin 4 → BitVec 4 := fun _ => 0
@@ -1492,7 +1499,7 @@ def executeParsedMatrixMAUAtMAB (state : State) (coordinate : MABCoordinate)
       | some (bus, flag) =>
         buses := fun index => if index == pe then bus else buses index
         flags := fun index => if index == pe then flag else flags index
-    return .ok (buses, flags)
+    return .ok (buses, flags, poison)
 
 
 theorem parsedMatrixMAURowActive_upper_lower_halves :
@@ -2702,6 +2709,27 @@ def writeParsedMslMsrDestination? (files : PEMemory.IntegerRegisterFiles)
   | .nowrite => some ⟨files, none⟩
   | _ => none
 
+def parsedMatrixMAUDestinationEnabled? (files : PEMemory.IntegerRegisterFiles)
+    (destination : ParsedOperand) (context : ParsedIntegerContext) (cycle : Fin 4)
+    (directive : ParsedMaskDirective) (hasSingleLineMask : Bool) : Option Bool := do
+  match destination with
+  | .mem .. => do
+      let access ← ParsedOperand.toDirectMemoryDestination? destination context.pe cycle
+        context.bar0 context.bar1 context.tWord
+      let selection ← ParsedOperand.resolveMemoryWriteSelection? destination access.bank
+        files.maskRegisters cycle directive hasSingleLineMask
+      some ((List.finRange 4).any fun word =>
+        word.val < access.width.words &&
+          PEMemory.selectedWordMask selection.flags selection.longLong word != 0)
+  | .bar lm1 .. => do
+      let bank := if lm1 then PEMemory.Bank.lm1 else PEMemory.Bank.lm0
+      let selection ← ParsedOperand.resolveMemoryWriteSelection? destination bank
+        files.maskRegisters cycle directive hasSingleLineMask
+      some (selection.flags != 0)
+  | .omr .. => some true
+  | .nowrite => some false
+  | _ => none
+
 def executeParsedMatrixMAUTransitionAtMAB (readState currentState : State)
     (expression : ParsedExpr) (coordinate : MABCoordinate)
     (noForward hasSingleLineMask : Bool) : ProofsLean.StepResult State := Id.run do
@@ -2712,11 +2740,12 @@ def executeParsedMatrixMAUTransitionAtMAB (readState currentState : State)
   let mut bar0 := initialBar0
   let mut bar1 := initialBar1
   let mut outputs : Fin 4 → Fin 4 → IntegerALU.Bus := fun _ _ => ⟨0, 0⟩
+  let mut poisoned : Fin 4 → Bool := fun _ => false
   for cycle in List.finRange 4 do
     match executeParsedMatrixMAUAtMAB readState coordinate expression cycle with
     | .failure => return .failure
     | .unknown => return .unknown
-    | .ok (buses, flags) =>
+    | .ok (buses, flags, poison) =>
       for pe in List.finRange 4 do
         let peId := physicalPEId coordinate pe
         let oldContext := currentState.peContext peId
@@ -2735,6 +2764,12 @@ def executeParsedMatrixMAUTransitionAtMAB (readState currentState : State)
                   bar0 := peBar0
                   bar1 := peBar1
                   tWord := oldContext.tWord }
+                if poison then
+                  match parsedMatrixMAUDestinationEnabled? peFiles destination context cycle
+                      currentState.maskDirective hasSingleLineMask with
+                  | none => return .unknown
+                  | some true => return .failure
+                  | some false => return writeDests rest peFiles peBar0 peBar1
                 match writeParsedMslMsrDestination? peFiles destination context output
                     (flags pe) cycle currentState.maskDirective hasSingleLineMask with
                 | none => return .unknown
@@ -2755,12 +2790,14 @@ def executeParsedMatrixMAUTransitionAtMAB (readState currentState : State)
             bar1 := fun index => if index == pe then nextBar1 else bar1 index
             outputs := fun index slot =>
               if index == pe && slot == cycle then output else outputs index slot
+            poisoned := fun slot => if slot == cycle then poison else poisoned slot
   let mut nextState := currentState
   for pe in List.finRange 4 do
     let peId := physicalPEId coordinate pe
     let forwarding : Forwarding.Slots := fun unit cycle =>
       if noForward then nextState.forwarding peId unit cycle
-      else if unit == .mau then .known (outputs pe cycle)
+      else if unit == .mau then
+        if poisoned cycle then .poison else .known (outputs pe cycle)
       else nextState.forwarding peId unit cycle
     let valid : Forwarding.Unit → Fin 4 → Bool := fun unit cycle =>
       if noForward then nextState.forwardingValid peId unit cycle
