@@ -2016,11 +2016,69 @@ def parsedFloatRsqrtLane (precision : ParsedPrecision) (value : Nat) : Nat := Id
     2 ^ exponentBits
   return outputExponent * 2 ^ mantissaBits + mantissa5 * 2 ^ (mantissaBits - 5)
 
+def parsedFloatFormat (precision : ParsedPrecision) : RRN.FloatPrecision :=
+  match precision with
+  | .d => .double
+  | .f => .single
+  | _ => .half
+
+def parsedFloatFloorLane (precision : ParsedPrecision) (value : Nat) : Nat := Id.run do
+  let format := parsedFloatFormat precision
+  let mantissaBits := format.mantissaBits
+  let exponent := value / 2 ^ mantissaBits % 2 ^ format.exponentBits
+  let negative := value / 2 ^ (format.width - 1) % 2 == 1
+  if exponent == 0 || exponent == format.exponentMax then return value
+  let significand := 2 ^ mantissaBits + value % 2 ^ mantissaBits
+  let binaryExponent := (exponent : Int) - format.bias - mantissaBits
+  if binaryExponent >= 0 then return value
+  let shift := (-binaryExponent).toNat
+  let integer := if shift >= 128 then 0 else significand / 2 ^ shift
+  let fractional := if shift >= 128 then true else significand % 2 ^ shift != 0
+  let roundedInteger := integer + if negative && fractional then 1 else 0
+  if roundedInteger == 0 then
+    return (if negative then 1 else 0) * 2 ^ (format.width - 1)
+  return RRN.roundPack format negative roundedInteger 0
+
+def parsedFloatFtoiLane (precision : ParsedPrecision) (unsigned : Bool)
+    (value : Nat) : Nat := Id.run do
+  let format := parsedFloatFormat precision
+  let width := format.width
+  let mantissaBits := format.mantissaBits
+  let exponent := value / 2 ^ mantissaBits % 2 ^ format.exponentBits
+  let negative := value / 2 ^ (width - 1) % 2 == 1
+  let magnitude := if exponent == 0 then 0 else if exponent == format.exponentMax then
+      2 ^ 127
+    else
+      let significand := 2 ^ mantissaBits + value % 2 ^ mantissaBits
+      let binaryExponent := (exponent : Int) - format.bias - mantissaBits
+      if binaryExponent >= 0 then
+        if binaryExponent > 70 then 2 ^ 127
+        else significand * 2 ^ binaryExponent.toNat
+      else if -binaryExponent >= 127 then 0
+      else significand / 2 ^ (-binaryExponent).toNat
+  let outputWidth := match precision with | .d => 64 | .f => 32 | _ => 16
+  if unsigned then return min magnitude (2 ^ outputWidth - 1)
+  let limit := if negative then 2 ^ (outputWidth - 1) else 2 ^ (outputWidth - 1) - 1
+  let clipped := min magnitude limit
+  return if negative then (2 ^ outputWidth - clipped) % 2 ^ outputWidth else clipped
+
+theorem parsedFloatFloorLane_rounds_negative_fraction_down :
+    parsedFloatFloorLane .f 0xbfc00000 = 0xc0000000 := by
+  decide
+
+theorem parsedFloatFtoiLane_signed_truncates_fraction :
+    parsedFloatFtoiLane .f false 0x3fe00000 = 1 := by
+  decide
+
+theorem parsedFloatFtoiLane_unsigned_clamps_infinity :
+    parsedFloatFtoiLane .f true 0x7f800000 = 0xffffffff := by
+  decide
+
 theorem parsedFloatRsqrtLane_single_exact_table_entry :
     parsedFloatRsqrtLane .f 0x3f800000 = 0x3f7c0000 := by
   decide
 
-def parsedFloatReluBus (precision : ParsedPrecision) (name : ParsedAluName)
+def parsedFloatReluBus (precision : ParsedPrecision) (name : ParsedAluName) (unsigned : Bool)
     (left : IntegerALU.Bus) (right? : Option IntegerALU.Bus) : IntegerALU.Bus × BitVec 4 := Id.run do
   let width := match precision with | .d => 64 | .f => 32 | _ => 16
   let lanes := 64 / width
@@ -2035,6 +2093,8 @@ def parsedFloatReluBus (precision : ParsedPrecision) (name : ParsedAluName)
     if name == .passa then (a, a == 0)
     else if name == .rsqrt then (parsedFloatRsqrtLane precision a,
       a / 2 ^ (width - 1) % 2 == 0)
+    else if name == .floor then (parsedFloatFloorLane precision a, false)
+    else if name == .ftoi then (parsedFloatFtoiLane precision unsigned a, false)
     else
       let condition := a / 2 ^ (width - 1 - shift) % 2 == 0
       (if condition then b else 2 ^ (width - 1), condition)
@@ -2050,14 +2110,14 @@ def parsedFloatReluBus (precision : ParsedPrecision) (name : ParsedAluName)
   return (⟨high, left.low⟩, BitVec.ofNat 4 flags)
 
 theorem parsedFloatReluBus_single_lane_sign_selection :
-    parsedFloatReluBus .f .relu
+    parsedFloatReluBus .f .relu false
       ⟨0x3f800000bf800000, 0x1122334455667788⟩
       (some ⟨0x4000000040400000, 0⟩) =
       (⟨0x4000000080000000, 0x1122334455667788⟩, 0xc) := by
   decide
 
 theorem parsedFloatReluBus_float_passa_preserves_bus_and_sets_zero_flags :
-    parsedFloatReluBus .f .passa
+    parsedFloatReluBus .f .passa false
       ⟨0x000000003f800000, 0x1122334455667788⟩ none =
       (⟨0x000000003f800000, 0x1122334455667788⟩, 0xc) := by
   decide
@@ -2082,18 +2142,19 @@ def lowerParsedMslMsr? (expression : ParsedExpr) :
 structure ParsedFloatReluAccesses where
   precision : ParsedPrecision
   name : ParsedAluName
+  unsigned : Bool
   sourceA : ParsedIntegerInput
   sourceB : Option ParsedIntegerInput
   destination : ParsedOperand
 
 def lowerParsedFloatRelu? (expression : ParsedExpr) (context : ParsedIntegerContext) :
     Option ParsedFloatReluAccesses := do
-  let (name, precision) ← match expression.op with
-    | .alu name (some precision) _ _ => do
-        guard (name == .passa || name == .rsqrt || name == .relu || name == .relu0 || name == .relu1 ||
+  let (name, precision, unsigned) ← match expression.op with
+    | .alu name (some precision) unsigned _ => do
+        guard (name == .passa || name == .rsqrt || name == .floor || name == .ftoi || name == .relu || name == .relu0 || name == .relu1 ||
           name == .relu2 || name == .relu3)
         guard (precision == .d || precision == .f || precision == .h)
-        some (name, precision)
+        some (name, precision, unsigned)
     | _ => none
   match expression.sources, expression.destinations with
   | [sourceA], [destination] => do
@@ -2101,7 +2162,7 @@ def lowerParsedFloatRelu? (expression : ParsedExpr) (context : ParsedIntegerCont
         context.group context.l2b context.l1b context.mab context.pe context.cycle
         context.bar0 context.bar1 context.tWord
       match destination with
-      | .mem .. | .bar .. | .omr .. | .nowrite => some ⟨precision, name, sourceA, none,
+      | .mem .. | .bar .. | .omr .. | .nowrite => some ⟨precision, name, unsigned, sourceA, none,
           destination⟩
       | _ => none
   | [sourceA, sourceB], [destination] => do
@@ -2113,7 +2174,7 @@ def lowerParsedFloatRelu? (expression : ParsedExpr) (context : ParsedIntegerCont
         context.group context.l2b context.l1b context.mab context.pe context.cycle
         context.bar0 context.bar1 context.tWord
       match destination with
-      | .mem .. | .bar .. | .omr .. | .nowrite => some ⟨precision, name, sourceA, some sourceB,
+      | .mem .. | .bar .. | .omr .. | .nowrite => some ⟨precision, name, unsigned, sourceA, some sourceB,
           destination⟩
       | _ => none
   | _, _ => none
@@ -2284,7 +2345,7 @@ def executeParsedMslMsrProducers (readState currentState : State)
 def parsedExprIsFloatReluProducer (expression : ParsedExpr) : Bool :=
   match expression.op with
   | .alu name (some precision) _ _ =>
-      (name == .passa || name == .rsqrt || name == .relu || name == .relu0 || name == .relu1 || name == .relu2 ||
+      (name == .passa || name == .rsqrt || name == .floor || name == .ftoi || name == .relu || name == .relu0 || name == .relu1 || name == .relu2 ||
         name == .relu3) && (precision == .d || precision == .f || precision == .h)
   | _ => false
 
@@ -2324,6 +2385,7 @@ def executeParsedFloatReluAtPE (readState currentState : State)
           | .unknown => .unknown
           | .ok sourceB =>
             let (rawOutput, flags) := parsedFloatReluBus accesses.precision accesses.name
+              accesses.unsigned
               sourceA sourceB
             match resolveFlushSelection? expression.flush files.maskRegisters cycle with
             | none => .unknown

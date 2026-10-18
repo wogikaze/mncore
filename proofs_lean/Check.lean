@@ -105,6 +105,9 @@ import Lean
 #print axioms ProofsLean.MNCore.parsedFloatReluBus_single_lane_sign_selection
 #print axioms ProofsLean.MNCore.parsedFloatReluBus_float_passa_preserves_bus_and_sets_zero_flags
 #print axioms ProofsLean.MNCore.parsedFloatRsqrtLane_single_exact_table_entry
+#print axioms ProofsLean.MNCore.parsedFloatFloorLane_rounds_negative_fraction_down
+#print axioms ProofsLean.MNCore.parsedFloatFtoiLane_signed_truncates_fraction
+#print axioms ProofsLean.MNCore.parsedFloatFtoiLane_unsigned_clamps_infinity
 #print axioms ProofsLean.MNCore.RRN.vectorMAUFma_half_one_plus_one_rounds_to_two
 #print axioms ProofsLean.MNCore.extendHalfPairToSingleBus_lane_order
 #print axioms ProofsLean.MNCore.roundDoublePairToSingleBus_lane_order
