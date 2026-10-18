@@ -805,6 +805,40 @@ def resolveFlushSelection? (flush : Option ParsedMask)
   | none => some none
   | some mask => (resolveParsedMaskSelection? mask registers cycle).map some
 
+theorem resolveParsedMaskSelection?_always_resolves (mask : ParsedMask)
+    (registers : ProofsLean.MNCore.Masks.RegisterFile) (cycle : Fin 4) :
+    ∃ selection, resolveParsedMaskSelection? mask registers cycle = some selection := by
+  cases mask with
+  | pattern longLong bits =>
+      exact ⟨⟨if bits.getLsbD (3 - cycle.val) then BitVec.allOnes 4 else 0,
+        longLong⟩, by simp [resolveParsedMaskSelection?, resolveParsedMaskFlags?,
+          parsedMaskLongLong]⟩
+  | entry longLong index =>
+      have indexLt : index.val < 256 := index.isLt
+      by_cases indexZero : index.val == 0
+      · refine ⟨⟨BitVec.allOnes 4, longLong⟩, ?_⟩
+        simp [resolveParsedMaskSelection?, resolveParsedMaskFlags?, parsedMaskLongLong,
+          indexZero]
+      · by_cases indexSmall : index.val < 16
+        · refine ⟨⟨registers ⟨index.val - 1, by omega⟩ cycle, longLong⟩, ?_⟩
+          simp [resolveParsedMaskSelection?, resolveParsedMaskFlags?, parsedMaskLongLong, indexZero,
+            indexSmall]
+        · refine ⟨⟨if (index.val / 2 ^ (3 - cycle.val)) % 2 == 1
+            then BitVec.allOnes 4 else 0, longLong⟩, ?_⟩
+          simp [resolveParsedMaskSelection?, resolveParsedMaskFlags?, parsedMaskLongLong, indexZero,
+            indexSmall, indexLt]
+
+theorem resolveFlushSelection?_always_resolves
+    (flush : Option ParsedMask) (registers : ProofsLean.MNCore.Masks.RegisterFile)
+    (cycle : Fin 4) :
+    ∃ selection, resolveFlushSelection? flush registers cycle = some selection := by
+  cases flush with
+  | none => exact ⟨none, rfl⟩
+  | some mask =>
+      obtain ⟨selection, resolved⟩ :=
+        resolveParsedMaskSelection?_always_resolves mask registers cycle
+      exact ⟨some selection, by simp [resolveFlushSelection?, resolved]⟩
+
 def parsedExprHasSingleLineWriteMask (expression : ParsedExpr) : Bool :=
   expression.destinations.any parsedOperandHasSingleLineWriteMask
 
@@ -4865,7 +4899,7 @@ theorem prepareParsedIntegerALUExprCycle_alu_never_unknown_of_resolved
       cases noForward <;>
         simp [isAlu, lowered, prepared, updateParsedIntegerALUForwardingCycle]
 
-theorem prepareParsedIntegerALUExprCycle_constant_never_unknown_of_resolved
+theorem prepareParsedIntegerALUExprCycle_constant_never_unknown_of_lowered
     (files : IntegerRegisterFiles) (oldSlots nextSlots : ProofsLean.MNCore.Forwarding.Slots)
     (expression : ParsedExpr) (control : ParsedMaskExecutionControl)
     (hasSingleLineMask noForward reduced : Bool) (cycle : Fin 4)
@@ -4875,10 +4909,7 @@ theorem prepareParsedIntegerALUExprCycle_constant_never_unknown_of_resolved
     (lowered : ParsedExpr.toDirectMaskedConstantWrites? expression files.maskRegisters
       control.directive hasSingleLineMask control.context.group control.context.l2b
       control.context.l1b control.context.mab control.context.pe cycle
-      control.context.bar0 control.context.bar1 control.context.tWord = some targets)
-    (flushSelection : Option PEWordSelection)
-    (flushResolved : resolveFlushSelection? expression.flush files.maskRegisters cycle =
-      some flushSelection) :
+      control.context.bar0 control.context.bar1 control.context.tWord = some targets) :
     prepareParsedIntegerALUExprCycle files oldSlots nextSlots expression control
       hasSingleLineMask noForward reduced cycle ≠ .unknown := by
   have targetReadsKnown := ParsedExpr.toDirectMaskedConstantWrites_reads_known expression files
@@ -4887,6 +4918,8 @@ theorem prepareParsedIntegerALUExprCycle_constant_never_unknown_of_resolved
     control.context.bar0 control.context.bar1 control.context.tWord isConstant targets lowered
   have targetsKnown := prepareParsedMaskedConstantWrites_never_unknown_of_reads
     files cycle targets targetReadsKnown
+  obtain ⟨flushSelection, flushResolved⟩ := resolveFlushSelection?_always_resolves
+    expression.flush files.maskRegisters cycle
   rcases isConstant with isZero | ⟨payload, sparse, isImmediate⟩
   · unfold prepareParsedIntegerALUExprCycle
     simp only [isZero, lowered]
@@ -5032,7 +5065,7 @@ theorem parsedIntegerALUExprFourCycleStep_alu_never_unknown_of_resolved
     outputSlots expression control hasSingleLineMask noForward reduced cycle isAlu accesses
     lowered readXKnown readYKnown
 
-theorem parsedIntegerALUExprFourCycleStep_constant_never_unknown_of_resolved
+theorem parsedIntegerALUExprFourCycleStep_constant_never_unknown_of_lowered
     (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)
     (expression : ParsedExpr) (control : ParsedMaskExecutionControl)
     (hasSingleLineMask noForward reduced : Bool)
@@ -5043,19 +5076,15 @@ theorem parsedIntegerALUExprFourCycleStep_constant_never_unknown_of_resolved
         ParsedExpr.toDirectMaskedConstantWrites? expression files.maskRegisters
           control.directive hasSingleLineMask control.context.group control.context.l2b
           control.context.l1b control.context.mab control.context.pe cycle
-          control.context.bar0 control.context.bar1 control.context.tWord = some targets ∧
-        ∃ flushSelection,
-          resolveFlushSelection? expression.flush files.maskRegisters cycle =
-            some flushSelection) :
+          control.context.bar0 control.context.bar1 control.context.tWord = some targets) :
     parsedIntegerALUExprFourCycleStep files slots expression control
       hasSingleLineMask noForward reduced ≠ .unknown := by
   apply parsedIntegerALUExprFourCycleStep_never_unknown
   intro cycle member outputSlots
-  obtain ⟨targets, lowered, flushSelection, flushResolved⟩ :=
-    resolved cycle member
-  exact prepareParsedIntegerALUExprCycle_constant_never_unknown_of_resolved files slots
+  obtain ⟨targets, lowered⟩ := resolved cycle member
+  exact prepareParsedIntegerALUExprCycle_constant_never_unknown_of_lowered files slots
     outputSlots expression control hasSingleLineMask noForward reduced cycle isConstant targets
-    lowered flushSelection flushResolved
+    lowered
 
 /-- Four-cycle issue-line transition for integer ALU, zero, and immediate
 producers. All
