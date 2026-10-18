@@ -1144,7 +1144,8 @@ def coverage_catalog() -> dict:
             "immediates_fixed_operands_and_zero", "pe_rotations_and_coordinate_operands",
             "t_indirect_madpe_and_address_mapping", "masks_flush_and_mask_directives",
             "forwarding_lifetime_and_latency", "l1bm_transfers_turnaround_and_reductions",
-            "l2bm_transfers_and_reductions", "mv_dram_pdm_all_transfer_and_reduction_modes") else "unimplemented"} for area in areas],
+            "l2bm_transfers_and_reductions", "mv_dram_pdm_all_transfer_and_reduction_modes",
+            "initial_state_and_zero_memory", "scoring_and_zero_cost_directive_normalization") else "unimplemented"} for area in areas],
     }
 
 

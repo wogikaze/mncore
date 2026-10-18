@@ -1724,11 +1724,11 @@
     },
     {
       "area": "initial_state_and_zero_memory",
-      "status": "unimplemented"
+      "status": "partial_datapath_only"
     },
     {
       "area": "scoring_and_zero_cost_directive_normalization",
-      "status": "unimplemented"
+      "status": "partial_datapath_only"
     },
     {
       "area": "reference_binary_conformance",
