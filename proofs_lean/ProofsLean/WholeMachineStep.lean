@@ -22,7 +22,7 @@ def parsedExprIsSupportedPELineProducer (expression : ParsedExpr) : Bool :=
   | .mau .f false .add none false | .mau .f false .mul none false
   | .mau .f false .fma none false => true
   | .matrixWrite .d | .matrixWrite .f | .matrixWrite .g | .matrixWrite .h => true
-  | .l1bm (.mwrite _) => true
+  | .l1bm (.mwrite _) | .l1bm (.m4write _) => true
   | _ => false
 
 def parsedExprIsMatrixReadProducer (expression : ParsedExpr) : Bool :=
@@ -37,7 +37,7 @@ def parsedExprIsMatrixWriteProducer (expression : ParsedExpr) : Bool :=
 
 def parsedExprIsL1MwriteProducer (expression : ParsedExpr) : Bool :=
   match expression.op with
-  | .l1bm (.mwrite _) => true
+  | .l1bm (.mwrite _) | .l1bm (.m4write _) => true
   | _ => false
 
 def parsedExprIsNoForwardProducer (expression : ParsedExpr) : Bool :=
@@ -661,7 +661,9 @@ def executeParsedMatrixWritesAtMABs (readState : State) (coordinates : List MABC
 
 structure ParsedL1MwriteAccess where
   source : ParsedOperand
-  mab : Fin 16
+  selectedMab : Fin 16
+  mabGroup : Fin 4
+  fourMabs : Bool
   twoLongWords : Bool
   address : Option (Fin L1Transfer.l1bmLongWords)
 
@@ -669,11 +671,21 @@ def lowerParsedL1Mwrite? (expression : ParsedExpr) : Option ParsedL1MwriteAccess
   match expression.op, expression.sources, expression.destinations with
   | .l1bm (.mwrite mab), [source], [.l1bm width address] => do
       if hmab : mab.val < 16 then
-        let mab : Fin 16 := ⟨mab.val, hmab⟩
+        let selectedMab : Fin 16 := ⟨mab.val, hmab⟩
+        let mabGroup : Fin 4 := ⟨mab.val / 4, by omega⟩
         let address := address.map fun address =>
           ⟨address.val % L1Transfer.l1bmLongWords,
             Nat.mod_lt _ (by decide)⟩
-        some ⟨source, mab, width.val == 4, address⟩
+        some ⟨source, selectedMab, mabGroup, false, width.val == 4, address⟩
+      else none
+  | .l1bm (.m4write mab), [source], [.l1bm width address] => do
+      if hmab : mab.val < 4 then
+        let selectedMab : Fin 16 := ⟨mab.val, by omega⟩
+        let mabGroup : Fin 4 := ⟨mab.val, hmab⟩
+        let address := address.map fun address =>
+          ⟨address.val % L1Transfer.l1bmLongWords,
+            Nat.mod_lt _ (by decide)⟩
+        some ⟨source, selectedMab, mabGroup, true, width.val == 4, address⟩
       else none
   | _, _, _ => none
 
@@ -708,11 +720,12 @@ def readRawL1MwriteBus (state : State) (source : ParsedOperand)
           (state.peRegisters pe) (state.forwarding pe) cycle input
 
 def readL1MwriteBusesAtBank (state : State) (access : ParsedL1MwriteAccess)
-    (bank : Fin 64) (cycle : Fin 4) : ProofsLean.StepResult (Fin 4 → IntegerALU.Bus) :=
+    (bank : Fin 64) (mab : Fin 16) (cycle : Fin 4) :
+    ProofsLean.StepResult (Fin 4 → IntegerALU.Bus) :=
   let coordinate : MABCoordinate :=
     ⟨⟨bank.val / 16, by have h := bank.isLt; omega⟩,
       ⟨bank.val / 8 % 2, by have h := bank.isLt; omega⟩,
-      ⟨bank.val % 8, by have h := bank.isLt; omega⟩, access.mab⟩
+      ⟨bank.val % 8, by have h := bank.isLt; omega⟩, mab⟩
   let rec readPEs : List (Fin 4) → (Fin 4 → IntegerALU.Bus) →
       ProofsLean.StepResult (Fin 4 → IntegerALU.Bus)
     | [], buses => .ok buses
@@ -724,6 +737,25 @@ def readL1MwriteBusesAtBank (state : State) (access : ParsedL1MwriteAccess)
         | .ok bus => readPEs rest (fun index => if index = pe then bus else buses index)
   readPEs (List.finRange 4) (fun _ => ⟨0, 0⟩)
 
+def readL1M4writeBusesAtBank (state : State) (access : ParsedL1MwriteAccess)
+    (bank : Fin 64) (cycle : Fin 4) :
+    ProofsLean.StepResult (Fin 4 → Fin 4 → IntegerALU.Bus) :=
+  let rec readGroups : List (Fin 4) → (Fin 4 → Fin 4 → IntegerALU.Bus) →
+      ProofsLean.StepResult (Fin 4 → Fin 4 → IntegerALU.Bus)
+    | [], buses => .ok buses
+    | group :: rest, buses =>
+        let mab : Fin 16 := ⟨group.val * 4 + access.mabGroup.val, by
+          have hg := group.isLt
+          have hm := access.mabGroup.isLt
+          omega⟩
+        match readL1MwriteBusesAtBank state access bank mab cycle with
+        | .failure => .failure
+        | .unknown => .unknown
+        | .ok groupBuses =>
+            readGroups rest (fun nextGroup pe =>
+              if nextGroup = group then groupBuses pe else buses nextGroup pe)
+  readGroups (List.finRange 4) (fun _ _ => ⟨0, 0⟩)
+
 def l1MwriteTurnaroundWrites (twoLongWords : Bool)
     (buses : Fin 4 → IntegerALU.Bus) : List L1Transfer.L1TurnWrite :=
   (List.finRange 4).flatMap fun pe =>
@@ -732,6 +764,24 @@ def l1MwriteTurnaroundWrites (twoLongWords : Bool)
         [(⟨pe.val + 4, by have h := pe.isLt; omega⟩, (buses pe).low)]
       else []
 
+def l1M4writeTurnaroundWrites (twoLongWords : Bool)
+    (buses : Fin 4 → Fin 4 → IntegerALU.Bus) : List L1Transfer.L1TurnWrite :=
+  (List.finRange 4).flatMap fun group =>
+    (List.finRange 4).flatMap fun pe =>
+      let offset := group.val * (if twoLongWords then 8 else 4) + pe.val
+      [(⟨offset, by
+        have hg := group.isLt
+        have hp := pe.isLt
+        cases twoLongWords <;> simp [offset] <;> omega⟩,
+        (buses group pe).high)] ++
+        if twoLongWords then
+          [(⟨offset + 4, by
+            have hg := group.isLt
+            have hp := pe.isLt
+            cases twoLongWords <;> simp [offset] <;> omega⟩,
+            (buses group pe).low)]
+        else []
+
 def executeL1MwriteCyclesAtBank (state : State) (access : ParsedL1MwriteAccess)
     (bank : Fin 64) (updateTurnaround : Bool) : ProofsLean.StepResult
       (L1Transfer.L1Bank × L1Transfer.L1Turnaround) :=
@@ -739,17 +789,35 @@ def executeL1MwriteCyclesAtBank (state : State) (access : ParsedL1MwriteAccess)
       ProofsLean.StepResult (L1Transfer.L1Bank × L1Transfer.L1Turnaround)
     | [], memory, turnaround => .ok (memory, turnaround)
     | cycle :: rest, memory, turnaround =>
-        match readL1MwriteBusesAtBank state access bank cycle with
-        | .failure => .failure
-        | .unknown => .unknown
-        | .ok buses =>
-            let writes := match access.address with
-              | none => []
-              | some base => L1Transfer.mwriteWrites base access.twoLongWords cycle buses
-            let turnWrites := if updateTurnaround then
-              l1MwriteTurnaroundWrites access.twoLongWords buses else []
-            let next := L1Transfer.commitL1Transfer memory turnaround cycle writes turnWrites
-            run rest next.1 next.2
+        let writeCycle (buses : Fin 4 → IntegerALU.Bus) :=
+          let writes := match access.address with
+            | none => []
+            | some base => L1Transfer.mwriteWrites base access.twoLongWords cycle buses
+          let turnWrites := if updateTurnaround then
+            l1MwriteTurnaroundWrites access.twoLongWords buses else []
+          L1Transfer.commitL1Transfer memory turnaround cycle writes turnWrites
+        let writeM4Cycle (buses : Fin 4 → Fin 4 → IntegerALU.Bus) :=
+          let writes := match access.address with
+            | none => []
+            | some base => L1Transfer.m4writeWrites base access.twoLongWords
+                cycle access.mabGroup (fun group _ pe => buses group pe)
+          let turnWrites := if updateTurnaround then
+            l1M4writeTurnaroundWrites access.twoLongWords buses else []
+          L1Transfer.commitL1Transfer memory turnaround cycle writes turnWrites
+        if access.fourMabs then
+          match readL1M4writeBusesAtBank state access bank cycle with
+          | .failure => .failure
+          | .unknown => .unknown
+          | .ok buses =>
+              let next := writeM4Cycle buses
+              run rest next.1 next.2
+        else
+          match readL1MwriteBusesAtBank state access bank access.selectedMab cycle with
+          | .failure => .failure
+          | .unknown => .unknown
+          | .ok buses =>
+              let next := writeCycle buses
+              run rest next.1 next.2
   run [0, 1, 2, 3] (state.l1bm bank) (state.l1bmTurnaround bank)
 
 def executeParsedL1MwriteAtAllBanks (readState currentState : State)

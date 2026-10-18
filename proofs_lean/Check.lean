@@ -96,7 +96,11 @@ import Lean
 #print axioms ProofsLean.MNCore.executeParsedMvMemory
 #print axioms ProofsLean.MNCore.executeIntegerProducerInstructionLine_mv_transfer_success
 #print axioms ProofsLean.MNCore.lowerParsedL1Mwrite?
+#print axioms ProofsLean.MNCore.readL1M4writeBusesAtBank
+#print axioms ProofsLean.MNCore.l1M4writeTurnaroundWrites
+#print axioms ProofsLean.MNCore.executeL1MwriteCyclesAtBank
 #print axioms ProofsLean.MNCore.executeParsedL1MwriteAtAllBanks
+#print axioms ProofsLean.MNCore.executeParsedL1MwriteProducers
 #print axioms ProofsLean.MNCore.executeIntegerProducerInstructionLine_pe_success
 #print axioms ProofsLean.MNCore.UnitKind.mem_all
 #print axioms ProofsLean.MNCore.Issue.ParsedOp.producerUnit?_of_alu
