@@ -166,7 +166,7 @@
   .center {
     min-width: 0;
     display: grid;
-    grid-template-rows: minmax(0, 0.36fr) minmax(0, 0.64fr);
+    grid-template-rows: minmax(0, 0.48fr) minmax(0, 0.52fr);
     min-height: 0;
   }
   .tabs {
