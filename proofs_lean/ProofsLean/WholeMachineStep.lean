@@ -4283,6 +4283,27 @@ def completeAllPendingMvs (state : State) : State := Id.run do
     | some tag => completed := fun other => other == tag || completed other
   return { state with blockMemory := memory, pendingMv := [], mvCompletedTags := completed }
 
+/-- Dispatch the L1BM-to-PE producers present on a PE issue line. The issue
+checker rejects multiple such producers because they conflict on L1BM emission
+or turnaround state. -/
+def executeParsedL1ToPEProducers (readState currentState : State)
+    (expressions : List ParsedExpr) (noForward hasSingleLineMask usePreIssueMask : Bool) :
+    ProofsLean.StepResult State :=
+  match expressions.filter parsedExprIsL1ToPEProducer with
+  | [] => .ok currentState
+  | [expression] => executeParsedL1ToPEProducer readState currentState expression noForward
+      hasSingleLineMask usePreIssueMask
+  | _ => .failure
+
+theorem executeParsedL1ToPEProducers_multiple_fail
+    (readState currentState : State) (first second : ParsedExpr) (rest : List ParsedExpr)
+    (noForward hasSingleLineMask usePreIssueMask : Bool)
+    (multiple : List.filter parsedExprIsL1ToPEProducer (first :: second :: rest) =
+      first :: second :: rest) :
+    executeParsedL1ToPEProducers readState currentState (first :: second :: rest)
+      noForward hasSingleLineMask usePreIssueMask = .failure := by
+  simp [executeParsedL1ToPEProducers, multiple]
+
 /-- Whole-machine line transition for parsed integer ALU, zero, immediate,
 matrix-read, wait, and noforward expressions. Reads and prepared writes use the
 existing per-PE transactional semantics; matrix data is read from the PE's
@@ -4335,16 +4356,12 @@ noncomputable def executeIntegerProducerInstructionLine
                         | .failure => .failure
                         | .unknown => .unknown
                         | .ok nextWithBlocks =>
-                            let l1ToPE := expressions.filter parsedExprIsL1ToPEProducer
                             let l1ToPEUsesPreIssueMask :=
                               parsedL1ToPEPrecedesOMRWriter expressions
-                            let afterL1ToPE : ProofsLean.StepResult State := match l1ToPE with
-                              | [] => .ok nextWithBlocks
-                              | [expression] => executeParsedL1ToPEProducer state nextWithBlocks
-                                  expression noForward
-                                  (expressions.any parsedExprHasSingleLineWriteMask)
-                                  l1ToPEUsesPreIssueMask
-                              | _ => .unknown
+                            let afterL1ToPE := executeParsedL1ToPEProducers state nextWithBlocks
+                              expressions noForward
+                              (expressions.any parsedExprHasSingleLineWriteMask)
+                              l1ToPEUsesPreIssueMask
                             match afterL1ToPE with
                             | .failure => .failure
                             | .unknown => .unknown
@@ -4958,17 +4975,12 @@ theorem executeIntegerProducerInstructionLine_pe_success
       (!(normalizedExpressions.any
         (parsedExprIsNoForwardProducer ∘ NormalizedExpr.toParsed))) = .ok nextSharedBlocks)
     (nextBroadcast : State)
-    (l1ToPE : (match (normalizedExpressions.map NormalizedExpr.toParsed).filter
-        parsedExprIsL1ToPEProducer with
-      | [] => (ProofsLean.StepResult.ok nextSharedBlocks : ProofsLean.StepResult State)
-      | [expression] => executeParsedL1ToPEProducer state nextSharedBlocks expression
-          (normalizedExpressions.any
-            (parsedExprIsNoForwardProducer ∘ NormalizedExpr.toParsed))
-          (normalizedExpressions.any
-            (parsedExprHasSingleLineWriteMask ∘ NormalizedExpr.toParsed))
-          (parsedL1ToPEPrecedesOMRWriter
-            (normalizedExpressions.map NormalizedExpr.toParsed))
-      | _ => .unknown) = .ok nextBroadcast)
+    (l1ToPE : executeParsedL1ToPEProducers state nextSharedBlocks
+      (normalizedExpressions.map NormalizedExpr.toParsed)
+      (normalizedExpressions.any (parsedExprIsNoForwardProducer ∘ NormalizedExpr.toParsed))
+      (normalizedExpressions.any (parsedExprHasSingleLineWriteMask ∘ NormalizedExpr.toParsed))
+      (parsedL1ToPEPrecedesOMRWriter (normalizedExpressions.map NormalizedExpr.toParsed)) =
+        .ok nextBroadcast)
     (waitsComplete : (normalizedExpressions.map NormalizedExpr.toParsed).any
       (parsedExprWaitPending state) = false)
     :

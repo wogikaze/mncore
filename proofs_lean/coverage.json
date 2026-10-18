@@ -1843,6 +1843,13 @@
     {
       "area": "l1bm_transfers_turnaround_and_reductions",
       "status": "partial_whole_machine_transition",
+      "l1bm_to_pe_issue_multiplicity": {
+        "behavior": "Multiple L1BM-to-PE producers in one line return failure instead of unknown after the line-level issue check.",
+        "lean_executor": "ProofsLean.MNCore.executeParsedL1ToPEProducers",
+        "failure_theorem": "ProofsLean.MNCore.executeParsedL1ToPEProducers_multiple_fail",
+        "rust_reference": "viz/core/src/issue.rs::group and check reject repeated L1BM/L1BM-turnaround groups and their tested implicit l1bm_emit conflict.",
+        "scope_limit": "The theorem classifies multiple selected producers; valid single-producer transfer semantics still require command-level Rust differential coverage."
+      },
       "combined_pe_to_l1_writes": {
         "newly_connected_case": "PE-to-L1BM mwrite, gather, and reduce producers execute in original expression order. Their PE sources read the pre-issue State, addressed L1BM writes accumulate in that order, and the latest producer replaces the turnaround contents computed from the pre-issue turnaround state, matching Rust Blocks::pe_to_l1 and BlockWrites application.",
         "rust_evidence": "viz/core/src/issue.rs:group; viz/core/src/machine.rs:330-360; viz/core/src/blocks.rs:146-260,358-365",
