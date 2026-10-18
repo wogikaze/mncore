@@ -8347,9 +8347,11 @@ theorem executeIntegerProducerInstructionLine_pe_never_unknown_of_stages
       ∀ coordinate, coordinate ∈ allMABCoordinates → ∀ blockFloatState,
         executeParsedBlockFloatAtMAB state blockFloatState expression coordinate
           noForward hasSingleLineMask ≠ .unknown)
-    (matrixProducerKnown : ∀ nextBlockFloat,
-      executeParsedMatrixMAUProducer state nextBlockFloat expressions
-        noForward hasSingleLineMask ≠ .unknown)
+    (matrixTransitionKnown : ∀ expression,
+      expression ∈ expressions.filter parsedExprIsMatrixMAUProducer →
+      ∀ coordinate, coordinate ∈ allMABCoordinates → ∀ mauState,
+        executeParsedMatrixMAUTransitionAtMAB state mauState expression coordinate
+          noForward hasSingleLineMask ≠ .unknown)
     (resolved : forwardingSourceResolved state)
     (l1ToPEKnown : ∀ nextShared,
       executeParsedL1ToPEProducers state nextShared expressions noForward
@@ -8410,9 +8412,21 @@ theorem executeIntegerProducerInstructionLine_pe_never_unknown_of_stages
                       expressions noForward hasSingleLineMask with
                   | failure => simp_all [expressions, noForward, hasSingleLineMask, List.any_map]
                   | unknown =>
+                      have mauProducerKnown : ∀ nextBlockFloat,
+                          executeParsedMatrixMAUProducer state nextBlockFloat expressions
+                            noForward hasSingleLineMask ≠ .unknown := by
+                        intro nextBlockFloat
+                        apply executeParsedMatrixMAUProducer_known_never_unknown
+                        intro expression member
+                        exact executeParsedMatrixMAUAtMABs_known_never_unknown
+                          state nextBlockFloat expression allMABCoordinates
+                          noForward hasSingleLineMask (by
+                            intro mauState coordinate coordinateMember
+                            exact matrixTransitionKnown expression member coordinate
+                              coordinateMember mauState)
                       have matrixStageKnown := executeParsedMatrixMAUAndWrites_resolved_never_unknown
                         state nextBlockFloat expressions noForward hasSingleLineMask
-                        (matrixProducerKnown nextBlockFloat) resolved
+                        (mauProducerKnown nextBlockFloat) resolved
                       exact (matrixStageKnown matrixResult).elim
                   | ok nextMatrix =>
                       cases sharedResult : executeParsedSharedBlockProducers state nextMatrix
