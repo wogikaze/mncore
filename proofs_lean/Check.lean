@@ -101,6 +101,7 @@ import Lean
 #print axioms ProofsLean.MNCore.halfMultiplyLane_infinity_sign_and_normalization
 #print axioms ProofsLean.MNCore.prepareHalfMultiplyBus_rounds_or_widens_outputs
 #print axioms ProofsLean.MNCore.prepareHalfFmaBus_round_modes
+#print axioms ProofsLean.MNCore.doubleMAUVectorBus_add_and_fma
 #print axioms ProofsLean.MNCore.RRN.vectorMAUFma_half_one_plus_one_rounds_to_two
 #print axioms ProofsLean.MNCore.extendHalfPairToSingleBus_lane_order
 #print axioms ProofsLean.MNCore.roundDoublePairToSingleBus_lane_order
