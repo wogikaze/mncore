@@ -2518,6 +2518,38 @@ def parsedMatrixMAUElement (store : ParsedMatrixReadStore) (mab : Fin 16)
         (parsedMatrixReadBaseH column)).toNat
   | .l | .i | .s => none
 
+def parsedMatrixMAURowCount : ParsedPrecision → Nat
+  | .d => 4
+  | .f | .g => 8
+  | .h => 16
+  | .l | .i | .s => 0
+
+/-- Columns consumed by one block-float matrix dot product. The F-precision
+matrix format has eight stored columns, while the FMA datapath consumes only
+the even columns, matching Rust's `0, 2, 4, 6` selection. -/
+def parsedMatrixMAUDotWidth : ParsedPrecision → Nat
+  | .d => 4
+  | .f => 4
+  | .g => 8
+  | .h => 16
+  | .l | .i | .s => 0
+
+def parsedMatrixMAUProductRow? (store : ParsedMatrixReadStore) (mab : Fin 16)
+    (sideY : Bool) (precision : ParsedPrecision) (row : Nat) : Option (List Nat) :=
+  (List.range (parsedMatrixMAUDotWidth precision)).mapM fun index =>
+    parsedMatrixMAUElement store mab sideY precision row
+      (index * if precision == .f then 2 else 1)
+
+theorem parsedMatrixMAURowCount_shapes :
+    parsedMatrixMAURowCount .d = 4 ∧ parsedMatrixMAURowCount .f = 8 ∧
+    parsedMatrixMAURowCount .g = 8 ∧ parsedMatrixMAURowCount .h = 16 := by
+  decide
+
+theorem parsedMatrixMAUDotWidth_shapes :
+    parsedMatrixMAUDotWidth .d = 4 ∧ parsedMatrixMAUDotWidth .f = 4 ∧
+    parsedMatrixMAUDotWidth .g = 8 ∧ parsedMatrixMAUDotWidth .h = 16 := by
+  decide
+
 theorem parsedMatrixMAUElement_double_layout (store : ParsedMatrixReadStore)
     (mab : Fin 16) (sideY : Bool) (row column : Fin 4) :
     parsedMatrixMAUElement store mab sideY .d row.val column.val =
