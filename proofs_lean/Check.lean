@@ -106,6 +106,11 @@ import Lean
 #print axioms ProofsLean.MNCore.executeL1GatherCyclesAtBank
 #print axioms ProofsLean.MNCore.executeParsedL1GatherAtAllBanks
 #print axioms ProofsLean.MNCore.executeParsedL1GatherProducers
+#print axioms ProofsLean.MNCore.lowerParsedL1Reduce?
+#print axioms ProofsLean.MNCore.parsedL1ReduceWritesAtCycle
+#print axioms ProofsLean.MNCore.executeL1ReduceCyclesAtBank
+#print axioms ProofsLean.MNCore.executeParsedL1ReduceAtAllBanks
+#print axioms ProofsLean.MNCore.executeParsedL1ReduceProducers
 #print axioms ProofsLean.MNCore.lowerParsedL1ToPE?
 #print axioms ProofsLean.MNCore.l1ToPEBusAt
 #print axioms ProofsLean.MNCore.executeParsedL1ToPEAtPEs
@@ -549,6 +554,8 @@ import Lean
 #print axioms ProofsLean.MNCore.RRN.single_rrn_opposites_cancel_to_positive_zero
 #print axioms ProofsLean.MNCore.RRN.single_rrn_infinity_sign_matches_all_infinities
 #print axioms ProofsLean.MNCore.RRN.single_longword_rrn_reduces_each_lane
+#print axioms ProofsLean.MNCore.RRN.reduceLongFloatAdd16
+#print axioms ProofsLean.MNCore.L1Transfer.reduceFloatL1Result
 #print axioms ProofsLean.MNCore.L1Transfer.reduceFloatL1Writes_count
 #print axioms ProofsLean.MNCore.L1Transfer.reduceFloatL1Writes_contains_result
 #print axioms ProofsLean.MNCore.L1Transfer.reduceL1Writes_contains_second

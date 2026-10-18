@@ -158,6 +158,21 @@ def reduceLongFloatAdd (precision : NativeFloatPrecision)
     (values : List (BitVec 64)) : BitVec 64 :=
   reduceLongFloatAddFormat precision.format values
 
+/-- Sixteen-input native floating reduction: round each consecutive group of
+four into the input format, then reduce those four intermediate results.
+This mirrors `rrn::reduce16` used by the 16x1 L1BM path. -/
+def reduceLongFloatAdd16 (precision : NativeFloatPrecision)
+    (values : List (BitVec 64)) : BitVec 64 :=
+  let format := precision.format
+  let width := format.width
+  let laneValues := (List.range (64 / width)).map fun lane =>
+    let shift := 64 - width * (lane + 1)
+    let inputs := values.map fun value => (value.extractLsb' shift width).toNat
+    let stages := (List.range 4).map fun group =>
+      reduceFloatAdd format format ((inputs.drop (group * 4)).take 4)
+    reduceFloatAdd format format stages * 2 ^ shift
+  BitVec.ofNat 64 (laneValues.foldl (· + ·) 0)
+
 /-- Half alias path: widen each half lane to single, reduce in the single
 network, round each result to half, and pack four halves. The 16-MAB case
 first reduces each group of four to single precision. -/

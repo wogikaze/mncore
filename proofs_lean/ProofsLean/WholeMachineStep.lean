@@ -25,7 +25,7 @@ def parsedExprIsSupportedPELineProducer (expression : ParsedExpr) : Bool :=
   | .matrixWrite .d | .matrixWrite .f | .matrixWrite .g | .matrixWrite .h => true
   | .l1bm (.mwrite _) | .l1bm (.m4write _) => true
   | .l1bm .pbcast | .l1bm .mbcast | .l1bm .m4bcast | .l1bm (.distrib _) => true
-  | .l1bm (.gather _) => true
+  | .l1bm (.gather _) | .l1bm (.reduce ..) | .l1bm (.reduce4 ..) => true
   | _ => false
 
 def parsedExprIsMatrixReadProducer (expression : ParsedExpr) : Bool :=
@@ -948,6 +948,201 @@ def executeParsedL1GatherProducers (readState currentState : State)
   | [expression] => executeParsedL1GatherAtAllBanks readState currentState expression updateTurnaround
   | _ => .unknown
 
+structure ParsedL1ReduceAccess where
+  source : ParsedOperand
+  rrn : ParsedRrn
+  round : Bool
+  fourGroups : Bool
+  twoLongWords : Bool
+  extended : Bool
+  sourceTwoWords : Bool
+  address : Option (Fin L1Transfer.l1bmLongWords)
+
+def parsedL1ReduceSourceAttributes (source : ParsedOperand) : Bool × Bool :=
+  match source with
+  | .mem access _ extended _ _ =>
+      (extended, access.region.width == 4)
+  | .forward _ _ extended _ => (extended, true)
+  | _ => (false, false)
+
+def lowerParsedL1Reduce? (expression : ParsedExpr) : Option ParsedL1ReduceAccess := do
+  match expression.op, expression.sources, expression.destinations with
+  | .l1bm (.reduce rrn round), [source], [.l1bm width address] =>
+      if width.val != 1 && width.val != 2 && width.val != 4 then none else
+      let (extended, sourceTwoWords) := parsedL1ReduceSourceAttributes source
+      let address := address.map fun address =>
+        ⟨address.val % L1Transfer.l1bmLongWords,
+          Nat.mod_lt _ (by decide)⟩
+      some ⟨source, rrn, round, false, width.val == 4, extended,
+        sourceTwoWords, address⟩
+  | .l1bm (.reduce4 rrn round), [source], [.l1bm width address] =>
+      if width.val != 1 && width.val != 2 && width.val != 4 then none else
+      let (extended, sourceTwoWords) := parsedL1ReduceSourceAttributes source
+      let address := address.map fun address =>
+        ⟨address.val % L1Transfer.l1bmLongWords,
+          Nat.mod_lt _ (by decide)⟩
+      some ⟨source, rrn, round, true, width.val == 4, extended,
+        sourceTwoWords, address⟩
+  | _, _, _ => none
+
+def extendL1ReduceBus (bus : IntegerALU.Bus) : IntegerALU.Bus :=
+  let lane (index : Fin 4) := BitVec.ofNat 32 <|
+    RRN.extendFloatBits .half .single
+      ((bus.high.extractLsb' (48 - index.val * 16) 16).toNat)
+  { high := BitVec.ofNat 64 (lane 0).toNat * 2 ^ 32 + (lane 1).toNat
+    low := BitVec.ofNat 64 (lane 2).toNat * 2 ^ 32 + (lane 3).toNat }
+
+def parsedL1IntegerRRN? (rrn : ParsedRrn) : Option (RRN.IntegerPrecision × RRN.IntegerOp) := do
+  let precision ← match rrn.precision.val with
+    | 'd' | 'l' => some .long
+    | 'f' | 'i' => some .word
+    | 'h' | 's' => some .half
+    | _ => none
+  let operation ← match rrn.op with
+    | .max => some .maximum
+    | .min => some .minimum
+    | .iadd => some .add
+    | .band => some .bitAnd
+    | .bor => some .bitOr
+    | .and => some .allNonzero
+    | .or => some .anyNonzero
+    | .fadd => none
+  some (precision, operation)
+
+def parsedL1NativeFloatPrecision? (rrn : ParsedRrn) : Option RRN.NativeFloatPrecision :=
+  if rrn.op != .fadd then none else
+    match rrn.precision.val with
+    | 'd' => some .double
+    | 'f' => some .single
+    | _ => none
+
+def roundedL1IntegerBus (first second : BitVec 64) : BitVec 64 :=
+  let halfLane (index : Nat) :=
+    let word := if index < 2 then first else second
+    let offset := if index % 2 == 0 then 32 else 0
+    (word.extractLsb' offset 16).toNat
+  BitVec.ofNat 64 ((halfLane 0) * 2 ^ 48 + (halfLane 1) * 2 ^ 32 +
+    (halfLane 2) * 2 ^ 16 + halfLane 3)
+
+def parsedL1ReduceWord (fourGroups : Bool) (rrn : ParsedRrn)
+    (values : List (BitVec 64)) : Option (BitVec 64) := do
+  if rrn.op == .fadd then
+    match rrn.precision.val with
+    | 'h' => some (RRN.reduceHalfAliasLongWord fourGroups values)
+    | 'd' => some (if fourGroups then RRN.reduceLongFloatAdd .double values
+        else RRN.reduceLongFloatAdd16 .double values)
+    | 'f' => some (if fourGroups then RRN.reduceLongFloatAdd .single values
+        else RRN.reduceLongFloatAdd16 .single values)
+    | _ => none
+  else do
+    let (precision, operation) ← parsedL1IntegerRRN? rrn
+    some (RRN.reduceLongInteger operation precision values)
+
+def parsedL1ReduceWritesAtCycle (access : ParsedL1ReduceAccess)
+    (base : Fin L1Transfer.l1bmLongWords) (cycle : Fin 4)
+    (buses : Fin 16 → Fin 4 → IntegerALU.Bus) : Option
+      (List L1Transfer.L1Write × List L1Transfer.L1TurnWrite) := do
+  let halfAlias := access.rrn.precision.val == 'h' && access.rrn.op == .fadd
+  let rounded := access.round || halfAlias
+  let inputBus := fun mab pe =>
+    let raw := buses mab pe
+    if access.extended && !halfAlias then extendL1ReduceBus raw else raw
+  let inputs : Fin 4 → Fin 4 → Fin 2 → Fin 16 → BitVec 64 := fun _ pe part mab =>
+    let bus := inputBus mab pe
+    if part.val == 0 then bus.high else bus.low
+  if halfAlias then
+    some (L1Transfer.reduceHalfAliasL1Writes base access.fourGroups cycle inputs,
+      L1Transfer.reduceHalfAliasTurnaroundWrites access.fourGroups inputs)
+  else if let some precision := parsedL1NativeFloatPrecision? access.rrn then
+    if access.round then
+      let sourceTwo := access.twoLongWords || access.sourceTwoWords || access.extended
+      some (L1Transfer.reduceRoundedFloatL1Writes base access.fourGroups
+          access.twoLongWords sourceTwo precision cycle inputs,
+        L1Transfer.reduceRoundedFloatTurnaroundWrites access.fourGroups
+          access.twoLongWords sourceTwo precision inputs)
+    else
+      let results := fun group pe part =>
+        let selected := ((List.finRange 16).filter fun mab =>
+          !access.fourGroups || mab.val / 4 == group.val).map fun mab => inputs group pe part mab
+        L1Transfer.reduceFloatL1Result access.fourGroups precision selected
+      some (L1Transfer.reduceFloatL1Writes base access.fourGroups
+          access.twoLongWords precision cycle inputs,
+        L1Transfer.reduceL1TurnaroundWrites access.fourGroups false
+          access.twoLongWords results)
+  else do
+    let (precision, operation) ← parsedL1IntegerRRN? access.rrn
+    let results := fun group pe part =>
+      let selected := ((List.finRange 16).filter fun mab =>
+        !access.fourGroups || mab.val / 4 == group.val).map fun mab => inputs group pe part mab
+      RRN.reduceLongInteger operation precision selected
+    if rounded then
+      let roundedResults := fun group pe _part =>
+        let second := if access.twoLongWords ||
+            (rounded && access.sourceTwoWords) || access.extended then
+          results group pe 1 else 0
+        roundedL1IntegerBus (results group pe 0) second
+      some (L1Transfer.reduceL1Writes base access.fourGroups true
+          access.twoLongWords cycle roundedResults,
+        L1Transfer.reduceL1TurnaroundWrites access.fourGroups true
+          access.twoLongWords roundedResults)
+    else
+      some (L1Transfer.reduceIntegerL1Writes base access.fourGroups
+          access.twoLongWords precision operation cycle inputs,
+        L1Transfer.reduceL1TurnaroundWrites access.fourGroups false
+          access.twoLongWords results)
+
+def executeL1ReduceCyclesAtBank (state : State) (access : ParsedL1ReduceAccess)
+    (bank : Fin 64) (updateTurnaround : Bool) :
+    ProofsLean.StepResult (L1Transfer.L1Bank × L1Transfer.L1Turnaround) :=
+  let rec run : List (Fin 4) → L1Transfer.L1Bank → L1Transfer.L1Turnaround →
+      ProofsLean.StepResult (L1Transfer.L1Bank × L1Transfer.L1Turnaround)
+    | [], memory, turnaround => .ok (memory, turnaround)
+    | cycle :: rest, memory, turnaround =>
+      match readL1GatherBusesAtBank state ⟨access.source, 0, access.address⟩ bank cycle with
+      | .failure => .failure
+      | .unknown => .unknown
+      | .ok buses =>
+        match parsedL1ReduceWritesAtCycle access
+            (access.address.getD ⟨0, by decide⟩) cycle buses with
+        | none => .unknown
+        | some (writes, turnWrites) =>
+            let writes := match access.address with | none => [] | some _ => writes
+            let turnWrites := if updateTurnaround then turnWrites else []
+            let next := L1Transfer.commitL1Transfer memory turnaround cycle writes turnWrites
+            run rest next.1 next.2
+  run [0, 1, 2, 3] (state.l1bm bank) (state.l1bmTurnaround bank)
+
+def executeParsedL1ReduceAtAllBanks (readState currentState : State)
+    (expression : ParsedExpr) (updateTurnaround : Bool) : ProofsLean.StepResult State :=
+  match lowerParsedL1Reduce? expression with
+  | none => .unknown
+  | some access =>
+      let rec run : List (Fin 64) → State → ProofsLean.StepResult State
+        | [], state => .ok state
+        | bank :: rest, state =>
+            match executeL1ReduceCyclesAtBank readState access bank updateTurnaround with
+            | .failure => .failure
+            | .unknown => .unknown
+            | .ok (memory, turnaround) =>
+                let next := { state with
+                  l1bm := fun other => if other = bank then memory else state.l1bm other
+                  l1bmTurnaround := fun other =>
+                    if other = bank then turnaround else state.l1bmTurnaround other }
+                run rest next
+      run (List.finRange 64) currentState
+
+def parsedExprIsL1ReduceProducer (expression : ParsedExpr) : Bool :=
+  match expression.op with
+  | .l1bm (.reduce ..) | .l1bm (.reduce4 ..) => true
+  | _ => false
+
+def executeParsedL1ReduceProducers (readState currentState : State)
+    (expressions : List ParsedExpr) (updateTurnaround : Bool) : ProofsLean.StepResult State :=
+  match expressions.filter parsedExprIsL1ReduceProducer with
+  | [] => .ok currentState
+  | [expression] => executeParsedL1ReduceAtAllBanks readState currentState expression updateTurnaround
+  | _ => .unknown
+
 structure ParsedL1ToPEAccess where
   sourceBase : Option (Fin L1Transfer.l1bmLongWords)
   twoLongWords : Bool
@@ -1097,6 +1292,7 @@ def executeIntegerProducerLineAtPE (expressions : List ParsedExpr)
     !parsedExprIsMatrixWriteProducer expression &&
       !parsedExprIsL1MwriteProducer expression &&
       !parsedExprIsL1GatherProducer expression &&
+      !parsedExprIsL1ReduceProducer expression &&
       !parsedExprIsL1ToPEProducer expression &&
       !parsedExprIsSupportedFloatMAUProducer expression
   match parsedIntegerMatrixReadLineFourCycleStep (state.peRegisters pe) oldSlots
@@ -1182,7 +1378,8 @@ noncomputable def executeIntegerProducerInstructionLine
               | .ok next =>
                   let noForward := expressions.any parsedExprIsNoForwardProducer
                   let hasPEToL1Producer := expressions.any fun expression =>
-                    parsedExprIsL1MwriteProducer expression || parsedExprIsL1GatherProducer expression
+                    parsedExprIsL1MwriteProducer expression ||
+                      parsedExprIsL1GatherProducer expression || parsedExprIsL1ReduceProducer expression
                   match executeParsedL1MwriteProducers state next expressions (!noForward) with
                   | .failure => .failure
                   | .unknown => .unknown
@@ -1191,21 +1388,25 @@ noncomputable def executeIntegerProducerInstructionLine
                     | .failure => .failure
                     | .unknown => .unknown
                     | .ok nextWithGather =>
-                      let l1ToPE := expressions.filter parsedExprIsL1ToPEProducer
-                      let afterL1ToPE : ProofsLean.StepResult State := match l1ToPE with
-                        | [] => .ok nextWithGather
-                        | [expression] => executeParsedL1ToPEProducer state nextWithGather
-                            expression noForward
-                            (expressions.any parsedExprHasSingleLineWriteMask)
-                        | _ => .unknown
-                      match afterL1ToPE with
+                      match executeParsedL1ReduceProducers state nextWithGather expressions (!noForward) with
                       | .failure => .failure
                       | .unknown => .unknown
-                      | .ok nextWithBroadcast =>
-                        .ok { nextWithBroadcast with
-                        hazardClock := nextWithBroadcast.hazardClock + InstructionLine.cost line
-                        l1bmTurnaroundValid :=
-                          if noForward then nextWithBroadcast.l1bmTurnaroundValid else hasPEToL1Producer }
+                      | .ok nextWithReduce =>
+                        let l1ToPE := expressions.filter parsedExprIsL1ToPEProducer
+                        let afterL1ToPE : ProofsLean.StepResult State := match l1ToPE with
+                          | [] => .ok nextWithReduce
+                          | [expression] => executeParsedL1ToPEProducer state nextWithReduce
+                              expression noForward
+                              (expressions.any parsedExprHasSingleLineWriteMask)
+                          | _ => .unknown
+                        match afterL1ToPE with
+                        | .failure => .failure
+                        | .unknown => .unknown
+                        | .ok nextWithBroadcast =>
+                          .ok { nextWithBroadcast with
+                            hazardClock := nextWithBroadcast.hazardClock + InstructionLine.cost line
+                            l1bmTurnaroundValid :=
+                              if noForward then nextWithBroadcast.l1bmTurnaroundValid else hasPEToL1Producer }
         else .unknown
     | .nop count _ =>
         .ok { state with hazardClock := state.hazardClock + count.val }
@@ -1280,11 +1481,16 @@ theorem executeIntegerProducerInstructionLine_pe_success
       (normalizedExpressions.map NormalizedExpr.toParsed)
       (!(normalizedExpressions.any
         (parsedExprIsNoForwardProducer ∘ NormalizedExpr.toParsed))) = .ok nextGather)
+    (nextReduce : State)
+    (reduceWrites : executeParsedL1ReduceProducers state nextGather
+      (normalizedExpressions.map NormalizedExpr.toParsed)
+      (!(normalizedExpressions.any
+        (parsedExprIsNoForwardProducer ∘ NormalizedExpr.toParsed))) = .ok nextReduce)
     (nextBroadcast : State)
     (l1ToPE : (match (normalizedExpressions.map NormalizedExpr.toParsed).filter
         parsedExprIsL1ToPEProducer with
-      | [] => (ProofsLean.StepResult.ok nextGather : ProofsLean.StepResult State)
-      | [expression] => executeParsedL1ToPEProducer state nextGather expression
+      | [] => (ProofsLean.StepResult.ok nextReduce : ProofsLean.StepResult State)
+      | [expression] => executeParsedL1ToPEProducer state nextReduce expression
           (normalizedExpressions.any
             (parsedExprIsNoForwardProducer ∘ NormalizedExpr.toParsed))
           (normalizedExpressions.any
@@ -1299,9 +1505,10 @@ theorem executeIntegerProducerInstructionLine_pe_success
           then nextBroadcast.l1bmTurnaroundValid
           else normalizedExpressions.any (fun expression =>
             parsedExprIsL1MwriteProducer expression.toParsed ||
-              parsedExprIsL1GatherProducer expression.toParsed) } := by
+              parsedExprIsL1GatherProducer expression.toParsed ||
+              parsedExprIsL1ReduceProducer expression.toParsed) } := by
   simp [executeIntegerProducerInstructionLine, accepted, supported, executed,
-    matrixWrites, l1Writes, gatherWrites, l1ToPE, List.any_map]
+    matrixWrites, l1Writes, gatherWrites, reduceWrites, l1ToPE, List.any_map]
   rfl
 
 end ProofsLean.MNCore
