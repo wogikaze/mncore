@@ -3249,9 +3249,11 @@ theorem commitParsedMatrixMAUPEState_preserves_non_pe_state
       simp only [List.foldl_cons]
       rw [ih]
 
-def executeParsedMatrixMAUTransitionAtMAB (readState currentState : State)
+def executeParsedMatrixMAUPEWritesAtMAB (readState currentState : State)
     (expression : ParsedExpr) (coordinate : MABCoordinate)
-    (noForward hasSingleLineMask : Bool) : ProofsLean.StepResult State := Id.run do
+    (hasSingleLineMask : Bool) : ProofsLean.StepResult
+      ((Fin 4 → PEMemory.IntegerRegisterFiles) × (Fin 4 → BitVec 12) ×
+        (Fin 4 → BitVec 12) × (Fin 4 → Fin 4 → IntegerALU.Bus) × (Fin 4 → Bool)) := Id.run do
   let initialFiles := fun pe => currentState.peRegisters (physicalPEId coordinate pe)
   let initialBar0 := fun pe => currentState.peContext (physicalPEId coordinate pe) |>.bar0
   let initialBar1 := fun pe => currentState.peContext (physicalPEId coordinate pe) |>.bar1
@@ -3316,8 +3318,52 @@ def executeParsedMatrixMAUTransitionAtMAB (readState currentState : State)
             outputs := fun index slot =>
               if index == pe && slot == cycle then output else outputs index slot
             poisoned := fun slot => if slot == cycle then poison else poisoned slot
-  return .ok (commitParsedMatrixMAUPEState (List.finRange 4) currentState coordinate noForward
-    files bar0 bar1 outputs poisoned)
+  return .ok (files, bar0, bar1, outputs, poisoned)
+
+def executeParsedMatrixMAUTransitionAtMAB (readState currentState : State)
+    (expression : ParsedExpr) (coordinate : MABCoordinate)
+    (noForward hasSingleLineMask : Bool) : ProofsLean.StepResult State :=
+  match executeParsedMatrixMAUPEWritesAtMAB readState currentState expression coordinate
+      hasSingleLineMask with
+  | .failure => .failure
+  | .unknown => .unknown
+  | .ok (files, bar0, bar1, outputs, poisoned) =>
+      .ok (commitParsedMatrixMAUPEState (List.finRange 4) currentState coordinate noForward
+        files bar0 bar1 outputs poisoned)
+
+theorem commitParsedMatrixMAUPEState_preserves_matrix_registers
+    (coordinates : List (Fin 4)) (currentState : State)
+    (coordinate : MABCoordinate) (noForward : Bool)
+    (files : Fin 4 → PEMemory.IntegerRegisterFiles) (bar0 bar1 : Fin 4 → BitVec 12)
+    (outputs : Fin 4 → Fin 4 → IntegerALU.Bus) (poisoned : Fin 4 → Bool) :
+    (commitParsedMatrixMAUPEState coordinates currentState coordinate noForward files bar0 bar1
+      outputs poisoned).matrixRegisters = currentState.matrixRegisters := by
+  simp only [commitParsedMatrixMAUPEState]
+  induction coordinates generalizing currentState with
+  | nil => rfl
+  | cons pe rest ih =>
+      simp only [List.foldl_cons]
+      rw [ih]
+
+theorem executeParsedMatrixMAUTransitionAtMAB_preserves_matrix_registers
+    (readState currentState : State) (expression : ParsedExpr)
+    (coordinate : MABCoordinate) (noForward hasSingleLineMask : Bool)
+    (next : State)
+    (executed : executeParsedMatrixMAUTransitionAtMAB readState currentState
+      expression coordinate noForward hasSingleLineMask = .ok next) :
+    next.matrixRegisters = currentState.matrixRegisters := by
+  simp only [executeParsedMatrixMAUTransitionAtMAB] at executed
+  cases writes : executeParsedMatrixMAUPEWritesAtMAB readState currentState expression
+      coordinate hasSingleLineMask with
+  | failure => simp [writes] at executed
+  | unknown => simp [writes] at executed
+  | ok result =>
+      simp only [writes] at executed
+      injection executed with nextEq
+      subst next
+      exact commitParsedMatrixMAUPEState_preserves_matrix_registers
+        (List.finRange 4) currentState coordinate noForward
+        result.1 result.2.1 result.2.2.1 result.2.2.2.1 result.2.2.2.2
 
 def executeParsedMatrixMAUAtMABs (readState currentState : State)
     (expression : ParsedExpr) (coordinates : List MABCoordinate)
@@ -3332,6 +3378,34 @@ def executeParsedMatrixMAUAtMABs (readState currentState : State)
       | .ok next => executeParsedMatrixMAUAtMABs readState next expression rest
           noForward hasSingleLineMask
 
+theorem executeParsedMatrixMAUAtMABs_preserves_matrix_registers
+    (readState currentState next : State) (expression : ParsedExpr)
+    (coordinates : List MABCoordinate) (noForward hasSingleLineMask : Bool)
+    (executed : executeParsedMatrixMAUAtMABs readState currentState expression
+      coordinates noForward hasSingleLineMask = .ok next) :
+    next.matrixRegisters = currentState.matrixRegisters := by
+  induction coordinates generalizing currentState with
+  | nil =>
+      simp [executeParsedMatrixMAUAtMABs] at executed
+      cases executed
+      rfl
+  | cons coordinate rest ih =>
+      simp only [executeParsedMatrixMAUAtMABs] at executed
+      cases transition : executeParsedMatrixMAUTransitionAtMAB readState currentState
+          expression coordinate noForward hasSingleLineMask with
+      | failure => simp [transition] at executed
+      | unknown => simp [transition] at executed
+      | ok intermediate =>
+          have remaining : executeParsedMatrixMAUAtMABs readState intermediate
+              expression rest noForward hasSingleLineMask = .ok next := by
+            simpa [transition] using executed
+          have restFrame := ih intermediate remaining
+          have transitionFrame :=
+            executeParsedMatrixMAUTransitionAtMAB_preserves_matrix_registers
+              readState currentState expression coordinate noForward hasSingleLineMask
+              intermediate transition
+          exact restFrame.trans transitionFrame
+
 def parsedStateHasMatrixMAUPoison (state : State) : Bool :=
   (List.finRange 4096).any fun pe =>
     (List.finRange 4).any fun cycle =>
@@ -3344,6 +3418,11 @@ def propagateParsedMatrixMAUPoison (state : State) : State :=
     { state with forwarding := fun pe unit cycle =>
         if unit == .mau then .poison else state.forwarding pe unit cycle }
   else state
+
+theorem propagateParsedMatrixMAUPoison_preserves_matrix_registers (state : State) :
+    (propagateParsedMatrixMAUPoison state).matrixRegisters = state.matrixRegisters := by
+  by_cases hasPoison : parsedStateHasMatrixMAUPoison state = true <;>
+    simp [propagateParsedMatrixMAUPoison, hasPoison]
 
 theorem propagateParsedMatrixMAUPoison_is_global
     (state : State) (hasPoison : parsedStateHasMatrixMAUPoison state = true)
@@ -3363,6 +3442,41 @@ def executeParsedMatrixMAUProducer (readState currentState : State)
       | .unknown => .unknown
       | .ok next => .ok (propagateParsedMatrixMAUPoison next)
   | _ => .unknown
+
+theorem executeParsedMatrixMAUProducer_preserves_matrix_registers
+    (readState currentState next : State) (expressions : List ParsedExpr)
+    (noForward hasSingleLineMask : Bool)
+    (executed : executeParsedMatrixMAUProducer readState currentState expressions
+      noForward hasSingleLineMask = .ok next) :
+    next.matrixRegisters = currentState.matrixRegisters := by
+  cases filtered : expressions.filter parsedExprIsMatrixMAUProducer with
+  | nil =>
+      simp [executeParsedMatrixMAUProducer, filtered] at executed
+      cases executed
+      rfl
+  | cons expression rest =>
+      cases rest with
+      | nil =>
+          simp only [executeParsedMatrixMAUProducer, filtered] at executed
+          cases execution : executeParsedMatrixMAUAtMABs readState currentState expression
+              allMABCoordinates noForward hasSingleLineMask with
+          | failure => simp [execution] at executed
+          | unknown => simp [execution] at executed
+          | ok intermediate =>
+              simp only [execution] at executed
+              have outputFrame := congrArg (fun result : ProofsLean.StepResult State =>
+                match result with
+                | .ok value => value.matrixRegisters
+                | .failure | .unknown => currentState.matrixRegisters) executed
+              simp only at outputFrame
+              have mauFrame := executeParsedMatrixMAUAtMABs_preserves_matrix_registers
+                readState currentState intermediate expression allMABCoordinates
+                noForward hasSingleLineMask execution
+              have poisonFrame := propagateParsedMatrixMAUPoison_preserves_matrix_registers
+                intermediate
+              exact outputFrame.symm.trans (poisonFrame.trans mauFrame)
+      | cons second remaining =>
+          simp [executeParsedMatrixMAUProducer, filtered] at executed
 
 def executeParsedMatrixMAUAndWrites (readState currentState : State)
     (expressions : List ParsedExpr) (noForward hasSingleLineMask : Bool) :
