@@ -3708,6 +3708,36 @@ def completePendingMvTag (state : State) (tag : Fin 256) : Option State := do
     pendingMv := remaining
     mvCompletedTags := fun other => other == tag || state.mvCompletedTags other }
 
+/-- Remove a pending MV by its current queue position. This also completes
+untagged transfers, which cannot be named by a wait tag but still progress
+asynchronously before program termination. -/
+def removePendingMvAtIndex : Nat → List PendingMv → Option (PendingMv × List PendingMv)
+  | _, [] => none
+  | 0, pending :: rest => some (pending, rest)
+  | index + 1, pending :: rest => do
+      let (target, remaining) ← removePendingMvAtIndex index rest
+      some (target, pending :: remaining)
+
+def completePendingMvAtIndex (state : State) (index : Nat) :
+    Option (PendingMv × State) := do
+  let (pending, remaining) ← removePendingMvAtIndex index state.pendingMv
+  let completedTags := match pending.tag with
+    | none => state.mvCompletedTags
+    | some tag => fun other => other == tag || state.mvCompletedTags other
+  some (pending, { state with
+    blockMemory := MVSemantics.commitWrites state.blockMemory pending.writes
+    pendingMv := remaining
+    mvCompletedTags := completedTags })
+
+theorem completePendingMvAtIndex_untagged_head (state : State)
+    (writes : List (MVSemantics.Cell × BitVec 64)) (rest : List PendingMv) :
+    completePendingMvAtIndex
+      { state with pendingMv := ⟨none, writes⟩ :: rest } 0 =
+        some (⟨none, writes⟩, { state with
+          blockMemory := MVSemantics.commitWrites state.blockMemory writes
+          pendingMv := rest }) := by
+  simp [completePendingMvAtIndex, removePendingMvAtIndex]
+
 /-- Drain all remaining MV operations at program termination. -/
 def completeAllPendingMvs (state : State) : State := Id.run do
   let mut memory := state.blockMemory
@@ -3931,6 +3961,7 @@ noncomputable def executeHazardAwareNormalizedLine (line : NormalizedLine)
 inductive ScheduledEvent where
   | issue (line : NormalizedLine)
   | completeMv (tag : Fin 256)
+  | completeMvIssue (pendingIndex : Nat)
 
 /-- One explicitly scheduled transition. `completeMv` events may complete any
 issued tag independently, so traces can represent out-of-order MV completion. -/
@@ -3959,6 +3990,20 @@ noncomputable def executeScheduledEvent (event : ScheduledEvent)
           | none => .ok withCompletion
           | some line =>
               if normalizedLineWaitTag? line == some tag then
+                match executeHazardAwareNormalizedLineCore line withCompletion with
+                | .failure => .failure
+                | .unknown => .unknown
+                | .ok next => .ok { next with stalledPEIssue := none }
+              else .ok withCompletion
+  | .completeMvIssue pendingIndex =>
+      match completePendingMvAtIndex state.machine pendingIndex with
+      | none => .unknown
+      | some (completed, machine) =>
+          let withCompletion := { state with machine }
+          match state.stalledPEIssue with
+          | none => .ok withCompletion
+          | some line =>
+              if normalizedLineWaitTag? line == completed.tag then
                 match executeHazardAwareNormalizedLineCore line withCompletion with
                 | .failure => .failure
                 | .unknown => .unknown
@@ -4030,7 +4075,7 @@ noncomputable def executeScheduledProgram (events : List ScheduledEvent)
 def scheduledIssueLines : List ScheduledEvent → List NormalizedLine
   | [] => []
   | .issue line :: rest => line :: scheduledIssueLines rest
-  | .completeMv _ :: rest => scheduledIssueLines rest
+  | .completeMv _ :: rest | .completeMvIssue _ :: rest => scheduledIssueLines rest
 
 /-- Run a completion schedule only when its issue events exactly preserve the
 source program's instruction order. Completion events may be interleaved. -/
