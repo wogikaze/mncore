@@ -946,6 +946,15 @@ structure ParsedIntegerMaskAccesses where
   hasIntegerRequest : ∃ precision aluOp,
     op.integerRequest = .ok (.integer precision aluOp)
 
+structure ParsedIntegerMaskInputAccesses where
+  op : ParsedOp
+  sourceX : ParsedIntegerInput
+  sourceY : ParsedIntegerInput
+  destination : Fin 15
+  selection : BitVec 4
+  hasIntegerRequest : ∃ precision aluOp,
+    op.integerRequest = .ok (.integer precision aluOp)
+
 def ParsedIntegerMaskAccesses.locations (accesses : ParsedIntegerMaskAccesses) :=
   (accesses.sourceX, accesses.sourceY, accesses.destination)
 
@@ -4286,6 +4295,52 @@ def prepareParsedIntegerMaskALUWriteWithForwarding (files : IntegerRegisterFiles
           .ok ⟨none, some (accesses.destination, cycle, flags),
             unpackALUBus bus, ⟨accesses.selection, true⟩⟩
 
+def prepareParsedIntegerMaskInputALUWriteWithForwarding (files : IntegerRegisterFiles)
+    (slots : ProofsLean.MNCore.Forwarding.Slots) (cycle : Fin 4)
+    (accesses : ParsedIntegerMaskInputAccesses) (flushSelection : Option PEWordSelection)
+    (reduced : Bool) : ProofsLean.StepResult PreparedParsedMaskedWrite :=
+  match ParsedIntegerInput.readWithForwarding files slots cycle accesses.sourceX with
+  | .failure => .failure
+  | .unknown => .unknown
+  | .ok x =>
+      match ParsedIntegerInput.readWithForwarding files slots cycle accesses.sourceY with
+      | .failure => .failure
+      | .unknown => .unknown
+      | .ok y =>
+          match evaluateParsedIntegerAlu accesses.op x y reduced with
+          | .failure => .failure
+          | .unknown => .unknown
+          | .ok output =>
+              let bus := parsedOutputAfterFlush flushSelection output.value
+              let flags := BitVec.ofBoolListLE
+                [output.flags 0, output.flags 1, output.flags 2, output.flags 3]
+              .ok ⟨none, some (accesses.destination, cycle, flags),
+                unpackALUBus bus, ⟨accesses.selection, true⟩⟩
+
+theorem prepareParsedIntegerMaskInputALUWriteWithForwarding_never_unknown_of_reads
+    (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (cycle : Fin 4) (accesses : ParsedIntegerMaskInputAccesses)
+    (flushSelection : Option PEWordSelection) (reduced : Bool)
+    (readXKnown : ParsedIntegerInput.readWithForwarding files slots cycle accesses.sourceX ≠
+      .unknown)
+    (readYKnown : ParsedIntegerInput.readWithForwarding files slots cycle accesses.sourceY ≠
+      .unknown) :
+    prepareParsedIntegerMaskInputALUWriteWithForwarding files slots cycle accesses
+      flushSelection reduced ≠ .unknown := by
+  obtain ⟨precision, aluOp, hasRequest⟩ := accesses.hasIntegerRequest
+  unfold prepareParsedIntegerMaskInputALUWriteWithForwarding
+  cases readX : ParsedIntegerInput.readWithForwarding files slots cycle accesses.sourceX with
+  | failure => simp [readX]
+  | unknown => exact (readXKnown readX).elim
+  | ok x =>
+      cases readY : ParsedIntegerInput.readWithForwarding files slots cycle accesses.sourceY with
+      | failure => simp [readX, readY]
+      | unknown => exact (readYKnown readY).elim
+      | ok y =>
+          have execution := integer_request_is_execution_request accesses.op precision aluOp hasRequest
+          simp [readX, readY, evaluateParsedIntegerAlu, execution,
+            evaluateParsedExecutionRequest]
+
 theorem prepareParsedIntegerMaskALUWriteWithForwarding_outputs
     (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)
     (cycle : Fin 4) (accesses : ParsedIntegerMaskAccesses)
@@ -4642,6 +4697,45 @@ def parsedIntegerMaskExprAccesses? (expression : ParsedExpr)
     Option ParsedIntegerMaskAccesses :=
   parsedIntegerMaskExprAccessesInLine? expression registers directive
     (parsedExprHasSingleLineWriteMask expression) pe cycle bar0 bar1 tWord
+
+def parsedIntegerMaskInputExprAccessesInLine? (expression : ParsedExpr)
+    (registers : ProofsLean.MNCore.Masks.RegisterFile)
+    (directive : ParsedMaskDirective) (hasSingleLineMask : Bool)
+    (group : Fin 4) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
+    (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
+    Option ParsedIntegerMaskInputAccesses :=
+  match expression.op with
+  | .alu name (some parsedPrecision) _ _ =>
+      match hRequest : expression.op.integerRequest with
+      | .ok (.integer precision aluOp) =>
+          match expression.sources, expression.destinations with
+          | [source], [destination] =>
+              if ParsedAluName.integerInputCount name != 1 then none else
+              match ParsedOperand.toParsedIntegerInput? source parsedPrecision.laneWidth
+                  group l2b l1b mab pe cycle bar0 bar1 tWord,
+                  ParsedOperand.toMaskRegisterEntry? destination,
+                  ParsedOperand.resolveOmrWriteSelection? destination registers cycle directive
+                    hasSingleLineMask with
+              | some sourceAccess, some entry, some selection =>
+                  some ⟨expression.op, sourceAccess, sourceAccess, entry, selection,
+                    ⟨precision, aluOp, hRequest⟩⟩
+              | _, _, _ => none
+          | [sourceX, sourceY], [destination] =>
+              if ParsedAluName.integerInputCount name != 2 then none else
+              match ParsedOperand.toParsedIntegerInput? sourceX parsedPrecision.laneWidth
+                    group l2b l1b mab pe cycle bar0 bar1 tWord,
+                    ParsedOperand.toParsedIntegerInput? sourceY parsedPrecision.laneWidth
+                    group l2b l1b mab pe cycle bar0 bar1 tWord,
+                    ParsedOperand.toMaskRegisterEntry? destination,
+                    ParsedOperand.resolveOmrWriteSelection? destination registers cycle directive
+                      hasSingleLineMask with
+              | some xAccess, some yAccess, some entry, some selection =>
+                  some ⟨expression.op, xAccess, yAccess, entry, selection,
+                    ⟨precision, aluOp, hRequest⟩⟩
+              | _, _, _, _ => none
+          | _, _ => none
+      | _ => none
+  | _ => none
 
 def parsedIntegerNoWriteExprAccessesInLine? (expression : ParsedExpr)
     (registers : ProofsLean.MNCore.Masks.RegisterFile)
@@ -5291,9 +5385,31 @@ def prepareParsedIntegerALUExprCycle (files : IntegerRegisterFiles)
                           cycleControl.context.pe cycle cycleControl.context.bar0
                           cycleControl.context.bar1 cycleControl.context.tWord with
                       | none =>
-                          match expression.destinations with
-                          | [.omr 0 _] => ProofsLean.StepResult.failure
-                          | _ => ProofsLean.StepResult.unknown
+                          match parsedIntegerMaskInputExprAccessesInLine? expression
+                              files.maskRegisters cycleControl.directive hasSingleLineMask
+                              cycleControl.context.group cycleControl.context.l2b
+                              cycleControl.context.l1b cycleControl.context.mab
+                              cycleControl.context.pe cycle cycleControl.context.bar0
+                              cycleControl.context.bar1 cycleControl.context.tWord with
+                          | none =>
+                              match expression.destinations with
+                              | [.omr 0 _] => ProofsLean.StepResult.failure
+                              | _ => ProofsLean.StepResult.unknown
+                          | some accesses =>
+                              match resolveFlushSelection? expression.flush
+                                  files.maskRegisters cycle with
+                              | none => ProofsLean.StepResult.unknown
+                              | some flushSelection =>
+                                  match prepareParsedIntegerMaskInputALUWriteWithForwarding
+                                      files oldSlots cycle accesses flushSelection reduced with
+                                  | .failure => ProofsLean.StepResult.failure
+                                  | .unknown => ProofsLean.StepResult.unknown
+                                  | .ok write =>
+                                      match updateParsedIntegerALUForwardingCycle nextSlots cycle
+                                          (.ok write) noForward with
+                                      | .failure => ProofsLean.StepResult.failure
+                                      | .unknown => ProofsLean.StepResult.unknown
+                                      | .ok updatedSlots => .ok ([write], updatedSlots)
                       | some accesses =>
                           match prepareParsedIntegerBarALUWithForwarding
                               files oldSlots cycle accesses reduced with
@@ -5408,13 +5524,17 @@ theorem prepareParsedIntegerALUExprCycle_alu_omr_zero_fails
     (barFailed : parsedIntegerBarExprAccessesInLine? expression files.maskRegisters
       control.directive hasSingleLineMask control.context.group control.context.l2b
       control.context.l1b control.context.mab control.context.pe cycle control.context.bar0
-      control.context.bar1 control.context.tWord = none) :
+      control.context.bar1 control.context.tWord = none)
+    (inputLoweringFailed : parsedIntegerMaskInputExprAccessesInLine? expression
+      files.maskRegisters control.directive hasSingleLineMask control.context.group
+      control.context.l2b control.context.l1b control.context.mab control.context.pe cycle
+      control.context.bar0 control.context.bar1 control.context.tWord = none) :
     prepareParsedIntegerALUExprCycle files oldSlots nextSlots expression control
       hasSingleLineMask noForward reduced cycle = .failure := by
   obtain ⟨name, precision, unsigned, arg, operation⟩ := isAlu
   unfold prepareParsedIntegerALUExprCycle
   simp only [operation, singleFailed, multipleFailed, omrFailed, noWriteFailed,
-    barFailed, destination]
+    barFailed, inputLoweringFailed, destination]
 
 theorem prepareParsedIntegerALUExprCycle_alu_omr_never_unknown_of_resolved
     (files : IntegerRegisterFiles) (oldSlots nextSlots : ProofsLean.MNCore.Forwarding.Slots)
@@ -5448,6 +5568,57 @@ theorem prepareParsedIntegerALUExprCycle_alu_omr_never_unknown_of_resolved
   unfold prepareParsedIntegerALUExprCycle
   simp only [isAlu, singleLoweringFailed, multipleLoweringFailed, omrLowered, flushResolved]
   cases prepared : prepareParsedIntegerMaskALUWriteWithForwarding files oldSlots cycle
+      accesses flushSelection reduced with
+  | failure => simp [prepared]
+  | unknown => exact (preparedKnown prepared).elim
+  | ok write =>
+      cases noForward <;> simp [prepared, updateParsedIntegerALUForwardingCycle]
+
+theorem prepareParsedIntegerALUExprCycle_alu_omr_input_never_unknown_of_resolved
+    (files : IntegerRegisterFiles) (oldSlots nextSlots : ProofsLean.MNCore.Forwarding.Slots)
+    (expression : ParsedExpr) (control : ParsedMaskExecutionControl)
+    (hasSingleLineMask noForward reduced : Bool) (cycle : Fin 4)
+    (isAlu : ∃ name precision unsigned arg,
+      expression.op = .alu name precision unsigned arg)
+    (singleFailed : ParsedExpr.toDirectMaskedIntegerAccessesInLine? expression
+      files.maskRegisters control.directive hasSingleLineMask control.context.group
+      control.context.l2b control.context.l1b control.context.mab control.context.pe cycle
+      control.context.bar0 control.context.bar1 control.context.tWord = none)
+    (multipleFailed : ParsedExpr.toDirectMaskedIntegerWritesInLine? expression
+      files.maskRegisters control.directive hasSingleLineMask control.context.group
+      control.context.l2b control.context.l1b control.context.mab control.context.pe cycle
+      control.context.bar0 control.context.bar1 control.context.tWord = none)
+    (omrFailed : parsedIntegerMaskExprAccessesInLine? expression files.maskRegisters
+      control.directive hasSingleLineMask control.context.pe cycle control.context.bar0
+      control.context.bar1 control.context.tWord = none)
+    (noWriteFailed : parsedIntegerNoWriteExprAccessesInLine? expression files.maskRegisters
+      control.context.pe cycle control.context.group control.context.l2b control.context.l1b
+      control.context.mab control.context.bar0 control.context.bar1 control.context.tWord = none)
+    (barFailed : parsedIntegerBarExprAccessesInLine? expression files.maskRegisters
+      control.directive hasSingleLineMask control.context.group control.context.l2b
+      control.context.l1b control.context.mab control.context.pe cycle control.context.bar0
+      control.context.bar1 control.context.tWord = none)
+    (accesses : ParsedIntegerMaskInputAccesses)
+    (inputLowered : parsedIntegerMaskInputExprAccessesInLine? expression files.maskRegisters
+      control.directive hasSingleLineMask control.context.group control.context.l2b
+      control.context.l1b control.context.mab control.context.pe cycle control.context.bar0
+      control.context.bar1 control.context.tWord = some accesses)
+    (flushSelection : Option PEWordSelection)
+    (flushResolved : resolveFlushSelection? expression.flush files.maskRegisters cycle =
+      some flushSelection)
+    (readXKnown : ParsedIntegerInput.readWithForwarding files oldSlots cycle accesses.sourceX ≠
+      .unknown)
+    (readYKnown : ParsedIntegerInput.readWithForwarding files oldSlots cycle accesses.sourceY ≠
+      .unknown) :
+    prepareParsedIntegerALUExprCycle files oldSlots nextSlots expression control
+      hasSingleLineMask noForward reduced cycle ≠ .unknown := by
+  obtain ⟨name, precision, unsigned, arg, isAlu⟩ := isAlu
+  have preparedKnown := prepareParsedIntegerMaskInputALUWriteWithForwarding_never_unknown_of_reads
+    files oldSlots cycle accesses flushSelection reduced readXKnown readYKnown
+  unfold prepareParsedIntegerALUExprCycle
+  simp only [isAlu, singleFailed, multipleFailed, omrFailed, noWriteFailed, barFailed,
+    inputLowered, flushResolved]
+  cases prepared : prepareParsedIntegerMaskInputALUWriteWithForwarding files oldSlots cycle
       accesses flushSelection reduced with
   | failure => simp [prepared]
   | unknown => exact (preparedKnown prepared).elim
@@ -6149,7 +6320,33 @@ def parsedIntegerMatrixReadLineExpressionReady (files : IntegerRegisterFiles)
             parsedIntegerBarExprAccessesInLine? expression files.maskRegisters
               control.directive hasSingleLineMask control.context.group control.context.l2b
               control.context.l1b control.context.mab control.context.pe cycle
-              control.context.bar0 control.context.bar1 control.context.tWord = some accesses)) ∧
+              control.context.bar0 control.context.bar1 control.context.tWord = some accesses) ∨
+        (ParsedExpr.toDirectMaskedIntegerAccessesInLine? expression files.maskRegisters
+            control.directive hasSingleLineMask control.context.group control.context.l2b
+            control.context.l1b control.context.mab control.context.pe cycle
+            control.context.bar0 control.context.bar1 control.context.tWord = none ∧
+          ParsedExpr.toDirectMaskedIntegerWritesInLine? expression files.maskRegisters
+            control.directive hasSingleLineMask control.context.group control.context.l2b
+            control.context.l1b control.context.mab control.context.pe cycle
+            control.context.bar0 control.context.bar1 control.context.tWord = none ∧
+          parsedIntegerMaskExprAccessesInLine? expression files.maskRegisters
+            control.directive hasSingleLineMask control.context.pe cycle
+            control.context.bar0 control.context.bar1 control.context.tWord = none ∧
+          parsedIntegerNoWriteExprAccessesInLine? expression files.maskRegisters
+            control.context.pe cycle control.context.group control.context.l2b
+            control.context.l1b control.context.mab control.context.bar0
+            control.context.bar1 control.context.tWord = none ∧
+          parsedIntegerBarExprAccessesInLine? expression files.maskRegisters
+            control.directive hasSingleLineMask control.context.group control.context.l2b
+            control.context.l1b control.context.mab control.context.pe cycle
+            control.context.bar0 control.context.bar1 control.context.tWord = none ∧
+          ∃ accesses flushSelection,
+            parsedIntegerMaskInputExprAccessesInLine? expression files.maskRegisters
+              control.directive hasSingleLineMask control.context.group control.context.l2b
+              control.context.l1b control.context.mab control.context.pe cycle
+              control.context.bar0 control.context.bar1 control.context.tWord = some accesses ∧
+            resolveFlushSelection? expression.flush files.maskRegisters cycle =
+              some flushSelection)) ∧
       (∀ cycle, cycle ∈ parsedIntegerALUCycles → ∀ unit,
         oldSlots unit cycle ≠ .unknown)
   | .zero | .immediate .. =>
@@ -6182,7 +6379,8 @@ theorem prepareParsedIntegerMatrixReadLineExpression_never_unknown_of_ready
             hasSingleLineMask noForward reduced cycle ≠ .unknown := by
         intro cycle member outputSlots
         rcases ready.1 cycle member with
-          singleLowered | multipleLowered | omrLowered | noWriteLowered | barLowered
+          singleLowered | multipleLowered | omrLowered | noWriteLowered | barLowered |
+          omrInputLowered
         · obtain ⟨accesses, lowered⟩ := singleLowered
           exact prepareParsedIntegerALUExprCycle_alu_never_unknown_of_lowered_and_slots_resolved
             files oldSlots outputSlots expression control hasSingleLineMask noForward reduced
@@ -6223,6 +6421,18 @@ theorem prepareParsedIntegerMatrixReadLineExpression_never_unknown_of_ready
             files oldSlots outputSlots expression control hasSingleLineMask noForward reduced
             cycle ⟨name, precision, unsigned, arg, operation⟩ singleFailed multipleFailed
             omrFailed noWriteFailed accesses lowered
+            (ParsedIntegerInput.readWithForwarding_never_unknown_of_slots_resolved
+              files oldSlots cycle accesses.sourceX (ready.2 cycle member))
+            (ParsedIntegerInput.readWithForwarding_never_unknown_of_slots_resolved
+              files oldSlots cycle accesses.sourceY (ready.2 cycle member))
+        · rcases omrInputLowered with
+            ⟨singleFailed, multipleFailed, omrFailed, noWriteFailed, barFailed,
+              accessesLowered⟩
+          obtain ⟨accesses, flushSelection, lowered, flushResolved⟩ := accessesLowered
+          exact prepareParsedIntegerALUExprCycle_alu_omr_input_never_unknown_of_resolved
+            files oldSlots outputSlots expression control hasSingleLineMask noForward reduced
+            cycle ⟨name, precision, unsigned, arg, operation⟩ singleFailed multipleFailed
+            omrFailed noWriteFailed barFailed accesses lowered flushSelection flushResolved
             (ParsedIntegerInput.readWithForwarding_never_unknown_of_slots_resolved
               files oldSlots cycle accesses.sourceX (ready.2 cycle member))
             (ParsedIntegerInput.readWithForwarding_never_unknown_of_slots_resolved
