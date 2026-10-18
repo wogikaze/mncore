@@ -3713,6 +3713,31 @@ def completePendingMvTag (state : State) (tag : Fin 256) : Option State := do
       if other == tag then !pendingMvContainsTag tag remaining
       else state.mvCompletedTags other }
 
+def completePendingMvTagFuel : Nat → State → Fin 256 → Option State
+  | 0, state, tag => if state.mvCompletedTags tag then some state else none
+  | fuel + 1, state, tag =>
+      if state.mvCompletedTags tag then some state else
+        match completePendingMvTag state tag with
+        | none => none
+        | some next => completePendingMvTagFuel fuel next tag
+
+/-- Deterministic runner profile: complete all currently pending transfers
+with this tag, preserving unrelated pending transfers. -/
+def completePendingMvTagAll (state : State) (tag : Fin 256) : Option State :=
+  completePendingMvTagFuel (state.pendingMv.length + 1) state tag
+
+theorem completePendingMvTagAll_completes_two_same_tag
+    (state : State) (tag : Fin 256)
+    (firstWrites secondWrites : List (MVSemantics.Cell × BitVec 64)) :
+    (completePendingMvTagAll
+      { state with
+        mvCompletedTags := fun other => other != tag
+        pendingMv := [⟨some tag, firstWrites⟩, ⟨some tag, secondWrites⟩] } tag).map
+      (fun completed => (completed.pendingMv.length, completed.mvCompletedTags tag)) =
+        some (0, true) := by
+  simp [completePendingMvTagAll, completePendingMvTagFuel,
+    completePendingMvTag, removePendingMvTag, pendingMvContainsTag]
+
 /-- Remove a pending MV by its current queue position. This also completes
 untagged transfers, which cannot be named by a wait tag but still progress
 asynchronously before program termination. -/
@@ -3980,7 +4005,7 @@ noncomputable def executeHazardAwareNormalizedLine (line : NormalizedLine)
   let state ← match normalizedLineWaitTag? line with
     | none => pure state
     | some tag =>
-        match completePendingMvTag state.machine tag with
+        match completePendingMvTagAll state.machine tag with
         | none => return .unknown
         | some machine => pure { state with machine }
   return executeHazardAwareNormalizedLineCore line state

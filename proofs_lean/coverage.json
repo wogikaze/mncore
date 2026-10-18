@@ -1756,6 +1756,8 @@
         "scope": "Completes any pending issue, including an untagged MV, by its current pending-queue index; commits the captured writes and marks a tag complete only when no pending issue with that tag remains.",
         "supporting_theorem": "ProofsLean.MNCore.completePendingMvAtIndex_untagged_head",
         "tagged_wait_release": "A matching tag releases the stalled PE wait only after the last pending issue with that tag completes; untagged and unrelated completions leave it stalled.",
+        "deterministic_runner": "completePendingMvTagAll drains every currently pending operation with the waited tag before executing the wait line.",
+        "duplicate_tag_theorem": "ProofsLean.MNCore.completePendingMvTagAll_completes_two_same_tag",
         "remaining": "Queue-index schedules are explicit semantic traces; exact timing and arbitration constraints from hardware remain unmodeled. Whether duplicate live tags are legal on hardware remains unresolved; the model conservatively waits for all pending operations carrying the tag."
       }
     },
