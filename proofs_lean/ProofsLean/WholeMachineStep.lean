@@ -4983,6 +4983,106 @@ theorem executeHazardAwareNormalizedLine_positive_nop
   simp [executeHazardAwareNormalizedLine, normalizedLineWaitTag?, notStalled,
     executeHazardAwareNormalizedLineCore_positive_nop]
 
+theorem executeHazardAwareNormalizedLineCore_completed_wait_nop
+    (state : HazardAwareState) (count : Nat) (tag : Fin 256)
+    (accepted : checkParsedTopLine (.nop (count + 1) (some tag)) = true)
+    (completed : state.machine.mvCompletedTags tag = true) :
+    executeHazardAwareNormalizedLineCore (.nop (count + 1) (some tag)) state =
+      .ok { state with
+        machine := { state.machine with
+          hazardClock := state.machine.hazardClock + (count + 1) }
+        peHistory := fun pe => (state.peHistory pe).filter fun event =>
+          event.startWord + 4 ≥ state.machine.hazardClock + (count + 1)
+        blockHistory := state.blockHistory.filter fun event =>
+          event.startWord + 4 ≥ state.machine.hazardClock + (count + 1) } := by
+  have acceptedInstruction : checkParsedTopLine (InstructionLine.toParsed
+      (.nop ⟨count + 1, by omega⟩ (some tag))) = true := by
+    simpa [InstructionLine.toParsed] using accepted
+  have executed : executeNormalizedLine (.nop (count + 1) (some tag)) state.machine =
+      .ok { state.machine with
+        hazardClock := state.machine.hazardClock + (count + 1) } := by
+    have executedInstruction : executeIntegerProducerInstructionLine
+        (.nop ⟨count + 1, by omega⟩ (some tag)) state.machine =
+          .ok { state.machine with
+            hazardClock := state.machine.hazardClock + (count + 1) } := by
+      simp [executeIntegerProducerInstructionLine, InstructionLine.toParsed,
+        accepted, completed]
+    simpa [executeNormalizedLine, NormalizedLine.toInstruction?]
+      using executedInstruction
+  have peEvents : parsedNormalizedLinePEHazardEvents? state.machine
+      (.nop (count + 1) (some tag)) = some (List.replicate 4096 []) := rfl
+  have blockEvents : HazardTrace.parsedLineBlockHazardEvents
+      (NormalizedLine.toParsed (.nop (count + 1) (some tag)))
+        state.machine.hazardClock = [] := rfl
+  have noPEHazard : ∀ pe, parsedPEHazardViolated
+      (state.peHistory pe) ([] : List PEMemory.TimedPEAccess) = false := by
+    intro pe
+    simp [parsedPEHazardViolated, PEMemory.peHazardConstraintsBetween]
+  have noBlockHazard : parsedBlockHazardViolated state.blockHistory [] = false := by
+    simp [parsedBlockHazardViolated, HazardTrace.blockHazardConstraintsBetween]
+  simp [-List.reduceReplicate, executeHazardAwareNormalizedLineCore,
+    NormalizedLine.toInstruction?, parsedNormalizedLinePEAddressModesValid,
+    peEvents, blockEvents, noPEHazard, noBlockHazard, executed,
+    acceptedInstruction]
+
+theorem executeHazardAwareNormalizedLine_completed_wait_nop
+    (state : HazardAwareState) (count : Nat) (tag : Fin 256)
+    (notStalled : state.stalledPEIssue = none)
+    (accepted : checkParsedTopLine (.nop (count + 1) (some tag)) = true)
+    (completed : state.machine.mvCompletedTags tag = true) :
+    executeHazardAwareNormalizedLine (.nop (count + 1) (some tag)) state =
+      .ok { state with
+        machine := { state.machine with
+          hazardClock := state.machine.hazardClock + (count + 1) }
+        peHistory := fun pe => (state.peHistory pe).filter fun event =>
+          event.startWord + 4 ≥ state.machine.hazardClock + (count + 1)
+        blockHistory := state.blockHistory.filter fun event =>
+          event.startWord + 4 ≥ state.machine.hazardClock + (count + 1) } := by
+  have completedAll : completePendingMvTagAll state.machine tag =
+      some state.machine := by
+    simp [completePendingMvTagAll, completePendingMvTagFuel, completed]
+  simp [executeHazardAwareNormalizedLine, normalizedLineWaitTag?, notStalled,
+    completedAll]
+  have sameState : { state with machine := state.machine, stalledPEIssue := none } = state := by
+    cases state with
+    | mk machine peHistory blockHistory stalled => simp_all
+  rw [sameState]
+  rw [executeHazardAwareNormalizedLineCore_completed_wait_nop
+    state count tag accepted completed]
+  simp
+  exact notStalled
+
+theorem executeScheduledProgram_wait_nop_releases_after_completion
+    (machine next : State) (count : Nat) (tag : Fin 256)
+    (accepted : checkParsedTopLine (.nop (count + 1) (some tag)) = true)
+    (incomplete : machine.mvCompletedTags tag = false)
+    (completed : completePendingMvTag machine tag = some next)
+    (tagFinished : next.mvCompletedTags tag = true) :
+    executeScheduledProgram
+      [.issue (.nop (count + 1) (some tag)), .completeMv tag] machine =
+      .ok { (HazardAwareState.initial next) with machine :=
+        { next with hazardClock := next.hazardClock + (count + 1) } } := by
+  let line : NormalizedLine := .nop (count + 1) (some tag)
+  let instruction : InstructionLine := .nop ⟨count + 1, by omega⟩ (some tag)
+  let stalledState : HazardAwareState := { (HazardAwareState.initial machine) with
+    machine := next, stalledPEIssue := some line }
+  have instructionLine : line.toInstruction? = some instruction := rfl
+  have legal : checkParsedTopLine instruction.toParsed = true := by
+    simpa [instruction, InstructionLine.toParsed] using accepted
+  have waitTag : normalizedLineWaitTag? line = some tag := rfl
+  have resumed : executeHazardAwareNormalizedLineCore line stalledState =
+      .ok { stalledState with machine :=
+        { next with hazardClock := next.hazardClock + (count + 1) } } := by
+    have core := executeHazardAwareNormalizedLineCore_completed_wait_nop
+      stalledState count tag accepted tagFinished
+    simpa [line, stalledState, HazardAwareState.initial] using core
+  have schedule := executeScheduledProgram_wait_releases_on_completion
+    machine next line instruction tag
+    { stalledState with machine :=
+        { next with hazardClock := next.hazardClock + (count + 1) } }
+    instructionLine legal waitTag incomplete completed tagFinished resumed
+  simpa [line, stalledState, HazardAwareState.initial] using schedule
+
 /-- Zero-count nop is erased by normalization. If constructed directly in the
 normalized AST, it cannot advance state and its footprint is empty. -/
 theorem executeNormalizedLine_zero_nop_matches_footprint

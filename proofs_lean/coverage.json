@@ -159,6 +159,14 @@
         "runner_theorem": "ProofsLean.MNCore.executeHazardAwareNormalizedLine_positive_nop",
         "scope": "Positive nop count with no wait.",
         "effect": "Advances the hazard clock by issue cost, emits no hazard events, and prunes PE/block history against the four-word retention window."
+      },
+      "wait_nop_completion_connection": {
+        "core_theorem": "ProofsLean.MNCore.executeHazardAwareNormalizedLineCore_completed_wait_nop",
+        "runner_theorem": "ProofsLean.MNCore.executeHazardAwareNormalizedLine_completed_wait_nop",
+        "scheduled_program_theorem": "ProofsLean.MNCore.executeScheduledProgram_wait_nop_releases_after_completion",
+        "scope": "A positive nop with a valid wait tag, scheduled after an incomplete tag and then resumed after completion of the final operation with that tag.",
+        "effect": "The scheduled run enters the stalled state, completes the named MV, resumes the nop, advances hazardClock by its count, emits no hazard events, prunes PE/block history, and clears the stalled marker.",
+        "remaining": "Wait-nop tags with multiple same-tag transfers or intervening untagged completions, plus general PE wait-line state effects, are not yet connected to a single end-to-end theorem."
       }
     },
     "remaining": [
@@ -180,7 +188,8 @@
       "ProofsLean.MNCore.InstructionLine.has_hazard_clock_write",
       "ProofsLean.MNCore.commitOperandWrites_frame",
       "ProofsLean.MNCore.NormalizedLine.footprint_eq_instructionLineFootprint",
-      "ProofsLean.MNCore.executeHazardAwareNormalizedLineCore_positive_nop"
+      "ProofsLean.MNCore.executeHazardAwareNormalizedLineCore_positive_nop",
+      "ProofsLean.MNCore.executeScheduledProgram_wait_nop_releases_after_completion"
     ],
     "initialization_policy": "unspecified_pending_judge_evidence",
     "connected_to_machine_step": false,
@@ -202,6 +211,12 @@
         "runner_theorem": "ProofsLean.MNCore.executeHazardAwareNormalizedLine_positive_nop",
         "scope": "All positive nop counts with no wait, using the integrated hazard-aware transition.",
         "proved_effect": "Advances machine hazardClock by count, generates no PE/block events, preserves the stalled marker, and filters prior histories by whether each event remains within four issue words of the new clock. The public runner requires no current stall."
+      },
+      "completed_wait_nop": {
+        "core_theorem": "ProofsLean.MNCore.executeHazardAwareNormalizedLineCore_completed_wait_nop",
+        "runner_theorem": "ProofsLean.MNCore.executeHazardAwareNormalizedLine_completed_wait_nop",
+        "scheduled_program_theorem": "ProofsLean.MNCore.executeScheduledProgram_wait_nop_releases_after_completion",
+        "effect": "After the tag is complete, the positive wait nop advances the clock, emits no events, prunes old histories, and releases the stalled issue."
       }
     }
   },
