@@ -245,8 +245,12 @@ def alignMAUAccumulator (value : MAUValue) (grid : Int) : MAUValue :=
           let shift := (grid - exponent).toNat
           let kept := if shift >= 128 then 0 else significand / 2 ^ shift
           let sticky := shift >= 128 || significand % 2 ^ shift != 0
-          .finite negative (kept + if sticky then 1 else 0) grid
+          .finite negative (kept + if sticky && kept % 2 == 0 then 1 else 0) grid
   | _ => value
+
+theorem alignMAUAccumulator_sticky_jams_into_odd_lsb :
+    alignMAUAccumulator (.finite false 7 0) 1 = .finite false 3 1 := by
+  decide
 
 def addMAUValues : MAUValue → MAUValue → MAUValue
   | .infinity negativeA, .infinity negativeB => .infinity (negativeA && negativeB)
