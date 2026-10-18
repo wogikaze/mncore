@@ -1862,7 +1862,8 @@
           "Per-PE input lane counts, FMA-only accumulator reads, and D/H output rounding formats",
           "u/d row activation and inactive-row accumulator passthrough for FMA",
           "Block-float exponent validation, dropped partial-product correction, adder-grid accumulator alignment, sticky-jammed addition, and final output encoding",
-          "Per-PE output packing and sign-derived MAU flags"
+          "Per-PE output packing and sign-derived MAU flags",
+          "MAU source memory reads ignore destination-only operand masks, matching Rust read_raw_untraced"
         ],
         "audit_kind": "manual_source_crosswalk",
         "rust_runtime_differential": false,
@@ -1921,7 +1922,8 @@
           "mab_scope": "When the same successful memory/forwarding source-lowering condition holds for each of the four participating PEs, the source-ordered MAB reader cannot return .unknown. Its recursive proof runner is proved equal to the original loop-based accumulation, including failure/unknown short-circuiting and lane order.",
           "connection_limit": "Connect the source-reader premise to parsed matrix-MAU expressions and prove the full calculation/execution transition unknown-free under the resolved-forwarding condition."
         },
-        "remaining": "Run command-level Rust differentials for source operands, matrix layout, row masks, PE packing, flags, poison, and forwarding; the arithmetic-only comparison does not establish compute_mat or whole-machine conformance."
+        "remaining": "Run command-level Rust differentials for source operands, matrix layout, row masks, PE packing, flags, poison, and forwarding; the arithmetic-only comparison does not establish compute_mat or whole-machine conformance.",
+        "source_mask_lowering": "parsedFloatMAUSourceAttrs? accepts masked and unmasked memory operands, then lowers the same mask-free memory input. Rust read_raw_untraced ignores the operand mask during reads."
       }
     },
     {

@@ -227,7 +227,7 @@ theorem parsedFloatMAUSource?_memory
 def parsedFloatMAUSourceAttrs? (operand : ParsedOperand)
     (context : ParsedIntegerContext) : Option (ParsedIntegerInput × Bool × Bool × Bool) :=
   match operand with
-  | .mem access neg ext rnd none =>
+  | .mem access neg ext rnd _ =>
       let rawOperand := ParsedOperand.mem access neg ext false none
       (ParsedOperand.toParsedIntegerInput? rawOperand .long context.group context.l2b
         context.l1b context.mab context.pe context.cycle context.bar0 context.bar1
