@@ -8165,8 +8165,7 @@ theorem executeIntegerProducerInstructionLine_pe_never_unknown_of_stages
     (matrixKnown : ∀ nextBlockFloat,
       executeParsedMatrixMAUAndWrites state nextBlockFloat expressions
         noForward hasSingleLineMask ≠ .unknown)
-    (sharedBlockKnown : ∀ nextMatrix,
-      executeParsedSharedBlockProducers state nextMatrix expressions (!noForward) ≠ .unknown)
+    (resolved : forwardingSourceResolved state)
     (l1ToPEKnown : ∀ nextShared,
       executeParsedL1ToPEProducers state nextShared expressions noForward
         (expressions.any parsedExprHasSingleLineWriteMask)
@@ -8214,7 +8213,8 @@ theorem executeIntegerProducerInstructionLine_pe_never_unknown_of_stages
                       cases sharedResult : executeParsedSharedBlockProducers state nextMatrix
                           expressions (!noForward) with
                       | failure => simp_all [expressions, noForward, hasSingleLineMask, List.any_map]
-                      | unknown => exact (sharedBlockKnown nextMatrix sharedResult).elim
+                      | unknown => exact (executeParsedSharedBlockProducers_resolved_never_unknown
+                          state nextMatrix expressions (!noForward) resolved sharedResult).elim
                       | ok nextShared =>
                           cases l1Result : executeParsedL1ToPEProducers state nextShared
                               expressions noForward
