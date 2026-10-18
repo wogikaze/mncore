@@ -4158,6 +4158,16 @@ def prepareParsedMatrixReadTargets (targets : List ParsedMatrixReadTarget)
             else (lm1, barValue) :: laterUpdates
           .ok (writes, updates)
 
+theorem prepareParsedMatrixReadTargets_never_unknown
+    (targets : List ParsedMatrixReadTarget) (output : IntegerALU.Bus) :
+    prepareParsedMatrixReadTargets targets output ≠ .unknown := by
+  induction targets with
+  | nil => simp [prepareParsedMatrixReadTargets]
+  | cons target rest ih =>
+      cases target <;>
+        cases recursive : prepareParsedMatrixReadTargets rest output <;>
+        simp [prepareParsedMatrixReadTargets, recursive] at ih ⊢
+
 theorem prepareParsedMatrixReadTargets_single_bar
     (lm1 : Bool) (selection : PEWordSelection) (output : IntegerALU.Bus) :
     prepareParsedMatrixReadTargets [.bar lm1 selection] output =
@@ -4188,6 +4198,29 @@ def prepareParsedMatrixReadCycle (files : IntegerRegisterFiles)
           | .ok (writes, barUpdates) =>
               .ok (writes, updateParsedMatrixReadForwardingCycle
                 slots context.cycle output noForward, barUpdates)
+
+theorem prepareParsedMatrixReadCycle_never_unknown_of_resolved
+    (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (store : ParsedMatrixReadStore) (expression : ParsedExpr)
+    (directive : ParsedMaskDirective) (hasSingleLineMask noForward : Bool)
+    (context : ParsedIntegerContext) (accesses : ParsedMatrixReadAccesses)
+    (flushSelection : Option PEWordSelection)
+    (lowered : ParsedExpr.toDirectMatrixReadAccesses? expression files.maskRegisters
+      directive hasSingleLineMask context = some accesses)
+    (flushResolved : resolveFlushSelection? expression.flush files.maskRegisters context.cycle =
+      some flushSelection) :
+    prepareParsedMatrixReadCycle files slots store expression directive
+      hasSingleLineMask noForward context ≠ .unknown := by
+  unfold prepareParsedMatrixReadCycle
+  rw [lowered, flushResolved]
+  cases targetsReady : prepareParsedMatrixReadTargets accesses.targets
+      (parsedOutputAfterFlush flushSelection (parsedMatrixReadBus store accesses context)) with
+  | failure => simp [targetsReady]
+  | unknown =>
+      exact (prepareParsedMatrixReadTargets_never_unknown accesses.targets
+        (parsedOutputAfterFlush flushSelection (parsedMatrixReadBus store accesses context))
+        targetsReady).elim
+  | ok result => simp [targetsReady]
 
 def parsedMatrixReadCycleStep (files : IntegerRegisterFiles)
     (slots : ProofsLean.MNCore.Forwarding.Slots) (store : ParsedMatrixReadStore)

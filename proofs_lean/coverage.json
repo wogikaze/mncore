@@ -2025,11 +2025,13 @@
             "shared-block producers",
             "L1-to-PE producers"
           ],
-          "scope_limit": "The matrix-MAU calculation condition is now an explicit format/source-lowering predicate per selected expression/MAB/cycle plus resolved forwarding. Other listed producer-stage premises remain to be reduced; full Rust/Lean equivalence and other line forms remain outstanding. Within the integer per-PE step, parsed integer/matrix-read preparation and float-MAU cycles still require separate unknown-free premises.",
+          "scope_limit": "The matrix-MAU calculation condition is now an explicit format/source-lowering predicate per selected expression/MAB/cycle plus resolved forwarding. For matrix-read, one cycle is known when operand lowering and flush selection resolve; composing all four cycles and the integer/float producer lists remains open. Other listed producer-stage premises, full Rust/Lean equivalence, and other line forms remain outstanding.",
           "derived_premises": [
             "ProofsLean.MNCore.executeParsedSharedBlockProducers_resolved_never_unknown",
             "ProofsLean.MNCore.executeParsedMatrixMAUAndWrites_resolved_never_unknown",
-            "ProofsLean.MNCore.updateSupportedPELineForwarding_never_unknown"
+            "ProofsLean.MNCore.updateSupportedPELineForwarding_never_unknown",
+            "ProofsLean.MNCore.PEMemory.prepareParsedMatrixReadTargets_never_unknown",
+            "ProofsLean.MNCore.PEMemory.prepareParsedMatrixReadCycle_never_unknown_of_resolved"
           ],
           "theorems": [
             "ProofsLean.MNCore.executeIntegerProducerLineAtPEs_never_unknown",
@@ -2043,7 +2045,9 @@
             "ProofsLean.MNCore.executeParsedMatrixMAUAndWrites_resolved_never_unknown",
             "ProofsLean.MNCore.parsedMatrixMAUCalculationLoweredAtMAB_is_matrix_op",
             "ProofsLean.MNCore.executeParsedMatrixMAUCalculationAtMAB_lowered_never_unknown",
-            "ProofsLean.MNCore.updateSupportedPELineForwarding_never_unknown"
+            "ProofsLean.MNCore.updateSupportedPELineForwarding_never_unknown",
+            "ProofsLean.MNCore.PEMemory.prepareParsedMatrixReadTargets_never_unknown",
+            "ProofsLean.MNCore.PEMemory.prepareParsedMatrixReadCycle_never_unknown_of_resolved"
           ]
         }
       }
