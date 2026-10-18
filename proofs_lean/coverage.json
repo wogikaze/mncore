@@ -1810,7 +1810,14 @@
     },
     {
       "area": "pe_rotations_and_coordinate_operands",
-      "status": "partial_datapath_only"
+      "status": "partial_datapath_only",
+      "msl_msr_known_lowering_failures": {
+        "behavior": "A recognized msl/msr expression whose source/destination shape cannot be lowered now returns failure instead of unknown.",
+        "lean_executor": "ProofsLean.MNCore.executeParsedMslMsrAtPE",
+        "failure_theorem": "ProofsLean.MNCore.executeParsedMslMsrAtPE_lowering_failure",
+        "rust_reference": "viz/core/src/machine.rs::Machine::compute_alu reads each required source through read_alu_input and propagates read errors as ExecError.",
+        "scope_limit": "This classifies lowering failures; PE rotation routing, destination writes, and forwarding still need command-level Rust differential coverage."
+      }
     },
     {
       "area": "l1bm_transfers_turnaround_and_reductions",

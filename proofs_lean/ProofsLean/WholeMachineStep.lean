@@ -3811,7 +3811,7 @@ def executeParsedMslMsrAtPE (readState currentState : State)
     bar0 := oldContext.bar0
     bar1 := oldContext.bar1
     tWord := oldContext.tWord }
-  let some (isMsl, destinations) := lowerParsedMslMsr? expression | return .unknown
+  let some (isMsl, destinations) := lowerParsedMslMsr? expression | return .failure
   let sourcePE := mslMsrSourcePE pe isMsl
   let sourceOldContext := readState.peContext sourcePE
   let sourceCoordinates := ParsedIntegerContext.ofLinearIndex sourcePE
@@ -3886,6 +3886,16 @@ def executeParsedMslMsrAtPE (readState currentState : State)
         peContext := fun other => if other = pe then
           { currentState.peContext other with bar0 := bar0, bar1 := bar1 }
           else currentState.peContext other }
+
+/-- An MSL/MSR expression with an unsupported source or destination shape is a
+known execution failure; unresolved values read from forwarding remain unknown. -/
+theorem executeParsedMslMsrAtPE_lowering_failure
+    (readState currentState : State) (expression : ParsedExpr) (pe : PEId)
+    (noForward hasSingleLineMask : Bool)
+    (notLowered : lowerParsedMslMsr? expression = none) :
+    executeParsedMslMsrAtPE readState currentState expression pe noForward
+      hasSingleLineMask = .failure := by
+  simp [executeParsedMslMsrAtPE, notLowered]
 
 def executeParsedMslMsrAtPEs (readState currentState : State)
     (expression : ParsedExpr) (pes : List PEId) (noForward hasSingleLineMask : Bool) :
