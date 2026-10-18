@@ -2331,7 +2331,7 @@ def executeParsedL2BlockProducers (readState currentState : State)
 structure ParsedL1ToPEAccess where
   sourceBase : Option (Fin L1Transfer.l1bmLongWords)
   twoLongWords : Bool
-  destination : ParsedOperand
+  destinations : List ParsedOperand
   deriving Repr
 
 def lowerParsedL1ToPE? (expression : ParsedExpr) : Option ParsedL1ToPEAccess := do
@@ -2339,9 +2339,10 @@ def lowerParsedL1ToPE? (expression : ParsedExpr) : Option ParsedL1ToPEAccess := 
   | .l1bm .pbcast | .l1bm .mbcast | .l1bm .m4bcast | .l1bm (.distrib _) => pure ()
   | _ => none
   match expression.sources, expression.destinations with
-  | [.l1bm width address], [destination@(.mem ..)]
-  | [.l1bm width address], [destination@(.bar ..)]
-  | [.l1bm width address], [destination@.nowrite] =>
+  | [.l1bm width address], destinations@(_ :: _) =>
+      guard (destinations.all fun destination => match destination with
+        | .mem .. | .bar .. | .nowrite => true
+        | _ => false)
       if width.val != 1 && width.val != 2 && width.val != 4 then none else
       let sourceOperand := ParsedOperand.l1bm width address
       let sourceBase : Option (Fin L1Transfer.l1bmLongWords) :=
@@ -2349,7 +2350,7 @@ def lowerParsedL1ToPE? (expression : ParsedExpr) : Option ParsedL1ToPEAccess := 
         address.map fun address =>
           ⟨address.val % L1Transfer.l1bmLongWords,
             Nat.mod_lt _ (by decide)⟩
-      some ⟨sourceBase, width.val == 4, destination⟩
+      some ⟨sourceBase, width.val == 4, destinations⟩
   | _, _ => none
 
 def writeParsedL1ToPEDestination? (files : PEMemory.IntegerRegisterFiles)
@@ -2424,16 +2425,28 @@ def executeParsedL1ToPEAtPEs (readState currentState : State)
             | some flushSelection =>
                 let bus := parsedOutputAfterFlush flushSelection
                   (l1ToPEBusAt readState expression access pe cycle)
-                match writeParsedL1ToPEDestination? files access.destination context bus
-                    cycle currentState.maskDirective hasSingleLineMask with
+                let rec writeDestinations : List ParsedOperand →
+                    PEMemory.IntegerRegisterFiles → BitVec 12 → BitVec 12 →
+                    Option (PEMemory.IntegerRegisterFiles × BitVec 12 × BitVec 12)
+                  | [], currentFiles, currentBar0, currentBar1 =>
+                      some (currentFiles, currentBar0, currentBar1)
+                  | destination :: remaining, currentFiles, currentBar0, currentBar1 => do
+                      let destinationContext := { context with
+                        bar0 := currentBar0
+                        bar1 := currentBar1 }
+                      let (nextFiles, barUpdate) ← writeParsedL1ToPEDestination?
+                        currentFiles destination destinationContext bus cycle
+                        currentState.maskDirective hasSingleLineMask
+                      let nextBar0 := match barUpdate with
+                        | some (false, value) => value
+                        | _ => currentBar0
+                      let nextBar1 := match barUpdate with
+                        | some (true, value) => value
+                        | _ => currentBar1
+                      writeDestinations remaining nextFiles nextBar0 nextBar1
+                match writeDestinations access.destinations files bar0 bar1 with
                 | none => .unknown
-                | some (nextFiles, barUpdate) =>
-                    let nextBar0 := match barUpdate with
-                      | some (false, value) => value
-                      | _ => bar0
-                    let nextBar1 := match barUpdate with
-                      | some (true, value) => value
-                      | _ => bar1
+                | some (nextFiles, nextBar0, nextBar1) =>
                     writeCycles cycles nextFiles nextBar0 nextBar1
       if access.sourceBase.isNone && !readState.l1bmTurnaroundValid then .failure
       else
