@@ -4,13 +4,14 @@
   import SourceView from './components/SourceView.svelte';
   import ChipView from './components/ChipView.svelte';
   import Datapath from './components/Datapath.svelte';
+  import MemoryView from './components/MemoryView.svelte';
   import Inspector from './components/Inspector.svelte';
   import Timeline from './components/Timeline.svelte';
   import Story from './components/Story.svelte';
   import Occupancy from './components/Occupancy.svelte';
 
   let mode = $state<'explorer' | 'story'>('explorer');
-  let lower = $state<'pe' | 'occupancy'>('pe');
+  let lower = $state<'pe' | 'memory' | 'occupancy'>('pe');
   let editing = $state(false);
   let draft = $state('');
 
@@ -84,9 +85,10 @@
         <div class="panel pewrap">
           <div class="tabs">
             <button class:on={lower === 'pe'} onclick={() => (lower = 'pe')}>PE データパス</button>
+            <button class:on={lower === 'memory'} onclick={() => (lower = 'memory')}>PE メモリ</button>
             <button class:on={lower === 'occupancy'} onclick={() => (lower = 'occupancy')}>命令グループ占有</button>
           </div>
-          {#if lower === 'pe'}<Datapath />{:else}<Occupancy />{/if}
+          {#if lower === 'pe'}<Datapath />{:else if lower === 'memory'}<MemoryView />{:else}<Occupancy />{/if}
         </div>
       </div>
       <div class="right panel"><Inspector /></div>

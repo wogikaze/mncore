@@ -106,3 +106,16 @@ export interface ProblemEntry {
   title: string;
   number: number;
 }
+
+/**
+ * A value the user selected for provenance. `line` is the moment the value is observed:
+ * the line that wrote it for a destination, the line before the read for a memory source.
+ * `addr` is null for forwarding registers, where `cycle` identifies the value.
+ */
+export interface Selection {
+  unit: number;
+  loc: string;
+  addr: number | null;
+  line: number;
+  cycle?: number;
+}

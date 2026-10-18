@@ -19,8 +19,15 @@ npm run sync-problems   # ../../problems をサイトにコピーする（git �
 npm run dev             # http://localhost:5173
 ```
 
-- Explorer：問題を選ぶか、VSM / testcase.vsm をドロップする。左のソースの nop には「必要（理由）」か「削れる候補」が付く。PE のセルをクリックすると値の来歴が出る。←→ でステップ移動、Space で再生。
+- Explorer：問題を選ぶか、VSM / testcase.vsm をドロップする。MAB を切り替えると、その MAB の4 PEを記録し直す。左のソースの nop には「必要（理由）」か「削れる候補」が付く。PE のセルをクリックすると値の来歴が出る。`PE メモリ` タブでは LM0/LM1/GRF/T/OMR の任意の番地をクリックでき、来歴の入力を辿ると依存の根まで移動できる。←→ でステップ移動、Space で再生。
 - Story：スクロールに合わせて、ReLU、DRAM からの分配、行列積を順に解説する。
+
+```sh
+cd viz/web
+npm run check   # svelte-check + tsc
+npm test        # 来歴ウォークの回帰テスト
+npm run build   # 静的サイトのビルド
+```
 
 ## シミュレータのツール（`core/`）
 

@@ -23,10 +23,10 @@
   const trace = $derived(app.trace);
   const line = $derived<LineInfo | undefined>(trace?.lines[app.line]);
   const pes = $derived(trace?.focus ?? [0, 1, 2, 3]);
-  let peIdx = $state(0);
-  const pe = $derived(pes[Math.min(peIdx, pes.length - 1)] ?? 0);
+  const pe = $derived(app.pe);
   const mab = $derived(Math.floor(pe / 4));
   const l1b = $derived(Math.floor(pe / 64));
+  const l2b = $derived(Math.floor(pe / 512));
   /** Cycle to emphasize; null shows all cycles alike. */
   let pinned = $state<number | null>(null);
   const cycle = $derived(player.playing || player.progress < 1 ? player.cycle : pinned);
@@ -87,6 +87,52 @@
   }
 
   const visible = (info: ExprInfo) => !['wait', 'noforward', 'other', 'l2'].includes(info.unit);
+
+  /** The access a row displays, preferring the cycle the user pinned. */
+  function rowAccess(r: Row): Access {
+    return (cycle !== null ? r.accesses.find((x) => x.cycle === cycle) : undefined) ?? r.accesses[0];
+  }
+
+  /** A source is observed before the line reads it; a destination after it is written. */
+  function observationLine(a: Access, source: boolean): number {
+    return source && a.addr !== null ? app.line - 1 : app.line;
+  }
+
+  function clickable(a: Access, source: boolean): boolean {
+    if (a.unit !== pe) return false; // L1BM writes are per L1B, not this PE's memory
+    return source || a.addr !== null; // forwarding outputs are results, not addresses
+  }
+
+  function select(a: Access, source: boolean) {
+    if (!clickable(a, source)) return;
+    app.selection = {
+      unit: pe,
+      loc: a.loc,
+      addr: a.addr,
+      line: observationLine(a, source),
+      cycle: a.cycle,
+    };
+  }
+
+  function selected(a: Access, source: boolean): boolean {
+    const s = app.selection;
+    if (!s || s.unit !== pe || s.loc !== a.loc) return false;
+    if (s.line !== observationLine(a, source)) return false;
+    if (a.addr === null || s.addr === null) {
+      if (a.addr !== s.addr) return false;
+      return s.cycle === undefined || s.cycle === a.cycle;
+    }
+    const n = Math.max(1, a.words.length);
+    return s.addr >= a.addr && s.addr < a.addr + n;
+  }
+
+  function rowKey(ev: KeyboardEvent, a: Access, source: boolean) {
+    if (!clickable(a, source)) return;
+    if (ev.key === 'Enter' || ev.key === ' ') {
+      ev.preventDefault();
+      select(a, source);
+    }
+  }
 
   function addrLabel(loc: string, addr: number | null): string {
     if (addr === null) return '';
@@ -271,14 +317,40 @@
   }
 </script>
 
+{#snippet srcRow(r: Row, selected: boolean)}
+  {#if selected}<rect class="selbar" x={SRC_X} y={r.y} width="2" height={ROW_H - 2} />{/if}
+  <text class="addr" x={SRC_X + 8} y={r.y + 14}>{r.label}</text>
+  <text class="val" x={SRC_X + 84} y={r.y + 14}>{rowValue(r)}</text>
+  <text class="cyc" x={SRC_X + SRC_W - 6} y={r.y + 14}>{r.accesses.map((x) => `c${x.cycle}`).join(' ')}</text>
+{/snippet}
+
+{#snippet dstRow(r: Row, selected: boolean)}
+  {#if selected}<rect class="selbar" x={DST_X} y={r.y} width="2" height={ROW_H - 2} />{/if}
+  <text class="addr" x={DST_X + 8} y={r.y + 14}>{r.label}</text>
+  <text class="val" x={DST_X + 84} y={r.y + 14}>{rowValue(r)}</text>
+  <text class="cyc" x={DST_X + DST_W - 6} y={r.y + 14}>{r.accesses.map((x) => `c${x.cycle}`).join(' ')}</text>
+{/snippet}
+
 <section class="dp">
   <header>
     <div class="tabs">
       {#each pes as p, i}
-        <button class:on={i === peIdx} onclick={() => (peIdx = i)}>PE{p % 4}</button>
+        <button class:on={i === app.peIndex} onclick={() => app.setPeIndex(i)}>PE{p % 4}</button>
       {/each}
     </div>
-    <span class="where">MAB #{mab}（L1B {l1b}）の PE #{pe}・{line?.lineno}行目</span>
+    <label class="mab" title="記録する MAB を切り替えます（再シミュレーション）">
+      MAB
+      <button onclick={() => app.setFocusMab(app.focusMab - 1)} disabled={app.focusMab <= 0}>−</button>
+      <input
+        type="number"
+        min="0"
+        max="1023"
+        value={app.focusMab}
+        onchange={(e) => app.setFocusMab(Number((e.currentTarget as HTMLInputElement).value))}
+      />
+      <button onclick={() => app.setFocusMab(app.focusMab + 1)} disabled={app.focusMab >= 1023}>＋</button>
+    </label>
+    <span class="where">MAB #{mab}（L1B {l1b}・L2B {l2b}）の PE #{pe}・{line?.lineno}行目</span>
     <div class="cycles">
       サイクル
       <button class:on={cycle === null} onclick={() => { player.pause(); player.progress = 1; pinned = null; }}>全</button>
@@ -318,12 +390,27 @@
             <rect x={SRC_X} y={b.y} width={SRC_W} height={b.h} rx="5" />
             <text class="btitle" x={SRC_X + 8} y={b.y + 15}>{b.title}</text>
             {#each b.rows as r (r.key)}
-              {@const on = r.accesses.some((a) => active(a.cycle))}
-              <g class:dim={!on}>
-                <text class="addr" x={SRC_X + 8} y={r.y + 14}>{r.label}</text>
-                <text class="val" x={SRC_X + 84} y={r.y + 14}>{rowValue(r)}</text>
-                <text class="cyc" x={SRC_X + SRC_W - 6} y={r.y + 14}>{r.accesses.map((a) => `c${a.cycle}`).join(' ')}</text>
-              </g>
+              {@const on = r.accesses.some((x) => active(x.cycle))}
+              {@const a = rowAccess(r)}
+              {@const can = clickable(a, true)}
+              {@const sel = r.accesses.some((x) => selected(x, true))}
+              {#if can}
+                <g
+                  class:dim={!on}
+                  class="clickable"
+                  class:sel={sel}
+                  role="button"
+                  tabindex="0"
+                  onclick={() => select(a, true)}
+                  onkeydown={(e) => rowKey(e, a, true)}
+                >
+                  {@render srcRow(r, sel)}
+                </g>
+              {:else}
+                <g class:dim={!on}>
+                  {@render srcRow(r, sel)}
+                </g>
+              {/if}
             {/each}
           </g>
         {/each}
@@ -367,12 +454,27 @@
             <rect x={DST_X} y={b.y} width={DST_W} height={b.h} rx="5" />
             <text class="btitle" x={DST_X + 8} y={b.y + 15}>{b.title}</text>
             {#each b.rows as r (r.key)}
-              {@const on = r.accesses.some((a) => active(a.cycle))}
-              <g class:dim={!on}>
-                <text class="addr" x={DST_X + 8} y={r.y + 14}>{r.label}</text>
-                <text class="val" x={DST_X + 84} y={r.y + 14}>{rowValue(r)}</text>
-                <text class="cyc" x={DST_X + DST_W - 6} y={r.y + 14}>{r.accesses.map((a) => `c${a.cycle}`).join(' ')}</text>
-              </g>
+              {@const on = r.accesses.some((x) => active(x.cycle))}
+              {@const a = rowAccess(r)}
+              {@const can = clickable(a, false)}
+              {@const sel = r.accesses.some((x) => selected(x, false))}
+              {#if can}
+                <g
+                  class:dim={!on}
+                  class="clickable"
+                  class:sel={sel}
+                  role="button"
+                  tabindex="0"
+                  onclick={() => select(a, false)}
+                  onkeydown={(e) => rowKey(e, a, false)}
+                >
+                  {@render dstRow(r, sel)}
+                </g>
+              {:else}
+                <g class:dim={!on}>
+                  {@render dstRow(r, sel)}
+                </g>
+              {/if}
             {/each}
           </g>
         {/each}
@@ -410,6 +512,33 @@
     display: flex;
     gap: 3px;
     align-items: center;
+  }
+  .mab {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+    color: var(--muted);
+  }
+  .mab input {
+    width: 4.5em;
+    padding: 1px 4px;
+    font-family: var(--mono);
+  }
+  .mab button {
+    padding: 1px 5px;
+  }
+  .clickable {
+    cursor: pointer;
+  }
+  .clickable:hover text {
+    fill: var(--accent);
+  }
+  .sel text {
+    fill: var(--accent);
+    font-weight: 600;
+  }
+  .selbar {
+    fill: var(--accent);
   }
   button.on {
     background: var(--accent);

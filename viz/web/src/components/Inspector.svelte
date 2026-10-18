@@ -1,11 +1,13 @@
 <script lang="ts">
   import { app } from '../lib/state.svelte';
-  import { chain, forwarded, producer, type Origin } from '../lib/provenance';
+  import { chainFrom, forwarded, producer, type Origin } from '../lib/provenance';
   import { format } from '../lib/numbers';
   import type { Access } from '../lib/types';
 
   const trace = $derived(app.trace);
   const line = $derived(trace?.lines[app.line]);
+  const sel = $derived(app.selection);
+  const selLine = $derived(sel?.line ?? app.line);
   const unitNames: Record<string, string> = {
     alu: 'ALU',
     mau: 'MAU（ベクトル）',
@@ -40,14 +42,20 @@
   });
 
   const origins = $derived.by<Origin[]>(() => {
-    const s = app.selection;
-    if (!trace || !s) return [];
-    return chain(trace, s.unit, s.loc, s.addr, app.line);
+    if (!trace || !sel) return [];
+    return chainFrom(trace, sel);
   });
 
   function describe(a: Access): string {
     const v = format(a.words.slice(0, app.view === 'f64' ? 2 : a.loc === 't' ? 2 : a.words.length), app.view).join(', ');
-    const where = a.addr === null ? `$${a.loc}` : a.loc === 't' ? `T c${a.addr}` : `${a.loc}[${a.addr}]`;
+    const where =
+      a.loc === 'out'
+        ? `結果 c${a.cycle}`
+        : a.addr === null
+          ? `$${a.loc}`
+          : a.loc === 't'
+            ? `T c${a.addr}`
+            : `${a.loc}[${a.addr}]`;
     return `${where} = ${v}`;
   }
 
@@ -103,10 +111,21 @@
 
     <section>
       <h3>値の来歴</h3>
-      {#if !app.selection}
-        <p class="muted">PE のセルをクリックすると、その値がどこから来たかをさかのぼります。</p>
+      {#if !sel}
+        <p class="muted">PE データパスの行か「PE メモリ」のセルをクリックすると、その値がどこから来たかをさかのぼります。</p>
       {:else}
-        <p class="muted">PE #{app.selection.unit} の {app.selection.loc}[{app.selection.addr}]（{line?.lineno}行目の時点）</p>
+        <p class="muted">
+          PE #{sel.unit} の {sel.addr !== null ? `${sel.loc}[${sel.addr}]` : `$${sel.loc}`}
+          {#if sel.addr === null}
+            （{trace.lines[selLine]?.lineno}行目で読んだ値）
+          {:else if selLine < 0}
+            （初期状態）
+          {:else}
+            （{trace.lines[selLine]?.lineno}行目の時点）
+          {/if}
+          <button class="clear" onclick={() => (app.selection = null)}>解除</button>
+        </p>
+        <p class="muted small">入力の値をクリックすると、その来歴に切り替わります。</p>
         <ol class="chain">
           {#each origins as o}
             <li>
@@ -120,7 +139,11 @@
                   入力:
                   {#each o.inputs as inp}
                     {@const up = origin(inp, o.line)}
-                    <span title={up ? `${up.line >= 0 ? trace.lines[up.line].lineno + '行' : '初期値'}: ${up.expr}` : ''}>{describe(inp)}</span>
+                    <button
+                      class="input"
+                      title={up ? `${up.line >= 0 ? trace.lines[up.line].lineno + '行' : '初期値'}: ${up.expr}` : 'この値の書き込みは記録にありません'}
+                      onclick={() => app.followInput(inp, o.line)}
+                    >{describe(inp)}</button>
                   {/each}
                 </div>
               {/if}
@@ -199,9 +222,26 @@
     flex-wrap: wrap;
     gap: 4px;
   }
-  .inputs span {
+  .inputs .input {
+    font-family: var(--mono);
+    font-size: 10px;
     background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 3px;
     padding: 0 3px;
+    cursor: pointer;
+  }
+  .inputs .input:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .clear {
+    font-size: 10px;
+    padding: 0 4px;
+    margin-left: 6px;
+  }
+  .small {
+    font-size: 10px;
   }
   .muted {
     color: var(--muted);
