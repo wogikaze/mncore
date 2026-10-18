@@ -5323,6 +5323,22 @@ def parsedExprIsBlockFloatProducer (expression : ParsedExpr) : Bool :=
   | .alu .bfe (some .h) _ _ => true
   | _ => false
 
+theorem supported_mau_has_known_dispatch_family
+    (expression : ParsedExpr) (precision : ParsedPrecision) (matrix : Bool)
+    (kind : CalcKind) (half : Option Char) (round : Bool)
+    (operation : expression.op = .mau precision matrix kind half round)
+    (supported : parsedExprIsSupportedPELineProducer expression = true) :
+    parsedExprIsMatrixMAUProducer expression = true ∨
+      parsedExprIsSupportedFloatMAUProducer expression = true ∨
+      parsedExprIsBlockFloatProducer expression = true := by
+  cases expression with
+  | mk op sources destinations flush text =>
+      simp only at operation
+      subst op
+      cases precision <;> cases matrix <;> cases kind <;> cases round <;>
+        simp [parsedExprIsSupportedPELineProducer, parsedExprIsMatrixMAUProducer,
+          parsedExprIsSupportedFloatMAUProducer, parsedExprIsBlockFloatProducer] at *
+
 theorem lowerParsedBlockFloat_bfn_g_uses_pseudo_single_width (source destination : ParsedOperand) :
     lowerParsedBlockFloat?
       { op := .alu .bfn (some .g) false none, sources := [source],
