@@ -81,7 +81,8 @@ import Lean
 #print axioms ProofsLean.MNCore.executeParsedFloatMAUCycleAtPE_add_success
 #print axioms ProofsLean.MNCore.lowerParsedFloatMultiply?_fvmul
 #print axioms ProofsLean.MNCore.executeParsedFloatMAUCycleAtPE_mul_success
-#print axioms ProofsLean.MNCore.lowerParsedFloatFma?_direct
+#print axioms ProofsLean.MNCore.parsedFloatMAUSource?_memory
+#print axioms ProofsLean.MNCore.parsedFloatMAUSource?_forward
 #print axioms ProofsLean.MNCore.executeParsedFloatMAUCycleAtPE_fma_success
 #print axioms ProofsLean.MNCore.integerProducerMachine_issue_failure
 #print axioms ProofsLean.MNCore.executeIntegerProducerInstructionLine_pe_success
