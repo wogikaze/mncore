@@ -83,6 +83,9 @@ structure ParsedFloatFmaAccesses where
   negateA : Bool
   negateB : Bool
   negateC : Bool
+  extendA : Bool
+  extendB : Bool
+  extendC : Bool
   destination : Fin (Bank.capacity .lm1)
 
 def lowerParsedFloatFma? (expression : ParsedExpr) (context : ParsedIntegerContext) :
@@ -92,14 +95,15 @@ def lowerParsedFloatFma? (expression : ParsedExpr) (context : ParsedIntegerConte
   | _ => none
   match expression.sources, expression.destinations with
   | [sourceA, sourceB, sourceC], [.mem access false false false none] =>
-      let (sourceA, negateA) ← parsedFloatMAUSourceSigned? sourceA context
-      let (sourceB, negateB) ← parsedFloatMAUSourceSigned? sourceB context
-      let (sourceC, negateC) ← parsedFloatMAUSourceSigned? sourceC context
+      let (sourceA, negateA, extendA) ← parsedFloatMAUSourceAttrs? sourceA context
+      let (sourceB, negateB, extendB) ← parsedFloatMAUSourceAttrs? sourceB context
+      let (sourceC, negateC, extendC) ← parsedFloatMAUSourceAttrs? sourceC context
       let destinationAccess ← ParsedOperand.toDirectMemoryAccess?
         (.mem access false false false none) context.pe context.cycle
         context.bar0 context.bar1 context.tWord
       let destination ← FloatPEMemory.lm1LongAddress? destinationAccess
-      some ⟨sourceA, sourceB, sourceC, negateA, negateB, negateC, destination⟩
+      some ⟨sourceA, sourceB, sourceC, negateA, negateB, negateC,
+        extendA, extendB, extendC, destination⟩
   | _, _ => none
 
 structure ParsedFloatMultiplyAccesses where
@@ -234,10 +238,9 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
           | .failure => .failure
           | .unknown => .unknown
           | .ok sourceC =>
-            let left := if accesses.negateA then negateSingleBus sourceA.high else sourceA.high
-            let right := if accesses.negateB then negateSingleBus sourceB.high else sourceB.high
-            let accumulator := if accesses.negateC then
-              negateSingleBus sourceC.high else sourceC.high
+            let left := prepareSingleMAUSource sourceA.high accesses.negateA accesses.extendA
+            let right := prepareSingleMAUSource sourceB.high accesses.negateB accesses.extendB
+            let accumulator := prepareSingleMAUSource sourceC.high accesses.negateC accesses.extendC
             let output := singleFmaBus left right accumulator
             let nextLM1 := FloatPEMemory.writePair currentFiles.lm1 accesses.destination output
             .ok ({ currentFiles with lm1 := nextLM1 }, ⟨output, 0⟩)
@@ -329,9 +332,9 @@ theorem executeParsedFloatMAUCycleAtPE_fma_success
     (readC : ParsedIntegerInput.readWithForwarding readFiles oldSlots cycle accesses.sourceC =
       .ok busC) :
     let output := singleFmaBus
-      (if accesses.negateA then negateSingleBus busA.high else busA.high)
-      (if accesses.negateB then negateSingleBus busB.high else busB.high)
-      (if accesses.negateC then negateSingleBus busC.high else busC.high)
+      (prepareSingleMAUSource busA.high accesses.negateA accesses.extendA)
+      (prepareSingleMAUSource busB.high accesses.negateB accesses.extendB)
+      (prepareSingleMAUSource busC.high accesses.negateC accesses.extendC)
     executeParsedFloatMAUCycleAtPE readFiles currentFiles oldSlots expression context cycle =
       .ok ({ currentFiles with lm1 :=
         (FloatPEMemory.writePair currentFiles.lm1 accesses.destination output) },
