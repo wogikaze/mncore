@@ -166,7 +166,8 @@
       "ProofsLean.MNCore.ParsedExpr.destination_in_read_footprint",
       "ProofsLean.MNCore.ParsedExpr.destination_in_write_footprint",
       "ProofsLean.MNCore.InstructionLine.has_hazard_clock_write",
-      "ProofsLean.MNCore.commitOperandWrites_frame"
+      "ProofsLean.MNCore.commitOperandWrites_frame",
+      "ProofsLean.MNCore.NormalizedLine.footprint_eq_instructionLineFootprint"
     ],
     "initialization_policy": "unspecified_pending_judge_evidence",
     "connected_to_machine_step": false,
@@ -175,7 +176,7 @@
       "scope": "one PE, four integer-register cycles; MV, forwarding, and hazards remain unknown",
       "issue_failure_theorem": "ProofsLean.MNCore.PEMemory.executeParsedPEInstructionLine_issue_failure"
     },
-    "limitation": "Footprints are syntactic read/write candidates. The generic store frame lemma is not yet a frame theorem for an integrated instruction transition."
+    "limitation": "Footprints are syntactic read/write candidates. The new theorem aligns each emitted normalized line with the exact InstructionLine passed to execution, but no general theorem yet proves successful integrated transitions modify only resources in that footprint."
   },
   "welcome_problem_specification": {
     "problem_source": "problems/challenge/1.plus-one/problem.md",

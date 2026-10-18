@@ -226,6 +226,33 @@ def normalizedLineFootprint : NormalizedLine → Footprint
   | .maskDirective .. =>
       { emptyFootprint with unitWrites := [.maskControl] }
 
+/-- Every normalized line that emits an instruction word has the same
+syntactic footprint as the `InstructionLine` consumed by the execution
+transition. Zero-count nops and mask directives are excluded because they do
+not produce an instruction line. -/
+theorem NormalizedLine.footprint_eq_instructionLineFootprint
+    (line : NormalizedLine) (instruction : InstructionLine)
+    (emits : line.toInstruction? = some instruction) :
+    normalizedLineFootprint line = instructionLineFootprint instruction := by
+  cases line with
+  | pe expressions =>
+      simp only [NormalizedLine.toInstruction?] at emits
+      cases emits
+      rfl
+  | nop count wait =>
+      cases count with
+      | zero => simp [NormalizedLine.toInstruction?] at emits
+      | succ count =>
+          simp only [NormalizedLine.toInstruction?] at emits
+          cases emits
+          rfl
+  | mv transfer =>
+      simp only [NormalizedLine.toInstruction?] at emits
+      cases emits
+      rfl
+  | maskDirective widthWords targets entry =>
+      simp [NormalizedLine.toInstruction?] at emits
+
 theorem ParsedExpr.source_in_footprint (expression : ParsedExpr)
     (operand : ParsedOperand) (member : operand ∈ expression.sources) :
     (OperandRole.source, OperandRef.pe operand) ∈
