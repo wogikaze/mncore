@@ -890,10 +890,21 @@
         "msl",
         "msr"
       ],
-      "status": "open",
+      "status": "reference_profile_connected_hardware_discrepancy_open",
       "manual_reading": "General one-long-word ALU rule says local first-input LSB passes through",
       "reference_observation": "MSB rotates; LSB is zero even for nonzero llr input",
-      "canonical_partial_step": "unknown",
+      "canonical_partial_step": "unknown because the standalone UntypedALU fragment does not choose between targets",
+      "whole_machine_step": {
+        "status": "connected_to_reference_binary_profile",
+        "source": "ProofsLean/WholeMachineStep.lean",
+        "implementation": "mslMsrOutputBus preserves the rotated MSB longword and writes zero to the LSB longword",
+        "supporting_theorem": "ProofsLean.MNCore.mslMsrOutputBus_keeps_msb_longword_only",
+        "reference_profile_theorems": [
+          "ProofsLean.MNCore.UntypedALU.reference_msl_lsb_zero",
+          "ProofsLean.MNCore.UntypedALU.reference_msr_lsb_zero"
+        ]
+      },
+      "remaining_question": "Whether the reference-binary behavior or the manual's LSB-passthrough rule describes hardware remains unresolved; the whole-machine VSM executor models the reference binary.",
       "evidence": "proofs_lean/evidence/untyped-alu/initial-manual-assumption/reference.json",
       "snapshot_manifest_sha256": "78e5138c203fde67b490c592df9ecc787d7fa18177ca5ca69860d7fc1ebc7335"
     }
