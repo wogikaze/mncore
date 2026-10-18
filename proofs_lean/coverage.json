@@ -117,11 +117,18 @@
       "modifier_projection_theorem": "ProofsLean.MNCore.PEMemory.ParsedOperand.forHazardAddress_mem",
       "malformed_address_mode_handling": "Unsupported direct PE-memory widths and t-indirect/madpe bank combinations fail before hazard lowering",
       "validity_predicate": "ProofsLean.MNCore.PEMemory.ParsedOperand.directMemoryAddressModeValid",
-      "scope_limit": "Disabled-forwarding and full accepted-source legality are not yet connected universally; source-parser correspondence for PE address modes remains unproved",
+      "disabled_forwarding": "Invalid per-unit/per-cycle forwarding state is exposed as poison and consumed forward operands fail; noforward preserves the previous payload and validity state",
+      "disabled_forwarding_theorems": [
+        "ProofsLean.MNCore.disabledForwardingSlot_read_fails",
+        "ProofsLean.MNCore.noforward_preserves_forwarding_validity",
+        "ProofsLean.MNCore.PEMemory.parsed_noforward_suppresses_forwarding_updates",
+        "ProofsLean.MNCore.Forwarding.noforward_preserves"
+      ],
+      "scope_limit": "Source-parser correspondence for PE address modes remains unproved; L1-to-PE absent-producer behavior remains unresolved",
       "reference_conformance": false
     },
     "remaining": [
-      "Prove PE/block hazard extraction total for every accepted source form and connect disabled-forwarding failures to the integrated step.",
+      "Prove PE/block hazard extraction total for every accepted source form and prove noforward/disabled-producer lifecycle against the reference executor for all forwarding units.",
       "Prove universal source-parser/assembler correspondence into fixed-width encoded words.",
       "Connect encoded words to transition semantics and seal MNCore.machine."
     ]

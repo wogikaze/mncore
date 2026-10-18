@@ -43,6 +43,19 @@ theorem stateForwardingSlots_valid_preserves_payload (state : State) (pe : PEId)
     stateForwardingSlots state pe unit cycle = state.forwarding pe unit cycle := by
   simp [stateForwardingSlots, valid]
 
+/-- Any read of a forwarding unit/cycle disabled in the whole-machine state
+is a known execution failure, independent of the stale payload stored there. -/
+theorem disabledForwardingSlot_read_fails (state : State) (pe : PEId)
+    (unit : Forwarding.Unit) (cycle : Fin 4) (kind : ParsedForward)
+    (hUnit : ParsedIntegerInput.forwardUnit kind = unit)
+    (disabled : state.forwardingValid pe unit cycle = false) :
+    ParsedIntegerInput.readWithForwarding
+      (state.peRegisters pe) (stateForwardingSlots state pe) cycle
+      (.forward kind false) = .failure := by
+  apply parsedIntegerInput_forward_poison_fails
+  rw [hUnit]
+  exact stateForwardingSlots_invalid_is_poison state pe unit cycle disabled
+
 /-- At simulator startup every forwarding read fails exactly as Rust's
 uninitialized-register error path: the initial validity bit yields poison,
 which the shared parsed-input reader turns into a known execution failure. -/
@@ -52,9 +65,9 @@ theorem rustSimulatorInitialState_forwarding_read_fails
       (rustSimulatorInitialState.peRegisters pe)
       (stateForwardingSlots rustSimulatorInitialState pe) cycle
       (.forward kind false) = .failure := by
-  apply parsedIntegerInput_forward_poison_fails
-  exact stateForwardingSlots_invalid_is_poison rustSimulatorInitialState pe
-    (ParsedIntegerInput.forwardUnit kind) cycle rfl
+  exact disabledForwardingSlot_read_fails rustSimulatorInitialState pe
+    (ParsedIntegerInput.forwardUnit kind) cycle kind rfl
+    (by rfl)
 
 /-- These legacy ALU names parse successfully in Rust, but `alu_lanes` has no
 implementation for them and returns `ExecError::Unsupported`. -/
@@ -2640,6 +2653,13 @@ def updateIntegerLineForwardingValid
     if noForward then old unit cycle
     else if unit = .l1ToPE then old unit cycle
     else forwardingValueValid (slots unit cycle)
+
+theorem noforward_preserves_forwarding_validity
+    (old : Forwarding.Unit → Fin 4 → Bool)
+    (slots : Forwarding.Slots) :
+    updateIntegerLineForwardingValid old slots true = old := by
+  funext unit cycle
+  simp [updateIntegerLineForwardingValid]
 
 def parsedExprIsMslMsrProducer (expression : ParsedExpr) : Bool :=
   match expression.op with
