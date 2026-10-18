@@ -129,6 +129,19 @@ def parsedExprIsL1ToPEProducer (expression : ParsedExpr) : Bool :=
   | .l1bm .pbcast | .l1bm .mbcast | .l1bm .m4bcast | .l1bm (.distrib _) => true
   | _ => false
 
+def parsedExprWritesOMR (expression : ParsedExpr) : Bool :=
+  expression.destinations.any fun destination =>
+    match destination with | .omr .. => true | _ => false
+
+/-- Rust computes every producer first, then commits output destinations in
+source order. If the L1-to-PE output precedes the line's OMR writer, its mask
+and flush selection therefore read the pre-issue OMR state. -/
+def parsedL1ToPEPrecedesOMRWriter : List ParsedExpr → Bool
+  | [] => false
+  | expression :: rest =>
+      if parsedExprIsL1ToPEProducer expression then rest.any parsedExprWritesOMR
+      else parsedL1ToPEPrecedesOMRWriter rest
+
 def parsedExprIsNoForwardProducer (expression : ParsedExpr) : Bool :=
   match expression.op with
   | .noforward => true
@@ -2367,6 +2380,7 @@ def lowerParsedL1ToPE? (expression : ParsedExpr) : Option ParsedL1ToPEAccess := 
   | _, _ => none
 
 def writeParsedL1ToPEDestination? (files : PEMemory.IntegerRegisterFiles)
+    (maskRegisters : ProofsLean.MNCore.Masks.RegisterFile)
     (destination : ParsedOperand) (context : ParsedIntegerContext)
     (output : IntegerALU.Bus) (cycle : Fin 4) (directive : ParsedMaskDirective)
     (hasSingleLineMask : Bool) :
@@ -2376,13 +2390,13 @@ def writeParsedL1ToPEDestination? (files : PEMemory.IntegerRegisterFiles)
       let access ← ParsedOperand.toDirectMemoryDestination? destination context.pe cycle
         context.bar0 context.bar1 context.tWord
       let selection ← ParsedOperand.resolveMemoryWriteSelection? destination access.bank
-        files.maskRegisters cycle directive hasSingleLineMask
+        maskRegisters cycle directive hasSingleLineMask
       some (PEMemory.writeDirectAccessMasked files access
         (PEMemory.unpackALUBus output) selection, none)
   | .bar lm1 .. => do
       let bank := if lm1 then PEMemory.Bank.lm1 else PEMemory.Bank.lm0
       let selection ← ParsedOperand.resolveMemoryWriteSelection? destination bank
-        files.maskRegisters cycle directive hasSingleLineMask
+        maskRegisters cycle directive hasSingleLineMask
       let barValue := BitVec.ofNat 12
         ((output.high.extractLsb' 32 32).toNat % 2 ^ 12)
       let update := if selection.flags == 0 then none else some (lm1, barValue)
@@ -2416,13 +2430,17 @@ def l1ToPEBusAt (state : State) (expression : ParsedExpr)
 
 def executeParsedL1ToPEAtPEs (readState currentState : State)
     (expression : ParsedExpr) (access : ParsedL1ToPEAccess)
-    (pes : List PEId) (noForward hasSingleLineMask : Bool) : ProofsLean.StepResult State :=
+    (pes : List PEId) (noForward hasSingleLineMask usePreIssueMask : Bool) :
+    ProofsLean.StepResult State :=
   match pes with
   | [] => .ok currentState
   | pe :: rest =>
       let coordinates := ParsedIntegerContext.ofLinearIndex pe
       let readContext := readState.peContext pe
       let initialContext := currentState.peContext pe
+      let maskRegisters := if usePreIssueMask then
+        (readState.peRegisters pe).maskRegisters
+        else (currentState.peRegisters pe).maskRegisters
       let rec writeCycles : List (Fin 4) → PEMemory.IntegerRegisterFiles →
           BitVec 12 → BitVec 12 →
           ProofsLean.StepResult (PEMemory.IntegerRegisterFiles × BitVec 12 × BitVec 12)
@@ -2433,7 +2451,7 @@ def executeParsedL1ToPEAtPEs (readState currentState : State)
               bar0 := bar0
               bar1 := bar1
               tWord := readContext.tWord }
-            match resolveFlushSelection? expression.flush files.maskRegisters cycle with
+            match resolveFlushSelection? expression.flush maskRegisters cycle with
             | none => .unknown
             | some flushSelection =>
                 let bus := parsedOutputAfterFlush flushSelection
@@ -2448,7 +2466,7 @@ def executeParsedL1ToPEAtPEs (readState currentState : State)
                         bar0 := currentBar0
                         bar1 := currentBar1 }
                       let (nextFiles, barUpdate) ← writeParsedL1ToPEDestination?
-                        currentFiles destination destinationContext bus cycle
+                        currentFiles maskRegisters destination destinationContext bus cycle
                         currentState.maskDirective hasSingleLineMask
                       let nextBar0 := match barUpdate with
                         | some (false, value) => value
@@ -2471,7 +2489,7 @@ def executeParsedL1ToPEAtPEs (readState currentState : State)
             let oldSlots := currentState.forwarding pe
             let outputs := fun cycle =>
               let raw := l1ToPEBusAt readState expression access pe cycle
-              match resolveFlushSelection? expression.flush files.maskRegisters cycle with
+              match resolveFlushSelection? expression.flush maskRegisters cycle with
               | some flushSelection => parsedOutputAfterFlush flushSelection raw
               | none => raw
             let forwarding := if noForward then oldSlots else fun unit cycle =>
@@ -2486,22 +2504,24 @@ def executeParsedL1ToPEAtPEs (readState currentState : State)
               peContext := fun other => if other = pe then
                 { currentState.peContext other with bar0 := bar0, bar1 := bar1 }
                 else currentState.peContext other }
-            executeParsedL1ToPEAtPEs readState next expression access rest noForward hasSingleLineMask
+            executeParsedL1ToPEAtPEs readState next expression access rest noForward
+              hasSingleLineMask usePreIssueMask
 
 theorem executeParsedL1ToPEAtPEs_initial_turnaround_failure
     (currentState : State) (expression : ParsedExpr) (access : ParsedL1ToPEAccess)
-    (pe : PEId) (rest : List PEId) (noForward hasSingleLineMask : Bool)
+    (pe : PEId) (rest : List PEId) (noForward hasSingleLineMask usePreIssueMask : Bool)
     (sourceIsTurnaround : access.sourceBase.isNone = true) :
     executeParsedL1ToPEAtPEs rustSimulatorInitialState currentState expression access (pe :: rest)
-      noForward hasSingleLineMask = .failure := by
+      noForward hasSingleLineMask usePreIssueMask = .failure := by
   simp [executeParsedL1ToPEAtPEs, sourceIsTurnaround, rustSimulatorInitialState]
 
 def executeParsedL1ToPEProducer (readState currentState : State)
-    (expression : ParsedExpr) (noForward hasSingleLineMask : Bool) : ProofsLean.StepResult State :=
+    (expression : ParsedExpr) (noForward hasSingleLineMask usePreIssueMask : Bool) :
+    ProofsLean.StepResult State :=
   match lowerParsedL1ToPE? expression with
   | none => .failure
   | some access => executeParsedL1ToPEAtPEs readState currentState expression access
-      (List.finRange 4096) noForward hasSingleLineMask
+      (List.finRange 4096) noForward hasSingleLineMask usePreIssueMask
 
 def forwardingValueValid : Forwarding.Value IntegerALU.Bus → Bool
   | .known _ => true
@@ -3642,11 +3662,14 @@ noncomputable def executeIntegerProducerInstructionLine
                             | .unknown => .unknown
                             | .ok nextWithReduce =>
                               let l1ToPE := expressions.filter parsedExprIsL1ToPEProducer
+                              let l1ToPEUsesPreIssueMask :=
+                                parsedL1ToPEPrecedesOMRWriter expressions
                               let afterL1ToPE : ProofsLean.StepResult State := match l1ToPE with
                                 | [] => .ok nextWithReduce
                                 | [expression] => executeParsedL1ToPEProducer state nextWithReduce
                                     expression noForward
                                     (expressions.any parsedExprHasSingleLineWriteMask)
+                                    l1ToPEUsesPreIssueMask
                                 | _ => .unknown
                               match afterL1ToPE with
                               | .failure => .failure
@@ -4022,6 +4045,8 @@ theorem executeIntegerProducerInstructionLine_pe_success
             (parsedExprIsNoForwardProducer ∘ NormalizedExpr.toParsed))
           (normalizedExpressions.any
             (parsedExprHasSingleLineWriteMask ∘ NormalizedExpr.toParsed))
+          (parsedL1ToPEPrecedesOMRWriter
+            (normalizedExpressions.map NormalizedExpr.toParsed))
       | _ => .unknown) = .ok nextBroadcast)
     (nextL2 : State)
     (l2Writes : executeParsedL2BlockProducers state nextBroadcast
