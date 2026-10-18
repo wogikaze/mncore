@@ -20,7 +20,7 @@ inductive OperandRef where
 
 inductive UnitResource where
   | alu | mau | matrix | l1bm | l2bm | mv
-  | forwarding | issueControl | maskRegisters | maskControl | bar | lbf
+  | forwarding | issueControl | maskRegisters | maskControl | bar | t | lbf
   | l1bmTurnaround | hazardClock
   deriving DecidableEq, Repr
 
@@ -42,6 +42,14 @@ def ParsedOperand.mayReadMaskDirective : ParsedOperand → Bool
 
 def ParsedOperand.isL1BMTurnaround : ParsedOperand → Bool
   | .l1bm _ none => true
+  | _ => false
+
+def ParsedOperand.readsBARContext : ParsedOperand → Bool
+  | .mem access .. => access.bank == .lm0 || access.bank == .lm1
+  | _ => false
+
+def ParsedOperand.readsTContext : ParsedOperand → Bool
+  | .mem access .. => access.region.tIndirect
   | _ => false
 
 theorem ParsedOperand.isL1BMTurnaround_iff_missing_address (width : Fin 5)
@@ -88,7 +96,11 @@ def parsedExprUnitReads (expression : ParsedExpr) : List UnitResource :=
     (if expression.destinations.any ParsedOperand.mayReadMaskDirective then [.maskControl]
       else []) ++
     (if expression.sources.any ParsedOperand.isL1BMTurnaround then [.l1bmTurnaround]
-      else [])
+      else []) ++
+    (if (expression.sources ++ expression.destinations).any ParsedOperand.readsBARContext
+      then [.bar] else []) ++
+    (if (expression.sources ++ expression.destinations).any ParsedOperand.readsTContext
+      then [.t] else [])
 
 def parsedExprFootprint (expression : ParsedExpr) : Footprint :=
   { operandReads :=
@@ -250,6 +262,18 @@ theorem ParsedExpr.inherited_write_mask_reads_directive (expression : ParsedExpr
 theorem ParsedExpr.l1bm_turnaround_read_in_footprint (expression : ParsedExpr)
     (reads : expression.sources.any ParsedOperand.isL1BMTurnaround = true) :
     UnitResource.l1bmTurnaround ∈ (parsedExprFootprint expression).unitReads := by
+  simp [parsedExprFootprint, parsedExprUnitReads, reads]
+
+theorem ParsedExpr.bar_context_read_in_footprint (expression : ParsedExpr)
+    (reads : (expression.sources ++ expression.destinations).any
+      ParsedOperand.readsBARContext = true) :
+    UnitResource.bar ∈ (parsedExprFootprint expression).unitReads := by
+  simp [parsedExprFootprint, parsedExprUnitReads, reads]
+
+theorem ParsedExpr.t_context_read_in_footprint (expression : ParsedExpr)
+    (reads : (expression.sources ++ expression.destinations).any
+      ParsedOperand.readsTContext = true) :
+    UnitResource.t ∈ (parsedExprFootprint expression).unitReads := by
   simp [parsedExprFootprint, parsedExprUnitReads, reads]
 
 theorem ParsedExpr.bar_write_in_footprint (expression : ParsedExpr)
