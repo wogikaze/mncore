@@ -2721,6 +2721,75 @@ theorem executeParsedMatrixMAUCalculationAtMAB_fma_lowered_reads_never_unknown
       state coordinate accumulatorSource (parsedMatrixMAUAccumulatorFormat precision)
       (parsedMatrixMAUAccumulatorLanesPerPE precision) cycle accumulatorLowered resolved
 
+def parsedMatrixMAUCalculationLoweredAtMAB (state : State) (coordinate : MABCoordinate)
+    (expression : ParsedExpr) (cycle : Fin 4) : Prop :=
+  ∃ (precision : ParsedPrecision) (half : Option Char) (round sideY : Bool)
+    (width : Fin 5) (format : RRN.FloatPrecision),
+      parsedMatrixMAUFloatFormat precision = some format ∧
+      ((∃ source,
+          expression = ({ op := .mau precision true .mul half round, sources := [.matrix sideY width none, source], destinations := [], flush := none, text := "" } : ParsedExpr) ∧
+          parsedFloatMAUSourceLoweredAtMAB state coordinate source cycle) ∨
+       (∃ source,
+          expression = ({ op := .mau precision true .add half round, sources := [.matrix sideY width none, source], destinations := [], flush := none, text := "" } : ParsedExpr) ∧
+          parsedFloatMAUSourceLoweredAtMAB state coordinate source cycle) ∨
+       (∃ source,
+          expression = ({ op := .mau precision true .passa half round, sources := [.matrix sideY width none, source], destinations := [], flush := none, text := "" } : ParsedExpr) ∧
+          parsedFloatMAUSourceLoweredAtMAB state coordinate source cycle) ∨
+       (∃ vectorSource accumulatorSource,
+          expression = ({ op := .mau precision true .fma half round, sources := [.matrix sideY width none, vectorSource, accumulatorSource], destinations := [], flush := none, text := "" } : ParsedExpr) ∧
+          parsedFloatMAUSourceLoweredAtMAB state coordinate vectorSource cycle ∧
+          parsedFloatMAUSourceLoweredAtMAB state coordinate accumulatorSource cycle))
+
+theorem parsedMatrixMAUCalculationLoweredAtMAB_is_matrix_op
+    (state : State) (coordinate : MABCoordinate) (expression : ParsedExpr)
+    (cycle : Fin 4)
+    (lowered : parsedMatrixMAUCalculationLoweredAtMAB state coordinate expression cycle) :
+    ∃ precision kind half round,
+      expression.op = .mau precision true kind half round := by
+  rcases lowered with ⟨precision, half, round, sideY, width, format, _, shape⟩
+  rcases shape with mul | add | passa | fma
+  · rcases mul with ⟨source, expressionEq, _⟩
+    subst expression
+    exact ⟨precision, .mul, half, round, rfl⟩
+  · rcases add with ⟨source, expressionEq, _⟩
+    subst expression
+    exact ⟨precision, .add, half, round, rfl⟩
+  · rcases passa with ⟨source, expressionEq, _⟩
+    subst expression
+    exact ⟨precision, .passa, half, round, rfl⟩
+  · rcases fma with ⟨vectorSource, accumulatorSource, expressionEq, _, _⟩
+    subst expression
+    exact ⟨precision, .fma, half, round, rfl⟩
+
+theorem executeParsedMatrixMAUCalculationAtMAB_lowered_never_unknown
+    (state : State) (coordinate : MABCoordinate) (expression : ParsedExpr)
+    (cycle : Fin 4) (lowered : parsedMatrixMAUCalculationLoweredAtMAB
+      state coordinate expression cycle) (resolved : forwardingSourceResolved state) :
+    executeParsedMatrixMAUCalculationAtMAB state coordinate expression cycle ≠ .unknown := by
+  rcases lowered with ⟨precision, half, round, sideY, width, format, formatLowered, shape⟩
+  rcases shape with mul | add | passa | fma
+  · rcases mul with ⟨source, expressionEq, sourceLowered⟩
+    subst expression
+    exact executeParsedMatrixMAUCalculationAtMAB_mul_lowered_reads_never_unknown
+      state coordinate precision half round sideY width source cycle format
+      formatLowered sourceLowered resolved
+  · rcases add with ⟨source, expressionEq, sourceLowered⟩
+    subst expression
+    exact executeParsedMatrixMAUCalculationAtMAB_add_lowered_reads_never_unknown
+      state coordinate precision half round sideY width source cycle format
+      formatLowered sourceLowered resolved
+  · rcases passa with ⟨source, expressionEq, sourceLowered⟩
+    subst expression
+    exact executeParsedMatrixMAUCalculationAtMAB_passa_lowered_reads_never_unknown
+      state coordinate precision half round sideY width source cycle format
+      formatLowered sourceLowered resolved
+  · rcases fma with ⟨vectorSource, accumulatorSource, expressionEq,
+      vectorLowered, accumulatorLowered⟩
+    subst expression
+    exact executeParsedMatrixMAUCalculationAtMAB_fma_lowered_reads_never_unknown
+      state coordinate precision half round sideY width vectorSource accumulatorSource
+      cycle format formatLowered vectorLowered accumulatorLowered resolved
+
 theorem readRawL1MwriteBus_resolved_never_unknown
     (state : State) (source : ParsedOperand) (pe : PEId) (cycle : Fin 4)
     (resolved : forwardingSourceResolved state) :
@@ -8347,11 +8416,11 @@ theorem executeIntegerProducerInstructionLine_pe_never_unknown_of_stages
       ∀ coordinate, coordinate ∈ allMABCoordinates → ∀ blockFloatState,
         executeParsedBlockFloatAtMAB state blockFloatState expression coordinate
           noForward hasSingleLineMask ≠ .unknown)
-    (matrixCalculationKnown : ∀ expression,
+    (matrixCalculationLowered : ∀ expression,
       expression ∈ expressions.filter parsedExprIsMatrixMAUProducer →
       ∀ coordinate, coordinate ∈ allMABCoordinates →
         ∀ cycle : Fin 4,
-          executeParsedMatrixMAUAtMAB state coordinate expression cycle ≠ .unknown)
+          parsedMatrixMAUCalculationLoweredAtMAB state coordinate expression cycle)
     (resolved : forwardingSourceResolved state)
     (l1ToPEKnown : ∀ nextShared,
       executeParsedL1ToPEProducers state nextShared expressions noForward
@@ -8425,8 +8494,19 @@ theorem executeIntegerProducerInstructionLine_pe_never_unknown_of_stages
                             apply executeParsedMatrixMAUTransitionAtMAB_known_never_unknown
                             apply executeParsedMatrixMAUPEWritesAtMAB_known_never_unknown
                             intro cycle
-                            exact matrixCalculationKnown expression member coordinate
-                              coordinateMember cycle)
+                            have calculationKnown :=
+                              executeParsedMatrixMAUCalculationAtMAB_lowered_never_unknown
+                                state coordinate expression cycle
+                                (matrixCalculationLowered expression member coordinate
+                                  coordinateMember cycle) resolved
+                            have matrixMAUOp : ∃ precision kind half round,
+                                expression.op = .mau precision true kind half round := by
+                              exact parsedMatrixMAUCalculationLoweredAtMAB_is_matrix_op
+                                state coordinate expression cycle
+                                (matrixCalculationLowered expression member coordinate
+                                  coordinateMember cycle)
+                            exact executeParsedMatrixMAUAtMAB_calculation_known_never_unknown
+                              state coordinate expression cycle calculationKnown matrixMAUOp)
                       have matrixStageKnown := executeParsedMatrixMAUAndWrites_resolved_never_unknown
                         state nextBlockFloat expressions noForward hasSingleLineMask
                         (mauProducerKnown nextBlockFloat) resolved
