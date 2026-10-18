@@ -21,6 +21,13 @@ def parsedExprIsIntegerProducer (expression : ParsedExpr) : Bool :=
   | .alu .. | .zero | .immediate .. => true
   | _ => false
 
+/-- These legacy ALU names parse successfully in Rust, but `alu_lanes` has no
+implementation for them and returns `ExecError::Unsupported`. -/
+def parsedExprIsUnsupportedRustAlu (expression : ParsedExpr) : Bool :=
+  match expression.op with
+  | .alu .lrelud _ _ _ | .alu .lreluo _ _ _ | .alu .ilrelud _ _ _ => true
+  | _ => false
+
 def parsedExprIsSupportedPELineProducer (expression : ParsedExpr) : Bool :=
   match expression.op with
   | .alu .. | .zero | .immediate .. | .matrixRead .. | .wait .. | .noforward => true
@@ -2883,7 +2890,8 @@ noncomputable def executeIntegerProducerInstructionLine
     match line with
     | .pe normalizedExpressions =>
         let expressions := normalizedExpressions.map NormalizedExpr.toParsed
-        if expressions.all parsedExprIsSupportedPELineProducer then
+        if expressions.any parsedExprIsUnsupportedRustAlu then .failure
+        else if expressions.all parsedExprIsSupportedPELineProducer then
           let peExpressions := expressions.filter (fun expression =>
             !parsedExprIsL2BMProducer expression && !parsedExprIsMslMsrProducer expression &&
               !parsedExprIsBlockFloatProducer expression &&
@@ -2976,6 +2984,15 @@ theorem integerProducerMachine_issue_failure (line : InstructionLine)
     integerProducerMachine.step line state = .failure := by
   simp [integerProducerMachine, executeIntegerProducerInstructionLine, rejected]
 
+theorem executeIntegerProducerInstructionLine_unsupported_rust_alu_failure
+    (normalizedExpressions : List NormalizedExpr) (state : State)
+    (accepted : checkParsedTopLine
+      (InstructionLine.pe normalizedExpressions).toParsed = true)
+    (unsupported : (normalizedExpressions.map NormalizedExpr.toParsed).any
+      parsedExprIsUnsupportedRustAlu = true) :
+    executeIntegerProducerInstructionLine (.pe normalizedExpressions) state = .failure := by
+  simp [executeIntegerProducerInstructionLine, accepted, unsupported]
+
 theorem executeIntegerProducerInstructionLine_nop
     (count : {n : Nat // 0 < n}) (wait : Option (Fin 256)) (state : State)
     (accepted : checkParsedTopLine (.nop count.val wait) = true) :
@@ -3010,6 +3027,8 @@ theorem executeIntegerProducerInstructionLine_pe_success
       (InstructionLine.pe normalizedExpressions).toParsed = true)
     (supported : (normalizedExpressions.map NormalizedExpr.toParsed).all
       parsedExprIsSupportedPELineProducer = true)
+    (noUnsupportedRustAlu : (normalizedExpressions.map NormalizedExpr.toParsed).any
+      parsedExprIsUnsupportedRustAlu = false)
     (executed : executeIntegerProducerLineAtPEs
       ((normalizedExpressions.map NormalizedExpr.toParsed).filter (fun expression =>
         !parsedExprIsL2BMProducer expression && !parsedExprIsMslMsrProducer expression &&
@@ -3073,7 +3092,8 @@ theorem executeIntegerProducerInstructionLine_pe_success
             parsedExprIsL1MwriteProducer expression.toParsed ||
               parsedExprIsL1GatherProducer expression.toParsed ||
               parsedExprIsL1ReduceProducer expression.toParsed) } := by
-  simp [executeIntegerProducerInstructionLine, accepted, supported, executed, mslMsrWrites,
+  simp [executeIntegerProducerInstructionLine, accepted, supported, noUnsupportedRustAlu,
+    executed, mslMsrWrites,
     reluWrites, blockFloatWrites,
     matrixWrites, l1Writes, gatherWrites, reduceWrites, l1ToPE, l2Writes, List.any_map]
   rfl
