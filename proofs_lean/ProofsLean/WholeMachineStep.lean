@@ -1244,6 +1244,50 @@ def parsedMatrixMAUOutputFormat (precision : ParsedPrecision) (round : Bool) :
   | some .half => some (if round then .half else .single)
   | some .single => some .single
 
+def parsedMatrixMAULowerFormat : RRN.FloatPrecision → Option RRN.FloatPrecision
+  | .double => some .single
+  | .single => some .half
+  | .half => none
+
+def parsedMatrixMAUHigherFormat : RRN.FloatPrecision → Option RRN.FloatPrecision
+  | .half => some .single
+  | .single => some .double
+  | .double => none
+
+def parsedMatrixMAUVectorLanesPerPE : ParsedPrecision → Nat
+  | .d | .f => 1
+  | .g => 2
+  | .h => 4
+  | .l | .i | .s => 0
+
+def parsedMatrixMAUAccumulatorLanesPerPE : ParsedPrecision → Nat
+  | .d => 1
+  | .f | .g => 2
+  | .h => 4
+  | .l | .i | .s => 0
+
+def parsedMatrixMAUDecodeLanes? (format : RRN.FloatPrecision) (count : Nat)
+    (bus : IntegerALU.Bus) (negate extend round : Bool) : Option (List Nat) := do
+  let rawFormat ← if extend then parsedMatrixMAULowerFormat format
+    else if round then parsedMatrixMAUHigherFormat format
+    else some format
+  let rawWidth := rawFormat.width
+  let signMask := 2 ^ (format.width - 1)
+  let values := (List.range count).map fun index =>
+    let shift := 128 - rawWidth * (index + 1)
+    let raw := ((bus.high ++ bus.low).extractLsb' shift rawWidth).toNat
+    let converted := RRN.encodeMAUValue format (RRN.decodeMAUValue rawFormat raw)
+    if negate then
+      (BitVec.ofNat format.width converted ^^^ BitVec.ofNat format.width signMask).toNat
+    else converted
+  some values
+
+theorem parsedMatrixMAUDecodeLanes_half_extend_four :
+    parsedMatrixMAUDecodeLanes? .single 4
+      ⟨0x3e003c0000000000, 0⟩ false true false =
+      some [0x3f800000, 0x3f000000, 0, 0] := by
+  decide
+
 def parsedMatrixMAURowActive (half : Option Char) (row : Nat) : Bool :=
   match half with
   | some 'u' => row < 2
