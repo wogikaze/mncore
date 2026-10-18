@@ -12,6 +12,7 @@ abbrev PEId := Fin 4096
 structure PendingMv where
   tag : Option (Fin 256)
   writes : List (MVSemantics.Cell × BitVec 64)
+  deriving DecidableEq
 
 structure State where
   /-- LM0/LM1/GRF0/GRF1/T and per-PE OMR mask registers. -/

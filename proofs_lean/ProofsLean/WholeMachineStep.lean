@@ -3668,30 +3668,25 @@ def executeParsedMvMemory (state : State) (transfer : ParsedMv) :
           mvCompletedTags := fun tag =>
             if transfer.tag == some tag then false else state.mvCompletedTags tag }
 
-/-- Complete queued MV operations in issue order through the first operation
-carrying `tag`. Writes are committed over the current memory, so unrelated
-changes made since issue are preserved. -/
-def completePendingMvThroughTag (state : State) (tag : Fin 256) : Option State := Id.run do
-  if state.mvCompletedTags tag then return some state
-  let mut memory := state.blockMemory
-  let mut completed := state.mvCompletedTags
-  let mut remaining := state.pendingMv
-  for _ in List.range (state.pendingMv.length) do
-    match remaining with
-    | [] => return none
-    | pending :: rest =>
-        memory := MVSemantics.commitWrites memory pending.writes
-        remaining := rest
-        match pending.tag with
-        | none => pure ()
-        | some completedTag =>
-            completed := fun other => other == completedTag || completed other
-        if pending.tag == some tag then
-          return some { state with
-            blockMemory := memory
-            pendingMv := remaining
-            mvCompletedTags := completed }
-  return none
+/-- Remove one pending operation carrying `tag` without completing unrelated
+operations. MV priority and resource contention can change completion order. -/
+def removePendingMvTag : Fin 256 → List PendingMv → Option (PendingMv × List PendingMv)
+  | _, [] => none
+  | tag, pending :: rest =>
+      if pending.tag == some tag then some (pending, rest)
+      else do
+        let (target, remaining) ← removePendingMvTag tag rest
+        some (target, pending :: remaining)
+
+/-- Complete the tagged MV operation while preserving every other pending
+operation and applying writes over the current memory. -/
+def completePendingMvTag (state : State) (tag : Fin 256) : Option State := do
+  if state.mvCompletedTags tag then return state
+  let (pending, remaining) ← removePendingMvTag tag state.pendingMv
+  some { state with
+    blockMemory := MVSemantics.commitWrites state.blockMemory pending.writes
+    pendingMv := remaining
+    mvCompletedTags := fun other => other == tag || state.mvCompletedTags other }
 
 /-- Drain all remaining MV operations at program termination. -/
 def completeAllPendingMvs (state : State) : State := Id.run do
@@ -3872,7 +3867,7 @@ noncomputable def executeHazardAwareNormalizedLine (line : NormalizedLine)
   let state ← match normalizedLineWaitTag? line with
     | none => pure state
     | some tag =>
-        match completePendingMvThroughTag state.machine tag with
+        match completePendingMvTag state.machine tag with
         | none => return .unknown
         | some machine => pure { state with machine }
   match line with
@@ -3905,16 +3900,6 @@ noncomputable def executeHazardAwareNormalizedLine (line : NormalizedLine)
               event.startWord + 4 ≥ next.hazardClock
           return .ok ⟨next, nextPEHistory, nextBlockHistory⟩
 
-/-- Remove and return the next MV-stream line while retaining PE lines in
-their original order. This is used only while the PE stream is blocked at a
-wait, when later MV-stream instructions remain issuable. -/
-def takeFirstNormalizedMv : List NormalizedLine → Option (NormalizedLine × List NormalizedLine)
-  | [] => none
-  | line@(.mv _) :: rest => some (line, rest)
-  | line :: rest => do
-      let (mv, remaining) ← takeFirstNormalizedMv rest
-      some (mv, line :: remaining)
-
 /-- Execute a normalized source program in order. The runner carries recent
 PE-memory accesses as validation history, rejects PE hazards before applying
 the line, and retains the transactional behavior of each datapath step. -/
@@ -3927,20 +3912,7 @@ noncomputable def executeNormalizedProgramAuxFuel
   | fuel + 1, line :: rest, currentState =>
       match executeHazardAwareNormalizedLine line currentState with
       | .failure => .failure
-      | .unknown =>
-          match normalizedLineWaitTag? line with
-          | none => .unknown
-          | some tag =>
-              if currentState.machine.mvCompletedTags tag then .unknown
-              else
-                match takeFirstNormalizedMv rest with
-                | none => .unknown
-                | some (mvLine, remaining) =>
-                    match executeHazardAwareNormalizedLine mvLine currentState with
-                    | .failure => .failure
-                    | .unknown => .unknown
-                    | .ok next =>
-                        executeNormalizedProgramAuxFuel fuel (line :: remaining) next
+      | .unknown => .unknown
       | .ok next => executeNormalizedProgramAuxFuel fuel rest next
 
 noncomputable def executeNormalizedProgramAux
