@@ -3429,6 +3429,49 @@ noncomputable def executeIntegerProducerInstructionLine
           | .ok next =>
               .ok { next with hazardClock := next.hazardClock + 1 }
 
+/-- Execute one normalized source line. Zero-cost mask directives update the
+control state directly; instruction-bearing lines use the scored line step. -/
+noncomputable def executeNormalizedLine (line : NormalizedLine) (state : State) :
+    ProofsLean.StepResult State :=
+  match line with
+  | .maskDirective widthWords targets entry =>
+      .ok { state with maskDirective := ⟨widthWords, targets, entry⟩ }
+  | _ =>
+      match line.toInstruction? with
+      | none => .failure
+      | some instruction => executeIntegerProducerInstructionLine instruction state
+
+/-- Execute a normalized source program in order, including zero-cost
+directives, while preserving transactional failure/unknown behavior. -/
+noncomputable def executeNormalizedProgram (lines : List NormalizedLine)
+    (state : State) : ProofsLean.StepResult State :=
+  match lines with
+  | [] => .ok state
+  | line :: rest =>
+      match executeNormalizedLine line state with
+      | .failure => .failure
+      | .unknown => .unknown
+      | .ok next => executeNormalizedProgram rest next
+
+/-- Source-level program entry: apply the repository's normalization rules
+before executing, so stripped records and mask directives retain their
+specified zero-cost behavior. -/
+noncomputable def executeParsedProgram (lines : List ParsedLine) (state : State) :
+    ProofsLean.StepResult State := Id.run do
+  let mut normalized := []
+  for line in lines do
+    match line.normalizeForSubmission? with
+    | none => return .failure
+    | some emitted => normalized := normalized ++ emitted
+  return executeNormalizedProgram normalized state
+
+theorem executeNormalizedLine_maskDirective_updates_state
+    (state : State) (widthWords : Nat) (targets : ParsedMaskTargets)
+    (entry : Fin 256) :
+    executeNormalizedLine (.maskDirective widthWords targets entry) state =
+      .ok { state with maskDirective := ⟨widthWords, targets, entry⟩ } := by
+  rfl
+
 noncomputable def integerProducerMachine : ProofsLean.PartialMachine where
   Line := InstructionLine
   State := State
