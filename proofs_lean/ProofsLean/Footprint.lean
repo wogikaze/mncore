@@ -32,6 +32,13 @@ structure Footprint where
 
 def emptyFootprint : Footprint := ⟨[], [], [], []⟩
 
+/-- An unmasked writable PE destination can inherit the current multiline mask
+directive. The directive can also select the mask used for an unmasked OMR
+write. -/
+def ParsedOperand.mayReadMaskDirective : ParsedOperand → Bool
+  | .mem _ _ _ _ none | .bar _ _ none | .omr _ none => true
+  | _ => false
+
 def parsedOpUnitReads : ParsedOp → List UnitResource
   | .alu .. => [.alu]
   | .immediate .. | .zero => []
@@ -52,13 +59,21 @@ def parsedOpUnitWrites : ParsedOp → List UnitResource
   | .l1bm .. => [.l1bm, .forwarding]
   | .l2bm .. => [.l2bm, .forwarding]
 
+def parsedExprUnitReads (expression : ParsedExpr) : List UnitResource :=
+  parsedOpUnitReads expression.op ++
+    (if (expression.maskApplications.filterMap ParsedMask.variableEntry?).isEmpty &&
+        !(expression.destinations.any ParsedOperand.mayReadMaskDirective) then []
+      else [.maskRegisters]) ++
+    (if expression.destinations.any ParsedOperand.mayReadMaskDirective then [.maskControl]
+      else [])
+
 def parsedExprFootprint (expression : ParsedExpr) : Footprint :=
   { operandReads :=
       expression.sources.map (fun operand => (.source, .pe operand)) ++
         expression.destinations.map (fun operand => (.destinationRead, .pe operand))
     operandWrites := expression.destinations.map
       (fun operand => (.destinationWrite, .pe operand))
-    unitReads := parsedOpUnitReads expression.op
+    unitReads := parsedExprUnitReads expression
     unitWrites := parsedOpUnitWrites expression.op ++
       (if expression.maskRegisterWrites.isEmpty then [] else [.maskRegisters]) ++
       (if expression.barWrites.isEmpty then [] else [.bar]) ++
@@ -178,6 +193,16 @@ theorem ParsedExpr.mask_register_write_in_footprint (expression : ParsedExpr)
     (written : expression.maskRegisterWrites ≠ []) :
     UnitResource.maskRegisters ∈ (parsedExprFootprint expression).unitWrites := by
   simp [parsedExprFootprint, written]
+
+theorem ParsedExpr.variable_mask_reads_register_file (expression : ParsedExpr)
+    (reads : (expression.maskApplications.filterMap ParsedMask.variableEntry?) ≠ []) :
+    UnitResource.maskRegisters ∈ (parsedExprFootprint expression).unitReads := by
+  simp [parsedExprFootprint, parsedExprUnitReads, reads]
+
+theorem ParsedExpr.inherited_write_mask_reads_directive (expression : ParsedExpr)
+    (reads : expression.destinations.any ParsedOperand.mayReadMaskDirective = true) :
+    UnitResource.maskControl ∈ (parsedExprFootprint expression).unitReads := by
+  simp [parsedExprFootprint, parsedExprUnitReads, reads]
 
 theorem ParsedExpr.bar_write_in_footprint (expression : ParsedExpr)
     (written : expression.barWrites ≠ []) :
