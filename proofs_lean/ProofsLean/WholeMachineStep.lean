@@ -1223,6 +1223,137 @@ def executeParsedMatrixWritesAtMABs (readState : State) (coordinates : List MABC
         | .ok nextState =>
             executeParsedMatrixWritesAtMABs readState rest expressions nextState
 
+def parsedMatrixMAUFloatFormat : ParsedPrecision → Option RRN.FloatPrecision
+  | .d => some .double
+  | .f | .g => some .single
+  | .h => some .half
+  | .l | .i | .s => none
+
+def parsedMatrixMAUKeptMantissaBits : ParsedPrecision → Nat
+  | .d => 52
+  | .f => 23
+  | .g => 18
+  | .h => 9
+  | .l | .i | .s => 0
+
+def parsedMatrixMAUOutputFormat (precision : ParsedPrecision) (round : Bool) :
+    Option RRN.FloatPrecision := do
+  match parsedMatrixMAUFloatFormat precision with
+  | none => none
+  | some .double => some (if round then .single else .double)
+  | some .half => some (if round then .half else .single)
+  | some .single => some .single
+
+def parsedMatrixMAURowActive (half : Option Char) (row : Nat) : Bool :=
+  match half with
+  | some 'u' => row < 2
+  | some 'd' => row ≥ 2
+  | _ => true
+
+/-- Compute all logical output rows for one MAB and cycle. Vector and
+accumulator lists are the concatenated lane values read from its four PEs.
+The matrix elements come from the same physical matrix store used by mread. -/
+def parsedMatrixMAUCalculateRows? (store : PEMemory.ParsedMatrixReadStore)
+    (coordinate : MABCoordinate) (sideY : Bool) (precision : ParsedPrecision) (kind : CalcKind)
+    (half : Option Char) (round : Bool) (vector accumulator : List Nat) : Option (List Nat) := do
+  let inputFormat ← parsedMatrixMAUFloatFormat precision
+  let outputFormat ← parsedMatrixMAUOutputFormat precision round
+  let rows := parsedMatrixMAURowCount precision
+  let keptBits := parsedMatrixMAUKeptMantissaBits precision
+  (List.range rows).mapM fun row => do
+    let left ← if parsedMatrixMAURowActive half row then
+        PEMemory.parsedMatrixMAUProductRow? store coordinate.mab sideY precision row
+      else some []
+    let accumulatorBits ← if kind == .fma then accumulator[row]? else some 0
+    some (RRN.encodeMAUValue outputFormat
+      (let (dot, grid) := RRN.matrixBlockFloatDot inputFormat keptBits left vector
+       let c := RRN.decodeMAUValue
+         (match precision with | .h => .single | .d => .double | _ => .single)
+         accumulatorBits
+       let aligned := match grid with
+         | some value => RRN.alignMAUAccumulator c value
+         | none => c
+       RRN.addMAUValues dot aligned))
+
+theorem parsedMatrixMAUCalculateRows_double_zero_store :
+    parsedMatrixMAUCalculateRows?
+      (fun _ _ _ _ => 0)
+      ⟨⟨0, by decide⟩, ⟨0, by decide⟩, ⟨0, by decide⟩, ⟨0, by decide⟩⟩
+      false .d .mul none false [0, 0, 0, 0] [] = some [0, 0, 0, 0] := by
+  decide
+
+def parsedMatrixMAURowsPerPE : ParsedPrecision → Nat
+  | .d => 1
+  | .f | .g => 2
+  | .h => 4
+  | .l | .i | .s => 0
+
+def parsedMatrixMAUPackPEBus? (precision : ParsedPrecision) (round : Bool)
+    (values : List Nat) : Option IntegerALU.Bus := do
+  match precision, round, values with
+  | .d, false, [a] => some ⟨BitVec.ofNat 64 a, 0⟩
+  | .d, true, [a] => some ⟨BitVec.ofNat 32 a ++ BitVec.ofNat 32 0, 0⟩
+  | .f, _, [a, b] | .g, _, [a, b] =>
+      some ⟨BitVec.ofNat 32 a ++ BitVec.ofNat 32 b, 0⟩
+  | .h, true, [a, b, c, d] =>
+      some ⟨BitVec.ofNat 16 a ++ BitVec.ofNat 16 b ++
+        BitVec.ofNat 16 c ++ BitVec.ofNat 16 d, 0⟩
+  | .h, false, [a, b, c, d] =>
+      some ⟨BitVec.ofNat 32 a ++ BitVec.ofNat 32 b,
+        BitVec.ofNat 32 c ++ BitVec.ofNat 32 d⟩
+  | _, _, _ => none
+
+def parsedMatrixMAUPositive (precision : RRN.FloatPrecision) (bits : Nat) : Bool :=
+  !RRN.floatIsNegative precision bits
+
+def parsedMatrixMAUFlags? (precision : ParsedPrecision) (round : Bool)
+    (values : List Nat) : Option (BitVec 4) := do
+  let outputFormat ← parsedMatrixMAUOutputFormat precision round
+  match values with
+  | [a] =>
+      let positive := parsedMatrixMAUPositive outputFormat a
+      some (BitVec.ofNat 4 (if outputFormat == .double then
+        if positive then 0xf else 0 else if positive then 0xc else 0))
+  | [a, b] =>
+      let first := if parsedMatrixMAUPositive outputFormat a then 0xc else 0
+      let second := if parsedMatrixMAUPositive outputFormat b then 0x3 else 0
+      some (BitVec.ofNat 4 (first + second))
+  | [a, b, c, d] =>
+      let bits := [a, b, c, d].reverse.zipIdx.foldl (fun flags (value, index) =>
+        flags + (if parsedMatrixMAUPositive outputFormat value then 2 ^ index else 0)) 0
+      some (BitVec.ofNat 4 bits)
+  | _ => none
+
+def parsedMatrixMAUPEOutput? (precision : ParsedPrecision) (round : Bool)
+    (values : List Nat) (pe : Fin 4) : Option (IntegerALU.Bus × BitVec 4) := do
+  let perPE := parsedMatrixMAURowsPerPE precision
+  let rowStart := pe.val * perPE
+  let peValues := (values.drop rowStart).take perPE
+  let bus ← parsedMatrixMAUPackPEBus? precision round peValues
+  let flags ← parsedMatrixMAUFlags? precision round peValues
+  some (bus, flags)
+
+theorem parsedMatrixMAURowActive_upper_lower_halves :
+    parsedMatrixMAURowActive (some 'u') 1 = true ∧
+    parsedMatrixMAURowActive (some 'u') 2 = false ∧
+    parsedMatrixMAURowActive (some 'd') 1 = false ∧
+    parsedMatrixMAURowActive (some 'd') 2 = true := by
+  decide
+
+theorem parsedMatrixMAUPEOutput_double_round_layout :
+    parsedMatrixMAUPEOutput? .d true [0x3fc00000] 0 =
+      some (⟨0x3fc0000000000000, 0⟩, 0xc) := by
+  decide
+
+theorem parsedMatrixMAUPEOutput_half_unrounded_layout :
+    parsedMatrixMAUPEOutput? .h false
+      [0x3f800000, 0xbf800000, 0x40000000, 0x40400000,
+        0x40800000, 0x40a00000, 0x40c00000, 0x40e00000,
+        0x41000000, 0x41100000, 0x41200000, 0x41300000,
+        0x41400000, 0x41500000, 0x41600000, 0x41700000] 0 =
+      some (⟨0x3f800000bf800000, 0x4000000040400000⟩, 0xb) := by
+  decide
+
 structure ParsedL1MwriteAccess where
   source : ParsedOperand
   selectedMab : Fin 16
