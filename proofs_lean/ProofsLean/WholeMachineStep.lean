@@ -3698,6 +3698,9 @@ def removePendingMvTag : Fin 256 → List PendingMv → Option (PendingMv × Lis
         let (target, remaining) ← removePendingMvTag tag rest
         some (target, pending :: remaining)
 
+def pendingMvContainsTag (tag : Fin 256) (pending : List PendingMv) : Bool :=
+  pending.any fun operation => operation.tag == some tag
+
 /-- Complete the tagged MV operation while preserving every other pending
 operation and applying writes over the current memory. -/
 def completePendingMvTag (state : State) (tag : Fin 256) : Option State := do
@@ -3706,7 +3709,9 @@ def completePendingMvTag (state : State) (tag : Fin 256) : Option State := do
   some { state with
     blockMemory := MVSemantics.commitWrites state.blockMemory pending.writes
     pendingMv := remaining
-    mvCompletedTags := fun other => other == tag || state.mvCompletedTags other }
+    mvCompletedTags := fun other =>
+      if other == tag then !pendingMvContainsTag tag remaining
+      else state.mvCompletedTags other }
 
 /-- Remove a pending MV by its current queue position. This also completes
 untagged transfers, which cannot be named by a wait tag but still progress
@@ -3723,7 +3728,9 @@ def completePendingMvAtIndex (state : State) (index : Nat) :
   let (pending, remaining) ← removePendingMvAtIndex index state.pendingMv
   let completedTags := match pending.tag with
     | none => state.mvCompletedTags
-    | some tag => fun other => other == tag || state.mvCompletedTags other
+    | some tag => fun other =>
+        if other == tag then !pendingMvContainsTag tag remaining
+        else state.mvCompletedTags other
   some (pending, { state with
     blockMemory := MVSemantics.commitWrites state.blockMemory pending.writes
     pendingMv := remaining
@@ -3737,6 +3744,26 @@ theorem completePendingMvAtIndex_untagged_head (state : State)
           blockMemory := MVSemantics.commitWrites state.blockMemory writes
           pendingMv := rest }) := by
   simp [completePendingMvAtIndex, removePendingMvAtIndex]
+
+theorem completePendingMvAtIndex_preserves_incomplete_duplicate_tag
+    (state : State) (tag : Fin 256)
+    (writes : List (MVSemantics.Cell × BitVec 64)) (rest : List PendingMv)
+    (duplicateRemains : pendingMvContainsTag tag rest = true) :
+    completePendingMvAtIndex
+      { state with pendingMv := ⟨some tag, writes⟩ :: rest } 0 =
+        some (⟨some tag, writes⟩, { state with
+          blockMemory := MVSemantics.commitWrites state.blockMemory writes
+          pendingMv := rest
+          mvCompletedTags := fun other =>
+            if other == tag then false else state.mvCompletedTags other }) := by
+  simp [completePendingMvAtIndex, removePendingMvAtIndex, pendingMvContainsTag]
+  funext other
+  by_cases h : other = tag
+  · subst other
+    have hdup : rest.any (fun operation => operation.tag == some tag) = true := by
+      simpa [pendingMvContainsTag] using duplicateRemains
+    simp [hdup]
+  · simp [h]
 
 /-- Drain all remaining MV operations at program termination. -/
 def completeAllPendingMvs (state : State) : State := Id.run do
@@ -3989,7 +4016,7 @@ noncomputable def executeScheduledEvent (event : ScheduledEvent)
           match state.stalledPEIssue with
           | none => .ok withCompletion
           | some line =>
-              if normalizedLineWaitTag? line == some tag then
+              if normalizedLineWaitTag? line == some tag && machine.mvCompletedTags tag then
                 match executeHazardAwareNormalizedLineCore line withCompletion with
                 | .failure => .failure
                 | .unknown => .unknown
@@ -4003,7 +4030,10 @@ noncomputable def executeScheduledEvent (event : ScheduledEvent)
           match state.stalledPEIssue with
           | none => .ok withCompletion
           | some line =>
-              if normalizedLineWaitTag? line == completed.tag then
+              if normalizedLineWaitTag? line == completed.tag &&
+                  (match completed.tag with
+                  | none => false
+                  | some tag => machine.mvCompletedTags tag) then
                 match executeHazardAwareNormalizedLineCore line withCompletion with
                 | .failure => .failure
                 | .unknown => .unknown
@@ -4044,6 +4074,7 @@ theorem executeScheduledEvent_completion_releases_stalled_pe_line
     (stalled : state.stalledPEIssue = some line)
     (waitTag : normalizedLineWaitTag? line = some tag)
     (completed : completePendingMvTag state.machine tag = some next)
+    (tagFinished : next.mvCompletedTags tag = true)
     (resumed : executeHazardAwareNormalizedLineCore line
       { state with machine := next, stalledPEIssue := some line } =
       .ok resumedState) :
@@ -4053,7 +4084,7 @@ theorem executeScheduledEvent_completion_releases_stalled_pe_line
     simp [waitTag]
   have stateStall : state.stalledPEIssue = some line := stalled
   rw [executeScheduledEvent, completed, stateStall]
-  simp only [tagEq, ↓reduceIte]
+  simp only [tagEq, tagFinished, Bool.and_true, ↓reduceIte]
   rw [resumed]
 
 noncomputable def executeScheduledEvents

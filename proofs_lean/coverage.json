@@ -1753,16 +1753,16 @@
       "completion_scheduling": {
         "source": "ProofsLean/WholeMachineStep.lean",
         "event": "ScheduledEvent.completeMvIssue pendingIndex",
-        "scope": "Completes any pending issue, including an untagged MV, by its current pending-queue index; commits the captured writes and marks a tag complete when present.",
+        "scope": "Completes any pending issue, including an untagged MV, by its current pending-queue index; commits the captured writes and marks a tag complete only when no pending issue with that tag remains.",
         "supporting_theorem": "ProofsLean.MNCore.completePendingMvAtIndex_untagged_head",
-        "tagged_wait_release": "A matching completed tag releases the stalled PE wait; untagged and unrelated completions leave it stalled.",
-        "remaining": "Queue-index schedules are explicit semantic traces; exact timing and arbitration constraints from hardware remain unmodeled."
+        "tagged_wait_release": "A matching tag releases the stalled PE wait only after the last pending issue with that tag completes; untagged and unrelated completions leave it stalled.",
+        "remaining": "Queue-index schedules are explicit semantic traces; exact timing and arbitration constraints from hardware remain unmodeled. Whether duplicate live tags are legal on hardware remains unresolved; the model conservatively waits for all pending operations carrying the tag."
       }
     },
     {
       "area": "dar_tags_wait_and_completion",
       "status": "partial_whole_machine_transition",
-      "untagged_mv_progress": "Represented by ScheduledEvent.completeMvIssue; wait release still requires the event's completed tag to match the held wait line."
+      "untagged_mv_progress": "Represented by ScheduledEvent.completeMvIssue; wait release requires the matching tag to have no remaining pending operations. Duplicate live-tag legality on hardware remains unresolved."
     },
     {
       "area": "initial_state_and_zero_memory",
