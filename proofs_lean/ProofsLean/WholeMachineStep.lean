@@ -3726,6 +3726,8 @@ noncomputable def executeHazardAwareNormalizedLine (line : NormalizedLine)
       | .unknown => return .unknown
       | .ok next => return .ok { state with machine := next }
   | _ =>
+      let some instruction := line.toInstruction? | return .failure
+      if !checkParsedTopLine instruction.toParsed then return .failure
       let some currentPEEvents ← pure
         (parsedNormalizedLinePEHazardEvents? state.machine line) | return .unknown
       let currentBlockEvents := HazardTrace.parsedLineBlockHazardEvents
@@ -3880,6 +3882,31 @@ noncomputable def integerProducerMachine : ProofsLean.PartialMachine where
   Input := Unit
   step := fun line state => executeIntegerProducerInstructionLine line state
   legal := fun _ => True
+  lineCost := InstructionLine.cost
+  positiveCost := InstructionLine.cost_positive
+
+def Issue.InstructionLine.toNormalizedLine : Issue.InstructionLine → NormalizedLine
+  | .pe expressions => .pe expressions
+  | .nop count wait => .nop count.val wait
+  | .mv transfer => .mv transfer
+
+@[simp] theorem Issue.InstructionLine.toNormalizedLine_toParsed
+    (line : Issue.InstructionLine) :
+    line.toNormalizedLine.toParsed = line.toParsed := by
+  cases line <;> simp [Issue.InstructionLine.toNormalizedLine,
+    Issue.InstructionLine.toParsed, NormalizedLine.toParsed,
+    NormalizedMv.toParsed, ParsedMv.normalize]
+
+/-- Stateful instruction machine whose state retains PE and block hazard
+history across calls to `step`. Unlike `integerProducerMachine`, its step is
+the same hazard-aware transition used by normalized program execution. -/
+noncomputable def hazardAwareInstructionMachine : ProofsLean.PartialMachine where
+  Line := InstructionLine
+  State := HazardAwareState
+  Input := Unit
+  step := fun line state =>
+    executeHazardAwareNormalizedLine line.toNormalizedLine state
+  legal := fun lines => ∀ line ∈ lines, checkParsedTopLine line.toParsed = true
   lineCost := InstructionLine.cost
   positiveCost := InstructionLine.cost_positive
 
