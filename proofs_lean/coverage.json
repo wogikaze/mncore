@@ -1997,12 +1997,15 @@
         },
         "matrix_write_forward_validation": {
           "lean_source": "ProofsLean.MNCore.readParsedMatrixWriteBusPE and readParsedMatrixWriteBusesFrom",
-          "behavior": "With forwardingSourceResolved, each PE bus read and the four-PE bus aggregation cannot return .unknown. Disabled forwarding and poison reads fail; known memory/fixed/forwarding values pass through a bus preparation function proved unknown-free.",
-          "scope_limit": "The premise excludes enabled forwarding slots whose payload remains unknown. The theorem is for bus acquisition; matrix-write cycle/store composition, MAB sequences, and the whole instruction-line transition remain to be connected.",
+          "behavior": "With forwardingSourceResolved, each PE bus read and the four-PE bus aggregation cannot return .unknown. Disabled forwarding and poison reads fail; known memory/fixed/forwarding values pass through a bus preparation function proved unknown-free. The matrix-write cycle, arbitrary cycle-list executor, and four-cycle executor also cannot return .unknown for a matrix-write expression under the same forwarding premise.",
+          "scope_limit": "The premise excludes enabled forwarding slots whose payload remains unknown. Multi-write applyWrites, MAB traversal, and the whole instruction-line transition still need composition.",
           "theorems": [
             "ProofsLean.MNCore.prepareMatrixWriteBus_never_unknown",
             "ProofsLean.MNCore.readParsedMatrixWriteBusPE_resolved_never_unknown",
-            "ProofsLean.MNCore.readParsedMatrixWriteBuses_resolved_never_unknown"
+            "ProofsLean.MNCore.readParsedMatrixWriteBuses_resolved_never_unknown",
+            "ProofsLean.MNCore.executeParsedMatrixWriteCycle_resolved_never_unknown",
+            "ProofsLean.MNCore.executeParsedMatrixWriteCycles_resolved_never_unknown",
+            "ProofsLean.MNCore.executeParsedMatrixWriteFourCycle_resolved_never_unknown"
           ]
         }
       }

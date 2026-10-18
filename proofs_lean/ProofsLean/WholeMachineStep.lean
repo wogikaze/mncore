@@ -1509,6 +1509,32 @@ def executeParsedMatrixWriteCycle (state : State) (coordinate : MABCoordinate)
                 accesses.sideY row0 values0)
   | _ => .unknown
 
+theorem executeParsedMatrixWriteCycle_resolved_never_unknown
+    (state : State) (coordinate : MABCoordinate) (expression : ParsedExpr)
+    (store : ParsedMatrixReadStore) (cycle : Fin 4)
+    (isMatrixWrite : ∃ precision, expression.op = .matrixWrite precision)
+    (resolved : forwardingSourceResolved state) :
+    executeParsedMatrixWriteCycle state coordinate expression store cycle ≠ .unknown := by
+  rcases isMatrixWrite with ⟨precision, opEq⟩
+  cases precision <;> simp only [executeParsedMatrixWriteCycle, opEq]
+  all_goals
+    have loweredNever := lowerParsedMatrixWriteResult_never_unknown expression
+      ((matrixWriteGroupContext state coordinate).at 0 cycle)
+    cases lowered : lowerParsedMatrixWriteResult expression
+        ((matrixWriteGroupContext state coordinate).at 0 cycle) with
+    | failure => simp [lowered]
+    | unknown => exact (loweredNever lowered).elim
+    | ok accesses =>
+        have busesNever := readParsedMatrixWriteBuses_resolved_never_unknown
+          state coordinate expression cycle resolved
+        cases buses : readParsedMatrixWriteBuses state coordinate expression cycle with
+        | failure => simp [lowered, buses]
+        | unknown => exact (busesNever buses).elim
+        | ok values =>
+            simp only [lowered, buses]
+            repeat (first | (split <;> try simp))
+            all_goals simp
+
 def executeParsedMatrixWriteCycles (state : State) (coordinate : MABCoordinate)
     (expression : ParsedExpr) : List (Fin 4) → ParsedMatrixReadStore →
       ProofsLean.StepResult ParsedMatrixReadStore
@@ -1523,6 +1549,32 @@ def executeParsedMatrixWriteFourCycle (state : State) (coordinate : MABCoordinat
     (expression : ParsedExpr) (store : ParsedMatrixReadStore) :
     ProofsLean.StepResult ParsedMatrixReadStore :=
   executeParsedMatrixWriteCycles state coordinate expression [0, 1, 2, 3] store
+
+theorem executeParsedMatrixWriteCycles_resolved_never_unknown
+    (state : State) (coordinate : MABCoordinate) (expression : ParsedExpr)
+    (cycles : List (Fin 4)) (store : ParsedMatrixReadStore)
+    (isMatrixWrite : ∃ precision, expression.op = .matrixWrite precision)
+    (resolved : forwardingSourceResolved state) :
+    executeParsedMatrixWriteCycles state coordinate expression cycles store ≠ .unknown := by
+  induction cycles generalizing store with
+  | nil => simp [executeParsedMatrixWriteCycles]
+  | cons cycle rest ih =>
+      have cycleNever := executeParsedMatrixWriteCycle_resolved_never_unknown
+        state coordinate expression store cycle isMatrixWrite resolved
+      unfold executeParsedMatrixWriteCycles
+      cases result : executeParsedMatrixWriteCycle state coordinate expression store cycle with
+      | failure => simp [result]
+      | unknown => exact (cycleNever result).elim
+      | ok nextStore => simp [result, ih nextStore]
+
+theorem executeParsedMatrixWriteFourCycle_resolved_never_unknown
+    (state : State) (coordinate : MABCoordinate) (expression : ParsedExpr)
+    (store : ParsedMatrixReadStore)
+    (isMatrixWrite : ∃ precision, expression.op = .matrixWrite precision)
+    (resolved : forwardingSourceResolved state) :
+    executeParsedMatrixWriteFourCycle state coordinate expression store ≠ .unknown := by
+  exact executeParsedMatrixWriteCycles_resolved_never_unknown state coordinate expression
+    [0, 1, 2, 3] store isMatrixWrite resolved
 
 def executeParsedMatrixWritesAtMAB (readState currentState : State)
     (coordinate : MABCoordinate) (expressions : List ParsedExpr) :
