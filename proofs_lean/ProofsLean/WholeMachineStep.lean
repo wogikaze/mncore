@@ -1288,6 +1288,49 @@ theorem parsedMatrixMAUDecodeLanes_half_extend_four :
       some [0x3f800000, 0x3f000000, 0, 0] := by
   decide
 
+def readParsedMatrixMAUSourcePE (state : State) (coordinate : MABCoordinate)
+    (operand : ParsedOperand) (precision : RRN.FloatPrecision) (count : Nat)
+    (negate extend round : Bool) (pe cycle : Fin 4) :
+    ProofsLean.StepResult (List Nat) := Id.run do
+  let physical := physicalPEId coordinate pe
+  let oldContext := state.peContext physical
+  let context := { ParsedIntegerContext.ofLinearIndex physical with
+    cycle := cycle
+    bar0 := oldContext.bar0
+    bar1 := oldContext.bar1
+    tWord := oldContext.tWord }
+  let some (input, actualNegate, actualExtend, actualRound) :=
+      parsedFloatMAUSourceAttrs? operand context | return .unknown
+  if actualNegate != negate || actualExtend != extend || actualRound != round then
+    return .unknown
+  if let .forward kind _ := input then
+    if !state.forwardingValid physical (ParsedIntegerInput.forwardUnit kind) cycle then
+      return .failure
+  match ParsedIntegerInput.readWithForwarding (state.peRegisters physical)
+      (state.forwarding physical) cycle input with
+  | .failure => return .failure
+  | .unknown => return .unknown
+  | .ok bus =>
+    match parsedMatrixMAUDecodeLanes? precision count bus negate extend round with
+    | none => return .failure
+    | some lanes => return .ok lanes
+
+def readParsedMatrixMAUSourceAtMAB (state : State) (coordinate : MABCoordinate)
+    (operand : ParsedOperand) (format : RRN.FloatPrecision) (count : Nat)
+    (cycle : Fin 4) : ProofsLean.StepResult (List Nat) := Id.run do
+  let mut values := []
+  for pe in List.finRange 4 do
+    let context := { ParsedIntegerContext.ofLinearIndex (physicalPEId coordinate pe) with
+      cycle := cycle }
+    let some (_, negate, extend, round) := parsedFloatMAUSourceAttrs? operand context
+      | return .unknown
+    match readParsedMatrixMAUSourcePE state coordinate operand format count
+        negate extend round pe cycle with
+    | .failure => return .failure
+    | .unknown => return .unknown
+    | .ok lanes => values := values ++ lanes
+  return .ok values
+
 def parsedMatrixMAURowActive (half : Option Char) (row : Nat) : Bool :=
   match half with
   | some 'u' => row < 2
@@ -1325,6 +1368,42 @@ theorem parsedMatrixMAUCalculateRows_double_zero_store :
       ⟨⟨0, by decide⟩, ⟨0, by decide⟩, ⟨0, by decide⟩, ⟨0, by decide⟩⟩
       false .d .mul none false [0, 0, 0, 0] [] = some [0, 0, 0, 0] := by
   decide
+
+def executeParsedMatrixMAUCalculationAtMAB (state : State) (coordinate : MABCoordinate)
+    (expression : ParsedExpr) (cycle : Fin 4) :
+    ProofsLean.StepResult (List Nat) := Id.run do
+  let (.mau precision true kind half round) := expression.op | return .unknown
+  let matrixSide ← match expression.sources with
+    | .matrix sideY _ none :: _ => pure sideY
+    | _ => return .unknown
+  let (vector, accumulator) ← match kind, expression.sources with
+    | .mul, [.matrix _ _ none, vector] => pure (vector, none)
+    | .add, [.matrix _ _ none, vector] => pure (vector, none)
+    | .passa, [.matrix _ _ none, vector] => pure (vector, none)
+    | .fma, [.matrix _ _ none, vector, acc] => pure (vector, some acc)
+    | _, _ => return .unknown
+  let some vectorFormat := parsedMatrixMAUFloatFormat precision | return .failure
+  let vectorValues ← match readParsedMatrixMAUSourceAtMAB state coordinate vector
+      vectorFormat (parsedMatrixMAUVectorLanesPerPE precision) cycle with
+    | .failure => return .failure
+    | .unknown => return .unknown
+    | .ok values => pure values
+  let accumulatorValues ← match accumulator with
+    | none => pure []
+    | some source =>
+      let accumulatorFormat := match precision with
+        | .d => RRN.FloatPrecision.double
+        | _ => RRN.FloatPrecision.single
+      match readParsedMatrixMAUSourceAtMAB state coordinate source accumulatorFormat
+          (parsedMatrixMAUAccumulatorLanesPerPE precision) cycle with
+      | .failure => return .failure
+      | .unknown => return .unknown
+      | .ok values => pure values
+  let store := state.matrixRegisters coordinate.group coordinate.l2b coordinate.l1b
+  match parsedMatrixMAUCalculateRows? store coordinate matrixSide precision kind half round
+      vectorValues accumulatorValues with
+  | none => return .failure
+  | some rows => return .ok rows
 
 def parsedMatrixMAURowsPerPE : ParsedPrecision → Nat
   | .d => 1
@@ -1376,6 +1455,24 @@ def parsedMatrixMAUPEOutput? (precision : ParsedPrecision) (round : Bool)
   let bus ← parsedMatrixMAUPackPEBus? precision round peValues
   let flags ← parsedMatrixMAUFlags? precision round peValues
   some (bus, flags)
+
+def executeParsedMatrixMAUAtMAB (state : State) (coordinate : MABCoordinate)
+    (expression : ParsedExpr) (cycle : Fin 4) :
+    ProofsLean.StepResult ((Fin 4 → IntegerALU.Bus) × (Fin 4 → BitVec 4)) := Id.run do
+  match executeParsedMatrixMAUCalculationAtMAB state coordinate expression cycle with
+  | .failure => return .failure
+  | .unknown => return .unknown
+  | .ok rows =>
+    let (.mau precision true _ _ round) := expression.op | return .unknown
+    let mut buses : Fin 4 → IntegerALU.Bus := fun _ => ⟨0, 0⟩
+    let mut flags : Fin 4 → BitVec 4 := fun _ => 0
+    for pe in List.finRange 4 do
+      match parsedMatrixMAUPEOutput? precision round rows pe with
+      | none => return .failure
+      | some (bus, flag) =>
+        buses := fun index => if index == pe then bus else buses index
+        flags := fun index => if index == pe then flag else flags index
+    return .ok (buses, flags)
 
 theorem parsedMatrixMAURowActive_upper_lower_halves :
     parsedMatrixMAURowActive (some 'u') 1 = true ∧
