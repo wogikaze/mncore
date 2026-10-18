@@ -3862,14 +3862,8 @@ def normalizedLineWaitTag? : NormalizedLine → Option (Fin 256)
       expressions.findSome? fun expression => parsedExprWaitTag? expression.toParsed
   | .mv _ | .maskDirective .. => none
 
-noncomputable def executeHazardAwareNormalizedLine (line : NormalizedLine)
+noncomputable def executeHazardAwareNormalizedLineCore (line : NormalizedLine)
     (state : HazardAwareState) : ProofsLean.StepResult HazardAwareState := Id.run do
-  let state ← match normalizedLineWaitTag? line with
-    | none => pure state
-    | some tag =>
-        match completePendingMvTag state.machine tag with
-        | none => return .unknown
-        | some machine => pure { state with machine }
   match line with
   | .maskDirective .. =>
       match executeNormalizedLine line state.machine with
@@ -3899,6 +3893,49 @@ noncomputable def executeHazardAwareNormalizedLine (line : NormalizedLine)
             (state.blockHistory ++ currentBlockEvents).filter fun event =>
               event.startWord + 4 ≥ next.hazardClock
           return .ok ⟨next, nextPEHistory, nextBlockHistory⟩
+
+/-- Deterministic program-runner profile: when a PE line waits, schedule the
+tagged completion immediately if its MV has already been issued. -/
+noncomputable def executeHazardAwareNormalizedLine (line : NormalizedLine)
+    (state : HazardAwareState) : ProofsLean.StepResult HazardAwareState := Id.run do
+  let state ← match normalizedLineWaitTag? line with
+    | none => pure state
+    | some tag =>
+        match completePendingMvTag state.machine tag with
+        | none => return .unknown
+        | some machine => pure { state with machine }
+  return executeHazardAwareNormalizedLineCore line state
+
+inductive ScheduledEvent where
+  | issue (line : NormalizedLine)
+  | completeMv (tag : Fin 256)
+
+/-- One explicitly scheduled transition. `completeMv` events may complete any
+issued tag independently, so traces can represent out-of-order MV completion. -/
+noncomputable def executeScheduledEvent (event : ScheduledEvent)
+    (state : HazardAwareState) : ProofsLean.StepResult HazardAwareState :=
+  match event with
+  | .issue line => executeHazardAwareNormalizedLineCore line state
+  | .completeMv tag =>
+      match completePendingMvTag state.machine tag with
+      | none => .unknown
+      | some machine => .ok { state with machine }
+
+noncomputable def executeScheduledEvents
+    : List ScheduledEvent → HazardAwareState → ProofsLean.StepResult HazardAwareState
+  | [], state => .ok state
+  | event :: rest, state =>
+      match executeScheduledEvent event state with
+      | .failure => .failure
+      | .unknown => .unknown
+      | .ok next => executeScheduledEvents rest next
+
+/-- Execute a chosen PE/MV issue and completion schedule without draining
+remaining MV work at the end. The returned hazard-aware state retains pending
+operations, allowing the caller to extend the trace. -/
+noncomputable def executeScheduledProgram (events : List ScheduledEvent)
+    (state : State) : ProofsLean.StepResult HazardAwareState :=
+  executeScheduledEvents events (HazardAwareState.initial state)
 
 /-- Execute a normalized source program in order. The runner carries recent
 PE-memory accesses as validation history, rejects PE hazards before applying
@@ -4026,8 +4063,8 @@ theorem executeNormalizedProgram_maskDirective_updates_state
       (.maskDirective widthWords targets entry) (HazardAwareState.initial state) =
       .ok { (HazardAwareState.initial state) with
         machine := { state with maskDirective := ⟨widthWords, targets, entry⟩ } } := by
-    simp [executeHazardAwareNormalizedLine, HazardAwareState.initial,
-      executeNormalizedLine, normalizedLineWaitTag?]
+    simp [executeHazardAwareNormalizedLine, executeHazardAwareNormalizedLineCore,
+      HazardAwareState.initial, executeNormalizedLine, normalizedLineWaitTag?]
   simp only [executeNormalizedProgram, executeNormalizedProgramAux,
     List.length_cons, List.length_nil, executeNormalizedProgramAuxFuel]
   rw [hstep]
