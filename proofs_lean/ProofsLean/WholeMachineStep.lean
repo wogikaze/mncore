@@ -1989,6 +1989,139 @@ def updateIntegerLineForwardingValid
     else if unit = .l1ToPE then old unit cycle
     else forwardingValueValid (slots unit cycle)
 
+def parsedExprIsMslMsrProducer (expression : ParsedExpr) : Bool :=
+  match expression.op with
+  | .alu .msl none _ _ | .alu .msr none _ _ => true
+  | _ => false
+
+def lowerParsedMslMsr? (expression : ParsedExpr) :
+    Option (Bool × ParsedOperand) := do
+  let isMsl ← match expression.op with
+    | .alu .msl none _ _ => some true
+    | .alu .msr none _ _ => some false
+    | _ => none
+  match expression.sources, expression.destinations with
+  | [_], [destination@(.mem ..)] =>
+      some (isMsl, destination)
+  | _, _ => none
+
+def mslMsrSourcePE (pe : PEId) (isMsl : Bool) : PEId :=
+  let localPE := pe.val % 4
+  let sourcePE := if isMsl then (localPE + 3) % 4 else (localPE + 1) % 4
+  have hlocal : localPE < 4 := Nat.mod_lt _ (by decide)
+  have hsource : sourcePE < 4 := by
+    unfold sourcePE
+    split <;> exact Nat.mod_lt _ (by decide : 0 < 4)
+  have hgroup : pe.val / 4 < 1024 := by omega
+  ⟨pe.val / 4 * 4 + sourcePE, by
+    omega⟩
+
+theorem mslMsrSourcePE_stays_in_MAB (pe : PEId) (isMsl : Bool) :
+    (mslMsrSourcePE pe isMsl).val / 4 = pe.val / 4 := by
+  have hlocal : pe.val % 4 < 4 := Nat.mod_lt _ (by decide)
+  have hsource : (if isMsl then (pe.val % 4 + 3) % 4 else
+      (pe.val % 4 + 1) % 4) < 4 := by split <;> omega
+  simp only [mslMsrSourcePE]
+  omega
+
+theorem mslMsrSourcePE_direction_examples :
+    mslMsrSourcePE 4 true = 7 ∧ mslMsrSourcePE 4 false = 5 := by
+  decide
+
+def mslMsrOutputBus (source : IntegerALU.Bus) : IntegerALU.Bus :=
+  ⟨source.high, 0⟩
+
+theorem mslMsrOutputBus_keeps_msb_longword_only (source : IntegerALU.Bus) :
+    (mslMsrOutputBus source).high = source.high ∧
+      (mslMsrOutputBus source).low = 0 := by
+  constructor <;> rfl
+
+def executeParsedMslMsrAtPE (readState currentState : State)
+    (expression : ParsedExpr) (pe : PEId) (noForward hasSingleLineMask : Bool) :
+    ProofsLean.StepResult State := Id.run do
+  let oldContext := readState.peContext pe
+  let coordinates := ParsedIntegerContext.ofLinearIndex pe
+  let some (isMsl, destination) := lowerParsedMslMsr? expression | return .unknown
+  let sourcePE := mslMsrSourcePE pe isMsl
+  let sourceOldContext := readState.peContext sourcePE
+  let sourceCoordinates := ParsedIntegerContext.ofLinearIndex sourcePE
+  let sourceContext := { sourceCoordinates with
+    bar0 := sourceOldContext.bar0
+    bar1 := sourceOldContext.bar1
+    tWord := sourceOldContext.tWord }
+  let sourceAt := fun cycle => match expression.sources with
+    | [source] => ParsedOperand.toParsedIntegerInput? source .long
+        sourceContext.group sourceContext.l2b sourceContext.l1b sourceContext.mab
+        sourceContext.pe cycle sourceContext.bar0 sourceContext.bar1 sourceContext.tWord
+    | _ => none
+  let rec runCycles : List (Fin 4) → PEMemory.IntegerRegisterFiles →
+      (Fin 4 → IntegerALU.Bus) → ProofsLean.StepResult
+        (PEMemory.IntegerRegisterFiles × (Fin 4 → IntegerALU.Bus))
+    | [], files, outputs => .ok (files, outputs)
+    | cycle :: rest, files, outputs =>
+        match sourceAt cycle with
+        | none => .unknown
+        | some source =>
+          match ParsedIntegerInput.readWithForwarding (readState.peRegisters sourcePE)
+              (readState.forwarding sourcePE) cycle source with
+          | .failure => .failure
+          | .unknown => .unknown
+          | .ok sourceBus =>
+            let shifted := mslMsrOutputBus sourceBus
+            match ParsedOperand.toDirectMemoryDestination? destination coordinates.pe cycle
+                oldContext.bar0 oldContext.bar1 oldContext.tWord with
+            | none => .unknown
+            | some destinationAccess =>
+                match ParsedOperand.resolveMemoryWriteSelection? destination
+                    destinationAccess.bank files.maskRegisters cycle currentState.maskDirective
+                    hasSingleLineMask,
+                  resolveFlushSelection? expression.flush files.maskRegisters cycle with
+                | none, _ | _, none => .unknown
+                | some selection, some flushSelection =>
+                    let output := parsedOutputAfterFlush flushSelection shifted
+                    let nextFiles := PEMemory.writeDirectAccessMasked files destinationAccess
+                      (PEMemory.unpackALUBus output) selection
+                    runCycles rest nextFiles
+                      (fun index => if index = cycle then output else outputs index)
+  match runCycles [0, 1, 2, 3] (currentState.peRegisters pe) (fun _ => ⟨0, 0⟩) with
+  | .failure => return .failure
+  | .unknown => return .unknown
+  | .ok (registers, outputs) =>
+      let forwarding : Forwarding.Slots := fun unit cycle =>
+        if noForward then currentState.forwarding pe unit cycle
+        else if unit == .alu then .known (outputs cycle)
+        else currentState.forwarding pe unit cycle
+      let valid : Forwarding.Unit → Fin 4 → Bool := fun unit cycle =>
+        if noForward then currentState.forwardingValid pe unit cycle
+        else if unit == .alu then true
+        else currentState.forwardingValid pe unit cycle
+      return .ok { currentState with
+        peRegisters := fun other => if other = pe then registers else currentState.peRegisters other
+        forwarding := fun other => if other = pe then forwarding else currentState.forwarding other
+        forwardingValid := fun other => if other = pe then valid else currentState.forwardingValid other }
+
+def executeParsedMslMsrAtPEs (readState currentState : State)
+    (expression : ParsedExpr) (pes : List PEId) (noForward hasSingleLineMask : Bool) :
+    ProofsLean.StepResult State :=
+  match pes with
+  | [] => .ok currentState
+  | pe :: rest =>
+      match executeParsedMslMsrAtPE readState currentState expression pe
+          noForward hasSingleLineMask with
+      | .failure => .failure
+      | .unknown => .unknown
+      | .ok next => executeParsedMslMsrAtPEs readState next expression rest
+          noForward hasSingleLineMask
+
+def executeParsedMslMsrProducers (readState currentState : State)
+    (expressions : List ParsedExpr) (noForward hasSingleLineMask : Bool) :
+    ProofsLean.StepResult State :=
+  match expressions.filter parsedExprIsMslMsrProducer with
+  | [] => .ok currentState
+  | [expression] => executeParsedMslMsrAtPEs readState currentState expression
+      (List.finRange 4096) noForward hasSingleLineMask
+  | _ => .unknown
+
 def executeIntegerProducerLineAtPE (expressions : List ParsedExpr)
     (state : State) (pe : PEId) : ProofsLean.StepResult State :=
   let oldContext := state.peContext pe
@@ -2009,7 +2142,8 @@ def executeIntegerProducerLineAtPE (expressions : List ParsedExpr)
       !parsedExprIsL1GatherProducer expression &&
       !parsedExprIsL1ReduceProducer expression &&
       !parsedExprIsL1ToPEProducer expression &&
-      !parsedExprIsSupportedFloatMAUProducer expression
+      !parsedExprIsSupportedFloatMAUProducer expression &&
+      !parsedExprIsMslMsrProducer expression
   match parsedIntegerMatrixReadLineFourCycleStep (state.peRegisters pe) oldSlots
       matrixStore peExpressions control false with
   | .failure => .failure
@@ -2084,15 +2218,23 @@ noncomputable def executeIntegerProducerInstructionLine
         let expressions := normalizedExpressions.map NormalizedExpr.toParsed
         if expressions.all parsedExprIsSupportedPELineProducer then
           let peExpressions := expressions.filter (fun expression =>
-            !parsedExprIsL2BMProducer expression)
+            !parsedExprIsL2BMProducer expression && !parsedExprIsMslMsrProducer expression)
           match executeIntegerProducerLineAtPEs peExpressions (List.finRange 4096) state with
           | .failure => .failure
           | .unknown => .unknown
           | .ok nextPEs =>
-              match executeParsedMatrixWritesAtMABs state allMABCoordinates expressions nextPEs with
+              let noForward := expressions.any parsedExprIsNoForwardProducer
+              let hasSingleLineMask := expressions.any parsedExprHasSingleLineWriteMask
+              match executeParsedMslMsrProducers state nextPEs expressions noForward
+                  hasSingleLineMask with
               | .failure => .failure
               | .unknown => .unknown
-              | .ok next =>
+              | .ok nextWithMsl =>
+                match executeParsedMatrixWritesAtMABs state allMABCoordinates expressions
+                    nextWithMsl with
+                | .failure => .failure
+                | .unknown => .unknown
+                | .ok next =>
                   let noForward := expressions.any parsedExprIsNoForwardProducer
                   let hasPEToL1Producer := expressions.any fun expression =>
                     parsedExprIsL1MwriteProducer expression ||
@@ -2183,17 +2325,23 @@ theorem executeIntegerProducerInstructionLine_mv_transfer_success
     accepted, notNop, executed]
 
 theorem executeIntegerProducerInstructionLine_pe_success
-    (normalizedExpressions : List NormalizedExpr) (state nextPEs next nextL1 : State)
+    (normalizedExpressions : List NormalizedExpr) (state nextPEs nextMsl next nextL1 : State)
     (accepted : checkParsedTopLine
       (InstructionLine.pe normalizedExpressions).toParsed = true)
     (supported : (normalizedExpressions.map NormalizedExpr.toParsed).all
       parsedExprIsSupportedPELineProducer = true)
     (executed : executeIntegerProducerLineAtPEs
-      ((normalizedExpressions.map NormalizedExpr.toParsed).filter
-        (fun expression => !parsedExprIsL2BMProducer expression)) (List.finRange 4096) state =
+      ((normalizedExpressions.map NormalizedExpr.toParsed).filter (fun expression =>
+        !parsedExprIsL2BMProducer expression && !parsedExprIsMslMsrProducer expression))
+      (List.finRange 4096) state =
         .ok nextPEs)
+    (mslMsrWrites : executeParsedMslMsrProducers state nextPEs
+      (normalizedExpressions.map NormalizedExpr.toParsed)
+      (normalizedExpressions.any (parsedExprIsNoForwardProducer ∘ NormalizedExpr.toParsed))
+      (normalizedExpressions.any (parsedExprHasSingleLineWriteMask ∘ NormalizedExpr.toParsed)) =
+        .ok nextMsl)
     (matrixWrites : executeParsedMatrixWritesAtMABs state allMABCoordinates
-      (normalizedExpressions.map NormalizedExpr.toParsed) nextPEs = .ok next)
+      (normalizedExpressions.map NormalizedExpr.toParsed) nextMsl = .ok next)
     (l1Writes : executeParsedL1MwriteProducers state next
       (normalizedExpressions.map NormalizedExpr.toParsed)
       (!(normalizedExpressions.any
@@ -2233,7 +2381,7 @@ theorem executeIntegerProducerInstructionLine_pe_success
             parsedExprIsL1MwriteProducer expression.toParsed ||
               parsedExprIsL1GatherProducer expression.toParsed ||
               parsedExprIsL1ReduceProducer expression.toParsed) } := by
-  simp [executeIntegerProducerInstructionLine, accepted, supported, executed,
+  simp [executeIntegerProducerInstructionLine, accepted, supported, executed, mslMsrWrites,
     matrixWrites, l1Writes, gatherWrites, reduceWrites, l1ToPE, l2Writes, List.any_map]
   rfl
 
