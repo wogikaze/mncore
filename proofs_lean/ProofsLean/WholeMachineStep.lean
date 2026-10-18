@@ -4262,6 +4262,35 @@ with this tag, preserving unrelated pending transfers. -/
 def completePendingMvTagAll (state : State) (tag : Fin 256) : Option State :=
   completePendingMvTagFuel (state.pendingMv.length + 1) state tag
 
+theorem completePendingMvTagFuel_success_completes_tag
+    (fuel : Nat) (state next : State) (tag : Fin 256)
+    (completed : completePendingMvTagFuel fuel state tag = some next) :
+    next.mvCompletedTags tag = true := by
+  induction fuel generalizing state next with
+  | zero =>
+      by_cases already : state.mvCompletedTags tag
+      · simp [completePendingMvTagFuel, already] at completed
+        cases completed
+        exact already
+      · simp [completePendingMvTagFuel, already] at completed
+  | succ fuel ih =>
+      by_cases already : state.mvCompletedTags tag
+      · simp [completePendingMvTagFuel, already] at completed
+        cases completed
+        exact already
+      · cases step : completePendingMvTag state tag with
+        | none => simp [completePendingMvTagFuel, already, step] at completed
+        | some intermediate =>
+            simp [completePendingMvTagFuel, already, step] at completed
+            exact ih intermediate next completed
+
+theorem completePendingMvTagAll_success_completes_tag
+    (state next : State) (tag : Fin 256)
+    (completed : completePendingMvTagAll state tag = some next) :
+    next.mvCompletedTags tag = true := by
+  exact completePendingMvTagFuel_success_completes_tag
+    (state.pendingMv.length + 1) state next tag completed
+
 theorem completePendingMvTagAll_completes_two_same_tag
     (state : State) (tag : Fin 256)
     (firstWrites secondWrites : List (MVSemantics.Cell × BitVec 64)) :
@@ -5059,6 +5088,32 @@ theorem executeHazardAwareNormalizedLine_completed_wait_nop
   rw [sameState]
   rw [executeHazardAwareNormalizedLineCore_completed_wait_nop
     state count tag accepted completed]
+  simp
+  exact notStalled
+
+theorem executeHazardAwareNormalizedLine_drains_tag_then_wait_nop
+    (state : HazardAwareState) (next : State) (count : Nat) (tag : Fin 256)
+    (notStalled : state.stalledPEIssue = none)
+    (accepted : checkParsedTopLine (.nop (count + 1) (some tag)) = true)
+    (drained : completePendingMvTagAll state.machine tag = some next) :
+    executeHazardAwareNormalizedLine (.nop (count + 1) (some tag)) state =
+      .ok { state with
+        machine := { next with hazardClock := next.hazardClock + (count + 1) }
+        peHistory := fun pe => (state.peHistory pe).filter fun event =>
+          event.startWord + 4 ≥ next.hazardClock + (count + 1)
+        blockHistory := state.blockHistory.filter fun event =>
+          event.startWord + 4 ≥ next.hazardClock + (count + 1) } := by
+  have tagCompleted := completePendingMvTagAll_success_completes_tag
+    state.machine next tag drained
+  have core := executeHazardAwareNormalizedLineCore_completed_wait_nop
+    { state with machine := next } count tag accepted tagCompleted
+  simp [executeHazardAwareNormalizedLine, normalizedLineWaitTag?, notStalled,
+    drained]
+  have sameDrained : { state with machine := next, stalledPEIssue := none } =
+      { state with machine := next } := by
+    cases state with
+    | mk machine peHistory blockHistory stalled => simp_all
+  rw [sameDrained, core]
   simp
   exact notStalled
 
