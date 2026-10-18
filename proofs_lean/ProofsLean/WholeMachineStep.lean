@@ -2559,6 +2559,11 @@ def executeParsedDars (state : State) (expression : ParsedExpr) :
     darBufferReadAddress := ⟨0, by decide⟩
     darWriteAddress := darStart }
 
+theorem executeParsedDars_never_unknown (state : State) (expression : ParsedExpr) :
+    executeParsedDars state expression ≠ .unknown := by
+  unfold executeParsedDars
+  split <;> simp_all [Id.run]
+
 def executeParsedDarw (state : State) : State := Id.run do
   let mut dar := state.dar
   let mut readAddress := state.darBufferReadAddress
@@ -2597,6 +2602,16 @@ def executeParsedL2BlockExpression (readState currentState : State)
                   L1Transfer.commitL1Writes (currentState.l1bm bank) writes
                 blockMemory := MVSemantics.commitWrites currentState.blockMemory l2Writes }
   | _ => .unknown
+
+theorem executeParsedL2BlockExpression_l2bm_never_unknown
+    (readState currentState : State) (expression : ParsedExpr) (operation : ParsedL2Op)
+    (isL2 : expression.op = .l2bm operation) :
+    executeParsedL2BlockExpression readState currentState expression ≠ .unknown := by
+  cases operation <;> simp only [executeParsedL2BlockExpression, isL2]
+  all_goals
+    first
+    | exact executeParsedDars_never_unknown currentState expression
+    | (split <;> simp_all <;> split <;> simp_all)
 
 def executeParsedL2BlockProducers (readState currentState : State)
     (expressions : List ParsedExpr) : ProofsLean.StepResult State := Id.run do

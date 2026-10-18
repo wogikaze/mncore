@@ -1832,6 +1832,11 @@
     {
       "area": "l2bm_transfers_and_reductions",
       "status": "partial_whole_machine_transition",
+      "opcode_result_classification": {
+        "theorem": "ProofsLean.MNCore.executeParsedL2BlockExpression_l2bm_never_unknown",
+        "scope": "Every ParsedL2Op dispatched to executeParsedL2BlockExpression returns success or failure. Address/source lowering failures and unsupported reductions are failures; `.unknown` is reserved for the non-L2 fallback branch.",
+        "dars_result_theorem": "ProofsLean.MNCore.executeParsedDars_never_unknown"
+      },
       "cross_group_block_write_order": {
         "issue_groups": "PE-to-L1BM operations use l1bm or l1bm-turnaround; L2BM operations use l2bm. The issue checker permits one operation from each distinct group in a line.",
         "newly_connected_case": "PE-to-L1BM and L2BM producers now execute in source-expression order. Both read source data from the pre-issue State; their L1BM writes accumulate in that order, so an overlapping later write wins as it does in Rust BlockWrites::apply.",
