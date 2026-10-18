@@ -3415,6 +3415,64 @@ theorem ParsedOperand.toHazardDirectAccess_isSome_of_valid
         issueBankToRegisterBank, ParsedOperand.toDirectMemoryAccessMode?,
         ParsedOperand.forHazardAddress, parsedWidth?]
 
+def ParsedOperand.integerInputLoweringValid : ParsedOperand → Prop
+  | .mem access .. => ParsedOperand.directMemoryAddressModeValid
+      (.mem access false false false none) = true
+  | .fixed .. | .forward .. => True
+  | _ => False
+
+theorem ParsedOperand.toParsedIntegerInput_isSome_of_lowering_valid
+    (operand : ParsedOperand) (precision : IntegerALU.Precision)
+    (group : Fin 4) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
+    (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
+    (valid : ParsedOperand.integerInputLoweringValid operand) :
+    (toParsedIntegerInput? operand precision group l2b l1b mab pe cycle
+      bar0 bar1 tWord).isSome = true := by
+  cases operand with
+  | fixed kind => simp [toParsedIntegerInput?]
+  | forward kind neg ext rounded => simp [toParsedIntegerInput?]
+  | mem access neg ext rounded mask =>
+      simp only [ParsedOperand.integerInputLoweringValid] at valid
+      have direct := ParsedOperand.toHazardDirectAccess_isSome_of_valid access none pe cycle
+        bar0 bar1 tWord valid
+      have directRead : (ParsedOperand.toDirectMemoryAccess?
+          (.mem access false false false none) pe cycle bar0 bar1 tWord).isSome = true := by
+        simpa [toDirectMemoryAccess?, toDirectMemoryAccessMode?, forHazardAddress] using direct
+      simp only [toParsedIntegerInput?]
+      simpa using directRead
+  | bar lm1 width mask => exact False.elim valid
+  | omr entry mask => exact False.elim valid
+  | matrix y width row => exact False.elim valid
+  | nowrite => exact False.elim valid
+  | l1bm width address => exact False.elim valid
+  | l2bm address l2b => exact False.elim valid
+  | dar address => exact False.elim valid
+
+theorem ParsedOperand.toDirectMemoryDestination_isSome_of_valid
+    (access : ProofsLean.MNCore.Issue.Access) (mask : Option ParsedMask)
+    (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
+    (valid : ParsedOperand.directMemoryAddressModeValid
+      (.mem access false false false mask) = true) :
+    (ParsedOperand.toDirectMemoryDestination?
+      (.mem access false false false mask) pe cycle bar0 bar1 tWord).isSome = true := by
+  have direct := ParsedOperand.toHazardDirectAccess_isSome_of_valid access mask pe cycle
+    bar0 bar1 tWord valid
+  simpa [ParsedOperand.toDirectMemoryDestination?, ParsedOperand.forHazardAddress] using direct
+
+theorem ParsedOperand.resolveMemoryWriteSelection_mem_isSome
+    (parsedAccess : ProofsLean.MNCore.Issue.Access) (access : DirectMemoryAccess)
+    (mask : Option ParsedMask)
+    (registers : ProofsLean.MNCore.Masks.RegisterFile) (cycle : Fin 4)
+    (directive : ParsedMaskDirective) (hasSingleLineMask : Bool) :
+    (resolveMemoryWriteSelection? (.mem parsedAccess false false false mask) access.bank
+      registers cycle directive hasSingleLineMask).isSome = true := by
+  cases mask with
+  | none => cases hasSingleLineMask <;> simp [resolveMemoryWriteSelection?]
+  | some mask =>
+      obtain ⟨selection, resolved⟩ :=
+        resolveParsedMaskSelection?_always_resolves mask registers cycle
+      simp [resolveMemoryWriteSelection?, resolved]
+
 theorem list_mapM_isSome_of_forall {α β : Type}
     (items : List α) (resolve : α → Option β)
     (each : ∀ item, item ∈ items → (resolve item).isSome = true) :
