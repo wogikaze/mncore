@@ -3491,6 +3491,34 @@ theorem executeNormalizedLine_maskDirective_matches_footprint
     executeNormalizedLine_maskDirective_updates_state state widthWords targets entry,
     rfl⟩
 
+/-- A positive normalized nop advances the clock by exactly its scored cost,
+matching its syntactic hazard-clock write footprint. -/
+theorem executeNormalizedLine_positive_nop_matches_footprint
+    (state : State) (count : Nat) (wait : Option (Fin 256))
+    (accepted : checkParsedTopLine (.nop (count + 1) wait) = true) :
+    UnitResource.hazardClock ∈
+        (normalizedLineFootprint (.nop (count + 1) wait)).unitWrites ∧
+      executeNormalizedLine (.nop (count + 1) wait) state =
+        .ok { state with hazardClock := state.hazardClock + (count + 1) } := by
+  constructor
+  · exact NormalizedLine.positive_nop_writes_hazard_clock count wait
+  · have acceptedInstruction :
+        checkParsedTopLine (InstructionLine.toParsed
+          (.nop ⟨count + 1, by omega⟩ wait)) = true := by
+      simpa [InstructionLine.toParsed] using accepted
+    simp [executeNormalizedLine, NormalizedLine.toInstruction?,
+      executeIntegerProducerInstructionLine, acceptedInstruction]
+
+/-- Zero-count nop is erased by normalization. If constructed directly in the
+normalized AST, it cannot advance state and its footprint is empty. -/
+theorem executeNormalizedLine_zero_nop_matches_footprint
+    (state : State) (wait : Option (Fin 256)) :
+    normalizedLineFootprint (.nop 0 wait) = emptyFootprint ∧
+      executeNormalizedLine (.nop 0 wait) state = .failure := by
+  constructor
+  · rfl
+  · simp [executeNormalizedLine, NormalizedLine.toInstruction?]
+
 theorem executeNormalizedProgram_maskDirective_updates_state
     (state : State) (widthWords : Nat) (targets : ParsedMaskTargets)
     (entry : Fin 256) :

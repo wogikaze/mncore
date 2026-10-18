@@ -165,7 +165,8 @@ def normalizedLineFootprint : NormalizedLine → Footprint
       expressions.foldl (fun result expression =>
         Footprint.combine result (parsedExprFootprint expression.toParsed))
         { emptyFootprint with unitWrites := [.hazardClock] }
-  | .nop .. => { emptyFootprint with unitWrites := [.hazardClock] }
+  | .nop 0 _ => emptyFootprint
+  | .nop (_ + 1) _ => { emptyFootprint with unitWrites := [.hazardClock] }
   | .mv transfer => Footprint.combine (normalizedMvFootprint transfer)
       { emptyFootprint with unitWrites := [.hazardClock] }
   | .maskDirective .. =>
@@ -235,6 +236,15 @@ theorem NormalizedLine.maskDirective_footprint (widthWords : Nat)
       (normalizedLineFootprint (.maskDirective widthWords targets entry)).unitWrites) ∧
     (UnitResource.hazardClock ∉
       (normalizedLineFootprint (.maskDirective widthWords targets entry)).unitWrites) := by
+  simp [normalizedLineFootprint]
+
+theorem NormalizedLine.zero_nop_has_empty_footprint (wait : Option (Fin 256)) :
+    normalizedLineFootprint (.nop 0 wait) = emptyFootprint := rfl
+
+theorem NormalizedLine.positive_nop_writes_hazard_clock
+    (count : Nat) (wait : Option (Fin 256)) :
+    UnitResource.hazardClock ∈
+      (normalizedLineFootprint (.nop (count + 1) wait)).unitWrites := by
   simp [normalizedLineFootprint]
 
 end ProofsLean.MNCore
