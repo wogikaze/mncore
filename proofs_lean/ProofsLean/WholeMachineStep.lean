@@ -4086,6 +4086,7 @@ noncomputable def executeHazardAwareNormalizedLineCore (line : NormalizedLine)
 tagged completion immediately if its MV has already been issued. -/
 noncomputable def executeHazardAwareNormalizedLine (line : NormalizedLine)
     (state : HazardAwareState) : ProofsLean.StepResult HazardAwareState := Id.run do
+  if state.stalledPEIssue.isSome then return .failure
   let state ← match normalizedLineWaitTag? line with
     | none => pure state
     | some tag =>
@@ -4093,6 +4094,12 @@ noncomputable def executeHazardAwareNormalizedLine (line : NormalizedLine)
         | none => return .unknown
         | some machine => pure { state with machine }
   return executeHazardAwareNormalizedLineCore line state
+
+theorem executeHazardAwareNormalizedLine_rejects_issue_while_stalled
+    (line blocked : NormalizedLine) (state : HazardAwareState)
+    (stalled : state.stalledPEIssue = some blocked) :
+    executeHazardAwareNormalizedLine line state = .failure := by
+  simp [executeHazardAwareNormalizedLine, stalled]
 
 inductive ScheduledEvent where
   | issue (line : NormalizedLine)

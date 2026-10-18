@@ -113,6 +113,8 @@
     "hazard_aware_transition": {
       "source": "ProofsLean.MNCore.executeHazardAwareNormalizedLineCore",
       "implemented": "PE and block hazard event extraction, violation-to-failure behavior, bounded event history, and deterministic completion of same-tag pending MV transfers before a wait line",
+      "stalled_issue_guard": "Both scheduled and deterministic hazard-aware runners reject new issues while a PE wait is stalled",
+      "stalled_issue_theorem": "ProofsLean.MNCore.executeHazardAwareNormalizedLine_rejects_issue_while_stalled",
       "pe_memory_address_modifiers": "Negated/extended/rounded value modifiers are erased only for hazard address resolution; bank, region, t-indirect/madpe fields, and destination write mask are retained",
       "modifier_projection_theorem": "ProofsLean.MNCore.PEMemory.ParsedOperand.forHazardAddress_mem",
       "malformed_address_mode_handling": "Unsupported direct PE-memory widths and t-indirect/madpe bank combinations fail before hazard lowering",
