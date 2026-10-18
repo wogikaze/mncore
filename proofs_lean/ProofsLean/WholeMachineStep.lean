@@ -1380,7 +1380,7 @@ theorem parsedMatrixMAUDecodeLanes_half_extend_four :
 
 def readParsedMatrixMAUSourcePE (state : State) (coordinate : MABCoordinate)
     (operand : ParsedOperand) (precision : RRN.FloatPrecision) (count : Nat)
-    (negate extend round : Bool) (pe cycle : Fin 4) :
+    (pe cycle : Fin 4) :
     ProofsLean.StepResult (List Nat) := Id.run do
   let physical := physicalPEId coordinate pe
   let oldContext := state.peContext physical
@@ -1394,8 +1394,6 @@ def readParsedMatrixMAUSourcePE (state : State) (coordinate : MABCoordinate)
     match operand with
     | .mem .. | .forward .. => return .unknown
     | _ => return .failure
-  if actualNegate != negate || actualExtend != extend || actualRound != round then
-    return .unknown
   if let .forward kind _ := input then
     if !state.forwardingValid physical (ParsedIntegerInput.forwardUnit kind) cycle then
       return .failure
@@ -1404,7 +1402,8 @@ def readParsedMatrixMAUSourcePE (state : State) (coordinate : MABCoordinate)
   | .failure => return .failure
   | .unknown => return .unknown
   | .ok bus =>
-    match parsedMatrixMAUDecodeLanes? precision count bus negate extend round with
+    match parsedMatrixMAUDecodeLanes? precision count bus
+        actualNegate actualExtend actualRound with
     | none => return .failure
     | some lanes => return .ok lanes
 
@@ -1413,14 +1412,7 @@ def readParsedMatrixMAUSourceAtMAB (state : State) (coordinate : MABCoordinate)
     (cycle : Fin 4) : ProofsLean.StepResult (List Nat) := Id.run do
   let mut values := []
   for pe in List.finRange 4 do
-    let context := { ParsedIntegerContext.ofLinearIndex (physicalPEId coordinate pe) with
-      cycle := cycle }
-    let some (_, negate, extend, round) := parsedFloatMAUSourceAttrs? operand context
-      | match operand with
-        | .mem .. | .forward .. => return .unknown
-        | _ => return .failure
-    match readParsedMatrixMAUSourcePE state coordinate operand format count
-        negate extend round pe cycle with
+    match readParsedMatrixMAUSourcePE state coordinate operand format count pe cycle with
     | .failure => return .failure
     | .unknown => return .unknown
     | .ok lanes => values := values ++ lanes
