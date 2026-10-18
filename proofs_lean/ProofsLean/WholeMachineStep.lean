@@ -2744,20 +2744,17 @@ theorem parsedFloatReluBus_float_passa_preserves_bus_and_sets_zero_flags :
   decide
 
 def lowerParsedMslMsr? (expression : ParsedExpr) :
-    Option (Bool × ParsedOperand) := do
+    Option (Bool × List ParsedOperand) := do
   let isMsl ← match expression.op with
     | .alu .msl none _ _ => some true
     | .alu .msr none _ _ => some false
     | _ => none
   match expression.sources, expression.destinations with
-  | [_], [destination@(.mem ..)] =>
-      some (isMsl, destination)
-  | [_], [destination@(.omr ..)] =>
-      some (isMsl, destination)
-  | [_], [.nowrite] =>
-      some (isMsl, .nowrite)
-  | [_], [destination@(.bar ..)] =>
-      some (isMsl, destination)
+  | [_], destinations@(_ :: _) =>
+      guard (destinations.all fun destination => match destination with
+        | .mem .. | .omr .. | .nowrite | .bar .. => true
+        | _ => false)
+      some (isMsl, destinations)
   | _, _ => none
 
 structure ParsedFloatReluAccesses where
@@ -3207,7 +3204,7 @@ def executeParsedMslMsrAtPE (readState currentState : State)
     bar0 := oldContext.bar0
     bar1 := oldContext.bar1
     tWord := oldContext.tWord }
-  let some (isMsl, destination) := lowerParsedMslMsr? expression | return .unknown
+  let some (isMsl, destinations) := lowerParsedMslMsr? expression | return .unknown
   let sourcePE := mslMsrSourcePE pe isMsl
   let sourceOldContext := readState.peContext sourcePE
   let sourceCoordinates := ParsedIntegerContext.ofLinearIndex sourcePE
@@ -3240,17 +3237,27 @@ def executeParsedMslMsrAtPE (readState currentState : State)
             | some flushSelection =>
                 let output := parsedOutputAfterFlush flushSelection shifted
                 let destinationContext := { context with cycle := cycle, bar0 := bar0, bar1 := bar1 }
-                match writeParsedMslMsrDestination? files destination destinationContext output 0 cycle
-                    currentState.maskDirective hasSingleLineMask with
+                let rec writeDestinations : List ParsedOperand → PEMemory.IntegerRegisterFiles →
+                    BitVec 12 → BitVec 12 → Option
+                      (PEMemory.IntegerRegisterFiles × BitVec 12 × BitVec 12)
+                  | [], currentFiles, currentBar0, currentBar1 =>
+                      some (currentFiles, currentBar0, currentBar1)
+                  | destination :: remaining, currentFiles, currentBar0, currentBar1 => do
+                      let destinationContext := { context with cycle := cycle, bar0 := currentBar0, bar1 := currentBar1 }
+                      let write ← writeParsedMslMsrDestination? currentFiles destination
+                        destinationContext output 0 cycle currentState.maskDirective
+                        hasSingleLineMask
+                      let nextBar0 := match write.barUpdate with
+                        | some (false, value) => value
+                        | _ => currentBar0
+                      let nextBar1 := match write.barUpdate with
+                        | some (true, value) => value
+                        | _ => currentBar1
+                      writeDestinations remaining write.files nextBar0 nextBar1
+                match writeDestinations destinations files bar0 bar1 with
                 | none => .unknown
-                | some write =>
-                    let nextBar0 := match write.barUpdate with
-                      | some (false, value) => value
-                      | _ => bar0
-                    let nextBar1 := match write.barUpdate with
-                      | some (true, value) => value
-                      | _ => bar1
-                    runCycles rest write.files nextBar0 nextBar1
+                | some (nextFiles, nextBar0, nextBar1) =>
+                    runCycles rest nextFiles nextBar0 nextBar1
                       (fun index => if index = cycle then output else outputs index)
   match runCycles [0, 1, 2, 3] (currentState.peRegisters pe) context.bar0 context.bar1
       (fun _ => ⟨0, 0⟩) with
