@@ -20,7 +20,7 @@ inductive OperandRef where
 
 inductive UnitResource where
   | alu | mau | matrix | l1bm | l2bm | mv
-  | forwarding | issueControl | maskRegisters | bar | lbf | hazardClock
+  | forwarding | issueControl | maskRegisters | maskControl | bar | lbf | hazardClock
   deriving DecidableEq, Repr
 
 structure Footprint where
@@ -139,9 +139,22 @@ def instructionLineFootprint : InstructionLine → Footprint
         Footprint.combine result (parsedExprFootprint expression.toParsed))
         { emptyFootprint with unitWrites := [.hazardClock] }
   | .nop .. => { emptyFootprint with unitWrites := [.hazardClock] }
-  | .mv transfer =>
-      Footprint.combine (normalizedMvFootprint transfer)
+  | .mv transfer => Footprint.combine (normalizedMvFootprint transfer)
+      { emptyFootprint with unitWrites := [.hazardClock] }
+
+/-- Footprint of every normalized source line, including zero-cost mask
+directives. A directive changes the mask-control context but consumes no issue
+word and therefore does not write the hazard clock. -/
+def normalizedLineFootprint : NormalizedLine → Footprint
+  | .pe expressions =>
+      expressions.foldl (fun result expression =>
+        Footprint.combine result (parsedExprFootprint expression.toParsed))
         { emptyFootprint with unitWrites := [.hazardClock] }
+  | .nop .. => { emptyFootprint with unitWrites := [.hazardClock] }
+  | .mv transfer => Footprint.combine (normalizedMvFootprint transfer)
+      { emptyFootprint with unitWrites := [.hazardClock] }
+  | .maskDirective .. =>
+      { emptyFootprint with unitWrites := [.maskControl] }
 
 theorem ParsedExpr.source_in_footprint (expression : ParsedExpr)
     (operand : ParsedOperand) (member : operand ∈ expression.sources) :
@@ -190,5 +203,13 @@ theorem InstructionLine.has_hazard_clock_write (line : InstructionLine) :
           initial UnitResource.hazardClock starts
   | nop count wait => simp [instructionLineFootprint]
   | mv transfer => simp [instructionLineFootprint, Footprint.combine]
+
+theorem NormalizedLine.maskDirective_footprint (widthWords : Nat)
+    (targets : ParsedMaskTargets) (entry : Fin 256) :
+    (UnitResource.maskControl ∈
+      (normalizedLineFootprint (.maskDirective widthWords targets entry)).unitWrites) ∧
+    (UnitResource.hazardClock ∉
+      (normalizedLineFootprint (.maskDirective widthWords targets entry)).unitWrites) := by
+  simp [normalizedLineFootprint]
 
 end ProofsLean.MNCore
