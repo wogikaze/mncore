@@ -1139,7 +1139,9 @@ def coverage_catalog() -> dict:
         "corrected_model_errors": [mask_model_correction()],
         "forwarding_findings": forwarding_findings(),
         "syntax_candidates": [{"spelling": name, "formal_step_semantics": "unimplemented"} for name in spellings],
-        "obligations": [{"area": area, "status": "partial_datapath_only" if area in (
+        "obligations": [{"area": area, "status": "partial_whole_machine_transition"
+            if area == "matrix_registers_and_matrix_operations" else
+            "partial_datapath_only" if area in (
             "integer_16_32_64_and_signedness", "parallel_issue_and_memory_port_legality", "wide_access_and_lsb_passthrough",
             "immediates_fixed_operands_and_zero", "pe_rotations_and_coordinate_operands",
             "t_indirect_madpe_and_address_mapping", "masks_flush_and_mask_directives",
