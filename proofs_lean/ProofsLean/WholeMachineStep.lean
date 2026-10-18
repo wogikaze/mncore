@@ -1944,6 +1944,40 @@ theorem readRawL1MwriteBus_memory_never_unknown
         ParsedOperand.toParsedIntegerInput?, h, ParsedIntegerInput.readWithForwarding,
         ParsedIntegerInput.read]
 
+def readL1MwritePEList (state : State) (source : ParsedOperand)
+    (coordinate : MABCoordinate) (cycle : Fin 4) :
+    List (Fin 4) → (Fin 4 → IntegerALU.Bus) →
+      ProofsLean.StepResult (Fin 4 → IntegerALU.Bus)
+    | [], buses => .ok buses
+    | pe :: rest, buses =>
+        match readRawL1MwriteBus state source
+            (physicalPEId coordinate pe) cycle with
+        | .failure => .failure
+        | .unknown => .unknown
+        | .ok bus => readL1MwritePEList state source coordinate cycle rest
+            (fun index => if index = pe then bus else buses index)
+
+theorem readL1MwritePEList_direct_memory_never_unknown
+    (state : State) (access : Access) (negated extended rounded : Bool)
+    (mask : Option ParsedMask) (coordinate : MABCoordinate) (cycle : Fin 4)
+    (pes : List (Fin 4)) (buses : Fin 4 → IntegerALU.Bus) :
+    readL1MwritePEList state (.mem access negated extended rounded mask)
+      coordinate cycle pes buses ≠ .unknown := by
+  induction pes generalizing buses with
+  | nil => simp [readL1MwritePEList]
+  | cons pe rest ih =>
+      simp only [readL1MwritePEList]
+      cases result : readRawL1MwriteBus state
+          (.mem access negated extended rounded mask)
+          (physicalPEId coordinate pe) cycle with
+      | failure => simp [result]
+      | unknown =>
+          exact (readRawL1MwriteBus_memory_never_unknown state access negated
+            extended rounded mask (physicalPEId coordinate pe) cycle result).elim
+      | ok bus =>
+          simp only [result]
+          exact ih (fun index => if index = pe then bus else buses index)
+
 def readL1MwriteBusesAtBank (state : State) (access : ParsedL1MwriteAccess)
     (bank : Fin 64) (mab : Fin 16) (cycle : Fin 4) :
     ProofsLean.StepResult (Fin 4 → IntegerALU.Bus) :=
@@ -1951,16 +1985,22 @@ def readL1MwriteBusesAtBank (state : State) (access : ParsedL1MwriteAccess)
     ⟨⟨bank.val / 16, by have h := bank.isLt; omega⟩,
       ⟨bank.val / 8 % 2, by have h := bank.isLt; omega⟩,
       ⟨bank.val % 8, by have h := bank.isLt; omega⟩, mab⟩
-  let rec readPEs : List (Fin 4) → (Fin 4 → IntegerALU.Bus) →
-      ProofsLean.StepResult (Fin 4 → IntegerALU.Bus)
-    | [], buses => .ok buses
-    | pe :: rest, buses =>
-        match readRawL1MwriteBus state access.source
-            (physicalPEId coordinate pe) cycle with
-        | .failure => .failure
-        | .unknown => .unknown
-        | .ok bus => readPEs rest (fun index => if index = pe then bus else buses index)
-  readPEs (List.finRange 4) (fun _ => ⟨0, 0⟩)
+  readL1MwritePEList state access.source coordinate cycle
+    (List.finRange 4) (fun _ => ⟨0, 0⟩)
+
+theorem readL1MwriteBusesAtBank_direct_memory_never_unknown
+    (state : State) (access : ParsedL1MwriteAccess)
+    (operandAccess : Access) (negated extended rounded : Bool)
+    (mask : Option ParsedMask) (bank : Fin 64) (mab : Fin 16) (cycle : Fin 4)
+    (source : access.source = .mem operandAccess negated extended rounded mask) :
+    readL1MwriteBusesAtBank state access bank mab cycle ≠ .unknown := by
+  simp only [readL1MwriteBusesAtBank, source]
+  exact readL1MwritePEList_direct_memory_never_unknown state operandAccess
+    negated extended rounded mask
+    ⟨⟨bank.val / 16, by have h := bank.isLt; omega⟩,
+      ⟨bank.val / 8 % 2, by have h := bank.isLt; omega⟩,
+      ⟨bank.val % 8, by have h := bank.isLt; omega⟩, mab⟩
+    cycle (List.finRange 4) (fun _ => ⟨0, 0⟩)
 
 def readL1M4writeBusesAtBank (state : State) (access : ParsedL1MwriteAccess)
     (bank : Fin 64) (cycle : Fin 4) :

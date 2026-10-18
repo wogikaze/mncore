@@ -1947,6 +1947,11 @@
         "theorem": "ProofsLean.MNCore.rawL1Mwrite_invalid_memory_source_is_failure",
         "memory_read_unknown_free_theorem": "ProofsLean.MNCore.readRawL1MwriteBus_memory_never_unknown",
         "memory_read_unknown_free_scope": "For every direct memory source and PE/cycle, the raw L1 mwrite read is either failure or success; unresolved forwarding cannot arise from this source form. This is a per-read property and is not yet lifted through the complete all-bank producer transition.",
+        "mwrite_pe_group_unknown_free_theorems": [
+          "ProofsLean.MNCore.readL1MwritePEList_direct_memory_never_unknown",
+          "ProofsLean.MNCore.readL1MwriteBusesAtBank_direct_memory_never_unknown"
+        ],
+        "mwrite_pe_group_unknown_free_scope": "The direct-memory guarantee composes across the four PEs read for one mwrite bank/MAB/cycle. It does not yet cover m4write group traversal, all cycles/banks, forwarding sources, or complete producer execution.",
         "rust_reference": "viz/core/src/vsm.rs::parse_operand separates PE-memory banks from L1BM/L2BM/OMR operands; viz/core/src/machine.rs::Machine::read_raw_untraced reports unsupported non-memory sources.",
         "scope_limit": "The Lean failure theorem covers malformed direct AST memory banks that cannot represent a Rust PE-memory operand. Parser-produced PE-memory reads still require source-level differential conformance."
       },
