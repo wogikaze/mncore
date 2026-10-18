@@ -1094,6 +1094,24 @@ def lowerParsedMatrixWrite? (expression : ParsedExpr) (context : ParsedIntegerCo
       some ⟨source, sideY, row.val, width.val == 4, negate, extend, round⟩
   | _, _, _ => none
 
+def lowerParsedMatrixWriteResult (expression : ParsedExpr) (context : ParsedIntegerContext) :
+    ProofsLean.StepResult ParsedMatrixWriteAccesses :=
+  match lowerParsedMatrixWrite? expression context with
+  | some accesses => .ok accesses
+  | none => match expression.sources with
+      | [.mem ..] | [.forward ..] => .unknown
+      | _ => .failure
+
+theorem lowerParsedMatrixWrite_fixed_source_is_failure
+    (fixed : ParsedFixed) (context : ParsedIntegerContext) (row : Fin (2 ^ 32)) :
+    lowerParsedMatrixWriteResult
+      { op := .matrixWrite .d
+        sources := [.fixed fixed]
+        destinations := [.matrix false ⟨1, by decide⟩ (some row)]
+        flush := none
+        text := "" } context = .failure := by
+  rfl
+
 def prepareMatrixWriteBus (precision : ParsedPrecision) (bus : IntegerALU.Bus)
     (negate extend round twoRows : Bool) : ProofsLean.StepResult IntegerALU.Bus :=
   let converted := match precision with
@@ -1159,9 +1177,10 @@ def readParsedMatrixWriteBuses (state : State) (coordinate : MABCoordinate)
     | [] => .ok buses
     | pe :: rest =>
         let context := groupContext.at pe cycle
-        match lowerParsedMatrixWrite? expression context with
-        | none => .unknown
-        | some accesses =>
+        match lowerParsedMatrixWriteResult expression context with
+        | .failure => .failure
+        | .unknown => .unknown
+        | .ok accesses =>
             match ParsedIntegerInput.readWithForwarding
                 (state.peRegisters (physicalPEId coordinate pe))
                 (stateForwardingSlots state (physicalPEId coordinate pe)) cycle accesses.source with
@@ -1183,9 +1202,10 @@ def executeParsedMatrixWriteCycle (state : State) (coordinate : MABCoordinate)
   let groupContext := matrixWriteGroupContext state coordinate
   match expression.op with
   | .matrixWrite .d =>
-      match lowerParsedMatrixWrite? expression (groupContext.at 0 cycle) with
-      | none => .unknown
-      | some accesses =>
+      match lowerParsedMatrixWriteResult expression (groupContext.at 0 cycle) with
+      | .failure => .failure
+      | .unknown => .unknown
+      | .ok accesses =>
           match readParsedMatrixWriteBuses state coordinate expression cycle with
           | .failure => .failure
           | .unknown => .unknown
@@ -1193,9 +1213,10 @@ def executeParsedMatrixWriteCycle (state : State) (coordinate : MABCoordinate)
               .ok (writeParsedDoubleMatrixStoreRow store coordinate.mab accesses.sideY
                 (doubleMatrixWriteRowAt accesses.row cycle) (fun pe => (buses pe).high))
   | .matrixWrite .f | .matrixWrite .g =>
-      match lowerParsedMatrixWrite? expression (groupContext.at 0 cycle) with
-      | none => .unknown
-      | some accesses =>
+      match lowerParsedMatrixWriteResult expression (groupContext.at 0 cycle) with
+      | .failure => .failure
+      | .unknown => .unknown
+      | .ok accesses =>
           match readParsedMatrixWriteBuses state coordinate expression cycle with
           | .failure => .failure
           | .unknown => .unknown
@@ -1203,9 +1224,10 @@ def executeParsedMatrixWriteCycle (state : State) (coordinate : MABCoordinate)
               .ok (writeParsedSingleMatrixStoreRow store coordinate.mab accesses.sideY
                 (singleMatrixWriteRowAt accesses.row cycle) (singleMatrixWriteValues buses))
   | .matrixWrite .h =>
-      match lowerParsedMatrixWrite? expression (groupContext.at 0 cycle) with
-      | none => .unknown
-      | some accesses =>
+      match lowerParsedMatrixWriteResult expression (groupContext.at 0 cycle) with
+      | .failure => .failure
+      | .unknown => .unknown
+      | .ok accesses =>
           match readParsedMatrixWriteBuses state coordinate expression cycle with
           | .failure => .failure
           | .unknown => .unknown
