@@ -1456,17 +1456,6 @@ theorem parsedMatrixMAUCalculateRows_double_zero_store :
       false .d .mul none false [0, 0, 0, 0] [] = some [0, 0, 0, 0] := by
   decide
 
-def parsedMatrixMAUSourceReadFailure (precision : ParsedPrecision) :
-    List Nat × Bool × Bool :=
-  (List.replicate (parsedMatrixMAURowCount precision) 0, true, true)
-
-theorem parsedMatrixMAUSourceReadFailure_contract (precision : ParsedPrecision) :
-    (parsedMatrixMAUSourceReadFailure precision).1 =
-        List.replicate (parsedMatrixMAURowCount precision) 0 ∧
-      (parsedMatrixMAUSourceReadFailure precision).2.1 = true ∧
-      (parsedMatrixMAUSourceReadFailure precision).2.2 = true := by
-  simp [parsedMatrixMAUSourceReadFailure]
-
 def executeParsedMatrixMAUCalculationAtMAB (state : State) (coordinate : MABCoordinate)
     (expression : ParsedExpr) (cycle : Fin 4) :
     ProofsLean.StepResult (List Nat × Bool × Bool) := Id.run do
@@ -1483,7 +1472,7 @@ def executeParsedMatrixMAUCalculationAtMAB (state : State) (coordinate : MABCoor
   let some vectorFormat := parsedMatrixMAUFloatFormat precision | return .failure
   let vectorValues ← match readParsedMatrixMAUSourceAtMAB state coordinate vector
       vectorFormat (parsedMatrixMAUVectorLanesPerPE precision) cycle with
-    | .failure => return .ok (parsedMatrixMAUSourceReadFailure precision)
+    | .failure => return .failure
     | .unknown => return .unknown
     | .ok values => pure values
   let accumulatorValues ← match accumulator with
@@ -1494,7 +1483,7 @@ def executeParsedMatrixMAUCalculationAtMAB (state : State) (coordinate : MABCoor
         | _ => RRN.FloatPrecision.single
       match readParsedMatrixMAUSourceAtMAB state coordinate source accumulatorFormat
           (parsedMatrixMAUAccumulatorLanesPerPE precision) cycle with
-      | .failure => return .ok (parsedMatrixMAUSourceReadFailure precision)
+      | .failure => return .failure
       | .unknown => return .unknown
       | .ok values => pure values
   let store := state.matrixRegisters coordinate.group coordinate.l2b coordinate.l1b
