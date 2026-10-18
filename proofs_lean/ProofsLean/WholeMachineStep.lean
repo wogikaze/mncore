@@ -1377,6 +1377,39 @@ theorem parsedIntegerMatrixReadLineExpressionReady_alu_of_lowered_and_resolved
   · intro cycle member unit
     exact stateForwardingSlots_never_unknown_of_resolved state pe resolved unit cycle
 
+theorem parsedIntegerMatrixReadLineExpressionReady_constant_of_lowered
+    (state : State) (pe : PEId) (expression : ParsedExpr)
+    (control : ParsedMaskExecutionControl) (hasSingleLineMask : Bool)
+    (isConstant : expression.op = .zero ∨
+      ∃ value unsigned, expression.op = .immediate value unsigned)
+    (lowered : ∀ cycle, cycle ∈ PEMemory.parsedIntegerALUCycles → ∃ targets,
+      PEMemory.ParsedExpr.toDirectMaskedConstantWrites? expression
+        (state.peRegisters pe).maskRegisters control.directive hasSingleLineMask
+        control.context.group control.context.l2b control.context.l1b control.context.mab
+        control.context.pe cycle control.context.bar0 control.context.bar1
+        control.context.tWord = some targets) :
+    PEMemory.parsedIntegerMatrixReadLineExpressionReady (state.peRegisters pe)
+      (stateForwardingSlots state pe) expression control hasSingleLineMask := by
+  rcases isConstant with isZero | ⟨value, unsigned, isImmediate⟩
+  · simp only [PEMemory.parsedIntegerMatrixReadLineExpressionReady, isZero]
+    exact lowered
+  · simp only [PEMemory.parsedIntegerMatrixReadLineExpressionReady, isImmediate]
+    exact lowered
+
+theorem parsedIntegerMatrixReadLineExpressionReady_matrixRead_of_lowered
+    (state : State) (pe : PEId) (expression : ParsedExpr)
+    (control : ParsedMaskExecutionControl) (hasSingleLineMask : Bool)
+    (isMatrixRead : ∃ precision, expression.op = .matrixRead precision)
+    (lowered : ∀ cycle, cycle ∈ PEMemory.parsedMatrixReadCycles → ∃ accesses,
+      PEMemory.ParsedExpr.toDirectMatrixReadAccesses? expression
+        (state.peRegisters pe).maskRegisters control.directive hasSingleLineMask
+        { control.context with cycle := cycle } = some accesses) :
+    PEMemory.parsedIntegerMatrixReadLineExpressionReady (state.peRegisters pe)
+      (stateForwardingSlots state pe) expression control hasSingleLineMask := by
+  obtain ⟨precision, operation⟩ := isMatrixRead
+  simp only [PEMemory.parsedIntegerMatrixReadLineExpressionReady, operation]
+  exact lowered
+
 def readParsedMatrixWriteBusPE (state : State) (coordinate : MABCoordinate)
     (expression : ParsedExpr) (cycle pe : Fin 4) : ProofsLean.StepResult IntegerALU.Bus :=
   let context := (matrixWriteGroupContext state coordinate).at pe cycle

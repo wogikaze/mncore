@@ -2052,7 +2052,9 @@
             "ProofsLean.MNCore.PEMemory.prepareParsedIntegerMatrixReadLineExpression_constant_never_unknown_of_lowered",
             "ProofsLean.MNCore.PEMemory.prepareParsedIntegerMatrixReadLineExpression_matrixRead_never_unknown_of_lowered",
             "ProofsLean.MNCore.PEMemory.prepareParsedIntegerMatrixReadLineExpression_never_unknown_of_ready",
-            "ProofsLean.MNCore.parsedIntegerMatrixReadLineExpressionReady_alu_of_lowered_and_resolved"
+            "ProofsLean.MNCore.parsedIntegerMatrixReadLineExpressionReady_alu_of_lowered_and_resolved",
+            "ProofsLean.MNCore.parsedIntegerMatrixReadLineExpressionReady_constant_of_lowered",
+            "ProofsLean.MNCore.parsedIntegerMatrixReadLineExpressionReady_matrixRead_of_lowered"
           ],
           "theorems": [
             "ProofsLean.MNCore.executeIntegerProducerLineAtPEs_never_unknown",
