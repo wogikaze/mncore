@@ -111,6 +111,10 @@ import Lean
 #print axioms ProofsLean.MNCore.executeL1ReduceCyclesAtBank
 #print axioms ProofsLean.MNCore.executeParsedL1ReduceAtAllBanks
 #print axioms ProofsLean.MNCore.executeParsedL1ReduceProducers
+#print axioms ProofsLean.MNCore.lowerParsedL2?
+#print axioms ProofsLean.MNCore.parsedL2Writes?
+#print axioms ProofsLean.MNCore.executeParsedL2BlockExpression
+#print axioms ProofsLean.MNCore.executeParsedL2BlockProducers
 #print axioms ProofsLean.MNCore.lowerParsedL1ToPE?
 #print axioms ProofsLean.MNCore.l1ToPEBusAt
 #print axioms ProofsLean.MNCore.executeParsedL1ToPEAtPEs

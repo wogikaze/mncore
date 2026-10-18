@@ -26,6 +26,7 @@ def parsedExprIsSupportedPELineProducer (expression : ParsedExpr) : Bool :=
   | .l1bm (.mwrite _) | .l1bm (.m4write _) => true
   | .l1bm .pbcast | .l1bm .mbcast | .l1bm .m4bcast | .l1bm (.distrib _) => true
   | .l1bm (.gather _) | .l1bm (.reduce ..) | .l1bm (.reduce4 ..) => true
+  | .l2bm _ => true
   | _ => false
 
 def parsedExprIsMatrixReadProducer (expression : ParsedExpr) : Bool :=
@@ -1143,6 +1144,182 @@ def executeParsedL1ReduceProducers (readState currentState : State)
   | [expression] => executeParsedL1ReduceAtAllBanks readState currentState expression updateTurnaround
   | _ => .unknown
 
+def parsedExprIsL2BMProducer (expression : ParsedExpr) : Bool :=
+  match expression.op with
+  | .l2bm .. => true
+  | _ => false
+
+structure ParsedL2Access where
+  op : ParsedL2Op
+  sourceAddress : Option Nat
+  destinationAddress : Option Nat
+
+def parsedL1BMAddress? : ParsedOperand → Option Nat
+  | .l1bm _ (some address) => some address.val
+  | _ => none
+
+def parsedL2BMAddress? : ParsedOperand → Option Nat
+  | .l2bm address _ => some address.val
+  | _ => none
+
+def lowerParsedL2? (expression : ParsedExpr) : Option ParsedL2Access := do
+  match expression.op with
+  | .l2bm op =>
+      match expression.sources, expression.destinations with
+      | [source], [destination] =>
+          let sourceAddress := match op with
+            | .bcast _ | .bcast2 _ | .distrib _ | .dars => parsedL2BMAddress? source
+            | .fromL1b _ | .reduce _ _ | .reduce2 _ | .gather | .imcast _ | .darw =>
+                parsedL1BMAddress? source
+          let destinationAddress := match op with
+            | .bcast _ | .bcast2 _ | .distrib _ | .imcast _ => parsedL1BMAddress? destination
+            | .fromL1b _ | .reduce _ _ | .reduce2 _ | .gather => parsedL2BMAddress? destination
+            | .dars | .darw => none
+          some ⟨op, sourceAddress, destinationAddress⟩
+      | _, _ => none
+  | _ => none
+
+def parsedL2SetContains (set : ParsedL1bSet) (l1b : Fin 8) : Bool :=
+  set.mask.val / 2 ^ l1b.val % 2 == 1
+
+def l2PhysicalCell (l2Index : Fin 8) (address : Nat) : MVSemantics.Cell :=
+  ⟨.l2bm, ⟨l2Index.val / 2, by omega⟩, ⟨l2Index.val % 2, by omega⟩,
+    address % (2 ^ 15)⟩
+
+def l2PhysicalL1Bank (l2Index : Fin 8) (l1b : Fin 8) : Fin 64 :=
+  ⟨l2Index.val * 8 + l1b.val, by omega⟩
+
+def parsedL2RRNUnit (rrn : ParsedRrn) : BitVec 64 :=
+  let bits := if rrn.precision.val == 'd' || rrn.precision.val == 'l' then 64
+    else if rrn.precision.val == 'f' || rrn.precision.val == 'i' then 32 else 16
+  let lane := match rrn.op with
+    | .fadd | .iadd | .bor | .or => 0
+    | .band => 2 ^ bits - 1
+    | .and => 1
+    | .max => 2 ^ bits - 1
+    | .min => 2 ^ (bits - 1) - 1
+  BitVec.ofNat 64 ((List.range (64 / bits)).foldl (fun acc index =>
+    acc + lane * 2 ^ (64 - bits * (index + 1))) 0)
+
+def parsedL2ReduceWord? (rrn : ParsedRrn) (values : List (BitVec 64)) :
+    Option (BitVec 64) := do
+  if rrn.op == .fadd then
+    match rrn.precision.val with
+    | 'd' => some (RRN.reduceLongFloatAddFormat .double values)
+    | 'f' => some (RRN.reduceLongFloatAddFormat .single values)
+    | 'h' => some (RRN.reduceLongFloatAddFormat .half values)
+    | _ => none
+  else do
+    let (precision, operation) ← parsedL1IntegerRRN? rrn
+    some (RRN.reduceLongInteger operation precision values)
+
+def parsedL2Writes? (readState : State) (access : ParsedL2Access) :
+    Option (List (Fin 64 × Fin L1Transfer.l1bmLongWords × BitVec 64) ×
+      List (MVSemantics.Cell × BitVec 64)) := do
+  let sourceAddress ← access.sourceAddress
+  let destinationAddress ← access.destinationAddress
+  let l1read (l2Index : Fin 8) (l1b : Fin 8) (offset : Nat) : BitVec 64 :=
+    readState.l1bm (l2PhysicalL1Bank l2Index l1b)
+      ⟨offset % L1Transfer.l1bmLongWords, Nat.mod_lt _ (by decide)⟩
+  let l2read (l2Index : Fin 8) (offset : Nat) : BitVec 64 :=
+    readState.blockMemory (l2PhysicalCell l2Index offset)
+  let l1write (l2Index : Fin 8) (l1b : Fin 8) (offset : Nat) (value : BitVec 64) :=
+    (l2PhysicalL1Bank l2Index l1b,
+      ⟨offset % L1Transfer.l1bmLongWords, Nat.mod_lt _ (by decide)⟩, value)
+  let l2write (l2Index : Fin 8) (offset : Nat) (value : BitVec 64) :=
+    (l2PhysicalCell l2Index offset, value)
+  let l2Indices := List.finRange 8
+  let cycles := List.range 4
+  let words16 := List.range 16
+  let l1Writes := match access.op with
+    | .bcast set => l2Indices.flatMap fun l2Index => cycles.flatMap fun cycle =>
+        (List.finRange 8).filter (parsedL2SetContains set) |>.flatMap fun l1b =>
+          words16.map fun word => l1write l2Index l1b
+            (destinationAddress + cycle * 16 + word)
+            (l2read l2Index (sourceAddress + cycle * 16 + word))
+    | .bcast2 set => l2Indices.flatMap fun l2Index => cycles.flatMap fun cycle =>
+        (List.finRange 8).filter (parsedL2SetContains set) |>.flatMap fun l1b =>
+          words16.map fun word => l1write l2Index l1b
+            (destinationAddress + cycle * 16 + word)
+            (l2read l2Index (sourceAddress + cycle * 64 + 16 * (l1b.val / 2) + word))
+    | .distrib set => l2Indices.flatMap fun l2Index => cycles.flatMap fun cycle =>
+        (List.finRange 8).filter (parsedL2SetContains set) |>.flatMap fun l1b =>
+          (List.range 8).map fun word => l1write l2Index l1b
+            (destinationAddress + cycle * 8 + word)
+            (l2read l2Index (sourceAddress + cycle * 64 + 8 * l1b.val + word))
+    | .imcast set => l2Indices.flatMap fun l2Index => cycles.flatMap fun cycle =>
+        (List.finRange 8).filter (parsedL2SetContains set) |>.flatMap fun sourceL1b =>
+          (List.finRange 8).filter (fun destinationL1b =>
+            destinationL1b != sourceL1b &&
+              Nat.land destinationL1b.val set.immode.val ==
+                Nat.land sourceL1b.val set.immode.val) |>.flatMap fun destinationL1b =>
+            words16.map fun word => l1write l2Index destinationL1b
+              (destinationAddress + cycle * 16 + word)
+              (l1read l2Index sourceL1b (sourceAddress + cycle * 16 + word))
+    | _ => []
+  let l2Writes := match access.op with
+    | .fromL1b selected => do
+        if h : selected.val < 8 then
+          let l1b : Fin 8 := ⟨selected.val, h⟩
+          l2Indices.flatMap fun l2Index => cycles.flatMap fun cycle =>
+            words16.map fun word => l2write l2Index (destinationAddress + cycle * 16 + word)
+              (l1read l2Index l1b (sourceAddress + cycle * 16 + word))
+        else []
+    | .gather => l2Indices.flatMap fun l2Index => cycles.flatMap fun cycle =>
+        (List.finRange 8).flatMap fun l1b => (List.range 8).map fun word =>
+          l2write l2Index (destinationAddress + cycle * 64 + 8 * l1b.val + word)
+            (l1read l2Index l1b (sourceAddress + cycle * 8 + word))
+    | .reduce rrn set => l2Indices.flatMap fun l2Index => cycles.flatMap fun cycle =>
+        words16.map fun word =>
+          let values := (List.finRange 8).map fun l1b =>
+            if parsedL2SetContains set l1b then
+              l1read l2Index (l1b) (sourceAddress + cycle * 16 + word)
+            else parsedL2RRNUnit rrn
+          l2write l2Index (destinationAddress + cycle * 16 + word)
+            ((parsedL2ReduceWord? rrn values).getD 0)
+    | .reduce2 rrn => l2Indices.flatMap fun l2Index => cycles.flatMap fun cycle =>
+        (List.finRange 4).flatMap fun group => words16.map fun word =>
+          let values := (List.finRange 2).map fun index =>
+            let l1b : Fin 8 := ⟨group.val * 2 + index.val, by omega⟩
+            l1read l2Index l1b (sourceAddress + cycle * 16 + word)
+          l2write l2Index (destinationAddress + cycle * 64 + 16 * group.val + word)
+            ((parsedL2ReduceWord? rrn values).getD 0)
+    | _ => []
+  match access.op with
+  | .dars | .darw => none
+  | .fromL1b selected => if selected.val < 8 then some (l1Writes, l2Writes) else none
+  | .bcast _ | .bcast2 _ | .distrib _ | .imcast _ | .gather | .reduce .. | .reduce2 .. =>
+      some (l1Writes, l2Writes)
+
+def executeParsedL2BlockExpression (readState currentState : State)
+    (expression : ParsedExpr) : ProofsLean.StepResult State :=
+  match expression.op with
+  | .l2bm .dars | .l2bm .darw => .failure
+  | .l2bm _ =>
+      match lowerParsedL2? expression with
+      | none => .failure
+      | some access =>
+          match parsedL2Writes? readState access with
+          | none => .failure
+          | some (l1Writes, l2Writes) =>
+              .ok { currentState with
+                l1bm := fun bank =>
+                  let writes := l1Writes.filter (fun write => write.1 == bank) |>.map
+                    (fun write => (write.2.1, write.2.2))
+                  L1Transfer.commitL1Writes (currentState.l1bm bank) writes
+                blockMemory := MVSemantics.commitWrites currentState.blockMemory l2Writes }
+  | _ => .unknown
+
+def executeParsedL2BlockProducers (readState currentState : State)
+    (expressions : List ParsedExpr) : ProofsLean.StepResult State := Id.run do
+  let mut state := currentState
+  for expression in expressions.filter parsedExprIsL2BMProducer do
+    match executeParsedL2BlockExpression readState state expression with
+    | .failure => return .failure
+    | .unknown => return .unknown
+    | .ok next => state := next
+  return .ok state
+
 structure ParsedL1ToPEAccess where
   sourceBase : Option (Fin L1Transfer.l1bmLongWords)
   twoLongWords : Bool
@@ -1368,7 +1545,9 @@ noncomputable def executeIntegerProducerInstructionLine
     | .pe normalizedExpressions =>
         let expressions := normalizedExpressions.map NormalizedExpr.toParsed
         if expressions.all parsedExprIsSupportedPELineProducer then
-          match executeIntegerProducerLineAtPEs expressions (List.finRange 4096) state with
+          let peExpressions := expressions.filter (fun expression =>
+            !parsedExprIsL2BMProducer expression)
+          match executeIntegerProducerLineAtPEs peExpressions (List.finRange 4096) state with
           | .failure => .failure
           | .unknown => .unknown
           | .ok nextPEs =>
@@ -1403,10 +1582,14 @@ noncomputable def executeIntegerProducerInstructionLine
                         | .failure => .failure
                         | .unknown => .unknown
                         | .ok nextWithBroadcast =>
-                          .ok { nextWithBroadcast with
-                            hazardClock := nextWithBroadcast.hazardClock + InstructionLine.cost line
-                            l1bmTurnaroundValid :=
-                              if noForward then nextWithBroadcast.l1bmTurnaroundValid else hasPEToL1Producer }
+                          match executeParsedL2BlockProducers state nextWithBroadcast expressions with
+                          | .failure => .failure
+                          | .unknown => .unknown
+                          | .ok nextWithL2 =>
+                            .ok { nextWithL2 with
+                              hazardClock := nextWithL2.hazardClock + InstructionLine.cost line
+                              l1bmTurnaroundValid :=
+                                if noForward then nextWithL2.l1bmTurnaroundValid else hasPEToL1Producer }
         else .unknown
     | .nop count _ =>
         .ok { state with hazardClock := state.hazardClock + count.val }
@@ -1468,7 +1651,8 @@ theorem executeIntegerProducerInstructionLine_pe_success
     (supported : (normalizedExpressions.map NormalizedExpr.toParsed).all
       parsedExprIsSupportedPELineProducer = true)
     (executed : executeIntegerProducerLineAtPEs
-      (normalizedExpressions.map NormalizedExpr.toParsed) (List.finRange 4096) state =
+      ((normalizedExpressions.map NormalizedExpr.toParsed).filter
+        (fun expression => !parsedExprIsL2BMProducer expression)) (List.finRange 4096) state =
         .ok nextPEs)
     (matrixWrites : executeParsedMatrixWritesAtMABs state allMABCoordinates
       (normalizedExpressions.map NormalizedExpr.toParsed) nextPEs = .ok next)
@@ -1495,20 +1679,24 @@ theorem executeIntegerProducerInstructionLine_pe_success
             (parsedExprIsNoForwardProducer ∘ NormalizedExpr.toParsed))
           (normalizedExpressions.any
             (parsedExprHasSingleLineWriteMask ∘ NormalizedExpr.toParsed))
-      | _ => .unknown) = .ok nextBroadcast) :
+      | _ => .unknown) = .ok nextBroadcast)
+    (nextL2 : State)
+    (l2Writes : executeParsedL2BlockProducers state nextBroadcast
+      (normalizedExpressions.map NormalizedExpr.toParsed) = .ok nextL2)
+    :
     executeIntegerProducerInstructionLine (.pe normalizedExpressions) state =
-      .ok { nextBroadcast with
-        hazardClock := nextBroadcast.hazardClock + InstructionLine.cost (.pe normalizedExpressions)
+      .ok { nextL2 with
+        hazardClock := nextL2.hazardClock + InstructionLine.cost (.pe normalizedExpressions)
         l1bmTurnaroundValid :=
           if ∃ expression ∈ normalizedExpressions,
             parsedExprIsNoForwardProducer expression.toParsed = true
-          then nextBroadcast.l1bmTurnaroundValid
+          then nextL2.l1bmTurnaroundValid
           else normalizedExpressions.any (fun expression =>
             parsedExprIsL1MwriteProducer expression.toParsed ||
               parsedExprIsL1GatherProducer expression.toParsed ||
               parsedExprIsL1ReduceProducer expression.toParsed) } := by
   simp [executeIntegerProducerInstructionLine, accepted, supported, executed,
-    matrixWrites, l1Writes, gatherWrites, reduceWrites, l1ToPE, List.any_map]
+    matrixWrites, l1Writes, gatherWrites, reduceWrites, l1ToPE, l2Writes, List.any_map]
   rfl
 
 end ProofsLean.MNCore
