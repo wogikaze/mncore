@@ -42,7 +42,15 @@ def executeParsedFloatAddCycleAtPE (readFiles currentFiles : IntegerRegisterFile
     (expression : ParsedExpr) (pe cycle : Fin 4) (bar0 bar1 : BitVec 12)
     (tWord : BitVec 32) : ProofsLean.StepResult (IntegerRegisterFiles × IntegerALU.Bus) :=
   match FloatPEMemory.lowerParsedFloatAdd? expression pe cycle bar0 bar1 tWord with
-  | none => .unknown
+  | none =>
+    match FloatPEMemory.lowerParsedFloatSubtract? expression pe cycle bar0 bar1 tWord with
+    | none => .unknown
+    | some (leftAddress, rightAddress, destinationAddress) =>
+        let left := FloatPEMemory.readPair .lm0 readFiles.lm0 leftAddress
+        let right := FloatPEMemory.readPair .lm0 readFiles.lm0 rightAddress
+        let output := FloatSubtract.subtractBus left right
+        let nextLM1 := FloatPEMemory.writePair currentFiles.lm1 destinationAddress output
+        .ok ({ currentFiles with lm1 := nextLM1 }, ⟨output, 0⟩)
   | some (leftAddress, rightAddress, destinationAddress) =>
       let left := FloatPEMemory.readPair .lm0 readFiles.lm0 leftAddress
       let right := FloatPEMemory.readPair .lm0 readFiles.lm0 rightAddress
