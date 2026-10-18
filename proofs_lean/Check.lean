@@ -84,7 +84,12 @@ import Lean
 #print axioms ProofsLean.MNCore.parsedFloatMAUSource?_memory
 #print axioms ProofsLean.MNCore.parsedFloatMAUSource?_forward
 #print axioms ProofsLean.MNCore.executeParsedFloatMAUCycleAtPE_fma_success
-#print axioms ProofsLean.MNCore.lowerParsedFloatPassa?
+#print axioms ProofsLean.MNCore.lowerParsedPassa?
+#print axioms ProofsLean.MNCore.parsedMauHalfSelectsPE_upper_lanes
+#print axioms ProofsLean.MNCore.parsedMauHalfSelectsPE_lower_lanes
+#print axioms ProofsLean.MNCore.prepareDoubleMAUSource_identity
+#print axioms ProofsLean.MNCore.prepareDoubleMAUSource_extend_single_one
+#print axioms ProofsLean.MNCore.prepareDoubleMAUSource_round_double_three_halves
 #print axioms ProofsLean.MNCore.extendHalfPairToSingleBus_lane_order
 #print axioms ProofsLean.MNCore.roundDoublePairToSingleBus_lane_order
 #print axioms ProofsLean.MNCore.prepareMatrixWriteBus
