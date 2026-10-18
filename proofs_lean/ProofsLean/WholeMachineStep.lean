@@ -1481,6 +1481,14 @@ def executeParsedMatrixWritesAtMABs (readState : State) (coordinates : List MABC
         | .ok nextState =>
             executeParsedMatrixWritesAtMABs readState rest expressions nextState
 
+theorem executeParsedMatrixWritesAtMABs_no_matrix_write_never_unknown
+    (readState : State) (coordinates : List MABCoordinate)
+    (expressions : List ParsedExpr) (currentState : State)
+    (noMatrixWrite : expressions.any parsedExprIsMatrixWriteProducer = false) :
+    executeParsedMatrixWritesAtMABs readState coordinates expressions currentState ≠ .unknown := by
+  unfold executeParsedMatrixWritesAtMABs
+  simp [noMatrixWrite]
+
 theorem executeParsedMatrixWritesAtMABs_preserves_pe_state
     (readState currentState next : State) (coordinates : List MABCoordinate)
     (expressions : List ParsedExpr)
@@ -5970,6 +5978,20 @@ theorem executeParsedMatrixMAUAndWrites_known_never_unknown
       | failure => simp [executeParsedMatrixMAUAndWrites, producer, writes]
       | unknown => exact (matrixWritesKnown afterMAU writes).elim
       | ok next => simp [executeParsedMatrixMAUAndWrites, producer, writes]
+
+theorem executeParsedMatrixMAUAndWrites_no_matrix_write_never_unknown
+    (readState currentState : State) (expressions : List ParsedExpr)
+    (noForward hasSingleLineMask : Bool)
+    (producerKnown : executeParsedMatrixMAUProducer readState currentState expressions
+      noForward hasSingleLineMask ≠ .unknown)
+    (noMatrixWrite : expressions.any parsedExprIsMatrixWriteProducer = false) :
+    executeParsedMatrixMAUAndWrites readState currentState expressions
+      noForward hasSingleLineMask ≠ .unknown := by
+  apply executeParsedMatrixMAUAndWrites_known_never_unknown readState currentState expressions
+    noForward hasSingleLineMask producerKnown
+  intro afterMAU
+  exact executeParsedMatrixWritesAtMABs_no_matrix_write_never_unknown
+    readState allMABCoordinates expressions afterMAU noMatrixWrite
 
 theorem executeParsedMatrixMAUAndWrites_preserves_post_mau_pe_state
     (readState currentState afterMAU next : State) (expressions : List ParsedExpr)
