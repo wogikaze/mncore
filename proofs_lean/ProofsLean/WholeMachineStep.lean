@@ -3610,7 +3610,7 @@ theorem executeParsedMatrixMAUAndWrites_preserves_post_mau_pe_state
 def executeParsedBlockFloatAtMAB (readState currentState : State)
     (expression : ParsedExpr) (coordinate : MABCoordinate)
     (noForward hasSingleLineMask : Bool) : ProofsLean.StepResult State := Id.run do
-  let some accesses := lowerParsedBlockFloat? expression | return .unknown
+  let some accesses := lowerParsedBlockFloat? expression | return .failure
   let initialFiles := fun pe => currentState.peRegisters (physicalPEId coordinate pe)
   let initialBar0 := fun pe =>
     currentState.peContext (physicalPEId coordinate pe) |>.bar0
@@ -3738,6 +3738,16 @@ def executeParsedBlockFloatAtMAB (readState currentState : State)
             { state.peContext other with bar0 := bar0, bar1 := bar1 }
             else state.peContext other }) currentState
       return .ok nextState
+
+/-- A block-float producer that cannot be lowered to its supported source and
+destination shape is a known execution failure, not an unresolved value. -/
+theorem executeParsedBlockFloatAtMAB_lowering_failure
+    (readState currentState : State) (expression : ParsedExpr)
+    (coordinate : MABCoordinate) (noForward hasSingleLineMask : Bool)
+    (notLowered : lowerParsedBlockFloat? expression = none) :
+    executeParsedBlockFloatAtMAB readState currentState expression coordinate
+      noForward hasSingleLineMask = .failure := by
+  simp [executeParsedBlockFloatAtMAB, notLowered]
 
 def executeParsedBlockFloatAtMABs (readState currentState : State)
     (expression : ParsedExpr) (coordinates : List MABCoordinate)

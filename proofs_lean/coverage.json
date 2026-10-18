@@ -1715,7 +1715,14 @@
     },
     {
       "area": "block_floating_conversion_and_mantissa_width",
-      "status": "partial_datapath_only"
+      "status": "partial_datapath_only",
+      "whole_state_lowering_failures": {
+        "behavior": "A recognized bfn/bfe producer whose source/destination shape cannot be lowered now returns failure instead of unknown.",
+        "lean_executor": "ProofsLean.MNCore.executeParsedBlockFloatAtMAB",
+        "failure_theorem": "ProofsLean.MNCore.executeParsedBlockFloatAtMAB_lowering_failure",
+        "rust_reference": "viz/core/src/machine.rs::Machine::compute_bfn propagates read_alu_input errors and unsupported Machine::write errors as ExecError.",
+        "scope_limit": "This classifies lowering failures; valid block-float read/write behavior still requires whole-machine Rust differential coverage."
+      }
     },
     {
       "area": "wide_access_and_lsb_passthrough",
