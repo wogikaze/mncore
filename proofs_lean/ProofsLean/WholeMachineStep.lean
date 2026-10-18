@@ -147,6 +147,16 @@ def parsedExprIsNoForwardProducer (expression : ParsedExpr) : Bool :=
   | .noforward => true
   | _ => false
 
+def parsedExprWaitTag? (expression : ParsedExpr) : Option (Fin 256) :=
+  match expression.op with
+  | .wait tag => some tag
+  | _ => none
+
+def parsedExprWaitPending (state : State) (expression : ParsedExpr) : Bool :=
+  match parsedExprWaitTag? expression with
+  | none => false
+  | some tag => !state.mvCompletedTags tag
+
 def parsedExprIsSupportedFloatMAUProducer (expression : ParsedExpr) : Bool :=
   match expression.op with
   | .mau .f false .add _ false | .mau .f false .mul _ false
@@ -3578,7 +3588,8 @@ def executeIntegerProducerLineAtPE (expressions : List ParsedExpr)
   let oldSlots := stateForwardingSlots state pe
   let matrixStore := state.matrixRegisters context.group context.l2b context.l1b
   let peExpressions := expressions.filter fun expression =>
-    !parsedExprIsMatrixWriteProducer expression &&
+    parsedExprWaitTag? expression == none &&
+      !parsedExprIsMatrixWriteProducer expression &&
       !parsedExprIsL1MwriteProducer expression &&
       !parsedExprIsL1GatherProducer expression &&
       !parsedExprIsL1ReduceProducer expression &&
@@ -3663,7 +3674,8 @@ noncomputable def executeIntegerProducerInstructionLine
     match line with
     | .pe normalizedExpressions =>
         let expressions := normalizedExpressions.map NormalizedExpr.toParsed
-        if expressions.any parsedExprIsUnsupportedRustAlu then .failure
+        if expressions.any (parsedExprWaitPending state) then .unknown
+        else if expressions.any parsedExprIsUnsupportedRustAlu then .failure
         else if expressions.all parsedExprIsSupportedPELineProducer then
           let peExpressions := expressions.filter (fun expression =>
             !parsedExprIsL2BMProducer expression && !parsedExprIsMslMsrProducer expression &&
@@ -4014,10 +4026,21 @@ theorem executeIntegerProducerInstructionLine_unsupported_rust_alu_failure
     (normalizedExpressions : List NormalizedExpr) (state : State)
     (accepted : checkParsedTopLine
       (InstructionLine.pe normalizedExpressions).toParsed = true)
+    (waitsComplete : (normalizedExpressions.map NormalizedExpr.toParsed).any
+      (parsedExprWaitPending state) = false)
     (unsupported : (normalizedExpressions.map NormalizedExpr.toParsed).any
       parsedExprIsUnsupportedRustAlu = true) :
     executeIntegerProducerInstructionLine (.pe normalizedExpressions) state = .failure := by
-  simp [executeIntegerProducerInstructionLine, accepted, unsupported]
+  simp [executeIntegerProducerInstructionLine, accepted, waitsComplete, unsupported]
+
+theorem executeIntegerProducerInstructionLine_pe_wait_pending
+    (normalizedExpressions : List NormalizedExpr) (state : State)
+    (accepted : checkParsedTopLine
+      (InstructionLine.pe normalizedExpressions).toParsed = true)
+    (pending : (normalizedExpressions.map NormalizedExpr.toParsed).any
+      (parsedExprWaitPending state) = true) :
+    executeIntegerProducerInstructionLine (.pe normalizedExpressions) state = .unknown := by
+  simp [executeIntegerProducerInstructionLine, accepted, pending]
 
 theorem executeIntegerProducerInstructionLine_nop
     (count : {n : Nat // 0 < n}) (wait : Option (Fin 256)) (state : State)
@@ -4133,6 +4156,8 @@ theorem executeIntegerProducerInstructionLine_pe_success
     (nextL2 : State)
     (l2Writes : executeParsedL2BlockProducers state nextBroadcast
       (normalizedExpressions.map NormalizedExpr.toParsed) = .ok nextL2)
+    (waitsComplete : (normalizedExpressions.map NormalizedExpr.toParsed).any
+      (parsedExprWaitPending state) = false)
     :
     executeIntegerProducerInstructionLine (.pe normalizedExpressions) state =
       .ok { nextL2 with
@@ -4143,7 +4168,7 @@ theorem executeIntegerProducerInstructionLine_pe_success
           then nextL2.l1bmTurnaroundValid
           else normalizedExpressions.any (fun expression =>
             parsedExprMayWriteL1BMTurnaround expression.toParsed) } := by
-  simp [executeIntegerProducerInstructionLine, accepted, supported, noUnsupportedRustAlu,
+  simp [executeIntegerProducerInstructionLine, accepted, waitsComplete, supported, noUnsupportedRustAlu,
     executed, mslMsrWrites,
     reluWrites, blockFloatWrites,
     matrixWrites, l1Writes, gatherWrites, reduceWrites, l1ToPE, l2Writes, List.any_map]
