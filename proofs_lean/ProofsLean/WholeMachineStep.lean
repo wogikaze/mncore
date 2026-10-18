@@ -2020,8 +2020,11 @@ def parsedFloatRsqrtLane (precision : ParsedPrecision) (value : Nat) : Nat := Id
 def parsedFloatFormat (precision : ParsedPrecision) : RRN.FloatPrecision :=
   match precision with
   | .d => .double
-  | .f => .single
+  | .f | .g => .single
   | _ => .half
+
+theorem parsedFloatFormat_g_is_single : parsedFloatFormat .g = .single := by
+  rfl
 
 def parsedFloatFloorLane (precision : ParsedPrecision) (value : Nat) : Nat := Id.run do
   let format := parsedFloatFormat precision
