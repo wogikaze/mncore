@@ -623,7 +623,8 @@ fn parse_expr(part: &str) -> Result<Expr, String> {
         Op::Alu { name, .. } => name.inputs(),
         Op::Mau { matrix, kind, .. } => match (matrix, kind) {
             (_, MauKind::Fma) => 3,
-            (_, MauKind::Mul) | (false, MauKind::Add) => 2,
+            (_, MauKind::Mul) | (false, MauKind::Add)
+            | (true, MauKind::Add | MauKind::Passa) => 2,
             _ => 1,
         },
         Op::MatWrite { .. } | Op::MatRead { .. } => 1,

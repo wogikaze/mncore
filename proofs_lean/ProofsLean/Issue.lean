@@ -600,6 +600,7 @@ def ParsedOp.parserSourceLimit : ParsedOp → Nat
       | _, .fma => 3
       | _, .mul => 2
       | false, .add => 2
+      | true, .add | true, .passa => 2
       | _, _ => 1
   | .matrixWrite .. | .matrixRead .. => 1
   | .l1bm .. | .l2bm .dars => 1
@@ -626,6 +627,11 @@ theorem ParsedOp.parserSourceLimit_le_three (op : ParsedOp) :
   | l1bm operation => change 1 ≤ 3; omega
   | l2bm operation =>
       cases operation <;> simp [ParsedOp.parserSourceLimit] <;> omega
+
+theorem ParsedOp.matrixAddAndPassa_have_two_sources (precision : ParsedPrecision) :
+    ParsedOp.parserSourceLimit (.mau precision true .add none false) = 2 ∧
+    ParsedOp.parserSourceLimit (.mau precision true .passa none false) = 2 := by
+  constructor <;> rfl
 
 /-- Opcode-class destination-role screen based on the assembler probes and
 Rust operand roles. It is a necessary filter only; block-memory roles and
