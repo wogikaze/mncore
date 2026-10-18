@@ -8,6 +8,7 @@
 
 use crate::float::{self, Fmt, Val, DOUBLE, HALF, SINGLE};
 use crate::vsm::*;
+use rayon::prelude::*;
 
 pub const GROUPS: usize = 4;
 pub const L2B_PER_GROUP: usize = 2;
@@ -607,39 +608,6 @@ impl Machine {
         }
     }
 
-    /// Writes a bus without mask directives or tracing when the destination is a plain word
-    /// memory. Falls back to the full path otherwise.
-    fn write_fast(
-        &mut self,
-        pe: usize,
-        d: &Operand,
-        cycle: usize,
-        bus: Bus,
-        flags: u8,
-        single_line: bool,
-    ) -> Result<(), ExecError> {
-        if !single_line && self.mask_state.entry == 0 {
-            if let Operand::Mem {
-                mem,
-                wl,
-                addr,
-                mask: None,
-                ..
-            } = d
-            {
-                if *mem != MemKind::T {
-                    let a = self.word_addrs(pe, *mem, *wl, addr, cycle);
-                    let m = self.pes[pe].mem_mut(*mem);
-                    for i in 0..*wl as usize {
-                        m.set(a + i, bus[i]);
-                    }
-                    return Ok(());
-                }
-            }
-        }
-        self.write(pe, d, cycle, bus, flags, single_line, None)
-    }
-
     fn write(
         &mut self,
         pe: usize,
@@ -1073,200 +1041,6 @@ impl Machine {
         })
     }
 
-    /// Reads one ALU input without recording a trace.
-    fn read_alu_input_at(
-        &self,
-        pe: usize,
-        op: &Operand,
-        prec: Option<Prec>,
-        cycle: usize,
-    ) -> Result<Bus, ExecError> {
-        if let Operand::Fixed(k) = op {
-            let id = PeId::from_index(pe);
-            let v: u64 = match k {
-                FixedKind::L2bid => (id.group * 2 + id.l2b) as u64,
-                FixedKind::L1bid => id.l1b as u64,
-                FixedKind::Mabid => id.mab as u64,
-                FixedKind::Peid => (id.mab * 4 + id.pe) as u64,
-                FixedKind::Subpeid => id.pe as u64,
-                FixedKind::Msb1 => u64::MAX,
-            };
-            let bits = prec_bits(prec);
-            let lane = if *k == FixedKind::Msb1 {
-                1u64 << (bits - 1)
-            } else {
-                v
-            };
-            return Ok(splat(lane, bits));
-        }
-        let bus = self.read_raw_untraced(pe, op, cycle)?;
-        let rnd = matches!(
-            op,
-            Operand::Mem { rnd: true, .. } | Operand::Forward { rnd: true, .. }
-        );
-        if rnd {
-            let mut out = [0u32; 4];
-            let mut halves = [0u64; 4];
-            for (i, half) in halves.iter_mut().enumerate() {
-                *half = float::encode(HALF, float::decode(SINGLE, bus[i] as u64));
-            }
-            out[0] = ((halves[0] << 16) | halves[1]) as u32;
-            out[1] = ((halves[2] << 16) | halves[3]) as u32;
-            return Ok(out);
-        }
-        Ok(bus)
-    }
-
-    /// Computes one PE's four cycles of one ALU expression.
-    fn compute_alu_at(
-        &self,
-        e: &Expr,
-        name: AluOp,
-        prec: Option<Prec>,
-        unsigned: bool,
-        pe: usize,
-    ) -> Result<([Bus; 4], [u8; 4]), ExecError> {
-        let n = name.inputs();
-        let bits = prec_bits(prec);
-        let mut bus = [[0u32; 4]; 4];
-        let mut flags = [0u8; 4];
-        for c in 0..4 {
-            let x = self.read_alu_input_at(pe, &e.srcs[0], prec, c)?;
-            let y = if n > 1 {
-                self.read_alu_input_at(pe, &e.srcs[1], prec, c)?
-            } else {
-                [0; 4]
-            };
-            let (out, fl) = match name {
-                AluOp::Msl | AluOp::Msr => {
-                    // msl: PE k outputs the input of PE k-1 within the MAB.
-                    let base = pe / 4 * 4;
-                    let src = if name == AluOp::Msl {
-                        base + (pe + 3) % 4
-                    } else {
-                        base + (pe + 1) % 4
-                    };
-                    // Only one long word moves between PEs: the LSB long word is 0 (emulator),
-                    // not the first input's LSB long word as for other ALU instructions.
-                    let v = self.read_alu_input_at(src, &e.srcs[0], prec, c)?;
-                    ([v[0], v[1], 0, 0], 0)
-                }
-                AluOp::Passa => {
-                    let (xl, count) = lanes_fixed(&x, bits);
-                    let fl = lane_flags(&xl[..count], bits, |v| v == 0);
-                    (x, fl)
-                }
-                _ => {
-                    let (xl, count) = lanes_fixed(&x, bits);
-                    let (yl, _) = lanes_fixed(&y, bits);
-                    let (msb, fl) =
-                        alu_lanes(name, prec.unwrap(), unsigned, &xl[..count], &yl[..count])?;
-                    let lo = pack_lanes(&msb[..count], bits);
-                    ([lo[0], lo[1], x[2], x[3]], fl)
-                }
-            };
-            bus[c] = out;
-            flags[c] = fl;
-        }
-        Ok((bus, flags))
-    }
-
-    /// Computes one PE's four cycles of one vector MAU expression.
-    fn compute_vec_at(
-        &self,
-        e: &Expr,
-        prec: Prec,
-        kind: MauKind,
-        half: Option<char>,
-        round: bool,
-        pe: usize,
-    ) -> Result<([Bus; 4], [u8; 4]), ExecError> {
-        let (fa, fc, fout): (Fmt, Fmt, Fmt) = match prec {
-            Prec::D => (DOUBLE, DOUBLE, if round { SINGLE } else { DOUBLE }),
-            Prec::F => (SINGLE, SINGLE, SINGLE),
-            Prec::H => (HALF, SINGLE, if round { HALF } else { SINGLE }),
-            _ => {
-                return Err(ExecError::Unsupported(format!(
-                    "vector op precision {prec:?}"
-                )))
-            }
-        };
-        if prec == Prec::F && round {
-            return Err(ExecError::Unsupported("fv*r".into()));
-        }
-        let lanes_n = match prec {
-            Prec::D => 1,
-            Prec::F => 2,
-            _ => 4,
-        };
-        let (ia, ib, ic): (Option<usize>, Option<usize>, Option<usize>) = match kind {
-            MauKind::Fma => (Some(0), Some(1), Some(2)),
-            MauKind::Mul => (Some(0), Some(1), None),
-            MauKind::Add => (Some(0), None, Some(1)),
-            MauKind::Passa => (Some(0), None, None),
-        };
-        let read_vals =
-            |idx: Option<usize>, f: Fmt, c: usize| -> Result<Option<[Val; 4]>, ExecError> {
-                let Some(i) = idx else { return Ok(None) };
-                let op = &e.srcs[i];
-                let bus = self.read_raw_untraced(pe, op, c)?;
-                let (neg, ext, rnd) = match op {
-                    Operand::Mem { neg, ext, rnd, .. } | Operand::Forward { neg, ext, rnd, .. } => {
-                        (*neg, *ext, *rnd)
-                    }
-                    _ => (false, false, false),
-                };
-                let raw_fmt = if ext {
-                    lower(f).ok_or_else(|| ExecError::Unsupported("extension below half".into()))?
-                } else if rnd {
-                    higher(f).ok_or_else(|| {
-                        ExecError::Unsupported("rounding from above double".into())
-                    })?
-                } else {
-                    f
-                };
-                let raw = unpack_fixed(&bus, raw_fmt.width(), lanes_n);
-                let mut vals = [Val::Zero { neg: false }; 4];
-                for (l, value) in vals.iter_mut().enumerate() {
-                    let v = float::decode(raw_fmt, raw[l]);
-                    let v = if rnd {
-                        float::decode(f, float::encode(f, v))
-                    } else {
-                        v
-                    };
-                    *value = if neg { v.negate() } else { v };
-                }
-                Ok(Some(vals))
-            };
-        let one_a = float::decode(fa, (fa.bias() as u64) << fa.man_bits);
-        let zero = Val::Zero { neg: false };
-        let mul_here = match half {
-            Some('u') => pe % 4 < 2,
-            Some('d') => pe % 4 >= 2,
-            _ => true,
-        };
-        let mut bus = [[0u32; 4]; 4];
-        let mut flags = [0u8; 4];
-        for c in 0..4 {
-            let a = read_vals(ia, fa, c)?.unwrap();
-            let b = read_vals(ib, fa, c)?;
-            let cv = read_vals(ic, fc, c)?;
-            let mut out = [0u64; 4];
-            for (l, value) in out.iter_mut().enumerate().take(lanes_n) {
-                let (x, y) = if mul_here {
-                    (a[l], b.map_or(one_a, |b| b[l]))
-                } else {
-                    (zero, zero)
-                };
-                let z = cv.map_or(zero, |c| c[l]);
-                *value = float::vfma(fa, fout, x, y, z);
-            }
-            bus[c] = pack(&out[..lanes_n], fout.width());
-            flags[c] = mau_flags(&out[..lanes_n], fout);
-        }
-        Ok((bus, flags))
-    }
-
     /// Executes a PE-local line one PE at a time.
     ///
     /// The generic path computes every expression into a 4,096-entry buffer and applies writes
@@ -1329,114 +1103,57 @@ impl Machine {
         Some(Ok(()))
     }
 
-    fn compute_expr_at(&self, e: &Expr, pe: usize) -> Result<([Bus; 4], [u8; 4]), ExecError> {
-        Ok(match &e.op {
-            Op::Alu {
-                name,
-                prec,
-                unsigned,
-                ..
-            } => self.compute_alu_at(e, *name, *prec, *unsigned, pe)?,
-            Op::Mau {
-                prec,
-                kind,
-                half,
-                round,
-                matrix: false,
-            } => self.compute_vec_at(e, *prec, *kind, *half, *round, pe)?,
-            Op::Zero => ([[0; 4]; 4], [0; 4]),
-            Op::Imm { value, u } => {
-                let bus = if *u {
-                    [*value, 0, *value, 0]
-                } else {
-                    [*value; 4]
-                };
-                ([bus; 4], [0; 4])
-            }
-            _ => ([[0; 4]; 4], [0; 4]),
-        })
-    }
-
     fn run_fast(
         &mut self,
         exprs: &[Expr],
         single_line_mask: bool,
         update_forward: bool,
     ) -> Result<(), ExecError> {
-        if exprs.len() == 1 {
-            let e = &exprs[0];
-            if matches!(e.op, Op::Noforward | Op::Wait(_)) {
-                return Ok(());
-            }
-            let kind = op_fwd_kind(e);
-            for pe in 0..PES {
-                let (buses, flags) = self.compute_expr_at(e, pe)?;
-                for c in 0..4 {
-                    let mut bus = buses[c];
-                    if let Some(sel) = e.flush {
-                        let f = self.mask_flags(pe, &sel, c);
-                        bus = apply_flush(bus, f, sel.ll);
+        const CHUNK: usize = 32;
+        let pes = &mut self.pes;
+        let fwd_error = &self.fwd_error;
+        let mask_state = self.mask_state;
+        thread_pool().install(|| {
+            pes.as_mut_slice()
+                .par_chunks_mut(CHUNK)
+                .enumerate()
+                .try_for_each(|(ci, chunk)| -> Result<(), ExecError> {
+                    for (j, p) in chunk.iter_mut().enumerate() {
+                        let pe = ci * CHUNK + j;
+                        run_fast_pe(
+                            p,
+                            fwd_error,
+                            &mask_state,
+                            exprs,
+                            single_line_mask,
+                            update_forward,
+                            pe,
+                        )?;
                     }
-                    for d in &e.dsts {
-                        self.write_fast(pe, d, c, bus, flags[c], single_line_mask)?;
-                    }
-                    if update_forward {
-                        if let Some(kind) = kind {
-                            let p = &mut self.pes[pe];
-                            match kind {
-                                FwdKind::Aluf => p.aluf[c] = bus,
-                                FwdKind::Mauf => p.mauf[c] = bus,
-                                FwdKind::Mreadf => p.mreadf[c] = bus,
-                                FwdKind::Lbf => p.lbf[c] = bus,
-                            }
-                        }
-                    }
-                }
-            }
-            return Ok(());
-        }
-        let mut buses = vec![[[0u32; 4]; 4]; exprs.len()];
-        let mut flags = vec![[0u8; 4]; exprs.len()];
-        for pe in 0..PES {
-            for (ei, e) in exprs.iter().enumerate() {
-                let (bus, fl) = self.compute_expr_at(e, pe)?;
-                buses[ei] = bus;
-                flags[ei] = fl;
-            }
-            for (ei, e) in exprs.iter().enumerate() {
-                for c in 0..4 {
-                    let mut bus = buses[ei][c];
-                    if let Some(sel) = e.flush {
-                        let f = self.mask_flags(pe, &sel, c);
-                        bus = apply_flush(bus, f, sel.ll);
-                    }
-                    for d in &e.dsts {
-                        self.write_fast(pe, d, c, bus, flags[ei][c], single_line_mask)?;
-                    }
-                }
-            }
-            if update_forward {
-                for (ei, e) in exprs.iter().enumerate() {
-                    let Some(kind) = op_fwd_kind(e) else { continue };
-                    for c in 0..4 {
-                        let mut bus = buses[ei][c];
-                        if let Some(sel) = e.flush {
-                            let f = self.mask_flags(pe, &sel, c);
-                            bus = apply_flush(bus, f, sel.ll);
-                        }
-                        let p = &mut self.pes[pe];
-                        match kind {
-                            FwdKind::Aluf => p.aluf[c] = bus,
-                            FwdKind::Mauf => p.mauf[c] = bus,
-                            FwdKind::Mreadf => p.mreadf[c] = bus,
-                            FwdKind::Lbf => p.lbf[c] = bus,
-                        }
-                    }
-                }
-            }
-        }
-        Ok(())
+                    Ok(())
+                })
+        })
     }
+}
+
+/// Worker pool for the PE-local path. SMT threads hurt this workload, so default to the
+/// physical-core count (half the logical count on machines with more than six logical CPUs).
+fn thread_pool() -> &'static rayon::ThreadPool {
+    static POOL: std::sync::OnceLock<rayon::ThreadPool> = std::sync::OnceLock::new();
+    POOL.get_or_init(|| {
+        let logical = std::thread::available_parallelism()
+            .map(|n| n.get())
+            .unwrap_or(1);
+        let threads = std::env::var("RAYON_NUM_THREADS")
+            .ok()
+            .and_then(|s| s.parse::<usize>().ok())
+            .filter(|&n| n > 0)
+            .unwrap_or_else(|| if logical <= 6 { logical } else { (logical + 1) / 2 });
+        rayon::ThreadPoolBuilder::new()
+            .num_threads(threads)
+            .build()
+            .expect("build simulator thread pool")
+    })
 }
 
 fn fwd_index(k: FwdKind) -> usize {
@@ -1603,6 +1320,18 @@ fn splat(lane: u64, bits: u32) -> Bus {
     let n = (128 / bits) as usize;
     let vals = [lane; 8];
     pack(&vals[..n], bits)
+}
+
+/// Rounds the four single-precision words of a bus to half precision (`r` operand option).
+fn round_bus(bus: Bus) -> Bus {
+    let mut out = [0u32; 4];
+    let mut halves = [0u64; 4];
+    for (i, half) in halves.iter_mut().enumerate() {
+        *half = float::encode(HALF, float::decode(SINGLE, bus[i] as u64));
+    }
+    out[0] = ((halves[0] << 16) | halves[1]) as u32;
+    out[1] = ((halves[2] << 16) | halves[3]) as u32;
+    out
 }
 
 /// Mask flags (4 bits per cycle) from per-lane conditions of the MSB long word.
@@ -2330,4 +2059,481 @@ fn fwd_name(k: FwdKind) -> &'static str {
         FwdKind::Mreadf => "mreadf",
         FwdKind::Lbf => "lbf",
     }
+}
+
+// ---- parallel PE-local execution --------------------------------------------------------
+
+fn word_addrs_pe(p: &Pe, pe: usize, mem: MemKind, wl: u8, addr: &Addr, cycle: usize) -> usize {
+    let bar = match mem {
+        MemKind::Lm0 => p.bar0,
+        MemKind::Lm1 => p.bar1,
+        _ => 0,
+    } as usize;
+    let wl = wl as usize;
+    if !addr.t_indirect && addr.madpe.is_none() {
+        return (bar + addr.cycles[cycle] as usize) & !(wl - 1);
+    }
+    let t = if addr.t_indirect {
+        p.t[cycle * 4 + 1] as usize
+    } else {
+        0
+    };
+    let maadj = match addr.madpe {
+        Some(m) if (pe % 4) as u8 <= m => wl,
+        _ => 0,
+    };
+    (bar + t + addr.cycles[cycle] as usize + maadj) & !(wl - 1)
+}
+
+fn read_raw_pe(
+    p: &Pe,
+    fwd_error: &[Option<String>; 4],
+    pe: usize,
+    op: &Operand,
+    cycle: usize,
+) -> Result<Bus, ExecError> {
+    Ok(match op {
+        Operand::Mem { mem: MemKind::T, .. } => {
+            let b = cycle * 4;
+            [p.t[b], p.t[b + 1], p.t[b + 2], p.t[b + 3]]
+        }
+        Operand::Mem { mem, wl, addr, .. } => {
+            let a = word_addrs_pe(p, pe, *mem, *wl, addr, cycle);
+            let m = p.mem(*mem);
+            let mut bus = [0; 4];
+            for i in 0..*wl as usize {
+                bus[i] = m.get(a + i);
+            }
+            bus
+        }
+        Operand::Forward { kind, .. } if fwd_error[fwd_index(*kind)].is_some() => {
+            return Err(ExecError::Runtime(format!(
+                "accessing {} forwarding register failed; the error on the previous step is: {}",
+                unit_name(*kind),
+                fwd_error[fwd_index(*kind)].as_ref().unwrap()
+            )))
+        }
+        Operand::Forward { kind, .. } => match kind {
+            FwdKind::Aluf => p.aluf[cycle],
+            FwdKind::Mauf => p.mauf[cycle],
+            FwdKind::Mreadf => p.mreadf[cycle],
+            FwdKind::Lbf => p.lbf[cycle],
+        },
+        Operand::Fixed(_) => {
+            return Err(ExecError::Unsupported(
+                "fixed operands depend on precision".into(),
+            ))
+        }
+        other => return Err(ExecError::Unsupported(format!("read of {other:?}"))),
+    })
+}
+
+fn read_alu_input_pe(
+    p: &Pe,
+    fwd_error: &[Option<String>; 4],
+    pe: usize,
+    op: &Operand,
+    prec: Option<Prec>,
+    cycle: usize,
+) -> Result<Bus, ExecError> {
+    if let Operand::Fixed(k) = op {
+        let id = PeId::from_index(pe);
+        let v: u64 = match k {
+            FixedKind::L2bid => (id.group * 2 + id.l2b) as u64,
+            FixedKind::L1bid => id.l1b as u64,
+            FixedKind::Mabid => id.mab as u64,
+            FixedKind::Peid => (id.mab * 4 + id.pe) as u64,
+            FixedKind::Subpeid => id.pe as u64,
+            FixedKind::Msb1 => u64::MAX,
+        };
+        let bits = prec_bits(prec);
+        let lane = if *k == FixedKind::Msb1 {
+            1u64 << (bits - 1)
+        } else {
+            v
+        };
+        return Ok(splat(lane, bits));
+    }
+    let bus = read_raw_pe(p, fwd_error, pe, op, cycle)?;
+    let rnd = matches!(
+        op,
+        Operand::Mem { rnd: true, .. } | Operand::Forward { rnd: true, .. }
+    );
+    Ok(if rnd { round_bus(bus) } else { bus })
+}
+
+fn compute_alu_pe(
+    p: &Pe,
+    fwd_error: &[Option<String>; 4],
+    e: &Expr,
+    name: AluOp,
+    prec: Option<Prec>,
+    unsigned: bool,
+    pe: usize,
+) -> Result<([Bus; 4], [u8; 4]), ExecError> {
+    if matches!(name, AluOp::Msl | AluOp::Msr) {
+        return Err(ExecError::Unsupported(
+            "cross-PE ALU is not PE-local".into(),
+        ));
+    }
+    let n = name.inputs();
+    let bits = prec_bits(prec);
+    let mut x = [[0u32; 4]; 4];
+    let mut y = [[0u32; 4]; 4];
+    for c in 0..4 {
+        x[c] = read_alu_input_pe(p, fwd_error, pe, &e.srcs[0], prec, c)?;
+        if n > 1 {
+            y[c] = read_alu_input_pe(p, fwd_error, pe, &e.srcs[1], prec, c)?;
+        }
+    }
+    let mut bus = [[0u32; 4]; 4];
+    let mut flags = [0u8; 4];
+    for c in 0..4 {
+        let (out, fl) = match name {
+            AluOp::Passa => {
+                let (xl, count) = lanes_fixed(&x[c], bits);
+                let fl = lane_flags(&xl[..count], bits, |v| v == 0);
+                (x[c], fl)
+            }
+            _ => {
+                let (xl, count) = lanes_fixed(&x[c], bits);
+                let (yl, _) = lanes_fixed(&y[c], bits);
+                let (msb, fl) =
+                    alu_lanes(name, prec.unwrap(), unsigned, &xl[..count], &yl[..count])?;
+                let lo = pack_lanes(&msb[..count], bits);
+                ([lo[0], lo[1], x[c][2], x[c][3]], fl)
+            }
+        };
+        bus[c] = out;
+        flags[c] = fl;
+    }
+    Ok((bus, flags))
+}
+
+fn compute_vec_pe(
+    p: &Pe,
+    fwd_error: &[Option<String>; 4],
+    e: &Expr,
+    prec: Prec,
+    kind: MauKind,
+    half: Option<char>,
+    round: bool,
+    pe: usize,
+) -> Result<([Bus; 4], [u8; 4]), ExecError> {
+    let (fa, fc, fout): (Fmt, Fmt, Fmt) = match prec {
+        Prec::D => (DOUBLE, DOUBLE, if round { SINGLE } else { DOUBLE }),
+        Prec::F => (SINGLE, SINGLE, SINGLE),
+        Prec::H => (HALF, SINGLE, if round { HALF } else { SINGLE }),
+        _ => {
+            return Err(ExecError::Unsupported(format!(
+                "vector op precision {prec:?}"
+            )))
+        }
+    };
+    if prec == Prec::F && round {
+        return Err(ExecError::Unsupported("fv*r".into()));
+    }
+    let lanes_n = match prec {
+        Prec::D => 1,
+        Prec::F => 2,
+        _ => 4,
+    };
+    let (ia, ib, ic): (Option<usize>, Option<usize>, Option<usize>) = match kind {
+        MauKind::Fma => (Some(0), Some(1), Some(2)),
+        MauKind::Mul => (Some(0), Some(1), None),
+        MauKind::Add => (Some(0), None, Some(1)),
+        MauKind::Passa => (Some(0), None, None),
+    };
+    let read_vals = |idx: Option<usize>, f: Fmt, c: usize| -> Result<Option<[Val; 4]>, ExecError> {
+        let Some(i) = idx else { return Ok(None) };
+        let op = &e.srcs[i];
+        let bus = read_raw_pe(p, fwd_error, pe, op, c)?;
+        let (neg, ext, rnd) = match op {
+            Operand::Mem { neg, ext, rnd, .. } | Operand::Forward { neg, ext, rnd, .. } => {
+                (*neg, *ext, *rnd)
+            }
+            _ => (false, false, false),
+        };
+        let raw_fmt = if ext {
+            lower(f).ok_or_else(|| ExecError::Unsupported("extension below half".into()))?
+        } else if rnd {
+            higher(f).ok_or_else(|| ExecError::Unsupported("rounding from above double".into()))?
+        } else {
+            f
+        };
+        let raw = unpack_fixed(&bus, raw_fmt.width(), lanes_n);
+        let mut vals = [Val::Zero { neg: false }; 4];
+        for (l, value) in vals.iter_mut().enumerate() {
+            let v = float::decode(raw_fmt, raw[l]);
+            let v = if rnd {
+                float::decode(f, float::encode(f, v))
+            } else {
+                v
+            };
+            *value = if neg { v.negate() } else { v };
+        }
+        Ok(Some(vals))
+    };
+    let one_a = float::decode(fa, (fa.bias() as u64) << fa.man_bits);
+    let zero = Val::Zero { neg: false };
+    let mul_here = match half {
+        Some('u') => pe % 4 < 2,
+        Some('d') => pe % 4 >= 2,
+        _ => true,
+    };
+    let mut bus = [[0u32; 4]; 4];
+    let mut flags = [0u8; 4];
+    for c in 0..4 {
+        let a = read_vals(ia, fa, c)?.unwrap();
+        let b = read_vals(ib, fa, c)?;
+        let cv = read_vals(ic, fc, c)?;
+        let mut out = [0u64; 4];
+        for (l, value) in out.iter_mut().enumerate().take(lanes_n) {
+            let (x, y) = if mul_here {
+                (a[l], b.map_or(one_a, |b| b[l]))
+            } else {
+                (zero, zero)
+            };
+            let z = cv.map_or(zero, |c| c[l]);
+            *value = float::vfma(fa, fout, x, y, z);
+        }
+        bus[c] = pack(&out[..lanes_n], fout.width());
+        flags[c] = mau_flags(&out[..lanes_n], fout);
+    }
+    Ok((bus, flags))
+}
+
+fn compute_expr_pe(
+    p: &Pe,
+    fwd_error: &[Option<String>; 4],
+    e: &Expr,
+    pe: usize,
+) -> Result<([Bus; 4], [u8; 4]), ExecError> {
+    Ok(match &e.op {
+        Op::Alu {
+            name,
+            prec,
+            unsigned,
+            ..
+        } => compute_alu_pe(p, fwd_error, e, *name, *prec, *unsigned, pe)?,
+        Op::Mau {
+            prec,
+            kind,
+            half,
+            round,
+            matrix: false,
+        } => compute_vec_pe(p, fwd_error, e, *prec, *kind, *half, *round, pe)?,
+        Op::Zero => ([[0; 4]; 4], [0; 4]),
+        Op::Imm { value, u } => {
+            let bus = if *u {
+                [*value, 0, *value, 0]
+            } else {
+                [*value; 4]
+            };
+            ([bus; 4], [0; 4])
+        }
+        _ => ([[0; 4]; 4], [0; 4]),
+    })
+}
+
+fn mask_flags_pe(p: &Pe, _st: &MaskState, sel: &MaskSel, cycle: usize) -> u8 {
+    match sel.source {
+        MaskSource::Pattern(pat) => {
+            if pat[cycle] {
+                0xf
+            } else {
+                0
+            }
+        }
+        MaskSource::Entry(n) => match n {
+            0 => 0xf,
+            1..=15 => ((p.mask[n as usize] >> (4 * cycle)) & 0xf) as u8,
+            _ => {
+                if (n >> (3 - cycle)) & 1 == 1 {
+                    0xf
+                } else {
+                    0
+                }
+            }
+        },
+    }
+}
+
+fn write_pe(
+    p: &mut Pe,
+    st: &MaskState,
+    pe: usize,
+    d: &Operand,
+    cycle: usize,
+    bus: Bus,
+    flags: u8,
+    single_line: bool,
+) -> Result<(), ExecError> {
+    let directive = |mem: Option<MemKind>, omr: bool| -> Option<MaskSel> {
+        if single_line {
+            return None;
+        }
+        let t = st.targets;
+        let on = match mem {
+            Some(MemKind::Grf0) => t.grf0,
+            Some(MemKind::Grf1) => t.grf1,
+            Some(MemKind::T) => t.t,
+            Some(MemKind::Lm0) => t.lm0,
+            Some(MemKind::Lm1) => t.lm1,
+            _ => omr && t.mask_reg,
+        };
+        if on && st.entry != 0 {
+            Some(MaskSel {
+                ll: st.wl == 4,
+                source: MaskSource::Entry(st.entry),
+            })
+        } else {
+            None
+        }
+    };
+    match d {
+        Operand::Nowrite => {}
+        Operand::Mem {
+            mem,
+            wl,
+            addr,
+            mask,
+            ..
+        } => {
+            let sel = mask.or_else(|| directive(Some(*mem), false));
+            let mflags = sel.map(|s| (mask_flags_pe(p, st, &s, cycle), s.ll));
+            let words = if *mem == MemKind::T {
+                4
+            } else {
+                *wl as usize
+            };
+            if !(0..words).any(|i| word_enabled(mflags, i)) {
+                return Ok(());
+            }
+            if *mem == MemKind::T {
+                for i in 0..4 {
+                    if word_enabled(mflags, i) {
+                        p.t[cycle * 4 + i] = merge_word(p.t[cycle * 4 + i], bus[i], mflags, i);
+                    }
+                }
+                return Ok(());
+            }
+            let a = word_addrs_pe(p, pe, *mem, *wl, addr, cycle);
+            let m = p.mem_mut(*mem);
+            for i in 0..*wl as usize {
+                if word_enabled(mflags, i) {
+                    let old = m.get(a + i);
+                    m.set(a + i, merge_word(old, bus[i], mflags, i));
+                }
+            }
+        }
+        Operand::Bar { lm1, mask, .. } => {
+            let mem = if *lm1 { MemKind::Lm1 } else { MemKind::Lm0 };
+            let sel = mask.or_else(|| directive(Some(mem), false));
+            if let Some(s) = sel {
+                if mask_flags_pe(p, st, &s, cycle) == 0 {
+                    return Ok(());
+                }
+            }
+            if *lm1 {
+                p.bar1 = bus[0] & 0xfff;
+            } else {
+                p.bar0 = bus[0] & 0xfff;
+            }
+        }
+        Operand::Omr { entry, mask } => {
+            if *entry == 0 || *entry > 15 {
+                return Err(ExecError::Unsupported(format!(
+                    "mask register entry {entry} is read-only"
+                )));
+            }
+            let sel = mask.or_else(|| directive(None, true));
+            let f = match sel {
+                Some(s) => flags & mask_flags_pe(p, st, &s, cycle),
+                None => flags,
+            };
+            let e = &mut p.mask[*entry as usize];
+            *e = (*e & !(0xf << (4 * cycle))) | ((f as u16) << (4 * cycle));
+        }
+        other => return Err(ExecError::Unsupported(format!("write to {other:?}"))),
+    }
+    Ok(())
+}
+
+fn run_fast_pe(
+    p: &mut Pe,
+    fwd_error: &[Option<String>; 4],
+    mask_state: &MaskState,
+    exprs: &[Expr],
+    single_line_mask: bool,
+    update_forward: bool,
+    pe: usize,
+) -> Result<(), ExecError> {
+    if exprs.len() == 1 {
+        let e = &exprs[0];
+        if matches!(e.op, Op::Noforward | Op::Wait(_)) {
+            return Ok(());
+        }
+        let kind = op_fwd_kind(e);
+        let (buses, flags) = compute_expr_pe(p, fwd_error, e, pe)?;
+        for c in 0..4 {
+            let mut bus = buses[c];
+            if let Some(sel) = e.flush {
+                let f = mask_flags_pe(p, mask_state, &sel, c);
+                bus = apply_flush(bus, f, sel.ll);
+            }
+            for d in &e.dsts {
+                write_pe(p, mask_state, pe, d, c, bus, flags[c], single_line_mask)?;
+            }
+            if update_forward {
+                if let Some(kind) = kind {
+                    match kind {
+                        FwdKind::Aluf => p.aluf[c] = bus,
+                        FwdKind::Mauf => p.mauf[c] = bus,
+                        FwdKind::Mreadf => p.mreadf[c] = bus,
+                        FwdKind::Lbf => p.lbf[c] = bus,
+                    }
+                }
+            }
+        }
+        return Ok(());
+    }
+    let mut buses = [[[0u32; 4]; 4]; MAX_STEP_EXPRS];
+    let mut flags = [[0u8; 4]; MAX_STEP_EXPRS];
+    for (ei, e) in exprs.iter().enumerate() {
+        let (b, f) = compute_expr_pe(p, fwd_error, e, pe)?;
+        buses[ei] = b;
+        flags[ei] = f;
+    }
+    for (ei, e) in exprs.iter().enumerate() {
+        for c in 0..4 {
+            let mut bus = buses[ei][c];
+            if let Some(sel) = e.flush {
+                let f = mask_flags_pe(p, mask_state, &sel, c);
+                bus = apply_flush(bus, f, sel.ll);
+            }
+            for d in &e.dsts {
+                write_pe(p, mask_state, pe, d, c, bus, flags[ei][c], single_line_mask)?;
+            }
+        }
+    }
+    if update_forward {
+        for (ei, e) in exprs.iter().enumerate() {
+            let Some(kind) = op_fwd_kind(e) else { continue };
+            for c in 0..4 {
+                let mut bus = buses[ei][c];
+                if let Some(sel) = e.flush {
+                    let f = mask_flags_pe(p, mask_state, &sel, c);
+                    bus = apply_flush(bus, f, sel.ll);
+                }
+                match kind {
+                    FwdKind::Aluf => p.aluf[c] = bus,
+                    FwdKind::Mauf => p.mauf[c] = bus,
+                    FwdKind::Mreadf => p.mreadf[c] = bus,
+                    FwdKind::Lbf => p.lbf[c] = bus,
+                }
+            }
+        }
+    }
+    Ok(())
 }
