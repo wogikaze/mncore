@@ -2883,13 +2883,36 @@ def executeParsedMatrixMAUAtMABs (readState currentState : State)
       | .ok next => executeParsedMatrixMAUAtMABs readState next expression rest
           noForward hasSingleLineMask
 
+def parsedStateHasMatrixMAUPoison (state : State) : Bool :=
+  (List.finRange 4096).any fun pe =>
+    (List.finRange 4).any fun cycle =>
+      match state.forwarding pe .mau cycle with
+      | .poison => true
+      | .known _ | .unknown => false
+
+def propagateParsedMatrixMAUPoison (state : State) : State :=
+  if parsedStateHasMatrixMAUPoison state then
+    { state with forwarding := fun pe unit cycle =>
+        if unit == .mau then .poison else state.forwarding pe unit cycle }
+  else state
+
+theorem propagateParsedMatrixMAUPoison_is_global
+    (state : State) (hasPoison : parsedStateHasMatrixMAUPoison state = true)
+    (pe : PEId) (cycle : Fin 4) :
+    (propagateParsedMatrixMAUPoison state).forwarding pe .mau cycle = .poison := by
+  simp [propagateParsedMatrixMAUPoison, hasPoison]
+
 def executeParsedMatrixMAUProducer (readState currentState : State)
     (expressions : List ParsedExpr) (noForward hasSingleLineMask : Bool) :
     ProofsLean.StepResult State :=
   match expressions.filter parsedExprIsMatrixMAUProducer with
   | [] => .ok currentState
-  | [expression] => executeParsedMatrixMAUAtMABs readState currentState expression
-      allMABCoordinates noForward hasSingleLineMask
+  | [expression] =>
+      match executeParsedMatrixMAUAtMABs readState currentState expression
+          allMABCoordinates noForward hasSingleLineMask with
+      | .failure => .failure
+      | .unknown => .unknown
+      | .ok next => .ok (propagateParsedMatrixMAUPoison next)
   | _ => .unknown
 
 def executeParsedMatrixMAUAndWrites (readState currentState : State)
