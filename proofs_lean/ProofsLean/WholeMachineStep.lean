@@ -1983,24 +1983,75 @@ def parsedMatrixMAUPEOutput? (precision : ParsedPrecision) (round : Bool)
   let flags ← parsedMatrixMAUFlags? precision round peValues
   some (bus, flags)
 
+def parsedMatrixMAUPackOutputs (precision : ParsedPrecision) (round flagsUnavailable : Bool)
+    (rows : List Nat) (poison : Bool) :
+    List (Fin 4) → (Fin 4 → IntegerALU.Bus) → (Fin 4 → BitVec 4) →
+      ProofsLean.StepResult ((Fin 4 → IntegerALU.Bus) × (Fin 4 → BitVec 4) × Bool)
+  | [], buses, flags => .ok (buses, flags, poison)
+  | pe :: rest, buses, flags =>
+      match parsedMatrixMAUPEOutput? precision round rows pe with
+      | none => .failure
+      | some (bus, flag) =>
+          parsedMatrixMAUPackOutputs precision round flagsUnavailable rows poison rest
+            (fun index => if index == pe then bus else buses index)
+            (fun index => if index == pe then
+              (if flagsUnavailable then 0 else flag) else flags index)
+
+theorem parsedMatrixMAUPackOutputs_never_unknown
+    (precision : ParsedPrecision) (round flagsUnavailable : Bool) (rows : List Nat)
+    (poison : Bool) (pes : List (Fin 4)) (buses : Fin 4 → IntegerALU.Bus)
+    (flags : Fin 4 → BitVec 4) :
+    parsedMatrixMAUPackOutputs precision round flagsUnavailable rows poison pes buses flags ≠
+      .unknown := by
+  induction pes generalizing buses flags with
+  | nil => simp [parsedMatrixMAUPackOutputs]
+  | cons pe rest ih =>
+      cases packed : parsedMatrixMAUPEOutput? precision round rows pe with
+      | none => simp [parsedMatrixMAUPackOutputs, packed]
+      | some output =>
+          cases output with
+          | mk bus flag =>
+              simp only [parsedMatrixMAUPackOutputs, packed]
+              exact ih
+                (fun index => if index == pe then bus else buses index)
+                (fun index => if index == pe then
+                  (if flagsUnavailable then 0 else flag) else flags index)
+
 def executeParsedMatrixMAUAtMAB (state : State) (coordinate : MABCoordinate)
     (expression : ParsedExpr) (cycle : Fin 4) :
-    ProofsLean.StepResult ((Fin 4 → IntegerALU.Bus) × (Fin 4 → BitVec 4) × Bool) := Id.run do
+    ProofsLean.StepResult ((Fin 4 → IntegerALU.Bus) × (Fin 4 → BitVec 4) × Bool) :=
   match executeParsedMatrixMAUCalculationAtMAB state coordinate expression cycle with
-  | .failure => return .failure
-  | .unknown => return .unknown
+  | .failure => .failure
+  | .unknown => .unknown
   | .ok (rows, poison, flagsUnavailable) =>
-    let (.mau precision true _ _ round) := expression.op | return .unknown
-    let mut buses : Fin 4 → IntegerALU.Bus := fun _ => ⟨0, 0⟩
-    let mut flags : Fin 4 → BitVec 4 := fun _ => 0
-    for pe in List.finRange 4 do
-      match parsedMatrixMAUPEOutput? precision round rows pe with
-      | none => return .failure
-      | some (bus, flag) =>
-        buses := fun index => if index == pe then bus else buses index
-        flags := fun index => if index == pe then
-          (if flagsUnavailable then 0 else flag) else flags index
-    return .ok (buses, flags, poison)
+      match expression.op with
+      | .mau precision true _ _ round =>
+          parsedMatrixMAUPackOutputs precision round flagsUnavailable rows poison
+            (List.finRange 4) (fun _ => ⟨0, 0⟩) (fun _ => 0)
+      | _ => .unknown
+
+theorem executeParsedMatrixMAUAtMAB_calculation_known_never_unknown
+    (state : State) (coordinate : MABCoordinate) (expression : ParsedExpr) (cycle : Fin 4)
+    (calculationKnown : executeParsedMatrixMAUCalculationAtMAB state coordinate
+      expression cycle ≠ .unknown)
+    (matrixMAUOp : ∃ precision kind half round,
+      expression.op = .mau precision true kind half round) :
+    executeParsedMatrixMAUAtMAB state coordinate expression cycle ≠ .unknown := by
+  cases expression with
+  | mk op sources destinations flush text =>
+      cases calculated : executeParsedMatrixMAUCalculationAtMAB state coordinate
+          { op := op, sources := sources, destinations := destinations,
+            flush := flush, text := text } cycle with
+      | failure => simp [executeParsedMatrixMAUAtMAB, calculated]
+      | unknown => exact (calculationKnown calculated).elim
+      | ok result =>
+          rcases matrixMAUOp with ⟨precision, kind, half, round, opEq⟩
+          change op = .mau precision true kind half round at opEq
+          subst op
+          rcases result with ⟨rows, poison, flagsUnavailable⟩
+          simpa [executeParsedMatrixMAUAtMAB, calculated] using
+            parsedMatrixMAUPackOutputs_never_unknown precision round flagsUnavailable
+              rows poison (List.finRange 4) (fun _ => ⟨0, 0⟩) (fun _ => 0)
 
 
 theorem parsedMatrixMAURowActive_upper_lower_halves :

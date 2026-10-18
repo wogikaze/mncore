@@ -1920,7 +1920,7 @@
           "aggregation_composition_theorem": "ProofsLean.MNCore.readParsedMatrixMAUSourcePEs_resolved_never_unknown",
           "aggregation_equivalence_theorem": "ProofsLean.MNCore.readParsedMatrixMAUSourcePEs_eq_loop",
           "mab_scope": "When the same successful memory/forwarding source-lowering condition holds for each of the four participating PEs, the source-ordered MAB reader cannot return .unknown. Its recursive proof runner is proved equal to the original loop-based accumulation, including failure/unknown short-circuiting and lane order.",
-          "connection_limit": "The calculation stage is now composed with source-lowering and resolved-forwarding conditions for every MAU kind. Remaining: derive source-lowering from accepted Rust/parser-produced expressions and connect the calculation result through MAB commit, producer execution, and whole instruction-line transition.",
+          "connection_limit": "Connect MAB output to destination writes/MAUF commit and full issue-line transition; derive all calculation/source premises from parser-produced instructions and legal forwarding state.",
           "lowering_miss_theorem": "ProofsLean.MNCore.readParsedMatrixMAUSourcePE_lowering_miss_fails",
           "lowering_miss_behavior": "A memory/forward source that cannot be lowered is a known execution failure, matching Rust compute_mat read_raw_elems errors; .unknown is reserved for unresolved forwarding state.",
           "calculation_executor_theorems": [
@@ -1936,7 +1936,10 @@
             "ProofsLean.MNCore.executeParsedMatrixMAUCalculationAtMAB_add_lowered_reads_never_unknown",
             "ProofsLean.MNCore.executeParsedMatrixMAUCalculationAtMAB_passa_lowered_reads_never_unknown",
             "ProofsLean.MNCore.executeParsedMatrixMAUCalculationAtMAB_fma_lowered_reads_never_unknown"
-          ]
+          ],
+          "packing_theorem": "ProofsLean.MNCore.parsedMatrixMAUPackOutputs_never_unknown",
+          "calculation_to_mab_output_theorem": "ProofsLean.MNCore.executeParsedMatrixMAUAtMAB_calculation_known_never_unknown",
+          "calculation_output_scope": "Given a known matrix-MAU calculation result and a matrix-MAU opcode, PE output packing over all four PEs returns only failure or success. Packing preserves source order and per-PE bus/flag placement."
         },
         "remaining": "Run command-level Rust differentials for source operands, matrix layout, row masks, PE packing, flags, poison, and forwarding; the arithmetic-only comparison does not establish compute_mat or whole-machine conformance.",
         "source_mask_lowering": "parsedFloatMAUSourceAttrs? accepts masked and unmasked memory operands, then lowers the same mask-free memory input. Rust read_raw_untraced ignores the operand mask during reads.",
