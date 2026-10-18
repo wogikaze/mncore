@@ -296,6 +296,102 @@ theorem vectorMAUFma_half_one_plus_one_rounds_to_two :
     vectorMAUFma .half .single .half 0x3e00 0x3e00 0x3f800000 = 0x4000 := by
   decide
 
+/-! ### Matrix block-float dot products
+
+The matrix MAU keeps the dot-product accumulator unrounded until it is added
+to the optional FMA accumulator. The representation below follows Rust
+`float::bf_dot`: block mantissas are truncated to the selected BF width, each
+product carries its exact binary exponent, and the returned grid is used to
+align the accumulator before the final output rounding. -/
+
+abbrev MAUDotTerm := Bool × Nat × Int
+
+def decodeBlockFloatLane (precision : FloatPrecision) (keptBits : Nat)
+    (bits : Nat) : Bool × Nat × Nat :=
+  (floatIsNegative precision bits,
+    floatExponent precision bits,
+    bits % 2 ^ precision.mantissaBits / 2 ^ (precision.mantissaBits - keptBits))
+
+def blockFloatProductTerms (precision : FloatPrecision) (keptBits commonA commonB : Nat)
+    (left right : List Nat) : List MAUDotTerm := Id.run do
+  let mut terms := []
+  for (x, y) in left.zip right do
+    let (negativeA, exponentA, mantissaA) := decodeBlockFloatLane precision keptBits x
+    let (negativeB, exponentB, mantissaB) := decodeBlockFloatLane precision keptBits y
+    if mantissaA != 0 && mantissaB != 0 then
+      let exponentA := if exponentA == 0 then commonA - min commonA 6 else exponentA
+      let exponentB := if exponentB == 0 then commonB - min commonB 6 else exponentB
+      let mut product := mantissaA * mantissaB
+      match precision.mauMulFullBits with
+      | some full =>
+          if keptBits == precision.mantissaBits then
+            let lowBits := precision.mantissaBits - full
+            let dropped := (mantissaA % 2 ^ lowBits) * (mantissaB % 2 ^ lowBits)
+            if dropped != 0 then
+              product := product - dropped + 2 ^ (2 * lowBits - 2)
+      | none => pure ()
+      let exponent := Int.ofNat exponentA + Int.ofNat exponentB -
+        2 * Int.ofNat precision.bias - 2 * Int.ofNat (keptBits - 1)
+      terms := terms ++ [(negativeA != negativeB, product, exponent)]
+  return terms
+
+def blockFloatDotGrid (precision : FloatPrecision) (keptBits commonA commonB : Nat) : Int :=
+  let low := match precision.mauMulFullBits with
+    | some full => if keptBits == precision.mantissaBits then full + keptBits
+        else 2 * keptBits
+    | none => 2 * keptBits
+  Int.ofNat commonA + Int.ofNat commonB - 2 * Int.ofNat precision.bias + 2 -
+    Int.ofNat low
+
+def matrixBlockFloatDot (precision : FloatPrecision) (keptBits : Nat)
+    (left right : List Nat) : MAUValue × Option Int := Id.run do
+  let commonA := maxFloatExponent precision left
+  let commonB := maxFloatExponent precision right
+  if commonA == 0 || commonB == 0 then
+    return (.zero false, none)
+  if commonA == precision.exponentMax || commonB == precision.exponentMax then
+    return (.infinity false, none)
+  let grid := blockFloatDotGrid precision keptBits commonA commonB
+  let terms := blockFloatProductTerms precision keptBits commonA commonB left right
+  let some first := terms.head? | return (.zero false, some grid)
+  let minExponent := terms.foldl (fun current term => min current term.2.2) first.2.2
+  let exact := terms.all fun term =>
+    let shift := (term.2.2 - minExponent).toNat
+    shift <= 16 && 128 - (Nat.log2 term.2.1 + 1) < shift + 4
+  if exact then
+    let total := terms.foldl (fun current term =>
+      let magnitude := Int.ofNat (term.2.1 * 2 ^ (term.2.2 - minExponent).toNat)
+      current + if term.1 then -magnitude else magnitude) 0
+    if total == 0 then return (.zero false, some grid)
+    return (.finite (total < 0) total.natAbs minExponent, some grid)
+  let accumulated := terms.foldl (fun current term =>
+    addMAUValues current (.finite term.1 term.2.1 term.2.2)) (.zero false)
+  return (accumulated, some grid)
+
+theorem matrixBlockFloatDot_half_raw_mantissa_product :
+    matrixBlockFloatDot .half 9 [0x3f00] [0x3f00] =
+      (.finite false 65536 (-16), some (-16)) := by
+  decide
+
+theorem matrixBlockFloatDot_zero_block (precision : FloatPrecision) (keptBits : Nat)
+    (right : List Nat) :
+    matrixBlockFloatDot precision keptBits [] right = (.zero false, none) := by
+  simp [matrixBlockFloatDot, maxFloatExponent]
+
+def matrixBlockFloatFma (input accumulatorPrecision output : FloatPrecision) (keptBits : Nat)
+    (left right : List Nat) (accumulator : Nat) : Nat :=
+  let (dot, grid) := matrixBlockFloatDot input keptBits left right
+  let c := decodeMAUValue accumulatorPrecision accumulator
+  let aligned := match grid with
+    | some value => alignMAUAccumulator c value
+    | none => c
+  encodeMAUValue output (addMAUValues dot aligned)
+
+theorem matrixBlockFloatFma_half_raw_product_plus_single_one :
+    matrixBlockFloatFma .half .single .single 9 [0x3f00] [0x3f00]
+      0x3f800000 = 0x40000000 := by
+  decide
+
 /-- Reduce each native floating lane independently, including direct half
 precision RRN operations used by MV. -/
 def reduceLongFloatAddFormat (format : FloatPrecision)
