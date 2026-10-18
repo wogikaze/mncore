@@ -3738,6 +3738,20 @@ theorem completePendingMvTagAll_completes_two_same_tag
   simp [completePendingMvTagAll, completePendingMvTagFuel,
     completePendingMvTag, removePendingMvTag, pendingMvContainsTag]
 
+theorem completePendingMvTagAll_preserves_untagged_issue_between_matches
+    (state : State) (tag : Fin 256)
+    (firstWrites middleWrites lastWrites : List (MVSemantics.Cell × BitVec 64)) :
+    (completePendingMvTagAll
+      { state with
+        mvCompletedTags := fun other => other != tag
+        pendingMv := [⟨some tag, firstWrites⟩, ⟨none, middleWrites⟩,
+          ⟨some tag, lastWrites⟩] } tag).map
+      (fun completed =>
+        (completed.pendingMv.map PendingMv.tag, completed.mvCompletedTags tag)) =
+      some ([none], true) := by
+  simp [completePendingMvTagAll, completePendingMvTagFuel,
+    completePendingMvTag, removePendingMvTag, pendingMvContainsTag]
+
 /-- Remove a pending MV by its current queue position. This also completes
 untagged transfers, which cannot be named by a wait tag but still progress
 asynchronously before program termination. -/
