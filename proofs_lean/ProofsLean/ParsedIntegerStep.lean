@@ -2498,6 +2498,54 @@ def parsedMatrixReadBus (store : ParsedMatrixReadStore)
   | _ => singleMatrixReadBus face (parsedMatrixReadBaseS accesses.row)
       context.pe context.cycle
 
+/-- Raw logical element lookup shared by matrix MAU execution. The indexing
+and physical row stride mirror Rust `Machine::mat_get`: double uses four
+logical rows with stride four, single and pseudo-single use eight rows with
+stride two, and half uses sixteen rows with stride one. -/
+def parsedMatrixMAUElement (store : ParsedMatrixReadStore) (mab : Fin 16)
+    (sideY : Bool) (precision : ParsedPrecision) (row column : Nat) : Option Nat :=
+  let face := store mab sideY
+  match precision with
+  | .d =>
+      let logical := doubleMatrixFaceFromPhysicalWords face
+      some (logical (parsedMatrixReadBaseD row) (parsedMatrixReadBaseD column)).toNat
+  | .f | .g =>
+      let logicalRow := parsedMatrixReadBaseS row
+      let logicalColumn := parsedMatrixReadBaseS column
+      some (face (singleMatrixPhysicalRow logicalRow) logicalColumn).toNat
+  | .h =>
+      some (halfMatrixPhysicalElement face (parsedMatrixReadBaseH row)
+        (parsedMatrixReadBaseH column)).toNat
+  | .l | .i | .s => none
+
+theorem parsedMatrixMAUElement_double_layout (store : ParsedMatrixReadStore)
+    (mab : Fin 16) (sideY : Bool) (row column : Fin 4) :
+    parsedMatrixMAUElement store mab sideY .d row.val column.val =
+      some (doubleMatrixFaceFromPhysicalWords (store mab sideY) row column).toNat := by
+  simp [parsedMatrixMAUElement, parsedMatrixReadBaseD,
+    Nat.mod_eq_of_lt row.isLt, Nat.mod_eq_of_lt column.isLt]
+
+theorem parsedMatrixMAUElement_single_layout (store : ParsedMatrixReadStore)
+    (mab : Fin 16) (sideY : Bool) (row column : Fin 8) :
+    parsedMatrixMAUElement store mab sideY .f row.val column.val =
+      some ((store mab sideY) (singleMatrixPhysicalRow row) column).toNat := by
+  simp [parsedMatrixMAUElement, parsedMatrixReadBaseS,
+    Nat.mod_eq_of_lt row.isLt, Nat.mod_eq_of_lt column.isLt]
+
+theorem parsedMatrixMAUElement_pseudoSingle_layout (store : ParsedMatrixReadStore)
+    (mab : Fin 16) (sideY : Bool) (row column : Fin 8) :
+    parsedMatrixMAUElement store mab sideY .g row.val column.val =
+      some ((store mab sideY) (singleMatrixPhysicalRow row) column).toNat := by
+  simp [parsedMatrixMAUElement, parsedMatrixReadBaseS,
+    Nat.mod_eq_of_lt row.isLt, Nat.mod_eq_of_lt column.isLt]
+
+theorem parsedMatrixMAUElement_half_layout (store : ParsedMatrixReadStore)
+    (mab : Fin 16) (sideY : Bool) (row column : Fin 16) :
+    parsedMatrixMAUElement store mab sideY .h row.val column.val =
+      some (halfMatrixPhysicalElement (store mab sideY) row column).toNat := by
+  simp [parsedMatrixMAUElement, parsedMatrixReadBaseH,
+    Nat.mod_eq_of_lt row.isLt, Nat.mod_eq_of_lt column.isLt]
+
 def writeMatrixReadOutputs (old : ProofsLean.MNCore.Forwarding.Slots)
     (outputs : Fin 4 → IntegerALU.Bus) (noForward : Bool) :
     ProofsLean.StepResult ProofsLean.MNCore.Forwarding.Slots :=
