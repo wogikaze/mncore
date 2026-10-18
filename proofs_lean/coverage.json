@@ -1954,7 +1954,7 @@
           "helper": "ProofsLean.MNCore.writeParsedMatrixMAUDestinationsAtPE",
           "theorem": "ProofsLean.MNCore.writeParsedMatrixMAUDestinationsAtPE_never_unknown",
           "scope": "For each kind, successful memory/forward lowering across all four MAB cycles plus forwardingSourceResolved implies the complete ordered four-cycle/four-PE destination write executor cannot return .unknown. fma requires both vector and accumulator lowering at every cycle.",
-          "remaining": "Prove parser/issue correspondence for the shaped expression and source-lowering premise; connect producer knownness through matrix-write stage and complete issue-line state transition.",
+          "remaining": "Prove parser/issue correspondence for shaped expressions and source-lowering premises; establish matrix-write knownness for the applicable issue-line shapes and connect the producer composition through the full line transition.",
           "ordered_cycle_pe_executor": "ProofsLean.MNCore.executeParsedMatrixMAUWriteCycles",
           "per_cycle_theorem": "ProofsLean.MNCore.executeParsedMatrixMAUPEWritesAtCycle_never_unknown",
           "all_cycles_theorem": "ProofsLean.MNCore.executeParsedMatrixMAUWriteCycles_never_unknown",
@@ -1982,7 +1982,9 @@
             "ProofsLean.MNCore.executeParsedMatrixMAUProducer_passa_lowered_never_unknown",
             "ProofsLean.MNCore.executeParsedMatrixMAUProducer_fma_lowered_never_unknown"
           ],
-          "producer_scope": "Given a producer filter containing exactly the shaped MAU expression, successful source lowering on all participating MABs/cycles and resolved forwarding imply the producer stage cannot return .unknown. Poison propagation after successful MAB execution is included."
+          "producer_scope": "Given a producer filter containing exactly the shaped MAU expression, successful source lowering on all participating MABs/cycles and resolved forwarding imply the producer stage cannot return .unknown. Poison propagation after successful MAB execution is included.",
+          "mau_and_matrix_write_composition": "ProofsLean.MNCore.executeParsedMatrixMAUAndWrites_known_never_unknown",
+          "mau_and_matrix_write_scope": "If the matrix-MAU producer and subsequent matrix-register-write stage are each known for their inputs, their composition is known; matrix-write knownness remains a separate premise."
         }
       }
     },

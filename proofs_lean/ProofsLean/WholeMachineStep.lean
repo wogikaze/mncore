@@ -5950,6 +5950,27 @@ def executeParsedMatrixMAUAndWrites (readState currentState : State)
   | .ok afterMAU =>
       executeParsedMatrixWritesAtMABs readState allMABCoordinates expressions afterMAU
 
+theorem executeParsedMatrixMAUAndWrites_known_never_unknown
+    (readState currentState : State) (expressions : List ParsedExpr)
+    (noForward hasSingleLineMask : Bool)
+    (producerKnown : executeParsedMatrixMAUProducer readState currentState expressions
+      noForward hasSingleLineMask ≠ .unknown)
+    (matrixWritesKnown : ∀ afterMAU,
+      executeParsedMatrixWritesAtMABs readState allMABCoordinates expressions afterMAU ≠
+        .unknown) :
+    executeParsedMatrixMAUAndWrites readState currentState expressions
+      noForward hasSingleLineMask ≠ .unknown := by
+  cases producer : executeParsedMatrixMAUProducer readState currentState expressions
+      noForward hasSingleLineMask with
+  | failure => simp [executeParsedMatrixMAUAndWrites, producer]
+  | unknown => exact (producerKnown producer).elim
+  | ok afterMAU =>
+      cases writes : executeParsedMatrixWritesAtMABs readState allMABCoordinates
+          expressions afterMAU with
+      | failure => simp [executeParsedMatrixMAUAndWrites, producer, writes]
+      | unknown => exact (matrixWritesKnown afterMAU writes).elim
+      | ok next => simp [executeParsedMatrixMAUAndWrites, producer, writes]
+
 theorem executeParsedMatrixMAUAndWrites_preserves_post_mau_pe_state
     (readState currentState afterMAU next : State) (expressions : List ParsedExpr)
     (noForward hasSingleLineMask : Bool)
