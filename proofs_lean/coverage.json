@@ -124,7 +124,12 @@
         "ProofsLean.MNCore.PEMemory.parsed_noforward_suppresses_forwarding_updates",
         "ProofsLean.MNCore.Forwarding.noforward_preserves"
       ],
-      "scope_limit": "Source-parser correspondence for PE address modes remains unproved; L1-to-PE absent-producer behavior remains unresolved",
+      "l1_to_pe_absent_behavior": "Rust machine.rs retains prior LBF payload and error when the step has no L1-to-PE producer; Lean reference transition preserves the same per-cycle slot",
+      "l1_to_pe_absent_theorems": [
+        "ProofsLean.MNCore.Forwarding.advanceReference_absent_l1ToPE_preserves",
+        "ProofsLean.MNCore.updateSupportedPELineForwarding_absent_l1ToPE_preserves"
+      ],
+      "scope_limit": "Source-parser correspondence for PE address modes remains unproved; five forwarding experiment programs remain assembler-rejected and lack whole-program conformance evidence",
       "reference_conformance": false
     },
     "remaining": [
@@ -846,7 +851,7 @@
     },
     {
       "source": "proofs_lean/ProofsLean/Forwarding.lean",
-      "sha256": "1fd0043f0b9ee33ce22e58569932f6761e6e121f7d198105757a8824b2721aa8",
+      "sha256": "f44868a936e865feb5d6169db264ac79b3e986bb8513298b0cd0229b525486a0",
       "implemented": "Four forwarding slots per cycle, nop/noforward preservation, absent producer poison, deferred consumption, unknown distinct from known invalid values",
       "scope": "Known whole-step producer summaries and whole-value poison only; not a VSM interpreter or complete numeric-error model",
       "missing": "All initial state/encoding rules, exact memory timing, per-lane numerical poison and full instruction integration",
@@ -856,7 +861,7 @@
         "cases": 42,
         "matched_cases": 37,
         "unresolved_cases": 5,
-        "scope": "Explicit reference target for ALU/MAU/mread/L1-to-PE forwarding; absent mread output observed as zero; L1-to-PE absence unresolved; normal finite producer values, nop/noforward, discard/chain/write masks and flags-only writes; not full hazards or numerical poison",
+        "scope": "Explicit reference target for ALU/MAU/mread/L1-to-PE forwarding; absent mread output observed as zero; L1-to-PE absence unresolved in these probes; normal finite producer values, nop/noforward, discard/chain/write masks and flags-only writes; not full hazards or numerical poison",
         "formal_conformance_proof": false
       }
     },
@@ -945,6 +950,7 @@
     "corrected_simulator_source_sha256": "cc62a4f9752f070b5d4e22887770f187f30c90763e15b746c245d9d7624c5378",
     "corrected_model_error": "Flags-only mask-register writes do not force invalid forwarding data",
     "open_manual_reference_difference": "Absent matrix-read output observed as zero, not a disabled-producer error",
+    "l1_to_pe_absent_source_behavior": "viz/core/src/machine.rs retains the previous LBF error and payload when no L1BM-to-PE producer is present; modeled by ProofsLean.MNCore.Forwarding.advanceReference_absent_l1ToPE_preserves",
     "unresolved_encoding_cases": "Five whole VSM cases rejected by type inference; encoded-fragment behavior observed separately, but whole-program legality/decoding correspondence remains unproven"
   },
   "syntax_candidates": [

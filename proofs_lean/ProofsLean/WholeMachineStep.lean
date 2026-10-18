@@ -2641,9 +2641,20 @@ def updateSupportedPELineForwarding (old prepared : Forwarding.Slots)
       | .l1ToPE => none) with
   | .failure => .failure
   | .unknown => .unknown
-  | .ok advanced =>
-      .ok (fun unit cycle =>
-        if unit = .l1ToPE then old unit cycle else advanced unit cycle)
+  | .ok advanced => .ok advanced
+
+theorem updateSupportedPELineForwarding_absent_l1ToPE_preserves
+    (old prepared : Forwarding.Slots) :
+    updateSupportedPELineForwarding old prepared false false false false =
+      .ok (fun unit cycle => match unit with
+        | .alu | .mau => .poison
+        | .matrixRead => .known ⟨0, 0⟩
+        | .l1ToPE => old unit cycle) := by
+  unfold updateSupportedPELineForwarding
+  simp only [Forwarding.advanceReference]
+  congr 1
+  funext unit cycle
+  cases unit <;> rfl
 
 def updateIntegerLineForwardingValid
     (old : Forwarding.Unit → Fin 4 → Bool)

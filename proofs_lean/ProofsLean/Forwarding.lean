@@ -40,8 +40,8 @@ def advance (old : Slots) : StepSummary → StepResult Slots
   | .unsupported => .unknown
 
 /-- Explicit reference target: absent matrix-read output is observed as zero,
-not an invalid producer error. This differs from the manual's general reading.
-L1-to-PE absence is unresolved: assembler rejection is not runtime semantics. -/
+and absent L1-to-PE output retains its previous payload/error state. This differs
+from the generic sound abstraction, where both producer states remain unknown. -/
 def advanceReference (old : Slots) : StepSummary → StepResult Slots
   | .nop => .ok old
   | .issue true _ => .ok old
@@ -50,8 +50,16 @@ def advanceReference (old : Slots) : StepSummary → StepResult Slots
       | none => match unit with
           | .alu | .mau => .poison
           | .matrixRead => .known ⟨0, 0⟩
-          | .l1ToPE => .unknown)
+          | .l1ToPE => old unit cycle)
   | .unsupported => .unknown
+
+theorem advanceReference_absent_l1ToPE_preserves
+    (old : Slots) :
+    advanceReference old (.issue false (fun _ => none)) =
+      .ok (fun unit cycle => match unit with
+        | .alu | .mau => .poison
+        | .matrixRead => .known ⟨0, 0⟩
+        | .l1ToPE => old unit cycle) := rfl
 
 inductive Sink where
   | discard
