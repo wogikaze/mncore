@@ -1258,9 +1258,13 @@ def lowerParsedMatrixWriteResult (expression : ParsedExpr) (context : ParsedInte
     ProofsLean.StepResult ParsedMatrixWriteAccesses :=
   match lowerParsedMatrixWrite? expression context with
   | some accesses => .ok accesses
-  | none => match expression.sources with
-      | [.mem ..] | [.forward ..] => .unknown
-      | _ => .failure
+  | none => .failure
+
+theorem lowerParsedMatrixWrite_lowering_miss_is_failure
+    (expression : ParsedExpr) (context : ParsedIntegerContext)
+    (miss : lowerParsedMatrixWrite? expression context = none) :
+    lowerParsedMatrixWriteResult expression context = .failure := by
+  simp [lowerParsedMatrixWriteResult, miss]
 
 theorem lowerParsedMatrixWrite_fixed_source_is_failure
     (fixed : ParsedFixed) (context : ParsedIntegerContext) (row : Fin (2 ^ 32)) :

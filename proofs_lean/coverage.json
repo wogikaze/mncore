@@ -1987,6 +1987,12 @@
           "mau_and_matrix_write_scope": "The MAU producer/write stage composes without unknown when the producer is known. If the issue line has no matrix-register write producer, the subsequent matrix-write stage is known by its empty-filter branch, so the full executeParsedMatrixMAUAndWrites composition is known.",
           "matrix_write_empty_theorem": "ProofsLean.MNCore.executeParsedMatrixWritesAtMABs_no_matrix_write_never_unknown",
           "mau_only_composition_theorem": "ProofsLean.MNCore.executeParsedMatrixMAUAndWrites_no_matrix_write_never_unknown"
+        },
+        "matrix_write_lowering_miss": {
+          "theorem": "ProofsLean.MNCore.lowerParsedMatrixWrite_lowering_miss_is_failure",
+          "behavior": "Any matrix-write lowering miss is a known failure, including mem/forward source forms whose address/source fields cannot be represented.",
+          "rust_reference": "viz/core/src/machine.rs::Machine::compute_mwrite propagates read_raw_elems errors as ExecError; unsupported source/destination lowering is not an epistemic unknown.",
+          "scope_limit": "Unresolved forwarding remains .unknown in readParsedMatrixWriteBuses. Prove per-PE/all-PE read knownness under resolved forwarding and connect it through matrix-write cycles and co-issued MAU lines."
         }
       }
     },
