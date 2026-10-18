@@ -5268,45 +5268,167 @@ theorem writeParsedMatrixMAUDestinationsAtPE_never_unknown
       all_goals split <;> simp_all
       all_goals first | exact ih _ _ _ | simp_all
 
+structure ParsedMatrixMAUWriteAccum where
+  files : Fin 4 → PEMemory.IntegerRegisterFiles
+  bar0 : Fin 4 → BitVec 12
+  bar1 : Fin 4 → BitVec 12
+  outputs : Fin 4 → Fin 4 → IntegerALU.Bus
+  poisoned : Fin 4 → Bool
+
+
+def executeParsedMatrixMAUPEWritesAtCycle (currentState : State)
+    (expression : ParsedExpr) (coordinate : MABCoordinate) (hasSingleLineMask : Bool)
+    (cycle : Fin 4) (buses : Fin 4 → IntegerALU.Bus)
+    (flags : Fin 4 → BitVec 4) (poison : Bool) :
+    List (Fin 4) → ParsedMatrixMAUWriteAccum →
+      ProofsLean.StepResult ParsedMatrixMAUWriteAccum
+  | [], accum => .ok accum
+  | pe :: rest, accum =>
+      match resolveFlushSelection? expression.flush (accum.files pe).maskRegisters cycle with
+      | none => .failure
+      | some flushSelection =>
+          let output := parsedOutputAfterFlush flushSelection (buses pe)
+          match writeParsedMatrixMAUDestinationsAtPE currentState expression coordinate pe cycle
+              poison hasSingleLineMask output (flags pe) expression.destinations
+              (accum.files pe) (accum.bar0 pe) (accum.bar1 pe) with
+          | .failure => .failure
+          | .unknown => .unknown
+          | .ok (nextFiles, nextBar0, nextBar1) =>
+              executeParsedMatrixMAUPEWritesAtCycle currentState expression coordinate
+                hasSingleLineMask cycle buses flags poison rest
+                { files := fun index => if index == pe then nextFiles else accum.files index
+                  bar0 := fun index => if index == pe then nextBar0 else accum.bar0 index
+                  bar1 := fun index => if index == pe then nextBar1 else accum.bar1 index
+                  outputs := fun index slot =>
+                    if index == pe && slot == cycle then output else accum.outputs index slot
+                  poisoned := fun slot => if slot == cycle then poison else accum.poisoned slot }
+
+theorem executeParsedMatrixMAUPEWritesAtCycle_never_unknown
+    (currentState : State) (expression : ParsedExpr) (coordinate : MABCoordinate)
+    (hasSingleLineMask : Bool) (cycle : Fin 4) (buses : Fin 4 → IntegerALU.Bus)
+    (flags : Fin 4 → BitVec 4) (poison : Bool) (pes : List (Fin 4))
+    (accum : ParsedMatrixMAUWriteAccum) :
+    executeParsedMatrixMAUPEWritesAtCycle currentState expression coordinate
+      hasSingleLineMask cycle buses flags poison pes accum ≠ .unknown := by
+  induction pes generalizing accum with
+  | nil => simp [executeParsedMatrixMAUPEWritesAtCycle]
+  | cons pe rest ih =>
+      cases flush : resolveFlushSelection? expression.flush
+          (accum.files pe).maskRegisters cycle with
+      | none => simp [executeParsedMatrixMAUPEWritesAtCycle, flush]
+      | some selection =>
+          have writeKnown := writeParsedMatrixMAUDestinationsAtPE_never_unknown
+            currentState expression coordinate pe cycle poison hasSingleLineMask
+            (parsedOutputAfterFlush selection (buses pe)) (flags pe)
+            expression.destinations (accum.files pe) (accum.bar0 pe) (accum.bar1 pe)
+          cases write : writeParsedMatrixMAUDestinationsAtPE currentState expression
+              coordinate pe cycle poison hasSingleLineMask
+              (parsedOutputAfterFlush selection (buses pe)) (flags pe)
+              expression.destinations (accum.files pe) (accum.bar0 pe) (accum.bar1 pe) with
+          | failure => simp [executeParsedMatrixMAUPEWritesAtCycle, flush, write]
+          | unknown => exact (writeKnown write).elim
+          | ok next =>
+              simpa [executeParsedMatrixMAUPEWritesAtCycle, flush, write] using
+                ih ({ files := fun index => if index == pe then next.1 else accum.files index
+                      bar0 := fun index => if index == pe then next.2.1 else accum.bar0 index
+                      bar1 := fun index => if index == pe then next.2.2 else accum.bar1 index
+                      outputs := fun index slot => if index == pe && slot == cycle then
+                        parsedOutputAfterFlush selection (buses pe) else accum.outputs index slot
+                      poisoned := fun slot => if slot == cycle then poison else accum.poisoned slot })
+
+def executeParsedMatrixMAUWriteCycles (readState currentState : State)
+    (expression : ParsedExpr) (coordinate : MABCoordinate) (hasSingleLineMask : Bool) :
+    List (Fin 4) → ParsedMatrixMAUWriteAccum →
+      ProofsLean.StepResult ParsedMatrixMAUWriteAccum
+  | [], accum => .ok accum
+  | cycle :: rest, accum =>
+      match executeParsedMatrixMAUAtMAB readState coordinate expression cycle with
+      | .failure => .failure
+      | .unknown => .unknown
+      | .ok (buses, flags, poison) =>
+          match executeParsedMatrixMAUPEWritesAtCycle currentState expression coordinate
+              hasSingleLineMask cycle buses flags poison (List.finRange 4) accum with
+          | .failure => .failure
+          | .unknown => .unknown
+          | .ok next =>
+              executeParsedMatrixMAUWriteCycles readState currentState expression coordinate
+                hasSingleLineMask rest next
+
+theorem executeParsedMatrixMAUWriteCycles_never_unknown
+    (readState currentState : State) (expression : ParsedExpr) (coordinate : MABCoordinate)
+    (hasSingleLineMask : Bool) (cycles : List (Fin 4)) (accum : ParsedMatrixMAUWriteAccum)
+    (known : ∀ cycle ∈ cycles,
+      executeParsedMatrixMAUAtMAB readState coordinate expression cycle ≠ .unknown) :
+    executeParsedMatrixMAUWriteCycles readState currentState expression coordinate
+      hasSingleLineMask cycles accum ≠ .unknown := by
+  induction cycles generalizing accum with
+  | nil => simp [executeParsedMatrixMAUWriteCycles]
+  | cons cycle rest ih =>
+      have headKnown := known cycle (by simp)
+      have tailKnown : ∀ item ∈ rest,
+          executeParsedMatrixMAUAtMAB readState coordinate expression item ≠ .unknown := by
+        intro item member
+        exact known item (List.mem_cons_of_mem _ member)
+      cases output : executeParsedMatrixMAUAtMAB readState coordinate expression cycle with
+      | failure => simp [executeParsedMatrixMAUWriteCycles, output]
+      | unknown => exact (headKnown output).elim
+      | ok result =>
+          have peWritesKnown := executeParsedMatrixMAUPEWritesAtCycle_never_unknown
+            currentState expression coordinate hasSingleLineMask cycle result.1 result.2.1
+            result.2.2 (List.finRange 4) accum
+          cases writes : executeParsedMatrixMAUPEWritesAtCycle currentState expression
+              coordinate hasSingleLineMask cycle result.1 result.2.1 result.2.2
+              (List.finRange 4) accum with
+          | failure => simp [executeParsedMatrixMAUWriteCycles, output, writes]
+          | unknown => exact (peWritesKnown writes).elim
+          | ok next =>
+              simpa [executeParsedMatrixMAUWriteCycles, output, writes] using
+                ih next tailKnown
+
+
 def executeParsedMatrixMAUPEWritesAtMAB (readState currentState : State)
     (expression : ParsedExpr) (coordinate : MABCoordinate)
     (hasSingleLineMask : Bool) : ProofsLean.StepResult
       ((Fin 4 → PEMemory.IntegerRegisterFiles) × (Fin 4 → BitVec 12) ×
-        (Fin 4 → BitVec 12) × (Fin 4 → Fin 4 → IntegerALU.Bus) × (Fin 4 → Bool)) := Id.run do
-  let initialFiles := fun pe => currentState.peRegisters (physicalPEId coordinate pe)
-  let initialBar0 := fun pe => currentState.peContext (physicalPEId coordinate pe) |>.bar0
-  let initialBar1 := fun pe => currentState.peContext (physicalPEId coordinate pe) |>.bar1
-  let mut files := initialFiles
-  let mut bar0 := initialBar0
-  let mut bar1 := initialBar1
-  let mut outputs : Fin 4 → Fin 4 → IntegerALU.Bus := fun _ _ => ⟨0, 0⟩
-  let mut poisoned : Fin 4 → Bool := fun _ => false
-  for cycle in List.finRange 4 do
-    match executeParsedMatrixMAUAtMAB readState coordinate expression cycle with
-    | .failure => return .failure
-    | .unknown => return .unknown
-    | .ok (buses, flags, poison) =>
-      for pe in List.finRange 4 do
-        let peId := physicalPEId coordinate pe
-        let oldContext := currentState.peContext peId
-        let contextBase := ParsedIntegerContext.ofLinearIndex peId
-        match resolveFlushSelection? expression.flush (files pe).maskRegisters cycle with
-        | none => return .failure
-        | some flushSelection =>
-          let output := parsedOutputAfterFlush flushSelection (buses pe)
-          let writeDests := writeParsedMatrixMAUDestinationsAtPE currentState expression
-            coordinate pe cycle poison hasSingleLineMask output (flags pe)
-          match writeDests expression.destinations (files pe) (bar0 pe) (bar1 pe) with
-          | .failure => return .failure
-          | .unknown => return .unknown
-          | .ok (nextFiles, nextBar0, nextBar1) =>
-            files := fun index => if index == pe then nextFiles else files index
-            bar0 := fun index => if index == pe then nextBar0 else bar0 index
-            bar1 := fun index => if index == pe then nextBar1 else bar1 index
-            outputs := fun index slot =>
-              if index == pe && slot == cycle then output else outputs index slot
-            poisoned := fun slot => if slot == cycle then poison else poisoned slot
-  return .ok (files, bar0, bar1, outputs, poisoned)
+        (Fin 4 → BitVec 12) × (Fin 4 → Fin 4 → IntegerALU.Bus) × (Fin 4 → Bool)) :=
+  match executeParsedMatrixMAUWriteCycles readState currentState expression coordinate
+      hasSingleLineMask (List.finRange 4)
+      { files := fun pe => currentState.peRegisters (physicalPEId coordinate pe)
+        bar0 := fun pe => currentState.peContext (physicalPEId coordinate pe) |>.bar0
+        bar1 := fun pe => currentState.peContext (physicalPEId coordinate pe) |>.bar1
+        outputs := fun _ _ => ⟨0, 0⟩
+        poisoned := fun _ => false } with
+  | .failure => .failure
+  | .unknown => .unknown
+  | .ok accum => .ok (accum.files, accum.bar0, accum.bar1, accum.outputs, accum.poisoned)
+
+theorem executeParsedMatrixMAUPEWritesAtMAB_known_never_unknown
+    (readState currentState : State) (expression : ParsedExpr) (coordinate : MABCoordinate)
+    (hasSingleLineMask : Bool)
+    (known : ∀ cycle : Fin 4,
+      executeParsedMatrixMAUAtMAB readState coordinate expression cycle ≠ .unknown) :
+    executeParsedMatrixMAUPEWritesAtMAB readState currentState expression coordinate
+      hasSingleLineMask ≠ .unknown := by
+  simp only [executeParsedMatrixMAUPEWritesAtMAB]
+  cases result : executeParsedMatrixMAUWriteCycles readState currentState expression
+      coordinate hasSingleLineMask (List.finRange 4)
+      { files := fun pe => currentState.peRegisters (physicalPEId coordinate pe)
+        bar0 := fun pe => currentState.peContext (physicalPEId coordinate pe) |>.bar0
+        bar1 := fun pe => currentState.peContext (physicalPEId coordinate pe) |>.bar1
+        outputs := fun _ _ => ⟨0, 0⟩
+        poisoned := fun _ => false } with
+  | failure => simp
+  | unknown =>
+      have resultKnown := executeParsedMatrixMAUWriteCycles_never_unknown
+        readState currentState expression coordinate hasSingleLineMask (List.finRange 4)
+        { files := fun pe => currentState.peRegisters (physicalPEId coordinate pe)
+          bar0 := fun pe => currentState.peContext (physicalPEId coordinate pe) |>.bar0
+          bar1 := fun pe => currentState.peContext (physicalPEId coordinate pe) |>.bar1
+          outputs := fun _ _ => ⟨0, 0⟩
+          poisoned := fun _ => false }
+        (by intro cycle _; exact known cycle)
+      exact (resultKnown result).elim
+  | ok accum => simp
 
 def executeParsedMatrixMAUTransitionAtMAB (readState currentState : State)
     (expression : ParsedExpr) (coordinate : MABCoordinate)

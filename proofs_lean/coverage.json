@@ -1953,8 +1953,12 @@
         "destination_write_knownness": {
           "helper": "ProofsLean.MNCore.writeParsedMatrixMAUDestinationsAtPE",
           "theorem": "ProofsLean.MNCore.writeParsedMatrixMAUDestinationsAtPE_never_unknown",
-          "scope": "For any destination list and PE files/BAR state, destination writes return failure or success; unsupported lowering and invalid selectors are classified as known failures. Poison-enabled destinations either fail or skip the data write; OMR flag writes remain independent of data poison.",
-          "remaining": "The enclosing cycle and PE loops still propagate .unknown from executeParsedMatrixMAUAtMAB; compose their four-cycle results with the calculation/source proofs."
+          "scope": "The imperative cycle/PE loops are represented as ordered recursive folds. If each cycle MAB output is known, all four cycles, destination writes, bus/flag/poison accumulation, and final PE-write result cannot be unknown.",
+          "remaining": "Derive per-cycle MAB output knownness from the four calculation/lowering theorems and connect this PE-write result through MAUF commit and the full issue-line transition.",
+          "ordered_cycle_pe_executor": "ProofsLean.MNCore.executeParsedMatrixMAUWriteCycles",
+          "per_cycle_theorem": "ProofsLean.MNCore.executeParsedMatrixMAUPEWritesAtCycle_never_unknown",
+          "all_cycles_theorem": "ProofsLean.MNCore.executeParsedMatrixMAUWriteCycles_never_unknown",
+          "mab_pewrites_theorem": "ProofsLean.MNCore.executeParsedMatrixMAUPEWritesAtMAB_known_never_unknown"
         }
       }
     },
