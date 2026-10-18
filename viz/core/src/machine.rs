@@ -23,6 +23,9 @@ pub const T_WORDS: usize = 16; // two long words for each of the 4 cycles
 /// Two long words on the PE data path in one cycle. Index 0 is the MSB word.
 pub type Bus = [u32; 4];
 
+/// Expressions per line handled by the PE-local fast path.
+const MAX_STEP_EXPRS: usize = 8;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct PeId {
     pub group: u8,
@@ -43,10 +46,16 @@ impl PeId {
         }
     }
     pub fn index(self) -> usize {
-        (((self.group as usize * 2 + self.l2b as usize) * 8 + self.l1b as usize) * 16 + self.mab as usize) * 4 + self.pe as usize
+        (((self.group as usize * 2 + self.l2b as usize) * 8 + self.l1b as usize) * 16
+            + self.mab as usize)
+            * 4
+            + self.pe as usize
     }
     pub fn name(self) -> String {
-        format!("n{}c{}b{}m{}p{}", self.group, self.l2b, self.l1b, self.mab, self.pe)
+        format!(
+            "n{}c{}b{}m{}p{}",
+            self.group, self.l2b, self.l1b, self.mab, self.pe
+        )
     }
 }
 
@@ -55,25 +64,36 @@ impl PeId {
 pub struct Words {
     data: Option<Box<[u32]>>,
     len: usize,
+    /// `len - 1`. Every memory size is a power of two, so wrapping is a mask, not a division.
+    mask: usize,
 }
 
 impl Words {
     pub fn new(len: usize) -> Words {
-        Words { data: None, len }
+        assert!(len.is_power_of_two(), "Words length must be a power of two");
+        Words {
+            data: None,
+            len,
+            mask: len - 1,
+        }
     }
     pub fn len(&self) -> usize {
         self.len
     }
+    #[inline]
     pub fn get(&self, addr: usize) -> u32 {
         match &self.data {
-            Some(d) => d[addr % self.len],
+            Some(d) => d[addr & self.mask],
             None => 0,
         }
     }
+    #[inline]
     pub fn set(&mut self, addr: usize, v: u32) {
-        let len = self.len;
-        let d = self.data.get_or_insert_with(|| vec![0; len].into_boxed_slice());
-        d[addr % len] = v;
+        let (len, mask) = (self.len, self.mask);
+        let d = self
+            .data
+            .get_or_insert_with(|| vec![0; len].into_boxed_slice());
+        d[addr & mask] = v;
     }
 }
 
@@ -180,6 +200,9 @@ pub struct Machine {
     /// Records accesses of focus PEs for the visualization, when set.
     pub tracer: std::cell::RefCell<Option<crate::trace::Tracer>>,
     pub mask_state: MaskState,
+    /// Lines executed by the generic path and by the PE-local fast path.
+    pub slow_steps: u64,
+    pub fast_steps: u64,
 }
 
 /// A pending write to a matrix register: MAB, face, physical row, and the 8 words of the row.
@@ -248,13 +271,33 @@ impl Default for Machine {
 
 impl Machine {
     pub fn new() -> Machine {
-        let uninit = |k| Some(format!("uninitialized {} forwarding register", unit_name(k)));
-        let fwd_error = [uninit(FwdKind::Aluf), uninit(FwdKind::Mauf), uninit(FwdKind::Mreadf), uninit(FwdKind::Lbf)];
-        Machine { pes: vec![Pe::default(); PES], fwd_error, blocks: Default::default(), tracer: Default::default(), mats: vec![[[[0; 8]; 16]; 2]; PES / 4], mask_state: MaskState::default() }
+        let uninit = |k| {
+            Some(format!(
+                "uninitialized {} forwarding register",
+                unit_name(k)
+            ))
+        };
+        let fwd_error = [
+            uninit(FwdKind::Aluf),
+            uninit(FwdKind::Mauf),
+            uninit(FwdKind::Mreadf),
+            uninit(FwdKind::Lbf),
+        ];
+        Machine {
+            pes: vec![Pe::default(); PES],
+            fwd_error,
+            blocks: Default::default(),
+            tracer: Default::default(),
+            mats: vec![[[[0; 8]; 16]; 2]; PES / 4],
+            mask_state: MaskState::default(),
+            slow_steps: 0,
+            fast_steps: 0,
+        }
     }
 
     // ---- reads ----------------------------------------------------------------------------
 
+    #[inline]
     fn word_addrs(&self, pe: usize, mem: MemKind, wl: u8, addr: &Addr, cycle: usize) -> usize {
         let p = &self.pes[pe];
         let bar = match mem {
@@ -262,15 +305,22 @@ impl Machine {
             MemKind::Lm1 => p.bar1,
             _ => 0,
         } as usize;
+        let wl = wl as usize;
+        if !addr.t_indirect && addr.madpe.is_none() {
+            return (bar + addr.cycles[cycle] as usize) & !(wl - 1);
+        }
         // T indirect adds the MSB long word of T as an integer; only its low bits matter, because
         // addresses wrap at the memory size.
-        let t = if addr.t_indirect { p.t[cycle * 4 + 1] as usize } else { 0 };
+        let t = if addr.t_indirect {
+            p.t[cycle * 4 + 1] as usize
+        } else {
+            0
+        };
         let maadj = match addr.madpe {
-            Some(m) if (pe % 4) as u8 <= m => wl as usize,
+            Some(m) if (pe % 4) as u8 <= m => wl,
             _ => 0,
         };
-        let a = bar + t + addr.cycles[cycle] as usize + maadj;
-        a / wl as usize * wl as usize
+        (bar + t + addr.cycles[cycle] as usize + maadj) & !(wl - 1)
     }
 
     fn read_raw(&self, pe: usize, op: &Operand, cycle: usize) -> Result<Bus, ExecError> {
@@ -278,10 +328,31 @@ impl Machine {
         if let Some(t) = self.tracer.borrow_mut().as_mut() {
             match op {
                 Operand::Mem { mem, wl, addr, .. } => {
-                    let (a, n) = if *mem == MemKind::T { (cycle as u32, 4) } else { (self.word_addrs(pe, *mem, *wl, addr, cycle) as u32, *wl as usize) };
-                    t.pe_read(pe, cycle, mem_name(*mem), op as *const Operand as usize, Some(a), &bus[..n]);
+                    let (a, n) = if *mem == MemKind::T {
+                        (cycle as u32, 4)
+                    } else {
+                        (
+                            self.word_addrs(pe, *mem, *wl, addr, cycle) as u32,
+                            *wl as usize,
+                        )
+                    };
+                    t.pe_read(
+                        pe,
+                        cycle,
+                        mem_name(*mem),
+                        op as *const Operand as usize,
+                        Some(a),
+                        &bus[..n],
+                    );
                 }
-                Operand::Forward { kind, .. } => t.pe_read(pe, cycle, fwd_name(*kind), op as *const Operand as usize, None, &bus),
+                Operand::Forward { kind, .. } => t.pe_read(
+                    pe,
+                    cycle,
+                    fwd_name(*kind),
+                    op as *const Operand as usize,
+                    None,
+                    &bus,
+                ),
                 _ => {}
             }
         }
@@ -326,6 +397,11 @@ impl Machine {
 
     /// Executes one PE statement.
     pub fn step(&mut self, exprs: &[Expr]) -> Result<(), ExecError> {
+        if let Some(fast) = self.step_fast(exprs) {
+            self.fast_steps += 1;
+            return fast;
+        }
+        self.slow_steps += 1;
         let noforward = exprs.iter().any(|e| e.op == Op::Noforward);
         let single_line_mask = exprs.iter().any(|e| e.dsts.iter().any(has_mask));
         let mut outputs: Vec<(&Expr, Output)> = Vec::new();
@@ -334,7 +410,11 @@ impl Machine {
         for (ei, e) in exprs.iter().enumerate() {
             if let Some(t) = self.tracer.borrow_mut().as_mut() {
                 t.expr = ei as u16;
-                t.srcs = e.srcs.iter().map(|o| o as *const Operand as usize).collect();
+                t.srcs = e
+                    .srcs
+                    .iter()
+                    .map(|o| o as *const Operand as usize)
+                    .collect();
             }
             match &e.op {
                 Op::Noforward | Op::Wait(_) => continue,
@@ -345,16 +425,24 @@ impl Machine {
                 Op::L1(op) if !is_l1_to_pe(e) => {
                     block_writes.expr = ei as u16;
                     let src = &e.srcs[0];
-                    let ext = matches!(src, Operand::Mem { ext: true, .. } | Operand::Forward { ext: true, .. });
+                    let ext = matches!(
+                        src,
+                        Operand::Mem { ext: true, .. } | Operand::Forward { ext: true, .. }
+                    );
                     let mut vals = vec![[[0u32; 4]; 4]; PES];
                     for pe in 0..PES {
                         for c in 0..4 {
                             vals[pe][c] = self.read_raw(pe, src, c)?;
                         }
                     }
-                    let dst = e.dsts.first().ok_or_else(|| ExecError::Unsupported("missing L1BM operand".into()))?;
-                    let src_two = matches!(src, Operand::Mem { wl: 4, .. } | Operand::Forward { .. });
-                    self.blocks.pe_to_l1(*op, dst, &vals, ext, src_two, &mut block_writes)?;
+                    let dst = e
+                        .dsts
+                        .first()
+                        .ok_or_else(|| ExecError::Unsupported("missing L1BM operand".into()))?;
+                    let src_two =
+                        matches!(src, Operand::Mem { wl: 4, .. } | Operand::Forward { .. });
+                    self.blocks
+                        .pe_to_l1(*op, dst, &vals, ext, src_two, &mut block_writes)?;
                     continue;
                 }
                 Op::L2(op) => {
@@ -370,7 +458,10 @@ impl Machine {
                     bus: vec![[[0; 4]; 4]; PES],
                     flags: vec![[0; 4]; PES],
                     fwd: op_fwd_kind(e),
-                    poison: Some(Poison { msg, at: Vec::new() }),
+                    poison: Some(Poison {
+                        msg,
+                        at: Vec::new(),
+                    }),
                 },
                 Err(other) => return Err(other),
             };
@@ -390,7 +481,10 @@ impl Machine {
                     self.blocks.lbi = l;
                     self.blocks.lbi_error = None;
                 }
-                None => self.blocks.lbi_error = Some("the previous step had no PE-to-L1BM transfer".into()),
+                None => {
+                    self.blocks.lbi_error =
+                        Some("the previous step had no PE-to-L1BM transfer".into())
+                }
             }
         }
         for w in mat_writes {
@@ -423,7 +517,11 @@ impl Machine {
                         let f = self.mask_flags(pe, &sel, c);
                         bus = apply_flush(bus, f, sel.ll);
                     }
-                    let poison = out.poison.as_ref().filter(|p| p.hits(pe, c)).map(|p| p.msg.as_str());
+                    let poison = out
+                        .poison
+                        .as_ref()
+                        .filter(|p| p.hits(pe, c))
+                        .map(|p| p.msg.as_str());
                     for (di, d) in e.dsts.iter().enumerate() {
                         if let Some(t) = self.tracer.borrow_mut().as_mut() {
                             t.wslot = Some(di as u8);
@@ -435,11 +533,17 @@ impl Machine {
         }
         if !noforward {
             for k in [FwdKind::Aluf, FwdKind::Mauf, FwdKind::Mreadf, FwdKind::Lbf] {
-                let mine: Vec<&Output> = outputs.iter().map(|(_, o)| o).filter(|o| o.fwd == Some(k)).collect();
+                let mine: Vec<&Output> = outputs
+                    .iter()
+                    .map(|(_, o)| o)
+                    .filter(|o| o.fwd == Some(k))
+                    .collect();
                 self.fwd_error[fwd_index(k)] = if mine.is_empty() && k == FwdKind::Mreadf {
                     // With no matrix read, the official emulator exposes zero on mreadf
                     // rather than a disabled-producer error. nop/noforward still preserve it.
-                    for pe in &mut self.pes { pe.mreadf = [[0; 4]; 4]; }
+                    for pe in &mut self.pes {
+                        pe.mreadf = [[0; 4]; 4];
+                    }
                     None
                 } else if mine.is_empty() && k == FwdKind::Lbf {
                     // Encoded-word experiments retain the last L1BM-to-PE value
@@ -448,7 +552,8 @@ impl Machine {
                 } else if mine.is_empty() {
                     Some(format!("{} is disabled", unit_name(k)))
                 } else {
-                    mine.iter().find_map(|o| o.poison.as_ref().map(|p| p.msg.clone()))
+                    mine.iter()
+                        .find_map(|o| o.poison.as_ref().map(|p| p.msg.clone()))
                 };
             }
             for (e, out) in &outputs {
@@ -502,7 +607,49 @@ impl Machine {
         }
     }
 
-    fn write(&mut self, pe: usize, d: &Operand, cycle: usize, bus: Bus, flags: u8, single_line: bool, poison: Option<&str>) -> Result<(), ExecError> {
+    /// Writes a bus without mask directives or tracing when the destination is a plain word
+    /// memory. Falls back to the full path otherwise.
+    fn write_fast(
+        &mut self,
+        pe: usize,
+        d: &Operand,
+        cycle: usize,
+        bus: Bus,
+        flags: u8,
+        single_line: bool,
+    ) -> Result<(), ExecError> {
+        if !single_line && self.mask_state.entry == 0 {
+            if let Operand::Mem {
+                mem,
+                wl,
+                addr,
+                mask: None,
+                ..
+            } = d
+            {
+                if *mem != MemKind::T {
+                    let a = self.word_addrs(pe, *mem, *wl, addr, cycle);
+                    let m = self.pes[pe].mem_mut(*mem);
+                    for i in 0..*wl as usize {
+                        m.set(a + i, bus[i]);
+                    }
+                    return Ok(());
+                }
+            }
+        }
+        self.write(pe, d, cycle, bus, flags, single_line, None)
+    }
+
+    fn write(
+        &mut self,
+        pe: usize,
+        d: &Operand,
+        cycle: usize,
+        bus: Bus,
+        flags: u8,
+        single_line: bool,
+        poison: Option<&str>,
+    ) -> Result<(), ExecError> {
         let fail = |enabled: bool| -> Result<(), ExecError> {
             match poison {
                 Some(msg) if enabled => Err(ExecError::Runtime(msg.to_string())),
@@ -525,7 +672,10 @@ impl Machine {
                 _ => omr && t.mask_reg,
             };
             if on && st.entry != 0 {
-                Some(MaskSel { ll: st.wl == 4, source: MaskSource::Entry(st.entry) })
+                Some(MaskSel {
+                    ll: st.wl == 4,
+                    source: MaskSource::Entry(st.entry),
+                })
             } else {
                 None
             }
@@ -533,14 +683,24 @@ impl Machine {
         let st = self.mask_state;
         match d {
             Operand::Nowrite => {}
-            Operand::Mem { mem, wl, addr, mask, .. } => {
+            Operand::Mem {
+                mem,
+                wl,
+                addr,
+                mask,
+                ..
+            } => {
                 let sel = mask.or_else(|| directive(Some(*mem), false, &st));
                 let mflags = sel.map(|s| (self.mask_flags(pe, &s, cycle), s.ll));
                 let words = if *mem == MemKind::T { 4 } else { *wl as usize };
                 fail((0..words).any(|i| word_enabled(mflags, i)))?;
                 if (0..words).any(|i| word_enabled(mflags, i)) {
                     if let Some(t) = self.tracer.borrow_mut().as_mut() {
-                        let a = if *mem == MemKind::T { cycle as u32 } else { self.word_addrs(pe, *mem, *wl, addr, cycle) as u32 };
+                        let a = if *mem == MemKind::T {
+                            cycle as u32
+                        } else {
+                            self.word_addrs(pe, *mem, *wl, addr, cycle) as u32
+                        };
                         t.pe(pe, cycle, mem_name(*mem), true, Some(a), &bus[..words]);
                     }
                 }
@@ -572,7 +732,14 @@ impl Machine {
                 }
                 fail(true)?;
                 if let Some(t) = self.tracer.borrow_mut().as_mut() {
-                    t.pe(pe, cycle, if *lm1 { "bar1" } else { "bar0" }, true, None, &[bus[0] & 0xfff]);
+                    t.pe(
+                        pe,
+                        cycle,
+                        if *lm1 { "bar1" } else { "bar0" },
+                        true,
+                        None,
+                        &[bus[0] & 0xfff],
+                    );
                 }
                 let p = &mut self.pes[pe];
                 if *lm1 {
@@ -583,7 +750,9 @@ impl Machine {
             }
             Operand::Omr { entry, mask } => {
                 if *entry == 0 || *entry > 15 {
-                    return Err(ExecError::Unsupported(format!("mask register entry {entry} is read-only")));
+                    return Err(ExecError::Unsupported(format!(
+                        "mask register entry {entry} is read-only"
+                    )));
                 }
                 let sel = mask.or_else(|| directive(None, true, &st));
                 let f = match sel {
@@ -614,10 +783,32 @@ impl Machine {
                 let bus = if *u { [v, 0, v, 0] } else { [v; 4] };
                 Ok(self.alu_like(|_, _| ([bus; 4], [0; 4])))
             }
-            Op::Alu { name: name @ (AluOp::Bfn | AluOp::Bfe), prec, arg, .. } => self.compute_bfn(e, *name, prec.unwrap(), *arg),
-            Op::Alu { name, prec, unsigned, .. } => self.compute_alu(e, *name, *prec, *unsigned),
-            Op::Mau { prec, matrix: false, kind, half, round } => self.compute_vec(e, *prec, *kind, *half, *round),
-            Op::Mau { prec, matrix: true, kind, half, round } => self.compute_mat(e, *prec, *kind, *half, *round),
+            Op::Alu {
+                name: name @ (AluOp::Bfn | AluOp::Bfe),
+                prec,
+                arg,
+                ..
+            } => self.compute_bfn(e, *name, prec.unwrap(), *arg),
+            Op::Alu {
+                name,
+                prec,
+                unsigned,
+                ..
+            } => self.compute_alu(e, *name, *prec, *unsigned),
+            Op::Mau {
+                prec,
+                matrix: false,
+                kind,
+                half,
+                round,
+            } => self.compute_vec(e, *prec, *kind, *half, *round),
+            Op::Mau {
+                prec,
+                matrix: true,
+                kind,
+                half,
+                round,
+            } => self.compute_mat(e, *prec, *kind, *half, *round),
             Op::MatRead { prec } => self.compute_mread(e, *prec),
             Op::L1(op) => {
                 let (bus, from) = self.blocks.l1_to_pe(*op, &e.srcs[0])?;
@@ -625,11 +816,23 @@ impl Machine {
                     for pe in 0..PES {
                         for c in 0..4 {
                             let b = &bus[pe][c];
-                            t.pe_read(pe, c, "l1bm_src", &e.srcs[0] as *const Operand as usize, from[pe][c], &[b[0], b[1]]);
+                            t.pe_read(
+                                pe,
+                                c,
+                                "l1bm_src",
+                                &e.srcs[0] as *const Operand as usize,
+                                from[pe][c],
+                                &[b[0], b[1]],
+                            );
                         }
                     }
                 }
-                Ok(Output { bus, flags: vec![[0; 4]; PES], fwd: Some(FwdKind::Lbf), poison: None })
+                Ok(Output {
+                    bus,
+                    flags: vec![[0; 4]; PES],
+                    fwd: Some(FwdKind::Lbf),
+                    poison: None,
+                })
             }
             other => Err(ExecError::Unsupported(format!("{other:?}"))),
         }
@@ -643,11 +846,22 @@ impl Machine {
             bus.push(b);
             flags.push(fl);
         }
-        Output { bus, flags, fwd: Some(FwdKind::Aluf), poison: None }
+        Output {
+            bus,
+            flags,
+            fwd: Some(FwdKind::Aluf),
+            poison: None,
+        }
     }
 
     /// Reads an ALU input operand, applying the `r` option (single to half) if present.
-    fn read_alu_input(&self, pe: usize, op: &Operand, prec: Option<Prec>, cycle: usize) -> Result<Bus, ExecError> {
+    fn read_alu_input(
+        &self,
+        pe: usize,
+        op: &Operand,
+        prec: Option<Prec>,
+        cycle: usize,
+    ) -> Result<Bus, ExecError> {
         if let Operand::Fixed(k) = op {
             let id = PeId::from_index(pe);
             let v: u64 = match k {
@@ -659,14 +873,23 @@ impl Machine {
                 FixedKind::Msb1 => u64::MAX,
             };
             let bits = prec_bits(prec);
-            let lane = if *k == FixedKind::Msb1 { 1u64 << (bits - 1) } else { v };
+            let lane = if *k == FixedKind::Msb1 {
+                1u64 << (bits - 1)
+            } else {
+                v
+            };
             return Ok(splat(lane, bits));
         }
         let bus = self.read_raw(pe, op, cycle)?;
-        let rnd = matches!(op, Operand::Mem { rnd: true, .. } | Operand::Forward { rnd: true, .. });
+        let rnd = matches!(
+            op,
+            Operand::Mem { rnd: true, .. } | Operand::Forward { rnd: true, .. }
+        );
         if rnd {
             let mut out = [0u32; 4];
-            let halves: Vec<u64> = (0..4).map(|i| float::encode(HALF, float::decode(SINGLE, bus[i] as u64))).collect();
+            let halves: Vec<u64> = (0..4)
+                .map(|i| float::encode(HALF, float::decode(SINGLE, bus[i] as u64)))
+                .collect();
             out[0] = ((halves[0] << 16) | halves[1]) as u32;
             out[1] = ((halves[2] << 16) | halves[3]) as u32;
             return Ok(out);
@@ -674,7 +897,13 @@ impl Machine {
         Ok(bus)
     }
 
-    fn compute_alu(&self, e: &Expr, name: AluOp, prec: Option<Prec>, unsigned: bool) -> Result<Output, ExecError> {
+    fn compute_alu(
+        &self,
+        e: &Expr,
+        name: AluOp,
+        prec: Option<Prec>,
+        unsigned: bool,
+    ) -> Result<Output, ExecError> {
         let n = name.inputs();
         let mut ins: Vec<Vec<[Bus; 4]>> = vec![vec![[[0; 4]; 4]; PES]; n];
         for (i, op) in e.srcs.iter().enumerate().take(n) {
@@ -695,19 +924,27 @@ impl Machine {
                     AluOp::Msl | AluOp::Msr => {
                         // msl: PE k outputs the input of PE k-1 within the MAB.
                         let base = pe / 4 * 4;
-                        let src = if name == AluOp::Msl { base + (pe + 3) % 4 } else { base + (pe + 1) % 4 };
+                        let src = if name == AluOp::Msl {
+                            base + (pe + 3) % 4
+                        } else {
+                            base + (pe + 1) % 4
+                        };
                         // Only one long word moves between PEs: the LSB long word is 0 (emulator),
                         // not the first input's LSB long word as for other ALU instructions.
                         let v = ins[0][src][c];
                         ([v[0], v[1], 0, 0], 0)
                     }
                     AluOp::Passa => {
-                        let fl = lane_flags(&lanes(&x, bits), bits, |v| v == 0);
+                        let (xl, count) = lanes_fixed(&x, bits);
+                        let fl = lane_flags(&xl[..count], bits, |v| v == 0);
                         (x, fl)
                     }
                     _ => {
-                        let (msb, fl) = alu_lanes(name, prec.unwrap(), unsigned, &lanes(&x, bits), &lanes(&y, bits))?;
-                        let lo = pack_lanes(&msb, bits);
+                        let (xl, count) = lanes_fixed(&x, bits);
+                        let (yl, _) = lanes_fixed(&y, bits);
+                        let (msb, fl) =
+                            alu_lanes(name, prec.unwrap(), unsigned, &xl[..count], &yl[..count])?;
+                        let lo = pack_lanes(&msb[..count], bits);
                         ([lo[0], lo[1], x[2], x[3]], fl)
                     }
                 };
@@ -715,16 +952,32 @@ impl Machine {
                 flags[pe][c] = fl;
             }
         }
-        Ok(Output { bus, flags, fwd: Some(FwdKind::Aluf), poison: None })
+        Ok(Output {
+            bus,
+            flags,
+            fwd: Some(FwdKind::Aluf),
+            poison: None,
+        })
     }
 
-    fn compute_vec(&self, e: &Expr, prec: Prec, kind: MauKind, half: Option<char>, round: bool) -> Result<Output, ExecError> {
+    fn compute_vec(
+        &self,
+        e: &Expr,
+        prec: Prec,
+        kind: MauKind,
+        half: Option<char>,
+        round: bool,
+    ) -> Result<Output, ExecError> {
         // Formats of the inputs a, b, c and of the output in the basic operation (SDM 3.6.9).
         let (fa, fc, fout): (Fmt, Fmt, Fmt) = match prec {
             Prec::D => (DOUBLE, DOUBLE, if round { SINGLE } else { DOUBLE }),
             Prec::F => (SINGLE, SINGLE, SINGLE),
             Prec::H => (HALF, SINGLE, if round { HALF } else { SINGLE }),
-            _ => return Err(ExecError::Unsupported(format!("vector op precision {prec:?}"))),
+            _ => {
+                return Err(ExecError::Unsupported(format!(
+                    "vector op precision {prec:?}"
+                )))
+            }
         };
         if prec == Prec::F && round {
             return Err(ExecError::Unsupported("fv*r".into()));
@@ -741,18 +994,26 @@ impl Machine {
             MauKind::Add => (Some(0), None, Some(1)),
             MauKind::Passa => (Some(0), None, None),
         };
-        let read_vals = |m: &Machine, pe: usize, idx: Option<usize>, f: Fmt, c: usize| -> Result<Option<Vec<Val>>, ExecError> {
+        let read_vals = |m: &Machine,
+                         pe: usize,
+                         idx: Option<usize>,
+                         f: Fmt,
+                         c: usize|
+         -> Result<Option<Vec<Val>>, ExecError> {
             let Some(i) = idx else { return Ok(None) };
             let op = &e.srcs[i];
             let bus = m.read_raw(pe, op, c)?;
             let (neg, ext, rnd) = match op {
-                Operand::Mem { neg, ext, rnd, .. } | Operand::Forward { neg, ext, rnd, .. } => (*neg, *ext, *rnd),
+                Operand::Mem { neg, ext, rnd, .. } | Operand::Forward { neg, ext, rnd, .. } => {
+                    (*neg, *ext, *rnd)
+                }
                 _ => (false, false, false),
             };
             let raw_fmt = if ext {
                 lower(f).ok_or_else(|| ExecError::Unsupported("extension below half".into()))?
             } else if rnd {
-                higher(f).ok_or_else(|| ExecError::Unsupported("rounding from above double".into()))?
+                higher(f)
+                    .ok_or_else(|| ExecError::Unsupported("rounding from above double".into()))?
             } else {
                 f
             };
@@ -761,7 +1022,11 @@ impl Machine {
                 raw.into_iter()
                     .map(|r| {
                         let v = float::decode(raw_fmt, r);
-                        let v = if rnd { float::decode(f, float::encode(f, v)) } else { v };
+                        let v = if rnd {
+                            float::decode(f, float::encode(f, v))
+                        } else {
+                            v
+                        };
                         if neg {
                             v.negate()
                         } else {
@@ -800,7 +1065,377 @@ impl Machine {
                 flags[pe][c] = mau_flags(&out, fout);
             }
         }
-        Ok(Output { bus, flags, fwd: Some(FwdKind::Mauf), poison: None })
+        Ok(Output {
+            bus,
+            flags,
+            fwd: Some(FwdKind::Mauf),
+            poison: None,
+        })
+    }
+
+    /// Reads one ALU input without recording a trace.
+    fn read_alu_input_at(
+        &self,
+        pe: usize,
+        op: &Operand,
+        prec: Option<Prec>,
+        cycle: usize,
+    ) -> Result<Bus, ExecError> {
+        if let Operand::Fixed(k) = op {
+            let id = PeId::from_index(pe);
+            let v: u64 = match k {
+                FixedKind::L2bid => (id.group * 2 + id.l2b) as u64,
+                FixedKind::L1bid => id.l1b as u64,
+                FixedKind::Mabid => id.mab as u64,
+                FixedKind::Peid => (id.mab * 4 + id.pe) as u64,
+                FixedKind::Subpeid => id.pe as u64,
+                FixedKind::Msb1 => u64::MAX,
+            };
+            let bits = prec_bits(prec);
+            let lane = if *k == FixedKind::Msb1 {
+                1u64 << (bits - 1)
+            } else {
+                v
+            };
+            return Ok(splat(lane, bits));
+        }
+        let bus = self.read_raw_untraced(pe, op, cycle)?;
+        let rnd = matches!(
+            op,
+            Operand::Mem { rnd: true, .. } | Operand::Forward { rnd: true, .. }
+        );
+        if rnd {
+            let mut out = [0u32; 4];
+            let mut halves = [0u64; 4];
+            for (i, half) in halves.iter_mut().enumerate() {
+                *half = float::encode(HALF, float::decode(SINGLE, bus[i] as u64));
+            }
+            out[0] = ((halves[0] << 16) | halves[1]) as u32;
+            out[1] = ((halves[2] << 16) | halves[3]) as u32;
+            return Ok(out);
+        }
+        Ok(bus)
+    }
+
+    /// Computes one PE's four cycles of one ALU expression.
+    fn compute_alu_at(
+        &self,
+        e: &Expr,
+        name: AluOp,
+        prec: Option<Prec>,
+        unsigned: bool,
+        pe: usize,
+    ) -> Result<([Bus; 4], [u8; 4]), ExecError> {
+        let n = name.inputs();
+        let bits = prec_bits(prec);
+        let mut bus = [[0u32; 4]; 4];
+        let mut flags = [0u8; 4];
+        for c in 0..4 {
+            let x = self.read_alu_input_at(pe, &e.srcs[0], prec, c)?;
+            let y = if n > 1 {
+                self.read_alu_input_at(pe, &e.srcs[1], prec, c)?
+            } else {
+                [0; 4]
+            };
+            let (out, fl) = match name {
+                AluOp::Msl | AluOp::Msr => {
+                    // msl: PE k outputs the input of PE k-1 within the MAB.
+                    let base = pe / 4 * 4;
+                    let src = if name == AluOp::Msl {
+                        base + (pe + 3) % 4
+                    } else {
+                        base + (pe + 1) % 4
+                    };
+                    // Only one long word moves between PEs: the LSB long word is 0 (emulator),
+                    // not the first input's LSB long word as for other ALU instructions.
+                    let v = self.read_alu_input_at(src, &e.srcs[0], prec, c)?;
+                    ([v[0], v[1], 0, 0], 0)
+                }
+                AluOp::Passa => {
+                    let (xl, count) = lanes_fixed(&x, bits);
+                    let fl = lane_flags(&xl[..count], bits, |v| v == 0);
+                    (x, fl)
+                }
+                _ => {
+                    let (xl, count) = lanes_fixed(&x, bits);
+                    let (yl, _) = lanes_fixed(&y, bits);
+                    let (msb, fl) =
+                        alu_lanes(name, prec.unwrap(), unsigned, &xl[..count], &yl[..count])?;
+                    let lo = pack_lanes(&msb[..count], bits);
+                    ([lo[0], lo[1], x[2], x[3]], fl)
+                }
+            };
+            bus[c] = out;
+            flags[c] = fl;
+        }
+        Ok((bus, flags))
+    }
+
+    /// Computes one PE's four cycles of one vector MAU expression.
+    fn compute_vec_at(
+        &self,
+        e: &Expr,
+        prec: Prec,
+        kind: MauKind,
+        half: Option<char>,
+        round: bool,
+        pe: usize,
+    ) -> Result<([Bus; 4], [u8; 4]), ExecError> {
+        let (fa, fc, fout): (Fmt, Fmt, Fmt) = match prec {
+            Prec::D => (DOUBLE, DOUBLE, if round { SINGLE } else { DOUBLE }),
+            Prec::F => (SINGLE, SINGLE, SINGLE),
+            Prec::H => (HALF, SINGLE, if round { HALF } else { SINGLE }),
+            _ => {
+                return Err(ExecError::Unsupported(format!(
+                    "vector op precision {prec:?}"
+                )))
+            }
+        };
+        if prec == Prec::F && round {
+            return Err(ExecError::Unsupported("fv*r".into()));
+        }
+        let lanes_n = match prec {
+            Prec::D => 1,
+            Prec::F => 2,
+            _ => 4,
+        };
+        let (ia, ib, ic): (Option<usize>, Option<usize>, Option<usize>) = match kind {
+            MauKind::Fma => (Some(0), Some(1), Some(2)),
+            MauKind::Mul => (Some(0), Some(1), None),
+            MauKind::Add => (Some(0), None, Some(1)),
+            MauKind::Passa => (Some(0), None, None),
+        };
+        let read_vals =
+            |idx: Option<usize>, f: Fmt, c: usize| -> Result<Option<[Val; 4]>, ExecError> {
+                let Some(i) = idx else { return Ok(None) };
+                let op = &e.srcs[i];
+                let bus = self.read_raw_untraced(pe, op, c)?;
+                let (neg, ext, rnd) = match op {
+                    Operand::Mem { neg, ext, rnd, .. } | Operand::Forward { neg, ext, rnd, .. } => {
+                        (*neg, *ext, *rnd)
+                    }
+                    _ => (false, false, false),
+                };
+                let raw_fmt = if ext {
+                    lower(f).ok_or_else(|| ExecError::Unsupported("extension below half".into()))?
+                } else if rnd {
+                    higher(f).ok_or_else(|| {
+                        ExecError::Unsupported("rounding from above double".into())
+                    })?
+                } else {
+                    f
+                };
+                let raw = unpack_fixed(&bus, raw_fmt.width(), lanes_n);
+                let mut vals = [Val::Zero { neg: false }; 4];
+                for (l, value) in vals.iter_mut().enumerate() {
+                    let v = float::decode(raw_fmt, raw[l]);
+                    let v = if rnd {
+                        float::decode(f, float::encode(f, v))
+                    } else {
+                        v
+                    };
+                    *value = if neg { v.negate() } else { v };
+                }
+                Ok(Some(vals))
+            };
+        let one_a = float::decode(fa, (fa.bias() as u64) << fa.man_bits);
+        let zero = Val::Zero { neg: false };
+        let mul_here = match half {
+            Some('u') => pe % 4 < 2,
+            Some('d') => pe % 4 >= 2,
+            _ => true,
+        };
+        let mut bus = [[0u32; 4]; 4];
+        let mut flags = [0u8; 4];
+        for c in 0..4 {
+            let a = read_vals(ia, fa, c)?.unwrap();
+            let b = read_vals(ib, fa, c)?;
+            let cv = read_vals(ic, fc, c)?;
+            let mut out = [0u64; 4];
+            for (l, value) in out.iter_mut().enumerate().take(lanes_n) {
+                let (x, y) = if mul_here {
+                    (a[l], b.map_or(one_a, |b| b[l]))
+                } else {
+                    (zero, zero)
+                };
+                let z = cv.map_or(zero, |c| c[l]);
+                *value = float::vfma(fa, fout, x, y, z);
+            }
+            bus[c] = pack(&out[..lanes_n], fout.width());
+            flags[c] = mau_flags(&out[..lanes_n], fout);
+        }
+        Ok((bus, flags))
+    }
+
+    /// Executes a PE-local line one PE at a time.
+    ///
+    /// The generic path computes every expression into a 4,096-entry buffer and applies writes
+    /// in a second pass. No ALU/MAU-only line reads another PE's state, so each PE can compute
+    /// all of its expressions and then write them, provided every read of the step happens
+    /// before that PE's writes. Lines with msl/msr, L1/L2, matrix or tracing stay generic.
+    fn step_fast(&mut self, exprs: &[Expr]) -> Option<Result<(), ExecError>> {
+        if self.tracer.borrow().is_some() || exprs.len() > MAX_STEP_EXPRS {
+            return None;
+        }
+        let supported = exprs.iter().all(|e| match &e.op {
+            Op::Noforward | Op::Wait(_) | Op::Zero | Op::Imm { .. } => true,
+            Op::Alu { name, prec, .. } => {
+                !matches!(name, AluOp::Msl | AluOp::Msr | AluOp::Bfn | AluOp::Bfe) && prec.is_some()
+            }
+            Op::Mau {
+                prec,
+                matrix: false,
+                round,
+                ..
+            } => matches!(prec, Prec::D | Prec::F | Prec::H) && !(*prec == Prec::F && *round),
+            _ => false,
+        });
+        if !supported {
+            return None;
+        }
+        // A disabled forwarding register makes the generic path produce poison, so keep those
+        // lines there.
+        for e in exprs {
+            for op in &e.srcs {
+                if let Operand::Forward { kind, .. } = op {
+                    if self.fwd_error[fwd_index(*kind)].is_some() {
+                        return None;
+                    }
+                }
+            }
+        }
+        let single_line_mask = exprs.iter().any(|e| e.dsts.iter().any(has_mask));
+        let noforward = exprs.iter().any(|e| matches!(e.op, Op::Noforward));
+        if let Err(e) = self.run_fast(exprs, single_line_mask, !noforward) {
+            return Some(Err(e));
+        }
+        if !noforward {
+            for kind in [FwdKind::Aluf, FwdKind::Mauf, FwdKind::Mreadf, FwdKind::Lbf] {
+                let present = exprs.iter().any(|e| op_fwd_kind(e) == Some(kind));
+                self.fwd_error[fwd_index(kind)] = if present {
+                    None
+                } else if kind == FwdKind::Mreadf {
+                    for pe in &mut self.pes {
+                        pe.mreadf = [[0; 4]; 4];
+                    }
+                    None
+                } else if kind == FwdKind::Lbf {
+                    self.fwd_error[fwd_index(kind)].clone()
+                } else {
+                    Some(format!("{} is disabled", unit_name(kind)))
+                };
+            }
+        }
+        Some(Ok(()))
+    }
+
+    fn compute_expr_at(&self, e: &Expr, pe: usize) -> Result<([Bus; 4], [u8; 4]), ExecError> {
+        Ok(match &e.op {
+            Op::Alu {
+                name,
+                prec,
+                unsigned,
+                ..
+            } => self.compute_alu_at(e, *name, *prec, *unsigned, pe)?,
+            Op::Mau {
+                prec,
+                kind,
+                half,
+                round,
+                matrix: false,
+            } => self.compute_vec_at(e, *prec, *kind, *half, *round, pe)?,
+            Op::Zero => ([[0; 4]; 4], [0; 4]),
+            Op::Imm { value, u } => {
+                let bus = if *u {
+                    [*value, 0, *value, 0]
+                } else {
+                    [*value; 4]
+                };
+                ([bus; 4], [0; 4])
+            }
+            _ => ([[0; 4]; 4], [0; 4]),
+        })
+    }
+
+    fn run_fast(
+        &mut self,
+        exprs: &[Expr],
+        single_line_mask: bool,
+        update_forward: bool,
+    ) -> Result<(), ExecError> {
+        if exprs.len() == 1 {
+            let e = &exprs[0];
+            if matches!(e.op, Op::Noforward | Op::Wait(_)) {
+                return Ok(());
+            }
+            let kind = op_fwd_kind(e);
+            for pe in 0..PES {
+                let (buses, flags) = self.compute_expr_at(e, pe)?;
+                for c in 0..4 {
+                    let mut bus = buses[c];
+                    if let Some(sel) = e.flush {
+                        let f = self.mask_flags(pe, &sel, c);
+                        bus = apply_flush(bus, f, sel.ll);
+                    }
+                    for d in &e.dsts {
+                        self.write_fast(pe, d, c, bus, flags[c], single_line_mask)?;
+                    }
+                    if update_forward {
+                        if let Some(kind) = kind {
+                            let p = &mut self.pes[pe];
+                            match kind {
+                                FwdKind::Aluf => p.aluf[c] = bus,
+                                FwdKind::Mauf => p.mauf[c] = bus,
+                                FwdKind::Mreadf => p.mreadf[c] = bus,
+                                FwdKind::Lbf => p.lbf[c] = bus,
+                            }
+                        }
+                    }
+                }
+            }
+            return Ok(());
+        }
+        let mut buses = vec![[[0u32; 4]; 4]; exprs.len()];
+        let mut flags = vec![[0u8; 4]; exprs.len()];
+        for pe in 0..PES {
+            for (ei, e) in exprs.iter().enumerate() {
+                let (bus, fl) = self.compute_expr_at(e, pe)?;
+                buses[ei] = bus;
+                flags[ei] = fl;
+            }
+            for (ei, e) in exprs.iter().enumerate() {
+                for c in 0..4 {
+                    let mut bus = buses[ei][c];
+                    if let Some(sel) = e.flush {
+                        let f = self.mask_flags(pe, &sel, c);
+                        bus = apply_flush(bus, f, sel.ll);
+                    }
+                    for d in &e.dsts {
+                        self.write_fast(pe, d, c, bus, flags[ei][c], single_line_mask)?;
+                    }
+                }
+            }
+            if update_forward {
+                for (ei, e) in exprs.iter().enumerate() {
+                    let Some(kind) = op_fwd_kind(e) else { continue };
+                    for c in 0..4 {
+                        let mut bus = buses[ei][c];
+                        if let Some(sel) = e.flush {
+                            let f = self.mask_flags(pe, &sel, c);
+                            bus = apply_flush(bus, f, sel.ll);
+                        }
+                        let p = &mut self.pes[pe];
+                        match kind {
+                            FwdKind::Aluf => p.aluf[c] = bus,
+                            FwdKind::Mauf => p.mauf[c] = bus,
+                            FwdKind::Mreadf => p.mreadf[c] = bus,
+                            FwdKind::Lbf => p.lbf[c] = bus,
+                        }
+                    }
+                }
+            }
+        }
+        Ok(())
     }
 }
 
@@ -831,7 +1466,12 @@ fn check_bf(f: Fmt, block: &[u64], what: &str) -> Result<(), ExecError> {
 }
 
 fn has_mask(op: &Operand) -> bool {
-    matches!(op, Operand::Mem { mask: Some(_), .. } | Operand::Bar { mask: Some(_), .. } | Operand::Omr { mask: Some(_), .. })
+    matches!(
+        op,
+        Operand::Mem { mask: Some(_), .. }
+            | Operand::Bar { mask: Some(_), .. }
+            | Operand::Omr { mask: Some(_), .. }
+    )
 }
 
 /// Whether word `i` of the bus (0 = MSB) is written at all under the given mask flags.
@@ -842,7 +1482,13 @@ fn word_enabled(mflags: Option<(u8, bool)>, i: usize) -> bool {
         // Long word masks affect only the MSB long word (four halves).
         // The LSB long word is always written, including when all flags are zero.
         // Confirmed with nonzero old/new sentinels against the official emulator.
-        Some((f, false)) => if i < 2 { (f >> (2 - 2 * i)) & 3 != 0 } else { true },
+        Some((f, false)) => {
+            if i < 2 {
+                (f >> (2 - 2 * i)) & 3 != 0
+            } else {
+                true
+            }
+        }
     }
 }
 
@@ -906,7 +1552,10 @@ fn higher(f: Fmt) -> Option<Fmt> {
 
 /// Extracts `n` elements of `width` bits from the bus, MSB first.
 fn unpack(bus: &Bus, width: u32, n: usize) -> Vec<u64> {
-    let full = ((bus[0] as u128) << 96) | ((bus[1] as u128) << 64) | ((bus[2] as u128) << 32) | bus[3] as u128;
+    let full = ((bus[0] as u128) << 96)
+        | ((bus[1] as u128) << 64)
+        | ((bus[2] as u128) << 32)
+        | bus[3] as u128;
     (0..n)
         .map(|i| ((full >> (128 - width * (i as u32 + 1))) & ((1u128 << width) - 1)) as u64)
         .collect()
@@ -918,12 +1567,31 @@ fn pack(vals: &[u64], width: u32) -> Bus {
     for (i, v) in vals.iter().enumerate() {
         full |= (*v as u128 & ((1u128 << width) - 1)) << (128 - width * (i as u32 + 1));
     }
-    [(full >> 96) as u32, (full >> 64) as u32, (full >> 32) as u32, full as u32]
+    [
+        (full >> 96) as u32,
+        (full >> 64) as u32,
+        (full >> 32) as u32,
+        full as u32,
+    ]
 }
 
-/// Elements of the MSB long word.
-fn lanes(bus: &Bus, bits: u32) -> Vec<u64> {
-    unpack(bus, bits, (64 / bits) as usize)
+/// Extracts `n` elements of `width` bits from the bus without allocating.
+fn unpack_fixed(bus: &Bus, width: u32, n: usize) -> [u64; 4] {
+    let full = ((bus[0] as u128) << 96)
+        | ((bus[1] as u128) << 64)
+        | ((bus[2] as u128) << 32)
+        | bus[3] as u128;
+    let mut out = [0u64; 4];
+    for (i, value) in out.iter_mut().enumerate().take(n) {
+        *value = ((full >> (128 - width * (i as u32 + 1))) & ((1u128 << width) - 1)) as u64;
+    }
+    out
+}
+
+/// Elements of the MSB long word as a fixed array, with the element count.
+fn lanes_fixed(bus: &Bus, bits: u32) -> ([u64; 4], usize) {
+    let n = (64 / bits) as usize;
+    (unpack_fixed(bus, bits, n), n)
 }
 
 fn pack_lanes(vals: &[u64], bits: u32) -> [u32; 2] {
@@ -933,7 +1601,8 @@ fn pack_lanes(vals: &[u64], bits: u32) -> [u32; 2] {
 
 fn splat(lane: u64, bits: u32) -> Bus {
     let n = (128 / bits) as usize;
-    pack(&vec![lane; n], bits)
+    let vals = [lane; 8];
+    pack(&vals[..n], bits)
 }
 
 /// Mask flags (4 bits per cycle) from per-lane conditions of the MSB long word.
@@ -947,7 +1616,9 @@ fn lane_flags(vals: &[u64], bits: u32, cond: impl Fn(u64) -> bool) -> u8 {
             }
         }
         32 => (if cond(vals[0]) { 0xc } else { 0 }) | (if cond(vals[1]) { 0x3 } else { 0 }),
-        _ => (0..4).map(|i| (cond(vals[i]) as u8) << (3 - i)).fold(0, |a, b| a | b),
+        _ => (0..4)
+            .map(|i| (cond(vals[i]) as u8) << (3 - i))
+            .fold(0, |a, b| a | b),
     }
 }
 
@@ -964,13 +1635,23 @@ fn fmt_of(prec: Prec) -> Fmt {
 }
 
 /// Applies an ALU operation to each lane of the MSB long word. Returns lanes and mask flags.
-fn alu_lanes(name: AluOp, prec: Prec, unsigned: bool, x: &[u64], y: &[u64]) -> Result<(Vec<u64>, u8), ExecError> {
+fn alu_lanes(
+    name: AluOp,
+    prec: Prec,
+    unsigned: bool,
+    x: &[u64],
+    y: &[u64],
+) -> Result<([u64; 4], u8), ExecError> {
     let bits = prec_bits(Some(prec));
-    let mask = if bits == 64 { u64::MAX } else { (1u64 << bits) - 1 };
+    let mask = if bits == 64 {
+        u64::MAX
+    } else {
+        (1u64 << bits) - 1
+    };
     let is_float = matches!(prec, Prec::D | Prec::F | Prec::H);
     let n = x.len();
-    let mut out = vec![0u64; n];
-    let mut cond = vec![false; n];
+    let mut out = [0u64; 4];
+    let mut cond = [false; 4];
     for i in 0..n {
         let (a, b) = (x[i], y[i]);
         let (sa, sb) = (sign_extend(a, bits), sign_extend(b, bits));
@@ -982,7 +1663,11 @@ fn alu_lanes(name: AluOp, prec: Prec, unsigned: bool, x: &[u64], y: &[u64]) -> R
                     _ => b,
                 };
                 let sub = matches!(name, AluOp::Dec | AluOp::Sub);
-                let r = if sub { a.wrapping_sub(rhs) } else { a.wrapping_add(rhs) } & mask;
+                let r = if sub {
+                    a.wrapping_sub(rhs)
+                } else {
+                    a.wrapping_add(rhs)
+                } & mask;
                 let c = if unsigned {
                     // no overflow (no carry out / no borrow)
                     if sub {
@@ -1086,7 +1771,9 @@ fn alu_lanes(name: AluOp, prec: Prec, unsigned: bool, x: &[u64], y: &[u64]) -> R
             }
         }
         32 => (if cond[0] { 0xc } else { 0 }) | (if cond[1] { 0x3 } else { 0 }),
-        _ => (0..4).map(|i| (cond[i] as u8) << (3 - i)).fold(0, |a, b| a | b),
+        _ => (0..4)
+            .map(|i| (cond[i] as u8) << (3 - i))
+            .fold(0, |a, b| a | b),
     };
     Ok((out, flags))
 }
@@ -1131,7 +1818,9 @@ fn float_max_pick_x(a: u64, b: u64, bits: u32, max: bool) -> bool {
 fn float_rsqrt(fmt: Fmt, v: u64) -> u64 {
     const MANT5: [[u64; 16]; 2] = [
         [13, 11, 10, 9, 8, 7, 6, 5, 4, 4, 3, 2, 2, 1, 1, 0],
-        [31, 30, 28, 26, 25, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13],
+        [
+            31, 30, 28, 26, 25, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13,
+        ],
     ];
     let m = fmt.man_bits;
     let e = (v >> m) & fmt.exp_max();
@@ -1185,7 +1874,11 @@ fn float_ftoi(fmt: Fmt, v: u64, unsigned: bool, bits: u32) -> u64 {
             (neg, m)
         }
     };
-    let mask = if bits == 64 { u64::MAX } else { (1u64 << bits) - 1 };
+    let mask = if bits == 64 {
+        u64::MAX
+    } else {
+        (1u64 << bits) - 1
+    };
     if unsigned {
         (mag.min(umax) as u64) & mask
     } else {
@@ -1214,7 +1907,9 @@ fn mau_flags(out: &[u64], f: Fmt) -> u8 {
             }
         }
         2 => (if pos(out[0]) { 0xc } else { 0 }) | (if pos(out[1]) { 0x3 } else { 0 }),
-        _ => (0..4).map(|i| (pos(out[i]) as u8) << (3 - i)).fold(0, |a, b| a | b),
+        _ => (0..4)
+            .map(|i| (pos(out[i]) as u8) << (3 - i))
+            .fold(0, |a, b| a | b),
     }
 }
 
@@ -1250,10 +1945,19 @@ impl Machine {
     /// Reads the raw elements of an operand for mwrite / matrix-vector input, applying the
     /// sign inversion, precision extension and rounding options. Values keep their bit pattern,
     /// because block-float values must not be normalized.
-    fn read_raw_elems(&self, pe: usize, op: &Operand, f: Fmt, n: usize, cycle: usize) -> Result<Vec<u64>, ExecError> {
+    fn read_raw_elems(
+        &self,
+        pe: usize,
+        op: &Operand,
+        f: Fmt,
+        n: usize,
+        cycle: usize,
+    ) -> Result<Vec<u64>, ExecError> {
         let bus = self.read_raw(pe, op, cycle)?;
         let (neg, ext, rnd) = match op {
-            Operand::Mem { neg, ext, rnd, .. } | Operand::Forward { neg, ext, rnd, .. } => (*neg, *ext, *rnd),
+            Operand::Mem { neg, ext, rnd, .. } | Operand::Forward { neg, ext, rnd, .. } => {
+                (*neg, *ext, *rnd)
+            }
             _ => (false, false, false),
         };
         let raw_fmt = if ext {
@@ -1267,7 +1971,11 @@ impl Machine {
         Ok(raw
             .into_iter()
             .map(|r| {
-                let v = if raw_fmt == f { r } else { float::encode(f, float::decode(raw_fmt, r)) };
+                let v = if raw_fmt == f {
+                    r
+                } else {
+                    float::encode(f, float::decode(raw_fmt, r))
+                };
                 if neg {
                     v ^ (1 << (f.width() - 1))
                 } else {
@@ -1278,8 +1986,16 @@ impl Machine {
     }
 
     fn compute_mwrite(&self, e: &Expr, prec: Prec) -> Result<Vec<MatWrite>, ExecError> {
-        let Some(Operand::Mat { y, wl, row: Some(addr) }) = e.dsts.first() else {
-            return Err(ExecError::Unsupported(format!("mwrite destination in `{}`", e.text)));
+        let Some(Operand::Mat {
+            y,
+            wl,
+            row: Some(addr),
+        }) = e.dsts.first()
+        else {
+            return Err(ExecError::Unsupported(format!(
+                "mwrite destination in `{}`",
+                e.text
+            )));
         };
         let side = *y as usize;
         let f = prec_fmt(prec);
@@ -1288,7 +2004,13 @@ impl Machine {
         // Elements each PE supplies per cycle: d 1, f/g 2, h 4 (8 with two rows).
         let per_pe = match prec {
             Prec::D => 1,
-            Prec::H => if two_rows { 8 } else { 4 },
+            Prec::H => {
+                if two_rows {
+                    8
+                } else {
+                    4
+                }
+            }
             _ => 2,
         };
         let mut out = Vec::new();
@@ -1300,16 +2022,29 @@ impl Machine {
                 }
                 let nrows = if two_rows { 2 } else { 1 };
                 for k in 0..nrows {
-                    let row = if two_rows { (*addr as usize + 2 * c) % rows + k } else { (*addr as usize + c) % rows };
+                    let row = if two_rows {
+                        (*addr as usize + 2 * c) % rows + k
+                    } else {
+                        (*addr as usize + c) % rows
+                    };
                     let row_elems: Vec<u64> = if two_rows {
                         // row a: halves 0..3 of each PE; row a+1: halves 4..7.
-                        (0..16).map(|j| elems[(j / 4) * 8 + k * 4 + j % 4]).collect()
+                        (0..16)
+                            .map(|j| elems[(j / 4) * 8 + k * 4 + j % 4])
+                            .collect()
                     } else {
                         elems.clone()
                     };
                     let words = pack_row(&row_elems, f.width());
                     let expr = self.tracer.borrow().as_ref().map(|t| t.expr).unwrap_or(0);
-                    out.push(MatWrite { expr, cycle: c, mab, side, phys_row: row * step, words: words.map(Some) });
+                    out.push(MatWrite {
+                        expr,
+                        cycle: c,
+                        mab,
+                        side,
+                        phys_row: row * step,
+                        words: words.map(Some),
+                    });
                 }
             }
         }
@@ -1317,8 +2052,14 @@ impl Machine {
     }
 
     fn compute_mread(&self, e: &Expr, prec: Prec) -> Result<Output, ExecError> {
-        let Some(Operand::Mat { y, row: Some(addr), .. }) = e.srcs.first() else {
-            return Err(ExecError::Unsupported(format!("mread source in `{}`", e.text)));
+        let Some(Operand::Mat {
+            y, row: Some(addr), ..
+        }) = e.srcs.first()
+        else {
+            return Err(ExecError::Unsupported(format!(
+                "mread source in `{}`",
+                e.text
+            )));
         };
         let side = *y as usize;
         let f = prec_fmt(prec);
@@ -1328,35 +2069,74 @@ impl Machine {
             for c in 0..4 {
                 for p in 0..4 {
                     let vals: Vec<u64> = match prec {
-                        Prec::D => vec![self.mat_get(mab, side, prec, p, (*addr as usize + c) % rows)],
+                        Prec::D => {
+                            vec![self.mat_get(mab, side, prec, p, (*addr as usize + c) % rows)]
+                        }
                         Prec::H => {
                             let c0 = (*addr as usize + 2 * c) % rows;
-                            let mut v: Vec<u64> = (0..4).map(|k| self.mat_get(mab, side, prec, 4 * p + k, c0)).collect();
-                            v.extend((0..4).map(|k| self.mat_get(mab, side, prec, 4 * p + k, (c0 + 1) % rows)));
+                            let mut v: Vec<u64> = (0..4)
+                                .map(|k| self.mat_get(mab, side, prec, 4 * p + k, c0))
+                                .collect();
+                            v.extend((0..4).map(|k| {
+                                self.mat_get(mab, side, prec, 4 * p + k, (c0 + 1) % rows)
+                            }));
                             v
                         }
                         _ => {
                             let col = (*addr as usize + c) % rows;
-                            vec![self.mat_get(mab, side, prec, 2 * p, col), self.mat_get(mab, side, prec, 2 * p + 1, col)]
+                            vec![
+                                self.mat_get(mab, side, prec, 2 * p, col),
+                                self.mat_get(mab, side, prec, 2 * p + 1, col),
+                            ]
                         }
                     };
                     bus[mab * 4 + p][c] = pack(&vals, f.width());
                 }
             }
         }
-        Ok(Output { bus, flags: vec![[0; 4]; PES], fwd: Some(FwdKind::Mreadf), poison: None })
+        Ok(Output {
+            bus,
+            flags: vec![[0; 4]; PES],
+            fwd: Some(FwdKind::Mreadf),
+            poison: None,
+        })
     }
 
-    fn compute_mat(&self, e: &Expr, prec: Prec, kind: MauKind, half: Option<char>, round: bool) -> Result<Output, ExecError> {
-        let Some(Operand::Mat { y: side_y, row: None, .. }) = e.srcs.first() else {
-            return Err(ExecError::Unsupported(format!("matrix operand in `{}`", e.text)));
+    fn compute_mat(
+        &self,
+        e: &Expr,
+        prec: Prec,
+        kind: MauKind,
+        half: Option<char>,
+        round: bool,
+    ) -> Result<Output, ExecError> {
+        let Some(Operand::Mat {
+            y: side_y,
+            row: None,
+            ..
+        }) = e.srcs.first()
+        else {
+            return Err(ExecError::Unsupported(format!(
+                "matrix operand in `{}`",
+                e.text
+            )));
         };
         let side = *side_y as usize;
         let (bf, fx, fy, fout) = match prec {
-            Prec::D => (float::BF_DOUBLE, DOUBLE, DOUBLE, if round { SINGLE } else { DOUBLE }),
+            Prec::D => (
+                float::BF_DOUBLE,
+                DOUBLE,
+                DOUBLE,
+                if round { SINGLE } else { DOUBLE },
+            ),
             Prec::F => (float::BF_SINGLE, SINGLE, SINGLE, SINGLE),
             Prec::G => (float::BF_PSEUDO, SINGLE, SINGLE, SINGLE),
-            Prec::H => (float::BF_HALF, HALF, SINGLE, if round { HALF } else { SINGLE }),
+            Prec::H => (
+                float::BF_HALF,
+                HALF,
+                SINGLE,
+                if round { HALF } else { SINGLE },
+            ),
             _ => unreachable!(),
         };
         // Elements per PE: x vector, y vector and output.
@@ -1394,12 +2174,21 @@ impl Machine {
                     if bad.is_some() {
                         break;
                     }
-                    let cols: Vec<u64> = (0..rows).map(|j| self.mat_get(mab, side, prec, i, j)).collect();
-                    let row: Vec<u64> = if prec == Prec::F { cols.iter().step_by(2).copied().collect() } else { cols };
+                    let cols: Vec<u64> = (0..rows)
+                        .map(|j| self.mat_get(mab, side, prec, i, j))
+                        .collect();
+                    let row: Vec<u64> = if prec == Prec::F {
+                        cols.iter().step_by(2).copied().collect()
+                    } else {
+                        cols
+                    };
                     bad = check_bf(fx, &row, "a matrix row").err();
                 }
                 if let Some(ExecError::Runtime(msg)) = bad {
-                    let pz = poison.get_or_insert_with(|| Poison { msg, at: vec![[false; 4]; PES] });
+                    let pz = poison.get_or_insert_with(|| Poison {
+                        msg,
+                        at: vec![[false; 4]; PES],
+                    });
                     for p in 0..4 {
                         pz.at[mab * 4 + p][c] = true;
                     }
@@ -1409,8 +2198,12 @@ impl Machine {
                         let dot = if active(i) {
                             let arow: Vec<u64> = match prec {
                                 // fmfma uses columns 0, 2, 4, 6.
-                                Prec::F => (0..4).map(|j| self.mat_get(mab, side, prec, i, 2 * j)).collect(),
-                                _ => (0..rows).map(|j| self.mat_get(mab, side, prec, i, j)).collect(),
+                                Prec::F => (0..4)
+                                    .map(|j| self.mat_get(mab, side, prec, i, 2 * j))
+                                    .collect(),
+                                _ => (0..rows)
+                                    .map(|j| self.mat_get(mab, side, prec, i, j))
+                                    .collect(),
                             };
                             float::bf_dot(bf, &arow, &x)
                         } else {
@@ -1427,10 +2220,21 @@ impl Machine {
                 }
             }
         }
-        Ok(Output { bus, flags, fwd: Some(FwdKind::Mauf), poison })
+        Ok(Output {
+            bus,
+            flags,
+            fwd: Some(FwdKind::Mauf),
+            poison,
+        })
     }
 
-    fn compute_bfn(&self, e: &Expr, name: AluOp, prec: Prec, arg: Option<u8>) -> Result<Output, ExecError> {
+    fn compute_bfn(
+        &self,
+        e: &Expr,
+        name: AluOp,
+        prec: Prec,
+        arg: Option<u8>,
+    ) -> Result<Output, ExecError> {
         let f = prec_fmt(prec);
         let keep = match prec {
             Prec::G => 18,
@@ -1441,19 +2245,34 @@ impl Machine {
         let mut bus = vec![[[0u32; 4]; 4]; PES];
         for mab in 0..PES / 4 {
             for c in 0..4 {
-                let ins: Vec<Bus> = (0..4).map(|p| self.read_alu_input(mab * 4 + p, &e.srcs[0], Some(prec), c)).collect::<Result<_, _>>()?;
+                let ins: Vec<Bus> = (0..4)
+                    .map(|p| self.read_alu_input(mab * 4 + p, &e.srcs[0], Some(prec), c))
+                    .collect::<Result<_, _>>()?;
                 // Blocks: lists of (pe, element index within the PE's bus, width in bits).
                 // Except for half precision, the LSB long word of the output is 0 (emulator).
-                let mut outs: Vec<Bus> = if prec == Prec::H { ins.clone() } else { ins.iter().map(|b| [b[0], b[1], 0, 0]).collect() };
+                let mut outs: Vec<Bus> = if prec == Prec::H {
+                    ins.clone()
+                } else {
+                    ins.iter().map(|b| [b[0], b[1], 0, 0]).collect()
+                };
                 let blocks: Vec<Vec<(usize, usize)>> = match prec {
                     Prec::D => vec![(0..4).map(|p| (p, 0)).collect()],
-                    Prec::F => vec![(0..4).map(|p| (p, 0)).collect(), (0..4).map(|p| (p, 1)).collect()],
+                    Prec::F => vec![
+                        (0..4).map(|p| (p, 0)).collect(),
+                        (0..4).map(|p| (p, 1)).collect(),
+                    ],
                     Prec::G => vec![(0..4).flat_map(|p| [(p, 0), (p, 1)]).collect()],
-                    _ => vec![(0..4).flat_map(|p| (0..4).map(move |k| (p, k))).collect(), (0..4).flat_map(|p| (4..8).map(move |k| (p, k))).collect()],
+                    _ => vec![
+                        (0..4).flat_map(|p| (0..4).map(move |k| (p, k))).collect(),
+                        (0..4).flat_map(|p| (4..8).map(move |k| (p, k))).collect(),
+                    ],
                 };
                 let w = f.width();
                 for blk in blocks {
-                    let vals: Vec<u64> = blk.iter().map(|&(p, k)| unpack(&ins[p], w, k + 1)[k]).collect();
+                    let vals: Vec<u64> = blk
+                        .iter()
+                        .map(|&(p, k)| unpack(&ins[p], w, k + 1)[k])
+                        .collect();
                     let conv = float::block_float(f, &vals, keep, extended);
                     for (&(p, k), v) in blk.iter().zip(conv) {
                         let mut all = unpack(&outs[p], w, (128 / w) as usize);
@@ -1466,7 +2285,12 @@ impl Machine {
                 }
             }
         }
-        Ok(Output { bus, flags: vec![[0; 4]; PES], fwd: Some(FwdKind::Aluf), poison: None })
+        Ok(Output {
+            bus,
+            flags: vec![[0; 4]; PES],
+            fwd: Some(FwdKind::Aluf),
+            poison: None,
+        })
     }
 }
 
