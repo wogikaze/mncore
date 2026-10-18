@@ -2015,7 +2015,7 @@
         "mau_and_matrix_write_scope": "The MAU producer/write stage composes without unknown when the producer is known and forwarding sources are resolved, including nonempty matrix-write producer lists. The empty-filter theorem remains a weaker special case.",
         "whole_line_no_unknown_composition": {
           "theorem": "ProofsLean.MNCore.executeIntegerProducerInstructionLine_pe_never_unknown_of_stages",
-          "behavior": "For a top-level accepted PE instruction line with supported producers, no unsupported Rust ALU, and completed waits, the ordered whole-line transition cannot return .unknown when each selected producer stage is itself known for every possible preceding state. The shared-block stage condition is derived directly from forwardingSourceResolved using the existing per-expression and source-order composition proofs. The 4096-PE prefix is itself composed from a per-PE unknown-free premise using source-order induction. The float-ReLU issue stage is reduced from a whole-stage condition to a per-selected-expression, per-PE, per-intermediate-state condition and composed over 4096 PEs. The MSL/MSR stage is now reduced to per-selected-expression/per-PE/per-intermediate-state conditions and composed across its 4096-PE traversal.",
+          "behavior": "For a top-level accepted PE instruction line with supported producers, no unsupported Rust ALU, and completed waits, the ordered whole-line transition cannot return .unknown when each selected producer stage is itself known for every possible preceding state. The shared-block stage condition is derived directly from forwardingSourceResolved using the existing per-expression and source-order composition proofs. The 4096-PE prefix is itself composed from a per-PE unknown-free premise using source-order induction. The float-ReLU issue stage is reduced from a whole-stage condition to a per-selected-expression, per-PE, per-intermediate-state condition and composed over 4096 PEs. The MSL/MSR stage is now reduced to per-selected-expression/per-PE/per-intermediate-state conditions and composed across its 4096-PE traversal. The block-float stage is reduced to per-selected-expression/per-MAB/per-intermediate-state conditions and composed over the complete MAB coordinate list.",
           "composed_stages": [
             "PE producers",
             "MSL/MSR",
@@ -2025,7 +2025,7 @@
             "shared-block producers",
             "L1-to-PE producers"
           ],
-          "scope_limit": "The theorem assumes per-PE no-unknown conditions for integer/matrix-read/float-MAU execution, MSL/MSR, float-ReLU, block-float, matrix-MAU/write, and L1-to-PE. Shared-block is derived from resolved forwarding. Other line variants and full Rust/Lean equivalence remain outside it.",
+          "scope_limit": "The theorem assumes no-unknown conditions at each block-float expression/MAB, float-ReLU expression/PE, MSL/MSR expression/PE, and integer per-PE step, plus stage conditions for matrix-MAU/write and L1-to-PE. Shared-block is discharged from resolved forwarding; other line variants and whole Rust/Lean equivalence remain outstanding.",
           "derived_premises": [
             "ProofsLean.MNCore.executeParsedSharedBlockProducers_resolved_never_unknown"
           ],
@@ -2035,7 +2035,9 @@
             "ProofsLean.MNCore.executeParsedFloatReluAtPEs_never_unknown",
             "ProofsLean.MNCore.executeParsedFloatReluProducers_per_pe_never_unknown",
             "ProofsLean.MNCore.executeParsedMslMsrAtPEs_never_unknown",
-            "ProofsLean.MNCore.executeParsedMslMsrProducers_per_pe_never_unknown"
+            "ProofsLean.MNCore.executeParsedMslMsrProducers_per_pe_never_unknown",
+            "ProofsLean.MNCore.executeParsedBlockFloatAtMABs_never_unknown",
+            "ProofsLean.MNCore.executeParsedBlockFloatProducer_at_mab_never_unknown"
           ]
         }
       }

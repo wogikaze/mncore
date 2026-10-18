@@ -6390,6 +6390,31 @@ def executeParsedBlockFloatAtMABs (readState currentState : State)
       | .ok next => executeParsedBlockFloatAtMABs readState next expression rest
           noForward hasSingleLineMask
 
+theorem executeParsedBlockFloatAtMABs_never_unknown
+    (readState : State) (expression : ParsedExpr) (coordinates : List MABCoordinate)
+    (currentState : State) (noForward hasSingleLineMask : Bool)
+    (known : ∀ coordinate, coordinate ∈ coordinates → ∀ state,
+      executeParsedBlockFloatAtMAB readState state expression coordinate
+        noForward hasSingleLineMask ≠ .unknown) :
+    executeParsedBlockFloatAtMABs readState currentState expression coordinates
+      noForward hasSingleLineMask ≠ .unknown := by
+  induction coordinates generalizing currentState with
+  | nil => simp [executeParsedBlockFloatAtMABs]
+  | cons coordinate rest ih =>
+      have headKnown := known coordinate (by simp) currentState
+      have restKnown : ∀ item, item ∈ rest → ∀ state,
+          executeParsedBlockFloatAtMAB readState state expression item
+            noForward hasSingleLineMask ≠ .unknown := by
+        intro item member state
+        exact known item (List.mem_cons_of_mem _ member) state
+      cases result : executeParsedBlockFloatAtMAB readState currentState expression coordinate
+          noForward hasSingleLineMask with
+      | failure => simp [executeParsedBlockFloatAtMABs, result]
+      | unknown => exact (headKnown result).elim
+      | ok nextState =>
+          simp only [executeParsedBlockFloatAtMABs, result]
+          exact ih nextState restKnown
+
 def executeParsedBlockFloatProducer (readState currentState : State)
     (expressions : List ParsedExpr) (noForward hasSingleLineMask : Bool) :
     ProofsLean.StepResult State :=
@@ -6398,6 +6423,33 @@ def executeParsedBlockFloatProducer (readState currentState : State)
   | [expression] => executeParsedBlockFloatAtMABs readState currentState expression
       allMABCoordinates noForward hasSingleLineMask
   | _ => .failure
+
+theorem executeParsedBlockFloatProducer_at_mab_never_unknown
+    (readState currentState : State) (expressions : List ParsedExpr)
+    (noForward hasSingleLineMask : Bool)
+    (known : ∀ expression,
+      expression ∈ expressions.filter parsedExprIsBlockFloatProducer →
+      ∀ coordinate, coordinate ∈ allMABCoordinates → ∀ state,
+        executeParsedBlockFloatAtMAB readState state expression coordinate
+          noForward hasSingleLineMask ≠ .unknown) :
+    executeParsedBlockFloatProducer readState currentState expressions
+      noForward hasSingleLineMask ≠ .unknown := by
+  cases filtered : expressions.filter parsedExprIsBlockFloatProducer with
+  | nil => simp [executeParsedBlockFloatProducer, filtered]
+  | cons expression rest =>
+      cases rest with
+      | nil =>
+          have selectedKnown : ∀ coordinate, coordinate ∈ allMABCoordinates → ∀ state,
+              executeParsedBlockFloatAtMAB readState state expression coordinate
+                noForward hasSingleLineMask ≠ .unknown := by
+            intro coordinate member state
+            exact known expression (by simp [filtered]) coordinate member state
+          have allMABsKnown := executeParsedBlockFloatAtMABs_never_unknown
+            readState expression allMABCoordinates currentState
+            noForward hasSingleLineMask selectedKnown
+          simp only [executeParsedBlockFloatProducer, filtered]
+          exact allMABsKnown
+      | cons second remaining => simp [executeParsedBlockFloatProducer, filtered]
 
 theorem executeParsedBlockFloatProducer_multiple_fail
     (readState currentState : State) (first second : ParsedExpr) (rest : List ParsedExpr)
@@ -8290,8 +8342,11 @@ theorem executeIntegerProducerInstructionLine_pe_never_unknown_of_stages
       ∀ pe, pe ∈ List.finRange 4096 → ∀ reluState,
         executeParsedFloatReluAtPE state reluState expression pe
           noForward hasSingleLineMask ≠ .unknown)
-    (blockFloatKnown : ∀ nextRelu, executeParsedBlockFloatProducer state nextRelu expressions
-      noForward hasSingleLineMask ≠ .unknown)
+    (blockFloatAtMABKnown : ∀ expression,
+      expression ∈ expressions.filter parsedExprIsBlockFloatProducer →
+      ∀ coordinate, coordinate ∈ allMABCoordinates → ∀ blockFloatState,
+        executeParsedBlockFloatAtMAB state blockFloatState expression coordinate
+          noForward hasSingleLineMask ≠ .unknown)
     (matrixKnown : ∀ nextBlockFloat,
       executeParsedMatrixMAUAndWrites state nextBlockFloat expressions
         noForward hasSingleLineMask ≠ .unknown)
@@ -8346,7 +8401,10 @@ theorem executeIntegerProducerInstructionLine_pe_never_unknown_of_stages
               cases blockResult : executeParsedBlockFloatProducer state nextRelu expressions
                   noForward hasSingleLineMask with
               | failure => simp_all [expressions, noForward, hasSingleLineMask, List.any_map]
-              | unknown => exact (blockFloatKnown nextRelu blockResult).elim
+              | unknown =>
+                  have blockFloatStageKnown := executeParsedBlockFloatProducer_at_mab_never_unknown
+                    state nextRelu expressions noForward hasSingleLineMask blockFloatAtMABKnown
+                  exact (blockFloatStageKnown blockResult).elim
               | ok nextBlockFloat =>
                   cases matrixResult : executeParsedMatrixMAUAndWrites state nextBlockFloat
                       expressions noForward hasSingleLineMask with
