@@ -3725,6 +3725,25 @@ def prepareParsedMaskedWriteWithForwarding (files : IntegerRegisterFiles)
       | .failure => .failure
       | .unknown => .unknown
 
+theorem prepareParsedMaskedWriteWithForwarding_never_unknown_of_reads
+    (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (cycle : Fin 4) (accesses : ParsedMaskedIntegerAccesses) (reduced : Bool)
+    (readXKnown : ParsedIntegerInput.readWithForwarding files slots cycle accesses.sourceX ≠
+      .unknown)
+    (readYKnown : ParsedIntegerInput.readWithForwarding files slots cycle accesses.sourceY ≠
+      .unknown) :
+    prepareParsedMaskedWriteWithForwarding files slots cycle accesses reduced ≠ .unknown := by
+  obtain ⟨request, hasRequest⟩ := accesses.hasRequest
+  unfold prepareParsedMaskedWriteWithForwarding
+  cases readX : ParsedIntegerInput.readWithForwarding files slots cycle accesses.sourceX with
+  | failure => simp [readX]
+  | unknown => exact (readXKnown readX).elim
+  | ok x =>
+      cases readY : ParsedIntegerInput.readWithForwarding files slots cycle accesses.sourceY with
+      | failure => simp [readX, readY]
+      | unknown => exact (readYKnown readY).elim
+      | ok y => simp [readX, readY, evaluateParsedIntegerAlu, hasRequest]
+
 def prepareParsedConstantTarget (files : IntegerRegisterFiles) (cycle : Fin 4)
     (target : ParsedConstantDestination) : ProofsLean.StepResult PreparedParsedMaskedWrite :=
   match target with
@@ -4516,6 +4535,36 @@ def prepareParsedIntegerALUExprCycle (files : IntegerRegisterFiles)
               | .unknown => ProofsLean.StepResult.unknown
   | _ => ProofsLean.StepResult.unknown
 
+theorem prepareParsedIntegerALUExprCycle_alu_never_unknown_of_resolved
+    (files : IntegerRegisterFiles) (oldSlots nextSlots : ProofsLean.MNCore.Forwarding.Slots)
+    (expression : ParsedExpr) (control : ParsedMaskExecutionControl)
+    (hasSingleLineMask noForward reduced : Bool) (cycle : Fin 4)
+    (isAlu : ∃ name precision unsigned arg,
+      expression.op = .alu name precision unsigned arg)
+    (accesses : ParsedMaskedIntegerAccesses)
+    (lowered : ParsedExpr.toDirectMaskedIntegerAccessesInLine? expression
+      files.maskRegisters control.directive hasSingleLineMask
+      control.context.group control.context.l2b control.context.l1b control.context.mab
+      control.context.pe cycle control.context.bar0 control.context.bar1 control.context.tWord =
+        some accesses)
+    (readXKnown : ParsedIntegerInput.readWithForwarding files oldSlots cycle accesses.sourceX ≠
+      .unknown)
+    (readYKnown : ParsedIntegerInput.readWithForwarding files oldSlots cycle accesses.sourceY ≠
+      .unknown) :
+    prepareParsedIntegerALUExprCycle files oldSlots nextSlots expression control
+      hasSingleLineMask noForward reduced cycle ≠ .unknown := by
+  obtain ⟨name, precision, unsigned, arg, isAlu⟩ := isAlu
+  unfold prepareParsedIntegerALUExprCycle
+  simp only [isAlu, lowered]
+  have preparedKnown := prepareParsedMaskedWriteWithForwarding_never_unknown_of_reads
+    files oldSlots cycle accesses reduced readXKnown readYKnown
+  cases prepared : prepareParsedMaskedWriteWithForwarding files oldSlots cycle accesses reduced with
+  | failure => simp [isAlu, lowered, prepared]
+  | unknown => exact (preparedKnown prepared).elim
+  | ok write =>
+      cases noForward <;>
+        simp [isAlu, lowered, prepared, updateParsedIntegerALUForwardingCycle]
+
 /-- Accumulate integer producer writes and forwarding values over an explicit
 cycle list. -/
 def prepareParsedIntegerALUCycles (files : IntegerRegisterFiles)
@@ -4617,6 +4666,29 @@ theorem parsedIntegerALUExprFourCycleStep_never_unknown
       exact (prepareParsedIntegerALUExprCycles_never_unknown files slots slots expression
         control hasSingleLineMask noForward reduced known result).elim
   | ok prepared => simp [result]
+
+theorem parsedIntegerALUExprFourCycleStep_alu_never_unknown_of_resolved
+    (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (expression : ParsedExpr) (control : ParsedMaskExecutionControl)
+    (hasSingleLineMask noForward reduced : Bool)
+    (isAlu : ∃ name precision unsigned arg,
+      expression.op = .alu name precision unsigned arg)
+    (resolved : ∀ cycle, cycle ∈ parsedIntegerALUCycles →
+      ∃ accesses,
+        ParsedExpr.toDirectMaskedIntegerAccessesInLine? expression files.maskRegisters
+          control.directive hasSingleLineMask control.context.group control.context.l2b
+          control.context.l1b control.context.mab control.context.pe cycle
+          control.context.bar0 control.context.bar1 control.context.tWord = some accesses ∧
+        ParsedIntegerInput.readWithForwarding files slots cycle accesses.sourceX ≠ .unknown ∧
+        ParsedIntegerInput.readWithForwarding files slots cycle accesses.sourceY ≠ .unknown) :
+    parsedIntegerALUExprFourCycleStep files slots expression control
+      hasSingleLineMask noForward reduced ≠ .unknown := by
+  apply parsedIntegerALUExprFourCycleStep_never_unknown
+  intro cycle member outputSlots
+  obtain ⟨accesses, lowered, readXKnown, readYKnown⟩ := resolved cycle member
+  exact prepareParsedIntegerALUExprCycle_alu_never_unknown_of_resolved files slots
+    outputSlots expression control hasSingleLineMask noForward reduced cycle isAlu accesses
+    lowered readXKnown readYKnown
 
 /-- Four-cycle issue-line transition for integer ALU, zero, and immediate
 producers. All
