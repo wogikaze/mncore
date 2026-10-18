@@ -4234,6 +4234,36 @@ def removePendingMvTag : Fin 256 → List PendingMv → Option (PendingMv × Lis
         let (target, remaining) ← removePendingMvTag tag rest
         some (target, pending :: remaining)
 
+theorem removePendingMvTag_preserves_other_operations
+    (tag : Fin 256) (pending : List PendingMv) (target : PendingMv)
+    (remaining : List PendingMv)
+    (removed : removePendingMvTag tag pending = some (target, remaining)) :
+    remaining.filter (fun operation => operation.tag != some tag) =
+      pending.filter (fun operation => operation.tag != some tag) := by
+  induction pending generalizing target remaining with
+  | nil => simp [removePendingMvTag] at removed
+  | cons head rest ih =>
+      cases hmatch : head.tag == some tag with
+      | true =>
+          simp [removePendingMvTag, hmatch] at removed
+          cases removed
+          subst target
+          subst remaining
+          simp_all [List.filter_cons]
+      | false =>
+          have headDiffers : head.tag ≠ some tag := by simpa using hmatch
+          cases tail : removePendingMvTag tag rest with
+          | none => simp [removePendingMvTag, hmatch, tail] at removed
+          | some pair =>
+              rcases pair with ⟨removedHead, removedRest⟩
+              simp [removePendingMvTag, hmatch, tail] at removed
+              cases removed
+              subst target
+              subst remaining
+              have preservedTail := ih removedHead removedRest tail
+              have hother : (head.tag != some tag) = true := by simp [headDiffers]
+              simp only [List.filter_cons, hother, ite_true, preservedTail]
+
 def pendingMvContainsTag (tag : Fin 256) (pending : List PendingMv) : Bool :=
   pending.any fun operation => operation.tag == some tag
 
@@ -4347,6 +4377,60 @@ theorem completePendingMvTagAll_success_clears_tag_queue
     (completed : completePendingMvTagAll state tag = some next) :
     pendingMvContainsTag tag next.pendingMv = false := by
   exact completePendingMvTagFuel_success_clears_tag_queue
+    (state.pendingMv.length + 1) state next tag initiallyIncomplete completed
+
+theorem completePendingMvTag_success_preserves_other_pending
+    (state next : State) (tag : Fin 256)
+    (initiallyIncomplete : state.mvCompletedTags tag = false)
+    (completed : completePendingMvTag state tag = some next) :
+    next.pendingMv.filter (fun operation => operation.tag != some tag) =
+      state.pendingMv.filter (fun operation => operation.tag != some tag) := by
+  cases removed : removePendingMvTag tag state.pendingMv with
+  | none => simp [completePendingMvTag, initiallyIncomplete, removed] at completed
+  | some result =>
+      rcases result with ⟨pending, remaining⟩
+      simp [completePendingMvTag, initiallyIncomplete, removed] at completed
+      cases completed
+      exact removePendingMvTag_preserves_other_operations tag state.pendingMv
+        pending remaining removed
+
+theorem completePendingMvTagFuel_success_preserves_other_pending
+    (fuel : Nat) (state next : State) (tag : Fin 256)
+    (initiallyIncomplete : state.mvCompletedTags tag = false)
+    (completed : completePendingMvTagFuel fuel state tag = some next) :
+    next.pendingMv.filter (fun operation => operation.tag != some tag) =
+      state.pendingMv.filter (fun operation => operation.tag != some tag) := by
+  induction fuel generalizing state next with
+  | zero => simp [completePendingMvTagFuel, initiallyIncomplete] at completed
+  | succ fuel ih =>
+      cases step : completePendingMvTag state tag with
+      | none => simp [completePendingMvTagFuel, initiallyIncomplete, step] at completed
+      | some intermediate =>
+          have oneStep := completePendingMvTag_success_preserves_other_pending
+            state intermediate tag initiallyIncomplete step
+          simp [completePendingMvTagFuel, initiallyIncomplete, step] at completed
+          by_cases finished : intermediate.mvCompletedTags tag = true
+          · have stop := completePendingMvTagFuel_of_tag_completed fuel
+              intermediate tag finished
+            rw [stop] at completed
+            injection completed with same
+            subst next
+            exact oneStep
+          · have stillIncomplete : intermediate.mvCompletedTags tag = false := by
+              cases h : intermediate.mvCompletedTags tag <;> simp_all
+            calc
+              next.pendingMv.filter (fun operation => operation.tag != some tag) =
+                  intermediate.pendingMv.filter (fun operation => operation.tag != some tag) :=
+                    ih intermediate next stillIncomplete completed
+              _ = state.pendingMv.filter (fun operation => operation.tag != some tag) := oneStep
+
+theorem completePendingMvTagAll_success_preserves_other_pending
+    (state next : State) (tag : Fin 256)
+    (initiallyIncomplete : state.mvCompletedTags tag = false)
+    (completed : completePendingMvTagAll state tag = some next) :
+    next.pendingMv.filter (fun operation => operation.tag != some tag) =
+      state.pendingMv.filter (fun operation => operation.tag != some tag) := by
+  exact completePendingMvTagFuel_success_preserves_other_pending
     (state.pendingMv.length + 1) state next tag initiallyIncomplete completed
 
 theorem completePendingMvTagAll_completes_two_same_tag
@@ -5162,7 +5246,9 @@ theorem executeHazardAwareNormalizedLine_drains_tag_then_wait_nop
           event.startWord + 4 ≥ next.hazardClock + (count + 1)
         blockHistory := state.blockHistory.filter fun event =>
           event.startWord + 4 ≥ next.hazardClock + (count + 1) }) ∧
-      pendingMvContainsTag tag next.pendingMv = false := by
+      pendingMvContainsTag tag next.pendingMv = false ∧
+      next.pendingMv.filter (fun operation => operation.tag != some tag) =
+        state.machine.pendingMv.filter (fun operation => operation.tag != some tag) := by
   constructor
   ·
       have tagCompleted := completePendingMvTagAll_success_completes_tag
@@ -5178,8 +5264,11 @@ theorem executeHazardAwareNormalizedLine_drains_tag_then_wait_nop
       rw [sameDrained, core]
       simp
       exact notStalled
-  · exact completePendingMvTagAll_success_clears_tag_queue
-      state.machine next tag initiallyIncomplete drained
+  · constructor
+    · exact completePendingMvTagAll_success_clears_tag_queue
+        state.machine next tag initiallyIncomplete drained
+    · exact completePendingMvTagAll_success_preserves_other_pending
+        state.machine next tag initiallyIncomplete drained
 
 theorem executeScheduledProgram_wait_nop_releases_after_completion
     (machine next : State) (count : Nat) (tag : Fin 256)
