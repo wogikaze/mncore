@@ -1971,7 +1971,9 @@
         "rust_reference": "viz/core/src/vsm.rs::parse_operand separates PE-memory banks from L1BM/L2BM/OMR operands; viz/core/src/machine.rs::Machine::read_raw_untraced reports unsupported non-memory sources.",
         "scope_limit": "The Lean failure theorem covers malformed direct AST memory banks that cannot represent a Rust PE-memory operand. Parser-produced PE-memory reads still require source-level differential conformance.",
         "gather_direct_memory_unknown_free_theorem": "ProofsLean.MNCore.executeParsedL1GatherAtAllBanks_direct_memory_never_unknown",
-        "gather_direct_memory_unknown_free_scope": "For a successfully lowered gather with direct PE-memory source, MAB/PE reads compose across all four cycles and all 64 L1BM banks; the complete producer transition cannot return unknown. Forward-source resolution and command-level Rust conformance remain open."
+        "gather_direct_memory_unknown_free_scope": "For a successfully lowered gather with direct PE-memory source, MAB/PE reads compose across all four cycles and all 64 L1BM banks; the complete producer transition cannot return unknown.",
+        "gather_resolved_forward_unknown_free_theorem": "ProofsLean.MNCore.executeParsedL1GatherAtAllBanks_resolved_forward_never_unknown",
+        "gather_resolved_forward_unknown_free_scope": "A successfully lowered gather with a forward source cannot return unknown across all MAB/PE reads, cycles, and banks when the read state satisfies forwardingSourceResolved. A valid unresolved forwarding slot remains an unknown-producing case; Rust command conformance remains open."
       },
       "pe_to_l1bm_known_lowering_failures": {
         "behavior": "Unsupported mwrite/gather/reduce operand shapes and unsupported L1BM reduction operations return failure; they no longer propagate unknown from Option-based lowering.",

@@ -2516,6 +2516,33 @@ theorem readL1GatherPEList_direct_memory_never_unknown
           simp only [result]
           exact ih (fun index => if index = pe then bus else buses index)
 
+theorem readL1GatherPEList_resolved_forward_never_unknown
+    (state : State) (kind : ParsedForward) (negated extended rounded : Bool)
+    (bank : Fin 64) (mab : Fin 16) (cycle : Fin 4) (pes : List (Fin 4))
+    (buses : Fin 4 → IntegerALU.Bus) (resolved : forwardingSourceResolved state) :
+    readL1GatherPEList state (.forward kind negated extended rounded)
+      bank mab cycle pes buses ≠ .unknown := by
+  induction pes generalizing buses with
+  | nil => simp [readL1GatherPEList]
+  | cons pe rest ih =>
+      simp only [readL1GatherPEList]
+      let linear := bank.val * 64 + mab.val * 4 + pe.val
+      let linearPE : PEId := ⟨linear, by
+        have hb := bank.isLt
+        have hm := mab.isLt
+        have hp := pe.isLt
+        omega⟩
+      cases result : readRawL1MwriteBus state
+          (.forward kind negated extended rounded) linearPE cycle with
+      | failure => simp [result]
+      | unknown =>
+          have known := resolved linearPE (ParsedIntegerInput.forwardUnit kind) cycle
+          exact (readRawL1MwriteBus_forward_never_unknown state kind negated extended
+            rounded linearPE cycle known result).elim
+      | ok bus =>
+          simp only [result]
+          exact ih (fun index => if index = pe then bus else buses index)
+
 def readL1GatherMabList (state : State) (source : ParsedOperand)
     (bank : Fin 64) (cycle : Fin 4) :
     List (Fin 16) → (Fin 16 → Fin 4 → IntegerALU.Bus) →
@@ -2552,6 +2579,30 @@ theorem readL1GatherMabList_direct_memory_never_unknown
           exact ih (fun nextMab pe =>
             if nextMab = mab then peBuses pe else buses nextMab pe)
 
+theorem readL1GatherMabList_resolved_forward_never_unknown
+    (state : State) (kind : ParsedForward) (negated extended rounded : Bool)
+    (bank : Fin 64) (cycle : Fin 4) (mabs : List (Fin 16))
+    (buses : Fin 16 → Fin 4 → IntegerALU.Bus)
+    (resolved : forwardingSourceResolved state) :
+    readL1GatherMabList state (.forward kind negated extended rounded)
+      bank cycle mabs buses ≠ .unknown := by
+  induction mabs generalizing buses with
+  | nil => simp [readL1GatherMabList]
+  | cons mab rest ih =>
+      simp only [readL1GatherMabList]
+      cases result : readL1GatherPEList state
+          (.forward kind negated extended rounded) bank mab cycle
+          (List.finRange 4) (fun _ => ⟨0, 0⟩) with
+      | failure => simp [result]
+      | unknown =>
+          exact (readL1GatherPEList_resolved_forward_never_unknown state kind negated
+            extended rounded bank mab cycle (List.finRange 4) (fun _ => ⟨0, 0⟩)
+            resolved result).elim
+      | ok peBuses =>
+          simp only [result]
+          exact ih (fun nextMab pe =>
+            if nextMab = mab then peBuses pe else buses nextMab pe)
+
 def readL1GatherBusesAtBank (state : State) (access : ParsedL1GatherAccess)
     (bank : Fin 64) (cycle : Fin 4) :
     ProofsLean.StepResult (Fin 16 → Fin 4 → IntegerALU.Bus) :=
@@ -2568,6 +2619,16 @@ theorem readL1GatherBusesAtBank_direct_memory_never_unknown
     readL1GatherMabList_direct_memory_never_unknown state sourceAccess negated
       extended rounded mask bank cycle (List.finRange 16)
       (fun _ _ => ⟨0, 0⟩)
+
+theorem readL1GatherBusesAtBank_resolved_forward_never_unknown
+    (state : State) (access : ParsedL1GatherAccess) (kind : ParsedForward)
+    (negated extended rounded : Bool) (bank : Fin 64) (cycle : Fin 4)
+    (resolved : forwardingSourceResolved state)
+    (source : access.source = .forward kind negated extended rounded) :
+    readL1GatherBusesAtBank state access bank cycle ≠ .unknown := by
+  simpa [readL1GatherBusesAtBank, source] using
+    readL1GatherMabList_resolved_forward_never_unknown state kind negated extended
+      rounded bank cycle (List.finRange 16) (fun _ _ => ⟨0, 0⟩) resolved
 
 def executeL1GatherCycleList (readState : State) (access : ParsedL1GatherAccess)
     (bank : Fin 64) (updateTurnaround : Bool) : List (Fin 4) →
@@ -2610,6 +2671,28 @@ theorem executeL1GatherCycleList_direct_memory_never_unknown
           simp only [result]
           exact ih _ _
 
+theorem executeL1GatherCycleList_resolved_forward_never_unknown
+    (readState : State) (access : ParsedL1GatherAccess) (bank : Fin 64)
+    (updateTurnaround : Bool) (cycles : List (Fin 4))
+    (memory : L1Transfer.L1Bank) (turnaround : L1Transfer.L1Turnaround)
+    (kind : ParsedForward) (negated extended rounded : Bool)
+    (resolved : forwardingSourceResolved readState)
+    (source : access.source = .forward kind negated extended rounded) :
+    executeL1GatherCycleList readState access bank updateTurnaround cycles memory
+      turnaround ≠ .unknown := by
+  induction cycles generalizing memory turnaround with
+  | nil => simp [executeL1GatherCycleList]
+  | cons cycle rest ih =>
+      simp only [executeL1GatherCycleList]
+      cases result : readL1GatherBusesAtBank readState access bank cycle with
+      | failure => simp [result]
+      | unknown =>
+          exact (readL1GatherBusesAtBank_resolved_forward_never_unknown readState access
+            kind negated extended rounded bank cycle resolved source result).elim
+      | ok buses =>
+          simp only [result]
+          exact ih _ _
+
 def executeL1GatherCyclesAtBank (readState currentState : State)
     (access : ParsedL1GatherAccess)
     (bank : Fin 64) (updateTurnaround : Bool) :
@@ -2628,6 +2711,17 @@ theorem executeL1GatherCyclesAtBank_direct_memory_never_unknown
   exact executeL1GatherCycleList_direct_memory_never_unknown readState access bank
     updateTurnaround [0, 1, 2, 3] (currentState.l1bm bank)
     (readState.l1bmTurnaround bank) sourceAccess negated extended rounded mask source
+
+theorem executeL1GatherCyclesAtBank_resolved_forward_never_unknown
+    (readState currentState : State) (access : ParsedL1GatherAccess)
+    (bank : Fin 64) (updateTurnaround : Bool) (kind : ParsedForward)
+    (negated extended rounded : Bool) (resolved : forwardingSourceResolved readState)
+    (source : access.source = .forward kind negated extended rounded) :
+    executeL1GatherCyclesAtBank readState currentState access bank updateTurnaround ≠
+      .unknown := by
+  exact executeL1GatherCycleList_resolved_forward_never_unknown readState access bank
+    updateTurnaround [0, 1, 2, 3] (currentState.l1bm bank)
+    (readState.l1bmTurnaround bank) kind negated extended rounded resolved source
 
 def executeL1GatherBankList (readState : State) (access : ParsedL1GatherAccess)
     (updateTurnaround : Bool) : List (Fin 64) → State → ProofsLean.StepResult State
@@ -2666,6 +2760,28 @@ theorem executeL1GatherBankList_direct_memory_never_unknown
           simp only [result]
           exact ih _
 
+theorem executeL1GatherBankList_resolved_forward_never_unknown
+    (readState : State) (access : ParsedL1GatherAccess) (updateTurnaround : Bool)
+    (banks : List (Fin 64)) (state : State) (kind : ParsedForward)
+    (negated extended rounded : Bool) (resolved : forwardingSourceResolved readState)
+    (source : access.source = .forward kind negated extended rounded) :
+    executeL1GatherBankList readState access updateTurnaround banks state ≠ .unknown := by
+  induction banks generalizing state with
+  | nil => simp [executeL1GatherBankList]
+  | cons bank rest ih =>
+      simp only [executeL1GatherBankList]
+      cases result : executeL1GatherCyclesAtBank readState state access bank
+          updateTurnaround with
+      | failure => simp [result]
+      | unknown =>
+          exact (executeL1GatherCyclesAtBank_resolved_forward_never_unknown readState
+            state access bank updateTurnaround kind negated extended rounded resolved
+            source result).elim
+      | ok completion =>
+          rcases completion with ⟨memory, turnaround⟩
+          simp only [result]
+          exact ih _
+
 def executeParsedL1GatherAtAllBanks (readState currentState : State)
     (expression : ParsedExpr) (updateTurnaround : Bool) : ProofsLean.StepResult State :=
   match lowerParsedL1Gather? expression with
@@ -2686,6 +2802,20 @@ theorem executeParsedL1GatherAtAllBanks_direct_memory_never_unknown
   exact executeL1GatherBankList_direct_memory_never_unknown readState access
     updateTurnaround (List.finRange 64) currentState sourceAccess negated extended
     rounded mask source
+
+theorem executeParsedL1GatherAtAllBanks_resolved_forward_never_unknown
+    (readState currentState : State) (expression : ParsedExpr)
+    (updateTurnaround : Bool) (access : ParsedL1GatherAccess)
+    (kind : ParsedForward) (negated extended rounded : Bool)
+    (lowered : lowerParsedL1Gather? expression = some access)
+    (resolved : forwardingSourceResolved readState)
+    (source : access.source = .forward kind negated extended rounded) :
+    executeParsedL1GatherAtAllBanks readState currentState expression updateTurnaround ≠
+      .unknown := by
+  simp only [executeParsedL1GatherAtAllBanks, lowered]
+  exact executeL1GatherBankList_resolved_forward_never_unknown readState access
+    updateTurnaround (List.finRange 64) currentState kind negated extended rounded
+    resolved source
 
 theorem executeParsedL1GatherAtAllBanks_lowering_failure
     (readState currentState : State) (expression : ParsedExpr) (updateTurnaround : Bool)
