@@ -115,7 +115,9 @@
       "implemented": "PE and block hazard event extraction, violation-to-failure behavior, bounded event history, and deterministic completion of same-tag pending MV transfers before a wait line",
       "pe_memory_address_modifiers": "Negated/extended/rounded value modifiers are erased only for hazard address resolution; bank, region, t-indirect/madpe fields, and destination write mask are retained",
       "modifier_projection_theorem": "ProofsLean.MNCore.PEMemory.ParsedOperand.forHazardAddress_mem",
-      "scope_limit": "PE address resolution can still return unknown for unsupported widths or illegal bank/address-mode combinations; disabled-forwarding and full accepted-source legality are not yet connected universally",
+      "malformed_address_mode_handling": "Unsupported direct PE-memory widths and t-indirect/madpe bank combinations fail before hazard lowering",
+      "validity_predicate": "ProofsLean.MNCore.PEMemory.ParsedOperand.directMemoryAddressModeValid",
+      "scope_limit": "Disabled-forwarding and full accepted-source legality are not yet connected universally; source-parser correspondence for PE address modes remains unproved",
       "reference_conformance": false
     },
     "remaining": [

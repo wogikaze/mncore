@@ -3959,6 +3959,17 @@ def parsedNormalizedLinePEHazardEvents?
       (List.finRange 4096).mapM fun pe =>
         parsedPEHazardEventsForPE? state expressions pe
 
+/-- Reject malformed direct PE-memory address modes as instruction failures
+before hazard lowering can turn their unsupported width/bank combination into
+an epistemic `.unknown`. Value-semantic gaps remain `.unknown` downstream. -/
+def parsedNormalizedLinePEAddressModesValid (line : NormalizedLine) : Bool :=
+  match line.toInstruction? with
+  | some (.pe expressions) =>
+      expressions.all fun expression =>
+        (expression.sources ++ expression.destinations).all
+          PEMemory.ParsedOperand.directMemoryAddressModeValid
+  | _ => true
+
 def parsedBlockHazardViolated
     (history current : List PEMemory.TimedBlockAccess) : Bool :=
   (HazardTrace.blockHazardConstraintsBetween history current).any fun constraint =>
@@ -3991,6 +4002,7 @@ noncomputable def executeHazardAwareNormalizedLineCore (line : NormalizedLine)
   | _ =>
       let some instruction := line.toInstruction? | return .failure
       if !checkParsedTopLine instruction.toParsed then return .failure
+      if !parsedNormalizedLinePEAddressModesValid line then return .failure
       let some currentPEEvents ← pure
         (parsedNormalizedLinePEHazardEvents? state.machine line) | return .unknown
       let currentBlockEvents := HazardTrace.parsedLineBlockHazardEvents

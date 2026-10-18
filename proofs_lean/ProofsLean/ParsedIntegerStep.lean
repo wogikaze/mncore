@@ -135,6 +135,19 @@ def parsedWidth? (encoded : Nat) : Option Width :=
   | 4 => some .double
   | _ => none
 
+/-- Syntactic PE-address modes accepted by the direct-memory transition.
+This is separate from value semantics: unsupported address encodings are
+malformed instructions and should fail before partial lowering returns unknown. -/
+def ParsedOperand.directMemoryAddressModeValid : ParsedOperand → Bool
+  | .mem access _ _ _ _ =>
+      match issueBankToRegisterBank access.bank with
+      | none => false
+      | some bank =>
+          (parsedWidth? access.region.width).isSome &&
+            (!access.region.tIndirect || bank == .lm0) &&
+            (access.region.madpe.isNone || bank == .lm0 || bank == .lm1)
+  | _ => true
+
 /-- Resolve the memory address fields of a parsed operand for one PE and cycle.
 This intentionally rejects rounded inputs and banks outside the PE memories.
 The surrounding caller still supplies current BAR and T values. -/
