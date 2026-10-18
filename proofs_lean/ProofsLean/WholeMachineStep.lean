@@ -2486,6 +2486,38 @@ def executeParsedL2BlockProducers (readState currentState : State)
     | .ok next => state := next
   return .ok state
 
+def executeParsedSharedBlockExpression (readState currentState : State)
+    (expression : ParsedExpr) (updateTurnaround : Bool) : ProofsLean.StepResult State :=
+  match expression.op with
+  | .l1bm (.mwrite _) | .l1bm (.m4write _) | .l1bm (.gather _) |
+      .l1bm (.reduce ..) | .l1bm (.reduce4 ..) =>
+      executeParsedL1PEToL1Expression readState currentState expression updateTurnaround
+  | .l2bm _ => executeParsedL2BlockExpression readState currentState expression
+  | _ => .ok currentState
+
+def executeParsedSharedBlockProducerList (readState : State) (updateTurnaround : Bool)
+    : List ParsedExpr → State → ProofsLean.StepResult State
+  | [], state => .ok state
+  | expression :: rest, state =>
+      match executeParsedSharedBlockExpression readState state expression updateTurnaround with
+      | .failure => .failure
+      | .unknown => .unknown
+      | .ok next => executeParsedSharedBlockProducerList readState updateTurnaround rest next
+
+def executeParsedSharedBlockProducers (readState currentState : State)
+    (expressions : List ParsedExpr) (updateTurnaround : Bool) : ProofsLean.StepResult State :=
+  executeParsedSharedBlockProducerList readState updateTurnaround expressions currentState
+
+theorem executeParsedSharedBlockProducerList_two_success
+    (readState state : State) (first second : ParsedExpr) (updateTurnaround : Bool)
+    (firstResult : executeParsedSharedBlockExpression readState state first
+      updateTurnaround = .ok stateAfterFirst)
+    (secondResult : executeParsedSharedBlockExpression readState stateAfterFirst second
+      updateTurnaround = .ok stateAfterSecond) :
+    executeParsedSharedBlockProducerList readState updateTurnaround [first, second] state =
+      .ok stateAfterSecond := by
+  simp [executeParsedSharedBlockProducerList, firstResult, secondResult]
+
 structure ParsedL1ToPEAccess where
   sourceBase : Option (Fin L1Transfer.l1bmLongWords)
   twoLongWords : Bool
@@ -3936,16 +3968,16 @@ noncomputable def executeIntegerProducerInstructionLine
                     | .ok next =>
                         let hasPEToL1Producer :=
                           expressions.any parsedExprMayWriteL1BMTurnaround
-                        match executeParsedL1PEToL1Producers state next expressions (!noForward) with
+                        match executeParsedSharedBlockProducers state next expressions (!noForward) with
                         | .failure => .failure
                         | .unknown => .unknown
-                        | .ok nextWithReduce =>
+                        | .ok nextWithBlocks =>
                             let l1ToPE := expressions.filter parsedExprIsL1ToPEProducer
                             let l1ToPEUsesPreIssueMask :=
                               parsedL1ToPEPrecedesOMRWriter expressions
                             let afterL1ToPE : ProofsLean.StepResult State := match l1ToPE with
-                              | [] => .ok nextWithReduce
-                              | [expression] => executeParsedL1ToPEProducer state nextWithReduce
+                              | [] => .ok nextWithBlocks
+                              | [expression] => executeParsedL1ToPEProducer state nextWithBlocks
                                   expression noForward
                                   (expressions.any parsedExprHasSingleLineWriteMask)
                                   l1ToPEUsesPreIssueMask
@@ -3954,14 +3986,10 @@ noncomputable def executeIntegerProducerInstructionLine
                             | .failure => .failure
                             | .unknown => .unknown
                             | .ok nextWithBroadcast =>
-                              match executeParsedL2BlockProducers state nextWithBroadcast expressions with
-                              | .failure => .failure
-                              | .unknown => .unknown
-                              | .ok nextWithL2 =>
-                                .ok { nextWithL2 with
-                                  hazardClock := nextWithL2.hazardClock + InstructionLine.cost line
-                                  l1bmTurnaroundValid :=
-                                    if noForward then nextWithL2.l1bmTurnaroundValid else hasPEToL1Producer }
+                              .ok { nextWithBroadcast with
+                                hazardClock := nextWithBroadcast.hazardClock + InstructionLine.cost line
+                                l1bmTurnaroundValid :=
+                                  if noForward then nextWithBroadcast.l1bmTurnaroundValid else hasPEToL1Producer }
         else .unknown
     | .nop count wait =>
         match wait with
@@ -4561,16 +4589,16 @@ theorem executeIntegerProducerInstructionLine_pe_success
       (normalizedExpressions.map NormalizedExpr.toParsed)
       (normalizedExpressions.any (parsedExprIsNoForwardProducer ∘ NormalizedExpr.toParsed))
       (normalizedExpressions.any (parsedExprHasSingleLineWriteMask ∘ NormalizedExpr.toParsed)) = .ok next)
-    (nextPEToL1 : State)
-    (peToL1Writes : executeParsedL1PEToL1Producers state next
+    (nextSharedBlocks : State)
+    (sharedBlockWrites : executeParsedSharedBlockProducers state next
       (normalizedExpressions.map NormalizedExpr.toParsed)
       (!(normalizedExpressions.any
-        (parsedExprIsNoForwardProducer ∘ NormalizedExpr.toParsed))) = .ok nextPEToL1)
+        (parsedExprIsNoForwardProducer ∘ NormalizedExpr.toParsed))) = .ok nextSharedBlocks)
     (nextBroadcast : State)
     (l1ToPE : (match (normalizedExpressions.map NormalizedExpr.toParsed).filter
         parsedExprIsL1ToPEProducer with
-      | [] => (ProofsLean.StepResult.ok nextPEToL1 : ProofsLean.StepResult State)
-      | [expression] => executeParsedL1ToPEProducer state nextPEToL1 expression
+      | [] => (ProofsLean.StepResult.ok nextSharedBlocks : ProofsLean.StepResult State)
+      | [expression] => executeParsedL1ToPEProducer state nextSharedBlocks expression
           (normalizedExpressions.any
             (parsedExprIsNoForwardProducer ∘ NormalizedExpr.toParsed))
           (normalizedExpressions.any
@@ -4578,25 +4606,22 @@ theorem executeIntegerProducerInstructionLine_pe_success
           (parsedL1ToPEPrecedesOMRWriter
             (normalizedExpressions.map NormalizedExpr.toParsed))
       | _ => .unknown) = .ok nextBroadcast)
-    (nextL2 : State)
-    (l2Writes : executeParsedL2BlockProducers state nextBroadcast
-      (normalizedExpressions.map NormalizedExpr.toParsed) = .ok nextL2)
     (waitsComplete : (normalizedExpressions.map NormalizedExpr.toParsed).any
       (parsedExprWaitPending state) = false)
     :
     executeIntegerProducerInstructionLine (.pe normalizedExpressions) state =
-      .ok { nextL2 with
-        hazardClock := nextL2.hazardClock + InstructionLine.cost (.pe normalizedExpressions)
+      .ok { nextBroadcast with
+        hazardClock := nextBroadcast.hazardClock + InstructionLine.cost (.pe normalizedExpressions)
         l1bmTurnaroundValid :=
           if ∃ expression ∈ normalizedExpressions,
             parsedExprIsNoForwardProducer expression.toParsed = true
-          then nextL2.l1bmTurnaroundValid
+          then nextBroadcast.l1bmTurnaroundValid
           else normalizedExpressions.any (fun expression =>
             parsedExprMayWriteL1BMTurnaround expression.toParsed) } := by
   simp [executeIntegerProducerInstructionLine, accepted, waitsComplete, supported, noUnsupportedRustAlu,
     executed, mslMsrWrites,
     reluWrites, blockFloatWrites,
-    matrixWrites, peToL1Writes, l1ToPE, l2Writes, List.any_map]
+    matrixWrites, sharedBlockWrites, l1ToPE, List.any_map]
   set_option maxRecDepth 8192 in rfl
 
 end ProofsLean.MNCore

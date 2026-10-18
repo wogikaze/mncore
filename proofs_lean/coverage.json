@@ -1774,6 +1774,14 @@
     {
       "area": "l2bm_transfers_and_reductions",
       "status": "partial_whole_machine_transition",
+      "cross_group_block_write_order": {
+        "issue_groups": "PE-to-L1BM operations use l1bm or l1bm-turnaround; L2BM operations use l2bm. The issue checker permits one operation from each distinct group in a line.",
+        "newly_connected_case": "PE-to-L1BM and L2BM producers now execute in source-expression order. Both read source data from the pre-issue State; their L1BM writes accumulate in that order, so an overlapping later write wins as it does in Rust BlockWrites::apply.",
+        "rust_evidence": "viz/core/src/issue.rs:group,check; viz/core/src/machine.rs:330-360; viz/core/src/blocks.rs:146-365",
+        "lean_executor": "ProofsLean.MNCore.executeParsedSharedBlockProducers",
+        "supporting_theorem": "ProofsLean.MNCore.executeParsedSharedBlockProducerList_two_success",
+        "scope_limit": "The composition theorem assumes each per-expression transition succeeds; command-level Rust differential conformance for mixed L1BM/L2BM lines remains open."
+      },
       "malformed_rrn_guard": {
         "source": "ProofsLean/WholeMachineStep.lean",
         "guard": "parsedL2ReductionSupported",
