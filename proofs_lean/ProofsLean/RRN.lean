@@ -270,8 +270,10 @@ def addMAUValues : MAUValue → MAUValue → MAUValue
       let distance := (expHigh - expLow).toNat
       let shiftedLow := if distance == 0 then sigLow
         else if distance >= 127 then if sigLow == 0 then 0 else 1
-        else sigLow / 2 ^ distance +
-          (if sigLow % 2 ^ distance != 0 then 1 else 0)
+        else
+          let kept := sigLow / 2 ^ distance
+          let sticky := sigLow % 2 ^ distance != 0
+          kept + if sticky && kept % 2 == 0 then 1 else 0
       if negativeA == negativeB then
         return .finite negativeHigh (sigHigh + shiftedLow) expHigh
       else if sigHigh > shiftedLow then
@@ -279,6 +281,12 @@ def addMAUValues : MAUValue → MAUValue → MAUValue
       else if shiftedLow > sigHigh then
         return .finite (!negativeHigh) (shiftedLow - sigHigh) expHigh
       else return .zero false
+
+theorem addMAUValues_sticky_jams_into_odd_lsb :
+    addMAUValues (.finite false (2 ^ 125) 1)
+      (.finite false (2 ^ 125 + 3) 0) =
+      .finite false (2 ^ 125 + 2 ^ 124 + 1) 1 := by
+  decide
 
 def vectorMAUFma (inputPrecision accumulatorPrecision outputPrecision : FloatPrecision)
     (left right accumulator : Nat) : Nat :=
