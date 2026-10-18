@@ -20,7 +20,8 @@ inductive OperandRef where
 
 inductive UnitResource where
   | alu | mau | matrix | l1bm | l2bm | mv
-  | forwarding | issueControl | maskRegisters | maskControl | bar | lbf | hazardClock
+  | forwarding | issueControl | maskRegisters | maskControl | bar | lbf
+  | l1bmTurnaround | hazardClock
   deriving DecidableEq, Repr
 
 structure Footprint where
@@ -59,6 +60,14 @@ def parsedOpUnitWrites : ParsedOp → List UnitResource
   | .l1bm .. => [.l1bm, .forwarding]
   | .l2bm .. => [.l2bm, .forwarding]
 
+def parsedOpMayWriteL1BMTurnaround : ParsedOp → Bool
+  | .l1bm (.mwrite _) => true
+  | .l1bm (.m4write _) => true
+  | .l1bm (.gather _) => true
+  | .l1bm (.reduce ..) => true
+  | .l1bm (.reduce4 ..) => true
+  | _ => false
+
 def parsedExprUnitReads (expression : ParsedExpr) : List UnitResource :=
   parsedOpUnitReads expression.op ++
     (if (expression.maskApplications.filterMap ParsedMask.variableEntry?).isEmpty &&
@@ -77,7 +86,8 @@ def parsedExprFootprint (expression : ParsedExpr) : Footprint :=
     unitWrites := parsedOpUnitWrites expression.op ++
       (if expression.maskRegisterWrites.isEmpty then [] else [.maskRegisters]) ++
       (if expression.barWrites.isEmpty then [] else [.bar]) ++
-      (if expression.writesLbf then [.lbf] else []) }
+      (if expression.writesLbf then [.lbf] else []) ++
+      (if parsedOpMayWriteL1BMTurnaround expression.op then [.l1bmTurnaround] else []) }
 
 def normalizedMvFootprint (transfer : NormalizedMv) : Footprint :=
   if transfer.kind == .nop then emptyFootprint else
@@ -214,6 +224,11 @@ theorem ParsedExpr.bar_write_in_footprint (expression : ParsedExpr)
 theorem ParsedExpr.lbf_write_in_footprint (expression : ParsedExpr)
     (written : expression.writesLbf = true) :
     UnitResource.lbf ∈ (parsedExprFootprint expression).unitWrites := by
+  simp [parsedExprFootprint, written]
+
+theorem ParsedExpr.l1bm_turnaround_write_in_footprint (expression : ParsedExpr)
+    (written : parsedOpMayWriteL1BMTurnaround expression.op = true) :
+    UnitResource.l1bmTurnaround ∈ (parsedExprFootprint expression).unitWrites := by
   simp [parsedExprFootprint, written]
 
 theorem InstructionLine.has_hazard_clock_write (line : InstructionLine) :
