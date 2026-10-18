@@ -1913,11 +1913,17 @@
         "rust_evidence": "viz/core/src/issue.rs:group,check; viz/core/src/machine.rs:330-360; viz/core/src/blocks.rs:146-365",
         "lean_executor": "ProofsLean.MNCore.executeParsedSharedBlockProducers",
         "supporting_theorem": "ProofsLean.MNCore.executeParsedSharedBlockProducerList_two_success",
-        "scope_limit": "The generic composition theorem no longer requires every producer to succeed, but assumes each per-expression transition is unknown-free for all intermediate states. Proving that premise for accepted operands and whole-command Rust differential conformance remain open.",
+        "scope_limit": "L2BM-only shared block lists are proved unknown-free, and arbitrary mixed lists compose under an explicit per-expression unknown-free premise. Accepted L1BM producer unknown-freedom and whole-command Rust differential conformance remain open.",
         "unknown_composition": {
           "theorem": "ProofsLean.MNCore.executeParsedSharedBlockProducers_never_unknown",
           "scope": "For arbitrary source-ordered mixed L1BM/L2BM producer lists, if each per-expression transition is unknown-free for every intermediate state, the composed producer runner cannot return unknown. Failure results are preserved; success of each expression is not assumed.",
           "remaining": "Prove the per-expression unknown-free premise for accepted L1BM and L2BM source forms and establish command-level Rust differential conformance."
+        },
+        "l2bm_list_semantics": {
+          "expression_theorem": "ProofsLean.MNCore.executeParsedSharedBlockExpression_l2bm_never_unknown",
+          "list_theorem": "ProofsLean.MNCore.executeParsedSharedBlockProducerList_l2bm_never_unknown",
+          "scope": "Any source-ordered list whose expressions all have ParsedOp.l2bm dispatches through the shared block executor without returning .unknown, for every initial/intermediate State. Each expression may still fail.",
+          "remaining": "Extend unknown-free reasoning to accepted L1BM producer expressions and prove Rust whole-command conformance."
         }
       },
       "malformed_rrn_guard": {

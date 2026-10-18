@@ -2653,6 +2653,16 @@ def executeParsedSharedBlockExpression (readState currentState : State)
   | .l2bm _ => executeParsedL2BlockExpression readState currentState expression
   | _ => .ok currentState
 
+theorem executeParsedSharedBlockExpression_l2bm_never_unknown
+    (readState currentState : State) (expression : ParsedExpr)
+    (operation : ParsedL2Op) (updateTurnaround : Bool)
+    (isL2 : expression.op = .l2bm operation) :
+    executeParsedSharedBlockExpression readState currentState expression
+      updateTurnaround ≠ .unknown := by
+  simp only [executeParsedSharedBlockExpression, isL2]
+  exact executeParsedL2BlockExpression_l2bm_never_unknown
+    readState currentState expression operation isL2
+
 def executeParsedSharedBlockProducerList (readState : State) (updateTurnaround : Bool)
     : List ParsedExpr → State → ProofsLean.StepResult State
   | [], state => .ok state
@@ -2708,6 +2718,21 @@ theorem executeParsedSharedBlockProducers_never_unknown
       updateTurnaround ≠ .unknown := by
   exact executeParsedSharedBlockProducerList_never_unknown readState
     updateTurnaround expressions currentState known
+
+/-- Any list consisting solely of L2BM expressions is unknown-free under the
+shared source-order runner, regardless of intermediate memory contents. -/
+theorem executeParsedSharedBlockProducerList_l2bm_never_unknown
+    (readState : State) (updateTurnaround : Bool)
+    (expressions : List ParsedExpr) (currentState : State)
+    (allL2 : ∀ expression ∈ expressions,
+      ∃ operation, expression.op = .l2bm operation) :
+    executeParsedSharedBlockProducerList readState updateTurnaround
+      expressions currentState ≠ .unknown := by
+  apply executeParsedSharedBlockProducerList_never_unknown
+  intro expression member state
+  obtain ⟨operation, isL2⟩ := allL2 expression member
+  exact executeParsedSharedBlockExpression_l2bm_never_unknown
+    readState state expression operation updateTurnaround isL2
 
 theorem executeParsedSharedBlockProducerList_two_success
     (readState state : State) (first second : ParsedExpr) (updateTurnaround : Bool)
