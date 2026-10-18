@@ -1349,6 +1349,14 @@ def forwardingSourceResolved (state : State) : Prop :=
     state.forwardingValid pe unit cycle = false ∨
       stateForwardingSlots state pe unit cycle ≠ .unknown
 
+theorem stateForwardingSlots_never_unknown_of_resolved (state : State) (pe : PEId)
+    (resolved : forwardingSourceResolved state) :
+    ∀ unit cycle, stateForwardingSlots state pe unit cycle ≠ .unknown := by
+  intro unit cycle
+  rcases resolved pe unit cycle with invalid | slotResolved
+  · simp [stateForwardingSlots, invalid]
+  · exact slotResolved
+
 def readParsedMatrixWriteBusPE (state : State) (coordinate : MABCoordinate)
     (expression : ParsedExpr) (cycle pe : Fin 4) : ProofsLean.StepResult IntegerALU.Bus :=
   let context := (matrixWriteGroupContext state coordinate).at pe cycle

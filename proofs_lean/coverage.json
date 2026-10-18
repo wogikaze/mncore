@@ -2046,7 +2046,8 @@
             "ProofsLean.MNCore.PEMemory.resolveFlushSelection?_always_resolves",
             "ProofsLean.MNCore.PEMemory.prepareParsedIntegerALUExprCycle_constant_never_unknown_of_lowered",
             "ProofsLean.MNCore.PEMemory.ParsedIntegerInput.readWithForwarding_never_unknown_of_slots_resolved",
-            "ProofsLean.MNCore.PEMemory.prepareParsedIntegerALUExprCycle_alu_never_unknown_of_lowered_and_slots_resolved"
+            "ProofsLean.MNCore.PEMemory.prepareParsedIntegerALUExprCycle_alu_never_unknown_of_lowered_and_slots_resolved",
+            "ProofsLean.MNCore.stateForwardingSlots_never_unknown_of_resolved"
           ],
           "theorems": [
             "ProofsLean.MNCore.executeIntegerProducerLineAtPEs_never_unknown",
