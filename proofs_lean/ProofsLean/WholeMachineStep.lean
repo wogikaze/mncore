@@ -4397,6 +4397,21 @@ def parsedExprIsL1ReduceProducer (expression : ParsedExpr) : Bool :=
   | .l1bm (.reduce ..) | .l1bm (.reduce4 ..) => true
   | _ => false
 
+theorem parsedL1Producer_has_complete_dispatch_classification
+    (expression : ParsedExpr) (l1op : ParsedL1Op)
+    (operation : expression.op = .l1bm l1op) :
+    parsedExprIsL1MwriteProducer expression = true ∨
+      parsedExprIsL1GatherProducer expression = true ∨
+      parsedExprIsL1ReduceProducer expression = true ∨
+      parsedExprIsL1ToPEProducer expression = true := by
+  cases expression with
+  | mk op sources destinations flush text =>
+      have opEq : op = .l1bm l1op := operation
+      subst op
+      cases l1op <;>
+        simp [parsedExprIsL1MwriteProducer, parsedExprIsL1GatherProducer,
+          parsedExprIsL1ReduceProducer, parsedExprIsL1ToPEProducer]
+
 def executeParsedL1PEToL1Expression (readState currentState : State)
     (expression : ParsedExpr) (updateTurnaround : Bool) : ProofsLean.StepResult State :=
   match expression.op with
@@ -4483,6 +4498,12 @@ def parsedExprIsL2BMProducer (expression : ParsedExpr) : Bool :=
   match expression.op with
   | .l2bm .. => true
   | _ => false
+
+theorem parsedL2Producer_is_selected_for_shared_block
+    (expression : ParsedExpr) (l2op : ParsedL2Op)
+    (operation : expression.op = .l2bm l2op) :
+    parsedExprIsL2BMProducer expression = true := by
+  simp [parsedExprIsL2BMProducer, operation]
 
 structure ParsedL2Access where
   op : ParsedL2Op

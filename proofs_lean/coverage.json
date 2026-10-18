@@ -2055,7 +2055,9 @@
             "ProofsLean.MNCore.parsedIntegerMatrixReadLineExpressionReady_alu_of_lowered_and_resolved",
             "ProofsLean.MNCore.parsedIntegerMatrixReadLineExpressionReady_constant_of_lowered",
             "ProofsLean.MNCore.parsedIntegerMatrixReadLineExpressionReady_matrixRead_of_lowered",
-            "ProofsLean.MNCore.supported_mau_has_known_dispatch_family"
+            "ProofsLean.MNCore.supported_mau_has_known_dispatch_family",
+            "ProofsLean.MNCore.parsedL1Producer_has_complete_dispatch_classification",
+            "ProofsLean.MNCore.parsedL2Producer_is_selected_for_shared_block"
           ],
           "theorems": [
             "ProofsLean.MNCore.executeIntegerProducerLineAtPEs_never_unknown",
