@@ -2282,7 +2282,9 @@ def lowerParsedL1ToPE? (expression : ParsedExpr) : Option ParsedL1ToPEAccess := 
   | .l1bm .pbcast | .l1bm .mbcast | .l1bm .m4bcast | .l1bm (.distrib _) => pure ()
   | _ => none
   match expression.sources, expression.destinations with
-  | [.l1bm width address], [destination@(.mem _ false false false _)] =>
+  | [.l1bm width address], [destination@(.mem ..)]
+  | [.l1bm width address], [destination@(.bar ..)]
+  | [.l1bm width address], [destination@.nowrite] =>
       if width.val != 1 && width.val != 2 && width.val != 4 then none else
       let sourceOperand := ParsedOperand.l1bm width address
       let sourceBase : Option (Fin L1Transfer.l1bmLongWords) :=
@@ -2292,6 +2294,30 @@ def lowerParsedL1ToPE? (expression : ParsedExpr) : Option ParsedL1ToPEAccess := 
             Nat.mod_lt _ (by decide)⟩
       some ⟨sourceBase, width.val == 4, destination⟩
   | _, _ => none
+
+def writeParsedL1ToPEDestination? (files : PEMemory.IntegerRegisterFiles)
+    (destination : ParsedOperand) (context : ParsedIntegerContext)
+    (output : IntegerALU.Bus) (cycle : Fin 4) (directive : ParsedMaskDirective)
+    (hasSingleLineMask : Bool) :
+    Option (PEMemory.IntegerRegisterFiles × Option (Bool × BitVec 12)) :=
+  match destination with
+  | .mem .. => do
+      let access ← ParsedOperand.toDirectMemoryDestination? destination context.pe cycle
+        context.bar0 context.bar1 context.tWord
+      let selection ← ParsedOperand.resolveMemoryWriteSelection? destination access.bank
+        files.maskRegisters cycle directive hasSingleLineMask
+      some (PEMemory.writeDirectAccessMasked files access
+        (PEMemory.unpackALUBus output) selection, none)
+  | .bar lm1 .. => do
+      let bank := if lm1 then PEMemory.Bank.lm1 else PEMemory.Bank.lm0
+      let selection ← ParsedOperand.resolveMemoryWriteSelection? destination bank
+        files.maskRegisters cycle directive hasSingleLineMask
+      let barValue := BitVec.ofNat 12
+        ((output.high.extractLsb' 32 32).toNat % 2 ^ 12)
+      let update := if selection.flags == 0 then none else some (lm1, barValue)
+      some (files, update)
+  | .nowrite => some (files, none)
+  | _ => none
 
 def l1ToPEBusAt (state : State) (expression : ParsedExpr)
     (access : ParsedL1ToPEAccess) (pe : PEId) (cycle : Fin 4) : IntegerALU.Bus := Id.run do
@@ -2324,34 +2350,41 @@ def executeParsedL1ToPEAtPEs (readState currentState : State)
   | [] => .ok currentState
   | pe :: rest =>
       let coordinates := ParsedIntegerContext.ofLinearIndex pe
-      let oldContext := readState.peContext pe
+      let readContext := readState.peContext pe
+      let initialContext := currentState.peContext pe
       let rec writeCycles : List (Fin 4) → PEMemory.IntegerRegisterFiles →
-          ProofsLean.StepResult PEMemory.IntegerRegisterFiles
-        | [], files => .ok files
-        | cycle :: cycles, files =>
-            match ParsedOperand.toDirectMemoryAccess? access.destination
-                coordinates.pe cycle oldContext.bar0 oldContext.bar1 oldContext.tWord with
+          BitVec 12 → BitVec 12 →
+          ProofsLean.StepResult (PEMemory.IntegerRegisterFiles × BitVec 12 × BitVec 12)
+        | [], files, bar0, bar1 => .ok (files, bar0, bar1)
+        | cycle :: cycles, files, bar0, bar1 =>
+            let context := { coordinates with
+              cycle := cycle
+              bar0 := bar0
+              bar1 := bar1
+              tWord := readContext.tWord }
+            match resolveFlushSelection? expression.flush files.maskRegisters cycle with
             | none => .unknown
-            | some destination =>
-              match ParsedOperand.resolveMemoryWriteSelection? access.destination
-                  destination.bank files.maskRegisters cycle currentState.maskDirective
-                  hasSingleLineMask with
-              | none => .unknown
-              | some writeSelection =>
-                match resolveFlushSelection? expression.flush files.maskRegisters cycle with
+            | some flushSelection =>
+                let bus := parsedOutputAfterFlush flushSelection
+                  (l1ToPEBusAt readState expression access pe cycle)
+                match writeParsedL1ToPEDestination? files access.destination context bus
+                    cycle currentState.maskDirective hasSingleLineMask with
                 | none => .unknown
-                | some flushSelection =>
-                    let bus := parsedOutputAfterFlush flushSelection
-                      (l1ToPEBusAt readState expression access pe cycle)
-                    let next := PEMemory.writeDirectAccessMasked files destination
-                      (PEMemory.unpackALUBus bus) writeSelection
-                    writeCycles cycles next
+                | some (nextFiles, barUpdate) =>
+                    let nextBar0 := match barUpdate with
+                      | some (false, value) => value
+                      | _ => bar0
+                    let nextBar1 := match barUpdate with
+                      | some (true, value) => value
+                      | _ => bar1
+                    writeCycles cycles nextFiles nextBar0 nextBar1
       if access.sourceBase.isNone && !readState.l1bmTurnaroundValid then .failure
       else
-        match writeCycles [0, 1, 2, 3] (currentState.peRegisters pe) with
+        match writeCycles [0, 1, 2, 3] (currentState.peRegisters pe)
+            initialContext.bar0 initialContext.bar1 with
         | .failure => .failure
         | .unknown => .unknown
-        | .ok files =>
+        | .ok (files, bar0, bar1) =>
             let oldSlots := currentState.forwarding pe
             let outputs := fun cycle =>
               let raw := l1ToPEBusAt readState expression access pe cycle
@@ -2366,7 +2399,10 @@ def executeParsedL1ToPEAtPEs (readState currentState : State)
             let next := { currentState with
               peRegisters := fun other => if other = pe then files else currentState.peRegisters other
               forwarding := fun other => if other = pe then forwarding else currentState.forwarding other
-              forwardingValid := fun other => if other = pe then valid else currentState.forwardingValid other }
+              forwardingValid := fun other => if other = pe then valid else currentState.forwardingValid other
+              peContext := fun other => if other = pe then
+                { currentState.peContext other with bar0 := bar0, bar1 := bar1 }
+                else currentState.peContext other }
             executeParsedL1ToPEAtPEs readState next expression access rest noForward hasSingleLineMask
 
 theorem executeParsedL1ToPEAtPEs_initial_turnaround_failure
@@ -2380,7 +2416,7 @@ theorem executeParsedL1ToPEAtPEs_initial_turnaround_failure
 def executeParsedL1ToPEProducer (readState currentState : State)
     (expression : ParsedExpr) (noForward hasSingleLineMask : Bool) : ProofsLean.StepResult State :=
   match lowerParsedL1ToPE? expression with
-  | none => .unknown
+  | none => .failure
   | some access => executeParsedL1ToPEAtPEs readState currentState expression access
       (List.finRange 4096) noForward hasSingleLineMask
 
