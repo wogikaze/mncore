@@ -488,10 +488,8 @@ def prepareHalfAddSource (bus : IntegerALU.Bus) (negate extend round : Bool)
           let shift := 48 - lane * 16
           RRN.extendFloatBits .half .single ((bus.high.extractLsb' shift 16).toNat)
       else if round then
-        [0, 1].flatMap fun word =>
-          let bits := if word == 0 then (bus.high.extractLsb' 32 32).toNat
-            else (bus.high.extractLsb' 0 32).toNat
-          [RRN.extendFloatBits .double .single bits] ++ (if word == 1 then [0, 0] else [])
+        [RRN.extendFloatBits .double .single bus.high.toNat,
+          RRN.extendFloatBits .double .single bus.low.toNat, 0, 0]
       else (List.range 4).map fun lane =>
         let bits := if lane < 2 then (bus.high.extractLsb' (32 * (1 - lane)) 32).toNat
           else (bus.low.extractLsb' (32 * (3 - lane)) 32).toNat
@@ -519,6 +517,11 @@ def prepareHalfFmaBus (left right accumulator : List Nat) (roundOutput : Bool) :
   else
     return ⟨BitVec.ofNat 32 results[0]! ++ BitVec.ofNat 32 results[1]!,
       BitVec.ofNat 32 results[2]! ++ BitVec.ofNat 32 results[3]!⟩
+
+theorem prepareHalfAddSource_rounds_two_double_accumulator_lanes :
+    prepareHalfAddSource ⟨0x3ff0000000000000, 0x4000000000000000⟩
+      false false true true = [0x3f800000, 0x40000000, 0, 0] := by
+  decide
 
 def readMAUSourceBuses (readFiles : IntegerRegisterFiles) (oldSlots : Forwarding.Slots)
     (cycle : Fin 4) : List ParsedIntegerInput →
@@ -799,7 +802,7 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
     | none => .unknown
     | some (sourceA, negateA, extendA, roundA, sourceC, negateC, extendC, roundC,
         destinationWidth, destinationAddress) =>
-      if extendA then .failure else if roundC then .unknown else
+      if extendA then .failure else
       match ParsedIntegerInput.readWithForwarding readFiles oldSlots cycle sourceA with
       | .failure => .failure
       | .unknown => .unknown
@@ -823,7 +826,7 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
     | none => .unknown
     | some (sourceA, negateA, extendA, roundA, sourceB, negateB, extendB, roundB,
         sourceC, negateC, extendC, roundC, destinationWidth, destinationAddress) =>
-      if extendA || extendB then .failure else if roundC then .unknown else
+      if extendA || extendB then .failure else
       match ParsedIntegerInput.readWithForwarding readFiles oldSlots cycle sourceA with
       | .failure => .failure
       | .unknown => .unknown
