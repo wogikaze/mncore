@@ -1373,7 +1373,37 @@ theorem parsedIntegerMatrixReadLineExpressionReady_alu_of_lowered_and_resolved
   obtain ⟨name, precision, unsigned, arg, operation⟩ := isAlu
   simp only [PEMemory.parsedIntegerMatrixReadLineExpressionReady, operation]
   constructor
-  · exact lowered
+  · intro cycle member
+    exact Or.inl (lowered cycle member)
+  · intro cycle member unit
+    exact stateForwardingSlots_never_unknown_of_resolved state pe resolved unit cycle
+
+theorem parsedIntegerMatrixReadLineExpressionReady_alu_of_multiple_destinations_lowered_and_resolved
+    (state : State) (pe : PEId) (expression : ParsedExpr)
+    (control : ParsedMaskExecutionControl) (hasSingleLineMask : Bool)
+    (isAlu : ∃ name precision unsigned arg,
+      expression.op = .alu name precision unsigned arg)
+    (lowered : ∀ cycle, cycle ∈ PEMemory.parsedIntegerALUCycles →
+      PEMemory.ParsedExpr.toDirectMaskedIntegerAccessesInLine? expression
+        (state.peRegisters pe).maskRegisters control.directive hasSingleLineMask
+        control.context.group control.context.l2b control.context.l1b control.context.mab
+        control.context.pe cycle control.context.bar0 control.context.bar1 control.context.tWord =
+          none ∧
+      ∃ access rest,
+        PEMemory.ParsedExpr.toDirectMaskedIntegerWritesInLine? expression
+          (state.peRegisters pe).maskRegisters control.directive hasSingleLineMask
+          control.context.group control.context.l2b control.context.l1b control.context.mab
+          control.context.pe cycle control.context.bar0 control.context.bar1 control.context.tWord =
+            some (access :: rest))
+    (resolved : forwardingSourceResolved state) :
+    PEMemory.parsedIntegerMatrixReadLineExpressionReady (state.peRegisters pe)
+      (stateForwardingSlots state pe) expression control hasSingleLineMask := by
+  obtain ⟨name, precision, unsigned, arg, operation⟩ := isAlu
+  simp only [PEMemory.parsedIntegerMatrixReadLineExpressionReady, operation]
+  constructor
+  · intro cycle member
+    rcases lowered cycle member with ⟨singleFailed, access, rest, multiple⟩
+    exact Or.inr ⟨singleFailed, access, rest, multiple⟩
   · intro cycle member unit
     exact stateForwardingSlots_never_unknown_of_resolved state pe resolved unit cycle
 
