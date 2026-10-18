@@ -3512,6 +3512,51 @@ theorem ParsedExpr.toDirectMaskedIntegerAccessesInLine_isSome_of_unary_lowering_
     sourceResolved, destinationResolved, writeResolved, flushResolved]
   split <;> simp_all
 
+/-- Binary integer ALU lowering succeeds when both sources and the direct
+memory destination satisfy their address and operand lowering guards. -/
+theorem ParsedExpr.toDirectMaskedIntegerAccessesInLine_isSome_of_binary_lowering_valid
+    (registers : ProofsLean.MNCore.Masks.RegisterFile)
+    (directive : ParsedMaskDirective) (hasSingleLineMask : Bool)
+    (group : Fin 4) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
+    (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
+    (name : ParsedAluName) (parsedPrecision : ParsedPrecision)
+    (unsigned : Bool) (arg : Option (Fin 256)) (precision : IntegerALU.Precision)
+    (aluOp : IntegerALU.Op) (sourceX sourceY : ParsedOperand)
+    (access : ProofsLean.MNCore.Issue.Access) (mask : Option ParsedMask)
+    (flush : Option ParsedMask) (text : String)
+    (request : (ParsedOp.alu name (some parsedPrecision) unsigned arg).executionRequest =
+      .ok (.integer precision aluOp))
+    (inputCount : ParsedAluName.integerInputCount name = 2)
+    (sourceXValid : ParsedOperand.integerInputLoweringValid sourceX)
+    (sourceYValid : ParsedOperand.integerInputLoweringValid sourceY)
+    (destinationValid : ParsedOperand.directMemoryAddressModeValid
+      (.mem access false false false mask) = true) :
+    (ParsedExpr.toDirectMaskedIntegerAccessesInLine?
+      ⟨.alu name (some parsedPrecision) unsigned arg, [sourceX, sourceY],
+        [.mem access false false false mask], flush, text⟩ registers directive
+      hasSingleLineMask group l2b l1b mab pe cycle bar0 bar1 tWord).isSome = true := by
+  have sourceXLowered := ParsedOperand.toParsedIntegerInput_isSome_of_lowering_valid
+    sourceX parsedPrecision.laneWidth group l2b l1b mab pe cycle bar0 bar1 tWord sourceXValid
+  obtain ⟨sourceXAccess, sourceXResolved⟩ :=
+    Option.isSome_iff_exists.mp sourceXLowered
+  have sourceYLowered := ParsedOperand.toParsedIntegerInput_isSome_of_lowering_valid
+    sourceY parsedPrecision.laneWidth group l2b l1b mab pe cycle bar0 bar1 tWord sourceYValid
+  obtain ⟨sourceYAccess, sourceYResolved⟩ :=
+    Option.isSome_iff_exists.mp sourceYLowered
+  have destinationLowered := ParsedOperand.toDirectMemoryDestination_isSome_of_valid
+    access mask pe cycle bar0 bar1 tWord destinationValid
+  obtain ⟨destinationAccess, destinationResolved⟩ :=
+    Option.isSome_iff_exists.mp destinationLowered
+  have writeSelection := ParsedOperand.resolveMemoryWriteSelection_mem_isSome
+    access destinationAccess mask registers cycle directive hasSingleLineMask
+  obtain ⟨writeSelectionValue, writeResolved⟩ :=
+    Option.isSome_iff_exists.mp writeSelection
+  obtain ⟨flushSelection, flushResolved⟩ :=
+    resolveFlushSelection?_always_resolves flush registers cycle
+  simp only [ParsedExpr.toDirectMaskedIntegerAccessesInLine?, inputCount,
+    sourceXResolved, sourceYResolved, destinationResolved, writeResolved, flushResolved]
+  split <;> simp_all
+
 theorem list_mapM_isSome_of_forall {α β : Type}
     (items : List α) (resolve : α → Option β)
     (each : ∀ item, item ∈ items → (resolve item).isSome = true) :
