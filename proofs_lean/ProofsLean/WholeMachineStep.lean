@@ -2162,7 +2162,8 @@ structure ParsedBlockFloatAccesses where
   keep : Nat
   extended : Bool
   source : ParsedOperand
-  destination : ParsedOperand
+  destinations : List ParsedOperand
+  deriving DecidableEq, Repr
 
 /-- Syntax lowering for the single-source block-float ALU forms accepted by
 the assembler: `bfn` on D/F/G/H and `bfe` on H. -/
@@ -2176,11 +2177,12 @@ def lowerParsedBlockFloat? (expression : ParsedExpr) : Option ParsedBlockFloatAc
     | .alu .bfe (some .h) _ arg => some (.h, (arg.map Fin.val).getD 9, true)
     | _ => none
   match expression.sources, expression.destinations with
-  | [source], [destination] => do
-      match destination with
-      | .mem .. | .bar .. | .omr .. | .nowrite =>
-          some ⟨precision, keep, extended, source, destination⟩
-      | _ => none
+  | [source], destinations@(_ :: _) => do
+      guard (destinations.all fun destination =>
+        match destination with
+        | .mem .. | .bar .. | .omr .. | .nowrite => true
+        | _ => false)
+      some ⟨precision, keep, extended, source, destinations⟩
   | _, _ => none
 
 def parsedExprIsBlockFloatProducer (expression : ParsedExpr) : Bool :=
@@ -2196,9 +2198,17 @@ theorem lowerParsedBlockFloat_bfn_g_uses_pseudo_single_width (source destination
         destinations := [destination], flush := none, text := "gbfn" } =
       (match destination with
       | .mem .. | .bar .. | .omr .. | .nowrite =>
-          some ⟨.g, 18, false, source, destination⟩
+          some ⟨.g, 18, false, source, [destination]⟩
       | _ => none) := by
   cases destination <;> rfl
+
+theorem lowerParsedBlockFloat_bfn_keeps_destination_order :
+    lowerParsedBlockFloat?
+      { op := .alu .bfn (some .h) false (some 7),
+        sources := [.fixed .msb1], destinations := [.omr 2 none, .nowrite],
+        flush := none, text := "hbfn" } =
+      some ⟨.h, 7, false, .fixed .msb1, [.omr 2 none, .nowrite]⟩ := by
+  decide
 
 theorem parsedFloatFloorLane_rounds_negative_fraction_down :
     parsedFloatFloorLane .f 0xbfc00000 = 0xc0000000 := by
@@ -2399,6 +2409,30 @@ def executeParsedBlockFloatAtMAB (readState currentState : State)
   let initialBar1 := fun pe =>
     currentState.peContext (physicalPEId coordinate pe) |>.bar1
   let initialOutputs := fun _ _ => (⟨0, 0⟩ : IntegerALU.Bus)
+  let writeDestinations (pe : Fin 4) (cycle : Fin 4) (output : IntegerALU.Bus)
+      (files : PEMemory.IntegerRegisterFiles) (bar0 bar1 : BitVec 12) :
+      ProofsLean.StepResult (PEMemory.IntegerRegisterFiles × BitVec 12 × BitVec 12) := Id.run do
+    let peId := physicalPEId coordinate pe
+    let oldContext := currentState.peContext peId
+    let coords := ParsedIntegerContext.ofLinearIndex peId
+    let rec apply : List ParsedOperand → PEMemory.IntegerRegisterFiles →
+        BitVec 12 → BitVec 12 →
+        ProofsLean.StepResult (PEMemory.IntegerRegisterFiles × BitVec 12 × BitVec 12)
+      | [], files, bar0, bar1 => .ok (files, bar0, bar1)
+      | destination :: rest, files, bar0, bar1 => Id.run do
+          let destinationContext := { coords with cycle := cycle, bar0 := bar0, bar1 := bar1, tWord := oldContext.tWord }
+          match writeParsedMslMsrDestination? files destination destinationContext output 0 cycle
+              currentState.maskDirective hasSingleLineMask with
+          | none => return .unknown
+          | some write =>
+              let nextBar0 := match write.barUpdate with
+                | some (false, value) => value
+                | _ => bar0
+              let nextBar1 := match write.barUpdate with
+                | some (true, value) => value
+                | _ => bar1
+              return apply rest write.files nextBar0 nextBar1
+    apply accesses.destinations files bar0 bar1
   let readCycle (cycle : Fin 4) : ProofsLean.StepResult (Fin 4 → IntegerALU.Bus) := Id.run do
     let rec readPEs : List (Fin 4) → (Fin 4 → IntegerALU.Bus) →
         ProofsLean.StepResult (Fin 4 → IntegerALU.Bus)
@@ -2434,25 +2468,15 @@ def executeParsedBlockFloatAtMAB (readState currentState : State)
       | [], files, bar0, bar1, outputs => .ok fun pe =>
           (files pe, bar0 pe, bar1 pe, outputs pe)
       | pe :: rest, files, bar0, bar1, outputs => Id.run do
-          let peId := physicalPEId coordinate pe
-          let oldContext := currentState.peContext peId
-          let coords := ParsedIntegerContext.ofLinearIndex peId
-          let destinationContext := { coords with cycle := cycle, bar0 := bar0 pe, bar1 := bar1 pe, tWord := oldContext.tWord }
           match resolveFlushSelection? expression.flush (files pe).maskRegisters cycle with
           | none => return .unknown
           | some flushSelection =>
               let output := parsedOutputAfterFlush flushSelection (buses pe)
-              match writeParsedMslMsrDestination? (files pe) accesses.destination
-                  destinationContext output 0 cycle currentState.maskDirective hasSingleLineMask with
-              | none => return .unknown
-              | some write =>
-                  let nextBar0 := match write.barUpdate with
-                    | some (false, value) => value
-                    | _ => bar0 pe
-                  let nextBar1 := match write.barUpdate with
-                    | some (true, value) => value
-                    | _ => bar1 pe
-                  let nextFiles := fun other => if other == pe then write.files else files other
+              match writeDestinations pe cycle output (files pe) (bar0 pe) (bar1 pe) with
+              | .failure => return .failure
+              | .unknown => return .unknown
+              | .ok (nextPEFiles, nextBar0, nextBar1) =>
+                  let nextFiles := fun other => if other == pe then nextPEFiles else files other
                   let nextBar0s := fun other => if other == pe then nextBar0 else bar0 other
                   let nextBar1s := fun other => if other == pe then nextBar1 else bar1 other
                   let nextOutputs := fun other index =>
