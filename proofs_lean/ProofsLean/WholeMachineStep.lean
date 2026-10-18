@@ -3519,6 +3519,29 @@ theorem executeNormalizedLine_zero_nop_matches_footprint
   · rfl
   · simp [executeNormalizedLine, NormalizedLine.toInstruction?]
 
+/-- The parsed `mvnop` form does not read or write block memory; its sole
+state effect is the issue-clock increment represented by the line footprint. -/
+theorem executeNormalizedLine_mvnop_matches_footprint
+    (state : State) (transfer : NormalizedMv)
+    (isNop : transfer.kind = .nop) :
+    UnitResource.mv ∉ (normalizedMvFootprint transfer).unitReads ∧
+      UnitResource.mv ∉ (normalizedMvFootprint transfer).unitWrites ∧
+      UnitResource.hazardClock ∈
+        (normalizedLineFootprint (.mv transfer)).unitWrites ∧
+      executeNormalizedLine (.mv transfer) state =
+        .ok { state with hazardClock := state.hazardClock + 1 } := by
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · rw [NormalizedMv.nop_has_empty_footprint transfer isNop]
+    simp [emptyFootprint]
+  · rw [NormalizedMv.nop_has_empty_footprint transfer isNop]
+    simp [emptyFootprint]
+  · simp [normalizedLineFootprint, normalizedMvFootprint, isNop,
+      Footprint.combine]
+  · have accepted : checkParsedTopLine (.mv transfer.toParsed) = true := rfl
+    simp [executeNormalizedLine, NormalizedLine.toInstruction?,
+      executeIntegerProducerInstructionLine, InstructionLine.toParsed,
+      accepted, isNop]
+
 theorem executeNormalizedProgram_maskDirective_updates_state
     (state : State) (widthWords : Nat) (targets : ParsedMaskTargets)
     (entry : Fin 256) :

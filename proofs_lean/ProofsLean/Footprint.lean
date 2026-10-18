@@ -80,12 +80,13 @@ def parsedExprFootprint (expression : ParsedExpr) : Footprint :=
       (if expression.writesLbf then [.lbf] else []) }
 
 def normalizedMvFootprint (transfer : NormalizedMv) : Footprint :=
-  { emptyFootprint with
-    operandReads := transfer.source.toList.map (fun operand => (.source, .mv operand))
-    operandWrites := transfer.destination.toList.map
-      (fun operand => (.destinationWrite, .mv operand))
-    unitReads := [.mv]
-    unitWrites := [.mv] }
+  if transfer.kind == .nop then emptyFootprint else
+    { emptyFootprint with
+      operandReads := transfer.source.toList.map (fun operand => (.source, .mv operand))
+      operandWrites := transfer.destination.toList.map
+        (fun operand => (.destinationWrite, .mv operand))
+      unitReads := [.mv]
+      unitWrites := [.mv] }
 
 def Footprint.combine (left right : Footprint) : Footprint :=
   { operandReads := left.operandReads ++ right.operandReads
@@ -246,5 +247,10 @@ theorem NormalizedLine.positive_nop_writes_hazard_clock
     UnitResource.hazardClock ∈
       (normalizedLineFootprint (.nop (count + 1) wait)).unitWrites := by
   simp [normalizedLineFootprint]
+
+theorem NormalizedMv.nop_has_empty_footprint (transfer : NormalizedMv)
+    (isNop : transfer.kind = .nop) :
+    normalizedMvFootprint transfer = emptyFootprint := by
+  simp [normalizedMvFootprint, isNop]
 
 end ProofsLean.MNCore
