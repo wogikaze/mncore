@@ -65,9 +65,9 @@ Welcome の後は Convert Endian を縦の2問目にする。有限性・範囲�
   各PEのALUF/MAUF/LBF/MREADF busとvalidity、mask directive、PE context、hazard clockをまとめるState型。
   一般Stateの初期値ポリシーはまだ仮定しない。Welcomeに必要なPE SRAMはRust emulatorの
   `Words::get`が未割当領域をzeroで読むことを確認した。
-- `WholeMachineStep.lean`: 4096 PEすべてに整数ALU/zero/immediate/matrixRead、単精度`fvadd`加減算のraw memory/forward source（half→single拡張、double→single丸め、符号反転対応）→LM1経路、`fvmul`のraw memory/forward source（half→single拡張、double→single丸め、符号反転対応）→LM1経路、および`fvfma`のraw memory/forward source（各入力のhalf→single拡張、double→single丸め、符号反転対応）→LM1経路、D/F/G/H matrixWriteのraw memory/forward sourceを含むPEラインを適用する全State遷移。matrixWriteはD/F/G/Hで`neg`/`ext`/`rnd`変換を扱う。H精度では1行roundとraw 1行/2行書込みを接続する。`fvadd`はビット単位FMAに基づく値をdestinationとMAUFへ反映する。
+- `WholeMachineStep.lean`: 4096 PEすべてに整数ALU/zero/immediate/matrixRead、単精度`fvadd`加減算のraw memory/forward source（half→single拡張、double→single丸め、符号反転対応）→LM1経路、`fvmul`のraw memory/forward source（half→single拡張、double→single丸め、符号反転対応）→LM1経路、および`fvfma`のraw memory/forward source（各入力のhalf→single拡張、double→single丸め、符号反転対応）→LM1経路、D/F/G/H matrixWriteのraw memory/forward source、MV transferを含むPE/MV行のState遷移。matrixWriteはD/F/G/Hで`neg`/`ext`/`rnd`変換を扱う。H精度では1行roundとraw 1行/2行書込みを接続する。MVはmvp/mvb/mvb2/mvb4/mvd/mvr/mvr2/mvr4を既存`MVSemantics`へ接続し、PDM/DRAM/L2BMのcell memoryを更新する。`nop`（waitなし）と`mvnop`はデータ状態を保ちhazard clockを進める。`fvadd`はビット単位FMAに基づく値をdestinationとMAUFへ反映する。
   ALUF/MREADF結果、MAU disabled、MREADFのzero、LBF保持のforwarding挙動も更新する。
-  待機タグ付き`nop`、`mvnop`以外のMV/block転送、他のMAU演算・精度・未接続の変換属性付きsource、L1BM/L2BM producer、PE/block hazard履歴、OMR混在宛先は未接続で`.unknown`。待機タグなし`nop`と`mvnop`はデータ状態を保ちhazard clockを各行コスト分進める。
+  待機タグ付き`nop`、他のMAU演算・精度・未接続の変換属性付きsource、L1BM/L2BM producer、PE/block hazard履歴、OMR混在宛先は未接続で`.unknown`。MV operand形やreduction演算がRust意味論で未対応の場合はstep failureになる。
 - `Footprint.lean`: 全`InstructionLine`（PE/nop/MV）と全`ParsedOp`の構文footprintを定義し、
   operand source/destination、functional unit、clockのread/write候補を記録する。
   destination readはmasked writeのpreserve可能性を含む保守的な記録。

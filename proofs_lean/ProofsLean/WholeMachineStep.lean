@@ -738,6 +738,22 @@ def executeIntegerProducerLineAtPEs (expressions : List ParsedExpr)
       | .unknown => .unknown
       | .ok next => executeIntegerProducerLineAtPEs expressions rest next
 
+def executeParsedMvMemory (state : State) (transfer : ParsedMv) :
+    ProofsLean.StepResult State :=
+  let nextMemory? := match transfer.kind with
+    | .nop => some state.blockMemory
+    | .copy => MVSemantics.executeParsedMvPCopy? state.blockMemory transfer
+    | .broadcast => MVSemantics.executeParsedMvB? state.blockMemory transfer
+    | .broadcast2 => MVSemantics.executeParsedMvB2? state.blockMemory transfer
+    | .broadcast4 => MVSemantics.executeParsedMvB4? state.blockMemory transfer
+    | .distribute => MVSemantics.executeParsedMvD? state.blockMemory transfer
+    | .reduce rrn => MVSemantics.executeParsedMvR? state.blockMemory transfer
+    | .reduce2 rrn => MVSemantics.executeParsedMvR2? state.blockMemory transfer
+    | .reduce4 rrn => MVSemantics.executeParsedMvR4? state.blockMemory transfer
+  match nextMemory? with
+  | none => .failure
+  | some blockMemory => .ok { state with blockMemory }
+
 /-- Whole-machine line transition for parsed integer ALU, zero, immediate,
 matrix-read, wait, and noforward expressions. Reads and prepared writes use the
 existing per-PE transactional semantics; matrix data is read from the PE's
@@ -767,7 +783,12 @@ noncomputable def executeIntegerProducerInstructionLine
     | .mv transfer =>
         if transfer.kind == .nop then
           .ok { state with hazardClock := state.hazardClock + 1 }
-        else .unknown
+        else
+          match executeParsedMvMemory state transfer.toParsed with
+          | .failure => .failure
+          | .unknown => .unknown
+          | .ok next =>
+              .ok { next with hazardClock := next.hazardClock + 1 }
 
 noncomputable def integerProducerMachine : ProofsLean.PartialMachine where
   Line := InstructionLine
@@ -799,6 +820,16 @@ theorem executeIntegerProducerInstructionLine_mvnop
       .ok { state with hazardClock := state.hazardClock + 1 } := by
   simp [executeIntegerProducerInstructionLine, InstructionLine.toParsed,
     InstructionLine.cost, isNop, accepted]
+
+theorem executeIntegerProducerInstructionLine_mv_transfer_success
+    (transfer : NormalizedMv) (state next : State)
+    (accepted : checkParsedTopLine (.mv transfer.toParsed) = true)
+    (notNop : transfer.kind ≠ .nop)
+    (executed : executeParsedMvMemory state transfer.toParsed = .ok next) :
+    executeIntegerProducerInstructionLine (.mv transfer) state =
+      .ok { next with hazardClock := next.hazardClock + 1 } := by
+  simp [executeIntegerProducerInstructionLine, InstructionLine.toParsed,
+    accepted, notNop, executed]
 
 theorem executeIntegerProducerInstructionLine_pe_success
     (normalizedExpressions : List NormalizedExpr) (state nextPEs next : State)
