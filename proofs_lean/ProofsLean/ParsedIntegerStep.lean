@@ -4120,6 +4120,21 @@ structure PreparedParsedMaskedWrite where
   data : WordBus
   selection : PEWordSelection
 
+/-- Apply one already-computed integer ALU bus to each remaining destination,
+changing only its destination and write selection. -/
+def replicatePreparedIntegerResult (accesses : List ParsedMaskedIntegerAccesses)
+    (result : PreparedParsedMaskedWrite) : List PreparedParsedMaskedWrite :=
+  accesses.map fun access =>
+    { result with destination := some access.destination, selection := access.writeSelection }
+
+theorem replicatePreparedIntegerResult_preserves_data
+    (accesses : List ParsedMaskedIntegerAccesses) (result : PreparedParsedMaskedWrite) :
+    ∀ write, write ∈ replicatePreparedIntegerResult accesses result →
+      write.data = result.data := by
+  induction accesses with
+  | nil => simp [replicatePreparedIntegerResult]
+  | cons access rest ih => simp [replicatePreparedIntegerResult, ih]
+
 def prepareParsedMaskedWrite (files : IntegerRegisterFiles)
     (accesses : ParsedMaskedIntegerAccesses) (reduced : Bool) :
     ProofsLean.StepResult PreparedParsedMaskedWrite :=
@@ -4937,36 +4952,6 @@ theorem updateParsedIntegerALUForwardingCycle_reads_back
   simp [ParsedIntegerInput.readWithForwarding, ParsedIntegerInput.forwardUnit,
     ParsedIntegerInput.applyRounding]
 
-theorem prepareParsedMaskedIntegerWritesWithForwarding_never_unknown_of_reads
-    (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)
-    (cycle : Fin 4) (accesses : List ParsedMaskedIntegerAccesses) (reduced : Bool)
-    (known : ∀ access, access ∈ accesses →
-      ParsedIntegerInput.readWithForwarding files slots cycle access.sourceX ≠ .unknown ∧
-      ParsedIntegerInput.readWithForwarding files slots cycle access.sourceY ≠ .unknown) :
-    prepareParsedMaskedIntegerWritesWithForwarding files slots cycle accesses reduced ≠
-      .unknown := by
-  induction accesses with
-  | nil => simp [prepareParsedMaskedIntegerWritesWithForwarding]
-  | cons access rest ih =>
-      have accessKnown := known access (by simp)
-      have restKnown : ∀ item, item ∈ rest →
-          ParsedIntegerInput.readWithForwarding files slots cycle item.sourceX ≠ .unknown ∧
-          ParsedIntegerInput.readWithForwarding files slots cycle item.sourceY ≠ .unknown := by
-        intro item member
-        exact known item (by simp [member])
-      have headKnown := prepareParsedMaskedWriteWithForwarding_never_unknown_of_reads
-        files slots cycle access reduced accessKnown.1 accessKnown.2
-      cases head : prepareParsedMaskedWriteWithForwarding files slots cycle access reduced with
-      | failure => simp [prepareParsedMaskedIntegerWritesWithForwarding, head]
-      | unknown => exact (headKnown head).elim
-      | ok write =>
-          have tailKnown := ih restKnown
-          cases tail : prepareParsedMaskedIntegerWritesWithForwarding
-              files slots cycle rest reduced with
-          | failure => simp [prepareParsedMaskedIntegerWritesWithForwarding, head, tail]
-          | unknown => exact (tailKnown tail).elim
-          | ok writes => simp [prepareParsedMaskedIntegerWritesWithForwarding, head, tail]
-
 /-- Single-expression, single-cycle integer ALU transition. The register write
 and ALU forwarding update consume the same prepared, post-flush result. -/
 def parsedIntegerMaskedALUAndForwardingCycleStep
@@ -5028,16 +5013,12 @@ def prepareParsedIntegerALUExprCycle (files : IntegerRegisterFiles)
               | .failure => ProofsLean.StepResult.failure
               | .unknown => ProofsLean.StepResult.unknown
               | .ok write =>
-                  match prepareParsedMaskedIntegerWritesWithForwarding
-                      files oldSlots cycle rest reduced with
+                  let writes := replicatePreparedIntegerResult rest write
+                  match updateParsedIntegerALUForwardingCycle nextSlots cycle
+                      (.ok write) noForward with
                   | .failure => ProofsLean.StepResult.failure
                   | .unknown => ProofsLean.StepResult.unknown
-                  | .ok writes =>
-                      match updateParsedIntegerALUForwardingCycle nextSlots cycle
-                          (.ok write) noForward with
-                      | .failure => ProofsLean.StepResult.failure
-                      | .unknown => ProofsLean.StepResult.unknown
-                      | .ok updatedSlots => .ok (write :: writes, updatedSlots)
+                  | .ok updatedSlots => .ok (write :: writes, updatedSlots)
       | some accesses =>
           match prepareParsedMaskedWriteWithForwarding files oldSlots cycle accesses reduced with
           | .failure => ProofsLean.StepResult.failure
@@ -5126,35 +5107,23 @@ theorem prepareParsedIntegerALUExprCycle_alu_never_unknown_of_multiple_destinati
       control.context.group control.context.l2b control.context.l1b control.context.mab
       control.context.pe cycle control.context.bar0 control.context.bar1 control.context.tWord =
         some (access :: rest))
-    (readsKnown : ∀ item, (item ∈ access :: rest) →
-      ParsedIntegerInput.readWithForwarding files oldSlots cycle item.sourceX ≠ .unknown ∧
-      ParsedIntegerInput.readWithForwarding files oldSlots cycle item.sourceY ≠ .unknown) :
+    (readXKnown : ParsedIntegerInput.readWithForwarding files oldSlots cycle access.sourceX ≠
+      .unknown)
+    (readYKnown : ParsedIntegerInput.readWithForwarding files oldSlots cycle access.sourceY ≠
+      .unknown) :
     prepareParsedIntegerALUExprCycle files oldSlots nextSlots expression control
       hasSingleLineMask noForward reduced cycle ≠ .unknown := by
   obtain ⟨name, precision, unsigned, arg, isAlu⟩ := isAlu
-  have firstReadsKnown := readsKnown access (by simp)
   have headKnown := prepareParsedMaskedWriteWithForwarding_never_unknown_of_reads
-    files oldSlots cycle access reduced firstReadsKnown.1 firstReadsKnown.2
-  have restReadsKnown : ∀ item, item ∈ rest →
-      ParsedIntegerInput.readWithForwarding files oldSlots cycle item.sourceX ≠ .unknown ∧
-      ParsedIntegerInput.readWithForwarding files oldSlots cycle item.sourceY ≠ .unknown := by
-    intro item member
-    exact readsKnown item (by simp [member])
-  have restKnown := prepareParsedMaskedIntegerWritesWithForwarding_never_unknown_of_reads
-    files oldSlots cycle rest reduced restReadsKnown
+    files oldSlots cycle access reduced readXKnown readYKnown
   unfold prepareParsedIntegerALUExprCycle
   simp only [isAlu, singleLoweringFailed, multipleLowering]
   cases head : prepareParsedMaskedWriteWithForwarding files oldSlots cycle access reduced with
   | failure => simp [head]
   | unknown => exact (headKnown head).elim
   | ok write =>
-      cases tail : prepareParsedMaskedIntegerWritesWithForwarding
-          files oldSlots cycle rest reduced with
-      | failure => simp [head, tail]
-      | unknown => exact (restKnown tail).elim
-      | ok writes =>
-          cases noForward <;>
-            simp [head, tail, updateParsedIntegerALUForwardingCycle]
+      cases noForward <;>
+        simp [head, replicatePreparedIntegerResult, updateParsedIntegerALUForwardingCycle]
 
 theorem prepareParsedIntegerALUExprCycle_alu_never_unknown_of_multiple_destinations_and_slots_resolved
     (files : IntegerRegisterFiles) (oldSlots nextSlots : ProofsLean.MNCore.Forwarding.Slots)
@@ -5177,17 +5146,13 @@ theorem prepareParsedIntegerALUExprCycle_alu_never_unknown_of_multiple_destinati
     (slotsResolved : ∀ unit, oldSlots unit cycle ≠ .unknown) :
     prepareParsedIntegerALUExprCycle files oldSlots nextSlots expression control
       hasSingleLineMask noForward reduced cycle ≠ .unknown := by
-  have readsKnown : ∀ item, (item ∈ access :: rest) →
-      ParsedIntegerInput.readWithForwarding files oldSlots cycle item.sourceX ≠ .unknown ∧
-      ParsedIntegerInput.readWithForwarding files oldSlots cycle item.sourceY ≠ .unknown := by
-    intro item _
-    exact ⟨ParsedIntegerInput.readWithForwarding_never_unknown_of_slots_resolved
-      files oldSlots cycle item.sourceX slotsResolved,
-      ParsedIntegerInput.readWithForwarding_never_unknown_of_slots_resolved
-        files oldSlots cycle item.sourceY slotsResolved⟩
+  have readXKnown := ParsedIntegerInput.readWithForwarding_never_unknown_of_slots_resolved
+    files oldSlots cycle access.sourceX slotsResolved
+  have readYKnown := ParsedIntegerInput.readWithForwarding_never_unknown_of_slots_resolved
+    files oldSlots cycle access.sourceY slotsResolved
   exact prepareParsedIntegerALUExprCycle_alu_never_unknown_of_multiple_destinations_lowered
     files oldSlots nextSlots expression control hasSingleLineMask noForward reduced cycle isAlu
-    singleLoweringFailed access rest multipleLowering readsKnown
+    singleLoweringFailed access rest multipleLowering readXKnown readYKnown
 
 theorem prepareParsedIntegerALUExprCycle_alu_never_unknown_of_lowered_and_slots_resolved
     (files : IntegerRegisterFiles) (oldSlots nextSlots : ProofsLean.MNCore.Forwarding.Slots)
