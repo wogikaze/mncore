@@ -1091,6 +1091,93 @@ def ParsedExpr.toDirectMaskedConstantWrites? (expression : ParsedExpr)
             some (.memory lowered)
   | _ => none
 
+theorem ParsedExpr.toDirectMaskedIntegerAccessesInLine_constant_sources_are_memory
+    (expression : ParsedExpr) (registers : ProofsLean.MNCore.Masks.RegisterFile)
+    (directive : ParsedMaskDirective) (hasSingleLineMask : Bool)
+    (group : Fin 4) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
+    (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
+    (isConstant : expression.op = .zero ∨
+      ∃ payload sparse, expression.op = .immediate payload sparse)
+    (accesses : ParsedMaskedIntegerAccesses)
+    (lowered : ParsedExpr.toDirectMaskedIntegerAccessesInLine? expression registers directive
+      hasSingleLineMask group l2b l1b mab pe cycle bar0 bar1 tWord = some accesses) :
+    accesses.sourceX = .memory accesses.destination false ∧
+      accesses.sourceY = .memory accesses.destination false := by
+  cases expression with
+  | mk op sources destinations flush text =>
+      rcases isConstant with isZero | ⟨payload, sparse, isImmediate⟩
+      · cases isZero
+        cases sources with
+        | nil =>
+            cases destinations with
+            | nil => simp [ParsedExpr.toDirectMaskedIntegerAccessesInLine?,
+                ParsedOp.executionRequest] at lowered
+            | cons destination tail =>
+                cases tail with
+                | nil =>
+                    cases direct : ParsedOperand.toDirectMemoryDestination?
+                        destination pe cycle bar0 bar1 tWord with
+                    | none => simp [ParsedExpr.toDirectMaskedIntegerAccessesInLine?,
+                        ParsedOp.executionRequest, direct] at lowered
+                    | some directAccess =>
+                        cases selection : ParsedOperand.resolveMemoryWriteSelection?
+                            destination directAccess.bank registers cycle directive
+                            hasSingleLineMask with
+                        | none => simp [ParsedExpr.toDirectMaskedIntegerAccessesInLine?,
+                            ParsedOp.executionRequest, direct, selection] at lowered
+                        | some writeSelection =>
+                            cases flushSelection : resolveFlushSelection? flush registers cycle with
+                            | none => simp [ParsedExpr.toDirectMaskedIntegerAccessesInLine?,
+                                ParsedOp.executionRequest, direct, selection, flushSelection]
+                                at lowered
+                            | some flushSel =>
+                                simp [ParsedExpr.toDirectMaskedIntegerAccessesInLine?,
+                                  ParsedOp.executionRequest, direct, selection, flushSelection]
+                                  at lowered
+                                cases lowered
+                                constructor <;> rfl
+                | cons second rest =>
+                    simp [ParsedExpr.toDirectMaskedIntegerAccessesInLine?,
+                      ParsedOp.executionRequest] at lowered
+          | cons source rest =>
+              simp [ParsedExpr.toDirectMaskedIntegerAccessesInLine?,
+                ParsedOp.executionRequest] at lowered
+      · cases isImmediate
+        cases sources with
+        | nil =>
+            cases destinations with
+            | nil => simp [ParsedExpr.toDirectMaskedIntegerAccessesInLine?,
+                ParsedOp.executionRequest] at lowered
+            | cons destination tail =>
+                cases tail with
+                | nil =>
+                    cases direct : ParsedOperand.toDirectMemoryDestination?
+                        destination pe cycle bar0 bar1 tWord with
+                    | none => simp [ParsedExpr.toDirectMaskedIntegerAccessesInLine?,
+                        ParsedOp.executionRequest, direct] at lowered
+                    | some directAccess =>
+                        cases selection : ParsedOperand.resolveMemoryWriteSelection?
+                            destination directAccess.bank registers cycle directive
+                            hasSingleLineMask with
+                        | none => simp [ParsedExpr.toDirectMaskedIntegerAccessesInLine?,
+                            ParsedOp.executionRequest, direct, selection] at lowered
+                        | some writeSelection =>
+                            cases flushSelection : resolveFlushSelection? flush registers cycle with
+                            | none => simp [ParsedExpr.toDirectMaskedIntegerAccessesInLine?,
+                                ParsedOp.executionRequest, direct, selection, flushSelection]
+                                at lowered
+                            | some flushSel =>
+                                simp [ParsedExpr.toDirectMaskedIntegerAccessesInLine?,
+                                  ParsedOp.executionRequest, direct, selection, flushSelection]
+                                  at lowered
+                                cases lowered
+                                constructor <;> rfl
+                | cons second rest =>
+                    simp [ParsedExpr.toDirectMaskedIntegerAccessesInLine?,
+                      ParsedOp.executionRequest] at lowered
+          | cons source rest =>
+              simp [ParsedExpr.toDirectMaskedIntegerAccessesInLine?,
+                ParsedOp.executionRequest] at lowered
 
 def parsedZeroMaskedExpr : ParsedExpr where
   op := .zero
@@ -1292,6 +1379,25 @@ def ParsedIntegerInput.read (files : IntegerRegisterFiles) (input : ParsedIntege
       .ok (applyRounding rounded (pack (readDirectAccess files access)))
   | .fixed value => .ok value
   | .forward _ _ => .unknown
+
+theorem ParsedExpr.toDirectMaskedIntegerAccessesInLine_constant_reads_known
+    (expression : ParsedExpr) (files : IntegerRegisterFiles)
+    (registers : ProofsLean.MNCore.Masks.RegisterFile)
+    (directive : ParsedMaskDirective) (hasSingleLineMask : Bool)
+    (group : Fin 4) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
+    (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
+    (isConstant : expression.op = .zero ∨
+      ∃ payload sparse, expression.op = .immediate payload sparse)
+    (accesses : ParsedMaskedIntegerAccesses)
+    (lowered : ParsedExpr.toDirectMaskedIntegerAccessesInLine? expression registers directive
+      hasSingleLineMask group l2b l1b mab pe cycle bar0 bar1 tWord = some accesses) :
+    ParsedIntegerInput.read files accesses.sourceX ≠ .unknown ∧
+      ParsedIntegerInput.read files accesses.sourceY ≠ .unknown := by
+  obtain ⟨sourceX, sourceY⟩ :=
+    ParsedExpr.toDirectMaskedIntegerAccessesInLine_constant_sources_are_memory
+      expression registers directive hasSingleLineMask group l2b l1b mab pe cycle bar0 bar1
+      tWord isConstant accesses lowered
+  simp [sourceX, sourceY, ParsedIntegerInput.read]
 
 def ParsedIntegerInput.readWithForwarding (files : IntegerRegisterFiles)
     (slots : ProofsLean.MNCore.Forwarding.Slots) (cycle : Fin 4)
