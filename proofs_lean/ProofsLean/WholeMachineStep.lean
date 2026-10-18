@@ -2002,10 +2002,9 @@ theorem readL1MwriteBusesAtBank_direct_memory_never_unknown
       ⟨bank.val % 8, by have h := bank.isLt; omega⟩, mab⟩
     cycle (List.finRange 4) (fun _ => ⟨0, 0⟩)
 
-def readL1M4writeBusesAtBank (state : State) (access : ParsedL1MwriteAccess)
+def readL1M4writeGroupList (state : State) (access : ParsedL1MwriteAccess)
     (bank : Fin 64) (cycle : Fin 4) :
-    ProofsLean.StepResult (Fin 4 → Fin 4 → IntegerALU.Bus) :=
-  let rec readGroups : List (Fin 4) → (Fin 4 → Fin 4 → IntegerALU.Bus) →
+    List (Fin 4) → (Fin 4 → Fin 4 → IntegerALU.Bus) →
       ProofsLean.StepResult (Fin 4 → Fin 4 → IntegerALU.Bus)
     | [], buses => .ok buses
     | group :: rest, buses =>
@@ -2017,9 +2016,54 @@ def readL1M4writeBusesAtBank (state : State) (access : ParsedL1MwriteAccess)
         | .failure => .failure
         | .unknown => .unknown
         | .ok groupBuses =>
-            readGroups rest (fun nextGroup pe =>
+            readL1M4writeGroupList state access bank cycle rest (fun nextGroup pe =>
               if nextGroup = group then groupBuses pe else buses nextGroup pe)
-  readGroups (List.finRange 4) (fun _ _ => ⟨0, 0⟩)
+
+theorem readL1M4writeGroupList_direct_memory_never_unknown
+    (state : State) (access : ParsedL1MwriteAccess)
+    (operandAccess : Access) (negated extended rounded : Bool)
+    (mask : Option ParsedMask) (bank : Fin 64) (cycle : Fin 4)
+    (groups : List (Fin 4)) (buses : Fin 4 → Fin 4 → IntegerALU.Bus)
+    (source : access.source = .mem operandAccess negated extended rounded mask) :
+    readL1M4writeGroupList state access bank cycle groups buses ≠ .unknown := by
+  induction groups generalizing buses with
+  | nil => simp [readL1M4writeGroupList]
+  | cons group rest ih =>
+      simp only [readL1M4writeGroupList]
+      cases result : readL1MwriteBusesAtBank state access bank
+          ⟨group.val * 4 + access.mabGroup.val, by
+            have hg := group.isLt
+            have hm := access.mabGroup.isLt
+            omega⟩ cycle with
+      | failure => simp [result]
+      | unknown =>
+          exact (readL1MwriteBusesAtBank_direct_memory_never_unknown state access
+            operandAccess negated extended rounded mask bank
+            ⟨group.val * 4 + access.mabGroup.val, by
+              have hg := group.isLt
+              have hm := access.mabGroup.isLt
+              omega⟩ cycle source result).elim
+      | ok groupBuses =>
+          simp only [result]
+          exact ih (fun nextGroup pe =>
+            if nextGroup = group then groupBuses pe else buses nextGroup pe)
+
+def readL1M4writeBusesAtBank (state : State) (access : ParsedL1MwriteAccess)
+    (bank : Fin 64) (cycle : Fin 4) :
+    ProofsLean.StepResult (Fin 4 → Fin 4 → IntegerALU.Bus) :=
+  readL1M4writeGroupList state access bank cycle (List.finRange 4)
+    (fun _ _ => ⟨0, 0⟩)
+
+theorem readL1M4writeBusesAtBank_direct_memory_never_unknown
+    (state : State) (access : ParsedL1MwriteAccess)
+    (operandAccess : Access) (negated extended rounded : Bool)
+    (mask : Option ParsedMask) (bank : Fin 64) (cycle : Fin 4)
+    (source : access.source = .mem operandAccess negated extended rounded mask) :
+    readL1M4writeBusesAtBank state access bank cycle ≠ .unknown := by
+  simpa [readL1M4writeBusesAtBank] using
+    readL1M4writeGroupList_direct_memory_never_unknown state access operandAccess
+      negated extended rounded mask bank cycle (List.finRange 4)
+      (fun _ _ => ⟨0, 0⟩) source
 
 def l1MwriteTurnaroundWrites (twoLongWords : Bool)
     (buses : Fin 4 → IntegerALU.Bus) : List L1Transfer.L1TurnWrite :=
