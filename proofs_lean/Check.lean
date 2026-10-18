@@ -96,6 +96,10 @@ import Lean
 #print axioms ProofsLean.MNCore.prepareHalfPassa_negativeZero_normalized
 #print axioms ProofsLean.MNCore.roundMAUSingleBusToHalf_preserves_lane_order
 #print axioms ProofsLean.MNCore.prepareHalfPassa_single_input_rounding
+#print axioms ProofsLean.MNCore.halfMultiplyLane_oneAndHalf_times_two
+#print axioms ProofsLean.MNCore.halfMultiplyLane_zero_times_infinity
+#print axioms ProofsLean.MNCore.halfMultiplyLane_infinity_sign_and_normalization
+#print axioms ProofsLean.MNCore.prepareHalfMultiplyBus_rounds_or_widens_outputs
 #print axioms ProofsLean.MNCore.extendHalfPairToSingleBus_lane_order
 #print axioms ProofsLean.MNCore.roundDoublePairToSingleBus_lane_order
 #print axioms ProofsLean.MNCore.prepareMatrixWriteBus

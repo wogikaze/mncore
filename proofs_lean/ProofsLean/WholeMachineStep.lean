@@ -23,7 +23,8 @@ def parsedExprIsSupportedPELineProducer (expression : ParsedExpr) : Bool :=
   | .mau .f false .add none false | .mau .f false .mul none false
   | .mau .f false .fma none false | .mau .f false .passa _ false => true
   | .mau .f false _ _ true => true
-  | .mau .d false .passa _ _ | .mau .h false .passa _ _ => true
+  | .mau .d false .passa _ _ | .mau .h false .passa _ _
+  | .mau .h false .mul _ _ => true
   | .mau .g false _ _ _ | .mau .l false _ _ _ | .mau .i false _ _ _
   | .mau .s false _ _ _ => true
   | .matrixWrite .d | .matrixWrite .f | .matrixWrite .g | .matrixWrite .h => true
@@ -68,7 +69,8 @@ def parsedExprIsSupportedFloatMAUProducer (expression : ParsedExpr) : Bool :=
   | .mau .f false .add none false | .mau .f false .mul none false
   | .mau .f false .fma none false | .mau .f false .passa _ false => true
   | .mau .f false _ _ true => true
-  | .mau .d false .passa _ _ | .mau .h false .passa _ _ => true
+  | .mau .d false .passa _ _ | .mau .h false .passa _ _
+  | .mau .h false .mul _ _ => true
   | .mau .g false _ _ _ | .mau .l false _ _ _ | .mau .i false _ _ _
   | .mau .s false _ _ _ => true
   | _ => false
@@ -292,6 +294,29 @@ def lowerParsedHalfPassa? (expression : ParsedExpr) (context : ParsedIntegerCont
       | _ => none
   | _, _ => none
 
+def lowerParsedHalfMultiply? (expression : ParsedExpr) (context : ParsedIntegerContext) :
+    Option (ParsedIntegerInput × Bool × Bool × Bool × ParsedIntegerInput × Bool × Bool × Bool ×
+      PEMemory.Width × Fin (Bank.capacity .lm1)) := do
+  match expression.op with
+  | .mau .h false .mul _ _ => pure ()
+  | _ => none
+  match expression.sources, expression.destinations with
+  | [sourceA, sourceB], [.mem access false false false none] =>
+      let (sourceA, negateA, extendA, roundA) ← parsedFloatMAUSourceAttrs? sourceA context
+      let (sourceB, negateB, extendB, roundB) ← parsedFloatMAUSourceAttrs? sourceB context
+      let destination ← ParsedOperand.toDirectMemoryAccess?
+        (.mem access false false false none) context.pe context.cycle
+        context.bar0 context.bar1 context.tWord
+      match destination with
+      | ⟨.lm1, .long, address⟩ =>
+          some (sourceA, negateA, extendA, roundA, sourceB, negateB, extendB, roundB,
+            .long, address)
+      | ⟨.lm1, .double, address⟩ =>
+          some (sourceA, negateA, extendA, roundA, sourceB, negateB, extendB, roundB,
+            .double, address)
+      | _ => none
+  | _, _ => none
+
 def normalizeHalfPassaLane (lane : BitVec 16) : BitVec 16 :=
   let exponent := lane.toNat / 2 ^ 9 % 64
   if exponent == 0 then 0
@@ -325,6 +350,67 @@ def prepareHalfPassa (bus : IntegerALU.Bus)
       BitVec.ofNat 32 (RRN.extendFloatBits .half .single lane1.toNat),
      BitVec.ofNat 32 (RRN.extendFloatBits .half .single lane2.toNat) ++
       BitVec.ofNat 32 (RRN.extendFloatBits .half .single lane3.toNat)⟩
+
+def halfMultiplyLane (left right : BitVec 16) : BitVec 16 :=
+  let sign := (left.toNat / 2 ^ 15 + right.toNat / 2 ^ 15) % 2
+  let leftExponent := left.toNat / 2 ^ 9 % 64
+  let rightExponent := right.toNat / 2 ^ 9 % 64
+  let exponentMax := 63
+  let output := if leftExponent == 0 || rightExponent == 0 then 0
+    else if leftExponent == exponentMax || rightExponent == exponentMax then
+      sign * 2 ^ 15 + exponentMax * 2 ^ 9
+    else
+      let leftSignificand := 2 ^ 9 + left.toNat % 2 ^ 9
+      let rightSignificand := 2 ^ 9 + right.toNat % 2 ^ 9
+      let binaryExponent := Int.ofNat leftExponent + Int.ofNat rightExponent - 2 * 31 - 2 * 9
+      RRN.roundPack .half (sign == 1) (leftSignificand * rightSignificand) binaryExponent
+  BitVec.ofNat 16 output
+
+def prepareHalfMulInput (bus : IntegerALU.Bus) (negate round : Bool) : BitVec 64 :=
+  let raw := if round then roundMAUSingleBusToHalf bus else bus.high
+  let signMask := BitVec.ofNat 64 (2 ^ 63 + 2 ^ 47 + 2 ^ 31 + 2 ^ 15)
+  let signed := if negate then raw ^^^ signMask else raw
+  signed
+
+def prepareHalfMultiplyBus (left right : BitVec 64) (roundOutput : Bool) :
+    IntegerALU.Bus :=
+  let l0 := left.extractLsb' 48 16
+  let l1 := left.extractLsb' 32 16
+  let l2 := left.extractLsb' 16 16
+  let l3 := left.extractLsb' 0 16
+  let r0 := right.extractLsb' 48 16
+  let r1 := right.extractLsb' 32 16
+  let r2 := right.extractLsb' 16 16
+  let r3 := right.extractLsb' 0 16
+  let h0 := halfMultiplyLane l0 r0
+  let h1 := halfMultiplyLane l1 r1
+  let h2 := halfMultiplyLane l2 r2
+  let h3 := halfMultiplyLane l3 r3
+  if roundOutput then ⟨h0 ++ h1 ++ h2 ++ h3, 0⟩
+  else
+    ⟨BitVec.ofNat 32 (RRN.extendFloatBits .half .single h0.toNat) ++
+        BitVec.ofNat 32 (RRN.extendFloatBits .half .single h1.toNat),
+      BitVec.ofNat 32 (RRN.extendFloatBits .half .single h2.toNat) ++
+        BitVec.ofNat 32 (RRN.extendFloatBits .half .single h3.toNat)⟩
+
+theorem halfMultiplyLane_oneAndHalf_times_two :
+    halfMultiplyLane 0x3f00 0x4000 = 0x4100 := by
+  decide
+
+theorem halfMultiplyLane_zero_times_infinity :
+    halfMultiplyLane 0x8000 0x7e00 = 0 := by
+  decide
+
+theorem halfMultiplyLane_infinity_sign_and_normalization :
+    halfMultiplyLane 0xfc01 0x4000 = 0xfe00 := by
+  decide
+
+theorem prepareHalfMultiplyBus_rounds_or_widens_outputs :
+    prepareHalfMultiplyBus 0x3f00400000000000 0x40003e0000000000 false =
+        ⟨0x4040000040000000, 0⟩ ∧
+      prepareHalfMultiplyBus 0x3f00400000000000 0x40003e0000000000 true =
+        ⟨0x4100400000000000, 0⟩ := by
+  decide
 
 theorem prepareHalfPassa_one_widens_to_single :
     prepareHalfPassa ⟨0x3e00000000000000, 0⟩ false false false =
@@ -491,6 +577,29 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
             prepareDoubleMAUSource sourceBus negate extend round else 0
         let nextLM1 := FloatPEMemory.writePair currentFiles.lm1 destination output
         .ok ({ currentFiles with lm1 := nextLM1 }, ⟨output, 0⟩)
+  | .mau .h false .mul half round =>
+    let cycleContext := { context with cycle := cycle }
+    match lowerParsedHalfMultiply? expression cycleContext with
+    | none => .unknown
+    | some (sourceA, negateA, extendA, roundA, sourceB, negateB, extendB, roundB,
+        destinationWidth, destinationAddress) =>
+      if extendA || extendB then .failure else
+      match ParsedIntegerInput.readWithForwarding readFiles oldSlots cycle sourceA with
+      | .failure => .failure
+      | .unknown => .unknown
+      | .ok sourceABus =>
+        match ParsedIntegerInput.readWithForwarding readFiles oldSlots cycle sourceB with
+        | .failure => .failure
+        | .unknown => .unknown
+        | .ok sourceBBus =>
+          let left := prepareHalfMulInput sourceABus negateA roundA
+          let right := prepareHalfMulInput sourceBBus negateB roundB
+          let calculated := prepareHalfMultiplyBus left right round
+          let output := if parsedMauHalfSelectsPE half cycleContext.pe then calculated
+            else (⟨0, 0⟩ : IntegerALU.Bus)
+          let nextLM1 := PEMemory.writeWords .lm1 destinationWidth currentFiles.lm1
+            destinationAddress (unpackALUBus output)
+          .ok ({ currentFiles with lm1 := nextLM1 }, output)
   | .mau .h false .passa half round =>
     let cycleContext := { context with cycle := cycle }
     match lowerParsedHalfPassa? expression cycleContext with
