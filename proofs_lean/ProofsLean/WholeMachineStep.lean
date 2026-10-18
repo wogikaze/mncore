@@ -2775,6 +2775,17 @@ def parsedMatrixMAUDestinationEnabled? (files : PEMemory.IntegerRegisterFiles)
   | .nowrite => some false
   | _ => none
 
+def parsedMatrixMAUDestinationDataPoisonApplies
+    (poison : Bool) (destination : ParsedOperand) : Bool :=
+  match destination with
+  | .omr .. => false
+  | _ => poison
+
+theorem parsedMatrixMAU_poison_does_not_block_mask_flag_writes
+    (poison : Bool) (entry : Fin 256) (mask : Option ParsedMask) :
+    parsedMatrixMAUDestinationDataPoisonApplies poison (.omr entry mask) = false := by
+  rfl
+
 def executeParsedMatrixMAUTransitionAtMAB (readState currentState : State)
     (expression : ParsedExpr) (coordinate : MABCoordinate)
     (noForward hasSingleLineMask : Bool) : ProofsLean.StepResult State := Id.run do
@@ -2809,7 +2820,9 @@ def executeParsedMatrixMAUTransitionAtMAB (readState currentState : State)
                   bar0 := peBar0
                   bar1 := peBar1
                   tWord := oldContext.tWord }
-                if poison then
+                let dataPoisonApplies :=
+                  parsedMatrixMAUDestinationDataPoisonApplies poison destination
+                if dataPoisonApplies then
                   match parsedMatrixMAUDestinationEnabled? peFiles destination context cycle
                       currentState.maskDirective hasSingleLineMask with
                   | none => return .unknown
