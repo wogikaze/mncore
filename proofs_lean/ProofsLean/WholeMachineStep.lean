@@ -2003,7 +2003,33 @@ def lowerParsedMslMsr? (expression : ParsedExpr) :
   match expression.sources, expression.destinations with
   | [_], [destination@(.mem ..)] =>
       some (isMsl, destination)
+  | [_], [destination@(.omr ..)] =>
+      some (isMsl, destination)
+  | [_], [.nowrite] =>
+      some (isMsl, .nowrite)
   | _, _ => none
+
+def writeParsedMslMsrDestination? (files : PEMemory.IntegerRegisterFiles)
+    (destination : ParsedOperand) (context : ParsedIntegerContext)
+    (output : IntegerALU.Bus) (cycle : Fin 4)
+    (directive : ParsedMaskDirective) (hasSingleLineMask : Bool) :
+    Option PEMemory.IntegerRegisterFiles :=
+  match destination with
+  | .mem .. => do
+      let access ← ParsedOperand.toDirectMemoryDestination? destination context.pe cycle
+        context.bar0 context.bar1 context.tWord
+      let selection ← ParsedOperand.resolveMemoryWriteSelection? destination access.bank
+        files.maskRegisters cycle directive hasSingleLineMask
+      some (PEMemory.writeDirectAccessMasked files access (PEMemory.unpackALUBus output) selection)
+  | .omr .. => do
+      let entry ← ParsedOperand.toMaskRegisterEntry? destination
+      let selection ← ParsedOperand.resolveOmrWriteSelection? destination files.maskRegisters
+        cycle directive hasSingleLineMask
+      let maskRegisters := ProofsLean.MNCore.Masks.writeRegister
+        files.maskRegisters entry cycle 0 selection
+      some { files with maskRegisters := maskRegisters }
+  | .nowrite => some files
+  | _ => none
 
 def mslMsrSourcePE (pe : PEId) (isMsl : Bool) : PEId :=
   let localPE := pe.val % 4
@@ -2041,6 +2067,10 @@ def executeParsedMslMsrAtPE (readState currentState : State)
     ProofsLean.StepResult State := Id.run do
   let oldContext := readState.peContext pe
   let coordinates := ParsedIntegerContext.ofLinearIndex pe
+  let context := { coordinates with
+    bar0 := oldContext.bar0
+    bar1 := oldContext.bar1
+    tWord := oldContext.tWord }
   let some (isMsl, destination) := lowerParsedMslMsr? expression | return .unknown
   let sourcePE := mslMsrSourcePE pe isMsl
   let sourceOldContext := readState.peContext sourcePE
@@ -2068,19 +2098,14 @@ def executeParsedMslMsrAtPE (readState currentState : State)
           | .unknown => .unknown
           | .ok sourceBus =>
             let shifted := mslMsrOutputBus sourceBus
-            match ParsedOperand.toDirectMemoryDestination? destination coordinates.pe cycle
-                oldContext.bar0 oldContext.bar1 oldContext.tWord with
+            match resolveFlushSelection? expression.flush files.maskRegisters cycle with
             | none => .unknown
-            | some destinationAccess =>
-                match ParsedOperand.resolveMemoryWriteSelection? destination
-                    destinationAccess.bank files.maskRegisters cycle currentState.maskDirective
-                    hasSingleLineMask,
-                  resolveFlushSelection? expression.flush files.maskRegisters cycle with
-                | none, _ | _, none => .unknown
-                | some selection, some flushSelection =>
-                    let output := parsedOutputAfterFlush flushSelection shifted
-                    let nextFiles := PEMemory.writeDirectAccessMasked files destinationAccess
-                      (PEMemory.unpackALUBus output) selection
+            | some flushSelection =>
+                let output := parsedOutputAfterFlush flushSelection shifted
+                match writeParsedMslMsrDestination? files destination context output cycle
+                    currentState.maskDirective hasSingleLineMask with
+                | none => .unknown
+                | some nextFiles =>
                     runCycles rest nextFiles
                       (fun index => if index = cycle then output else outputs index)
   match runCycles [0, 1, 2, 3] (currentState.peRegisters pe) (fun _ => ⟨0, 0⟩) with
