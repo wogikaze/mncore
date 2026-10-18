@@ -1601,16 +1601,68 @@ def readParsedMatrixMAUSourcePE (state : State) (coordinate : MABCoordinate)
     | none => return .failure
     | some lanes => return .ok lanes
 
-def readParsedMatrixMAUSourceAtMAB (state : State) (coordinate : MABCoordinate)
+def readParsedMatrixMAUSourcePEsAux (state : State) (coordinate : MABCoordinate)
     (operand : ParsedOperand) (format : RRN.FloatPrecision) (count : Nat)
-    (cycle : Fin 4) : ProofsLean.StepResult (List Nat) := Id.run do
-  let mut values := []
-  for pe in List.finRange 4 do
+    (cycle : Fin 4) : List (Fin 4) → List Nat → ProofsLean.StepResult (List Nat)
+  | [], values => .ok values
+  | pe :: rest, values =>
+      match readParsedMatrixMAUSourcePE state coordinate operand format count pe cycle with
+      | .failure => .failure
+      | .unknown => .unknown
+      | .ok lanes =>
+          readParsedMatrixMAUSourcePEsAux state coordinate operand format count cycle
+            rest (values ++ lanes)
+
+def readParsedMatrixMAUSourcePEs (state : State) (coordinate : MABCoordinate)
+    (operand : ParsedOperand) (format : RRN.FloatPrecision) (count : Nat)
+    (cycle : Fin 4) (pes : List (Fin 4)) : ProofsLean.StepResult (List Nat) :=
+  readParsedMatrixMAUSourcePEsAux state coordinate operand format count cycle pes []
+
+def readParsedMatrixMAUSourcePEsLoopAux (state : State) (coordinate : MABCoordinate)
+    (operand : ParsedOperand) (format : RRN.FloatPrecision) (count : Nat)
+    (cycle : Fin 4) (pes : List (Fin 4)) (initial : List Nat) :
+    ProofsLean.StepResult (List Nat) := Id.run do
+  let mut values := initial
+  for pe in pes do
     match readParsedMatrixMAUSourcePE state coordinate operand format count pe cycle with
     | .failure => return .failure
     | .unknown => return .unknown
     | .ok lanes => values := values ++ lanes
   return .ok values
+
+def readParsedMatrixMAUSourcePEsLoop (state : State) (coordinate : MABCoordinate)
+    (operand : ParsedOperand) (format : RRN.FloatPrecision) (count : Nat)
+    (cycle : Fin 4) (pes : List (Fin 4)) : ProofsLean.StepResult (List Nat) :=
+  readParsedMatrixMAUSourcePEsLoopAux state coordinate operand format count cycle pes []
+
+theorem readParsedMatrixMAUSourcePEsAux_eq_loopAux
+    (state : State) (coordinate : MABCoordinate) (operand : ParsedOperand)
+    (format : RRN.FloatPrecision) (count : Nat) (cycle : Fin 4)
+    (pes : List (Fin 4)) (initial : List Nat) :
+    readParsedMatrixMAUSourcePEsAux state coordinate operand format count cycle pes initial =
+      readParsedMatrixMAUSourcePEsLoopAux state coordinate operand format count cycle pes
+        initial := by
+  induction pes generalizing initial with
+  | nil => simp [readParsedMatrixMAUSourcePEsAux, readParsedMatrixMAUSourcePEsLoopAux]
+  | cons pe rest ih =>
+      cases h : readParsedMatrixMAUSourcePE state coordinate operand format count pe cycle <;>
+        simp [readParsedMatrixMAUSourcePEsAux, readParsedMatrixMAUSourcePEsLoopAux,
+          h, ih]
+
+theorem readParsedMatrixMAUSourcePEs_eq_loop
+    (state : State) (coordinate : MABCoordinate) (operand : ParsedOperand)
+    (format : RRN.FloatPrecision) (count : Nat) (cycle : Fin 4)
+    (pes : List (Fin 4)) :
+    readParsedMatrixMAUSourcePEs state coordinate operand format count cycle pes =
+      readParsedMatrixMAUSourcePEsLoop state coordinate operand format count cycle pes := by
+  exact readParsedMatrixMAUSourcePEsAux_eq_loopAux state coordinate operand format count
+    cycle pes []
+
+def readParsedMatrixMAUSourceAtMAB (state : State) (coordinate : MABCoordinate)
+    (operand : ParsedOperand) (format : RRN.FloatPrecision) (count : Nat)
+    (cycle : Fin 4) : ProofsLean.StepResult (List Nat) :=
+  readParsedMatrixMAUSourcePEs state coordinate operand format count cycle
+    (List.finRange 4)
 
 def parsedMatrixMAURowActive (half : Option Char) (row : Nat) : Bool :=
   match half with
@@ -2034,6 +2086,127 @@ theorem readParsedMatrixMAUSourcePE_resolved_never_unknown
           · exact (notUnknown slot).elim
     · simp [readParsedMatrixMAUSourcePE, lowered, valid,
         ParsedIntegerInput.readWithForwarding]
+
+theorem readParsedMatrixMAUSourcePEsAux_resolved_never_unknown
+    (state : State) (coordinate : MABCoordinate) (operand : ParsedOperand)
+    (precision : RRN.FloatPrecision) (count : Nat) (cycle : Fin 4)
+    (pes : List (Fin 4)) (initial : List Nat)
+    (attrs : ∀ pe ∈ pes,
+      (∃ access rounded negate extend round,
+        parsedFloatMAUSourceAttrs? operand
+          ({ ParsedIntegerContext.ofLinearIndex (physicalPEId coordinate pe) with
+            cycle := cycle
+            bar0 := (state.peContext (physicalPEId coordinate pe)).bar0
+            bar1 := (state.peContext (physicalPEId coordinate pe)).bar1
+            tWord := (state.peContext (physicalPEId coordinate pe)).tWord }) =
+          some (.memory access rounded, negate, extend, round)) ∨
+      (∃ kind rounded negate extend round,
+        parsedFloatMAUSourceAttrs? operand
+          ({ ParsedIntegerContext.ofLinearIndex (physicalPEId coordinate pe) with
+            cycle := cycle
+            bar0 := (state.peContext (physicalPEId coordinate pe)).bar0
+            bar1 := (state.peContext (physicalPEId coordinate pe)).bar1
+            tWord := (state.peContext (physicalPEId coordinate pe)).tWord }) =
+          some (.forward kind rounded, negate, extend, round)))
+    (resolved : forwardingSourceResolved state) :
+    readParsedMatrixMAUSourcePEsAux state coordinate operand precision count cycle pes initial ≠
+      .unknown := by
+  induction pes generalizing initial with
+  | nil => simp [readParsedMatrixMAUSourcePEsAux]
+  | cons pe rest ih =>
+      have headKnown := readParsedMatrixMAUSourcePE_resolved_never_unknown
+        state coordinate operand precision count pe cycle (attrs pe (by simp)) resolved
+      have tailAttrs : ∀ item ∈ rest,
+          (∃ access rounded negate extend round,
+            parsedFloatMAUSourceAttrs? operand
+              ({ ParsedIntegerContext.ofLinearIndex (physicalPEId coordinate item) with
+                cycle := cycle
+                bar0 := (state.peContext (physicalPEId coordinate item)).bar0
+                bar1 := (state.peContext (physicalPEId coordinate item)).bar1
+                tWord := (state.peContext (physicalPEId coordinate item)).tWord }) =
+              some (.memory access rounded, negate, extend, round)) ∨
+          (∃ kind rounded negate extend round,
+            parsedFloatMAUSourceAttrs? operand
+              ({ ParsedIntegerContext.ofLinearIndex (physicalPEId coordinate item) with
+                cycle := cycle
+                bar0 := (state.peContext (physicalPEId coordinate item)).bar0
+                bar1 := (state.peContext (physicalPEId coordinate item)).bar1
+                tWord := (state.peContext (physicalPEId coordinate item)).tWord }) =
+              some (.forward kind rounded, negate, extend, round)) := by
+        intro item member
+        exact attrs item (List.mem_cons_of_mem _ member)
+      cases head : readParsedMatrixMAUSourcePE state coordinate operand precision count pe cycle with
+      | failure => simp [readParsedMatrixMAUSourcePEsAux, head]
+      | unknown =>
+          simp only [readParsedMatrixMAUSourcePEsAux, head]
+          exact False.elim (headKnown head)
+      | ok lanes =>
+          cases tail : readParsedMatrixMAUSourcePEsAux state coordinate operand
+              precision count cycle rest (initial ++ lanes) with
+          | failure =>
+              simp [readParsedMatrixMAUSourcePEsAux, head, tail]
+          | unknown =>
+              simp only [readParsedMatrixMAUSourcePEsAux, head, tail]
+              exact False.elim ((ih (initial ++ lanes) tailAttrs) tail)
+          | ok values =>
+              simp [readParsedMatrixMAUSourcePEsAux, head, tail]
+
+theorem readParsedMatrixMAUSourcePEs_resolved_never_unknown
+    (state : State) (coordinate : MABCoordinate) (operand : ParsedOperand)
+    (precision : RRN.FloatPrecision) (count : Nat) (cycle : Fin 4)
+    (pes : List (Fin 4))
+    (attrs : ∀ pe ∈ pes,
+      (∃ access rounded negate extend round,
+        parsedFloatMAUSourceAttrs? operand
+          ({ ParsedIntegerContext.ofLinearIndex (physicalPEId coordinate pe) with
+            cycle := cycle
+            bar0 := (state.peContext (physicalPEId coordinate pe)).bar0
+            bar1 := (state.peContext (physicalPEId coordinate pe)).bar1
+            tWord := (state.peContext (physicalPEId coordinate pe)).tWord }) =
+          some (.memory access rounded, negate, extend, round)) ∨
+      (∃ kind rounded negate extend round,
+        parsedFloatMAUSourceAttrs? operand
+          ({ ParsedIntegerContext.ofLinearIndex (physicalPEId coordinate pe) with
+            cycle := cycle
+            bar0 := (state.peContext (physicalPEId coordinate pe)).bar0
+            bar1 := (state.peContext (physicalPEId coordinate pe)).bar1
+            tWord := (state.peContext (physicalPEId coordinate pe)).tWord }) =
+          some (.forward kind rounded, negate, extend, round)))
+    (resolved : forwardingSourceResolved state) :
+    readParsedMatrixMAUSourcePEs state coordinate operand precision count cycle pes ≠
+      .unknown := by
+  simpa [readParsedMatrixMAUSourcePEs] using
+    readParsedMatrixMAUSourcePEsAux_resolved_never_unknown state coordinate operand
+      precision count cycle pes [] attrs resolved
+
+theorem readParsedMatrixMAUSourceAtMAB_resolved_never_unknown
+    (state : State) (coordinate : MABCoordinate) (operand : ParsedOperand)
+    (precision : RRN.FloatPrecision) (count : Nat) (cycle : Fin 4)
+    (attrs : ∀ pe : Fin 4,
+      (∃ access rounded negate extend round,
+        parsedFloatMAUSourceAttrs? operand
+          ({ ParsedIntegerContext.ofLinearIndex (physicalPEId coordinate pe) with
+            cycle := cycle
+            bar0 := (state.peContext (physicalPEId coordinate pe)).bar0
+            bar1 := (state.peContext (physicalPEId coordinate pe)).bar1
+            tWord := (state.peContext (physicalPEId coordinate pe)).tWord }) =
+          some (.memory access rounded, negate, extend, round)) ∨
+      (∃ kind rounded negate extend round,
+        parsedFloatMAUSourceAttrs? operand
+          ({ ParsedIntegerContext.ofLinearIndex (physicalPEId coordinate pe) with
+            cycle := cycle
+            bar0 := (state.peContext (physicalPEId coordinate pe)).bar0
+            bar1 := (state.peContext (physicalPEId coordinate pe)).bar1
+            tWord := (state.peContext (physicalPEId coordinate pe)).tWord }) =
+          some (.forward kind rounded, negate, extend, round)))
+    (resolved : forwardingSourceResolved state) :
+    readParsedMatrixMAUSourceAtMAB state coordinate operand precision count cycle ≠
+      .unknown := by
+  simpa [readParsedMatrixMAUSourceAtMAB] using
+    readParsedMatrixMAUSourcePEs_resolved_never_unknown state coordinate operand
+      precision count cycle (List.finRange 4) (by
+        intro pe _
+        exact attrs pe) resolved
 
 theorem readRawL1MwriteBus_resolved_never_unknown
     (state : State) (source : ParsedOperand) (pe : PEId) (cycle : Fin 4)

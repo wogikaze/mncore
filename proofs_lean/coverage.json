@@ -1915,7 +1915,11 @@
         "source_unknown_classification": {
           "theorem": "ProofsLean.MNCore.readParsedMatrixMAUSourcePE_resolved_never_unknown",
           "scope": "For one participating PE, when parsedFloatMAUSourceAttrs? successfully lowers the operand to a direct-memory or forwarding input, the MAU source reader cannot return .unknown if every valid forwarding slot in the state is resolved. Disabled forwarding and invalid lane decoding remain known failures.",
-          "connection_limit": "The four-PE MAB source aggregation and complete matrix-MAU producer still need this premise connected across every participating PE and source."
+          "mab_aggregation_theorem": "ProofsLean.MNCore.readParsedMatrixMAUSourceAtMAB_resolved_never_unknown",
+          "aggregation_composition_theorem": "ProofsLean.MNCore.readParsedMatrixMAUSourcePEs_resolved_never_unknown",
+          "aggregation_equivalence_theorem": "ProofsLean.MNCore.readParsedMatrixMAUSourcePEs_eq_loop",
+          "mab_scope": "When the same successful memory/forwarding source-lowering condition holds for each of the four participating PEs, the source-ordered MAB reader cannot return .unknown. Its recursive proof runner is proved equal to the original loop-based accumulation, including failure/unknown short-circuiting and lane order.",
+          "connection_limit": "Connect the source-reader premise to parsed matrix-MAU expressions and prove the full calculation/execution transition unknown-free under the resolved-forwarding condition."
         },
         "remaining": "Run command-level Rust differentials for source operands, matrix layout, row masks, PE packing, flags, poison, and forwarding; the arithmetic-only comparison does not establish compute_mat or whole-machine conformance."
       }
