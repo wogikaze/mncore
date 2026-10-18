@@ -2325,10 +2325,69 @@ def parsedL2Writes? (readState : State) (access : ParsedL2Access) :
   | .bcast _ | .bcast2 _ | .distrib _ | .imcast _ | .gather | .reduce .. | .reduce2 .. =>
       some (l1Writes, l2Writes)
 
+def parsedDarsSource? (expression : ParsedExpr) : Option (Nat × Fin 2 × Fin 1024) := do
+  let (.l2bm .dars) := expression.op | none
+  let [.l2bm address (some l2b)] := expression.sources | none
+  let [.dar darAddress] := expression.destinations | none
+  if h : l2b.val < 2 then
+    if ha : address.val < 2 ^ 15 then
+      if hd : darAddress.val < 1024 then
+        some (address.val, ⟨l2b.val, h⟩, ⟨darAddress.val, hd⟩)
+      else none
+    else none
+  else none
+
+def executeParsedDars (state : State) (expression : ParsedExpr) :
+    ProofsLean.StepResult State := Id.run do
+  let some (sourceAddress, selectedL2b, darStart) := parsedDarsSource? expression
+    | return .failure
+  let mut buffer := state.darBuffer
+  for group in List.finRange 4 do
+    let l2Index : Fin 8 :=
+      ⟨group.val * 2 + selectedL2b.val, by omega⟩
+    for cycle in List.range 4 do
+      for word in List.range 64 do
+        let longWord := state.blockMemory
+          (l2PhysicalCell l2Index (sourceAddress + cycle * 64 + word))
+        let evenAddress : Fin 512 :=
+          ⟨(cycle * 128 + word * 2) % 512, Nat.mod_lt _ (by omega)⟩
+        let oddAddress : Fin 512 :=
+          ⟨(cycle * 128 + word * 2 + 1) % 512, Nat.mod_lt _ (by omega)⟩
+        let high := longWord.extractLsb' 32 32
+        let low := longWord.extractLsb' 0 32
+        buffer := fun other address =>
+          if other == group && address == evenAddress then high
+          else if other == group && address == oddAddress then low
+          else buffer other address
+  return .ok { state with
+    darBuffer := buffer
+    darBufferReadAddress := ⟨0, by decide⟩
+    darWriteAddress := darStart }
+
+def executeParsedDarw (state : State) : State := Id.run do
+  let mut dar := state.dar
+  let mut readAddress := state.darBufferReadAddress
+  let mut writeAddress := state.darWriteAddress
+  for _cycle in List.range 4 do
+    for group in List.finRange 4 do
+      let value := state.darBuffer group readAddress
+      dar := fun other address =>
+        if other == group && address == writeAddress then value else dar other address
+    readAddress := ⟨(readAddress.val + 1) % 512, Nat.mod_lt _ (by decide)⟩
+    writeAddress := ⟨(writeAddress.val + 1) % 1024, Nat.mod_lt _ (by decide)⟩
+  return { state with
+    dar := dar
+    darBufferReadAddress := readAddress
+    darWriteAddress := writeAddress }
+
 def executeParsedL2BlockExpression (readState currentState : State)
     (expression : ParsedExpr) : ProofsLean.StepResult State :=
   match expression.op with
-  | .l2bm .dars | .l2bm .darw => .failure
+  | .l2bm .dars => executeParsedDars currentState expression
+  | .l2bm .darw =>
+      if expression.sources.isEmpty && expression.destinations.isEmpty then
+        .ok (executeParsedDarw currentState)
+      else .failure
   | .l2bm _ =>
       match lowerParsedL2? expression with
       | none => .failure
@@ -3588,17 +3647,7 @@ def executeIntegerProducerLineAtPEs (expressions : List ParsedExpr)
 
 def executeParsedMvMemory (state : State) (transfer : ParsedMv) :
     ProofsLean.StepResult State :=
-  let nextMemory? := match transfer.kind with
-    | .nop => some state.blockMemory
-    | .copy => MVSemantics.executeParsedMvPCopy? state.blockMemory transfer
-    | .broadcast => MVSemantics.executeParsedMvB? state.blockMemory transfer
-    | .broadcast2 => MVSemantics.executeParsedMvB2? state.blockMemory transfer
-    | .broadcast4 => MVSemantics.executeParsedMvB4? state.blockMemory transfer
-    | .distribute => MVSemantics.executeParsedMvD? state.blockMemory transfer
-    | .reduce rrn => MVSemantics.executeParsedMvR? state.blockMemory transfer
-    | .reduce2 rrn => MVSemantics.executeParsedMvR2? state.blockMemory transfer
-    | .reduce4 rrn => MVSemantics.executeParsedMvR4? state.blockMemory transfer
-  match nextMemory? with
+  match MVSemantics.executeParsedMvWithDAR? state.blockMemory state.dar transfer with
   | none => .failure
   | some blockMemory => .ok { state with blockMemory }
 

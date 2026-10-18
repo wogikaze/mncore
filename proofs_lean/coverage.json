@@ -1716,11 +1716,11 @@
     },
     {
       "area": "mv_dram_pdm_all_transfer_and_reduction_modes",
-      "status": "partial_datapath_only"
+      "status": "partial_whole_machine_transition"
     },
     {
       "area": "dar_tags_wait_and_completion",
-      "status": "unimplemented"
+      "status": "partial_whole_machine_transition"
     },
     {
       "area": "initial_state_and_zero_memory",

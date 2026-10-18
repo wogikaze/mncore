@@ -45,6 +45,64 @@ def commitWrites (memory : Memory) (writes : List (Cell × BitVec 64)) : Memory 
 def executeCopies (memory : Memory) (copies : List CopyPair) : Memory :=
   commitWrites memory (stageCopies memory copies)
 
+/-- Resolve one indirect DRAM long word. Each DAR entry is a 16-longword
+address unit. `nd = N` reuses each entry N times; without `nd`, the selected
+entry is held and the unit offset increases for every access. -/
+def resolveIndirectDRAMCell? (dar : Fin 4 → Fin 1024 → BitVec 32)
+    (nd : Option (Fin (2 ^ 32))) (operand : ParsedMvOperand) (cell : Cell) : Option Cell := do
+  match operand with
+  | .dram start group true =>
+      if cell.space != .dram then some cell else do
+        let relative := (cell.address + 2 ^ 29 - (start.val % 2 ^ 29)) % 2 ^ 29
+        let access := relative / 16
+        let (entry, displacement) ← match nd with
+          | none => some ((⟨start.val % 1024,
+              Nat.mod_lt _ (by decide : 0 < 1024)⟩ : Fin 1024), access)
+          | some reuse =>
+              if reuse.val == 0 then none else
+                some ((⟨(start.val + access / reuse.val) % 1024,
+                  Nat.mod_lt _ (by decide : 0 < 1024)⟩ : Fin 1024),
+                  access % reuse.val)
+        let address := ((dar cell.group entry).toNat + displacement) * 16 + relative % 16
+        some { cell with address := address % (2 ^ 29) }
+  | _ => some cell
+
+theorem resolveIndirectDRAMCell_reuses_entry_by_nd_four :
+    resolveIndirectDRAMCell?
+      (fun group entry =>
+        if group.val == 2 && entry.val == 513 then 10 else 0)
+      (some ⟨4, by decide⟩)
+      (.dram ⟨512, by decide⟩ (some ⟨2, by decide⟩) true)
+      ⟨.dram, ⟨2, by decide⟩, 0, 512 + 5 * 16 + 7⟩ =
+      some ⟨.dram, ⟨2, by decide⟩, 0, 11 * 16 + 7⟩ := by
+  decide
+
+theorem resolveIndirectDRAMCell_unbounded_nd_reuses_start_entry :
+    resolveIndirectDRAMCell?
+      (fun group entry =>
+        if group.val == 2 && entry.val == 512 then 3 else 0)
+      none
+      (.dram ⟨512, by decide⟩ (some ⟨2, by decide⟩) true)
+      ⟨.dram, ⟨2, by decide⟩, 0, 512 + 5 * 16 + 7⟩ =
+      some ⟨.dram, ⟨2, by decide⟩, 0, 8 * 16 + 7⟩ := by
+  decide
+
+def resolveIndirectCopyPlan? (dar : Fin 4 → Fin 1024 → BitVec 32)
+    (nd : Option (Fin (2 ^ 32))) (source destination : ParsedMvOperand)
+    (copies : List CopyPair) : Option (List CopyPair) :=
+  copies.mapM fun (sourceCell, destinationCell) => do
+    let sourceCell ← resolveIndirectDRAMCell? dar nd source sourceCell
+    let destinationCell ← resolveIndirectDRAMCell? dar nd destination destinationCell
+    some (sourceCell, destinationCell)
+
+def resolveIndirectReductionPlan? (dar : Fin 4 → Fin 1024 → BitVec 32)
+    (nd : Option (Fin (2 ^ 32))) (source destination : ParsedMvOperand)
+    (reductions : List ReductionPair) : Option (List ReductionPair) :=
+  reductions.mapM fun (sourceCells, destinationCell) => do
+    let sourceCells ← sourceCells.mapM (resolveIndirectDRAMCell? dar nd source)
+    let destinationCell ← resolveIndirectDRAMCell? dar nd destination destinationCell
+    some (sourceCells, destinationCell)
+
 def mvGroupFin? (group : Fin 256) : Option (Fin 4) :=
   if h : group.val < 4 then some ⟨group.val, h⟩ else none
 
@@ -102,13 +160,11 @@ def parsedMvPCopyPlan? (transfer : ParsedMv) : Option (List CopyPair) := do
   match transfer.source, transfer.destination with
   | none, _ | _, none => pure []
   | some source, some destination => do
-      if (match source with | .dram _ _ indirect => indirect | _ => false) ||
-          (match destination with | .dram _ _ indirect => indirect | _ => false) then none else
-        let sourceBank ← mvOperandBank? source
-        let destinationBank ← mvOperandBank? destination
-        let groups ← mvParallelGroupPairs? source destination
-        let count := (transfer.size.val / 64) * 64
-        pure (pCopyPlan source destination sourceBank destinationBank groups count)
+      let sourceBank ← mvOperandBank? source
+      let destinationBank ← mvOperandBank? destination
+      let groups ← mvParallelGroupPairs? source destination
+      let count := (transfer.size.val / 64) * 64
+      pure (pCopyPlan source destination sourceBank destinationBank groups count)
 
 theorem pCopyPlan_length (source destination : ParsedMvOperand)
     (sourceBank destinationBank : Fin 2)
@@ -169,10 +225,8 @@ def parsedMvB2Plan? (transfer : ParsedMv) : Option (List CopyPair) := do
   match transfer.source, transfer.destination with
   | none, _ | _, none => pure []
   | some source, some destination => do
-      if (match source with | .dram _ _ indirect => indirect | _ => false) ||
-          (match destination with | .dram _ _ indirect => indirect | _ => false) then none else
-        let count := (transfer.size.val / 64) * 64
-        pure (b2CopyPlan source destination count)
+      let count := (transfer.size.val / 64) * 64
+      pure (b2CopyPlan source destination count)
 
 def executeParsedMvB2? (memory : Memory) (transfer : ParsedMv) : Option Memory := do
   let plan ← parsedMvB2Plan? transfer
@@ -497,14 +551,12 @@ def parsedMvDPlan? (transfer : ParsedMv) : Option (List CopyPair) := do
   match transfer.source, transfer.destination with
   | none, _ | _, none => pure []
   | some source, some destination => do
-      if (match source with | .dram _ _ indirect => indirect | _ => false) ||
-          (match destination with | .dram _ _ indirect => indirect | _ => false) then none else
       let count := (transfer.size.val / 64) * 64
       match source, destination with
-      | .pdm _ _, .dram _ _ false => do
+      | .pdm _ _, .dram _ _ _ => do
           let sourceGroup ← mvFirstOperandGroup? source
           pure (dPdmDramCopyPlan source destination sourceGroup count)
-      | .dram _ _ false, .pdm _ _ => do
+      | .dram _ _ _, .pdm _ _ => do
           let destinationGroup ← mvFirstOperandGroup? destination
           pure (dDramPdmCopyPlan source destination destinationGroup count)
       | .pdm _ _, .l2bm _ _ _ => do
@@ -525,11 +577,6 @@ def parsedMvR2Plan? (transfer : ParsedMv) : Option (List ReductionPair) := do
   match transfer.kind with
   | .reduce2 _ => pure ()
   | _ => none
-  if (match transfer.source with
-      | some (.dram _ _ true) => true
-      | _ => false) || (match transfer.destination with
-      | some (.dram _ _ true) => true
-      | _ => false) then none else
   match transfer.source, transfer.destination with
   | none, _ | _, none => pure []
   | some source, some destination => do
@@ -691,11 +738,6 @@ def r4Reducer (reduce : List (BitVec 64) → BitVec 64)
 def parsedMvRPlan? (transfer : ParsedMv) : Option (List ReductionPair) := do
   let .reduce rrn := transfer.kind | none
   if (parsedMvReducer? rrn).isNone then none else
-  if (match transfer.source with
-      | some (.dram _ _ true) => true
-      | _ => false) || (match transfer.destination with
-      | some (.dram _ _ true) => true
-      | _ => false) then none else
   match transfer.source, transfer.destination with
   | some source, some (destination@(.pdm _ _)) => do
       let destinationGroup ← mvFirstOperandGroup? destination
@@ -708,11 +750,6 @@ def parsedMvRPlan? (transfer : ParsedMv) : Option (List ReductionPair) := do
 def parsedMvR4Plan? (transfer : ParsedMv) : Option (List ReductionPair) := do
   let .reduce4 rrn := transfer.kind | none
   if (parsedMvReducer? rrn).isNone then none else
-  if (match transfer.source with
-      | some (.dram _ _ true) => true
-      | _ => false) || (match transfer.destination with
-      | some (.dram _ _ true) => true
-      | _ => false) then none else
   match transfer.source, transfer.destination with
   | some source, some destination =>
       pure (r4Plan source destination ((transfer.size.val / 64) * 128))
@@ -749,15 +786,12 @@ def parsedMvBPlan? (transfer : ParsedMv) : Option (List CopyPair) := do
   match transfer.source, transfer.destination with
   | none, _ | _, none => pure []
   | some source, some destination => do
-      if (match source with | .dram _ _ indirect => indirect | _ => false) ||
-          (match destination with | .dram _ _ indirect => indirect | _ => false) then none else
       let count := (transfer.size.val / 64) * 64
       match source with
       | .pdm _ _ =>
           let sourceGroup ← mvFirstOperandGroup? source
           pure (bPdmCopyPlan source destination sourceGroup count)
-      | .dram _ _ false => pure (bDramCopyPlan source destination count)
-      | .dram _ _ true => none
+      | .dram _ _ _ => pure (bDramCopyPlan source destination count)
       | .l2bm _ _ _ => none
 
 def executeParsedMvB? (memory : Memory) (transfer : ParsedMv) : Option Memory := do
@@ -869,14 +903,71 @@ def parsedMvB4Plan? (transfer : ParsedMv) : Option (List CopyPair) := do
   match transfer.source, transfer.destination with
   | none, _ | _, none => pure []
   | some source, some destination => do
-      if (match source with | .dram _ _ indirect => indirect | _ => true) ||
-          (match destination with | .dram _ _ indirect => indirect | _ => false) then none else
+      if (match source with | .dram .. => false | _ => true) then none else
       let count := (transfer.size.val / 64) * 128
       pure (b4DramCopyPlan source destination count)
 
 def executeParsedMvB4? (memory : Memory) (transfer : ParsedMv) : Option Memory := do
   let plan ← parsedMvB4Plan? transfer
   pure (executeCopies memory plan)
+
+def resolveTransferCopies? (dar : Fin 4 → Fin 1024 → BitVec 32)
+    (transfer : ParsedMv) (copies : List CopyPair) : Option (List CopyPair) := do
+  match transfer.source, transfer.destination with
+  | some source, some destination =>
+      resolveIndirectCopyPlan? dar transfer.nd source destination copies
+  | _, _ => some copies
+
+def resolveTransferReductions? (dar : Fin 4 → Fin 1024 → BitVec 32)
+    (transfer : ParsedMv) (reductions : List ReductionPair) :
+    Option (List ReductionPair) := do
+  match transfer.source, transfer.destination with
+  | some source, some destination =>
+      resolveIndirectReductionPlan? dar transfer.nd source destination reductions
+  | _, _ => some reductions
+
+/-- Execute a parsed MV transfer after resolving indirect DRAM cells through
+the machine's per-group DAR contents. All modes share the same 16-longword
+address-unit rule; their plans retain their mode-specific lane/group ordering. -/
+def executeParsedMvWithDAR? (memory : Memory)
+    (dar : Fin 4 → Fin 1024 → BitVec 32) (transfer : ParsedMv) : Option Memory := do
+  match transfer.kind with
+  | .nop => some memory
+  | .copy => do
+      let copies ← parsedMvPCopyPlan? transfer
+      let copies ← resolveTransferCopies? dar transfer copies
+      some (executeCopies memory copies)
+  | .broadcast => do
+      let copies ← parsedMvBPlan? transfer
+      let copies ← resolveTransferCopies? dar transfer copies
+      some (executeCopies memory copies)
+  | .broadcast2 => do
+      let copies ← parsedMvB2Plan? transfer
+      let copies ← resolveTransferCopies? dar transfer copies
+      some (executeCopies memory copies)
+  | .broadcast4 => do
+      let copies ← parsedMvB4Plan? transfer
+      let copies ← resolveTransferCopies? dar transfer copies
+      some (executeCopies memory copies)
+  | .distribute => do
+      let copies ← parsedMvDPlan? transfer
+      let copies ← resolveTransferCopies? dar transfer copies
+      some (executeCopies memory copies)
+  | .reduce2 rrn => do
+      let reduce ← parsedMvReducer? rrn
+      let reductions ← parsedMvR2Plan? transfer
+      let reductions ← resolveTransferReductions? dar transfer reductions
+      some (executeReductions memory reduce reductions)
+  | .reduce rrn => do
+      let reduce ← parsedMvReducer? rrn
+      let reductions ← parsedMvRPlan? transfer
+      let reductions ← resolveTransferReductions? dar transfer reductions
+      some (executeReductions memory (rNestedReducer reduce) reductions)
+  | .reduce4 rrn => do
+      let reduce ← parsedMvReducer? rrn
+      let reductions ← parsedMvR4Plan? transfer
+      let reductions ← resolveTransferReductions? dar transfer reductions
+      some (executeReductions memory (r4Reducer reduce) reductions)
 
 theorem b2GroupOffsetCopies_ignores_operand_selectors
     (source destination : Fin (2 ^ 64)) (sourceGroup destinationGroup : Fin 256)

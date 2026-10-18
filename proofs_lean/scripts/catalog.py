@@ -1140,7 +1140,9 @@ def coverage_catalog() -> dict:
         "forwarding_findings": forwarding_findings(),
         "syntax_candidates": [{"spelling": name, "formal_step_semantics": "unimplemented"} for name in spellings],
         "obligations": [{"area": area, "status": "partial_whole_machine_transition"
-            if area == "matrix_registers_and_matrix_operations" else
+            if area in ("matrix_registers_and_matrix_operations",
+                "mv_dram_pdm_all_transfer_and_reduction_modes",
+                "dar_tags_wait_and_completion") else
             "partial_datapath_only" if area in (
             "integer_16_32_64_and_signedness", "parallel_issue_and_memory_port_legality", "wide_access_and_lsb_passthrough",
             "immediates_fixed_operands_and_zero", "pe_rotations_and_coordinate_operands",
@@ -1148,7 +1150,7 @@ def coverage_catalog() -> dict:
             "floating_16_32_64_rounding_and_special_values",
             "block_floating_conversion_and_mantissa_width",
             "forwarding_lifetime_and_latency", "l1bm_transfers_turnaround_and_reductions",
-            "l2bm_transfers_and_reductions", "mv_dram_pdm_all_transfer_and_reduction_modes",
+            "l2bm_transfers_and_reductions",
             "initial_state_and_zero_memory", "scoring_and_zero_cost_directive_normalization") else "unimplemented"} for area in areas],
     }
 

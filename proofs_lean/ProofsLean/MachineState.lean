@@ -20,6 +20,12 @@ structure State where
   l1bmTurnaroundValid : Bool
   /-- Unified cell-addressed store for L2BM, PDM, and DRAM. -/
   blockMemory : MVSemantics.Memory
+  /-- Per-group 32-bit DRAM address registers and their 512-word staging buffers. -/
+  dar : Fin 4 → Fin 1024 → BitVec 32
+  darBuffer : Fin 4 → Fin 512 → BitVec 32
+  /-- Shared DARBUF read pointer and DAR write pointer used by l2bmdarw. -/
+  darBufferReadAddress : Fin 512
+  darWriteAddress : Fin 1024
   /-- Matrix registers, indexed by physical group/L2B/L1B and local MAB. -/
   matrixRegisters : Fin 4 → Fin 2 → Fin 8 → PEMemory.ParsedMatrixReadStore
   /-- ALUF, MAUF, matrix-read forwarding, and L1-to-PE forwarding buses. -/
@@ -61,6 +67,10 @@ def rustSimulatorInitialState : State where
   l1bmTurnaround := fun _ _ _ => 0
   l1bmTurnaroundValid := false
   blockMemory := fun _ => 0
+  dar := fun _ _ => 0
+  darBuffer := fun _ _ => 0
+  darBufferReadAddress := ⟨0, by decide⟩
+  darWriteAddress := ⟨0, by decide⟩
   matrixRegisters := fun _ _ _ _ _ _ => 0
   forwarding := fun _ unit _ => .known (match unit with
     | .alu | .mau | .matrixRead | .l1ToPE => ⟨0, 0⟩)
