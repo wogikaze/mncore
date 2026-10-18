@@ -3,9 +3,9 @@ import ProofsLean.PEMachine
 import ProofsLean.FloatPEMemory
 
 /-! A whole-state transition for the connected PE integer ALU, single-precision
-vector `fvadd`, matrix-read, and raw D/F/G matrix-write fragments. It runs the
-same issue-line transaction independently at every physical PE, then updates
-ALU/MAU/MREADF/LBF forwarding state. Other producer units remain unresolved. -/
+vector `fvadd`/`fvmul`, matrix-read, and raw D/F/G matrix-write fragments. It
+runs the same issue-line transaction independently at every physical PE, then
+updates ALU/MAU/MREADF/LBF forwarding state. Other producer units remain unresolved. -/
 namespace ProofsLean.MNCore
 
 open Issue
@@ -19,7 +19,7 @@ def parsedExprIsIntegerProducer (expression : ParsedExpr) : Bool :=
 def parsedExprIsSupportedPELineProducer (expression : ParsedExpr) : Bool :=
   match expression.op with
   | .alu .. | .zero | .immediate .. | .matrixRead .. | .wait .. | .noforward => true
-  | .mau .f false .add none false => true
+  | .mau .f false .add none false | .mau .f false .mul none false => true
   | .matrixWrite .d | .matrixWrite .f | .matrixWrite .g => true
   | _ => false
 
@@ -33,15 +33,69 @@ def parsedExprIsMatrixWriteProducer (expression : ParsedExpr) : Bool :=
   | .matrixWrite .. => true
   | _ => false
 
-def parsedExprIsFloatAddProducer (expression : ParsedExpr) : Bool :=
+def parsedExprIsSupportedFloatMAUProducer (expression : ParsedExpr) : Bool :=
   match expression.op with
-  | .mau .f false .add none false => true
+  | .mau .f false .add none false | .mau .f false .mul none false => true
   | _ => false
 
-def executeParsedFloatAddCycleAtPE (readFiles currentFiles : IntegerRegisterFiles)
+def lowerParsedFloatMultiply? (expression : ParsedExpr) (pe cycle : Fin 4)
+    (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
+    Option (Fin (Bank.capacity .lm0) × Fin (Bank.capacity .lm0) ×
+      Fin (Bank.capacity .lm1)) := do
+  match expression.op with
+  | .mau .f false .mul none false => pure ()
+  | _ => none
+  match expression.sources, expression.destinations with
+  | [.mem left false false false none, .mem right false false false none],
+      [.mem destination false false false none] =>
+      let leftAccess ← ParsedOperand.toDirectMemoryAccess?
+        (.mem left false false false none) pe cycle bar0 bar1 tWord
+      let rightAccess ← ParsedOperand.toDirectMemoryAccess?
+        (.mem right false false false none) pe cycle bar0 bar1 tWord
+      let destinationAccess ← ParsedOperand.toDirectMemoryAccess?
+        (.mem destination false false false none) pe cycle bar0 bar1 tWord
+      let leftAddress ← FloatPEMemory.lm0LongAddress? leftAccess
+      let rightAddress ← FloatPEMemory.lm0LongAddress? rightAccess
+      let destinationAddress ← FloatPEMemory.lm1LongAddress? destinationAccess
+      some (leftAddress, rightAddress, destinationAddress)
+  | _, _ => none
+
+theorem lowerParsedFloatMultiply?_fvmul
+    (left right destination : Access) (pe cycle : Fin 4)
+    (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
+    (leftAddress rightAddress : Fin (Bank.capacity .lm0))
+    (destinationAddress : Fin (Bank.capacity .lm1))
+    (leftLowered : ParsedOperand.toDirectMemoryAccess?
+      (.mem left false false false none) pe cycle bar0 bar1 tWord =
+        some ⟨.lm0, .long, leftAddress⟩)
+    (rightLowered : ParsedOperand.toDirectMemoryAccess?
+      (.mem right false false false none) pe cycle bar0 bar1 tWord =
+        some ⟨.lm0, .long, rightAddress⟩)
+    (destinationLowered : ParsedOperand.toDirectMemoryAccess?
+      (.mem destination false false false none) pe cycle bar0 bar1 tWord =
+        some ⟨.lm1, .long, destinationAddress⟩) :
+    lowerParsedFloatMultiply?
+      ⟨.mau .f false .mul none false,
+        [.mem left false false false none, .mem right false false false none],
+        [.mem destination false false false none], none, "fvmul"⟩ pe cycle bar0 bar1 tWord =
+      some (leftAddress, rightAddress, destinationAddress) := by
+  simp [lowerParsedFloatMultiply?, leftLowered, rightLowered, destinationLowered,
+    FloatPEMemory.lm0LongAddress?, FloatPEMemory.lm1LongAddress?]
+
+def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFiles)
     (expression : ParsedExpr) (pe cycle : Fin 4) (bar0 bar1 : BitVec 12)
     (tWord : BitVec 32) : ProofsLean.StepResult (IntegerRegisterFiles × IntegerALU.Bus) :=
-  match FloatPEMemory.lowerParsedFloatAdd? expression pe cycle bar0 bar1 tWord with
+  match expression.op with
+  | .mau .f false .mul none false =>
+    match lowerParsedFloatMultiply? expression pe cycle bar0 bar1 tWord with
+    | none => .unknown
+    | some (leftAddress, rightAddress, destinationAddress) =>
+        let left := FloatPEMemory.readPair .lm0 readFiles.lm0 leftAddress
+        let right := FloatPEMemory.readPair .lm0 readFiles.lm0 rightAddress
+        let output := FloatMultiply.multiplyBus left right
+        let nextLM1 := FloatPEMemory.writePair currentFiles.lm1 destinationAddress output
+        .ok ({ currentFiles with lm1 := nextLM1 }, ⟨output, 0⟩)
+  | _ => match FloatPEMemory.lowerParsedFloatAdd? expression pe cycle bar0 bar1 tWord with
   | none =>
     match FloatPEMemory.lowerParsedFloatSubtract? expression pe cycle bar0 bar1 tWord with
     | none => .unknown
@@ -58,48 +112,66 @@ def executeParsedFloatAddCycleAtPE (readFiles currentFiles : IntegerRegisterFile
       let nextLM1 := FloatPEMemory.writePair currentFiles.lm1 destinationAddress output
       .ok ({ currentFiles with lm1 := nextLM1 }, ⟨output, 0⟩)
 
-theorem executeParsedFloatAddCycleAtPE_success
+theorem executeParsedFloatMAUCycleAtPE_mul_success
     (readFiles currentFiles : IntegerRegisterFiles) (expression : ParsedExpr)
     (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
     (leftAddress rightAddress : Fin (Bank.capacity .lm0))
     (destinationAddress : Fin (Bank.capacity .lm1))
+    (isMul : expression.op = .mau .f false .mul none false)
+    (lowered : lowerParsedFloatMultiply? expression pe cycle bar0 bar1 tWord =
+      some (leftAddress, rightAddress, destinationAddress)) :
+    let output := FloatMultiply.multiplyBus
+      (FloatPEMemory.readPair .lm0 readFiles.lm0 leftAddress)
+      (FloatPEMemory.readPair .lm0 readFiles.lm0 rightAddress)
+    executeParsedFloatMAUCycleAtPE readFiles currentFiles expression pe cycle bar0 bar1 tWord =
+      .ok ({ currentFiles with lm1 :=
+        (FloatPEMemory.writePair currentFiles.lm1 destinationAddress output) },
+        ⟨output, 0⟩) := by
+  simp [executeParsedFloatMAUCycleAtPE, isMul, lowered]
+
+theorem executeParsedFloatMAUCycleAtPE_add_success
+    (readFiles currentFiles : IntegerRegisterFiles) (expression : ParsedExpr)
+    (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
+    (leftAddress rightAddress : Fin (Bank.capacity .lm0))
+    (destinationAddress : Fin (Bank.capacity .lm1))
+    (isAdd : expression.op = .mau .f false .add none false)
     (lowered : FloatPEMemory.lowerParsedFloatAdd? expression pe cycle bar0 bar1 tWord =
       some (leftAddress, rightAddress, destinationAddress)) :
     let output := FloatAdd.addBus
       (FloatPEMemory.readPair .lm0 readFiles.lm0 leftAddress)
       (FloatPEMemory.readPair .lm0 readFiles.lm0 rightAddress)
-    executeParsedFloatAddCycleAtPE readFiles currentFiles expression pe cycle bar0 bar1 tWord =
+    executeParsedFloatMAUCycleAtPE readFiles currentFiles expression pe cycle bar0 bar1 tWord =
       .ok ({ currentFiles with lm1 :=
         (FloatPEMemory.writePair currentFiles.lm1 destinationAddress output) },
         ⟨output, 0⟩) := by
-  simp [executeParsedFloatAddCycleAtPE, lowered]
+  simp [executeParsedFloatMAUCycleAtPE, isAdd, lowered]
 
-def executeParsedFloatAddCyclesAtPE (readFiles : IntegerRegisterFiles)
+def executeParsedFloatMAUCyclesAtPE (readFiles : IntegerRegisterFiles)
     (expression : ParsedExpr) (pe : Fin 4) (bar0 bar1 : BitVec 12)
     (tWord : BitVec 32) : List (Fin 4) → IntegerRegisterFiles →
       (Fin 4 → IntegerALU.Bus) → ProofsLean.StepResult
         (IntegerRegisterFiles × (Fin 4 → IntegerALU.Bus))
   | [], files, outputs => .ok (files, outputs)
   | cycle :: rest, files, outputs =>
-      match executeParsedFloatAddCycleAtPE readFiles files expression pe cycle bar0 bar1 tWord with
+      match executeParsedFloatMAUCycleAtPE readFiles files expression pe cycle bar0 bar1 tWord with
       | .failure => .failure
       | .unknown => .unknown
       | .ok (nextFiles, output) =>
-          executeParsedFloatAddCyclesAtPE readFiles expression pe bar0 bar1 tWord rest
+          executeParsedFloatMAUCyclesAtPE readFiles expression pe bar0 bar1 tWord rest
             nextFiles (fun index => if index = cycle then output else outputs index)
 
-def executeParsedFloatAddsAtPE (readState currentFiles : IntegerRegisterFiles)
+def executeParsedFloatMAUsAtPE (readState currentFiles : IntegerRegisterFiles)
     (pe : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
     (expressions : List ParsedExpr) : ProofsLean.StepResult
       (IntegerRegisterFiles × (Fin 4 → IntegerALU.Bus) × Bool) :=
-  let floatAdds := expressions.filter parsedExprIsFloatAddProducer
+  let floatAdds := expressions.filter parsedExprIsSupportedFloatMAUProducer
   let rec run (remaining : List ParsedExpr) (files : IntegerRegisterFiles)
       (outputs : Fin 4 → IntegerALU.Bus) :
       ProofsLean.StepResult (IntegerRegisterFiles × (Fin 4 → IntegerALU.Bus)) :=
     match remaining with
     | [] => .ok (files, outputs)
     | expression :: rest =>
-        match executeParsedFloatAddCyclesAtPE readState expression pe bar0 bar1 tWord
+        match executeParsedFloatMAUCyclesAtPE readState expression pe bar0 bar1 tWord
             [0, 1, 2, 3] files (fun _ => ⟨0, 0⟩) with
         | .failure => .failure
         | .unknown => .unknown
@@ -298,13 +370,14 @@ def executeIntegerProducerLineAtPE (expressions : List ParsedExpr)
   let oldSlots := state.forwarding pe
   let matrixStore := state.matrixRegisters context.group context.l2b context.l1b
   let peExpressions := expressions.filter fun expression =>
-    !parsedExprIsMatrixWriteProducer expression && !parsedExprIsFloatAddProducer expression
+    !parsedExprIsMatrixWriteProducer expression &&
+      !parsedExprIsSupportedFloatMAUProducer expression
   match parsedIntegerMatrixReadLineFourCycleStep (state.peRegisters pe) oldSlots
       matrixStore peExpressions control false with
   | .failure => .failure
   | .unknown => .unknown
   | .ok (registers, integerPreparedSlots) =>
-    match executeParsedFloatAddsAtPE (state.peRegisters pe) registers
+    match executeParsedFloatMAUsAtPE (state.peRegisters pe) registers
         coordinates.pe context.bar0 context.bar1 context.tWord expressions with
     | .failure => .failure
     | .unknown => .unknown
