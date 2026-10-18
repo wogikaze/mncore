@@ -1943,7 +1943,13 @@
         },
         "remaining": "Run command-level Rust differentials for source operands, matrix layout, row masks, PE packing, flags, poison, and forwarding; the arithmetic-only comparison does not establish compute_mat or whole-machine conformance.",
         "source_mask_lowering": "parsedFloatMAUSourceAttrs? accepts masked and unmasked memory operands, then lowers the same mask-free memory input. Rust read_raw_untraced ignores the operand mask during reads.",
-        "source_mask_theorem": "ProofsLean.MNCore.parsedFloatMAUSourceAttrs?_memory_mask_irrelevant"
+        "source_mask_theorem": "ProofsLean.MNCore.parsedFloatMAUSourceAttrs?_memory_mask_irrelevant",
+        "destination_lowering_miss_classification": {
+          "behavior": "In matrix-MAU PE destination execution, flush selector, poison-enabled destination, and destination write lowering misses now return failure rather than unknown.",
+          "rust_reference": "viz/core/src/machine.rs::Machine::write returns ExecError::Unsupported for unsupported destination operands and propagates invalid write/poison conditions as execution errors.",
+          "lean_source": "ProofsLean.MNCore.executeParsedMatrixMAUPEWritesAtMAB",
+          "scope_limit": "This classifies known lowering failures; proving the full PE write loop and whole-line matrix-MAU transition unknown-free still requires premises for calculation outputs and legal destination forms."
+        }
       }
     },
     {

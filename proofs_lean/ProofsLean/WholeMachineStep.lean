@@ -5234,7 +5234,7 @@ def executeParsedMatrixMAUPEWritesAtMAB (readState currentState : State)
         let oldContext := currentState.peContext peId
         let contextBase := ParsedIntegerContext.ofLinearIndex peId
         match resolveFlushSelection? expression.flush (files pe).maskRegisters cycle with
-        | none => return .unknown
+        | none => return .failure
         | some flushSelection =>
           let output := parsedOutputAfterFlush flushSelection (buses pe)
           let rec writeDests : List ParsedOperand → PEMemory.IntegerRegisterFiles →
@@ -5256,12 +5256,12 @@ def executeParsedMatrixMAUPEWritesAtMAB (readState currentState : State)
                 if dataPoisonApplies then
                   match parsedMatrixMAUDestinationEnabled? peFiles destination context cycle
                       currentState.maskDirective hasSingleLineMask with
-                  | none => return .unknown
+                  | none => return .failure
                   | some true => return .failure
                   | some false => return writeDests rest peFiles peBar0 peBar1
                 match writeParsedMslMsrDestination? peFiles destination context output
                     (flags pe) cycle currentState.maskDirective hasSingleLineMask with
-                | none => return .unknown
+                | none => return .failure
                 | some write =>
                   let nextBar0 := match write.barUpdate with
                     | some (false, value) => value
