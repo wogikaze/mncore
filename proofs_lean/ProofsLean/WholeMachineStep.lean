@@ -2666,6 +2666,49 @@ def executeParsedSharedBlockProducers (readState currentState : State)
     (expressions : List ParsedExpr) (updateTurnaround : Bool) : ProofsLean.StepResult State :=
   executeParsedSharedBlockProducerList readState updateTurnaround expressions currentState
 
+/-- A source-ordered block-producer list cannot introduce epistemic
+`.unknown` when every selected expression is unknown-free at every
+intermediate state. This composes per-expression semantic guarantees without
+assuming that each expression succeeds: ordinary execution failures remain
+observable as failures. -/
+theorem executeParsedSharedBlockProducerList_never_unknown
+    (readState : State) (updateTurnaround : Bool)
+    (expressions : List ParsedExpr) (currentState : State)
+    (known : ∀ expression ∈ expressions, ∀ state,
+      executeParsedSharedBlockExpression readState state expression
+        updateTurnaround ≠ .unknown) :
+    executeParsedSharedBlockProducerList readState updateTurnaround
+      expressions currentState ≠ .unknown := by
+  induction expressions generalizing currentState with
+  | nil => simp [executeParsedSharedBlockProducerList]
+  | cons expression rest ih =>
+      have headKnown := known expression (by simp) currentState
+      have tailKnown : ∀ item ∈ rest, ∀ state,
+          executeParsedSharedBlockExpression readState state item
+            updateTurnaround ≠ .unknown := by
+        intro item member state
+        exact known item (List.mem_cons_of_mem _ member) state
+      cases h : executeParsedSharedBlockExpression readState currentState
+          expression updateTurnaround with
+      | failure => simp [executeParsedSharedBlockProducerList, h]
+      | unknown => exact (headKnown h).elim
+      | ok next =>
+          simp only [executeParsedSharedBlockProducerList, h]
+          exact ih next tailKnown
+
+/-- The public shared-block producer runner preserves the list-level
+unknown-free guarantee used by the whole PE issue transition. -/
+theorem executeParsedSharedBlockProducers_never_unknown
+    (readState currentState : State) (expressions : List ParsedExpr)
+    (updateTurnaround : Bool)
+    (known : ∀ expression ∈ expressions, ∀ state,
+      executeParsedSharedBlockExpression readState state expression
+        updateTurnaround ≠ .unknown) :
+    executeParsedSharedBlockProducers readState currentState expressions
+      updateTurnaround ≠ .unknown := by
+  exact executeParsedSharedBlockProducerList_never_unknown readState
+    updateTurnaround expressions currentState known
+
 theorem executeParsedSharedBlockProducerList_two_success
     (readState state : State) (first second : ParsedExpr) (updateTurnaround : Bool)
     (firstResult : executeParsedSharedBlockExpression readState state first
