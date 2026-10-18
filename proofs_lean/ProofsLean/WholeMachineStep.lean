@@ -1592,9 +1592,7 @@ def readParsedMatrixMAUSourcePE (state : State) (coordinate : MABCoordinate)
     tWord := oldContext.tWord }
   let sourceAttrs? := parsedFloatMAUSourceAttrs? operand context
   let some (input, actualNegate, actualExtend, actualRound) := sourceAttrs? |
-    match operand with
-    | .mem .. | .forward .. => return .unknown
-    | _ => return .failure
+    return .failure
   if let .forward kind _ := input then
     if !state.forwardingValid physical (ParsedIntegerInput.forwardUnit kind) cycle then
       return .failure
@@ -2037,6 +2035,19 @@ def forwardingSourceResolved (state : State) : Prop :=
   ∀ pe unit cycle,
     state.forwardingValid pe unit cycle = false ∨
       stateForwardingSlots state pe unit cycle ≠ .unknown
+
+theorem readParsedMatrixMAUSourcePE_lowering_miss_fails
+    (state : State) (coordinate : MABCoordinate) (operand : ParsedOperand)
+    (precision : RRN.FloatPrecision) (count : Nat) (pe cycle : Fin 4)
+    (lowered : parsedFloatMAUSourceAttrs? operand
+      ({ ParsedIntegerContext.ofLinearIndex (physicalPEId coordinate pe) with
+        cycle := cycle
+        bar0 := (state.peContext (physicalPEId coordinate pe)).bar0
+        bar1 := (state.peContext (physicalPEId coordinate pe)).bar1
+        tWord := (state.peContext (physicalPEId coordinate pe)).tWord }) = none) :
+    readParsedMatrixMAUSourcePE state coordinate operand precision count pe cycle =
+      .failure := by
+  simp [readParsedMatrixMAUSourcePE, lowered]
 
 theorem readParsedMatrixMAUSourcePE_resolved_never_unknown
     (state : State) (coordinate : MABCoordinate) (operand : ParsedOperand)
