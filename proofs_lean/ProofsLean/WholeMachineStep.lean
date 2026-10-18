@@ -146,6 +146,13 @@ def parsedExprIsSupportedFloatMAUProducer (expression : ParsedExpr) : Bool :=
   | .mau .s false _ _ _ => true
   | _ => false
 
+def parsedFloatMAUWritesBAR (lm1 : Bool) (expression : ParsedExpr) : Bool :=
+  parsedExprIsSupportedFloatMAUProducer expression &&
+    expression.destinations.any (fun destination =>
+      match destination with
+      | .bar destinationLM1 .. => destinationLM1 == lm1
+      | _ => false)
+
 def parsedFloatMAUSource? (operand : ParsedOperand) (context : ParsedIntegerContext) :
     Option ParsedIntegerInput :=
   match operand with
@@ -193,6 +200,11 @@ theorem parsedFloatMAU_fixed_source_is_definitely_unsupported (fixed : ParsedFix
     parsedFloatMAUSourceDefinitelyUnsupported (.fixed fixed) = true := by
   rfl
 
+def parsedFloatMAUDestinationRole (destination : ParsedOperand) : Bool :=
+  match destination with
+  | .mem .. | .omr .. | .bar .. | .nowrite => true
+  | _ => false
+
 structure ParsedFloatFmaAccesses where
   sourceA : ParsedIntegerInput
   sourceB : ParsedIntegerInput
@@ -206,7 +218,7 @@ structure ParsedFloatFmaAccesses where
   roundA : Bool
   roundB : Bool
   roundC : Bool
-  destination : Fin (Bank.capacity .lm1)
+  destinations : List ParsedOperand
 
 def lowerParsedFloatFma? (expression : ParsedExpr) (context : ParsedIntegerContext) :
     Option ParsedFloatFmaAccesses := do
@@ -214,16 +226,13 @@ def lowerParsedFloatFma? (expression : ParsedExpr) (context : ParsedIntegerConte
   | .mau .f false .fma none false => pure ()
   | _ => none
   match expression.sources, expression.destinations with
-  | [sourceA, sourceB, sourceC], [.mem access false false false none] =>
+  | [sourceA, sourceB, sourceC], destinations@(_ :: _) => do
+      guard (destinations.all parsedFloatMAUDestinationRole)
       let (sourceA, negateA, extendA, roundA) ← parsedFloatMAUSourceAttrs? sourceA context
       let (sourceB, negateB, extendB, roundB) ← parsedFloatMAUSourceAttrs? sourceB context
       let (sourceC, negateC, extendC, roundC) ← parsedFloatMAUSourceAttrs? sourceC context
-      let destinationAccess ← ParsedOperand.toDirectMemoryAccess?
-        (.mem access false false false none) context.pe context.cycle
-        context.bar0 context.bar1 context.tWord
-      let destination ← FloatPEMemory.lm1LongAddress? destinationAccess
       some ⟨sourceA, sourceB, sourceC, negateA, negateB, negateC,
-        extendA, extendB, extendC, roundA, roundB, roundC, destination⟩
+        extendA, extendB, extendC, roundA, roundB, roundC, destinations⟩
   | _, _ => none
 
 structure ParsedFloatMultiplyAccesses where
@@ -235,7 +244,7 @@ structure ParsedFloatMultiplyAccesses where
   extendB : Bool
   roundA : Bool
   roundB : Bool
-  destination : Fin (Bank.capacity .lm1)
+  destinations : List ParsedOperand
 
 def negateSingleBus (bus : BitVec 64) : BitVec 64 :=
   bus ^^^ (BitVec.ofNat 64 (2 ^ 63 + 2 ^ 31))
@@ -306,15 +315,12 @@ def lowerParsedFloatMultiply? (expression : ParsedExpr) (context : ParsedInteger
   | .mau .f false .mul none false => pure ()
   | _ => none
   match expression.sources, expression.destinations with
-  | [sourceA, sourceB], [.mem access false false false none] =>
+  | [sourceA, sourceB], destinations@(_ :: _) => do
+      guard (destinations.all parsedFloatMAUDestinationRole)
       let (sourceA, negateA, extendA, roundA) ← parsedFloatMAUSourceAttrs? sourceA context
       let (sourceB, negateB, extendB, roundB) ← parsedFloatMAUSourceAttrs? sourceB context
-      let destinationAccess ← ParsedOperand.toDirectMemoryAccess?
-        (.mem access false false false none) context.pe context.cycle
-        context.bar0 context.bar1 context.tWord
-      let destination ← FloatPEMemory.lm1LongAddress? destinationAccess
       some ⟨sourceA, sourceB, negateA, negateB, extendA, extendB, roundA, roundB,
-        destination⟩
+        destinations⟩
   | _, _ => none
 
 structure ParsedFloatAddAccesses where
@@ -326,7 +332,7 @@ structure ParsedFloatAddAccesses where
   extendB : Bool
   roundA : Bool
   roundB : Bool
-  destination : Fin (Bank.capacity .lm1)
+  destinations : List ParsedOperand
 
 def lowerParsedFloatAddMachine? (expression : ParsedExpr) (context : ParsedIntegerContext) :
     Option ParsedFloatAddAccesses := do
@@ -334,124 +340,88 @@ def lowerParsedFloatAddMachine? (expression : ParsedExpr) (context : ParsedInteg
   | .mau .f false .add none false => pure ()
   | _ => none
   match expression.sources, expression.destinations with
-  | [sourceA, sourceB], [.mem access false false false none] =>
+  | [sourceA, sourceB], destinations@(_ :: _) => do
+      guard (destinations.all parsedFloatMAUDestinationRole)
       let (sourceA, negateA, extendA, roundA) ← parsedFloatMAUSourceAttrs? sourceA context
       let (sourceB, negateB, extendB, roundB) ← parsedFloatMAUSourceAttrs? sourceB context
-      let destinationAccess ← ParsedOperand.toDirectMemoryAccess?
-        (.mem access false false false none) context.pe context.cycle
-        context.bar0 context.bar1 context.tWord
-      let destination ← FloatPEMemory.lm1LongAddress? destinationAccess
       some ⟨sourceA, sourceB, negateA, negateB, extendA, extendB, roundA, roundB,
-        destination⟩
+        destinations⟩
   | _, _ => none
 
 def lowerParsedPassa? (precision : ParsedPrecision) (expression : ParsedExpr)
     (context : ParsedIntegerContext) :
-    Option (ParsedIntegerInput × Bool × Bool × Bool × Fin (Bank.capacity .lm1)) := do
+    Option (ParsedIntegerInput × Bool × Bool × Bool × List ParsedOperand) := do
   match expression.op with
   | .mau opPrecision false .passa _ _ => guard (opPrecision == precision)
   | _ => none
   match expression.sources, expression.destinations with
-  | [source], [.mem access false false false none] =>
+  | [source], destinations@(_ :: _) => do
+      guard (destinations.all parsedFloatMAUDestinationRole)
       let (source, negate, extend, round) ← parsedFloatMAUSourceAttrs? source context
-      let destinationAccess ← ParsedOperand.toDirectMemoryAccess?
-        (.mem access false false false none) context.pe context.cycle
-        context.bar0 context.bar1 context.tWord
-      let destination ← FloatPEMemory.lm1LongAddress? destinationAccess
-      some (source, negate, extend, round, destination)
+      some (source, negate, extend, round, destinations)
   | _, _ => none
 
 def lowerParsedHalfPassa? (expression : ParsedExpr) (context : ParsedIntegerContext) :
-    Option (ParsedIntegerInput × Bool × Bool × Bool × PEMemory.Width ×
-      Fin (Bank.capacity .lm1)) := do
+    Option (ParsedIntegerInput × Bool × Bool × Bool × List ParsedOperand) := do
   match expression.op with
   | .mau .h false .passa _ _ => pure ()
   | _ => none
   match expression.sources, expression.destinations with
-  | [source], [.mem access false false false none] =>
+  | [source], destinations@(_ :: _) => do
+      guard (destinations.all parsedFloatMAUDestinationRole)
       let (source, negate, extend, round) ← parsedFloatMAUSourceAttrs? source context
-      let destination ← ParsedOperand.toDirectMemoryAccess?
-        (.mem access false false false none) context.pe context.cycle
-        context.bar0 context.bar1 context.tWord
-      match destination with
-      | ⟨.lm1, .long, address⟩ => some (source, negate, extend, round, .long, address)
-      | ⟨.lm1, .double, address⟩ => some (source, negate, extend, round, .double, address)
-      | _ => none
+      some (source, negate, extend, round, destinations)
   | _, _ => none
 
 def lowerParsedHalfMultiply? (expression : ParsedExpr) (context : ParsedIntegerContext) :
     Option (ParsedIntegerInput × Bool × Bool × Bool × ParsedIntegerInput × Bool × Bool × Bool ×
-      PEMemory.Width × Fin (Bank.capacity .lm1)) := do
+      List ParsedOperand) := do
   match expression.op with
   | .mau .h false .mul _ _ => pure ()
   | _ => none
   match expression.sources, expression.destinations with
-  | [sourceA, sourceB], [.mem access false false false none] =>
+  | [sourceA, sourceB], destinations@(_ :: _) => do
+      guard (destinations.all parsedFloatMAUDestinationRole)
       let (sourceA, negateA, extendA, roundA) ← parsedFloatMAUSourceAttrs? sourceA context
       let (sourceB, negateB, extendB, roundB) ← parsedFloatMAUSourceAttrs? sourceB context
-      let destination ← ParsedOperand.toDirectMemoryAccess?
-        (.mem access false false false none) context.pe context.cycle
-        context.bar0 context.bar1 context.tWord
-      match destination with
-      | ⟨.lm1, .long, address⟩ =>
-          some (sourceA, negateA, extendA, roundA, sourceB, negateB, extendB, roundB,
-            .long, address)
-      | ⟨.lm1, .double, address⟩ =>
-          some (sourceA, negateA, extendA, roundA, sourceB, negateB, extendB, roundB,
-            .double, address)
-      | _ => none
+      some (sourceA, negateA, extendA, roundA, sourceB, negateB, extendB, roundB,
+        destinations)
   | _, _ => none
 
 def lowerParsedHalfAdd? (expression : ParsedExpr) (context : ParsedIntegerContext) :
     Option (ParsedIntegerInput × Bool × Bool × Bool × ParsedIntegerInput × Bool × Bool × Bool ×
-      PEMemory.Width × Fin (Bank.capacity .lm1)) := do
+      List ParsedOperand) := do
   match expression.op with
   | .mau .h false .add _ _ => pure ()
   | _ => none
   match expression.sources, expression.destinations with
-  | [sourceA, sourceC], [.mem access false false false none] =>
+  | [sourceA, sourceC], destinations@(_ :: _) => do
+      guard (destinations.all parsedFloatMAUDestinationRole)
       let (sourceA, negateA, extendA, roundA) ← parsedFloatMAUSourceAttrs? sourceA context
       let (sourceC, negateC, extendC, roundC) ← parsedFloatMAUSourceAttrs? sourceC context
-      let destination ← ParsedOperand.toDirectMemoryAccess?
-        (.mem access false false false none) context.pe context.cycle
-        context.bar0 context.bar1 context.tWord
-      match destination with
-      | ⟨.lm1, .long, address⟩ =>
-          some (sourceA, negateA, extendA, roundA, sourceC, negateC, extendC, roundC,
-            .long, address)
-      | ⟨.lm1, .double, address⟩ =>
-          some (sourceA, negateA, extendA, roundA, sourceC, negateC, extendC, roundC,
-            .double, address)
-      | _ => none
+      some (sourceA, negateA, extendA, roundA, sourceC, negateC, extendC, roundC,
+        destinations)
   | _, _ => none
 
 def lowerParsedHalfFma? (expression : ParsedExpr) (context : ParsedIntegerContext) :
     Option (ParsedIntegerInput × Bool × Bool × Bool × ParsedIntegerInput × Bool × Bool × Bool ×
-      ParsedIntegerInput × Bool × Bool × Bool × PEMemory.Width × Fin (Bank.capacity .lm1)) := do
+      ParsedIntegerInput × Bool × Bool × Bool × List ParsedOperand) := do
   match expression.op with
   | .mau .h false .fma _ _ => pure ()
   | _ => none
   match expression.sources, expression.destinations with
-  | [sourceA, sourceB, sourceC], [.mem access false false false none] =>
+  | [sourceA, sourceB, sourceC], destinations@(_ :: _) => do
+      guard (destinations.all parsedFloatMAUDestinationRole)
       let (sourceA, negateA, extendA, roundA) ← parsedFloatMAUSourceAttrs? sourceA context
       let (sourceB, negateB, extendB, roundB) ← parsedFloatMAUSourceAttrs? sourceB context
       let (sourceC, negateC, extendC, roundC) ← parsedFloatMAUSourceAttrs? sourceC context
-      let destination ← ParsedOperand.toDirectMemoryAccess?
-        (.mem access false false false none) context.pe context.cycle
-        context.bar0 context.bar1 context.tWord
-      match destination with
-      | ⟨.lm1, .long, address⟩ =>
-          some (sourceA, negateA, extendA, roundA, sourceB, negateB, extendB, roundB,
-            sourceC, negateC, extendC, roundC, .long, address)
-      | ⟨.lm1, .double, address⟩ =>
-          some (sourceA, negateA, extendA, roundA, sourceB, negateB, extendB, roundB,
-            sourceC, negateC, extendC, roundC, .double, address)
-      | _ => none
+      some (sourceA, negateA, extendA, roundA, sourceB, negateB, extendB, roundB,
+        sourceC, negateC, extendC, roundC, destinations)
   | _, _ => none
 
 def lowerParsedDoubleArithmetic? (expression : ParsedExpr) (context : ParsedIntegerContext) :
     Option (CalcKind × Bool × List (ParsedIntegerInput × Bool × Bool × Bool) ×
-      PEMemory.Width × Fin (Bank.capacity .lm1)) := do
+      List ParsedOperand) := do
   let (kind, round) ← match expression.op with
     | .mau .d false kind _ round => do
         guard (kind == .add || kind == .mul || kind == .fma)
@@ -461,14 +431,9 @@ def lowerParsedDoubleArithmetic? (expression : ParsedExpr) (context : ParsedInte
   guard (expression.sources.length == expected)
   let sources ← expression.sources.mapM fun source => parsedFloatMAUSourceAttrs? source context
   match expression.destinations with
-  | [.mem access false false false none] =>
-      let destination ← ParsedOperand.toDirectMemoryAccess?
-        (.mem access false false false none) context.pe context.cycle
-        context.bar0 context.bar1 context.tWord
-      match destination with
-      | ⟨.lm1, .long, address⟩ => some (kind, round, sources, .long, address)
-      | ⟨.lm1, .double, address⟩ => some (kind, round, sources, .double, address)
-      | _ => none
+  | destinations@(_ :: _) =>
+      guard (destinations.all parsedFloatMAUDestinationRole)
+      some (kind, round, sources, destinations)
   | _ => none
 
 def normalizeHalfPassaLane (lane : BitVec 16) : BitVec 16 :=
@@ -697,22 +662,18 @@ theorem lowerParsedFloatMultiply?_fvmul
     (sourceA sourceB : ParsedOperand) (destinationAccess : Access)
     (context : ParsedIntegerContext) (inputA inputB : ParsedIntegerInput)
     (negateA negateB extendA extendB roundA roundB : Bool)
-    (destinationAddress : Fin (Bank.capacity .lm1))
     (sourceALowered : parsedFloatMAUSourceAttrs? sourceA context =
       some (inputA, negateA, extendA, roundA))
     (sourceBLowered : parsedFloatMAUSourceAttrs? sourceB context =
       some (inputB, negateB, extendB, roundB))
-    (destinationLowered : ParsedOperand.toDirectMemoryAccess?
-      (.mem destinationAccess false false false none) context.pe context.cycle
-      context.bar0 context.bar1 context.tWord =
-        some ⟨.lm1, .long, destinationAddress⟩) :
+    :
     lowerParsedFloatMultiply?
       ⟨.mau .f false .mul none false,
         [sourceA, sourceB], [.mem destinationAccess false false false none], none, "fvmul"⟩
       context = some ⟨inputA, inputB, negateA, negateB, extendA, extendB, roundA, roundB,
-        destinationAddress⟩ := by
-  simp [lowerParsedFloatMultiply?, sourceALowered, sourceBLowered, destinationLowered,
-    FloatPEMemory.lm1LongAddress?]
+        [.mem destinationAccess false false false none]⟩ := by
+  simp [lowerParsedFloatMultiply?, sourceALowered, sourceBLowered,
+    parsedFloatMAUDestinationRole]
 
 def parsedMauHalfSelectsPE (half : Option Char) (pe : Fin 4) : Bool :=
   match half with
@@ -720,6 +681,56 @@ def parsedMauHalfSelectsPE (half : Option Char) (pe : Fin 4) : Bool :=
   | some 'u' => pe.val < 2
   | some 'd' => pe.val ≥ 2
   | some _ => false
+
+def parsedVectorMAUFlags (format : RRN.FloatPrecision) (rounded : Bool)
+    (output : IntegerALU.Bus) : BitVec 4 := Id.run do
+  let lanes : List Nat := match format, rounded with
+    | .double, false => [output.high.toNat]
+    | .double, true => [(output.high.extractLsb' 32 32).toNat]
+    | .single, _ => [
+        (output.high.extractLsb' 32 32).toNat,
+        (output.high.extractLsb' 0 32).toNat]
+    | .half, true => [
+        (output.high.extractLsb' 48 16).toNat,
+        (output.high.extractLsb' 32 16).toNat,
+        (output.high.extractLsb' 16 16).toNat,
+        (output.high.extractLsb' 0 16).toNat]
+    | .half, false => [
+        (output.high.extractLsb' 32 32).toNat,
+        (output.high.extractLsb' 0 32).toNat,
+        (output.low.extractLsb' 32 32).toNat,
+        (output.low.extractLsb' 0 32).toNat]
+  let signFormat := match format, rounded with
+    | .double, false => .double
+    | .double, true => .single
+    | .single, _ => .single
+    | .half, true => .half
+    | .half, false => .single
+  let positive (bits : Nat) := !RRN.floatIsNegative signFormat bits
+  let flags := match lanes with
+    | [value] =>
+        let isPositive := positive value
+        if signFormat == .double then if isPositive then 0xf else 0
+        else if isPositive then 0xc else 0
+    | [first, second] =>
+        (if positive first then 0xc else 0) + (if positive second then 0x3 else 0)
+    | [a, b, c, d] =>
+        (if positive a then 8 else 0) + (if positive b then 4 else 0) +
+          (if positive c then 2 else 0) + (if positive d then 1 else 0)
+    | _ => 0
+  return BitVec.ofNat 4 flags
+
+theorem parsedVectorMAUFlags_single_lane_order :
+    parsedVectorMAUFlags .single false ⟨0x3f800000bf800000, 0⟩ = 0xc := by
+  decide
+
+theorem parsedVectorMAUFlags_double_uses_all_flags_for_positive :
+    parsedVectorMAUFlags .double false ⟨0x3ff0000000000000, 0⟩ = 0xf := by
+  decide
+
+theorem parsedVectorMAUFlags_half_word_order :
+    parsedVectorMAUFlags .half true ⟨0x3c00bc003c00bc00, 0⟩ = 0xa := by
+  decide
 
 theorem parsedMauHalfSelectsPE_upper_lanes :
     parsedMauHalfSelectsPE (some 'u') 1 = true ∧
@@ -731,10 +742,74 @@ theorem parsedMauHalfSelectsPE_lower_lanes :
       parsedMauHalfSelectsPE (some 'd') 2 = true := by
   decide
 
+structure ParsedMslMsrDestinationWrite where
+  files : PEMemory.IntegerRegisterFiles
+  barUpdate : Option (Bool × BitVec 12)
+
+def writeParsedMslMsrDestination? (files : PEMemory.IntegerRegisterFiles)
+    (destination : ParsedOperand) (context : ParsedIntegerContext)
+    (output : IntegerALU.Bus) (flags : BitVec 4) (cycle : Fin 4)
+    (directive : ParsedMaskDirective) (hasSingleLineMask : Bool) :
+    Option ParsedMslMsrDestinationWrite :=
+  match destination with
+  | .mem .. => do
+      let access ← ParsedOperand.toDirectMemoryDestination? destination context.pe cycle
+        context.bar0 context.bar1 context.tWord
+      let selection ← ParsedOperand.resolveMemoryWriteSelection? destination access.bank
+        files.maskRegisters cycle directive hasSingleLineMask
+      some ⟨PEMemory.writeDirectAccessMasked files access
+        (PEMemory.unpackALUBus output) selection, none⟩
+  | .omr .. => do
+      let entry ← ParsedOperand.toMaskRegisterEntry? destination
+      let selection ← ParsedOperand.resolveOmrWriteSelection? destination files.maskRegisters
+        cycle directive hasSingleLineMask
+      let maskRegisters := ProofsLean.MNCore.Masks.writeRegister
+        files.maskRegisters entry cycle flags selection
+      some ⟨{ files with maskRegisters := maskRegisters }, none⟩
+  | .bar lm1 _ _ => do
+      let bank := if lm1 then PEMemory.Bank.lm1 else PEMemory.Bank.lm0
+      let selection ← ParsedOperand.resolveMemoryWriteSelection? destination bank
+        files.maskRegisters cycle directive hasSingleLineMask
+      let barValue := BitVec.ofNat 12
+        ((output.high.extractLsb' 32 32).toNat % 2 ^ 12)
+      let update := if selection.flags == 0 then none else some (lm1, barValue)
+      some ⟨files, update⟩
+  | .nowrite => some ⟨files, none⟩
+  | _ => none
+
+structure ParsedMAUDestinationWrites where
+  files : PEMemory.IntegerRegisterFiles
+  bar0 : BitVec 12
+  bar1 : BitVec 12
+
+def writeParsedMAUDestinations? (files : PEMemory.IntegerRegisterFiles)
+    (destinations : List ParsedOperand) (context : ParsedIntegerContext)
+    (output : IntegerALU.Bus) (flags : BitVec 4) (cycle : Fin 4)
+    (directive : ParsedMaskDirective) (hasSingleLineMask : Bool) :
+    Option ParsedMAUDestinationWrites := do
+  let rec writeAll : List ParsedOperand → PEMemory.IntegerRegisterFiles →
+      BitVec 12 → BitVec 12 → Option ParsedMAUDestinationWrites
+    | [], currentFiles, bar0, bar1 => some ⟨currentFiles, bar0, bar1⟩
+    | destination :: rest, currentFiles, bar0, bar1 => do
+        let currentContext := { context with bar0 := bar0, bar1 := bar1 }
+        let write ← writeParsedMslMsrDestination? currentFiles destination currentContext
+          output flags cycle directive hasSingleLineMask
+        let nextBar0 := match write.barUpdate with
+          | some (false, value) => value
+          | _ => bar0
+        let nextBar1 := match write.barUpdate with
+          | some (true, value) => value
+          | _ => bar1
+        writeAll rest write.files nextBar0 nextBar1
+  writeAll destinations files context.bar0 context.bar1
+
+/-- Compute one vector-MAU cycle from the pre-issue operands. Destination
+commit is kept in the cycle runner so every encoded output operand receives
+the same bus, flags, flush, mask, and sequential BAR behavior. -/
 def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFiles)
     (oldSlots : Forwarding.Slots) (expression : ParsedExpr)
     (context : ParsedIntegerContext) (cycle : Fin 4) :
-    ProofsLean.StepResult (IntegerRegisterFiles × IntegerALU.Bus) :=
+    ProofsLean.StepResult (IntegerRegisterFiles × IntegerALU.Bus × BitVec 4) :=
   match expression.op with
   | .mau .f false .fma none false =>
     let cycleContext := { context with cycle := cycle }
@@ -757,8 +832,8 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
             let right := prepareSingleMAUSource sourceB accesses.negateB accesses.extendB accesses.roundB
             let accumulator := prepareSingleMAUSource sourceC accesses.negateC accesses.extendC accesses.roundC
             let output := singleFmaBus left right accumulator
-            let nextLM1 := FloatPEMemory.writePair currentFiles.lm1 accesses.destination output
-            .ok ({ currentFiles with lm1 := nextLM1 }, ⟨output, 0⟩)
+            .ok (currentFiles, ⟨output, 0⟩,
+              parsedVectorMAUFlags .single false ⟨output, 0⟩)
   | .mau .f false .mul none false =>
     let cycleContext := { context with cycle := cycle }
     match lowerParsedFloatMultiply? expression cycleContext with
@@ -775,8 +850,8 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
           let left := prepareSingleMAUSource sourceA accesses.negateA accesses.extendA accesses.roundA
           let right := prepareSingleMAUSource sourceB accesses.negateB accesses.extendB accesses.roundB
           let output := FloatMultiply.multiplyBus left right
-          let nextLM1 := FloatPEMemory.writePair currentFiles.lm1 accesses.destination output
-          .ok ({ currentFiles with lm1 := nextLM1 }, ⟨output, 0⟩)
+          .ok (currentFiles, ⟨output, 0⟩,
+            parsedVectorMAUFlags .single false ⟨output, 0⟩)
   | .mau .f false .add none false =>
     let cycleContext := { context with cycle := cycle }
     match lowerParsedFloatAddMachine? expression cycleContext with
@@ -793,13 +868,13 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
           let left := prepareSingleMAUSource sourceA accesses.negateA accesses.extendA accesses.roundA
           let right := prepareSingleMAUSource sourceB accesses.negateB accesses.extendB accesses.roundB
           let output := FloatAdd.addBus left right
-          let nextLM1 := FloatPEMemory.writePair currentFiles.lm1 accesses.destination output
-          .ok ({ currentFiles with lm1 := nextLM1 }, ⟨output, 0⟩)
+          .ok (currentFiles, ⟨output, 0⟩,
+            parsedVectorMAUFlags .single false ⟨output, 0⟩)
   | .mau .f false .passa half false =>
     let cycleContext := { context with cycle := cycle }
     match lowerParsedPassa? .f expression cycleContext with
     | none => parsedFloatMAULoweringMiss expression
-    | some (source, negate, extend, round, destination) =>
+    | some (source, negate, extend, round, _destinations) =>
       match ParsedIntegerInput.readWithForwarding readFiles oldSlots cycle source with
       | .failure => .failure
       | .unknown => .unknown
@@ -807,13 +882,13 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
         let prepared := prepareSingleMAUSource sourceBus negate extend round
         let output := if parsedMauHalfSelectsPE half cycleContext.pe then
             singlePassaBus prepared else singlePassaBus 0
-        let nextLM1 := FloatPEMemory.writePair currentFiles.lm1 destination output
-        .ok ({ currentFiles with lm1 := nextLM1 }, ⟨output, 0⟩)
+        .ok (currentFiles, ⟨output, 0⟩,
+          parsedVectorMAUFlags .single false ⟨output, 0⟩)
   | .mau .d false .passa half round =>
     let cycleContext := { context with cycle := cycle }
     match lowerParsedPassa? .d expression cycleContext with
     | none => parsedFloatMAULoweringMiss expression
-    | some (source, negate, extend, sourceRound, destination) =>
+    | some (source, negate, extend, sourceRound, _destinations) =>
       if sourceRound && !extend then .failure else
       match ParsedIntegerInput.readWithForwarding readFiles oldSlots cycle source with
       | .failure => .failure
@@ -821,13 +896,13 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
       | .ok sourceBus =>
         let output := if parsedMauHalfSelectsPE half cycleContext.pe then
             prepareDoubleMAUSource sourceBus negate extend round else 0
-        let nextLM1 := FloatPEMemory.writePair currentFiles.lm1 destination output
-        .ok ({ currentFiles with lm1 := nextLM1 }, ⟨output, 0⟩)
+        .ok (currentFiles, ⟨output, 0⟩,
+          parsedVectorMAUFlags .double round ⟨output, 0⟩)
   | .mau .d false kind half roundOutput =>
     let cycleContext := { context with cycle := cycle }
     match lowerParsedDoubleArithmetic? expression cycleContext with
     | none => parsedFloatMAULoweringMiss expression
-    | some (kind, roundOutput, sources, destinationWidth, destinationAddress) =>
+    | some (kind, roundOutput, sources, _destinations) =>
       if sources.any (fun source => source.2.2.2) then .failure else
       match readMAUSourceBuses readFiles oldSlots cycle (sources.map fun source => source.1) with
       | .failure => .failure
@@ -838,15 +913,13 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
         let calculated := doubleMAUVectorBus kind roundOutput prepared
         let output := if parsedMauHalfSelectsPE half cycleContext.pe then calculated
           else (⟨0, 0⟩ : IntegerALU.Bus)
-        let nextLM1 := PEMemory.writeWords .lm1 destinationWidth currentFiles.lm1
-          destinationAddress (unpackALUBus output)
-        .ok ({ currentFiles with lm1 := nextLM1 }, output)
+        .ok (currentFiles, output, parsedVectorMAUFlags .double roundOutput output)
   | .mau .h false .mul half round =>
     let cycleContext := { context with cycle := cycle }
     match lowerParsedHalfMultiply? expression cycleContext with
     | none => parsedFloatMAULoweringMiss expression
     | some (sourceA, negateA, extendA, roundA, sourceB, negateB, extendB, roundB,
-        destinationWidth, destinationAddress) =>
+        destinations) =>
       if extendA || extendB then .failure else
       match ParsedIntegerInput.readWithForwarding readFiles oldSlots cycle sourceA with
       | .failure => .failure
@@ -861,15 +934,13 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
           let calculated := prepareHalfMultiplyBus left right round
           let output := if parsedMauHalfSelectsPE half cycleContext.pe then calculated
             else (⟨0, 0⟩ : IntegerALU.Bus)
-          let nextLM1 := PEMemory.writeWords .lm1 destinationWidth currentFiles.lm1
-            destinationAddress (unpackALUBus output)
-          .ok ({ currentFiles with lm1 := nextLM1 }, output)
+          .ok (currentFiles, output, parsedVectorMAUFlags .half round output)
   | .mau .h false .add half round =>
     let cycleContext := { context with cycle := cycle }
     match lowerParsedHalfAdd? expression cycleContext with
     | none => parsedFloatMAULoweringMiss expression
     | some (sourceA, negateA, extendA, roundA, sourceC, negateC, extendC, roundC,
-        destinationWidth, destinationAddress) =>
+        destinations) =>
       if extendA then .failure else
       match ParsedIntegerInput.readWithForwarding readFiles oldSlots cycle sourceA with
       | .failure => .failure
@@ -885,15 +956,13 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
           let calculated := prepareHalfFmaBus left ones accumulator round
           let output := if parsedMauHalfSelectsPE half cycleContext.pe then calculated
             else (⟨0, 0⟩ : IntegerALU.Bus)
-          let nextLM1 := PEMemory.writeWords .lm1 destinationWidth currentFiles.lm1
-            destinationAddress (unpackALUBus output)
-          .ok ({ currentFiles with lm1 := nextLM1 }, output)
+          .ok (currentFiles, output, parsedVectorMAUFlags .half round output)
   | .mau .h false .fma half round =>
     let cycleContext := { context with cycle := cycle }
     match lowerParsedHalfFma? expression cycleContext with
     | none => parsedFloatMAULoweringMiss expression
     | some (sourceA, negateA, extendA, roundA, sourceB, negateB, extendB, roundB,
-        sourceC, negateC, extendC, roundC, destinationWidth, destinationAddress) =>
+        sourceC, negateC, extendC, roundC, destinations) =>
       if extendA || extendB then .failure else
       match ParsedIntegerInput.readWithForwarding readFiles oldSlots cycle sourceA with
       | .failure => .failure
@@ -913,14 +982,12 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
             let calculated := prepareHalfFmaBus left right accumulator round
             let output := if parsedMauHalfSelectsPE half cycleContext.pe then calculated
               else (⟨0, 0⟩ : IntegerALU.Bus)
-            let nextLM1 := PEMemory.writeWords .lm1 destinationWidth currentFiles.lm1
-              destinationAddress (unpackALUBus output)
-            .ok ({ currentFiles with lm1 := nextLM1 }, output)
+            .ok (currentFiles, output, parsedVectorMAUFlags .half round output)
   | .mau .h false .passa half round =>
     let cycleContext := { context with cycle := cycle }
     match lowerParsedHalfPassa? expression cycleContext with
     | none => parsedFloatMAULoweringMiss expression
-    | some (source, negate, extend, sourceRound, destinationWidth, destinationAddress) =>
+    | some (source, negate, extend, sourceRound, _destinations) =>
       if extend then .failure else
       match ParsedIntegerInput.readWithForwarding readFiles oldSlots cycle source with
       | .failure => .failure
@@ -928,9 +995,7 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
       | .ok sourceBus =>
         let output := if parsedMauHalfSelectsPE half cycleContext.pe then
             prepareHalfPassa sourceBus negate sourceRound round else (⟨0, 0⟩ : IntegerALU.Bus)
-        let nextLM1 := PEMemory.writeWords .lm1 destinationWidth currentFiles.lm1
-          destinationAddress (unpackALUBus output)
-        .ok ({ currentFiles with lm1 := nextLM1 }, output)
+        .ok (currentFiles, output, parsedVectorMAUFlags .half round output)
   | .mau .f false _ _ true => .failure
   | .mau .g false _ _ _ | .mau .l false _ _ _ | .mau .i false _ _ _
   | .mau .s false _ _ _ => .failure
@@ -944,14 +1009,14 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
         let left := FloatPEMemory.readPair .lm0 readFiles.lm0 leftAddress
         let right := FloatPEMemory.readPair .lm0 readFiles.lm0 rightAddress
         let output := FloatSubtract.subtractBus left right
-        let nextLM1 := FloatPEMemory.writePair currentFiles.lm1 destinationAddress output
-        .ok ({ currentFiles with lm1 := nextLM1 }, ⟨output, 0⟩)
+        .ok (currentFiles, ⟨output, 0⟩,
+          parsedVectorMAUFlags .single false ⟨output, 0⟩)
   | some (leftAddress, rightAddress, destinationAddress) =>
       let left := FloatPEMemory.readPair .lm0 readFiles.lm0 leftAddress
       let right := FloatPEMemory.readPair .lm0 readFiles.lm0 rightAddress
       let output := FloatAdd.addBus left right
-      let nextLM1 := FloatPEMemory.writePair currentFiles.lm1 destinationAddress output
-      .ok ({ currentFiles with lm1 := nextLM1 }, ⟨output, 0⟩)
+      .ok (currentFiles, ⟨output, 0⟩,
+        parsedVectorMAUFlags .single false ⟨output, 0⟩)
 
 theorem executeParsedFloatMAUCycleAtPE_mul_success
     (readFiles currentFiles : IntegerRegisterFiles) (oldSlots : Forwarding.Slots)
@@ -968,9 +1033,7 @@ theorem executeParsedFloatMAUCycleAtPE_mul_success
       (prepareSingleMAUSource busA accesses.negateA accesses.extendA accesses.roundA)
       (prepareSingleMAUSource busB accesses.negateB accesses.extendB accesses.roundB)
     executeParsedFloatMAUCycleAtPE readFiles currentFiles oldSlots expression context cycle =
-      .ok ({ currentFiles with lm1 :=
-        (FloatPEMemory.writePair currentFiles.lm1 accesses.destination output) },
-        ⟨output, 0⟩) := by
+      .ok (currentFiles, ⟨output, 0⟩, parsedVectorMAUFlags .single false ⟨output, 0⟩) := by
   simp [executeParsedFloatMAUCycleAtPE, isMul, lowered, readA, readB]
 
 theorem executeParsedFloatMAUCycleAtPE_fma_success
@@ -990,9 +1053,7 @@ theorem executeParsedFloatMAUCycleAtPE_fma_success
       (prepareSingleMAUSource busB accesses.negateB accesses.extendB accesses.roundB)
       (prepareSingleMAUSource busC accesses.negateC accesses.extendC accesses.roundC)
     executeParsedFloatMAUCycleAtPE readFiles currentFiles oldSlots expression context cycle =
-      .ok ({ currentFiles with lm1 :=
-        (FloatPEMemory.writePair currentFiles.lm1 accesses.destination output) },
-        ⟨output, 0⟩) := by
+      .ok (currentFiles, ⟨output, 0⟩, parsedVectorMAUFlags .single false ⟨output, 0⟩) := by
   simp [executeParsedFloatMAUCycleAtPE, isFma, lowered, readA, readB, readC]
 
 theorem executeParsedFloatMAUCycleAtPE_add_success
@@ -1010,45 +1071,60 @@ theorem executeParsedFloatMAUCycleAtPE_add_success
       (prepareSingleMAUSource busA accesses.negateA accesses.extendA accesses.roundA)
       (prepareSingleMAUSource busB accesses.negateB accesses.extendB accesses.roundB)
     executeParsedFloatMAUCycleAtPE readFiles currentFiles oldSlots expression context cycle =
-      .ok ({ currentFiles with lm1 :=
-        (FloatPEMemory.writePair currentFiles.lm1 accesses.destination output) },
-        ⟨output, 0⟩) := by
+      .ok (currentFiles, ⟨output, 0⟩, parsedVectorMAUFlags .single false ⟨output, 0⟩) := by
   simp [executeParsedFloatMAUCycleAtPE, isAdd, lowered, readA, readB]
 
+/-- Run vector-MAU cycles and commit the bus to all destinations in source
+order, carrying BAR updates into the following cycle. -/
 def executeParsedFloatMAUCyclesAtPE (readFiles : IntegerRegisterFiles)
     (oldSlots : Forwarding.Slots) (expression : ParsedExpr)
-    (context : ParsedIntegerContext) : List (Fin 4) → IntegerRegisterFiles →
-      (Fin 4 → IntegerALU.Bus) → ProofsLean.StepResult
-        (IntegerRegisterFiles × (Fin 4 → IntegerALU.Bus))
-  | [], files, outputs => .ok (files, outputs)
-  | cycle :: rest, files, outputs =>
-      match executeParsedFloatMAUCycleAtPE readFiles files oldSlots expression context cycle with
+    (context : ParsedIntegerContext) (directive : ParsedMaskDirective)
+    (hasSingleLineMask : Bool) : List (Fin 4) → IntegerRegisterFiles →
+      BitVec 12 → BitVec 12 → (Fin 4 → IntegerALU.Bus) → ProofsLean.StepResult
+        (IntegerRegisterFiles × BitVec 12 × BitVec 12 × (Fin 4 → IntegerALU.Bus))
+  | [], files, bar0, bar1, outputs => .ok (files, bar0, bar1, outputs)
+  | cycle :: rest, files, bar0, bar1, outputs =>
+      let cycleContext := { context with cycle := cycle, bar0 := bar0, bar1 := bar1 }
+      match executeParsedFloatMAUCycleAtPE readFiles files oldSlots expression cycleContext cycle with
       | .failure => .failure
       | .unknown => .unknown
-      | .ok (nextFiles, output) =>
-          executeParsedFloatMAUCyclesAtPE readFiles oldSlots expression context rest
-            nextFiles (fun index => if index = cycle then output else outputs index)
+      | .ok (_, output, flags) =>
+          match resolveFlushSelection? expression.flush files.maskRegisters cycle with
+          | none => .unknown
+          | some flushSelection =>
+              let writtenOutput := parsedOutputAfterFlush flushSelection output
+              match writeParsedMAUDestinations? files expression.destinations cycleContext
+                  writtenOutput flags cycle directive hasSingleLineMask with
+              | none => .unknown
+              | some writes =>
+                  executeParsedFloatMAUCyclesAtPE readFiles oldSlots expression context
+                    directive hasSingleLineMask rest writes.files writes.bar0 writes.bar1
+                    (fun index => if index = cycle then output else outputs index)
 
 def executeParsedFloatMAUsAtPE (readState currentFiles : IntegerRegisterFiles)
     (oldSlots : Forwarding.Slots) (context : ParsedIntegerContext)
-    (expressions : List ParsedExpr) : ProofsLean.StepResult
-      (IntegerRegisterFiles × (Fin 4 → IntegerALU.Bus) × Bool) :=
+    (expressions : List ParsedExpr) (directive : ParsedMaskDirective)
+    (hasSingleLineMask : Bool) : ProofsLean.StepResult
+      (IntegerRegisterFiles × BitVec 12 × BitVec 12 × (Fin 4 → IntegerALU.Bus) × Bool) :=
   let floatAdds := expressions.filter parsedExprIsSupportedFloatMAUProducer
   let rec run (remaining : List ParsedExpr) (files : IntegerRegisterFiles)
-      (outputs : Fin 4 → IntegerALU.Bus) :
-      ProofsLean.StepResult (IntegerRegisterFiles × (Fin 4 → IntegerALU.Bus)) :=
+      (bar0 bar1 : BitVec 12) (outputs : Fin 4 → IntegerALU.Bus) :
+      ProofsLean.StepResult
+        (IntegerRegisterFiles × BitVec 12 × BitVec 12 × (Fin 4 → IntegerALU.Bus)) :=
     match remaining with
-    | [] => .ok (files, outputs)
+    | [] => .ok (files, bar0, bar1, outputs)
     | expression :: rest =>
         match executeParsedFloatMAUCyclesAtPE readState oldSlots expression context
-            [0, 1, 2, 3] files (fun _ => ⟨0, 0⟩) with
+            directive hasSingleLineMask [0, 1, 2, 3] files bar0 bar1 (fun _ => ⟨0, 0⟩) with
         | .failure => .failure
         | .unknown => .unknown
-        | .ok (nextFiles, nextOutputs) => run rest nextFiles nextOutputs
-  match run floatAdds currentFiles (fun _ => ⟨0, 0⟩) with
+        | .ok (nextFiles, nextBar0, nextBar1, nextOutputs) =>
+            run rest nextFiles nextBar0 nextBar1 nextOutputs
+  match run floatAdds currentFiles context.bar0 context.bar1 (fun _ => ⟨0, 0⟩) with
   | .failure => .failure
   | .unknown => .unknown
-  | .ok (files, outputs) => .ok (files, outputs, !floatAdds.isEmpty)
+  | .ok (files, bar0, bar1, outputs) =>
+      .ok (files, bar0, bar1, outputs, !floatAdds.isEmpty)
 
 structure MABCoordinate where
   group : Fin 4
@@ -2800,41 +2876,6 @@ def lowerParsedFloatRelu? (expression : ParsedExpr) (context : ParsedIntegerCont
       some ⟨precision, name, unsigned, sourceA, some sourceB, destinations⟩
   | _, _ => none
 
-structure ParsedMslMsrDestinationWrite where
-  files : PEMemory.IntegerRegisterFiles
-  barUpdate : Option (Bool × BitVec 12)
-
-def writeParsedMslMsrDestination? (files : PEMemory.IntegerRegisterFiles)
-    (destination : ParsedOperand) (context : ParsedIntegerContext)
-    (output : IntegerALU.Bus) (flags : BitVec 4) (cycle : Fin 4)
-    (directive : ParsedMaskDirective) (hasSingleLineMask : Bool) :
-    Option ParsedMslMsrDestinationWrite :=
-  match destination with
-  | .mem .. => do
-      let access ← ParsedOperand.toDirectMemoryDestination? destination context.pe cycle
-        context.bar0 context.bar1 context.tWord
-      let selection ← ParsedOperand.resolveMemoryWriteSelection? destination access.bank
-        files.maskRegisters cycle directive hasSingleLineMask
-      some ⟨PEMemory.writeDirectAccessMasked files access
-        (PEMemory.unpackALUBus output) selection, none⟩
-  | .omr .. => do
-      let entry ← ParsedOperand.toMaskRegisterEntry? destination
-      let selection ← ParsedOperand.resolveOmrWriteSelection? destination files.maskRegisters
-        cycle directive hasSingleLineMask
-      let maskRegisters := ProofsLean.MNCore.Masks.writeRegister
-        files.maskRegisters entry cycle flags selection
-      some ⟨{ files with maskRegisters := maskRegisters }, none⟩
-  | .bar lm1 _ _ => do
-      let bank := if lm1 then PEMemory.Bank.lm1 else PEMemory.Bank.lm0
-      let selection ← ParsedOperand.resolveMemoryWriteSelection? destination bank
-        files.maskRegisters cycle directive hasSingleLineMask
-      let barValue := BitVec.ofNat 12
-        ((output.high.extractLsb' 32 32).toNat % 2 ^ 12)
-      let update := if selection.flags == 0 then none else some (lm1, barValue)
-      some ⟨files, update⟩
-  | .nowrite => some ⟨files, none⟩
-  | _ => none
-
 def parsedMatrixMAUDestinationEnabled? (files : PEMemory.IntegerRegisterFiles)
     (destination : ParsedOperand) (context : ParsedIntegerContext) (cycle : Fin 4)
     (directive : ParsedMaskDirective) (hasSingleLineMask : Bool) : Option Bool := do
@@ -3448,10 +3489,11 @@ def executeIntegerProducerLineAtPE (expressions : List ParsedExpr)
   | .unknown => .unknown
   | .ok (registers, integerPreparedSlots, matrixBarUpdates) =>
     match executeParsedFloatMAUsAtPE (state.peRegisters pe) registers oldSlots
-        context expressions with
+        context expressions state.maskDirective
+        (expressions.any parsedExprHasSingleLineWriteMask) with
     | .failure => .failure
     | .unknown => .unknown
-    | .ok (registersWithFloat, floatOutputs, hasMAUProducer) =>
+    | .ok (registersWithFloat, floatBar0, floatBar1, floatOutputs, hasMAUProducer) =>
       let preparedSlots := fun unit cycle =>
         if unit = .mau && hasMAUProducer then .known (floatOutputs cycle)
         else integerPreparedSlots unit cycle
@@ -3468,11 +3510,15 @@ def executeIntegerProducerLineAtPE (expressions : List ParsedExpr)
       | .ok forwarding =>
           let forwardingValid := updateIntegerLineForwardingValid
             (state.forwardingValid pe) forwarding noForward
-          let (nextBar0, nextBar1) := matrixBarUpdates.foldl
+          let (matrixBar0, matrixBar1) := matrixBarUpdates.foldl
             (fun (bar0, bar1) update => match update with
               | (false, value) => (value, bar1)
               | (true, value) => (bar0, value))
             (oldContext.bar0, oldContext.bar1)
+          let nextBar0 := if expressions.any (parsedFloatMAUWritesBAR false)
+            then floatBar0 else matrixBar0
+          let nextBar1 := if expressions.any (parsedFloatMAUWritesBAR true)
+            then floatBar1 else matrixBar1
           .ok { state with
             peRegisters := fun other =>
               if other = pe then registersWithFloat else state.peRegisters other
