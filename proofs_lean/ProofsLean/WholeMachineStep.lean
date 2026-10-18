@@ -1403,7 +1403,7 @@ theorem parsedIntegerMatrixReadLineExpressionReady_alu_of_multiple_destinations_
   constructor
   · intro cycle member
     rcases lowered cycle member with ⟨singleFailed, access, rest, multiple⟩
-    exact Or.inr ⟨singleFailed, access, rest, multiple⟩
+    exact Or.inr (Or.inl ⟨singleFailed, access, rest, multiple⟩)
   · intro cycle member unit
     exact stateForwardingSlots_never_unknown_of_resolved state pe resolved unit cycle
 
