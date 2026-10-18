@@ -5356,6 +5356,72 @@ theorem prepareParsedIntegerMatrixReadLineExpression_matrixRead_never_unknown_of
   | unknown => exact (cyclesKnown result).elim
   | ok prepared => simp [result]
 
+def parsedIntegerMatrixReadLineExpressionReady (files : IntegerRegisterFiles)
+    (oldSlots : ProofsLean.MNCore.Forwarding.Slots) (expression : ParsedExpr)
+    (control : ParsedMaskExecutionControl) (hasSingleLineMask : Bool) : Prop :=
+  match expression.op with
+  | .alu .. =>
+      (∀ cycle, cycle ∈ parsedIntegerALUCycles → ∃ accesses,
+        ParsedExpr.toDirectMaskedIntegerAccessesInLine? expression files.maskRegisters
+          control.directive hasSingleLineMask control.context.group control.context.l2b
+          control.context.l1b control.context.mab control.context.pe cycle
+          control.context.bar0 control.context.bar1 control.context.tWord = some accesses) ∧
+      (∀ cycle, cycle ∈ parsedIntegerALUCycles → ∀ unit,
+        oldSlots unit cycle ≠ .unknown)
+  | .zero | .immediate .. =>
+      ∀ cycle, cycle ∈ parsedIntegerALUCycles → ∃ targets,
+        ParsedExpr.toDirectMaskedConstantWrites? expression files.maskRegisters
+          control.directive hasSingleLineMask control.context.group control.context.l2b
+          control.context.l1b control.context.mab control.context.pe cycle
+          control.context.bar0 control.context.bar1 control.context.tWord = some targets
+  | .matrixRead .. =>
+      ∀ cycle, cycle ∈ parsedMatrixReadCycles → ∃ accesses,
+        ParsedExpr.toDirectMatrixReadAccesses? expression files.maskRegisters
+          control.directive hasSingleLineMask { control.context with cycle := cycle } =
+            some accesses
+  | .wait _ | .noforward => True
+  | _ => False
+
+theorem prepareParsedIntegerMatrixReadLineExpression_never_unknown_of_ready
+    (files : IntegerRegisterFiles) (oldSlots nextSlots : ProofsLean.MNCore.Forwarding.Slots)
+    (store : ParsedMatrixReadStore) (expression : ParsedExpr)
+    (control : ParsedMaskExecutionControl) (hasSingleLineMask noForward reduced : Bool)
+    (ready : parsedIntegerMatrixReadLineExpressionReady files oldSlots expression control
+      hasSingleLineMask) :
+    prepareParsedIntegerMatrixReadLineExpression files oldSlots nextSlots store expression
+      control hasSingleLineMask noForward reduced ≠ .unknown := by
+  cases operation : expression.op with
+  | alu name precision unsigned arg =>
+      simp only [parsedIntegerMatrixReadLineExpressionReady, operation] at ready
+      exact prepareParsedIntegerMatrixReadLineExpression_alu_never_unknown_of_lowered files
+        oldSlots nextSlots store expression control hasSingleLineMask noForward reduced
+        ⟨name, precision, unsigned, arg, operation⟩ ready.1 ready.2
+  | zero =>
+      simp only [parsedIntegerMatrixReadLineExpressionReady, operation] at ready
+      exact prepareParsedIntegerMatrixReadLineExpression_constant_never_unknown_of_lowered
+        files oldSlots nextSlots store expression control hasSingleLineMask noForward reduced
+        (Or.inl operation) ready
+  | immediate value unsigned =>
+      simp only [parsedIntegerMatrixReadLineExpressionReady, operation] at ready
+      exact prepareParsedIntegerMatrixReadLineExpression_constant_never_unknown_of_lowered
+        files oldSlots nextSlots store expression control hasSingleLineMask noForward reduced
+        (Or.inr ⟨value, unsigned, operation⟩) ready
+  | matrixRead precision =>
+      simp only [parsedIntegerMatrixReadLineExpressionReady, operation] at ready
+      exact prepareParsedIntegerMatrixReadLineExpression_matrixRead_never_unknown_of_lowered
+        files oldSlots nextSlots store expression control hasSingleLineMask noForward reduced
+        ⟨precision, operation⟩ ready
+  | wait tag => simp [prepareParsedIntegerMatrixReadLineExpression, operation]
+  | noforward => simp [prepareParsedIntegerMatrixReadLineExpression, operation]
+  | mau precision matrix kind half round =>
+      simp only [parsedIntegerMatrixReadLineExpressionReady, operation] at ready
+  | matrixWrite precision =>
+      simp only [parsedIntegerMatrixReadLineExpressionReady, operation] at ready
+  | l1bm op =>
+      simp only [parsedIntegerMatrixReadLineExpressionReady, operation] at ready
+  | l2bm op =>
+      simp only [parsedIntegerMatrixReadLineExpressionReady, operation] at ready
+
 def prepareParsedIntegerMatrixReadLineExpressions (files : IntegerRegisterFiles)
     (oldSlots : ProofsLean.MNCore.Forwarding.Slots) (store : ParsedMatrixReadStore)
     (control : ParsedMaskExecutionControl) (hasSingleLineMask noForward reduced : Bool) :
@@ -5463,6 +5529,23 @@ theorem parsedIntegerMatrixReadLineFourCycleStep_never_unknown
       exact (prepareParsedIntegerMatrixReadLineCycles_never_unknown files slots store
         expressions control reduced known prepared).elim
   | ok result => simp [prepared]
+
+theorem parsedIntegerMatrixReadLineFourCycleStep_never_unknown_of_ready
+    (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (store : ParsedMatrixReadStore) (expressions : List ParsedExpr)
+    (control : ParsedMaskExecutionControl) (reduced : Bool)
+    (ready : ∀ expression, expression ∈ expressions →
+      parsedIntegerMatrixReadLineExpressionReady files slots expression control
+        (expressions.any parsedExprHasSingleLineWriteMask)) :
+    parsedIntegerMatrixReadLineFourCycleStep files slots store expressions control reduced ≠
+      .unknown := by
+  apply parsedIntegerMatrixReadLineFourCycleStep_never_unknown
+  intro expression member outputSlots
+  exact prepareParsedIntegerMatrixReadLineExpression_never_unknown_of_ready files slots
+    outputSlots store expression control (expressions.any parsedExprHasSingleLineWriteMask)
+    (expressions.any fun expression =>
+      match expression.op with | .noforward => true | _ => false) reduced
+    (ready expression member)
 
 theorem parsedIntegerALUCycles_complete :
     parsedIntegerALUCycles = [0, 1, 2, 3] := rfl
