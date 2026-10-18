@@ -1954,7 +1954,7 @@
           "helper": "ProofsLean.MNCore.writeParsedMatrixMAUDestinationsAtPE",
           "theorem": "ProofsLean.MNCore.writeParsedMatrixMAUDestinationsAtPE_never_unknown",
           "scope": "For each kind, successful memory/forward lowering across all four MAB cycles plus forwardingSourceResolved implies the complete ordered four-cycle/four-PE destination write executor cannot return .unknown. fma requires both vector and accumulator lowering at every cycle.",
-          "remaining": "Derive MAB transition knownness from source lowering for all coordinates and intermediate states, then connect through producer poison propagation and issue-line composition.",
+          "remaining": "Establish parser-to-lowering premises for all participating coordinates, then connect through producer filtering/poison propagation and whole instruction-line transitions.",
           "ordered_cycle_pe_executor": "ProofsLean.MNCore.executeParsedMatrixMAUWriteCycles",
           "per_cycle_theorem": "ProofsLean.MNCore.executeParsedMatrixMAUPEWritesAtCycle_never_unknown",
           "all_cycles_theorem": "ProofsLean.MNCore.executeParsedMatrixMAUWriteCycles_never_unknown",
@@ -1967,7 +1967,14 @@
           ],
           "transition_theorem": "ProofsLean.MNCore.executeParsedMatrixMAUTransitionAtMAB_known_never_unknown",
           "mab_sequence_theorem": "ProofsLean.MNCore.executeParsedMatrixMAUAtMABs_known_never_unknown",
-          "mab_sequence_scope": "A sequence of MAB transitions is unknown-free when each transition is unknown-free for every intermediate committed state; the state-dependent premise explicitly follows the state threaded through the sequence."
+          "mab_sequence_scope": "A sequence of MAB transitions is unknown-free when each transition is unknown-free for every intermediate committed state; the state-dependent premise explicitly follows the state threaded through the sequence.",
+          "all_mab_sequence_source_theorems": [
+            "ProofsLean.MNCore.executeParsedMatrixMAUAtMABs_mul_lowered_never_unknown",
+            "ProofsLean.MNCore.executeParsedMatrixMAUAtMABs_add_lowered_never_unknown",
+            "ProofsLean.MNCore.executeParsedMatrixMAUAtMABs_passa_lowered_never_unknown",
+            "ProofsLean.MNCore.executeParsedMatrixMAUAtMABs_fma_lowered_never_unknown"
+          ],
+          "all_mab_sequence_scope": "For any coordinate list, if each coordinate and every cycle has successful vector lowering (and fma accumulator lowering) under one resolved readState, the entire state-threaded MAB sequence cannot return .unknown. Read lowering is based on readState while commit state is threaded separately."
         }
       }
     },

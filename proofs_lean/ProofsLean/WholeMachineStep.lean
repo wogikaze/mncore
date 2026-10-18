@@ -5620,6 +5620,101 @@ theorem executeParsedMatrixMAUAtMABs_known_never_unknown
           simpa [executeParsedMatrixMAUAtMABs, transition] using
             ih next (fun state item member => tailKnown state item member)
 
+theorem executeParsedMatrixMAUAtMABs_mul_lowered_never_unknown
+    (readState currentState : State) (coordinates : List MABCoordinate)
+    (precision : ParsedPrecision) (half : Option Char) (round : Bool)
+    (sideY : Bool) (width : Fin 5) (source : ParsedOperand)
+    (noForward hasSingleLineMask : Bool) (format : RRN.FloatPrecision)
+    (formatLowered : parsedMatrixMAUFloatFormat precision = some format)
+    (lowered : ∀ coordinate, coordinate ∈ coordinates → ∀ cycle : Fin 4,
+      parsedFloatMAUSourceLoweredAtMAB readState coordinate source cycle)
+    (resolved : forwardingSourceResolved readState) :
+    executeParsedMatrixMAUAtMABs readState currentState
+      { op := .mau precision true .mul half round
+        sources := [.matrix sideY width none, source]
+        destinations := []
+        flush := none
+        text := "" }
+      coordinates noForward hasSingleLineMask ≠ .unknown := by
+  apply executeParsedMatrixMAUAtMABs_known_never_unknown
+  intro intermediate coordinate member
+  apply executeParsedMatrixMAUTransitionAtMAB_known_never_unknown
+  exact executeParsedMatrixMAUPEWritesAtMAB_mul_lowered_never_unknown
+    readState intermediate coordinate precision half round sideY width source
+    hasSingleLineMask format formatLowered (lowered coordinate member) resolved
+
+theorem executeParsedMatrixMAUAtMABs_add_lowered_never_unknown
+    (readState currentState : State) (coordinates : List MABCoordinate)
+    (precision : ParsedPrecision) (half : Option Char) (round : Bool)
+    (sideY : Bool) (width : Fin 5) (source : ParsedOperand)
+    (noForward hasSingleLineMask : Bool) (format : RRN.FloatPrecision)
+    (formatLowered : parsedMatrixMAUFloatFormat precision = some format)
+    (lowered : ∀ coordinate, coordinate ∈ coordinates → ∀ cycle : Fin 4,
+      parsedFloatMAUSourceLoweredAtMAB readState coordinate source cycle)
+    (resolved : forwardingSourceResolved readState) :
+    executeParsedMatrixMAUAtMABs readState currentState
+      { op := .mau precision true .add half round
+        sources := [.matrix sideY width none, source]
+        destinations := []
+        flush := none
+        text := "" }
+      coordinates noForward hasSingleLineMask ≠ .unknown := by
+  apply executeParsedMatrixMAUAtMABs_known_never_unknown
+  intro intermediate coordinate member
+  apply executeParsedMatrixMAUTransitionAtMAB_known_never_unknown
+  exact executeParsedMatrixMAUPEWritesAtMAB_add_lowered_never_unknown
+    readState intermediate coordinate precision half round sideY width source
+    hasSingleLineMask format formatLowered (lowered coordinate member) resolved
+
+theorem executeParsedMatrixMAUAtMABs_passa_lowered_never_unknown
+    (readState currentState : State) (coordinates : List MABCoordinate)
+    (precision : ParsedPrecision) (half : Option Char) (round : Bool)
+    (sideY : Bool) (width : Fin 5) (source : ParsedOperand)
+    (noForward hasSingleLineMask : Bool) (format : RRN.FloatPrecision)
+    (formatLowered : parsedMatrixMAUFloatFormat precision = some format)
+    (lowered : ∀ coordinate, coordinate ∈ coordinates → ∀ cycle : Fin 4,
+      parsedFloatMAUSourceLoweredAtMAB readState coordinate source cycle)
+    (resolved : forwardingSourceResolved readState) :
+    executeParsedMatrixMAUAtMABs readState currentState
+      { op := .mau precision true .passa half round
+        sources := [.matrix sideY width none, source]
+        destinations := []
+        flush := none
+        text := "" }
+      coordinates noForward hasSingleLineMask ≠ .unknown := by
+  apply executeParsedMatrixMAUAtMABs_known_never_unknown
+  intro intermediate coordinate member
+  apply executeParsedMatrixMAUTransitionAtMAB_known_never_unknown
+  exact executeParsedMatrixMAUPEWritesAtMAB_passa_lowered_never_unknown
+    readState intermediate coordinate precision half round sideY width source
+    hasSingleLineMask format formatLowered (lowered coordinate member) resolved
+
+theorem executeParsedMatrixMAUAtMABs_fma_lowered_never_unknown
+    (readState currentState : State) (coordinates : List MABCoordinate)
+    (precision : ParsedPrecision) (half : Option Char) (round : Bool)
+    (sideY : Bool) (width : Fin 5) (vectorSource accumulatorSource : ParsedOperand)
+    (noForward hasSingleLineMask : Bool) (format : RRN.FloatPrecision)
+    (formatLowered : parsedMatrixMAUFloatFormat precision = some format)
+    (vectorLowered : ∀ coordinate, coordinate ∈ coordinates → ∀ cycle : Fin 4,
+      parsedFloatMAUSourceLoweredAtMAB readState coordinate vectorSource cycle)
+    (accumulatorLowered : ∀ coordinate, coordinate ∈ coordinates → ∀ cycle : Fin 4,
+      parsedFloatMAUSourceLoweredAtMAB readState coordinate accumulatorSource cycle)
+    (resolved : forwardingSourceResolved readState) :
+    executeParsedMatrixMAUAtMABs readState currentState
+      { op := .mau precision true .fma half round
+        sources := [.matrix sideY width none, vectorSource, accumulatorSource]
+        destinations := []
+        flush := none
+        text := "" }
+      coordinates noForward hasSingleLineMask ≠ .unknown := by
+  apply executeParsedMatrixMAUAtMABs_known_never_unknown
+  intro intermediate coordinate member
+  apply executeParsedMatrixMAUTransitionAtMAB_known_never_unknown
+  exact executeParsedMatrixMAUPEWritesAtMAB_fma_lowered_never_unknown
+    readState intermediate coordinate precision half round sideY width vectorSource
+    accumulatorSource hasSingleLineMask format formatLowered
+    (vectorLowered coordinate member) (accumulatorLowered coordinate member) resolved
+
 theorem executeParsedMatrixMAUAtMABs_preserves_matrix_registers
     (readState currentState next : State) (expression : ParsedExpr)
     (coordinates : List MABCoordinate) (noForward hasSingleLineMask : Bool)
