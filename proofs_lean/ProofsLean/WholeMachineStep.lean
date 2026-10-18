@@ -5015,6 +5015,15 @@ def updateSupportedPELineForwarding (old prepared : Forwarding.Slots)
   | .unknown => .unknown
   | .ok advanced => .ok advanced
 
+theorem updateSupportedPELineForwarding_never_unknown
+    (old prepared : Forwarding.Slots)
+    (noForward hasALUProducer hasMAUProducer hasMatrixReadProducer : Bool) :
+    updateSupportedPELineForwarding old prepared noForward hasALUProducer
+      hasMAUProducer hasMatrixReadProducer ≠ .unknown := by
+  cases noForward <;> cases hasALUProducer <;> cases hasMAUProducer <;>
+    cases hasMatrixReadProducer <;>
+    simp [updateSupportedPELineForwarding, Forwarding.advanceReference]
+
 theorem updateSupportedPELineForwarding_absent_l1ToPE_preserves
     (old prepared : Forwarding.Slots) :
     updateSupportedPELineForwarding old prepared false false false false =

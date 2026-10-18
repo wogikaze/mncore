@@ -2015,7 +2015,7 @@
         "mau_and_matrix_write_scope": "The MAU producer/write stage composes without unknown when the producer is known and forwarding sources are resolved, including nonempty matrix-write producer lists. The empty-filter theorem remains a weaker special case.",
         "whole_line_no_unknown_composition": {
           "theorem": "ProofsLean.MNCore.executeIntegerProducerInstructionLine_pe_never_unknown_of_stages",
-          "behavior": "For a top-level accepted PE instruction line with supported producers, no unsupported Rust ALU, and completed waits, the ordered whole-line transition cannot return .unknown when each selected producer stage is itself known for every possible preceding state. The shared-block stage condition is derived directly from forwardingSourceResolved using the existing per-expression and source-order composition proofs. The 4096-PE prefix is itself composed from a per-PE unknown-free premise using source-order induction. The float-ReLU issue stage is reduced from a whole-stage condition to a per-selected-expression, per-PE, per-intermediate-state condition and composed over 4096 PEs. The MSL/MSR stage is now reduced to per-selected-expression/per-PE/per-intermediate-state conditions and composed across its 4096-PE traversal. The block-float stage is reduced to per-selected-expression/per-MAB/per-intermediate-state conditions and composed over the complete MAB coordinate list. The matrix-MAU/write command stage now derives its matrix-write/MAB traversal premise from resolved forwarding and retains only matrix-MAU producer knownness as an explicit stage condition. The matrix-MAU producer premise is further reduced to each selected expression’s transition at each MAB and every intermediate state; the MAB traversal and producer filter are composed using existing generic theorems. The matrix-MAU MAB condition now sits at the cycle calculation boundary; the destination/forwarding write loop and the MAB state commit are discharged by composition. The remaining matrix-MAU cycle-calculation premise is characterized by one of mul/add/passa/fma, a recognized precision format, and lowered vector sources (plus the accumulator source for fma); resolved forwarding then proves the calculation known.",
+          "behavior": "For a top-level accepted PE instruction line with supported producers, no unsupported Rust ALU, and completed waits, the ordered whole-line transition cannot return .unknown when each selected producer stage is itself known for every possible preceding state. The shared-block stage condition is derived directly from forwardingSourceResolved using the existing per-expression and source-order composition proofs. The 4096-PE prefix is itself composed from a per-PE unknown-free premise using source-order induction. The float-ReLU issue stage is reduced from a whole-stage condition to a per-selected-expression, per-PE, per-intermediate-state condition and composed over 4096 PEs. The MSL/MSR stage is now reduced to per-selected-expression/per-PE/per-intermediate-state conditions and composed across its 4096-PE traversal. The block-float stage is reduced to per-selected-expression/per-MAB/per-intermediate-state conditions and composed over the complete MAB coordinate list. The matrix-MAU/write command stage now derives its matrix-write/MAB traversal premise from resolved forwarding and retains only matrix-MAU producer knownness as an explicit stage condition. The matrix-MAU producer premise is further reduced to each selected expression’s transition at each MAB and every intermediate state; the MAB traversal and producer filter are composed using existing generic theorems. The matrix-MAU MAB condition now sits at the cycle calculation boundary; the destination/forwarding write loop and the MAB state commit are discharged by composition. The remaining matrix-MAU cycle-calculation premise is characterized by one of mul/add/passa/fma, a recognized precision format, and lowered vector sources (plus the accumulator source for fma); resolved forwarding then proves the calculation known. The per-PE forwarding update is independently proved unknown-free because it only supplies supported issue summaries to the reference update function.",
           "composed_stages": [
             "PE producers",
             "MSL/MSR",
@@ -2025,9 +2025,11 @@
             "shared-block producers",
             "L1-to-PE producers"
           ],
-          "scope_limit": "The matrix-MAU calculation condition is now an explicit format/source-lowering predicate per selected expression/MAB/cycle plus resolved forwarding. Other listed producer-stage premises remain to be reduced; full Rust/Lean equivalence and other line forms remain outstanding.",
+          "scope_limit": "The matrix-MAU calculation condition is now an explicit format/source-lowering predicate per selected expression/MAB/cycle plus resolved forwarding. Other listed producer-stage premises remain to be reduced; full Rust/Lean equivalence and other line forms remain outstanding. Within the integer per-PE step, parsed integer/matrix-read preparation and float-MAU cycles still require separate unknown-free premises.",
           "derived_premises": [
-            "ProofsLean.MNCore.executeParsedSharedBlockProducers_resolved_never_unknown"
+            "ProofsLean.MNCore.executeParsedSharedBlockProducers_resolved_never_unknown",
+            "ProofsLean.MNCore.executeParsedMatrixMAUAndWrites_resolved_never_unknown",
+            "ProofsLean.MNCore.updateSupportedPELineForwarding_never_unknown"
           ],
           "theorems": [
             "ProofsLean.MNCore.executeIntegerProducerLineAtPEs_never_unknown",
@@ -2040,7 +2042,8 @@
             "ProofsLean.MNCore.executeParsedBlockFloatProducer_at_mab_never_unknown",
             "ProofsLean.MNCore.executeParsedMatrixMAUAndWrites_resolved_never_unknown",
             "ProofsLean.MNCore.parsedMatrixMAUCalculationLoweredAtMAB_is_matrix_op",
-            "ProofsLean.MNCore.executeParsedMatrixMAUCalculationAtMAB_lowered_never_unknown"
+            "ProofsLean.MNCore.executeParsedMatrixMAUCalculationAtMAB_lowered_never_unknown",
+            "ProofsLean.MNCore.updateSupportedPELineForwarding_never_unknown"
           ]
         }
       }
