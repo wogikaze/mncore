@@ -8339,6 +8339,21 @@ theorem executeIntegerProducerInstructionLine_mv_transfer_success
   simp [executeIntegerProducerInstructionLine, InstructionLine.toParsed,
     accepted, notNop, executed]
 
+theorem executeIntegerProducerInstructionLine_mv_never_unknown
+    (transfer : NormalizedMv) (state : State)
+    (accepted : checkParsedTopLine (.mv transfer.toParsed) = true) :
+    executeIntegerProducerInstructionLine (.mv transfer) state ≠ .unknown := by
+  by_cases isNop : transfer.kind == .nop
+  · simp [executeIntegerProducerInstructionLine, InstructionLine.toParsed,
+      accepted, isNop]
+  · cases memoryResult : executeParsedMvMemory state transfer.toParsed with
+    | failure => simp [executeIntegerProducerInstructionLine,
+        InstructionLine.toParsed, accepted, isNop, memoryResult]
+    | ok next => simp [executeIntegerProducerInstructionLine,
+        InstructionLine.toParsed, accepted, isNop, memoryResult]
+    | unknown =>
+        exact (executeParsedMvMemory_never_unknown state transfer.toParsed memoryResult).elim
+
 theorem executeIntegerProducerInstructionLine_pe_success
     (normalizedExpressions : List NormalizedExpr)
     (state nextPEs nextMsl nextRelu nextBlockFloat next nextL1 : State)

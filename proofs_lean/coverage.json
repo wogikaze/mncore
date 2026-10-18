@@ -2192,9 +2192,10 @@
       "area": "mv_dram_pdm_all_transfer_and_reduction_modes",
       "status": "partial_whole_machine_transition",
       "unknown_result_scope": {
-        "theorem": "ProofsLean.MNCore.executeParsedMvMemory_never_unknown",
-        "behavior": "The parsed MV memory-staging transition returns failure when pending writes cannot be constructed and otherwise returns ok; this subtransition cannot return unknown.",
-        "scope_limit": "This covers only pending-write construction and staging. It does not prove full MV command conformance, scheduling/timing, or whole-line unknown-freedom."
+        "theorem": "ProofsLean.MNCore.executeIntegerProducerInstructionLine_mv_never_unknown",
+        "supporting_theorem": "ProofsLean.MNCore.executeParsedMvMemory_never_unknown",
+        "behavior": "For an accepted normalized MV top-level line, both the MV no-op form and ordinary pending-transfer form cannot return unknown. Pending-write construction failure remains a known failure.",
+        "scope_limit": "This proves unknown-freedom for the normalized MV line transition only. It does not prove Rust command conformance, scheduling/timing, or whole-program unknown-freedom."
       },
       "completion_scheduling": {
         "source": "ProofsLean/WholeMachineStep.lean",
