@@ -2153,6 +2153,42 @@ theorem parsedBlockFloatMab_double_shares_exponent_across_pes :
         else ⟨0x3ff0000000000000, 0⟩) := by
   decide
 
+structure ParsedBlockFloatAccesses where
+  precision : ParsedPrecision
+  keep : Nat
+  extended : Bool
+  source : ParsedOperand
+  destination : ParsedOperand
+
+/-- Syntax lowering for the single-source block-float ALU forms accepted by
+the assembler: `bfn` on D/F/G/H and `bfe` on H. -/
+def lowerParsedBlockFloat? (expression : ParsedExpr) : Option ParsedBlockFloatAccesses := do
+  let (precision, keep, extended) ← match expression.op with
+    | .alu .bfn (some precision) _ arg => do
+        guard (precision == .d || precision == .f || precision == .g || precision == .h)
+        let keep := if precision == .g then 18 else if precision == .h then arg.map Fin.val |>.getD 9
+          else (parsedFloatFormat precision).mantissaBits
+        some (precision, keep, false)
+    | .alu .bfe (some .h) _ arg => some (.h, (arg.map Fin.val).getD 9, true)
+    | _ => none
+  match expression.sources, expression.destinations with
+  | [source], [destination] => do
+      match destination with
+      | .mem .. | .bar .. | .omr .. | .nowrite =>
+          some ⟨precision, keep, extended, source, destination⟩
+      | _ => none
+  | _, _ => none
+
+theorem lowerParsedBlockFloat_bfn_g_uses_pseudo_single_width (source destination : ParsedOperand) :
+    lowerParsedBlockFloat?
+      { op := .alu .bfn (some .g) false none, sources := [source],
+        destinations := [destination], flush := none, text := "gbfn" } =
+      (match destination with
+      | .mem .. | .bar .. | .omr .. | .nowrite =>
+          some ⟨.g, 18, false, source, destination⟩
+      | _ => none) := by
+  cases destination <;> rfl
+
 theorem parsedFloatFloorLane_rounds_negative_fraction_down :
     parsedFloatFloorLane .f 0xbfc00000 = 0xc0000000 := by
   decide
