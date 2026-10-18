@@ -1635,6 +1635,19 @@ def rawL1MwriteSource? (source : ParsedOperand) (context : ParsedIntegerContext)
   ParsedOperand.toParsedIntegerInput? rawSource .long context.group context.l2b
     context.l1b context.mab context.pe context.cycle context.bar0 context.bar1 context.tWord
 
+def rawL1MwriteSourceResult (source : ParsedOperand) (context : ParsedIntegerContext) :
+    ProofsLean.StepResult ParsedIntegerInput :=
+  match rawL1MwriteSource? source context with
+  | some input => .ok input
+  | none => match source with
+      | .mem .. | .forward .. => .unknown
+      | _ => .failure
+
+theorem rawL1Mwrite_fixed_source_is_failure
+    (fixed : ParsedFixed) (context : ParsedIntegerContext) :
+    rawL1MwriteSourceResult (.fixed fixed) context = .failure := by
+  rfl
+
 def readRawL1MwriteBus (state : State) (source : ParsedOperand)
     (pe : PEId) (cycle : Fin 4) : ProofsLean.StepResult IntegerALU.Bus :=
   let oldContext := state.peContext pe
@@ -1644,9 +1657,10 @@ def readRawL1MwriteBus (state : State) (source : ParsedOperand)
     bar0 := oldContext.bar0
     bar1 := oldContext.bar1
     tWord := oldContext.tWord }
-  match rawL1MwriteSource? source context with
-  | none => .failure
-  | some input =>
+  match rawL1MwriteSourceResult source context with
+  | .failure => .failure
+  | .unknown => .unknown
+  | .ok input =>
       match input with
       | .forward kind _ =>
           if !state.forwardingValid pe (ParsedIntegerInput.forwardUnit kind) cycle then
