@@ -1973,7 +1973,9 @@
         "gather_direct_memory_unknown_free_theorem": "ProofsLean.MNCore.executeParsedL1GatherAtAllBanks_direct_memory_never_unknown",
         "gather_direct_memory_unknown_free_scope": "For a successfully lowered gather with direct PE-memory source, MAB/PE reads compose across all four cycles and all 64 L1BM banks; the complete producer transition cannot return unknown.",
         "gather_resolved_forward_unknown_free_theorem": "ProofsLean.MNCore.executeParsedL1GatherAtAllBanks_resolved_forward_never_unknown",
-        "gather_resolved_forward_unknown_free_scope": "A successfully lowered gather with a forward source cannot return unknown across all MAB/PE reads, cycles, and banks when the read state satisfies forwardingSourceResolved. A valid unresolved forwarding slot remains an unknown-producing case; Rust command conformance remains open."
+        "gather_resolved_forward_unknown_free_scope": "A successfully lowered gather with a forward source cannot return unknown across all MAB/PE reads, cycles, and banks when the read state satisfies forwardingSourceResolved. A valid unresolved forwarding slot remains an unknown-producing case; Rust command conformance remains open.",
+        "gather_arbitrary_source_unknown_free_theorem": "ProofsLean.MNCore.executeParsedL1GatherAtAllBanks_resolved_source_never_unknown",
+        "gather_arbitrary_source_unknown_free_scope": "For any ParsedOperand source, successful gather lowering and forwardingSourceResolved on the read state imply that the full producer cannot return unknown. Unsupported source operand forms become known failure during raw source lowering."
       },
       "pe_to_l1bm_known_lowering_failures": {
         "behavior": "Unsupported mwrite/gather/reduce operand shapes and unsupported L1BM reduction operations return failure; they no longer propagate unknown from Option-based lowering.",
@@ -1992,7 +1994,9 @@
         "reduce_direct_memory_unknown_free_theorem": "ProofsLean.MNCore.executeParsedL1ReduceAtAllBanks_direct_memory_never_unknown",
         "reduce_direct_memory_unknown_free_scope": "For successfully lowered reduce/reduce4 with direct PE-memory source, the shared gather read and reduction write generation compose across all four cycles and 64 banks. Unsupported reduction writes remain known failure; Rust command conformance and result-layout differentials remain open.",
         "reduce_resolved_forward_unknown_free_theorem": "ProofsLean.MNCore.executeParsedL1ReduceAtAllBanks_resolved_forward_never_unknown",
-        "reduce_resolved_forward_unknown_free_scope": "For successfully lowered reduce/reduce4 with a forward source, the complete transition cannot return unknown when the read state satisfies forwardingSourceResolved. Unresolved valid slots remain unknown-producing, and Rust result-layout conformance remains open."
+        "reduce_resolved_forward_unknown_free_scope": "For successfully lowered reduce/reduce4 with a forward source, the complete transition cannot return unknown when the read state satisfies forwardingSourceResolved. Unresolved valid slots remain unknown-producing, and Rust result-layout conformance remains open.",
+        "reduce_arbitrary_source_unknown_free_theorem": "ProofsLean.MNCore.executeParsedL1ReduceAtAllBanks_resolved_source_never_unknown",
+        "reduce_arbitrary_source_unknown_free_scope": "For any ParsedOperand source, successful reduce/reduce4 lowering and forwardingSourceResolved on the read state imply that the full producer cannot return unknown. Unsupported source forms and unsupported reduction variants remain known failure."
       }
     },
     {
