@@ -777,9 +777,8 @@ noncomputable def executeIntegerProducerInstructionLine
               | .ok next =>
                   .ok { next with hazardClock := next.hazardClock + InstructionLine.cost line }
         else .unknown
-    | .nop count none =>
+    | .nop count _ =>
         .ok { state with hazardClock := state.hazardClock + count.val }
-    | .nop _ (some _) => .unknown
     | .mv transfer =>
         if transfer.kind == .nop then
           .ok { state with hazardClock := state.hazardClock + 1 }
@@ -804,10 +803,10 @@ theorem integerProducerMachine_issue_failure (line : InstructionLine)
     integerProducerMachine.step line state = .failure := by
   simp [integerProducerMachine, executeIntegerProducerInstructionLine, rejected]
 
-theorem executeIntegerProducerInstructionLine_nop_without_wait
-    (count : {n : Nat // 0 < n}) (state : State)
-    (accepted : checkParsedTopLine (.nop count.val none) = true) :
-    executeIntegerProducerInstructionLine (.nop count none) state =
+theorem executeIntegerProducerInstructionLine_nop
+    (count : {n : Nat // 0 < n}) (wait : Option (Fin 256)) (state : State)
+    (accepted : checkParsedTopLine (.nop count.val wait) = true) :
+    executeIntegerProducerInstructionLine (.nop count wait) state =
       .ok { state with hazardClock := state.hazardClock + count.val } := by
   simp [executeIntegerProducerInstructionLine, InstructionLine.toParsed,
     accepted, InstructionLine.cost]
