@@ -3536,6 +3536,54 @@ def executeParsedL1PEToL1Expression (readState currentState : State)
       executeParsedL1ReduceAtAllBanks readState currentState expression updateTurnaround
   | _ => .ok currentState
 
+theorem executeParsedL1PEToL1Expression_resolved_never_unknown
+    (readState currentState : State) (expression : ParsedExpr)
+    (updateTurnaround : Bool) (resolved : forwardingSourceResolved readState) :
+    executeParsedL1PEToL1Expression readState currentState expression updateTurnaround ≠
+      .unknown := by
+  cases hOp : expression.op with
+  | l1bm operation =>
+      cases operation with
+      | mwrite mab =>
+          cases lowered : lowerParsedL1Mwrite? expression with
+          | none => simp [executeParsedL1PEToL1Expression, hOp,
+              executeParsedL1MwriteAtAllBanks, lowered]
+          | some access =>
+              simp only [executeParsedL1PEToL1Expression, hOp]
+              simpa only [executeParsedL1MwriteAtAllBanks] using
+                executeParsedL1MwriteAtAllBanks_resolved_source_never_unknown
+                  readState currentState expression updateTurnaround access lowered resolved
+      | m4write mab =>
+          cases lowered : lowerParsedL1Mwrite? expression with
+          | none => simp [executeParsedL1PEToL1Expression, hOp,
+              executeParsedL1MwriteAtAllBanks, lowered]
+          | some access =>
+              simp only [executeParsedL1PEToL1Expression, hOp]
+              simpa only [executeParsedL1MwriteAtAllBanks] using
+                executeParsedL1MwriteAtAllBanks_resolved_source_never_unknown
+                  readState currentState expression updateTurnaround access lowered resolved
+      | gather mabDiff =>
+          cases lowered : lowerParsedL1Gather? expression with
+          | none => simp [executeParsedL1PEToL1Expression, hOp,
+              executeParsedL1GatherAtAllBanks, lowered]
+          | some access =>
+              simp only [executeParsedL1PEToL1Expression, hOp]
+              simpa only [executeParsedL1GatherAtAllBanks] using
+                executeParsedL1GatherAtAllBanks_resolved_source_never_unknown
+                  readState currentState expression updateTurnaround access lowered resolved
+      | reduce rrn round | reduce4 rrn round =>
+          cases lowered : lowerParsedL1Reduce? expression with
+          | none => simp [executeParsedL1PEToL1Expression, hOp,
+              executeParsedL1ReduceAtAllBanks, lowered]
+          | some access =>
+              simp only [executeParsedL1PEToL1Expression, hOp]
+              simpa only [executeParsedL1ReduceAtAllBanks] using
+                executeParsedL1ReduceAtAllBanks_resolved_source_never_unknown
+                  readState currentState expression updateTurnaround access lowered resolved
+      | pbcast | mbcast | m4bcast | distrib _ =>
+          simp [executeParsedL1PEToL1Expression, hOp]
+  | _ => simp [executeParsedL1PEToL1Expression, hOp]
+
 def executeParsedL1PEToL1ProducerList (readState : State) (updateTurnaround : Bool)
     : List ParsedExpr → State → ProofsLean.StepResult State
   | [], state => .ok state
