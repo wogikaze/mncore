@@ -1700,7 +1700,7 @@
     },
     {
       "area": "matrix_registers_and_matrix_operations",
-      "status": "unimplemented"
+      "status": "partial_datapath_only"
     },
     {
       "area": "pe_rotations_and_coordinate_operands",
