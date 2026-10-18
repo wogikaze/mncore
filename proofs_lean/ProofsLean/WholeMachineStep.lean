@@ -6772,6 +6772,26 @@ def executeIntegerProducerLineAtPEs (expressions : List ParsedExpr)
       | .unknown => .unknown
       | .ok next => executeIntegerProducerLineAtPEs expressions rest next
 
+theorem executeIntegerProducerLineAtPEs_never_unknown
+    (expressions : List ParsedExpr) (pes : List PEId) (state : State)
+    (known : ∀ pe, pe ∈ pes → ∀ currentState,
+      executeIntegerProducerLineAtPE expressions currentState pe ≠ .unknown) :
+    executeIntegerProducerLineAtPEs expressions pes state ≠ .unknown := by
+  induction pes generalizing state with
+  | nil => simp [executeIntegerProducerLineAtPEs]
+  | cons pe rest ih =>
+      have headKnown := known pe (by simp) state
+      have restKnown : ∀ item, item ∈ rest → ∀ currentState,
+          executeIntegerProducerLineAtPE expressions currentState item ≠ .unknown := by
+        intro item member currentState
+        exact known item (List.mem_cons_of_mem _ member) currentState
+      cases result : executeIntegerProducerLineAtPE expressions state pe with
+      | failure => simp [executeIntegerProducerLineAtPEs, result]
+      | unknown => exact (headKnown result).elim
+      | ok nextState =>
+          simp only [executeIntegerProducerLineAtPEs, result]
+          exact ih nextState restKnown
+
 def executeParsedMvMemory (state : State) (transfer : ParsedMv) :
     ProofsLean.StepResult State :=
   match MVSemantics.parsedMvPendingWritesWithDAR? state.blockMemory state.dar transfer with
@@ -8149,13 +8169,13 @@ theorem executeIntegerProducerInstructionLine_pe_never_unknown_of_stages
     (supported : expressions.all parsedExprIsSupportedPELineProducer = true)
     (noUnsupportedRustAlu : expressions.any parsedExprIsUnsupportedRustAlu = false)
     (waitsComplete : expressions.any (parsedExprWaitPending state) = false)
-    (peKnown : executeIntegerProducerLineAtPEs
-      (expressions.filter (fun expression =>
+    (peKnown : ∀ pe, pe ∈ List.finRange 4096 → ∀ peState,
+      executeIntegerProducerLineAtPE (expressions.filter (fun expression =>
         !parsedExprIsL2BMProducer expression && !parsedExprIsMslMsrProducer expression &&
           !parsedExprIsMatrixMAUProducer expression &&
           !parsedExprIsBlockFloatProducer expression &&
           !parsedExprIsFloatReluProducer expression))
-      (List.finRange 4096) state ≠ .unknown)
+      peState pe ≠ .unknown)
     (mslKnown : ∀ nextPEs, executeParsedMslMsrProducers state nextPEs expressions
       noForward hasSingleLineMask ≠ .unknown)
     (reluKnown : ∀ nextMsl, executeParsedFloatReluProducers state nextMsl expressions
@@ -8177,6 +8197,13 @@ theorem executeIntegerProducerInstructionLine_pe_never_unknown_of_stages
   let expressions := normalizedExpressions.map NormalizedExpr.toParsed
   let noForward := expressions.any parsedExprIsNoForwardProducer
   let hasSingleLineMask := expressions.any parsedExprHasSingleLineWriteMask
+  have peListKnown := executeIntegerProducerLineAtPEs_never_unknown
+    (expressions.filter (fun expression =>
+      !parsedExprIsL2BMProducer expression && !parsedExprIsMslMsrProducer expression &&
+        !parsedExprIsMatrixMAUProducer expression &&
+        !parsedExprIsBlockFloatProducer expression &&
+        !parsedExprIsFloatReluProducer expression))
+    (List.finRange 4096) state peKnown
   simp only [executeIntegerProducerInstructionLine, accepted]
   simp only [waitsComplete, Bool.not_false, ↓reduceIte, noUnsupportedRustAlu, supported,
     Bool.not_true, ↓reduceIte]
@@ -8188,7 +8215,7 @@ theorem executeIntegerProducerInstructionLine_pe_never_unknown_of_stages
           !parsedExprIsFloatReluProducer expression))
       (List.finRange 4096) state with
   | failure => simp_all [expressions, noForward, hasSingleLineMask, List.any_map]
-  | unknown => exact (peKnown peResult).elim
+  | unknown => exact (peListKnown peResult).elim
   | ok nextPEs =>
       cases mslResult : executeParsedMslMsrProducers state nextPEs expressions
           noForward hasSingleLineMask with
