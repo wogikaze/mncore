@@ -239,6 +239,13 @@ def parsedFloatMAUSourceAttrs? (operand : ParsedOperand)
         context.tWord).map (fun input => (input, neg, ext, rnd))
   | _ => none
 
+theorem parsedFloatMAUSourceAttrs?_memory_mask_irrelevant
+    (access : Access) (neg ext rnd : Bool) (mask : Option ParsedMask)
+    (context : ParsedIntegerContext) :
+    parsedFloatMAUSourceAttrs? (.mem access neg ext rnd mask) context =
+      parsedFloatMAUSourceAttrs? (.mem access neg ext rnd none) context := by
+  rfl
+
 def parsedFloatMAUSourceDefinitelyUnsupported (operand : ParsedOperand) : Bool :=
   match operand with
   | .mem .. | .forward .. => false
