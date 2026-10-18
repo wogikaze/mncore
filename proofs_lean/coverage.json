@@ -2025,14 +2025,15 @@
             "shared-block producers",
             "L1-to-PE producers"
           ],
-          "scope_limit": "The matrix-MAU calculation condition is now an explicit format/source-lowering predicate per selected expression/MAB/cycle plus resolved forwarding. A matrix-read expression's four-cycle transition is known when operand lowering and flush selection resolve at each cycle. Composing matrix-read expressions into the integer producer line, integer ALU preparation, float-MAU cycles, full Rust/Lean equivalence, and other line forms remain open.",
+          "scope_limit": "The matrix-MAU calculation condition is now an explicit format/source-lowering predicate per selected expression/MAB/cycle plus resolved forwarding. A matrix-read expression's four-cycle transition is known when operand lowering and flush selection resolve at each cycle. Integer ALU/zero/immediate four-cycle preparation composes from per-cycle knownness; reducing those per-cycle premises to operand lowering, reads, execution requests, and flush resolution remains open. Composing both producer families into the PE line, float-MAU cycles, full Rust/Lean equivalence, and other line forms remain open.",
           "derived_premises": [
             "ProofsLean.MNCore.executeParsedSharedBlockProducers_resolved_never_unknown",
             "ProofsLean.MNCore.executeParsedMatrixMAUAndWrites_resolved_never_unknown",
             "ProofsLean.MNCore.updateSupportedPELineForwarding_never_unknown",
             "ProofsLean.MNCore.PEMemory.prepareParsedMatrixReadTargets_never_unknown",
             "ProofsLean.MNCore.PEMemory.prepareParsedMatrixReadCycle_never_unknown_of_resolved",
-            "ProofsLean.MNCore.PEMemory.prepareParsedMatrixReadCycles_never_unknown"
+            "ProofsLean.MNCore.PEMemory.prepareParsedMatrixReadCycles_never_unknown",
+            "ProofsLean.MNCore.PEMemory.prepareParsedIntegerALUCycles_never_unknown"
           ],
           "theorems": [
             "ProofsLean.MNCore.executeIntegerProducerLineAtPEs_never_unknown",
@@ -2052,7 +2053,10 @@
             "ProofsLean.MNCore.PEMemory.prepareParsedMatrixReadCycles_never_unknown",
             "ProofsLean.MNCore.PEMemory.prepareParsedMatrixReadExprCycles_never_unknown",
             "ProofsLean.MNCore.PEMemory.parsedMatrixReadExprFourCycleStep_never_unknown",
-            "ProofsLean.MNCore.PEMemory.parsedMatrixReadExprFourCycleStep_never_unknown_of_resolved"
+            "ProofsLean.MNCore.PEMemory.parsedMatrixReadExprFourCycleStep_never_unknown_of_resolved",
+            "ProofsLean.MNCore.PEMemory.prepareParsedIntegerALUCycles_never_unknown",
+            "ProofsLean.MNCore.PEMemory.prepareParsedIntegerALUExprCycles_never_unknown",
+            "ProofsLean.MNCore.PEMemory.parsedIntegerALUExprFourCycleStep_never_unknown"
           ]
         }
       }
