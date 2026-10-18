@@ -2002,6 +2002,24 @@ def parsedFloatReluShift (name : ParsedAluName) : Nat :=
   | .relu3 => 3
   | _ => 0
 
+def parsedFloatRsqrtLane (precision : ParsedPrecision) (value : Nat) : Nat := Id.run do
+  let (exponentBits, mantissaBits, bias) := match precision with
+    | .d => (11, 52, 1023)
+    | .f => (8, 23, 127)
+    | _ => (5, 10, 15)
+  let exponent := value / 2 ^ mantissaBits % 2 ^ exponentBits
+  let top4 := value / 2 ^ (mantissaBits - 4) % 16
+  let evenMantissas := [13, 11, 10, 9, 8, 7, 6, 5, 4, 4, 3, 2, 2, 1, 1, 0]
+  let oddMantissas := [31, 30, 28, 26, 25, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13]
+  let mantissa5 := (if exponent % 2 == 0 then evenMantissas else oddMantissas)[top4]!
+  let outputExponent := (bias + (bias + 1) / 2 - 1 + 2 ^ exponentBits - (exponent + 1) / 2) %
+    2 ^ exponentBits
+  return outputExponent * 2 ^ mantissaBits + mantissa5 * 2 ^ (mantissaBits - 5)
+
+theorem parsedFloatRsqrtLane_single_exact_table_entry :
+    parsedFloatRsqrtLane .f 0x3f800000 = 0x3f7c0000 := by
+  decide
+
 def parsedFloatReluBus (precision : ParsedPrecision) (name : ParsedAluName)
     (left : IntegerALU.Bus) (right? : Option IntegerALU.Bus) : IntegerALU.Bus × BitVec 4 := Id.run do
   let width := match precision with | .d => 64 | .f => 32 | _ => 16
@@ -2015,6 +2033,8 @@ def parsedFloatReluBus (precision : ParsedPrecision) (name : ParsedAluName)
     let a := inputA[lane]!
     let b := inputB[lane]!
     if name == .passa then (a, a == 0)
+    else if name == .rsqrt then (parsedFloatRsqrtLane precision a,
+      a / 2 ^ (width - 1) % 2 == 0)
     else
       let condition := a / 2 ^ (width - 1 - shift) % 2 == 0
       (if condition then b else 2 ^ (width - 1), condition)
@@ -2070,7 +2090,7 @@ def lowerParsedFloatRelu? (expression : ParsedExpr) (context : ParsedIntegerCont
     Option ParsedFloatReluAccesses := do
   let (name, precision) ← match expression.op with
     | .alu name (some precision) _ _ => do
-        guard (name == .passa || name == .relu || name == .relu0 || name == .relu1 ||
+        guard (name == .passa || name == .rsqrt || name == .relu || name == .relu0 || name == .relu1 ||
           name == .relu2 || name == .relu3)
         guard (precision == .d || precision == .f || precision == .h)
         some (name, precision)
@@ -2264,7 +2284,7 @@ def executeParsedMslMsrProducers (readState currentState : State)
 def parsedExprIsFloatReluProducer (expression : ParsedExpr) : Bool :=
   match expression.op with
   | .alu name (some precision) _ _ =>
-      (name == .passa || name == .relu || name == .relu0 || name == .relu1 || name == .relu2 ||
+      (name == .passa || name == .rsqrt || name == .relu || name == .relu0 || name == .relu1 || name == .relu2 ||
         name == .relu3) && (precision == .d || precision == .f || precision == .h)
   | _ => false
 
