@@ -3709,50 +3709,65 @@ def parsedBlockHazardViolated
   (HazardTrace.blockHazardConstraintsBetween history current).any fun constraint =>
     constraint.distance < constraint.required
 
+structure HazardAwareState where
+  machine : State
+  peHistory : PEId → List PEMemory.TimedPEAccess
+  blockHistory : List PEMemory.TimedBlockAccess
+
+def HazardAwareState.initial (state : State) : HazardAwareState :=
+  ⟨state, fun _ => [], []⟩
+
+noncomputable def executeHazardAwareNormalizedLine (line : NormalizedLine)
+    (state : HazardAwareState) : ProofsLean.StepResult HazardAwareState := Id.run do
+  match line with
+  | .maskDirective .. =>
+      match executeNormalizedLine line state.machine with
+      | .failure => return .failure
+      | .unknown => return .unknown
+      | .ok next => return .ok { state with machine := next }
+  | _ =>
+      let some currentPEEvents ← pure
+        (parsedNormalizedLinePEHazardEvents? state.machine line) | return .unknown
+      let currentBlockEvents := HazardTrace.parsedLineBlockHazardEvents
+        line.toParsed state.machine.hazardClock
+      if (List.finRange 4096).any fun pe =>
+          parsedPEHazardViolated (state.peHistory pe) currentPEEvents[pe.val]! then
+        return .failure
+      if parsedBlockHazardViolated state.blockHistory currentBlockEvents then
+        return .failure
+      match executeNormalizedLine line state.machine with
+      | .failure => return .failure
+      | .unknown => return .unknown
+      | .ok next =>
+          let nextPEHistory := fun pe =>
+            (state.peHistory pe ++ currentPEEvents[pe.val]!).filter fun event =>
+              event.startWord + 4 ≥ next.hazardClock
+          let nextBlockHistory :=
+            (state.blockHistory ++ currentBlockEvents).filter fun event =>
+              event.startWord + 4 ≥ next.hazardClock
+          return .ok ⟨next, nextPEHistory, nextBlockHistory⟩
+
 /-- Execute a normalized source program in order. The runner carries recent
 PE-memory accesses as validation history, rejects PE hazards before applying
 the line, and retains the transactional behavior of each datapath step. -/
 noncomputable def executeNormalizedProgramAux
-    : List NormalizedLine → State → (PEId → List PEMemory.TimedPEAccess) →
-      List PEMemory.TimedBlockAccess →
-      ProofsLean.StepResult State
-  | [], currentState, _, _ => .ok currentState
-  | line :: rest, currentState, history, blockHistory =>
-      match line with
-      | .maskDirective .. =>
-          match executeNormalizedLine line currentState with
-          | .failure => .failure
-          | .unknown => .unknown
-          | .ok next => executeNormalizedProgramAux rest next history blockHistory
-      | _ =>
-          match parsedNormalizedLinePEHazardEvents? currentState line with
-          | none => .unknown
-          | some currentEvents =>
-              let currentBlockEvents :=
-                HazardTrace.parsedLineBlockHazardEvents line.toParsed currentState.hazardClock
-              if (List.finRange 4096).any fun pe =>
-                  parsedPEHazardViolated (history pe) currentEvents[pe.val]! then
-                .failure
-              else if parsedBlockHazardViolated blockHistory currentBlockEvents then
-                .failure
-              else
-                match executeNormalizedLine line currentState with
-                | .failure => .failure
-                | .unknown => .unknown
-                | .ok next =>
-                    let nextHistory := fun pe =>
-                      (history pe ++ currentEvents[pe.val]!).filter fun event =>
-                        event.startWord + 4 ≥ next.hazardClock
-                    let nextBlockHistory :=
-                      (blockHistory ++ currentBlockEvents).filter fun event =>
-                        event.startWord + 4 ≥ next.hazardClock
-                    executeNormalizedProgramAux rest next nextHistory nextBlockHistory
-termination_by remaining _ _ _ => remaining.length
-decreasing_by simp_wf; simp
+    : List NormalizedLine → HazardAwareState →
+      ProofsLean.StepResult HazardAwareState
+  | [], currentState => .ok currentState
+  | line :: rest, currentState =>
+      match executeHazardAwareNormalizedLine line currentState with
+      | .failure => .failure
+      | .unknown => .unknown
+      | .ok next => executeNormalizedProgramAux rest next
+termination_by remaining _ => remaining.length
+decreasing_by simp_wf
 
 noncomputable def executeNormalizedProgram (lines : List NormalizedLine)
     (state : State) : ProofsLean.StepResult State :=
-  executeNormalizedProgramAux lines state (fun _ => []) []
+  match executeNormalizedProgramAux lines (HazardAwareState.initial state) with
+  | .failure => .failure
+  | .unknown => .unknown
+  | .ok final => .ok final.machine
 
 /-- Source-level program entry: apply the repository's normalization rules
 before executing, so stripped records and mask directives retain their
@@ -3848,7 +3863,7 @@ theorem executeNormalizedProgram_maskDirective_updates_state
     executeNormalizedProgram [.maskDirective widthWords targets entry] state =
       .ok { state with maskDirective := ⟨widthWords, targets, entry⟩ } := by
   simp [executeNormalizedProgram, executeNormalizedProgramAux,
-    executeNormalizedLine]
+    executeHazardAwareNormalizedLine, HazardAwareState.initial, executeNormalizedLine]
 
 theorem executeParsedProgram_maskDirective_updates_state
     (state : State) (widthWords : Nat) (targets : ParsedMaskTargets)
@@ -3856,7 +3871,8 @@ theorem executeParsedProgram_maskDirective_updates_state
     executeParsedProgram [.maskDirective widthWords targets entry] state =
       .ok { state with maskDirective := ⟨widthWords, targets, entry⟩ } := by
   simp [executeParsedProgram, ParsedLine.normalizeForSubmission?,
-    executeNormalizedProgram, executeNormalizedProgramAux, executeNormalizedLine]
+    executeNormalizedProgram, executeNormalizedProgramAux,
+    executeHazardAwareNormalizedLine, HazardAwareState.initial, executeNormalizedLine]
 
 noncomputable def integerProducerMachine : ProofsLean.PartialMachine where
   Line := InstructionLine
