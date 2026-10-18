@@ -5430,6 +5430,100 @@ theorem executeParsedMatrixMAUPEWritesAtMAB_known_never_unknown
       exact (resultKnown result).elim
   | ok accum => simp
 
+theorem executeParsedMatrixMAUPEWritesAtMAB_mul_lowered_never_unknown
+    (readState currentState : State) (coordinate : MABCoordinate)
+    (precision : ParsedPrecision) (half : Option Char) (round : Bool)
+    (sideY : Bool) (width : Fin 5) (source : ParsedOperand)
+    (hasSingleLineMask : Bool) (format : RRN.FloatPrecision)
+    (formatLowered : parsedMatrixMAUFloatFormat precision = some format)
+    (lowered : ∀ cycle : Fin 4,
+      parsedFloatMAUSourceLoweredAtMAB readState coordinate source cycle)
+    (resolved : forwardingSourceResolved readState) :
+    executeParsedMatrixMAUPEWritesAtMAB readState currentState
+      { op := .mau precision true .mul half round
+        sources := [.matrix sideY width none, source]
+        destinations := []
+        flush := none
+        text := "" } coordinate hasSingleLineMask ≠ .unknown := by
+  apply executeParsedMatrixMAUPEWritesAtMAB_known_never_unknown
+  intro cycle
+  have calculationKnown := executeParsedMatrixMAUCalculationAtMAB_mul_lowered_reads_never_unknown
+    readState coordinate precision half round sideY width source cycle format formatLowered
+    (lowered cycle) resolved
+  exact executeParsedMatrixMAUAtMAB_calculation_known_never_unknown
+    readState coordinate _ cycle calculationKnown ⟨precision, .mul, half, round, rfl⟩
+
+theorem executeParsedMatrixMAUPEWritesAtMAB_add_lowered_never_unknown
+    (readState currentState : State) (coordinate : MABCoordinate)
+    (precision : ParsedPrecision) (half : Option Char) (round : Bool)
+    (sideY : Bool) (width : Fin 5) (source : ParsedOperand)
+    (hasSingleLineMask : Bool) (format : RRN.FloatPrecision)
+    (formatLowered : parsedMatrixMAUFloatFormat precision = some format)
+    (lowered : ∀ cycle : Fin 4,
+      parsedFloatMAUSourceLoweredAtMAB readState coordinate source cycle)
+    (resolved : forwardingSourceResolved readState) :
+    executeParsedMatrixMAUPEWritesAtMAB readState currentState
+      { op := .mau precision true .add half round
+        sources := [.matrix sideY width none, source]
+        destinations := []
+        flush := none
+        text := "" } coordinate hasSingleLineMask ≠ .unknown := by
+  apply executeParsedMatrixMAUPEWritesAtMAB_known_never_unknown
+  intro cycle
+  have calculationKnown := executeParsedMatrixMAUCalculationAtMAB_add_lowered_reads_never_unknown
+    readState coordinate precision half round sideY width source cycle format formatLowered
+    (lowered cycle) resolved
+  exact executeParsedMatrixMAUAtMAB_calculation_known_never_unknown
+    readState coordinate _ cycle calculationKnown ⟨precision, .add, half, round, rfl⟩
+
+theorem executeParsedMatrixMAUPEWritesAtMAB_passa_lowered_never_unknown
+    (readState currentState : State) (coordinate : MABCoordinate)
+    (precision : ParsedPrecision) (half : Option Char) (round : Bool)
+    (sideY : Bool) (width : Fin 5) (source : ParsedOperand)
+    (hasSingleLineMask : Bool) (format : RRN.FloatPrecision)
+    (formatLowered : parsedMatrixMAUFloatFormat precision = some format)
+    (lowered : ∀ cycle : Fin 4,
+      parsedFloatMAUSourceLoweredAtMAB readState coordinate source cycle)
+    (resolved : forwardingSourceResolved readState) :
+    executeParsedMatrixMAUPEWritesAtMAB readState currentState
+      { op := .mau precision true .passa half round
+        sources := [.matrix sideY width none, source]
+        destinations := []
+        flush := none
+        text := "" } coordinate hasSingleLineMask ≠ .unknown := by
+  apply executeParsedMatrixMAUPEWritesAtMAB_known_never_unknown
+  intro cycle
+  have calculationKnown := executeParsedMatrixMAUCalculationAtMAB_passa_lowered_reads_never_unknown
+    readState coordinate precision half round sideY width source cycle format formatLowered
+    (lowered cycle) resolved
+  exact executeParsedMatrixMAUAtMAB_calculation_known_never_unknown
+    readState coordinate _ cycle calculationKnown ⟨precision, .passa, half, round, rfl⟩
+
+theorem executeParsedMatrixMAUPEWritesAtMAB_fma_lowered_never_unknown
+    (readState currentState : State) (coordinate : MABCoordinate)
+    (precision : ParsedPrecision) (half : Option Char) (round : Bool)
+    (sideY : Bool) (width : Fin 5) (vectorSource accumulatorSource : ParsedOperand)
+    (hasSingleLineMask : Bool) (format : RRN.FloatPrecision)
+    (formatLowered : parsedMatrixMAUFloatFormat precision = some format)
+    (vectorLowered : ∀ cycle : Fin 4,
+      parsedFloatMAUSourceLoweredAtMAB readState coordinate vectorSource cycle)
+    (accumulatorLowered : ∀ cycle : Fin 4,
+      parsedFloatMAUSourceLoweredAtMAB readState coordinate accumulatorSource cycle)
+    (resolved : forwardingSourceResolved readState) :
+    executeParsedMatrixMAUPEWritesAtMAB readState currentState
+      { op := .mau precision true .fma half round
+        sources := [.matrix sideY width none, vectorSource, accumulatorSource]
+        destinations := []
+        flush := none
+        text := "" } coordinate hasSingleLineMask ≠ .unknown := by
+  apply executeParsedMatrixMAUPEWritesAtMAB_known_never_unknown
+  intro cycle
+  have calculationKnown := executeParsedMatrixMAUCalculationAtMAB_fma_lowered_reads_never_unknown
+    readState coordinate precision half round sideY width vectorSource accumulatorSource cycle
+    format formatLowered (vectorLowered cycle) (accumulatorLowered cycle) resolved
+  exact executeParsedMatrixMAUAtMAB_calculation_known_never_unknown
+    readState coordinate _ cycle calculationKnown ⟨precision, .fma, half, round, rfl⟩
+
 def executeParsedMatrixMAUTransitionAtMAB (readState currentState : State)
     (expression : ParsedExpr) (coordinate : MABCoordinate)
     (noForward hasSingleLineMask : Bool) : ProofsLean.StepResult State :=

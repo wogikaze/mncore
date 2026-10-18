@@ -1953,12 +1953,18 @@
         "destination_write_knownness": {
           "helper": "ProofsLean.MNCore.writeParsedMatrixMAUDestinationsAtPE",
           "theorem": "ProofsLean.MNCore.writeParsedMatrixMAUDestinationsAtPE_never_unknown",
-          "scope": "The imperative cycle/PE loops are represented as ordered recursive folds. If each cycle MAB output is known, all four cycles, destination writes, bus/flag/poison accumulation, and final PE-write result cannot be unknown.",
-          "remaining": "Derive per-cycle MAB output knownness from the four calculation/lowering theorems and connect this PE-write result through MAUF commit and the full issue-line transition.",
+          "scope": "For each kind, successful memory/forward lowering across all four MAB cycles plus forwardingSourceResolved implies the complete ordered four-cycle/four-PE destination write executor cannot return .unknown. fma requires both vector and accumulator lowering at every cycle.",
+          "remaining": "Connect the successful source-lowering predicates to parser-produced instructions and lift PE writes through MAUF commit and the whole issue-line transition.",
           "ordered_cycle_pe_executor": "ProofsLean.MNCore.executeParsedMatrixMAUWriteCycles",
           "per_cycle_theorem": "ProofsLean.MNCore.executeParsedMatrixMAUPEWritesAtCycle_never_unknown",
           "all_cycles_theorem": "ProofsLean.MNCore.executeParsedMatrixMAUWriteCycles_never_unknown",
-          "mab_pewrites_theorem": "ProofsLean.MNCore.executeParsedMatrixMAUPEWritesAtMAB_known_never_unknown"
+          "mab_pewrites_theorem": "ProofsLean.MNCore.executeParsedMatrixMAUPEWritesAtMAB_known_never_unknown",
+          "kind_specific_source_to_pewrite_theorems": [
+            "ProofsLean.MNCore.executeParsedMatrixMAUPEWritesAtMAB_mul_lowered_never_unknown",
+            "ProofsLean.MNCore.executeParsedMatrixMAUPEWritesAtMAB_add_lowered_never_unknown",
+            "ProofsLean.MNCore.executeParsedMatrixMAUPEWritesAtMAB_passa_lowered_never_unknown",
+            "ProofsLean.MNCore.executeParsedMatrixMAUPEWritesAtMAB_fma_lowered_never_unknown"
+          ]
         }
       }
     },
