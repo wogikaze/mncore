@@ -4219,6 +4219,21 @@ noncomputable def executeScheduledProgram (events : List ScheduledEvent)
     (state : State) : ProofsLean.StepResult HazardAwareState :=
   executeScheduledEvents events (HazardAwareState.initial state)
 
+theorem executeScheduledProgram_wait_enters_stall
+    (machine : State) (line : NormalizedLine) (instruction : InstructionLine)
+    (tag : Fin 256)
+    (instructionLine : line.toInstruction? = some instruction)
+    (legal : checkParsedTopLine instruction.toParsed = true)
+    (waitTag : normalizedLineWaitTag? line = some tag)
+    (incomplete : machine.mvCompletedTags tag = false) :
+    executeScheduledProgram [.issue line] machine =
+      .ok { HazardAwareState.initial machine with stalledPEIssue := some line } := by
+  unfold executeScheduledProgram
+  simp only [executeScheduledEvents]
+  rw [executeScheduledEvent_wait_enters_stall
+    (HazardAwareState.initial machine) line instruction tag rfl
+    instructionLine legal waitTag incomplete]
+
 def scheduledIssueLines : List ScheduledEvent → List NormalizedLine
   | [] => []
   | .issue line :: rest => line :: scheduledIssueLines rest
