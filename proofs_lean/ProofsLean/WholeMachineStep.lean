@@ -2347,6 +2347,108 @@ theorem readParsedMatrixMAUSourceAtMAB_resolved_never_unknown
         intro pe _
         exact attrs pe) resolved
 
+def parsedFloatMAUSourceLoweredAtMAB (state : State) (coordinate : MABCoordinate)
+    (operand : ParsedOperand) (cycle : Fin 4) : Prop :=
+  ∀ pe : Fin 4,
+    (∃ access rounded negate extend round,
+      parsedFloatMAUSourceAttrs? operand
+        ({ ParsedIntegerContext.ofLinearIndex (physicalPEId coordinate pe) with
+          cycle := cycle
+          bar0 := (state.peContext (physicalPEId coordinate pe)).bar0
+          bar1 := (state.peContext (physicalPEId coordinate pe)).bar1
+          tWord := (state.peContext (physicalPEId coordinate pe)).tWord }) =
+        some (.memory access rounded, negate, extend, round)) ∨
+    (∃ kind rounded negate extend round,
+      parsedFloatMAUSourceAttrs? operand
+        ({ ParsedIntegerContext.ofLinearIndex (physicalPEId coordinate pe) with
+          cycle := cycle
+          bar0 := (state.peContext (physicalPEId coordinate pe)).bar0
+          bar1 := (state.peContext (physicalPEId coordinate pe)).bar1
+          tWord := (state.peContext (physicalPEId coordinate pe)).tWord }) =
+        some (.forward kind rounded, negate, extend, round))
+
+theorem executeParsedMatrixMAUCalculationAtMAB_mul_lowered_reads_never_unknown
+    (state : State) (coordinate : MABCoordinate) (precision : ParsedPrecision)
+    (half : Option Char) (round : Bool) (sideY : Bool) (width : Fin 5)
+    (source : ParsedOperand) (cycle : Fin 4) (format : RRN.FloatPrecision)
+    (formatLowered : parsedMatrixMAUFloatFormat precision = some format)
+    (lowered : parsedFloatMAUSourceLoweredAtMAB state coordinate source cycle)
+    (resolved : forwardingSourceResolved state) :
+    executeParsedMatrixMAUCalculationAtMAB state coordinate
+      { op := .mau precision true .mul half round
+        sources := [.matrix sideY width none, source]
+        destinations := []
+        flush := none
+        text := "" } cycle ≠ .unknown := by
+  apply executeParsedMatrixMAUCalculationAtMAB_mul_read_known_never_unknown
+    state coordinate precision half round sideY width source cycle format formatLowered
+  exact readParsedMatrixMAUSourceAtMAB_resolved_never_unknown
+    state coordinate source format (parsedMatrixMAUVectorLanesPerPE precision) cycle
+    lowered resolved
+
+theorem executeParsedMatrixMAUCalculationAtMAB_add_lowered_reads_never_unknown
+    (state : State) (coordinate : MABCoordinate) (precision : ParsedPrecision)
+    (half : Option Char) (round : Bool) (sideY : Bool) (width : Fin 5)
+    (source : ParsedOperand) (cycle : Fin 4) (format : RRN.FloatPrecision)
+    (formatLowered : parsedMatrixMAUFloatFormat precision = some format)
+    (lowered : parsedFloatMAUSourceLoweredAtMAB state coordinate source cycle)
+    (resolved : forwardingSourceResolved state) :
+    executeParsedMatrixMAUCalculationAtMAB state coordinate
+      { op := .mau precision true .add half round
+        sources := [.matrix sideY width none, source]
+        destinations := []
+        flush := none
+        text := "" } cycle ≠ .unknown := by
+  apply executeParsedMatrixMAUCalculationAtMAB_add_read_known_never_unknown
+    state coordinate precision half round sideY width source cycle format formatLowered
+  exact readParsedMatrixMAUSourceAtMAB_resolved_never_unknown
+    state coordinate source format (parsedMatrixMAUVectorLanesPerPE precision) cycle
+    lowered resolved
+
+theorem executeParsedMatrixMAUCalculationAtMAB_passa_lowered_reads_never_unknown
+    (state : State) (coordinate : MABCoordinate) (precision : ParsedPrecision)
+    (half : Option Char) (round : Bool) (sideY : Bool) (width : Fin 5)
+    (source : ParsedOperand) (cycle : Fin 4) (format : RRN.FloatPrecision)
+    (formatLowered : parsedMatrixMAUFloatFormat precision = some format)
+    (lowered : parsedFloatMAUSourceLoweredAtMAB state coordinate source cycle)
+    (resolved : forwardingSourceResolved state) :
+    executeParsedMatrixMAUCalculationAtMAB state coordinate
+      { op := .mau precision true .passa half round
+        sources := [.matrix sideY width none, source]
+        destinations := []
+        flush := none
+        text := "" } cycle ≠ .unknown := by
+  apply executeParsedMatrixMAUCalculationAtMAB_passa_read_known_never_unknown
+    state coordinate precision half round sideY width source cycle format formatLowered
+  exact readParsedMatrixMAUSourceAtMAB_resolved_never_unknown
+    state coordinate source format (parsedMatrixMAUVectorLanesPerPE precision) cycle
+    lowered resolved
+
+theorem executeParsedMatrixMAUCalculationAtMAB_fma_lowered_reads_never_unknown
+    (state : State) (coordinate : MABCoordinate) (precision : ParsedPrecision)
+    (half : Option Char) (round : Bool) (sideY : Bool) (width : Fin 5)
+    (vectorSource accumulatorSource : ParsedOperand) (cycle : Fin 4)
+    (format : RRN.FloatPrecision)
+    (formatLowered : parsedMatrixMAUFloatFormat precision = some format)
+    (vectorLowered : parsedFloatMAUSourceLoweredAtMAB state coordinate vectorSource cycle)
+    (accumulatorLowered : parsedFloatMAUSourceLoweredAtMAB state coordinate accumulatorSource cycle)
+    (resolved : forwardingSourceResolved state) :
+    executeParsedMatrixMAUCalculationAtMAB state coordinate
+      { op := .mau precision true .fma half round
+        sources := [.matrix sideY width none, vectorSource, accumulatorSource]
+        destinations := []
+        flush := none
+        text := "" } cycle ≠ .unknown := by
+  apply executeParsedMatrixMAUCalculationAtMAB_fma_reads_known_never_unknown
+    state coordinate precision half round sideY width vectorSource accumulatorSource cycle
+    format formatLowered
+  · exact readParsedMatrixMAUSourceAtMAB_resolved_never_unknown
+      state coordinate vectorSource format (parsedMatrixMAUVectorLanesPerPE precision)
+      cycle vectorLowered resolved
+  · exact readParsedMatrixMAUSourceAtMAB_resolved_never_unknown
+      state coordinate accumulatorSource (parsedMatrixMAUAccumulatorFormat precision)
+      (parsedMatrixMAUAccumulatorLanesPerPE precision) cycle accumulatorLowered resolved
+
 theorem readRawL1MwriteBus_resolved_never_unknown
     (state : State) (source : ParsedOperand) (pe : PEId) (cycle : Fin 4)
     (resolved : forwardingSourceResolved state) :
