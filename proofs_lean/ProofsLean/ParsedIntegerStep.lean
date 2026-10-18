@@ -3124,6 +3124,38 @@ theorem ParsedOperand.toHazardDirectAccess_isSome_of_valid
         issueBankToRegisterBank, ParsedOperand.toDirectMemoryAccessMode?,
         ParsedOperand.forHazardAddress, parsedWidth?]
 
+theorem list_mapM_isSome_of_forall {α β : Type}
+    (items : List α) (resolve : α → Option β)
+    (each : ∀ item, item ∈ items → (resolve item).isSome = true) :
+    (items.mapM resolve).isSome = true := by
+  induction items with
+  | nil => simp
+  | cons item rest ih =>
+      have itemSome := each item (by simp)
+      have restSome : ∀ value, value ∈ rest → (resolve value).isSome = true := by
+        intro value member
+        exact each value (by simp [member])
+      cases resolved : resolve item with
+      | none => simp [resolved] at itemSome
+      | some value =>
+          have restResolved := ih restSome
+          cases mapped : List.mapM resolve rest with
+          | none => simp [List.mapM_cons, resolved, mapped] at restResolved
+          | some values => simp [List.mapM_cons, resolved, mapped]
+
+theorem ParsedOperand.parsedHazardCycles_resolve_of_valid
+    (access : Access) (mask : Option ParsedMask) (context : ParsedIntegerContext)
+    (valid : ParsedOperand.directMemoryAddressModeValid
+      (.mem access false false false mask) = true) :
+    (parsedHazardCycles.mapM fun cycle =>
+      ParsedOperand.toDirectMemoryAccessMode?
+        (ParsedOperand.forHazardAddress (.mem access false false false mask)) true
+        context.pe cycle context.bar0 context.bar1 context.tWord).isSome = true := by
+  apply list_mapM_isSome_of_forall
+  intro cycle member
+  exact ParsedOperand.toHazardDirectAccess_isSome_of_valid access mask context.pe cycle
+    context.bar0 context.bar1 context.tWord valid
+
 def ParsedOperand.toTimedPEHazardEvents? (operand : ParsedOperand) (write : Bool)
     (control : ParsedMaskExecutionControl) : Option (List TimedPEAccess) :=
   match operand with

@@ -121,8 +121,10 @@
       "validity_predicate": "ProofsLean.MNCore.PEMemory.ParsedOperand.directMemoryAddressModeValid",
       "hazard_address_resolution": {
         "theorem": "ProofsLean.MNCore.PEMemory.ParsedOperand.toHazardDirectAccess_isSome_of_valid",
-        "scope": "For one PE memory operand and one cycle, a mode admitted by directMemoryAddressModeValid resolves to a concrete DirectMemoryAccess after value modifiers are erased.",
-        "remaining": "Lift single-cycle address resolution across the four-cycle event list and prove ParsedExpr/NormalizedLine hazard extraction total for all accepted PE lines."
+        "cycle_list_theorem": "ProofsLean.MNCore.PEMemory.ParsedOperand.parsedHazardCycles_resolve_of_valid",
+        "list_helper": "ProofsLean.MNCore.PEMemory.list_mapM_isSome_of_forall",
+        "scope": "For one PE memory operand, a mode admitted by directMemoryAddressModeValid resolves to concrete DirectMemoryAccess values for all four hazard cycles after value modifiers are erased.",
+        "remaining": "Connect the resolved cycle list to TimedPEAccess event construction and prove ParsedExpr/NormalizedLine hazard extraction total for all accepted PE lines."
       },
       "disabled_forwarding": "Producer absence is represented as poison with validity=false and consumed forward operands fail; unresolved ALU/MAU/mread output remains unknown with validity=true; noforward preserves payload and validity state; L1-to-PE validity has its separate retained-state rule",
       "disabled_forwarding_theorems": [
