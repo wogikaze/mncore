@@ -3082,6 +3082,19 @@ def parsedHazardPatternEnables (mask : Option ParsedMask) (cycle : Fin 4) : Bool
 def tIndirectHazardAccess (cycle : Fin 4) : DirectMemoryAccess :=
   ⟨.t, .word, ⟨cycle.val, by have h := cycle.isLt; simp [Bank.capacity]; omega⟩⟩
 
+/-- PE hazard tracking needs the address and bank, but operand value modifiers
+do not change either. Strip those modifiers before resolving the access so a
+valid signed/extended/rounded memory operand does not make hazard extraction
+partial. Preserve the per-line write mask because it selects written cycles. -/
+def ParsedOperand.forHazardAddress : ParsedOperand → ParsedOperand
+  | .mem access _ _ _ mask => .mem access false false false mask
+  | operand => operand
+
+theorem ParsedOperand.forHazardAddress_mem (access : Access)
+    (negated extended rounded : Bool) (mask : Option ParsedMask) :
+    ParsedOperand.forHazardAddress (.mem access negated extended rounded mask) =
+      .mem access false false false mask := rfl
+
 def ParsedOperand.toTimedPEHazardEvents? (operand : ParsedOperand) (write : Bool)
     (control : ParsedMaskExecutionControl) : Option (List TimedPEAccess) :=
   match operand with
@@ -3090,7 +3103,8 @@ def ParsedOperand.toTimedPEHazardEvents? (operand : ParsedOperand) (write : Bool
       | none => some []
       | some _ => do
           let resolved ← parsedHazardCycles.mapM fun cycle =>
-            ParsedOperand.toDirectMemoryAccessMode? operand true
+            ParsedOperand.toDirectMemoryAccessMode?
+              (ParsedOperand.forHazardAddress operand) true
               control.context.pe cycle control.context.bar0 control.context.bar1
               control.context.tWord
           pure <| (parsedHazardCycles.zip resolved).flatMap fun (cycle, direct) =>

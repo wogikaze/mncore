@@ -110,8 +110,16 @@
       "failure_theorem": "ProofsLean.MNCore.partialMachine_issue_failure",
       "accepted_transition": "unknown pending integrated value semantics"
     },
+    "hazard_aware_transition": {
+      "source": "ProofsLean.MNCore.executeHazardAwareNormalizedLineCore",
+      "implemented": "PE and block hazard event extraction, violation-to-failure behavior, bounded event history, and deterministic completion of same-tag pending MV transfers before a wait line",
+      "pe_memory_address_modifiers": "Negated/extended/rounded value modifiers are erased only for hazard address resolution; bank, region, t-indirect/madpe fields, and destination write mask are retained",
+      "modifier_projection_theorem": "ProofsLean.MNCore.PEMemory.ParsedOperand.forHazardAddress_mem",
+      "scope_limit": "PE address resolution can still return unknown for unsupported widths or illegal bank/address-mode combinations; disabled-forwarding and full accepted-source legality are not yet connected universally",
+      "reference_conformance": false
+    },
     "remaining": [
-      "Implement PE/block hazard and disabled-forwarding failures in step.",
+      "Prove PE/block hazard extraction total for every accepted source form and connect disabled-forwarding failures to the integrated step.",
       "Prove universal source-parser/assembler correspondence into fixed-width encoded words.",
       "Connect encoded words to transition semantics and seal MNCore.machine."
     ]
