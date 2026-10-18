@@ -2915,6 +2915,10 @@ def executeParsedMatrixMAUTransitionAtMAB (readState currentState : State)
                   bar0 := peBar0
                   bar1 := peBar1
                   tWord := oldContext.tWord }
+                match destination with
+                | .omr entry _ =>
+                    if entry.val == 0 || entry.val > 15 then return .failure
+                | _ => pure ()
                 let dataPoisonApplies :=
                   parsedMatrixMAUDestinationDataPoisonApplies poison destination
                 if dataPoisonApplies then
