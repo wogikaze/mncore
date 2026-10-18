@@ -179,6 +179,20 @@ def parsedFloatMAUSourceAttrs? (operand : ParsedOperand)
         context.tWord).map (fun input => (input, neg, ext, rnd))
   | _ => none
 
+def parsedFloatMAUSourceDefinitelyUnsupported (operand : ParsedOperand) : Bool :=
+  match operand with
+  | .mem .. | .forward .. => false
+  | _ => true
+
+def parsedFloatMAULoweringMiss {α : Type} (expression : ParsedExpr) :
+    ProofsLean.StepResult α :=
+  if expression.sources.any parsedFloatMAUSourceDefinitelyUnsupported then .failure
+  else .unknown
+
+theorem parsedFloatMAU_fixed_source_is_definitely_unsupported (fixed : ParsedFixed) :
+    parsedFloatMAUSourceDefinitelyUnsupported (.fixed fixed) = true := by
+  rfl
+
 structure ParsedFloatFmaAccesses where
   sourceA : ParsedIntegerInput
   sourceB : ParsedIntegerInput
@@ -725,7 +739,7 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
   | .mau .f false .fma none false =>
     let cycleContext := { context with cycle := cycle }
     match lowerParsedFloatFma? expression cycleContext with
-    | none => .unknown
+    | none => parsedFloatMAULoweringMiss expression
     | some accesses =>
       match ParsedIntegerInput.readWithForwarding readFiles oldSlots cycle accesses.sourceA with
       | .failure => .failure
@@ -748,7 +762,7 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
   | .mau .f false .mul none false =>
     let cycleContext := { context with cycle := cycle }
     match lowerParsedFloatMultiply? expression cycleContext with
-    | none => .unknown
+    | none => parsedFloatMAULoweringMiss expression
     | some accesses =>
       match ParsedIntegerInput.readWithForwarding readFiles oldSlots cycle accesses.sourceA with
       | .failure => .failure
@@ -766,7 +780,7 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
   | .mau .f false .add none false =>
     let cycleContext := { context with cycle := cycle }
     match lowerParsedFloatAddMachine? expression cycleContext with
-    | none => .unknown
+    | none => parsedFloatMAULoweringMiss expression
     | some accesses =>
       match ParsedIntegerInput.readWithForwarding readFiles oldSlots cycle accesses.sourceA with
       | .failure => .failure
@@ -784,7 +798,7 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
   | .mau .f false .passa half false =>
     let cycleContext := { context with cycle := cycle }
     match lowerParsedPassa? .f expression cycleContext with
-    | none => .unknown
+    | none => parsedFloatMAULoweringMiss expression
     | some (source, negate, extend, round, destination) =>
       match ParsedIntegerInput.readWithForwarding readFiles oldSlots cycle source with
       | .failure => .failure
@@ -798,7 +812,7 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
   | .mau .d false .passa half round =>
     let cycleContext := { context with cycle := cycle }
     match lowerParsedPassa? .d expression cycleContext with
-    | none => .unknown
+    | none => parsedFloatMAULoweringMiss expression
     | some (source, negate, extend, sourceRound, destination) =>
       if sourceRound && !extend then .failure else
       match ParsedIntegerInput.readWithForwarding readFiles oldSlots cycle source with
@@ -812,7 +826,7 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
   | .mau .d false kind half roundOutput =>
     let cycleContext := { context with cycle := cycle }
     match lowerParsedDoubleArithmetic? expression cycleContext with
-    | none => .unknown
+    | none => parsedFloatMAULoweringMiss expression
     | some (kind, roundOutput, sources, destinationWidth, destinationAddress) =>
       if sources.any (fun source => source.2.2.2) then .failure else
       match readMAUSourceBuses readFiles oldSlots cycle (sources.map fun source => source.1) with
@@ -830,7 +844,7 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
   | .mau .h false .mul half round =>
     let cycleContext := { context with cycle := cycle }
     match lowerParsedHalfMultiply? expression cycleContext with
-    | none => .unknown
+    | none => parsedFloatMAULoweringMiss expression
     | some (sourceA, negateA, extendA, roundA, sourceB, negateB, extendB, roundB,
         destinationWidth, destinationAddress) =>
       if extendA || extendB then .failure else
@@ -853,7 +867,7 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
   | .mau .h false .add half round =>
     let cycleContext := { context with cycle := cycle }
     match lowerParsedHalfAdd? expression cycleContext with
-    | none => .unknown
+    | none => parsedFloatMAULoweringMiss expression
     | some (sourceA, negateA, extendA, roundA, sourceC, negateC, extendC, roundC,
         destinationWidth, destinationAddress) =>
       if extendA then .failure else
@@ -877,7 +891,7 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
   | .mau .h false .fma half round =>
     let cycleContext := { context with cycle := cycle }
     match lowerParsedHalfFma? expression cycleContext with
-    | none => .unknown
+    | none => parsedFloatMAULoweringMiss expression
     | some (sourceA, negateA, extendA, roundA, sourceB, negateB, extendB, roundB,
         sourceC, negateC, extendC, roundC, destinationWidth, destinationAddress) =>
       if extendA || extendB then .failure else
@@ -905,7 +919,7 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
   | .mau .h false .passa half round =>
     let cycleContext := { context with cycle := cycle }
     match lowerParsedHalfPassa? expression cycleContext with
-    | none => .unknown
+    | none => parsedFloatMAULoweringMiss expression
     | some (source, negate, extend, sourceRound, destinationWidth, destinationAddress) =>
       if extend then .failure else
       match ParsedIntegerInput.readWithForwarding readFiles oldSlots cycle source with
