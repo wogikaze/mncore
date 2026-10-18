@@ -8139,4 +8139,90 @@ theorem executeIntegerProducerInstructionLine_pe_success
     matrixWrites, sharedBlockWrites, l1ToPE, List.any_map]
   set_option maxRecDepth 8192 in rfl
 
+theorem executeIntegerProducerInstructionLine_pe_never_unknown_of_stages
+    (normalizedExpressions : List NormalizedExpr) (state : State)
+    (expressions : List ParsedExpr) (noForward hasSingleLineMask : Bool)
+    (expressionsEq : expressions = normalizedExpressions.map NormalizedExpr.toParsed)
+    (noForwardEq : noForward = expressions.any parsedExprIsNoForwardProducer)
+    (maskEq : hasSingleLineMask = expressions.any parsedExprHasSingleLineWriteMask)
+    (accepted : checkParsedTopLine (InstructionLine.pe normalizedExpressions).toParsed = true)
+    (supported : expressions.all parsedExprIsSupportedPELineProducer = true)
+    (noUnsupportedRustAlu : expressions.any parsedExprIsUnsupportedRustAlu = false)
+    (waitsComplete : expressions.any (parsedExprWaitPending state) = false)
+    (peKnown : executeIntegerProducerLineAtPEs
+      (expressions.filter (fun expression =>
+        !parsedExprIsL2BMProducer expression && !parsedExprIsMslMsrProducer expression &&
+          !parsedExprIsMatrixMAUProducer expression &&
+          !parsedExprIsBlockFloatProducer expression &&
+          !parsedExprIsFloatReluProducer expression))
+      (List.finRange 4096) state ≠ .unknown)
+    (mslKnown : ∀ nextPEs, executeParsedMslMsrProducers state nextPEs expressions
+      noForward hasSingleLineMask ≠ .unknown)
+    (reluKnown : ∀ nextMsl, executeParsedFloatReluProducers state nextMsl expressions
+      noForward hasSingleLineMask ≠ .unknown)
+    (blockFloatKnown : ∀ nextRelu, executeParsedBlockFloatProducer state nextRelu expressions
+      noForward hasSingleLineMask ≠ .unknown)
+    (matrixKnown : ∀ nextBlockFloat,
+      executeParsedMatrixMAUAndWrites state nextBlockFloat expressions
+        noForward hasSingleLineMask ≠ .unknown)
+    (sharedBlockKnown : ∀ nextMatrix,
+      executeParsedSharedBlockProducers state nextMatrix expressions (!noForward) ≠ .unknown)
+    (l1ToPEKnown : ∀ nextShared,
+      executeParsedL1ToPEProducers state nextShared expressions noForward
+        (expressions.any parsedExprHasSingleLineWriteMask)
+        (parsedL1ToPEPrecedesOMRWriter expressions) ≠ .unknown) :
+    executeIntegerProducerInstructionLine (InstructionLine.pe normalizedExpressions) state ≠ .unknown := by
+  subst expressions
+  subst noForward
+  subst hasSingleLineMask
+  let expressions := normalizedExpressions.map NormalizedExpr.toParsed
+  let noForward := expressions.any parsedExprIsNoForwardProducer
+  let hasSingleLineMask := expressions.any parsedExprHasSingleLineWriteMask
+  simp only [executeIntegerProducerInstructionLine, accepted]
+  simp only [waitsComplete, Bool.not_false, ↓reduceIte, noUnsupportedRustAlu, supported,
+    Bool.not_true, ↓reduceIte]
+  cases peResult : executeIntegerProducerLineAtPEs
+      (expressions.filter (fun expression =>
+        !parsedExprIsL2BMProducer expression && !parsedExprIsMslMsrProducer expression &&
+          !parsedExprIsMatrixMAUProducer expression &&
+          !parsedExprIsBlockFloatProducer expression &&
+          !parsedExprIsFloatReluProducer expression))
+      (List.finRange 4096) state with
+  | failure => simp_all [expressions, noForward, hasSingleLineMask, List.any_map]
+  | unknown => exact (peKnown peResult).elim
+  | ok nextPEs =>
+      cases mslResult : executeParsedMslMsrProducers state nextPEs expressions
+          noForward hasSingleLineMask with
+      | failure => simp_all [expressions, noForward, hasSingleLineMask, List.any_map]
+      | unknown => exact (mslKnown nextPEs mslResult).elim
+      | ok nextMsl =>
+          cases reluResult : executeParsedFloatReluProducers state nextMsl expressions
+              noForward hasSingleLineMask with
+          | failure => simp_all [expressions, noForward, hasSingleLineMask, List.any_map]
+          | unknown => exact (reluKnown nextMsl reluResult).elim
+          | ok nextRelu =>
+              cases blockResult : executeParsedBlockFloatProducer state nextRelu expressions
+                  noForward hasSingleLineMask with
+              | failure => simp_all [expressions, noForward, hasSingleLineMask, List.any_map]
+              | unknown => exact (blockFloatKnown nextRelu blockResult).elim
+              | ok nextBlockFloat =>
+                  cases matrixResult : executeParsedMatrixMAUAndWrites state nextBlockFloat
+                      expressions noForward hasSingleLineMask with
+                  | failure => simp_all [expressions, noForward, hasSingleLineMask, List.any_map]
+                  | unknown => exact (matrixKnown nextBlockFloat matrixResult).elim
+                  | ok nextMatrix =>
+                      cases sharedResult : executeParsedSharedBlockProducers state nextMatrix
+                          expressions (!noForward) with
+                      | failure => simp_all [expressions, noForward, hasSingleLineMask, List.any_map]
+                      | unknown => exact (sharedBlockKnown nextMatrix sharedResult).elim
+                      | ok nextShared =>
+                          cases l1Result : executeParsedL1ToPEProducers state nextShared
+                              expressions noForward
+                              (expressions.any parsedExprHasSingleLineWriteMask)
+                              (parsedL1ToPEPrecedesOMRWriter expressions) with
+                          | failure => simp_all [expressions, noForward, hasSingleLineMask, List.any_map]
+                          | unknown => exact (l1ToPEKnown nextShared l1Result).elim
+                          | ok nextBroadcast =>
+                              simp_all [expressions, noForward, hasSingleLineMask, List.any_map]
+
 end ProofsLean.MNCore

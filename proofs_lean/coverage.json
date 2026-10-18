@@ -2012,7 +2012,21 @@
             "ProofsLean.MNCore.executeParsedMatrixMAUAndWrites_resolved_never_unknown"
           ]
         },
-        "mau_and_matrix_write_scope": "The MAU producer/write stage composes without unknown when the producer is known and forwarding sources are resolved, including nonempty matrix-write producer lists. The empty-filter theorem remains a weaker special case."
+        "mau_and_matrix_write_scope": "The MAU producer/write stage composes without unknown when the producer is known and forwarding sources are resolved, including nonempty matrix-write producer lists. The empty-filter theorem remains a weaker special case.",
+        "whole_line_no_unknown_composition": {
+          "theorem": "ProofsLean.MNCore.executeIntegerProducerInstructionLine_pe_never_unknown_of_stages",
+          "behavior": "For a top-level accepted PE instruction line with supported producers, no unsupported Rust ALU, and completed waits, the ordered whole-line transition cannot return .unknown when each selected producer stage is itself known for every possible preceding state.",
+          "composed_stages": [
+            "PE producers",
+            "MSL/MSR",
+            "float ReLU",
+            "block-float",
+            "matrix-MAU plus matrix-register writes",
+            "shared-block producers",
+            "L1-to-PE producers"
+          ],
+          "scope_limit": "This is a conditional composition theorem for the PE line path. Each stage-known premise must still be established from that stage’s operand, legality, forwarding, and state preconditions; other InstructionLine variants and full Rust/Lean equivalence remain outside this theorem."
+        }
       }
     },
     {
