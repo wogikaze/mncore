@@ -385,6 +385,11 @@ theorem matrixBlockFloatDot_half_raw_mantissa_product :
       (.finite false 65536 (-16), some (-16)) := by
   decide
 
+theorem matrixBlockFloatDot_half_extended_lane_uses_common_minus_six :
+    matrixBlockFloatDot .half 9 [0x01ff, 0x1401] [0x1401, 0x1401] =
+      (.finite false (575 * 2 ^ 117) (-181), some (-58)) := by
+  decide
+
 theorem matrixBlockFloatDot_zero_block (precision : FloatPrecision) (keptBits : Nat)
     (right : List Nat) :
     matrixBlockFloatDot precision keptBits [] right = (.zero false, none) := by
