@@ -3,7 +3,7 @@ import ProofsLean.PEMachine
 import ProofsLean.FloatPEMemory
 
 /-! A whole-state transition for the connected PE integer ALU, single-precision
-vector `fvadd`/`fvmul`, matrix-read, and raw D/F/G matrix-write fragments. It
+vector `fvadd`/`fvmul`, matrix-read, D/F/G/H matrix-write, and L1BM `mwrite` fragments. It
 runs the same issue-line transaction independently at every physical PE, then
 updates ALU/MAU/MREADF/LBF forwarding state. Other producer units remain unresolved. -/
 namespace ProofsLean.MNCore
@@ -22,6 +22,7 @@ def parsedExprIsSupportedPELineProducer (expression : ParsedExpr) : Bool :=
   | .mau .f false .add none false | .mau .f false .mul none false
   | .mau .f false .fma none false => true
   | .matrixWrite .d | .matrixWrite .f | .matrixWrite .g | .matrixWrite .h => true
+  | .l1bm (.mwrite _) => true
   | _ => false
 
 def parsedExprIsMatrixReadProducer (expression : ParsedExpr) : Bool :=
@@ -32,6 +33,16 @@ def parsedExprIsMatrixReadProducer (expression : ParsedExpr) : Bool :=
 def parsedExprIsMatrixWriteProducer (expression : ParsedExpr) : Bool :=
   match expression.op with
   | .matrixWrite .. => true
+  | _ => false
+
+def parsedExprIsL1MwriteProducer (expression : ParsedExpr) : Bool :=
+  match expression.op with
+  | .l1bm (.mwrite _) => true
+  | _ => false
+
+def parsedExprIsNoForwardProducer (expression : ParsedExpr) : Bool :=
+  match expression.op with
+  | .noforward => true
   | _ => false
 
 def parsedExprIsSupportedFloatMAUProducer (expression : ParsedExpr) : Bool :=
@@ -648,6 +659,126 @@ def executeParsedMatrixWritesAtMABs (readState : State) (coordinates : List MABC
         | .ok nextState =>
             executeParsedMatrixWritesAtMABs readState rest expressions nextState
 
+structure ParsedL1MwriteAccess where
+  source : ParsedOperand
+  mab : Fin 16
+  twoLongWords : Bool
+  address : Option (Fin L1Transfer.l1bmLongWords)
+
+def lowerParsedL1Mwrite? (expression : ParsedExpr) : Option ParsedL1MwriteAccess := do
+  match expression.op, expression.sources, expression.destinations with
+  | .l1bm (.mwrite mab), [source], [.l1bm width address] => do
+      if hmab : mab.val < 16 then
+        let mab : Fin 16 := ⟨mab.val, hmab⟩
+        let address := address.map fun address =>
+          ⟨address.val % L1Transfer.l1bmLongWords,
+            Nat.mod_lt _ (by decide)⟩
+        some ⟨source, mab, width.val == 4, address⟩
+      else none
+  | _, _, _ => none
+
+def rawL1MwriteSource? (source : ParsedOperand) (context : ParsedIntegerContext) :
+    Option ParsedIntegerInput := do
+  let rawSource ← match source with
+    | .mem access _ _ _ _ => some (.mem access false false false none)
+    | .forward kind _ _ _ => some (.forward kind false false false)
+    | _ => none
+  ParsedOperand.toParsedIntegerInput? rawSource .long context.group context.l2b
+    context.l1b context.mab context.pe context.cycle context.bar0 context.bar1 context.tWord
+
+def readRawL1MwriteBus (state : State) (source : ParsedOperand)
+    (pe : PEId) (cycle : Fin 4) : ProofsLean.StepResult IntegerALU.Bus :=
+  let oldContext := state.peContext pe
+  let coordinates := ParsedIntegerContext.ofLinearIndex pe
+  let context := { coordinates with
+    cycle := cycle
+    bar0 := oldContext.bar0
+    bar1 := oldContext.bar1
+    tWord := oldContext.tWord }
+  match rawL1MwriteSource? source context with
+  | none => .failure
+  | some input =>
+      match input with
+      | .forward kind _ =>
+          if !state.forwardingValid pe (ParsedIntegerInput.forwardUnit kind) cycle then
+            .failure
+          else ParsedIntegerInput.readWithForwarding
+            (state.peRegisters pe) (state.forwarding pe) cycle input
+      | _ => ParsedIntegerInput.readWithForwarding
+          (state.peRegisters pe) (state.forwarding pe) cycle input
+
+def readL1MwriteBusesAtBank (state : State) (access : ParsedL1MwriteAccess)
+    (bank : Fin 64) (cycle : Fin 4) : ProofsLean.StepResult (Fin 4 → IntegerALU.Bus) :=
+  let coordinate : MABCoordinate :=
+    ⟨⟨bank.val / 16, by have h := bank.isLt; omega⟩,
+      ⟨bank.val / 8 % 2, by have h := bank.isLt; omega⟩,
+      ⟨bank.val % 8, by have h := bank.isLt; omega⟩, access.mab⟩
+  let rec readPEs : List (Fin 4) → (Fin 4 → IntegerALU.Bus) →
+      ProofsLean.StepResult (Fin 4 → IntegerALU.Bus)
+    | [], buses => .ok buses
+    | pe :: rest, buses =>
+        match readRawL1MwriteBus state access.source
+            (physicalPEId coordinate pe) cycle with
+        | .failure => .failure
+        | .unknown => .unknown
+        | .ok bus => readPEs rest (fun index => if index = pe then bus else buses index)
+  readPEs (List.finRange 4) (fun _ => ⟨0, 0⟩)
+
+def l1MwriteTurnaroundWrites (twoLongWords : Bool)
+    (buses : Fin 4 → IntegerALU.Bus) : List L1Transfer.L1TurnWrite :=
+  (List.finRange 4).flatMap fun pe =>
+    [(⟨pe.val, by have h := pe.isLt; omega⟩, (buses pe).high)] ++
+      if twoLongWords then
+        [(⟨pe.val + 4, by have h := pe.isLt; omega⟩, (buses pe).low)]
+      else []
+
+def executeL1MwriteCyclesAtBank (state : State) (access : ParsedL1MwriteAccess)
+    (bank : Fin 64) (updateTurnaround : Bool) : ProofsLean.StepResult
+      (L1Transfer.L1Bank × L1Transfer.L1Turnaround) :=
+  let rec run : List (Fin 4) → L1Transfer.L1Bank → L1Transfer.L1Turnaround →
+      ProofsLean.StepResult (L1Transfer.L1Bank × L1Transfer.L1Turnaround)
+    | [], memory, turnaround => .ok (memory, turnaround)
+    | cycle :: rest, memory, turnaround =>
+        match readL1MwriteBusesAtBank state access bank cycle with
+        | .failure => .failure
+        | .unknown => .unknown
+        | .ok buses =>
+            let writes := match access.address with
+              | none => []
+              | some base => L1Transfer.mwriteWrites base access.twoLongWords cycle buses
+            let turnWrites := if updateTurnaround then
+              l1MwriteTurnaroundWrites access.twoLongWords buses else []
+            let next := L1Transfer.commitL1Transfer memory turnaround cycle writes turnWrites
+            run rest next.1 next.2
+  run [0, 1, 2, 3] (state.l1bm bank) (state.l1bmTurnaround bank)
+
+def executeParsedL1MwriteAtAllBanks (readState currentState : State)
+    (expression : ParsedExpr) (updateTurnaround : Bool) : ProofsLean.StepResult State :=
+  match lowerParsedL1Mwrite? expression with
+  | none => .unknown
+  | some access =>
+      let rec run : List (Fin 64) → State → ProofsLean.StepResult State
+        | [], state => .ok state
+        | bank :: rest, state =>
+            match executeL1MwriteCyclesAtBank readState access bank updateTurnaround with
+            | .failure => .failure
+            | .unknown => .unknown
+            | .ok (memory, turnaround) =>
+                let next := { state with
+                  l1bm := fun other => if other = bank then memory else state.l1bm other
+                  l1bmTurnaround := fun other =>
+                    if other = bank then turnaround else state.l1bmTurnaround other }
+                run rest next
+      run (List.finRange 64) currentState
+
+def executeParsedL1MwriteProducers (readState currentState : State)
+    (expressions : List ParsedExpr) (updateTurnaround : Bool) : ProofsLean.StepResult State :=
+  match expressions.filter parsedExprIsL1MwriteProducer with
+  | [] => .ok currentState
+  | [expression] =>
+      executeParsedL1MwriteAtAllBanks readState currentState expression updateTurnaround
+  | _ => .unknown
+
 def forwardingValueValid : Forwarding.Value IntegerALU.Bus → Bool
   | .known _ => true
   | .poison | .unknown => false
@@ -693,6 +824,7 @@ def executeIntegerProducerLineAtPE (expressions : List ParsedExpr)
   let matrixStore := state.matrixRegisters context.group context.l2b context.l1b
   let peExpressions := expressions.filter fun expression =>
     !parsedExprIsMatrixWriteProducer expression &&
+      !parsedExprIsL1MwriteProducer expression &&
       !parsedExprIsSupportedFloatMAUProducer expression
   match parsedIntegerMatrixReadLineFourCycleStep (state.peRegisters pe) oldSlots
       matrixStore peExpressions control false with
@@ -775,14 +907,16 @@ noncomputable def executeIntegerProducerInstructionLine
               | .failure => .failure
               | .unknown => .unknown
               | .ok next =>
-                  let noForward := expressions.any fun expression =>
-                    match expression.op with
-                    | .noforward => true
-                    | _ => false
-                  .ok { next with
-                    hazardClock := next.hazardClock + InstructionLine.cost line
-                    l1bmTurnaroundValid :=
-                      if noForward then next.l1bmTurnaroundValid else false }
+                  let noForward := expressions.any parsedExprIsNoForwardProducer
+                  let hasL1Mwrite := expressions.any parsedExprIsL1MwriteProducer
+                  match executeParsedL1MwriteProducers state next expressions (!noForward) with
+                  | .failure => .failure
+                  | .unknown => .unknown
+                  | .ok nextWithL1 =>
+                      .ok { nextWithL1 with
+                        hazardClock := nextWithL1.hazardClock + InstructionLine.cost line
+                        l1bmTurnaroundValid :=
+                          if noForward then nextWithL1.l1bmTurnaroundValid else hasL1Mwrite }
         else .unknown
     | .nop count _ =>
         .ok { state with hazardClock := state.hazardClock + count.val }
@@ -838,7 +972,7 @@ theorem executeIntegerProducerInstructionLine_mv_transfer_success
     accepted, notNop, executed]
 
 theorem executeIntegerProducerInstructionLine_pe_success
-    (normalizedExpressions : List NormalizedExpr) (state nextPEs next : State)
+    (normalizedExpressions : List NormalizedExpr) (state nextPEs next nextL1 : State)
     (accepted : checkParsedTopLine
       (InstructionLine.pe normalizedExpressions).toParsed = true)
     (supported : (normalizedExpressions.map NormalizedExpr.toParsed).all
@@ -847,14 +981,22 @@ theorem executeIntegerProducerInstructionLine_pe_success
       (normalizedExpressions.map NormalizedExpr.toParsed) (List.finRange 4096) state =
         .ok nextPEs)
     (matrixWrites : executeParsedMatrixWritesAtMABs state allMABCoordinates
-      (normalizedExpressions.map NormalizedExpr.toParsed) nextPEs = .ok next) :
+      (normalizedExpressions.map NormalizedExpr.toParsed) nextPEs = .ok next)
+    (l1Writes : executeParsedL1MwriteProducers state next
+      (normalizedExpressions.map NormalizedExpr.toParsed)
+      (!(normalizedExpressions.any
+        (parsedExprIsNoForwardProducer ∘ NormalizedExpr.toParsed))) = .ok nextL1) :
     executeIntegerProducerInstructionLine (.pe normalizedExpressions) state =
-      .ok { next with
-        hazardClock := next.hazardClock + InstructionLine.cost (.pe normalizedExpressions)
+      .ok { nextL1 with
+        hazardClock := nextL1.hazardClock + InstructionLine.cost (.pe normalizedExpressions)
         l1bmTurnaroundValid :=
-          if (normalizedExpressions.map NormalizedExpr.toParsed).any (fun expression =>
-            match expression.op with | .noforward => true | _ => false)
-          then next.l1bmTurnaroundValid else false } := by
-  simp [executeIntegerProducerInstructionLine, accepted, supported, executed, matrixWrites]
+          if ∃ expression ∈ normalizedExpressions,
+            parsedExprIsNoForwardProducer expression.toParsed = true
+          then nextL1.l1bmTurnaroundValid
+          else normalizedExpressions.any (fun expression =>
+            parsedExprIsL1MwriteProducer expression.toParsed) } := by
+  simp [executeIntegerProducerInstructionLine, accepted, supported, executed,
+    matrixWrites, l1Writes, List.any_map]
+  rfl
 
 end ProofsLean.MNCore
