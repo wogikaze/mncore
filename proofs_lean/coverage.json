@@ -117,12 +117,14 @@
       "modifier_projection_theorem": "ProofsLean.MNCore.PEMemory.ParsedOperand.forHazardAddress_mem",
       "malformed_address_mode_handling": "Unsupported direct PE-memory widths and t-indirect/madpe bank combinations fail before hazard lowering",
       "validity_predicate": "ProofsLean.MNCore.PEMemory.ParsedOperand.directMemoryAddressModeValid",
-      "disabled_forwarding": "Invalid per-unit/per-cycle forwarding state is exposed as poison and consumed forward operands fail; noforward preserves the previous payload and validity state",
+      "disabled_forwarding": "Producer absence is represented as poison with validity=false and consumed forward operands fail; an unresolved produced value remains unknown with validity=true; noforward preserves payload and validity state",
       "disabled_forwarding_theorems": [
         "ProofsLean.MNCore.disabledForwardingSlot_read_fails",
+        "ProofsLean.MNCore.unresolvedForwardingSlot_read_stays_unknown",
         "ProofsLean.MNCore.noforward_preserves_forwarding_validity",
         "ProofsLean.MNCore.PEMemory.parsed_noforward_suppresses_forwarding_updates",
-        "ProofsLean.MNCore.Forwarding.noforward_preserves"
+        "ProofsLean.MNCore.Forwarding.noforward_preserves",
+        "ProofsLean.MNCore.unknown_forwarding_value_keeps_slot_enabled"
       ],
       "l1_to_pe_absent_behavior": "Rust machine.rs retains prior LBF payload and error when the step has no L1-to-PE producer; Lean reference transition preserves the same per-cycle slot",
       "l1_to_pe_absent_theorems": [

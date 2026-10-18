@@ -56,6 +56,21 @@ theorem disabledForwardingSlot_read_fails (state : State) (pe : PEId)
   rw [hUnit]
   exact stateForwardingSlots_invalid_is_poison state pe unit cycle disabled
 
+theorem unresolvedForwardingSlot_read_stays_unknown (state : State) (pe : PEId)
+    (unit : Forwarding.Unit) (cycle : Fin 4) (kind : ParsedForward)
+    (hUnit : ParsedIntegerInput.forwardUnit kind = unit)
+    (enabled : state.forwardingValid pe unit cycle = true)
+    (unresolved : state.forwarding pe unit cycle = .unknown) :
+    ParsedIntegerInput.readWithForwarding
+      (state.peRegisters pe) (stateForwardingSlots state pe) cycle
+      (.forward kind false) = .unknown := by
+  have slot : stateForwardingSlots state pe (ParsedIntegerInput.forwardUnit kind) cycle = .unknown := by
+    rw [hUnit]
+    rw [stateForwardingSlots_valid_preserves_payload state pe unit cycle enabled]
+    exact unresolved
+  exact parsedIntegerInput_forward_unknown_stays_unknown
+    (state.peRegisters pe) (stateForwardingSlots state pe) cycle kind false slot
+
 /-- At simulator startup every forwarding read fails exactly as Rust's
 uninitialized-register error path: the initial validity bit yields poison,
 which the shared parsed-input reader turns into a known execution failure. -/
@@ -2627,7 +2642,11 @@ def executeParsedL1ToPEProducer (readState currentState : State)
 
 def forwardingValueValid : Forwarding.Value IntegerALU.Bus → Bool
   | .known _ => true
-  | .poison | .unknown => false
+  | .poison => false
+  | .unknown => true
+
+theorem unknown_forwarding_value_keeps_slot_enabled :
+    forwardingValueValid (.unknown : Forwarding.Value IntegerALU.Bus) = true := rfl
 
 def updateSupportedPELineForwarding (old prepared : Forwarding.Slots)
     (noForward hasALUProducer hasMAUProducer hasMatrixReadProducer : Bool) :
