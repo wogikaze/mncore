@@ -7038,6 +7038,18 @@ def executeParsedMvMemory (state : State) (transfer : ParsedMv) :
           mvCompletedTags := fun tag =>
             if transfer.tag == some tag then false else state.mvCompletedTags tag }
 
+/-- MV staging is total with respect to the three-way step result: address/
+write construction can fail, but this transition never produces `.unknown`. -/
+theorem executeParsedMvMemory_never_unknown (state : State) (transfer : ParsedMv) :
+    executeParsedMvMemory state transfer ≠ .unknown := by
+  unfold executeParsedMvMemory
+  cases MVSemantics.parsedMvPendingWritesWithDAR? state.blockMemory state.dar transfer with
+  | none => simp
+  | some writes =>
+      by_cases isNop : transfer.kind == .nop
+      · simp [isNop]
+      · simp [isNop]
+
 /-- Remove one pending operation carrying `tag` without completing unrelated
 operations. MV priority and resource contention can change completion order. -/
 def removePendingMvTag : Fin 256 → List PendingMv → Option (PendingMv × List PendingMv)
