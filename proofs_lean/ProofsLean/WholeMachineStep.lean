@@ -2184,24 +2184,63 @@ theorem executeL1MwriteCyclesAtBank_direct_memory_never_unknown
     updateTurnaround [0, 1, 2, 3] (currentState.l1bm bank)
     (readState.l1bmTurnaround bank) operandAccess negated extended rounded mask source
 
+def executeL1MwriteBankList (readState : State) (access : ParsedL1MwriteAccess)
+    (updateTurnaround : Bool) : List (Fin 64) → State → ProofsLean.StepResult State
+  | [], state => .ok state
+  | bank :: rest, state =>
+      match executeL1MwriteCyclesAtBank readState state access bank updateTurnaround with
+      | .failure => .failure
+      | .unknown => .unknown
+      | .ok (memory, turnaround) =>
+          let next := { state with
+            l1bm := fun other => if other = bank then memory else state.l1bm other
+            l1bmTurnaround := fun other =>
+              if other = bank then turnaround else state.l1bmTurnaround other }
+          executeL1MwriteBankList readState access updateTurnaround rest next
+
+theorem executeL1MwriteBankList_direct_memory_never_unknown
+    (readState : State) (access : ParsedL1MwriteAccess) (updateTurnaround : Bool)
+    (banks : List (Fin 64)) (state : State)
+    (operandAccess : Access) (negated extended rounded : Bool)
+    (mask : Option ParsedMask)
+    (source : access.source = .mem operandAccess negated extended rounded mask) :
+    executeL1MwriteBankList readState access updateTurnaround banks state ≠ .unknown := by
+  induction banks generalizing state with
+  | nil => simp [executeL1MwriteBankList]
+  | cons bank rest ih =>
+      simp only [executeL1MwriteBankList]
+      cases result : executeL1MwriteCyclesAtBank readState state access bank
+          updateTurnaround with
+      | failure => simp [result]
+      | unknown =>
+          exact (executeL1MwriteCyclesAtBank_direct_memory_never_unknown
+            readState state access bank updateTurnaround operandAccess negated extended
+            rounded mask source result).elim
+      | ok completion =>
+          rcases completion with ⟨memory, turnaround⟩
+          simp only [result]
+          exact ih _
+
 def executeParsedL1MwriteAtAllBanks (readState currentState : State)
     (expression : ParsedExpr) (updateTurnaround : Bool) : ProofsLean.StepResult State :=
   match lowerParsedL1Mwrite? expression with
   | none => .failure
-  | some access =>
-      let rec run : List (Fin 64) → State → ProofsLean.StepResult State
-        | [], state => .ok state
-        | bank :: rest, state =>
-            match executeL1MwriteCyclesAtBank readState state access bank updateTurnaround with
-            | .failure => .failure
-            | .unknown => .unknown
-            | .ok (memory, turnaround) =>
-                let next := { state with
-                  l1bm := fun other => if other = bank then memory else state.l1bm other
-                  l1bmTurnaround := fun other =>
-                    if other = bank then turnaround else state.l1bmTurnaround other }
-                run rest next
-      run (List.finRange 64) currentState
+  | some access => executeL1MwriteBankList readState access updateTurnaround
+      (List.finRange 64) currentState
+
+theorem executeParsedL1MwriteAtAllBanks_direct_memory_never_unknown
+    (readState currentState : State) (expression : ParsedExpr)
+    (updateTurnaround : Bool) (access : ParsedL1MwriteAccess)
+    (operandAccess : Access) (negated extended rounded : Bool)
+    (mask : Option ParsedMask)
+    (lowered : lowerParsedL1Mwrite? expression = some access)
+    (source : access.source = .mem operandAccess negated extended rounded mask) :
+    executeParsedL1MwriteAtAllBanks readState currentState expression updateTurnaround ≠
+      .unknown := by
+  simp only [executeParsedL1MwriteAtAllBanks, lowered]
+  exact executeL1MwriteBankList_direct_memory_never_unknown readState access
+    updateTurnaround (List.finRange 64) currentState operandAccess negated extended
+    rounded mask source
 
 theorem executeParsedL1MwriteAtAllBanks_lowering_failure
     (readState currentState : State) (expression : ParsedExpr) (updateTurnaround : Bool)
