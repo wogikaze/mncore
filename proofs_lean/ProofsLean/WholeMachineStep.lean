@@ -2007,28 +2007,43 @@ def lowerParsedMslMsr? (expression : ParsedExpr) :
       some (isMsl, destination)
   | [_], [.nowrite] =>
       some (isMsl, .nowrite)
+  | [_], [destination@(.bar ..)] =>
+      some (isMsl, destination)
   | _, _ => none
+
+structure ParsedMslMsrDestinationWrite where
+  files : PEMemory.IntegerRegisterFiles
+  barUpdate : Option (Bool × BitVec 12)
 
 def writeParsedMslMsrDestination? (files : PEMemory.IntegerRegisterFiles)
     (destination : ParsedOperand) (context : ParsedIntegerContext)
     (output : IntegerALU.Bus) (cycle : Fin 4)
     (directive : ParsedMaskDirective) (hasSingleLineMask : Bool) :
-    Option PEMemory.IntegerRegisterFiles :=
+    Option ParsedMslMsrDestinationWrite :=
   match destination with
   | .mem .. => do
       let access ← ParsedOperand.toDirectMemoryDestination? destination context.pe cycle
         context.bar0 context.bar1 context.tWord
       let selection ← ParsedOperand.resolveMemoryWriteSelection? destination access.bank
         files.maskRegisters cycle directive hasSingleLineMask
-      some (PEMemory.writeDirectAccessMasked files access (PEMemory.unpackALUBus output) selection)
+      some ⟨PEMemory.writeDirectAccessMasked files access
+        (PEMemory.unpackALUBus output) selection, none⟩
   | .omr .. => do
       let entry ← ParsedOperand.toMaskRegisterEntry? destination
       let selection ← ParsedOperand.resolveOmrWriteSelection? destination files.maskRegisters
         cycle directive hasSingleLineMask
       let maskRegisters := ProofsLean.MNCore.Masks.writeRegister
         files.maskRegisters entry cycle 0 selection
-      some { files with maskRegisters := maskRegisters }
-  | .nowrite => some files
+      some ⟨{ files with maskRegisters := maskRegisters }, none⟩
+  | .bar lm1 _ _ => do
+      let bank := if lm1 then PEMemory.Bank.lm1 else PEMemory.Bank.lm0
+      let selection ← ParsedOperand.resolveMemoryWriteSelection? destination bank
+        files.maskRegisters cycle directive hasSingleLineMask
+      let barValue := BitVec.ofNat 12
+        ((output.high.extractLsb' 32 32).toNat % 2 ^ 12)
+      let update := if selection.flags == 0 then none else some (lm1, barValue)
+      some ⟨files, update⟩
+  | .nowrite => some ⟨files, none⟩
   | _ => none
 
 def mslMsrSourcePE (pe : PEId) (isMsl : Bool) : PEId :=
@@ -2085,10 +2100,11 @@ def executeParsedMslMsrAtPE (readState currentState : State)
         sourceContext.pe cycle sourceContext.bar0 sourceContext.bar1 sourceContext.tWord
     | _ => none
   let rec runCycles : List (Fin 4) → PEMemory.IntegerRegisterFiles →
-      (Fin 4 → IntegerALU.Bus) → ProofsLean.StepResult
-        (PEMemory.IntegerRegisterFiles × (Fin 4 → IntegerALU.Bus))
-    | [], files, outputs => .ok (files, outputs)
-    | cycle :: rest, files, outputs =>
+      BitVec 12 → BitVec 12 → (Fin 4 → IntegerALU.Bus) → ProofsLean.StepResult
+        (PEMemory.IntegerRegisterFiles × BitVec 12 × BitVec 12 ×
+          (Fin 4 → IntegerALU.Bus))
+    | [], files, bar0, bar1, outputs => .ok (files, bar0, bar1, outputs)
+    | cycle :: rest, files, bar0, bar1, outputs =>
         match sourceAt cycle with
         | none => .unknown
         | some source =>
@@ -2102,16 +2118,24 @@ def executeParsedMslMsrAtPE (readState currentState : State)
             | none => .unknown
             | some flushSelection =>
                 let output := parsedOutputAfterFlush flushSelection shifted
-                match writeParsedMslMsrDestination? files destination context output cycle
+                let destinationContext := { context with cycle := cycle, bar0 := bar0, bar1 := bar1 }
+                match writeParsedMslMsrDestination? files destination destinationContext output cycle
                     currentState.maskDirective hasSingleLineMask with
                 | none => .unknown
-                | some nextFiles =>
-                    runCycles rest nextFiles
+                | some write =>
+                    let nextBar0 := match write.barUpdate with
+                      | some (false, value) => value
+                      | _ => bar0
+                    let nextBar1 := match write.barUpdate with
+                      | some (true, value) => value
+                      | _ => bar1
+                    runCycles rest write.files nextBar0 nextBar1
                       (fun index => if index = cycle then output else outputs index)
-  match runCycles [0, 1, 2, 3] (currentState.peRegisters pe) (fun _ => ⟨0, 0⟩) with
+  match runCycles [0, 1, 2, 3] (currentState.peRegisters pe) context.bar0 context.bar1
+      (fun _ => ⟨0, 0⟩) with
   | .failure => return .failure
   | .unknown => return .unknown
-  | .ok (registers, outputs) =>
+  | .ok (registers, bar0, bar1, outputs) =>
       let forwarding : Forwarding.Slots := fun unit cycle =>
         if noForward then currentState.forwarding pe unit cycle
         else if unit == .alu then .known (outputs cycle)
@@ -2123,7 +2147,10 @@ def executeParsedMslMsrAtPE (readState currentState : State)
       return .ok { currentState with
         peRegisters := fun other => if other = pe then registers else currentState.peRegisters other
         forwarding := fun other => if other = pe then forwarding else currentState.forwarding other
-        forwardingValid := fun other => if other = pe then valid else currentState.forwardingValid other }
+        forwardingValid := fun other => if other = pe then valid else currentState.forwardingValid other
+        peContext := fun other => if other = pe then
+          { currentState.peContext other with bar0 := bar0, bar1 := bar1 }
+          else currentState.peContext other }
 
 def executeParsedMslMsrAtPEs (readState currentState : State)
     (expression : ParsedExpr) (pes : List PEId) (noForward hasSingleLineMask : Bool) :

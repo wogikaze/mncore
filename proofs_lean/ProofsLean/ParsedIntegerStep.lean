@@ -777,6 +777,12 @@ def ParsedOperand.resolveMemoryWriteSelection? (operand : ParsedOperand) (bank :
       if hasSingleLineMask then some ⟨BitVec.allOnes 4, true⟩
       else some ((resolveMemoryDirectiveSelection? directive bank registers cycle).getD
         ⟨BitVec.allOnes 4, true⟩)
+  | .bar lm1 _ (some mask) => resolveParsedMaskSelection? mask registers cycle
+  | .bar lm1 _ none =>
+      let bank := if lm1 then .lm1 else .lm0
+      if hasSingleLineMask then some ⟨BitVec.allOnes 4, true⟩
+      else some ((resolveMemoryDirectiveSelection? directive bank registers cycle).getD
+        ⟨BitVec.allOnes 4, true⟩)
   | _ => none
 
 def resolveFlushSelection? (flush : Option ParsedMask)
@@ -834,6 +840,13 @@ theorem single_line_mask_cancels_memory_directive
     ParsedOperand.resolveMemoryWriteSelection?
       (.mem access false false false none) bank registers cycle directive true =
       some ⟨BitVec.allOnes 4, true⟩ := by
+  simp [ParsedOperand.resolveMemoryWriteSelection?]
+
+theorem single_line_bar_write_mask_cancels_multiline_directive
+    (registers : ProofsLean.MNCore.Masks.RegisterFile) (cycle : Fin 4)
+    (directive : ParsedMaskDirective) :
+    ParsedOperand.resolveMemoryWriteSelection? (.bar true 1 none) .lm1
+      registers cycle directive true = some ⟨BitVec.allOnes 4, true⟩ := by
   simp [ParsedOperand.resolveMemoryWriteSelection?]
 
 theorem untargeted_memory_uses_unmasked_selection

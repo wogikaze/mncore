@@ -142,6 +142,7 @@ import Lean
 #print axioms ProofsLean.MNCore.mslMsrSourcePE_stays_in_MAB
 #print axioms ProofsLean.MNCore.mslMsrSourcePE_direction_examples
 #print axioms ProofsLean.MNCore.mslMsrOutputBus_keeps_msb_longword_only
+#print axioms ProofsLean.MNCore.PEMemory.single_line_bar_write_mask_cancels_multiline_directive
 #print axioms ProofsLean.MNCore.UnitKind.mem_all
 #print axioms ProofsLean.MNCore.Issue.ParsedOp.producerUnit?_of_alu
 #print axioms ProofsLean.MNCore.Issue.ParsedOp.producerUnit?_of_mau
