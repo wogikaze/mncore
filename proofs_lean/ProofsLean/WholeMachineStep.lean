@@ -2691,6 +2691,14 @@ theorem noforward_preserves_forwarding_validity
   funext unit cycle
   simp [updateIntegerLineForwardingValid]
 
+theorem unresolved_forwarding_output_sets_enabled_validity
+    (oldValid : Forwarding.Unit → Fin 4 → Bool)
+    (slots : Forwarding.Slots) (unit : Forwarding.Unit) (cycle : Fin 4)
+    (notL1ToPE : unit ≠ .l1ToPE)
+    (unresolved : slots unit cycle = .unknown) :
+    updateIntegerLineForwardingValid oldValid slots false unit cycle = true := by
+  simp [updateIntegerLineForwardingValid, unresolved, forwardingValueValid, notL1ToPE]
+
 def parsedExprIsMslMsrProducer (expression : ParsedExpr) : Bool :=
   match expression.op with
   | .alu .msl none _ _ | .alu .msr none _ _ => true
