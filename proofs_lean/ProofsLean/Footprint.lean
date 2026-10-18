@@ -118,6 +118,23 @@ theorem Footprint.foldl_unitWrites_keep {α : Type} (items : List α)
       apply ih
       simp [Footprint.combine, member]
 
+theorem Footprint.foldl_unitWrites_contains_effect {α : Type} (items : List α)
+    (effect : α → Footprint) (initial : Footprint) (item : α)
+    (member : item ∈ items) (resource : UnitResource)
+    (writes : resource ∈ (effect item).unitWrites) :
+    resource ∈ (items.foldl
+      (fun result current => Footprint.combine result (effect current)) initial).unitWrites := by
+  induction items generalizing initial with
+  | nil => simp at member
+  | cons head rest ih =>
+      rcases List.mem_cons.mp member with same | later
+      · subst item
+        have afterHead : resource ∈ (Footprint.combine initial (effect head)).unitWrites := by
+          simp [Footprint.combine, writes]
+        exact Footprint.foldl_unitWrites_keep rest effect
+          (Footprint.combine initial (effect head)) resource afterHead
+      · exact ih (Footprint.combine initial (effect head)) later
+
 def writeOperand {α : Type} (state : OperandRef → α)
     (target : OperandRef) (value : α) : OperandRef → α :=
   fun location => if location = target then value else state location
@@ -233,6 +250,18 @@ theorem ParsedExpr.l1bm_turnaround_write_in_footprint (expression : ParsedExpr)
     (written : parsedOpMayWriteL1BMTurnaround expression.op = true) :
     UnitResource.l1bmTurnaround ∈ (parsedExprFootprint expression).unitWrites := by
   simp [parsedExprFootprint, written]
+
+theorem NormalizedLine.pe_preserves_l1bm_turnaround_write
+    (expressions : List NormalizedExpr) (expression : NormalizedExpr)
+    (member : expression ∈ expressions)
+    (writes : parsedExprMayWriteL1BMTurnaround expression.toParsed = true) :
+    UnitResource.l1bmTurnaround ∈
+      (normalizedLineFootprint (.pe expressions)).unitWrites := by
+  simp only [normalizedLineFootprint]
+  apply Footprint.foldl_unitWrites_contains_effect expressions
+    (fun current => parsedExprFootprint current.toParsed)
+    { emptyFootprint with unitWrites := [.hazardClock] } expression member
+  exact ParsedExpr.l1bm_turnaround_write_in_footprint expression.toParsed writes
 
 theorem InstructionLine.has_hazard_clock_write (line : InstructionLine) :
     UnitResource.hazardClock ∈ (instructionLineFootprint line).unitWrites := by
