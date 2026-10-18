@@ -1959,11 +1959,15 @@
           "ProofsLean.MNCore.executeL1MwriteCycleList_direct_memory_never_unknown",
           "ProofsLean.MNCore.executeL1MwriteCyclesAtBank_direct_memory_never_unknown",
           "ProofsLean.MNCore.executeL1MwriteBankList_direct_memory_never_unknown",
-          "ProofsLean.MNCore.executeParsedL1MwriteAtAllBanks_direct_memory_never_unknown"
+          "ProofsLean.MNCore.executeParsedL1MwriteAtAllBanks_direct_memory_never_unknown",
+          "ProofsLean.MNCore.executeL1MwriteCycleList_resolved_forward_never_unknown",
+          "ProofsLean.MNCore.executeL1MwriteCyclesAtBank_resolved_forward_never_unknown",
+          "ProofsLean.MNCore.executeL1MwriteBankList_resolved_forward_never_unknown",
+          "ProofsLean.MNCore.executeParsedL1MwriteAtAllBanks_resolved_forward_never_unknown"
         ],
         "mwrite_pe_group_unknown_free_scope": "For a successfully lowered mwrite or m4write whose PE source is direct memory, the guarantee composes across its PE/group reads, all four cycles, and all 64 banks; the complete producer transition cannot return unknown. Forwarding sources and command-level Rust conformance remain open.",
         "forward_source_condition_theorem": "ProofsLean.MNCore.readRawL1MwriteBus_forward_never_unknown",
-        "forward_source_condition": "For a forwarding source, the raw read cannot return unknown if the forwarding slot is disabled or its stateForwardingSlots value is known/poison. A valid unresolved slot can still return unknown. This condition composes across the selected PE group for one mwrite bank/MAB/cycle and across all four MAB groups for one m4write bank/cycle; all-cycle/all-bank composition remains open.",
+        "forward_source_condition": "For a forwarding source, the raw read cannot return unknown if the forwarding slot is disabled or its stateForwardingSlots value is known/poison. A valid unresolved slot can still return unknown. The state-wide forwardingSourceResolved premise composes this condition across all cycles and banks, proving the complete successfully lowered mwrite/m4write producer cannot return unknown for that source.",
         "rust_reference": "viz/core/src/vsm.rs::parse_operand separates PE-memory banks from L1BM/L2BM/OMR operands; viz/core/src/machine.rs::Machine::read_raw_untraced reports unsupported non-memory sources.",
         "scope_limit": "The Lean failure theorem covers malformed direct AST memory banks that cannot represent a Rust PE-memory operand. Parser-produced PE-memory reads still require source-level differential conformance."
       },
