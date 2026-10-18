@@ -8347,8 +8347,8 @@ theorem executeIntegerProducerInstructionLine_pe_never_unknown_of_stages
       ∀ coordinate, coordinate ∈ allMABCoordinates → ∀ blockFloatState,
         executeParsedBlockFloatAtMAB state blockFloatState expression coordinate
           noForward hasSingleLineMask ≠ .unknown)
-    (matrixKnown : ∀ nextBlockFloat,
-      executeParsedMatrixMAUAndWrites state nextBlockFloat expressions
+    (matrixProducerKnown : ∀ nextBlockFloat,
+      executeParsedMatrixMAUProducer state nextBlockFloat expressions
         noForward hasSingleLineMask ≠ .unknown)
     (resolved : forwardingSourceResolved state)
     (l1ToPEKnown : ∀ nextShared,
@@ -8409,7 +8409,11 @@ theorem executeIntegerProducerInstructionLine_pe_never_unknown_of_stages
                   cases matrixResult : executeParsedMatrixMAUAndWrites state nextBlockFloat
                       expressions noForward hasSingleLineMask with
                   | failure => simp_all [expressions, noForward, hasSingleLineMask, List.any_map]
-                  | unknown => exact (matrixKnown nextBlockFloat matrixResult).elim
+                  | unknown =>
+                      have matrixStageKnown := executeParsedMatrixMAUAndWrites_resolved_never_unknown
+                        state nextBlockFloat expressions noForward hasSingleLineMask
+                        (matrixProducerKnown nextBlockFloat) resolved
+                      exact (matrixStageKnown matrixResult).elim
                   | ok nextMatrix =>
                       cases sharedResult : executeParsedSharedBlockProducers state nextMatrix
                           expressions (!noForward) with
