@@ -2257,6 +2257,20 @@ def parsedL2ReduceWord? (rrn : ParsedRrn) (values : List (BitVec 64)) :
     let (precision, operation) ← parsedL1IntegerRRN? rrn
     some (RRN.reduceLongInteger operation precision values)
 
+/-- The block reduction executor must never turn an unsupported RRN spelling
+into a successful zero write. `parsedL2Writes?` uses this predicate to guard
+the total list construction below. -/
+def parsedL2ReductionSupported (op : ParsedL2Op) : Bool :=
+  match op with
+  | .reduce rrn _ | .reduce2 rrn =>
+      (parsedL2ReduceWord? rrn [0]).isSome
+  | _ => true
+
+theorem parsedL2ReductionSupported_rejects_integer_float_add (set : ParsedL1bSet) :
+    parsedL2ReductionSupported
+      (.reduce ⟨⟨'i', by decide⟩, .fadd⟩ set) = false := by
+  simp [parsedL2ReductionSupported, parsedL2ReduceWord?, parsedL1IntegerRRN?]
+
 def parsedL2Writes? (readState : State) (access : ParsedL2Access) :
     Option (List (Fin 64 × Fin L1Transfer.l1bmLongWords × BitVec 64) ×
       List (MVSemantics.Cell × BitVec 64)) := do
@@ -2329,11 +2343,17 @@ def parsedL2Writes? (readState : State) (access : ParsedL2Access) :
           l2write l2Index (destinationAddress + cycle * 64 + 16 * group.val + word)
             ((parsedL2ReduceWord? rrn values).getD 0)
     | _ => []
-  match access.op with
-  | .dars | .darw => none
-  | .fromL1b selected => if selected.val < 8 then some (l1Writes, l2Writes) else none
-  | .bcast _ | .bcast2 _ | .distrib _ | .imcast _ | .gather | .reduce .. | .reduce2 .. =>
-      some (l1Writes, l2Writes)
+  if !parsedL2ReductionSupported access.op then none else
+    match access.op with
+    | .dars | .darw => none
+    | .fromL1b selected => if selected.val < 8 then some (l1Writes, l2Writes) else none
+    | .bcast _ | .bcast2 _ | .distrib _ | .imcast _ | .gather | .reduce .. | .reduce2 .. =>
+        some (l1Writes, l2Writes)
+
+theorem parsedL2Writes_rejects_integer_float_add
+    (state : State) (set : ParsedL1bSet) :
+    parsedL2Writes? state ⟨.reduce ⟨⟨'i', by decide⟩, .fadd⟩ set, some 0, some 0⟩ = none := by
+  simp [parsedL2Writes?, parsedL2ReductionSupported_rejects_integer_float_add]
 
 def parsedDarsSource? (expression : ParsedExpr) : Option (Nat × Fin 2 × Fin 1024) := do
   let (.l2bm .dars) := expression.op | none
