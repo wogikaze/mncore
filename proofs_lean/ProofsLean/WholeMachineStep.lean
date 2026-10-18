@@ -1260,6 +1260,12 @@ def lowerParsedMatrixWriteResult (expression : ParsedExpr) (context : ParsedInte
   | some accesses => .ok accesses
   | none => .failure
 
+theorem lowerParsedMatrixWriteResult_never_unknown
+    (expression : ParsedExpr) (context : ParsedIntegerContext) :
+    lowerParsedMatrixWriteResult expression context ≠ .unknown := by
+  cases lowered : lowerParsedMatrixWrite? expression context <;>
+    simp [lowerParsedMatrixWriteResult, lowered]
+
 theorem lowerParsedMatrixWrite_lowering_miss_is_failure
     (expression : ParsedExpr) (context : ParsedIntegerContext)
     (miss : lowerParsedMatrixWrite? expression context = none) :

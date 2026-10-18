@@ -1992,7 +1992,8 @@
           "theorem": "ProofsLean.MNCore.lowerParsedMatrixWrite_lowering_miss_is_failure",
           "behavior": "Any matrix-write lowering miss is a known failure, including mem/forward source forms whose address/source fields cannot be represented.",
           "rust_reference": "viz/core/src/machine.rs::Machine::compute_mwrite propagates read_raw_elems errors as ExecError; unsupported source/destination lowering is not an epistemic unknown.",
-          "scope_limit": "Unresolved forwarding remains .unknown in readParsedMatrixWriteBuses. Prove per-PE/all-PE read knownness under resolved forwarding and connect it through matrix-write cycles and co-issued MAU lines."
+          "scope_limit": "Lowering itself is now proved unknown-free; readParsedMatrixWriteBuses may still be unknown only through source read or bus preparation, with enabled unresolved forwarding the confirmed live case. Prove the PE read helper and cycle/coordinate composition next.",
+          "result_theorem": "ProofsLean.MNCore.lowerParsedMatrixWriteResult_never_unknown"
         },
         "matrix_write_forward_validation": {
           "lean_source": "ProofsLean.MNCore.readParsedMatrixWriteBuses",
