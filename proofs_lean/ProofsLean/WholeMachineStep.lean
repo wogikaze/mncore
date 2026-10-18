@@ -4932,6 +4932,57 @@ theorem executeNormalizedLine_positive_nop_matches_footprint
     simp [executeNormalizedLine, NormalizedLine.toInstruction?,
       executeIntegerProducerInstructionLine, acceptedInstruction, waitNone]
 
+/-- A positive no-wait nop advances the machine clock by its issue cost,
+emits no PE or block hazard events, and ages existing histories against the
+new clock. The stalled marker is preserved. -/
+theorem executeHazardAwareNormalizedLineCore_positive_nop
+    (state : HazardAwareState) (count : Nat) :
+    executeHazardAwareNormalizedLineCore (.nop (count + 1) none) state =
+      .ok { state with
+        machine := { state.machine with
+          hazardClock := state.machine.hazardClock + (count + 1) }
+        peHistory := fun pe => (state.peHistory pe).filter fun event =>
+          event.startWord + 4 ≥ state.machine.hazardClock + (count + 1)
+        blockHistory := state.blockHistory.filter fun event =>
+          event.startWord + 4 ≥ state.machine.hazardClock + (count + 1) } := by
+  have accepted : checkParsedTopLine (.nop (count + 1) none) = true := by
+    simp [checkParsedTopLine, ParsedLine.nopIssueLegalB]
+  have acceptedInstruction : checkParsedTopLine (InstructionLine.toParsed
+      (.nop ⟨count + 1, by omega⟩ none)) = true := by
+    simpa [InstructionLine.toParsed] using accepted
+  have executed :=
+    (executeNormalizedLine_positive_nop_matches_footprint state.machine count none
+      accepted rfl).2
+  have peEvents : parsedNormalizedLinePEHazardEvents? state.machine
+      (.nop (count + 1) none) = some (List.replicate 4096 []) := rfl
+  have blockEvents : HazardTrace.parsedLineBlockHazardEvents
+      (NormalizedLine.toParsed (.nop (count + 1) none))
+        state.machine.hazardClock = [] := rfl
+  have noPEHazard : ∀ pe, parsedPEHazardViolated
+      (state.peHistory pe) ([] : List PEMemory.TimedPEAccess) = false := by
+    intro pe
+    simp [parsedPEHazardViolated, PEMemory.peHazardConstraintsBetween]
+  have noBlockHazard : parsedBlockHazardViolated state.blockHistory [] = false := by
+    simp [parsedBlockHazardViolated, HazardTrace.blockHazardConstraintsBetween]
+  simp [-List.reduceReplicate, executeHazardAwareNormalizedLineCore,
+    NormalizedLine.toInstruction?,
+    parsedNormalizedLinePEAddressModesValid, peEvents, blockEvents,
+    noPEHazard, noBlockHazard, executed, acceptedInstruction]
+
+theorem executeHazardAwareNormalizedLine_positive_nop
+    (state : HazardAwareState) (count : Nat)
+    (notStalled : state.stalledPEIssue = none) :
+    executeHazardAwareNormalizedLine (.nop (count + 1) none) state =
+      .ok { state with
+        machine := { state.machine with
+          hazardClock := state.machine.hazardClock + (count + 1) }
+        peHistory := fun pe => (state.peHistory pe).filter fun event =>
+          event.startWord + 4 ≥ state.machine.hazardClock + (count + 1)
+        blockHistory := state.blockHistory.filter fun event =>
+          event.startWord + 4 ≥ state.machine.hazardClock + (count + 1) } := by
+  simp [executeHazardAwareNormalizedLine, normalizedLineWaitTag?, notStalled,
+    executeHazardAwareNormalizedLineCore_positive_nop]
+
 /-- Zero-count nop is erased by normalization. If constructed directly in the
 normalized AST, it cannot advance state and its footprint is empty. -/
 theorem executeNormalizedLine_zero_nop_matches_footprint

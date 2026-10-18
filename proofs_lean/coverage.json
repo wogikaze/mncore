@@ -153,6 +153,12 @@
         "runner_theorem": "ProofsLean.MNCore.executeHazardAwareNormalizedLine_maskDirective",
         "condition": "No PE issue is already stalled for the public deterministic runner.",
         "effect": "Only machine maskDirective changes; PE/block histories, stalled marker, and hazardClock are preserved."
+      },
+      "positive_nop_state_connection": {
+        "core_theorem": "ProofsLean.MNCore.executeHazardAwareNormalizedLineCore_positive_nop",
+        "runner_theorem": "ProofsLean.MNCore.executeHazardAwareNormalizedLine_positive_nop",
+        "scope": "Positive nop count with no wait.",
+        "effect": "Advances the hazard clock by issue cost, emits no hazard events, and prunes PE/block history against the four-word retention window."
       }
     },
     "remaining": [
@@ -173,7 +179,8 @@
       "ProofsLean.MNCore.ParsedExpr.destination_in_write_footprint",
       "ProofsLean.MNCore.InstructionLine.has_hazard_clock_write",
       "ProofsLean.MNCore.commitOperandWrites_frame",
-      "ProofsLean.MNCore.NormalizedLine.footprint_eq_instructionLineFootprint"
+      "ProofsLean.MNCore.NormalizedLine.footprint_eq_instructionLineFootprint",
+      "ProofsLean.MNCore.executeHazardAwareNormalizedLineCore_positive_nop"
     ],
     "initialization_policy": "unspecified_pending_judge_evidence",
     "connected_to_machine_step": false,
@@ -189,6 +196,12 @@
         "runner_theorem": "ProofsLean.MNCore.executeHazardAwareNormalizedLine_maskDirective",
         "footprint": "normalizedLineFootprint marks maskControl and omits hazardClock",
         "proved_effect": "Updates only State.maskDirective within the machine; preserves PE history, block history, stalled-issue marker, and machine hazard clock. The public deterministic runner requires no pre-existing stalled PE issue."
+      },
+      "positive_nop_without_wait": {
+        "core_theorem": "ProofsLean.MNCore.executeHazardAwareNormalizedLineCore_positive_nop",
+        "runner_theorem": "ProofsLean.MNCore.executeHazardAwareNormalizedLine_positive_nop",
+        "scope": "All positive nop counts with no wait, using the integrated hazard-aware transition.",
+        "proved_effect": "Advances machine hazardClock by count, generates no PE/block events, preserves the stalled marker, and filters prior histories by whether each event remains within four issue words of the new clock. The public runner requires no current stall."
       }
     }
   },
