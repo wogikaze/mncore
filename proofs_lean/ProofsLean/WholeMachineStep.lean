@@ -1,10 +1,11 @@
 import ProofsLean.MachineState
 import ProofsLean.PEMachine
+import ProofsLean.FloatPEMemory
 
-/-! A whole-state transition for the PE integer ALU producer family. It runs
-the same issue-line transaction independently at every physical PE, then
-updates ALU/MAU/MREADF/LBF forwarding state using the emulator's ordinary-step
-rules. Other producer units remain explicitly unresolved. -/
+/-! A whole-state transition for the connected PE integer ALU, single-precision
+vector `fvadd`, matrix-read, and raw D/F/G matrix-write fragments. It runs the
+same issue-line transaction independently at every physical PE, then updates
+ALU/MAU/MREADF/LBF forwarding state. Other producer units remain unresolved. -/
 namespace ProofsLean.MNCore
 
 open Issue
@@ -18,6 +19,7 @@ def parsedExprIsIntegerProducer (expression : ParsedExpr) : Bool :=
 def parsedExprIsSupportedPELineProducer (expression : ParsedExpr) : Bool :=
   match expression.op with
   | .alu .. | .zero | .immediate .. | .matrixRead .. | .wait .. | .noforward => true
+  | .mau .f false .add none false => true
   | .matrixWrite .d | .matrixWrite .f | .matrixWrite .g => true
   | _ => false
 
@@ -30,6 +32,74 @@ def parsedExprIsMatrixWriteProducer (expression : ParsedExpr) : Bool :=
   match expression.op with
   | .matrixWrite .. => true
   | _ => false
+
+def parsedExprIsFloatAddProducer (expression : ParsedExpr) : Bool :=
+  match expression.op with
+  | .mau .f false .add none false => true
+  | _ => false
+
+def executeParsedFloatAddCycleAtPE (readFiles currentFiles : IntegerRegisterFiles)
+    (expression : ParsedExpr) (pe cycle : Fin 4) (bar0 bar1 : BitVec 12)
+    (tWord : BitVec 32) : ProofsLean.StepResult (IntegerRegisterFiles × IntegerALU.Bus) :=
+  match FloatPEMemory.lowerParsedFloatAdd? expression pe cycle bar0 bar1 tWord with
+  | none => .unknown
+  | some (leftAddress, rightAddress, destinationAddress) =>
+      let left := FloatPEMemory.readPair .lm0 readFiles.lm0 leftAddress
+      let right := FloatPEMemory.readPair .lm0 readFiles.lm0 rightAddress
+      let output := FloatAdd.addBus left right
+      let nextLM1 := FloatPEMemory.writePair currentFiles.lm1 destinationAddress output
+      .ok ({ currentFiles with lm1 := nextLM1 }, ⟨output, 0⟩)
+
+theorem executeParsedFloatAddCycleAtPE_success
+    (readFiles currentFiles : IntegerRegisterFiles) (expression : ParsedExpr)
+    (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
+    (leftAddress rightAddress : Fin (Bank.capacity .lm0))
+    (destinationAddress : Fin (Bank.capacity .lm1))
+    (lowered : FloatPEMemory.lowerParsedFloatAdd? expression pe cycle bar0 bar1 tWord =
+      some (leftAddress, rightAddress, destinationAddress)) :
+    let output := FloatAdd.addBus
+      (FloatPEMemory.readPair .lm0 readFiles.lm0 leftAddress)
+      (FloatPEMemory.readPair .lm0 readFiles.lm0 rightAddress)
+    executeParsedFloatAddCycleAtPE readFiles currentFiles expression pe cycle bar0 bar1 tWord =
+      .ok ({ currentFiles with lm1 :=
+        (FloatPEMemory.writePair currentFiles.lm1 destinationAddress output) },
+        ⟨output, 0⟩) := by
+  simp [executeParsedFloatAddCycleAtPE, lowered]
+
+def executeParsedFloatAddCyclesAtPE (readFiles : IntegerRegisterFiles)
+    (expression : ParsedExpr) (pe : Fin 4) (bar0 bar1 : BitVec 12)
+    (tWord : BitVec 32) : List (Fin 4) → IntegerRegisterFiles →
+      (Fin 4 → IntegerALU.Bus) → ProofsLean.StepResult
+        (IntegerRegisterFiles × (Fin 4 → IntegerALU.Bus))
+  | [], files, outputs => .ok (files, outputs)
+  | cycle :: rest, files, outputs =>
+      match executeParsedFloatAddCycleAtPE readFiles files expression pe cycle bar0 bar1 tWord with
+      | .failure => .failure
+      | .unknown => .unknown
+      | .ok (nextFiles, output) =>
+          executeParsedFloatAddCyclesAtPE readFiles expression pe bar0 bar1 tWord rest
+            nextFiles (fun index => if index = cycle then output else outputs index)
+
+def executeParsedFloatAddsAtPE (readState currentFiles : IntegerRegisterFiles)
+    (pe : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
+    (expressions : List ParsedExpr) : ProofsLean.StepResult
+      (IntegerRegisterFiles × (Fin 4 → IntegerALU.Bus) × Bool) :=
+  let floatAdds := expressions.filter parsedExprIsFloatAddProducer
+  let rec run (remaining : List ParsedExpr) (files : IntegerRegisterFiles)
+      (outputs : Fin 4 → IntegerALU.Bus) :
+      ProofsLean.StepResult (IntegerRegisterFiles × (Fin 4 → IntegerALU.Bus)) :=
+    match remaining with
+    | [] => .ok (files, outputs)
+    | expression :: rest =>
+        match executeParsedFloatAddCyclesAtPE readState expression pe bar0 bar1 tWord
+            [0, 1, 2, 3] files (fun _ => ⟨0, 0⟩) with
+        | .failure => .failure
+        | .unknown => .unknown
+        | .ok (nextFiles, nextOutputs) => run rest nextFiles nextOutputs
+  match run floatAdds currentFiles (fun _ => ⟨0, 0⟩) with
+  | .failure => .failure
+  | .unknown => .unknown
+  | .ok (files, outputs) => .ok (files, outputs, !floatAdds.isEmpty)
 
 structure MABCoordinate where
   group : Fin 4
@@ -181,14 +251,15 @@ def forwardingValueValid : Forwarding.Value IntegerALU.Bus → Bool
   | .poison | .unknown => false
 
 def updateSupportedPELineForwarding (old prepared : Forwarding.Slots)
-    (noForward hasALUProducer hasMatrixReadProducer : Bool) :
+    (noForward hasALUProducer hasMAUProducer hasMatrixReadProducer : Bool) :
     ProofsLean.StepResult Forwarding.Slots :=
   match Forwarding.advanceReference old (.issue noForward fun unit =>
       match unit with
       | .alu => if hasALUProducer then some fun cycle => prepared .alu cycle else none
+      | .mau => if hasMAUProducer then some fun cycle => prepared .mau cycle else none
       | .matrixRead =>
           if hasMatrixReadProducer then some fun cycle => prepared .matrixRead cycle else none
-      | .mau | .l1ToPE => none) with
+      | .l1ToPE => none) with
   | .failure => .failure
   | .unknown => .unknown
   | .ok advanced =>
@@ -219,12 +290,20 @@ def executeIntegerProducerLineAtPE (expressions : List ParsedExpr)
   let oldSlots := state.forwarding pe
   let matrixStore := state.matrixRegisters context.group context.l2b context.l1b
   let peExpressions := expressions.filter fun expression =>
-    !parsedExprIsMatrixWriteProducer expression
+    !parsedExprIsMatrixWriteProducer expression && !parsedExprIsFloatAddProducer expression
   match parsedIntegerMatrixReadLineFourCycleStep (state.peRegisters pe) oldSlots
       matrixStore peExpressions control false with
   | .failure => .failure
   | .unknown => .unknown
-  | .ok (registers, preparedSlots) =>
+  | .ok (registers, integerPreparedSlots) =>
+    match executeParsedFloatAddsAtPE (state.peRegisters pe) registers
+        coordinates.pe context.bar0 context.bar1 context.tWord expressions with
+    | .failure => .failure
+    | .unknown => .unknown
+    | .ok (registersWithFloat, floatOutputs, hasMAUProducer) =>
+      let preparedSlots := fun unit cycle =>
+        if unit = .mau && hasMAUProducer then .known (floatOutputs cycle)
+        else integerPreparedSlots unit cycle
       let noForward := expressions.any fun expression =>
         match expression.op with
         | .noforward => true
@@ -232,7 +311,7 @@ def executeIntegerProducerLineAtPE (expressions : List ParsedExpr)
       let hasALUProducer := expressions.any parsedExprIsIntegerProducer
       let hasMatrixReadProducer := expressions.any parsedExprIsMatrixReadProducer
       match updateSupportedPELineForwarding oldSlots preparedSlots
-          noForward hasALUProducer hasMatrixReadProducer with
+          noForward hasALUProducer hasMAUProducer hasMatrixReadProducer with
       | .failure => .failure
       | .unknown => .unknown
       | .ok forwarding =>
@@ -240,7 +319,7 @@ def executeIntegerProducerLineAtPE (expressions : List ParsedExpr)
             (state.forwardingValid pe) forwarding noForward
           .ok { state with
             peRegisters := fun other =>
-              if other = pe then registers else state.peRegisters other
+              if other = pe then registersWithFloat else state.peRegisters other
             forwarding := fun other =>
               if other = pe then forwarding else state.forwarding other
             forwardingValid := fun other =>

@@ -2,6 +2,7 @@ import ProofsLean
 import ProofsLean.PEMachine
 import ProofsLean.PEParser
 import ProofsLean.OperatorAbstraction
+import ProofsLean.WholeMachineStep
 import Lean
 
 #print axioms ProofsLean.length_le_score
@@ -77,6 +78,7 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.instructionMachine_issue_failure
 #print axioms ProofsLean.MNCore.PEMemory.instructionMachine_accepted_pe_executes
 #print axioms ProofsLean.MNCore.PEMemory.instructionMachine_nop_advances
+#print axioms ProofsLean.MNCore.executeParsedFloatAddCycleAtPE_success
 #print axioms ProofsLean.MNCore.integerProducerMachine_issue_failure
 #print axioms ProofsLean.MNCore.executeIntegerProducerInstructionLine_pe_success
 #print axioms ProofsLean.MNCore.UnitKind.mem_all
