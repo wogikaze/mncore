@@ -1758,9 +1758,10 @@
           "lean_order": "The Lean whole-state line transition commits PE producer destinations, applies MAU PE destinations, then commits matrix-register writes.",
           "noninterference_theorems": [
             "ProofsLean.MNCore.executeParsedMatrixWritesAtMAB_preserves_pe_state",
-            "ProofsLean.MNCore.executeParsedMatrixWritesAtMABs_preserves_pe_state"
+            "ProofsLean.MNCore.executeParsedMatrixWritesAtMABs_preserves_pe_state",
+            "ProofsLean.MNCore.executeParsedMatrixMAUAndWrites_preserves_post_mau_pe_state"
           ],
-          "scope": "The matrix-write commit stage preserves PE registers, forwarding payloads and validity, and PE context. Combined with pre-issue source snapshots, this establishes that the matrix-write/PE-destination commit order cannot overwrite one another's state fields.",
+          "scope": "When the MAU producer and following matrix-write stage succeed, the combined transition preserves the PE registers, forwarding payloads and validity, and PE context produced by the MAU stage. The matrix-write-only frame theorem also covers the same fields for PE producer destinations. This establishes the corresponding state-field noninterference for the represented commit order.",
           "issue_source": "viz/core/src/issue.rs:check rejects duplicate PE memory-bank writers and multiple mask-register writers in one issue line."
         },
         "mau_commit_frame": {

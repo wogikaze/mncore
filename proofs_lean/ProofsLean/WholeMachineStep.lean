@@ -3480,13 +3480,28 @@ theorem executeParsedMatrixMAUProducer_preserves_matrix_registers
 
 def executeParsedMatrixMAUAndWrites (readState currentState : State)
     (expressions : List ParsedExpr) (noForward hasSingleLineMask : Bool) :
-    ProofsLean.StepResult State := Id.run do
-  let afterMAU ← match executeParsedMatrixMAUProducer readState currentState expressions
+    ProofsLean.StepResult State :=
+  match executeParsedMatrixMAUProducer readState currentState expressions
       noForward hasSingleLineMask with
-    | .failure => return .failure
-    | .unknown => return .unknown
-    | .ok next => pure next
-  return executeParsedMatrixWritesAtMABs readState allMABCoordinates expressions afterMAU
+  | .failure => .failure
+  | .unknown => .unknown
+  | .ok afterMAU =>
+      executeParsedMatrixWritesAtMABs readState allMABCoordinates expressions afterMAU
+
+theorem executeParsedMatrixMAUAndWrites_preserves_post_mau_pe_state
+    (readState currentState afterMAU next : State) (expressions : List ParsedExpr)
+    (noForward hasSingleLineMask : Bool)
+    (mauExecuted : executeParsedMatrixMAUProducer readState currentState expressions
+      noForward hasSingleLineMask = .ok afterMAU)
+    (executed : executeParsedMatrixMAUAndWrites readState currentState expressions
+      noForward hasSingleLineMask = .ok next) :
+    next.peRegisters = afterMAU.peRegisters ∧
+      next.forwarding = afterMAU.forwarding ∧
+      next.forwardingValid = afterMAU.forwardingValid ∧
+      next.peContext = afterMAU.peContext := by
+  simp only [executeParsedMatrixMAUAndWrites, mauExecuted] at executed
+  exact executeParsedMatrixWritesAtMABs_preserves_pe_state readState afterMAU next
+    allMABCoordinates expressions executed
 
 def executeParsedBlockFloatAtMAB (readState currentState : State)
     (expression : ParsedExpr) (coordinate : MABCoordinate)
