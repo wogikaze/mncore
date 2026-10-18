@@ -1353,8 +1353,11 @@ def readParsedMatrixMAUSourcePE (state : State) (coordinate : MABCoordinate)
     bar0 := oldContext.bar0
     bar1 := oldContext.bar1
     tWord := oldContext.tWord }
-  let some (input, actualNegate, actualExtend, actualRound) :=
-      parsedFloatMAUSourceAttrs? operand context | return .unknown
+  let sourceAttrs? := parsedFloatMAUSourceAttrs? operand context
+  let some (input, actualNegate, actualExtend, actualRound) := sourceAttrs? |
+    match operand with
+    | .mem .. | .forward .. => return .unknown
+    | _ => return .failure
   if actualNegate != negate || actualExtend != extend || actualRound != round then
     return .unknown
   if let .forward kind _ := input then
@@ -1377,7 +1380,9 @@ def readParsedMatrixMAUSourceAtMAB (state : State) (coordinate : MABCoordinate)
     let context := { ParsedIntegerContext.ofLinearIndex (physicalPEId coordinate pe) with
       cycle := cycle }
     let some (_, negate, extend, round) := parsedFloatMAUSourceAttrs? operand context
-      | return .unknown
+      | match operand with
+        | .mem .. | .forward .. => return .unknown
+        | _ => return .failure
     match readParsedMatrixMAUSourcePE state coordinate operand format count
         negate extend round pe cycle with
     | .failure => return .failure
