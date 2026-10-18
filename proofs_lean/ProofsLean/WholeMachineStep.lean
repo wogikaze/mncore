@@ -102,20 +102,36 @@ def lowerParsedFloatMultiply? (expression : ParsedExpr) (context : ParsedInteger
       some ⟨sourceA, sourceB, destination⟩
   | _, _ => none
 
+structure ParsedFloatAddAccesses where
+  sourceA : ParsedIntegerInput
+  sourceB : ParsedIntegerInput
+  subtract : Bool
+  destination : Fin (Bank.capacity .lm1)
+
+def parsedFloatMAUAddSource? (operand : ParsedOperand) (context : ParsedIntegerContext) :
+    Option (ParsedIntegerInput × Bool) :=
+  match operand with
+  | .mem _ neg false false none | .forward _ neg false false =>
+      (ParsedOperand.toParsedIntegerInput? operand .long context.group context.l2b
+        context.l1b context.mab context.pe context.cycle context.bar0 context.bar1
+        context.tWord).map (fun input => (input, neg))
+  | _ => none
+
 def lowerParsedFloatAddMachine? (expression : ParsedExpr) (context : ParsedIntegerContext) :
-    Option ParsedFloatMultiplyAccesses := do
+    Option ParsedFloatAddAccesses := do
   match expression.op with
   | .mau .f false .add none false => pure ()
   | _ => none
   match expression.sources, expression.destinations with
   | [sourceA, sourceB], [.mem access false false false none] =>
-      let sourceA ← parsedFloatMAUSource? sourceA context
-      let sourceB ← parsedFloatMAUSource? sourceB context
+      let (sourceA, negA) ← parsedFloatMAUAddSource? sourceA context
+      if negA then none else pure ()
+      let (sourceB, subtract) ← parsedFloatMAUAddSource? sourceB context
       let destinationAccess ← ParsedOperand.toDirectMemoryAccess?
         (.mem access false false false none) context.pe context.cycle
         context.bar0 context.bar1 context.tWord
       let destination ← FloatPEMemory.lm1LongAddress? destinationAccess
-      some ⟨sourceA, sourceB, destination⟩
+      some ⟨sourceA, sourceB, subtract, destination⟩
   | _, _ => none
 
 def singleFmaBus (left right accumulator : BitVec 64) : BitVec 64 :=
@@ -201,7 +217,9 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
         | .failure => .failure
         | .unknown => .unknown
         | .ok sourceB =>
-          let output := FloatAdd.addBus sourceA.high sourceB.high
+          let output := if accesses.subtract then
+            FloatSubtract.subtractBus sourceA.high sourceB.high
+            else FloatAdd.addBus sourceA.high sourceB.high
           let nextLM1 := FloatPEMemory.writePair currentFiles.lm1 accesses.destination output
           .ok ({ currentFiles with lm1 := nextLM1 }, ⟨output, 0⟩)
   | _ => match FloatPEMemory.lowerParsedFloatAdd? expression context.pe cycle context.bar0
@@ -263,7 +281,7 @@ theorem executeParsedFloatMAUCycleAtPE_fma_success
 theorem executeParsedFloatMAUCycleAtPE_add_success
     (readFiles currentFiles : IntegerRegisterFiles) (oldSlots : Forwarding.Slots)
     (expression : ParsedExpr) (context : ParsedIntegerContext) (cycle : Fin 4)
-    (accesses : ParsedFloatMultiplyAccesses) (busA busB : IntegerALU.Bus)
+    (accesses : ParsedFloatAddAccesses) (busA busB : IntegerALU.Bus)
     (isAdd : expression.op = .mau .f false .add none false)
     (lowered : lowerParsedFloatAddMachine? expression { context with cycle := cycle } =
       some accesses)
@@ -271,7 +289,8 @@ theorem executeParsedFloatMAUCycleAtPE_add_success
       .ok busA)
     (readB : ParsedIntegerInput.readWithForwarding readFiles oldSlots cycle accesses.sourceB =
       .ok busB) :
-    let output := FloatAdd.addBus busA.high busB.high
+    let output := if accesses.subtract then FloatSubtract.subtractBus busA.high busB.high
+      else FloatAdd.addBus busA.high busB.high
     executeParsedFloatMAUCycleAtPE readFiles currentFiles oldSlots expression context cycle =
       .ok ({ currentFiles with lm1 :=
         (FloatPEMemory.writePair currentFiles.lm1 accesses.destination output) },
