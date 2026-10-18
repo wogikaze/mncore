@@ -5211,6 +5211,63 @@ theorem commitParsedMatrixMAUPEState_preserves_non_pe_state
       simp only [List.foldl_cons]
       rw [ih]
 
+def writeParsedMatrixMAUDestinationsAtPE (currentState : State)
+    (expression : ParsedExpr) (coordinate : MABCoordinate) (pe cycle : Fin 4)
+    (poison hasSingleLineMask : Bool) (output : IntegerALU.Bus) (flags : BitVec 4) :
+    List ParsedOperand → PEMemory.IntegerRegisterFiles → BitVec 12 → BitVec 12 →
+      ProofsLean.StepResult (PEMemory.IntegerRegisterFiles × BitVec 12 × BitVec 12)
+  | [], peFiles, peBar0, peBar1 => .ok (peFiles, peBar0, peBar1)
+  | destination :: rest, peFiles, peBar0, peBar1 => Id.run do
+      let peId := physicalPEId coordinate pe
+      let oldContext := currentState.peContext peId
+      let contextBase := ParsedIntegerContext.ofLinearIndex peId
+      let context := { contextBase with
+        cycle := cycle
+        bar0 := peBar0
+        bar1 := peBar1
+        tWord := oldContext.tWord }
+      match destination with
+      | .omr entry _ =>
+          if entry.val == 0 || entry.val > 15 then return .failure
+      | _ => pure ()
+      let dataPoisonApplies := parsedMatrixMAUDestinationDataPoisonApplies poison destination
+      if dataPoisonApplies then
+        match parsedMatrixMAUDestinationEnabled? peFiles destination context cycle
+            currentState.maskDirective hasSingleLineMask with
+        | none => return .failure
+        | some true => return .failure
+        | some false =>
+            return writeParsedMatrixMAUDestinationsAtPE currentState expression coordinate pe
+              cycle poison hasSingleLineMask output flags rest peFiles peBar0 peBar1
+      match writeParsedMslMsrDestination? peFiles destination context output flags cycle
+          currentState.maskDirective hasSingleLineMask with
+      | none => return .failure
+      | some write =>
+          let nextBar0 := match write.barUpdate with
+            | some (false, value) => value
+            | _ => peBar0
+          let nextBar1 := match write.barUpdate with
+            | some (true, value) => value
+            | _ => peBar1
+          return writeParsedMatrixMAUDestinationsAtPE currentState expression coordinate pe
+            cycle poison hasSingleLineMask output flags rest write.files nextBar0 nextBar1
+
+theorem writeParsedMatrixMAUDestinationsAtPE_never_unknown
+    (currentState : State) (expression : ParsedExpr) (coordinate : MABCoordinate)
+    (pe cycle : Fin 4) (poison hasSingleLineMask : Bool)
+    (output : IntegerALU.Bus) (flags : BitVec 4) (destinations : List ParsedOperand)
+    (files : PEMemory.IntegerRegisterFiles) (bar0 bar1 : BitVec 12) :
+    writeParsedMatrixMAUDestinationsAtPE currentState expression coordinate pe cycle poison
+      hasSingleLineMask output flags destinations files bar0 bar1 ≠ .unknown := by
+  induction destinations generalizing files bar0 bar1 with
+  | nil => simp [writeParsedMatrixMAUDestinationsAtPE]
+  | cons destination rest ih =>
+      simp only [writeParsedMatrixMAUDestinationsAtPE]
+      split <;> simp_all [parsedMatrixMAUDestinationDataPoisonApplies]
+      all_goals split <;> simp_all
+      all_goals split <;> simp_all
+      all_goals first | exact ih _ _ _ | simp_all
+
 def executeParsedMatrixMAUPEWritesAtMAB (readState currentState : State)
     (expression : ParsedExpr) (coordinate : MABCoordinate)
     (hasSingleLineMask : Bool) : ProofsLean.StepResult
@@ -5237,39 +5294,8 @@ def executeParsedMatrixMAUPEWritesAtMAB (readState currentState : State)
         | none => return .failure
         | some flushSelection =>
           let output := parsedOutputAfterFlush flushSelection (buses pe)
-          let rec writeDests : List ParsedOperand → PEMemory.IntegerRegisterFiles →
-              BitVec 12 → BitVec 12 →
-              ProofsLean.StepResult (PEMemory.IntegerRegisterFiles × BitVec 12 × BitVec 12)
-            | [], peFiles, peBar0, peBar1 => .ok (peFiles, peBar0, peBar1)
-            | destination :: rest, peFiles, peBar0, peBar1 => Id.run do
-                let context := { contextBase with
-                  cycle := cycle
-                  bar0 := peBar0
-                  bar1 := peBar1
-                  tWord := oldContext.tWord }
-                match destination with
-                | .omr entry _ =>
-                    if entry.val == 0 || entry.val > 15 then return .failure
-                | _ => pure ()
-                let dataPoisonApplies :=
-                  parsedMatrixMAUDestinationDataPoisonApplies poison destination
-                if dataPoisonApplies then
-                  match parsedMatrixMAUDestinationEnabled? peFiles destination context cycle
-                      currentState.maskDirective hasSingleLineMask with
-                  | none => return .failure
-                  | some true => return .failure
-                  | some false => return writeDests rest peFiles peBar0 peBar1
-                match writeParsedMslMsrDestination? peFiles destination context output
-                    (flags pe) cycle currentState.maskDirective hasSingleLineMask with
-                | none => return .failure
-                | some write =>
-                  let nextBar0 := match write.barUpdate with
-                    | some (false, value) => value
-                    | _ => peBar0
-                  let nextBar1 := match write.barUpdate with
-                    | some (true, value) => value
-                    | _ => peBar1
-                  return writeDests rest write.files nextBar0 nextBar1
+          let writeDests := writeParsedMatrixMAUDestinationsAtPE currentState expression
+            coordinate pe cycle poison hasSingleLineMask output (flags pe)
           match writeDests expression.destinations (files pe) (bar0 pe) (bar1 pe) with
           | .failure => return .failure
           | .unknown => return .unknown

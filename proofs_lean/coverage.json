@@ -1949,6 +1949,12 @@
           "rust_reference": "viz/core/src/machine.rs::Machine::write returns ExecError::Unsupported for unsupported destination operands and propagates invalid write/poison conditions as execution errors.",
           "lean_source": "ProofsLean.MNCore.executeParsedMatrixMAUPEWritesAtMAB",
           "scope_limit": "This classifies known lowering failures; proving the full PE write loop and whole-line matrix-MAU transition unknown-free still requires premises for calculation outputs and legal destination forms."
+        },
+        "destination_write_knownness": {
+          "helper": "ProofsLean.MNCore.writeParsedMatrixMAUDestinationsAtPE",
+          "theorem": "ProofsLean.MNCore.writeParsedMatrixMAUDestinationsAtPE_never_unknown",
+          "scope": "For any destination list and PE files/BAR state, destination writes return failure or success; unsupported lowering and invalid selectors are classified as known failures. Poison-enabled destinations either fail or skip the data write; OMR flag writes remain independent of data poison.",
+          "remaining": "The enclosing cycle and PE loops still propagate .unknown from executeParsedMatrixMAUAtMAB; compose their four-cycle results with the calculation/source proofs."
         }
       }
     },
