@@ -1820,6 +1820,13 @@
         "lean_executor": "ProofsLean.MNCore.executeParsedL1ToPEAtPEs",
         "rust_reference": "viz/core/src/machine.rs::Machine::write returns ExecError for unsupported PE destinations; mask selections are evaluated from the concrete machine mask state.",
         "scope_limit": "This classifies concrete destination-resolution failures; it does not establish L1BM transfer command conformance against Rust."
+      },
+      "pe_to_l1bm_known_source_failures": {
+        "behavior": "A PE-to-L1BM memory source that cannot be lowered to a concrete PE read is classified as failure rather than unknown.",
+        "lean_executor": "ProofsLean.MNCore.rawL1MwriteSourceResult",
+        "theorem": "ProofsLean.MNCore.rawL1Mwrite_invalid_memory_source_is_failure",
+        "rust_reference": "viz/core/src/vsm.rs::parse_operand separates PE-memory banks from L1BM/L2BM/OMR operands; viz/core/src/machine.rs::Machine::read_raw_untraced reports unsupported non-memory sources.",
+        "scope_limit": "The Lean failure theorem covers malformed direct AST memory banks that cannot represent a Rust PE-memory operand. Parser-produced PE-memory reads still require source-level differential conformance."
       }
     },
     {

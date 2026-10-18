@@ -1889,14 +1889,21 @@ def rawL1MwriteSourceResult (source : ParsedOperand) (context : ParsedIntegerCon
     ProofsLean.StepResult ParsedIntegerInput :=
   match rawL1MwriteSource? source context with
   | some input => .ok input
-  | none => match source with
-      | .mem .. | .forward .. => .unknown
-      | _ => .failure
+  | none => .failure
 
 theorem rawL1Mwrite_fixed_source_is_failure
     (fixed : ParsedFixed) (context : ParsedIntegerContext) :
     rawL1MwriteSourceResult (.fixed fixed) context = .failure := by
   rfl
+
+theorem rawL1Mwrite_invalid_memory_source_is_failure
+    (access : Access) (context : ParsedIntegerContext)
+    (loweringFails : ParsedOperand.toParsedIntegerInput?
+      (.mem access false false false none) .long context.group context.l2b
+      context.l1b context.mab context.pe context.cycle context.bar0 context.bar1
+      context.tWord = none) :
+    rawL1MwriteSourceResult (.mem access false false false none) context = .failure := by
+  simp [rawL1MwriteSourceResult, rawL1MwriteSource?, loweringFails]
 
 def readRawL1MwriteBus (state : State) (source : ParsedOperand)
     (pe : PEId) (cycle : Fin 4) : ProofsLean.StepResult IntegerALU.Bus :=
