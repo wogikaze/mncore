@@ -9,6 +9,10 @@ namespace ProofsLean.MNCore
 
 abbrev PEId := Fin 4096
 
+structure PendingMv where
+  tag : Option (Fin 256)
+  writes : List (MVSemantics.Cell × BitVec 64)
+
 structure State where
   /-- LM0/LM1/GRF0/GRF1/T and per-PE OMR mask registers. -/
   peRegisters : PEId → PEMemory.IntegerRegisterFiles
@@ -28,6 +32,8 @@ structure State where
   darWriteAddress : Fin 1024
   /-- MV tags whose transfers have completed in the synchronous transfer model. -/
   mvCompletedTags : Fin 256 → Bool
+  /-- MV writes staged from the issue-time memory snapshot, in issue order. -/
+  pendingMv : List PendingMv
   /-- Matrix registers, indexed by physical group/L2B/L1B and local MAB. -/
   matrixRegisters : Fin 4 → Fin 2 → Fin 8 → PEMemory.ParsedMatrixReadStore
   /-- ALUF, MAUF, matrix-read forwarding, and L1-to-PE forwarding buses. -/
@@ -74,6 +80,7 @@ def rustSimulatorInitialState : State where
   darBufferReadAddress := ⟨0, by decide⟩
   darWriteAddress := ⟨0, by decide⟩
   mvCompletedTags := fun _ => false
+  pendingMv := []
   matrixRegisters := fun _ _ _ _ _ _ => 0
   forwarding := fun _ unit _ => .known (match unit with
     | .alu | .mau | .matrixRead | .l1ToPE => ⟨0, 0⟩)

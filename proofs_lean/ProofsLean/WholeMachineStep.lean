@@ -3658,9 +3658,51 @@ def executeIntegerProducerLineAtPEs (expressions : List ParsedExpr)
 
 def executeParsedMvMemory (state : State) (transfer : ParsedMv) :
     ProofsLean.StepResult State :=
-  match MVSemantics.executeParsedMvWithDAR? state.blockMemory state.dar transfer with
+  match MVSemantics.parsedMvPendingWritesWithDAR? state.blockMemory state.dar transfer with
   | none => .failure
-  | some blockMemory => .ok { state with blockMemory }
+  | some writes =>
+      if transfer.kind == .nop then .ok state
+      else
+        .ok { state with
+          pendingMv := state.pendingMv ++ [{ tag := transfer.tag, writes := writes }]
+          mvCompletedTags := fun tag =>
+            if transfer.tag == some tag then false else state.mvCompletedTags tag }
+
+/-- Complete queued MV operations in issue order through the first operation
+carrying `tag`. Writes are committed over the current memory, so unrelated
+changes made since issue are preserved. -/
+def completePendingMvThroughTag (state : State) (tag : Fin 256) : Option State := Id.run do
+  if state.mvCompletedTags tag then return some state
+  let mut memory := state.blockMemory
+  let mut completed := state.mvCompletedTags
+  let mut remaining := state.pendingMv
+  for _ in List.range (state.pendingMv.length) do
+    match remaining with
+    | [] => return none
+    | pending :: rest =>
+        memory := MVSemantics.commitWrites memory pending.writes
+        remaining := rest
+        match pending.tag with
+        | none => pure ()
+        | some completedTag =>
+            completed := fun other => other == completedTag || completed other
+        if pending.tag == some tag then
+          return some { state with
+            blockMemory := memory
+            pendingMv := remaining
+            mvCompletedTags := completed }
+  return none
+
+/-- Drain all remaining MV operations at program termination. -/
+def completeAllPendingMvs (state : State) : State := Id.run do
+  let mut memory := state.blockMemory
+  let mut completed := state.mvCompletedTags
+  for pending in state.pendingMv do
+    memory := MVSemantics.commitWrites memory pending.writes
+    match pending.tag with
+    | none => pure ()
+    | some tag => completed := fun other => other == tag || completed other
+  return { state with blockMemory := memory, pendingMv := [], mvCompletedTags := completed }
 
 /-- Whole-machine line transition for parsed integer ALU, zero, immediate,
 matrix-read, wait, and noforward expressions. Reads and prepared writes use the
@@ -3761,10 +3803,7 @@ noncomputable def executeIntegerProducerInstructionLine
           | .unknown => .unknown
           | .ok next =>
               .ok { next with
-                hazardClock := next.hazardClock + 1
-                mvCompletedTags := fun tag =>
-                  if transfer.toParsed.tag == some tag then true
-                  else next.mvCompletedTags tag }
+                hazardClock := next.hazardClock + 1 }
 
 /-- Execute one normalized source line. Zero-cost mask directives update the
 control state directly; instruction-bearing lines use the scored line step. -/
@@ -3822,8 +3861,20 @@ structure HazardAwareState where
 def HazardAwareState.initial (state : State) : HazardAwareState :=
   ⟨state, fun _ => [], []⟩
 
+def normalizedLineWaitTag? : NormalizedLine → Option (Fin 256)
+  | .nop _ wait => wait
+  | .pe expressions =>
+      expressions.findSome? fun expression => parsedExprWaitTag? expression.toParsed
+  | .mv _ | .maskDirective .. => none
+
 noncomputable def executeHazardAwareNormalizedLine (line : NormalizedLine)
     (state : HazardAwareState) : ProofsLean.StepResult HazardAwareState := Id.run do
+  let state ← match normalizedLineWaitTag? line with
+    | none => pure state
+    | some tag =>
+        match completePendingMvThroughTag state.machine tag with
+        | none => return .unknown
+        | some machine => pure { state with machine }
   match line with
   | .maskDirective .. =>
       match executeNormalizedLine line state.machine with
@@ -3853,13 +3904,6 @@ noncomputable def executeHazardAwareNormalizedLine (line : NormalizedLine)
             (state.blockHistory ++ currentBlockEvents).filter fun event =>
               event.startWord + 4 ≥ next.hazardClock
           return .ok ⟨next, nextPEHistory, nextBlockHistory⟩
-
-def normalizedLineWaitTag? : NormalizedLine → Option (Fin 256)
-  | .nop _ wait => wait
-  | .pe expressions =>
-      (expressions.findSome? fun expression =>
-        parsedExprWaitTag? expression.toParsed)
-  | .mv _ | .maskDirective .. => none
 
 /-- Remove and return the next MV-stream line while retaining PE lines in
 their original order. This is used only while the PE stream is blocked at a
@@ -3909,7 +3953,7 @@ noncomputable def executeNormalizedProgram (lines : List NormalizedLine)
   match executeNormalizedProgramAux lines (HazardAwareState.initial state) with
   | .failure => .failure
   | .unknown => .unknown
-  | .ok final => .ok final.machine
+  | .ok final => .ok (completeAllPendingMvs final.machine)
 
 /-- Source-level program entry: apply the repository's normalization rules
 before executing, so stripped records and mask directives retain their
@@ -4003,22 +4047,27 @@ theorem executeNormalizedLine_mvnop_matches_footprint
 
 theorem executeNormalizedProgram_maskDirective_updates_state
     (state : State) (widthWords : Nat) (targets : ParsedMaskTargets)
-    (entry : Fin 256) :
+    (entry : Fin 256) (noPendingMv : state.pendingMv = []) :
     executeNormalizedProgram [.maskDirective widthWords targets entry] state =
       .ok { state with maskDirective := ⟨widthWords, targets, entry⟩ } := by
-  simp [executeNormalizedProgram, executeNormalizedProgramAux,
-    executeNormalizedProgramAuxFuel, executeHazardAwareNormalizedLine,
-    HazardAwareState.initial, executeNormalizedLine]
+  have hstep : executeHazardAwareNormalizedLine
+      (.maskDirective widthWords targets entry) (HazardAwareState.initial state) =
+      .ok { (HazardAwareState.initial state) with
+        machine := { state with maskDirective := ⟨widthWords, targets, entry⟩ } } := by
+    simp [executeHazardAwareNormalizedLine, HazardAwareState.initial,
+      executeNormalizedLine, normalizedLineWaitTag?]
+  simp only [executeNormalizedProgram, executeNormalizedProgramAux,
+    List.length_cons, List.length_nil, executeNormalizedProgramAuxFuel]
+  rw [hstep]
+  simp [completeAllPendingMvs, noPendingMv]
 
 theorem executeParsedProgram_maskDirective_updates_state
     (state : State) (widthWords : Nat) (targets : ParsedMaskTargets)
-    (entry : Fin 256) :
+    (entry : Fin 256) (noPendingMv : state.pendingMv = []) :
     executeParsedProgram [.maskDirective widthWords targets entry] state =
       .ok { state with maskDirective := ⟨widthWords, targets, entry⟩ } := by
   simp [executeParsedProgram, ParsedLine.normalizeForSubmission?,
-    executeNormalizedProgram, executeNormalizedProgramAux,
-    executeNormalizedProgramAuxFuel, executeHazardAwareNormalizedLine,
-    HazardAwareState.initial, executeNormalizedLine]
+    executeNormalizedProgram_maskDirective_updates_state, noPendingMv]
 
 noncomputable def integerProducerMachine : ProofsLean.PartialMachine where
   Line := InstructionLine
@@ -4122,9 +4171,7 @@ theorem executeIntegerProducerInstructionLine_mv_transfer_success
     (executed : executeParsedMvMemory state transfer.toParsed = .ok next) :
     executeIntegerProducerInstructionLine (.mv transfer) state =
       .ok { next with
-        hazardClock := next.hazardClock + 1
-        mvCompletedTags := fun tag =>
-          if transfer.toParsed.tag == some tag then true else next.mvCompletedTags tag } := by
+        hazardClock := next.hazardClock + 1 } := by
   simp [executeIntegerProducerInstructionLine, InstructionLine.toParsed,
     accepted, notNop, executed]
 

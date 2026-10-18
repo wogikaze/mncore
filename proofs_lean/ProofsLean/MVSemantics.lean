@@ -969,6 +969,64 @@ def executeParsedMvWithDAR? (memory : Memory)
       let reductions ← resolveTransferReductions? dar transfer reductions
       some (executeReductions memory (r4Reducer reduce) reductions)
 
+/-- Capture the writes an issued MV will eventually commit. Source values are
+read from `memory` now, while destinations remain unchanged until completion. -/
+def parsedMvPendingWritesWithDAR? (memory : Memory)
+    (dar : Fin 4 → Fin 1024 → BitVec 32) (transfer : ParsedMv) :
+    Option (List (Cell × BitVec 64)) := do
+  match transfer.kind with
+  | .nop => some []
+  | .copy => do
+      let copies ← parsedMvPCopyPlan? transfer
+      let copies ← resolveTransferCopies? dar transfer copies
+      some (stageCopies memory copies)
+  | .broadcast => do
+      let copies ← parsedMvBPlan? transfer
+      let copies ← resolveTransferCopies? dar transfer copies
+      some (stageCopies memory copies)
+  | .broadcast2 => do
+      let copies ← parsedMvB2Plan? transfer
+      let copies ← resolveTransferCopies? dar transfer copies
+      some (stageCopies memory copies)
+  | .broadcast4 => do
+      let copies ← parsedMvB4Plan? transfer
+      let copies ← resolveTransferCopies? dar transfer copies
+      some (stageCopies memory copies)
+  | .distribute => do
+      let copies ← parsedMvDPlan? transfer
+      let copies ← resolveTransferCopies? dar transfer copies
+      some (stageCopies memory copies)
+  | .reduce2 rrn => do
+      let reduce ← parsedMvReducer? rrn
+      let reductions ← parsedMvR2Plan? transfer
+      let reductions ← resolveTransferReductions? dar transfer reductions
+      some (stageReductions memory reduce reductions)
+  | .reduce rrn => do
+      let reduce ← parsedMvReducer? rrn
+      let reductions ← parsedMvRPlan? transfer
+      let reductions ← resolveTransferReductions? dar transfer reductions
+      some (stageReductions memory (rNestedReducer reduce) reductions)
+  | .reduce4 rrn => do
+      let reduce ← parsedMvReducer? rrn
+      let reductions ← parsedMvR4Plan? transfer
+      let reductions ← resolveTransferReductions? dar transfer reductions
+      some (stageReductions memory (r4Reducer reduce) reductions)
+
+theorem commitWrites_empty (memory : Memory) :
+    commitWrites memory [] = memory := by
+  rfl
+
+theorem executeParsedMvWithDAR_eq_commitPendingWrites
+    (memory : Memory) (dar : Fin 4 → Fin 1024 → BitVec 32)
+    (transfer : ParsedMv) :
+    executeParsedMvWithDAR? memory dar transfer =
+      (parsedMvPendingWritesWithDAR? memory dar transfer).map
+        (commitWrites memory) := by
+  cases kind : transfer.kind <;>
+    simp [executeParsedMvWithDAR?, parsedMvPendingWritesWithDAR?, kind,
+      executeCopies, executeReductions, commitWrites, Option.map_bind,
+      Function.comp_def, commitWrites_empty]
+
 theorem b2GroupOffsetCopies_ignores_operand_selectors
     (source destination : Fin (2 ^ 64)) (sourceGroup destinationGroup : Fin 256)
     (sourceBank destinationBank : Fin 256) (group : Fin 4) (offset : Nat) :
