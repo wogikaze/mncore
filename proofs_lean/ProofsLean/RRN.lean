@@ -83,6 +83,47 @@ def floatIsNegative (precision : FloatPrecision) (bits : Nat) : Bool :=
 def maxFloatExponent (precision : FloatPrecision) (values : List Nat) : Nat :=
   (values.map (floatExponent precision)).foldl Nat.max 0
 
+/-! ### Block-float input validation
+
+The matrix MAU consumes block-float encodings. Every element normally shares
+the block's maximum exponent. Half precision additionally permits exponent
+zero as the extended representation used by `bfe`; this mirrors the emulator's
+`check_bf` rule and deliberately leaves mantissa/sign bits untouched. -/
+
+def blockFloatCommonExponent (precision : FloatPrecision) (values : List Nat) : Nat :=
+  maxFloatExponent precision values
+
+def blockFloatExponentValid (precision : FloatPrecision) (values : List Nat) : Bool :=
+  let common := blockFloatCommonExponent precision values
+  values.all fun bits =>
+    let exponent := floatExponent precision bits
+    exponent == common || (precision == .half && exponent == 0)
+
+theorem blockFloatExponentValid_empty (precision : FloatPrecision) :
+    blockFloatExponentValid precision [] = true := by
+  simp [blockFloatExponentValid]
+
+theorem blockFloatExponentValid_single (precision : FloatPrecision) (bits : Nat) :
+    blockFloatExponentValid precision [bits] = true := by
+  simp [blockFloatExponentValid, blockFloatCommonExponent, maxFloatExponent,
+    floatExponent]
+
+theorem blockFloatExponentValid_half_zero_exponent_is_allowed (bits : Nat)
+    (zeroExponent : floatExponent .half bits = 0) :
+    blockFloatExponentValid .half [bits, 0] = true := by
+  simp [blockFloatExponentValid, blockFloatCommonExponent, maxFloatExponent,
+    zeroExponent]
+
+theorem blockFloatExponentValid_rejects_mismatched_single_exponents
+    (left right : Nat) (leftExponent rightExponent : Nat)
+    (leftExp : floatExponent .single left = leftExponent)
+    (rightExp : floatExponent .single right = rightExponent)
+    (different : leftExponent ≠ rightExponent) :
+    blockFloatExponentValid .single [left, right] = false := by
+  simp [blockFloatExponentValid, blockFloatCommonExponent, maxFloatExponent,
+    leftExp, rightExp]
+  omega
+
 /-- Signed, exponent-aligned RRN significand sum before final format rounding. -/
 def floatAlignedSum (precision : FloatPrecision) (values : List Nat) : Int :=
   let maxExponent := maxFloatExponent precision values
