@@ -22,6 +22,7 @@ def parsedExprIsSupportedPELineProducer (expression : ParsedExpr) : Bool :=
   | .alu .. | .zero | .immediate .. | .matrixRead .. | .wait .. | .noforward => true
   | .mau .f false .add none false | .mau .f false .mul none false
   | .mau .f false .fma none false | .mau .f false .passa none false => true
+  | .mau .f false _ _ true => true
   | .matrixWrite .d | .matrixWrite .f | .matrixWrite .g | .matrixWrite .h => true
   | .l1bm (.mwrite _) | .l1bm (.m4write _) => true
   | .l1bm .pbcast | .l1bm .mbcast | .l1bm .m4bcast | .l1bm (.distrib _) => true
@@ -63,6 +64,7 @@ def parsedExprIsSupportedFloatMAUProducer (expression : ParsedExpr) : Bool :=
   match expression.op with
   | .mau .f false .add none false | .mau .f false .mul none false
   | .mau .f false .fma none false | .mau .f false .passa none false => true
+  | .mau .f false _ _ true => true
   | _ => false
 
 def parsedFloatMAUSource? (operand : ParsedOperand) (context : ParsedIntegerContext) :
@@ -343,6 +345,7 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
         let output := prepareSingleMAUSource sourceBus negate extend round
         let nextLM1 := FloatPEMemory.writePair currentFiles.lm1 destination output
         .ok ({ currentFiles with lm1 := nextLM1 }, ⟨output, 0⟩)
+  | .mau .f false _ _ true => .failure
   | _ => match FloatPEMemory.lowerParsedFloatAdd? expression context.pe cycle context.bar0
       context.bar1 context.tWord with
   | none =>
