@@ -1,6 +1,7 @@
 import ProofsLean.MachineState
 import ProofsLean.PEMachine
 import ProofsLean.FloatPEMemory
+import ProofsLean.Footprint
 
 /-! A whole-state transition for connected PE integer ALU, single-precision
 vector `fvadd`/`fvmul`/`fvfma`, half-precision `hvadd`/`hvmul`/`hvfma`,
@@ -3471,6 +3472,24 @@ theorem executeNormalizedLine_maskDirective_updates_state
     executeNormalizedLine (.maskDirective widthWords targets entry) state =
       .ok { state with maskDirective := ⟨widthWords, targets, entry⟩ } := by
   rfl
+
+/-- The zero-cost directive transition changes exactly the control resource
+named by its normalized footprint and leaves the scored hazard clock alone. -/
+theorem executeNormalizedLine_maskDirective_matches_footprint
+    (state : State) (widthWords : Nat) (targets : ParsedMaskTargets)
+    (entry : Fin 256) :
+    UnitResource.maskControl ∈
+        (normalizedLineFootprint (.maskDirective widthWords targets entry)).unitWrites ∧
+      UnitResource.hazardClock ∉
+        (normalizedLineFootprint (.maskDirective widthWords targets entry)).unitWrites ∧
+      executeNormalizedLine (.maskDirective widthWords targets entry) state =
+        .ok { state with maskDirective := ⟨widthWords, targets, entry⟩ } ∧
+      ({ state with maskDirective := ⟨widthWords, targets, entry⟩ }).hazardClock =
+        state.hazardClock := by
+  exact ⟨(NormalizedLine.maskDirective_footprint widthWords targets entry).1,
+    (NormalizedLine.maskDirective_footprint widthWords targets entry).2,
+    executeNormalizedLine_maskDirective_updates_state state widthWords targets entry,
+    rfl⟩
 
 theorem executeNormalizedProgram_maskDirective_updates_state
     (state : State) (widthWords : Nat) (targets : ParsedMaskTargets)
