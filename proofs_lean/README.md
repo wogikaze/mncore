@@ -61,13 +61,13 @@ Welcome の後は Convert Endian を縦の2問目にする。有限性・範囲�
 - `PEMachine.lean`: 1つのPEについて、整数ALU/zero/immediateラインを既存の4-cycle prepare-then-commit stepperへ接続する。
   各cycle/式の読み出しは旧register filesと旧forwarding slotsを使い、ALUF出力を含む書込みを準備後にコミットする。
   Issue checker拒否は`failure`、OMR混在宛先・MV/待ち制御/他演算器は`unknown`。全PE状態、block転送、hazard clock、footprint frameとは未接続。
-- `MachineState.lean`: Rust machine定数に合わせたPE 4096個（4×2×8×16×4）の5バンクregister files/OMR、L1BM 64バンク、MAB 1024個、L2BM/PDM/DRAM、
+- `MachineState.lean`: Rust machine定数に合わせたPE 4096個（4×2×8×16×4）の5バンクregister files/OMR、L1BM 64バンクと各bankの4-cycle turnaround値・有効状態、MAB 1024個、L2BM/PDM/DRAM、
   各PEのALUF/MAUF/LBF/MREADF busとvalidity、mask directive、PE context、hazard clockをまとめるState型。
   一般Stateの初期値ポリシーはまだ仮定しない。Welcomeに必要なPE SRAMはRust emulatorの
   `Words::get`が未割当領域をzeroで読むことを確認した。
 - `WholeMachineStep.lean`: 4096 PEすべてに整数ALU/zero/immediate/matrixRead、単精度`fvadd`加減算のraw memory/forward source（half→single拡張、double→single丸め、符号反転対応）→LM1経路、`fvmul`のraw memory/forward source（half→single拡張、double→single丸め、符号反転対応）→LM1経路、および`fvfma`のraw memory/forward source（各入力のhalf→single拡張、double→single丸め、符号反転対応）→LM1経路、D/F/G/H matrixWriteのraw memory/forward source、MV transferを含むPE/MV行のState遷移。matrixWriteはD/F/G/Hで`neg`/`ext`/`rnd`変換を扱う。H精度では1行roundとraw 1行/2行書込みを接続する。MVはmvp/mvb/mvb2/mvb4/mvd/mvr/mvr2/mvr4を既存`MVSemantics`へ接続し、PDM/DRAM/L2BMのcell memoryを更新する。`nop`（waitなし）と`mvnop`はデータ状態を保ちhazard clockを進める。`fvadd`はビット単位FMAに基づく値をdestinationとMAUFへ反映する。
   ALUF/MREADF結果、MAU disabled、MREADFのzero、LBF保持のforwarding挙動も更新する。
-  他のMAU演算・精度・未接続の変換属性付きsource、L1BM/L2BM producer、PE/block hazard履歴、OMR混在宛先は未接続で`.unknown`。MV operand形やreduction演算がRust意味論で未対応の場合はstep failureになる。`nop`のwait tagはRustの値遷移に影響せず、hazard timing制約は別解析で扱う。
+  他のMAU演算・精度・未接続の変換属性付きsource、L1BM/L2BM producer、PE/block hazard履歴、OMR混在宛先は未接続で`.unknown`。MV operand形やreduction演算がRust意味論で未対応の場合はstep failureになる。PE行は`noforward`なしでL1BM turnaroundを無効化し、`noforward`付きでは有効状態を保つ。`nop`のwait tagはRustの値遷移に影響せず、hazard timing制約は別解析で扱う。
 - `Footprint.lean`: 全`InstructionLine`（PE/nop/MV）と全`ParsedOp`の構文footprintを定義し、
   operand source/destination、functional unit、clockのread/write候補を記録する。
   destination readはmasked writeのpreserve可能性を含む保守的な記録。

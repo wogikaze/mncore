@@ -14,6 +14,10 @@ structure State where
   peRegisters : PEId → PEMemory.IntegerRegisterFiles
   /-- Sixty-four independent L1B banks, each holding 8192 long words. -/
   l1bm : Fin 64 → L1Transfer.L1Bank
+  /-- Per-L1B turnaround values ($lbi), four cycles by 64 long words. -/
+  l1bmTurnaround : Fin 64 → L1Transfer.L1Turnaround
+  /-- Rust's `lbi_error.is_none()`: false after a PE step without a transfer. -/
+  l1bmTurnaroundValid : Bool
   /-- Unified cell-addressed store for L2BM, PDM, and DRAM. -/
   blockMemory : MVSemantics.Memory
   /-- Matrix registers, indexed by physical group/L2B/L1B and local MAB. -/

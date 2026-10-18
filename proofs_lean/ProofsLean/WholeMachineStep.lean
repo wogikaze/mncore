@@ -775,7 +775,14 @@ noncomputable def executeIntegerProducerInstructionLine
               | .failure => .failure
               | .unknown => .unknown
               | .ok next =>
-                  .ok { next with hazardClock := next.hazardClock + InstructionLine.cost line }
+                  let noForward := expressions.any fun expression =>
+                    match expression.op with
+                    | .noforward => true
+                    | _ => false
+                  .ok { next with
+                    hazardClock := next.hazardClock + InstructionLine.cost line
+                    l1bmTurnaroundValid :=
+                      if noForward then next.l1bmTurnaroundValid else false }
         else .unknown
     | .nop count _ =>
         .ok { state with hazardClock := state.hazardClock + count.val }
@@ -843,7 +850,11 @@ theorem executeIntegerProducerInstructionLine_pe_success
       (normalizedExpressions.map NormalizedExpr.toParsed) nextPEs = .ok next) :
     executeIntegerProducerInstructionLine (.pe normalizedExpressions) state =
       .ok { next with
-        hazardClock := next.hazardClock + InstructionLine.cost (.pe normalizedExpressions) } := by
+        hazardClock := next.hazardClock + InstructionLine.cost (.pe normalizedExpressions)
+        l1bmTurnaroundValid :=
+          if (normalizedExpressions.map NormalizedExpr.toParsed).any (fun expression =>
+            match expression.op with | .noforward => true | _ => false)
+          then next.l1bmTurnaroundValid else false } := by
   simp [executeIntegerProducerInstructionLine, accepted, supported, executed, matrixWrites]
 
 end ProofsLean.MNCore
