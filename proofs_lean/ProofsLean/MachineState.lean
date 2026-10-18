@@ -7,13 +7,13 @@ forwarding, mask-control, and hazard-clock components. This is a state type,
 not yet a complete transition semantics or an initialization policy. -/
 namespace ProofsLean.MNCore
 
-abbrev PEId := Fin 2048
+abbrev PEId := Fin 4096
 
 structure State where
   /-- LM0/LM1/GRF0/GRF1/T and per-PE OMR mask registers. -/
   peRegisters : PEId → PEMemory.IntegerRegisterFiles
-  /-- Eight independent L1B banks, each holding 8192 long words. -/
-  l1bm : Fin 8 → L1Transfer.L1Bank
+  /-- Sixty-four independent L1B banks, each holding 8192 long words. -/
+  l1bm : Fin 64 → L1Transfer.L1Bank
   /-- Unified cell-addressed store for L2BM, PDM, and DRAM. -/
   blockMemory : MVSemantics.Memory
   /-- ALUF, MAUF, matrix-read forwarding, and L1-to-PE forwarding buses. -/

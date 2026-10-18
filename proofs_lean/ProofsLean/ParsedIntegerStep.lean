@@ -34,7 +34,7 @@ structure ParsedIntegerContext where
   bar0 : BitVec 12
   bar1 : BitVec 12
   tWord : BitVec 32
-  group : Fin 2
+  group : Fin 4
   l2b : Fin 2
   l1b : Fin 8
   mab : Fin 16
@@ -42,7 +42,7 @@ structure ParsedIntegerContext where
 
 /-- Coordinates shared by the four PEs in one MAB, with per-PE BAR/T state. -/
 structure ParsedPEGroupContext where
-  group : Fin 2
+  group : Fin 4
   l2b : Fin 2
   l1b : Fin 8
   mab : Fin 16
@@ -66,7 +66,7 @@ def ParsedIntegerContext.linearIndex (context : ParsedIntegerContext) : Nat :=
   (((context.group.val * 2 + context.l2b.val) * 8 + context.l1b.val) * 16 +
     context.mab.val) * 4 + context.pe.val
 
-def ParsedIntegerContext.ofLinearIndex (index : Fin 2048) : ParsedIntegerContext where
+def ParsedIntegerContext.ofLinearIndex (index : Fin 4096) : ParsedIntegerContext where
   pe := ⟨index.val % 4, by have h := index.isLt; omega⟩
   cycle := 0
   bar0 := 0
@@ -77,14 +77,14 @@ def ParsedIntegerContext.ofLinearIndex (index : Fin 2048) : ParsedIntegerContext
   l1b := ⟨index.val / 64 % 8, by have h := index.isLt; omega⟩
   mab := ⟨index.val / 4 % 16, by have h := index.isLt; omega⟩
 
-theorem ParsedIntegerContext.linearIndex_ofLinearIndex (index : Fin 2048) :
+theorem ParsedIntegerContext.linearIndex_ofLinearIndex (index : Fin 4096) :
     (ParsedIntegerContext.ofLinearIndex index).linearIndex = index.val := by
   simp [ParsedIntegerContext.linearIndex, ParsedIntegerContext.ofLinearIndex]
   have h := index.isLt
   omega
 
 theorem ParsedIntegerContext.linearIndex_lt (context : ParsedIntegerContext) :
-    context.linearIndex < 2048 := by
+    context.linearIndex < 4096 := by
   simp [ParsedIntegerContext.linearIndex]
   have hg := context.group.isLt
   have hl2 := context.l2b.isLt
@@ -220,7 +220,7 @@ theorem parsedIntegerMaskSourceAccess_preserves_rounding_ignores_attributes
         pe cycle bar0 bar1 tWord).map (fun resolved => (resolved, rounded)) := rfl
 
 def ParsedFixed.integerValue (fixed : ParsedFixed) (precision : IntegerALU.Precision)
-    (group : Fin 2) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16) (pe : Fin 4) : Nat :=
+    (group : Fin 4) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16) (pe : Fin 4) : Nat :=
   match fixed with
   | .l2bid => group.val * 2 + l2b.val
   | .l1bid => l1b.val
@@ -230,7 +230,7 @@ def ParsedFixed.integerValue (fixed : ParsedFixed) (precision : IntegerALU.Preci
   | .msb1 => 2 ^ (precision.width - 1)
 
 theorem parsed_fixed_integerValue_ofLinearIndex (fixed : ParsedFixed)
-    (precision : IntegerALU.Precision) (index : Fin 2048) :
+    (precision : IntegerALU.Precision) (index : Fin 4096) :
     ParsedFixed.integerValue fixed precision
       (ParsedIntegerContext.ofLinearIndex index).group
       (ParsedIntegerContext.ofLinearIndex index).l2b
@@ -372,7 +372,7 @@ example : roundSingleWordToHalf 0xff800000 = 0xfe00 := by decide
 
 def ParsedOperand.toParsedIntegerInput? (operand : ParsedOperand)
     (precision : IntegerALU.Precision)
-    (group : Fin 2) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16) (pe cycle : Fin 4)
+    (group : Fin 4) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16) (pe cycle : Fin 4)
     (bar0 bar1 : BitVec 12) (tWord : BitVec 32) : Option ParsedIntegerInput :=
   match operand with
   | .fixed fixed =>
@@ -388,7 +388,7 @@ def ParsedOperand.toParsedIntegerInput? (operand : ParsedOperand)
 
 theorem parsed_fixed_integer_input
     (fixed : ParsedFixed) (precision : IntegerALU.Precision)
-    (group : Fin 2) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16) (pe cycle : Fin 4)
+    (group : Fin 4) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16) (pe cycle : Fin 4)
     (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
     ParsedOperand.toParsedIntegerInput? (.fixed fixed) precision
       group l2b l1b mab pe cycle bar0 bar1 tWord =
@@ -397,7 +397,7 @@ theorem parsed_fixed_integer_input
 
 theorem parsed_integer_memory_input_ignores_negation_extension
     (access : Access) (negated extended : Bool) (precision : IntegerALU.Precision)
-    (group : Fin 2) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
+    (group : Fin 4) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
     (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
     ParsedOperand.toParsedIntegerInput?
       (.mem access negated extended false none) precision group l2b l1b mab pe cycle
@@ -407,7 +407,7 @@ theorem parsed_integer_memory_input_ignores_negation_extension
 
 theorem parsed_forward_integer_input (kind : ParsedForward) (negated extended rounded : Bool)
     (precision : IntegerALU.Precision)
-    (group : Fin 2) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
+    (group : Fin 4) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
     (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
     ParsedOperand.toParsedIntegerInput?
       (.forward kind negated extended rounded) precision group l2b l1b mab pe cycle
@@ -416,7 +416,7 @@ theorem parsed_forward_integer_input (kind : ParsedForward) (negated extended ro
 theorem parsed_integer_memory_input_preserves_rounding_and_ignores_mask
     (access : Access) (negated extended rounded : Bool) (mask : Option ParsedMask)
     (precision : IntegerALU.Precision)
-    (group : Fin 2) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
+    (group : Fin 4) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
     (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
     ParsedOperand.toParsedIntegerInput?
       (.mem access negated extended rounded mask) precision group l2b l1b mab pe cycle
@@ -927,7 +927,7 @@ resolving its explicit or multiline write mask and output flush for this cycle. 
 def ParsedExpr.toDirectMaskedIntegerAccessesInLine? (expression : ParsedExpr)
     (registers : ProofsLean.MNCore.Masks.RegisterFile)
     (directive : ParsedMaskDirective) (hasSingleLineMask : Bool)
-    (group : Fin 2) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
+    (group : Fin 4) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
     (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
     Option ParsedMaskedIntegerAccesses :=
   match expression.op with
@@ -995,7 +995,7 @@ def ParsedExpr.toDirectMaskedIntegerAccessesInLine? (expression : ParsedExpr)
 def ParsedExpr.toDirectMaskedIntegerAccesses? (expression : ParsedExpr)
     (registers : ProofsLean.MNCore.Masks.RegisterFile)
     (directive : ParsedMaskDirective)
-    (group : Fin 2) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
+    (group : Fin 4) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
     (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
     Option ParsedMaskedIntegerAccesses :=
   ParsedExpr.toDirectMaskedIntegerAccessesInLine? expression registers directive
@@ -1006,7 +1006,7 @@ Each destination receives the same prepared ALU result, in source order. -/
 def ParsedExpr.toDirectMaskedIntegerWritesInLine? (expression : ParsedExpr)
     (registers : ProofsLean.MNCore.Masks.RegisterFile)
     (directive : ParsedMaskDirective) (hasSingleLineMask : Bool)
-    (group : Fin 2) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
+    (group : Fin 4) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
     (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
     Option (List ParsedMaskedIntegerAccesses) :=
   match expression.op, expression.destinations with
@@ -1045,7 +1045,7 @@ writes the same computed bus to every destination in source order. -/
 def ParsedExpr.toDirectMaskedConstantWrites? (expression : ParsedExpr)
     (registers : ProofsLean.MNCore.Masks.RegisterFile)
     (directive : ParsedMaskDirective) (hasSingleLineMask : Bool)
-    (group : Fin 2) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
+    (group : Fin 4) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
     (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
     Option (List ParsedConstantDestination) :=
   match expression.op with
@@ -2668,7 +2668,7 @@ theorem parsedIntegerMaskedRegisterStep_masked_readback
 
 def executeParsedMaskedIntegerExpr? (files : IntegerRegisterFiles)
     (expression : ParsedExpr) (directive : ParsedMaskDirective)
-    (group : Fin 2) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
+    (group : Fin 4) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
     (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
     Option (ProofsLean.StepResult IntegerRegisterFiles) :=
   match ParsedExpr.toDirectMaskedIntegerAccesses? expression files.maskRegisters
@@ -4288,7 +4288,7 @@ def parsedIntegerMaskedRegisterStepWithForwarding (files : IntegerRegisterFiles)
 def executeParsedMaskedIntegerExprWithForwarding? (files : IntegerRegisterFiles)
     (slots : ProofsLean.MNCore.Forwarding.Slots) (expression : ParsedExpr)
     (directive : ParsedMaskDirective)
-    (group : Fin 2) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
+    (group : Fin 4) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
     (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32) :
     Option (ProofsLean.StepResult IntegerRegisterFiles) :=
   match ParsedExpr.toDirectMaskedIntegerAccesses? expression files.maskRegisters
@@ -4300,7 +4300,7 @@ def executeParsedMaskedIntegerExprWithForwarding? (files : IntegerRegisterFiles)
 theorem executeParsedMaskedIntegerExprWithForwarding?_uses_lowering
     (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)
     (expression : ParsedExpr) (directive : ParsedMaskDirective)
-    (group : Fin 2) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
+    (group : Fin 4) (l2b : Fin 2) (l1b : Fin 8) (mab : Fin 16)
     (pe cycle : Fin 4) (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
     (accesses : ParsedMaskedIntegerAccesses)
     (lowered : ParsedExpr.toDirectMaskedIntegerAccesses? expression files.maskRegisters

@@ -60,7 +60,7 @@ Welcome の後は Convert Endian を縦の2問目にする。有限性・範囲�
   全命令・全状態で未実装がないことを証明しない限り、完全モデルへ変換できない。
 - `PEMachine.lean`: 1つのPEについて、整数register演算の4サイクルを既存のstepperで順次実行する。
   Issue checker拒否は`failure`、MV/待ち制御/未実装演算は`unknown`。全PE状態、forwarding、hazard clock、footprint frameとは未接続。
-- `MachineState.lean`: PE 2048個の5バンクregister files/OMR、L1BM 8バンク、L2BM/PDM/DRAM、
+- `MachineState.lean`: Rust machine定数に合わせたPE 4096個（4×2×8×16×4）の5バンクregister files/OMR、L1BM 64バンク、L2BM/PDM/DRAM、
   各PEのALUF/MAUF/LBF/MREADF busとvalidity、mask directive、PE context、hazard clockをまとめるState型。
   一般Stateの初期値ポリシーはまだ仮定しない。Welcomeに必要なPE SRAMはRust emulatorの
   `Words::get`が未割当領域をzeroで読むことを確認した。
