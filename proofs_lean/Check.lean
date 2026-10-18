@@ -111,6 +111,9 @@ import Lean
 #print axioms ProofsLean.MNCore.parsedFloatMaxPickLeft_ties_keep_left_zero_sign
 #print axioms ProofsLean.MNCore.parsedFloatMaxPickLeft_orders_signed_values
 #print axioms ProofsLean.MNCore.parsedFloatMaxBus_selects_each_lane_and_emits_flags
+#print axioms ProofsLean.MNCore.parsedBlockFloat_half_bfn_converts_one
+#print axioms ProofsLean.MNCore.parsedBlockFloat_half_bfe_preserves_negative_zero
+#print axioms ProofsLean.MNCore.parsedBlockFloatMab_double_shares_exponent_across_pes
 #print axioms ProofsLean.MNCore.RRN.vectorMAUFma_half_one_plus_one_rounds_to_two
 #print axioms ProofsLean.MNCore.extendHalfPairToSingleBus_lane_order
 #print axioms ProofsLean.MNCore.roundDoublePairToSingleBus_lane_order

@@ -2062,6 +2062,97 @@ def parsedFloatFtoiLane (precision : ParsedPrecision) (unsigned : Bool)
   let clipped := min magnitude limit
   return if negative then (2 ^ outputWidth - clipped) % 2 ^ outputWidth else clipped
 
+/-- Rust `float::block_float`, used by ALU `bfn` and `bfe`. The caller supplies
+one exponent-sharing block and the format's retained mantissa width. -/
+def parsedBlockFloat (precision : RRN.FloatPrecision) (values : List Nat)
+    (keep : Nat) (extended : Bool) : List Nat :=
+  let mantissaBits := precision.mantissaBits
+  let exponentMax := precision.exponentMax
+  let width := precision.width
+  let dropped := mantissaBits - keep
+  let exponent (value : Nat) := value / 2 ^ mantissaBits % 2 ^ precision.exponentBits
+  let mantissa (value : Nat) := value % 2 ^ mantissaBits
+  let sign (value : Nat) := value / 2 ^ (width - 1) % 2 * 2 ^ (width - 1)
+  let maxExponent := (values.map exponent).foldl Nat.max 0
+  let topOnes (value : Nat) := mantissa value / 2 ^ dropped == 2 ^ keep - 1
+  let common0 := maxExponent + if values.any fun value =>
+      exponent value == maxExponent && topOnes value then 1 else 0
+  let common := common0 + if precision == .half then dropped else 0
+  values.map fun value =>
+    let inputExponent := exponent value
+    if common >= exponentMax then
+      sign value + exponentMax * 2 ^ mantissaBits
+    else if maxExponent == 0 then sign value
+    else if inputExponent == 0 then
+      if extended then sign value else sign value + common * 2 ^ mantissaBits
+    else
+      let distance := common - inputExponent
+      let extendedFlag := extended &&
+        (distance > 6 + dropped || (distance == 6 + dropped && !topOnes value))
+      let shift := (if extendedFlag then distance - 6 else distance) + 1 +
+        (if precision == .half then 0 else dropped)
+      let rounded := RRN.roundShift (2 ^ mantissaBits + mantissa value) shift
+      let resultMantissa := if precision == .half then rounded else rounded * 2 ^ dropped
+      if resultMantissa == 0 then
+        if extended then sign value else sign value + common * 2 ^ mantissaBits
+      else
+        sign value + (if extendedFlag then 0 else common) * 2 ^ mantissaBits +
+          resultMantissa % 2 ^ mantissaBits
+
+theorem parsedBlockFloat_half_bfn_converts_one :
+    parsedBlockFloat .half [0x3e00] 9 false = [0x3f00] := by
+  decide
+
+theorem parsedBlockFloat_half_bfe_preserves_negative_zero :
+    parsedBlockFloat .half [0x8000] 9 true = [0x8000] := by
+  decide
+
+/-- One MAB's four ALU lanes share the exponent blocks used by the Rust executor. -/
+def parsedBlockFloatMab (precision : ParsedPrecision) (keep : Nat) (extended : Bool)
+    (inputs : Fin 4 → IntegerALU.Bus) : Fin 4 → IntegerALU.Bus := Id.run do
+  let laneCount := match precision with | .d => 1 | .f | .g => 2 | _ => 8
+  let laneWidth := match precision with | .d => 64 | .f | .g => 32 | _ => 16
+  let readLane (pe : Fin 4) (lane : Nat) : Nat :=
+    let bus := inputs pe
+    match precision with
+    | .d => bus.high.toNat
+    | .f | .g => bus.high.extractLsb' (32 * (1 - lane)) 32 |>.toNat
+    | _ =>
+        if lane < 4 then bus.high.extractLsb' (48 - 16 * lane) 16 |>.toNat
+        else bus.low.extractLsb' (48 - 16 * (lane - 4)) 16 |>.toNat
+  let positionsFor (lane : Nat) : List (Fin 4 × Nat) :=
+    match precision with
+    | .d => (List.finRange 4).map fun pe => (pe, 0)
+    | .f => (List.finRange 4).map fun pe => (pe, lane)
+    | .g => (List.finRange 4).flatMap fun pe => [(pe, 0), (pe, 1)]
+    | _ => (List.finRange 4).flatMap fun pe =>
+        (List.range 4).map fun offset => (pe, (lane / 4) * 4 + offset)
+  let convertedLane (pe : Fin 4) (lane : Nat) : Nat := Id.run do
+    let positions := positionsFor lane
+    let values := positions.map fun (sourcePE, sourceLane) => readLane sourcePE sourceLane
+    let converted := parsedBlockFloat (parsedFloatFormat precision) values keep extended
+    let targetIndex := positions.idxOf (pe, lane)
+    return converted[targetIndex]!
+  return fun pe => Id.run do
+    let lanes := (List.range laneCount).map (convertedLane pe)
+    if laneWidth == 64 then
+      return ⟨BitVec.ofNat 64 lanes[0]!, 0⟩
+    else if laneWidth == 32 then
+      return ⟨BitVec.ofNat 64 (lanes[0]! * 2 ^ 32 + lanes[1]!), 0⟩
+    else
+      let high := (List.range 4).foldl (fun acc lane =>
+        acc + lanes[lane]! * 2 ^ (48 - 16 * lane)) 0
+      let low := (List.range 4).foldl (fun acc lane =>
+        acc + lanes[lane + 4]! * 2 ^ (48 - 16 * lane)) 0
+      return ⟨BitVec.ofNat 64 high, BitVec.ofNat 64 low⟩
+
+theorem parsedBlockFloatMab_double_shares_exponent_across_pes :
+    parsedBlockFloatMab .d 52 false
+      (fun pe => if pe.val == 0 then ⟨0x3ff0000000000000, 7⟩ else ⟨0, 0⟩) =
+      (fun pe => if pe.val == 0 then ⟨0x3ff8000000000000, 0⟩
+        else ⟨0x3ff0000000000000, 0⟩) := by
+  decide
+
 theorem parsedFloatFloorLane_rounds_negative_fraction_down :
     parsedFloatFloorLane .f 0xbfc00000 = 0xc0000000 := by
   decide
