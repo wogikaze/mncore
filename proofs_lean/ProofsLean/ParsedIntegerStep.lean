@@ -5286,6 +5286,76 @@ theorem prepareParsedIntegerMatrixReadLineExpression_alu_never_unknown_of_lowere
   | unknown => exact (cyclesKnown result).elim
   | ok prepared => simp [result]
 
+theorem prepareParsedIntegerMatrixReadLineExpression_constant_never_unknown_of_lowered
+    (files : IntegerRegisterFiles) (oldSlots nextSlots : ProofsLean.MNCore.Forwarding.Slots)
+    (store : ParsedMatrixReadStore) (expression : ParsedExpr)
+    (control : ParsedMaskExecutionControl) (hasSingleLineMask noForward reduced : Bool)
+    (isConstant : expression.op = .zero ∨
+      ∃ payload sparse, expression.op = .immediate payload sparse)
+    (lowered : ∀ cycle, cycle ∈ parsedIntegerALUCycles → ∃ targets,
+      ParsedExpr.toDirectMaskedConstantWrites? expression files.maskRegisters
+        control.directive hasSingleLineMask control.context.group control.context.l2b
+        control.context.l1b control.context.mab control.context.pe cycle
+        control.context.bar0 control.context.bar1 control.context.tWord = some targets) :
+    prepareParsedIntegerMatrixReadLineExpression files oldSlots nextSlots store expression
+      control hasSingleLineMask noForward reduced ≠ .unknown := by
+  have cycleKnown : ∀ cycle, cycle ∈ parsedIntegerALUCycles → ∀ outputSlots,
+      prepareParsedIntegerALUExprCycle files oldSlots outputSlots expression control
+        hasSingleLineMask noForward reduced cycle ≠ .unknown := by
+    intro cycle member outputSlots
+    obtain ⟨targets, targetsLowered⟩ := lowered cycle member
+    exact prepareParsedIntegerALUExprCycle_constant_never_unknown_of_lowered files oldSlots
+      outputSlots expression control hasSingleLineMask noForward reduced cycle isConstant targets
+      targetsLowered
+  have cyclesKnown := prepareParsedIntegerALUExprCycles_never_unknown files oldSlots nextSlots
+    expression control hasSingleLineMask noForward reduced cycleKnown
+  unfold prepareParsedIntegerMatrixReadLineExpression
+  rcases isConstant with isZero | ⟨payload, sparse, isImmediate⟩
+  · simp only [isZero]
+    cases result : prepareParsedIntegerALUExprCycles files oldSlots nextSlots expression control
+        hasSingleLineMask noForward reduced with
+    | failure => simp [result]
+    | unknown => exact (cyclesKnown result).elim
+    | ok prepared => simp [result]
+  · simp only [isImmediate]
+    cases result : prepareParsedIntegerALUExprCycles files oldSlots nextSlots expression control
+        hasSingleLineMask noForward reduced with
+    | failure => simp [result]
+    | unknown => exact (cyclesKnown result).elim
+    | ok prepared => simp [result]
+
+theorem prepareParsedIntegerMatrixReadLineExpression_matrixRead_never_unknown_of_lowered
+    (files : IntegerRegisterFiles) (oldSlots nextSlots : ProofsLean.MNCore.Forwarding.Slots)
+    (store : ParsedMatrixReadStore) (expression : ParsedExpr)
+    (control : ParsedMaskExecutionControl) (hasSingleLineMask noForward reduced : Bool)
+    (isMatrixRead : ∃ precision, expression.op = .matrixRead precision)
+    (lowered : ∀ cycle, cycle ∈ parsedMatrixReadCycles → ∃ accesses,
+      ParsedExpr.toDirectMatrixReadAccesses? expression files.maskRegisters
+        control.directive hasSingleLineMask { control.context with cycle := cycle } =
+          some accesses) :
+    prepareParsedIntegerMatrixReadLineExpression files oldSlots nextSlots store expression
+      control hasSingleLineMask noForward reduced ≠ .unknown := by
+  have cycleKnown : ∀ cycle, cycle ∈ parsedMatrixReadCycles → ∀ outputSlots,
+      prepareParsedMatrixReadCycle files outputSlots store expression control.directive
+        hasSingleLineMask noForward { control.context with cycle := cycle } ≠ .unknown := by
+    intro cycle member outputSlots
+    obtain ⟨accesses, accessesLowered⟩ := lowered cycle member
+    obtain ⟨flushSelection, flushResolved⟩ := resolveFlushSelection?_always_resolves
+      expression.flush files.maskRegisters cycle
+    exact prepareParsedMatrixReadCycle_never_unknown_of_resolved files outputSlots store
+      expression control.directive hasSingleLineMask noForward
+      { control.context with cycle := cycle } accesses flushSelection accessesLowered flushResolved
+  have cyclesKnown := prepareParsedMatrixReadExprCycles_never_unknown files nextSlots store
+    expression control.directive hasSingleLineMask noForward control.context cycleKnown
+  obtain ⟨precision, operation⟩ := isMatrixRead
+  unfold prepareParsedIntegerMatrixReadLineExpression
+  simp only [operation]
+  cases result : prepareParsedMatrixReadExprCycles files nextSlots store expression
+      control.directive hasSingleLineMask noForward control.context with
+  | failure => simp [result]
+  | unknown => exact (cyclesKnown result).elim
+  | ok prepared => simp [result]
+
 def prepareParsedIntegerMatrixReadLineExpressions (files : IntegerRegisterFiles)
     (oldSlots : ProofsLean.MNCore.Forwarding.Slots) (store : ParsedMatrixReadStore)
     (control : ParsedMaskExecutionControl) (hasSingleLineMask noForward reduced : Bool) :
