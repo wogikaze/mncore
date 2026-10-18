@@ -3226,13 +3226,22 @@ def commitParsedMatrixMAUPEState (coordinates : List (Fin 4)) (currentState : St
         { nextState.peContext other with bar0 := bar0 pe, bar1 := bar1 pe }
         else nextState.peContext other }) currentState coordinates
 
-theorem commitParsedMatrixMAUPEState_preserves_matrix_registers
+theorem commitParsedMatrixMAUPEState_preserves_non_pe_state
     (coordinates : List (Fin 4)) (currentState : State)
     (coordinate : MABCoordinate) (noForward : Bool)
     (files : Fin 4 → PEMemory.IntegerRegisterFiles) (bar0 bar1 : Fin 4 → BitVec 12)
     (outputs : Fin 4 → Fin 4 → IntegerALU.Bus) (poisoned : Fin 4 → Bool) :
-    (commitParsedMatrixMAUPEState coordinates currentState coordinate noForward files bar0 bar1
-      outputs poisoned).matrixRegisters = currentState.matrixRegisters := by
+    let next := commitParsedMatrixMAUPEState coordinates currentState coordinate noForward
+      files bar0 bar1 outputs poisoned
+    (next.l1bm, next.l1bmTurnaround, next.l1bmTurnaroundValid, next.blockMemory,
+      next.dar, next.darBuffer, next.darBufferReadAddress, next.darWriteAddress,
+      next.mvCompletedTags, next.pendingMv, next.matrixRegisters, next.maskDirective,
+      next.hazardClock) =
+    (currentState.l1bm, currentState.l1bmTurnaround, currentState.l1bmTurnaroundValid,
+      currentState.blockMemory, currentState.dar, currentState.darBuffer,
+      currentState.darBufferReadAddress, currentState.darWriteAddress,
+      currentState.mvCompletedTags, currentState.pendingMv, currentState.matrixRegisters,
+      currentState.maskDirective, currentState.hazardClock) := by
   simp only [commitParsedMatrixMAUPEState]
   induction coordinates generalizing currentState with
   | nil => rfl

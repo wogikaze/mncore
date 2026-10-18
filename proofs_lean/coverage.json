@@ -1765,8 +1765,8 @@
         },
         "mau_commit_frame": {
           "lean_executor": "ProofsLean.MNCore.commitParsedMatrixMAUPEState",
-          "theorem": "ProofsLean.MNCore.commitParsedMatrixMAUPEState_preserves_matrix_registers",
-          "scope": "For any PE commit sequence, MAU PE register, forwarding, validity, and BAR context updates preserve the matrix-register function. This proves the commit helper frame; successful whole-transition result extraction and all-MAB composition remain unproved.",
+          "theorem": "ProofsLean.MNCore.commitParsedMatrixMAUPEState_preserves_non_pe_state",
+          "scope": "For any PE commit sequence, PE register, forwarding, validity, and BAR context updates preserve L1BM and turnaround state, block memory, DAR/DARBUF state, MV tags and queue, matrix registers, mask directive, and hazard clock. This proves the commit helper frame; successful whole-transition result extraction and all-MAB composition remain unproved.",
           "source": "proofs_lean/ProofsLean/WholeMachineStep.lean"
         },
         "remaining": "Run and preserve command/precision/row-mask/rounding/poison/forwarding differential vectors against the reference executor, then prove the Lean model covers those cases."
