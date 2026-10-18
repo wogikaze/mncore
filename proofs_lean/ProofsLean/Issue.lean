@@ -940,6 +940,75 @@ def NormalizedExpr.parserSourceArityValid (expression : NormalizedExpr) : Prop :
     expression.sources.length = expression.op.parserSourceLimit
   else expression.sourcesMatchParserArity
 
+/-- For the ordinary fixed-prefix parser path, an integer ALU's source count
+is exactly the opcode's declared input count. -/
+theorem NormalizedExpr.alu_source_count_of_parser_arity
+    (expression : NormalizedExpr) (name : ParsedAluName)
+    (precision : Option ParsedPrecision) (unsigned : Bool) (arg : Option (Fin 256))
+    (opShape : expression.op = .alu name precision unsigned arg)
+    (arity : expression.parserSourceArityValid) :
+    expression.sources.length = name.inputCount := by
+  unfold NormalizedExpr.parserSourceArityValid at arity
+  rw [opShape] at arity
+  simp [ParsedOp.hasFixedParserSourceArity, ParsedOp.parserSourceLimit] at arity
+  exact arity
+
+theorem ParsedExpr.alu_source_count_of_parser_arity
+    (expression : ParsedExpr) (name : ParsedAluName)
+    (precision : Option ParsedPrecision) (unsigned : Bool) (arg : Option (Fin 256))
+    (opShape : expression.op = .alu name precision unsigned arg)
+    (arity : expression.parserSourceArityValid) :
+    expression.sources.length = name.inputCount := by
+  unfold ParsedExpr.parserSourceArityValid at arity
+  rw [opShape] at arity
+  simp [ParsedOp.hasFixedParserSourceArity, ParsedOp.parserSourceLimit] at arity
+  exact arity
+
+theorem list_eq_singleton_of_length_eq_one {α : Type} (items : List α)
+    (length : items.length = 1) : ∃ item, items = [item] := by
+  cases items with
+  | nil => simp at length
+  | cons item rest =>
+      cases rest with
+      | nil => exact ⟨item, rfl⟩
+      | cons next tail => simp at length
+
+theorem list_eq_pair_of_length_eq_two {α : Type} (items : List α)
+    (length : items.length = 2) : ∃ first second, items = [first, second] := by
+  cases items with
+  | nil => simp at length
+  | cons first rest =>
+      cases rest with
+      | nil => simp at length
+      | cons second tail =>
+          cases tail with
+          | nil => exact ⟨first, second, rfl⟩
+          | cons third remaining => simp at length
+
+theorem NormalizedExpr.alu_unary_sources_of_parser_arity
+    (expression : NormalizedExpr) (name : ParsedAluName)
+    (precision : Option ParsedPrecision) (unsigned : Bool) (arg : Option (Fin 256))
+    (opShape : expression.op = .alu name precision unsigned arg)
+    (inputCount : name.inputCount = 1)
+    (arity : expression.parserSourceArityValid) :
+    ∃ source, expression.sources = [source] := by
+  obtain ⟨source, sourcesShape⟩ := list_eq_singleton_of_length_eq_one
+    expression.sources (expression.alu_source_count_of_parser_arity name precision unsigned
+      arg opShape arity |>.trans inputCount)
+  exact ⟨source, sourcesShape⟩
+
+theorem NormalizedExpr.alu_binary_sources_of_parser_arity
+    (expression : NormalizedExpr) (name : ParsedAluName)
+    (precision : Option ParsedPrecision) (unsigned : Bool) (arg : Option (Fin 256))
+    (opShape : expression.op = .alu name precision unsigned arg)
+    (inputCount : name.inputCount = 2)
+    (arity : expression.parserSourceArityValid) :
+    ∃ sourceX sourceY, expression.sources = [sourceX, sourceY] := by
+  obtain ⟨sourceX, sourceY, sourcesShape⟩ := list_eq_pair_of_length_eq_two
+    expression.sources (expression.alu_source_count_of_parser_arity name precision unsigned
+      arg opShape arity |>.trans inputCount)
+  exact ⟨sourceX, sourceY, sourcesShape⟩
+
 def NormalizedExpr.blockDestinationArityValid (expression : NormalizedExpr) : Prop :=
   match expression.op with
   | .l2bm .dars => expression.destinations.length = 1
