@@ -7035,6 +7035,98 @@ def parsedExprIsIntegerMatrixReadStageInput (expression : ParsedExpr) : Bool :=
     !parsedExprIsBlockFloatProducer expression &&
     !parsedExprIsFloatReluProducer expression
 
+def parsedExprIntegerMatrixReadStageInputSpec (expression : ParsedExpr) : Prop :=
+  parsedExprWaitTag? expression = none ∧
+    parsedExprIsL2BMProducer expression = false ∧
+    parsedExprIsMatrixWriteProducer expression = false ∧
+    parsedExprIsL1MwriteProducer expression = false ∧
+    parsedExprIsL1GatherProducer expression = false ∧
+    parsedExprIsL1ReduceProducer expression = false ∧
+    parsedExprIsL1ToPEProducer expression = false ∧
+    parsedExprIsMatrixMAUProducer expression = false ∧
+    parsedExprIsSupportedFloatMAUProducer expression = false ∧
+    parsedExprIsMslMsrProducer expression = false ∧
+    parsedExprIsBlockFloatProducer expression = false ∧
+    parsedExprIsFloatReluProducer expression = false
+
+theorem parsedExprIsIntegerMatrixReadStageInput_spec
+    (expression : ParsedExpr) :
+    parsedExprIsIntegerMatrixReadStageInput expression = true ↔
+      parsedExprIntegerMatrixReadStageInputSpec expression := by
+  simp [parsedExprIsIntegerMatrixReadStageInput,
+    parsedExprIntegerMatrixReadStageInputSpec, and_assoc]
+
+def parsedExprIsIntegerMatrixReadLineCandidate (expression : ParsedExpr) : Bool :=
+  match expression.op with
+  | .alu .. | .zero | .immediate .. | .matrixRead .. | .noforward => true
+  | _ => false
+
+theorem parsedExpr_supported_stage_input_is_candidate
+    (expression : ParsedExpr) (expressions : List ParsedExpr)
+    (supported : parsedExprIsSupportedPELineProducer expression = true)
+    (member : expression ∈ expressions.filter parsedExprIsIntegerMatrixReadStageInput) :
+    parsedExprIsIntegerMatrixReadLineCandidate expression = true := by
+  cases expression with
+  | mk op sources destinations flush text =>
+      let e : ParsedExpr := ⟨op, sources, destinations, flush, text⟩
+      have hSupported : parsedExprIsSupportedPELineProducer e = true := by
+        simpa [e] using supported
+      have hMember : e ∈ expressions.filter parsedExprIsIntegerMatrixReadStageInput := by
+        simpa [e] using member
+      have hSpec := (parsedExprIsIntegerMatrixReadStageInput_spec e).mp
+        ((List.mem_filter.mp hMember).2)
+      rcases hSpec with ⟨notWait, notL2BM, notMatrixWrite, notL1Mwrite, notL1Gather,
+        notL1Reduce, notL1ToPE, notMatrixMAU, notFloatMAU, notMslMsr, notBlockFloat,
+        notFloatRelu⟩
+      cases op with
+      | alu name precision unsigned arg => simp [parsedExprIsIntegerMatrixReadLineCandidate, e]
+      | zero => simp [parsedExprIsIntegerMatrixReadLineCandidate, e]
+      | immediate value unsigned => simp [parsedExprIsIntegerMatrixReadLineCandidate, e]
+      | matrixRead precision => simp [parsedExprIsIntegerMatrixReadLineCandidate, e]
+      | noforward => simp [parsedExprIsIntegerMatrixReadLineCandidate, e]
+      | mau precision matrix kind half round =>
+          have operation : e.op = .mau precision matrix kind half round := rfl
+          have families := supported_mau_has_known_dispatch_family e precision matrix kind half
+            round operation hSupported
+          rcases families with matrixMAU | floatMAU | blockFloat
+          · have hFalse : parsedExprIsMatrixMAUProducer e = false := by simpa using notMatrixMAU
+            rw [hFalse] at matrixMAU
+            cases matrixMAU
+          · have hFalse : parsedExprIsSupportedFloatMAUProducer e = false := by
+              simpa using notFloatMAU
+            rw [hFalse] at floatMAU
+            cases floatMAU
+          · simp [parsedExprIsBlockFloatProducer, e] at blockFloat
+      | matrixWrite precision =>
+          have hTrue : parsedExprIsMatrixWriteProducer e = true := by
+            simp [parsedExprIsMatrixWriteProducer, e]
+          rw [notMatrixWrite] at hTrue
+          cases hTrue
+      | wait tag =>
+          have hTag : parsedExprWaitTag? e = some tag := by simp [parsedExprWaitTag?, e]
+          rw [notWait] at hTag
+          cases hTag
+      | l1bm l1op =>
+          have families := parsedL1Producer_has_complete_dispatch_classification e l1op rfl
+          rcases families with l1mwrite | l1gather | l1reduce | l1tope
+          · have hFalse : parsedExprIsL1MwriteProducer e = false := by simpa using notL1Mwrite
+            rw [hFalse] at l1mwrite
+            cases l1mwrite
+          · have hFalse : parsedExprIsL1GatherProducer e = false := by simpa using notL1Gather
+            rw [hFalse] at l1gather
+            cases l1gather
+          · have hFalse : parsedExprIsL1ReduceProducer e = false := by simpa using notL1Reduce
+            rw [hFalse] at l1reduce
+            cases l1reduce
+          · have hFalse : parsedExprIsL1ToPEProducer e = false := by simpa using notL1ToPE
+            rw [hFalse] at l1tope
+            cases l1tope
+      | l2bm l2op =>
+          have hTrue : parsedExprIsL2BMProducer e = true := by
+            simp [parsedExprIsL2BMProducer, e]
+          rw [notL2BM] at hTrue
+          cases hTrue
+
 def executeIntegerProducerLineAtPE (expressions : List ParsedExpr)
     (state : State) (pe : PEId) : ProofsLean.StepResult State :=
   let oldContext := state.peContext pe
