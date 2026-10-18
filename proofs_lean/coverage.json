@@ -1752,6 +1752,15 @@
         ],
         "audit_kind": "manual_source_crosswalk",
         "rust_runtime_differential": false,
+        "arithmetic_fragment_differential": {
+          "evidence": "proofs_lean/evidence/matrix-bf/reference.json",
+          "runner": "proofs_lean/scripts/check_matrix_bf_reference.py",
+          "reference": "viz/core/src/float.rs::bf_dot + mat_fma",
+          "cases": 584,
+          "matched": 584,
+          "scope": "D/F/G/H block-float dot and accumulator FMA arithmetic, including D/H output-rounding variants. Operand reading, matrix layout, row masks, PE packing, flags, poison, issue timing, and whole-machine command behavior are outside this comparison.",
+          "universal_conformance_proof": false
+        },
         "formal_rust_lean_equivalence": false,
         "commit_order_frame": {
           "rust_source_order": "Rust computes all producers from pre-issue operands, applies matrix-register writes, then commits PE destinations.",
@@ -1777,7 +1786,7 @@
           "scope": "For every successful matrix-MAU producer, including PE output commit across all MABs and global poison propagation, matrix registers equal their pre-issue values. The isolated PE commit helper also preserves L1BM and turnaround state, block memory, DAR/DARBUF, MV tags and queue, mask directive, and hazard clock.",
           "source": "proofs_lean/ProofsLean/WholeMachineStep.lean"
         },
-        "remaining": "Run and preserve command/precision/row-mask/rounding/poison/forwarding differential vectors against the reference executor, then prove the Lean model covers those cases."
+        "remaining": "Run command-level Rust differentials for source operands, matrix layout, row masks, PE packing, flags, poison, and forwarding; the arithmetic-only comparison does not establish compute_mat or whole-machine conformance."
       }
     },
     {

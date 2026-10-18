@@ -37,6 +37,10 @@ root = "ForwardingProbe"
 name = "lbf_encoded_probe"
 root = "LBFEncodedProbe"
 
+[[lean_exe]]
+name = "matrix_bf_probe"
+root = "MatrixBFProbe"
+
 [[require]]
 name = "mathlib"
 git = "https://github.com/leanprover-community/mathlib4"
