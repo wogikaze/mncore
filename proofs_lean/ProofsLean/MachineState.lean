@@ -26,6 +26,8 @@ structure State where
   /-- Shared DARBUF read pointer and DAR write pointer used by l2bmdarw. -/
   darBufferReadAddress : Fin 512
   darWriteAddress : Fin 1024
+  /-- MV tags whose transfers have completed in the synchronous transfer model. -/
+  mvCompletedTags : Fin 256 → Bool
   /-- Matrix registers, indexed by physical group/L2B/L1B and local MAB. -/
   matrixRegisters : Fin 4 → Fin 2 → Fin 8 → PEMemory.ParsedMatrixReadStore
   /-- ALUF, MAUF, matrix-read forwarding, and L1-to-PE forwarding buses. -/
@@ -71,6 +73,7 @@ def rustSimulatorInitialState : State where
   darBuffer := fun _ _ => 0
   darBufferReadAddress := ⟨0, by decide⟩
   darWriteAddress := ⟨0, by decide⟩
+  mvCompletedTags := fun _ => false
   matrixRegisters := fun _ _ _ _ _ _ => 0
   forwarding := fun _ unit _ => .known (match unit with
     | .alu | .mau | .matrixRead | .l1ToPE => ⟨0, 0⟩)

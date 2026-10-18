@@ -3733,8 +3733,13 @@ noncomputable def executeIntegerProducerInstructionLine
                                     l1bmTurnaroundValid :=
                                       if noForward then nextWithL2.l1bmTurnaroundValid else hasPEToL1Producer }
         else .unknown
-    | .nop count _ =>
-        .ok { state with hazardClock := state.hazardClock + count.val }
+    | .nop count wait =>
+        match wait with
+        | none => .ok { state with hazardClock := state.hazardClock + count.val }
+        | some tag =>
+            if state.mvCompletedTags tag then
+              .ok { state with hazardClock := state.hazardClock + count.val }
+            else .unknown
     | .mv transfer =>
         if transfer.kind == .nop then
           .ok { state with hazardClock := state.hazardClock + 1 }
@@ -3743,7 +3748,11 @@ noncomputable def executeIntegerProducerInstructionLine
           | .failure => .failure
           | .unknown => .unknown
           | .ok next =>
-              .ok { next with hazardClock := next.hazardClock + 1 }
+              .ok { next with
+                hazardClock := next.hazardClock + 1
+                mvCompletedTags := fun tag =>
+                  if transfer.toParsed.tag == some tag then true
+                  else next.mvCompletedTags tag }
 
 /-- Execute one normalized source line. Zero-cost mask directives update the
 control state directly; instruction-bearing lines use the scored line step. -/
@@ -3896,7 +3905,8 @@ theorem executeNormalizedLine_maskDirective_matches_footprint
 matching its syntactic hazard-clock write footprint. -/
 theorem executeNormalizedLine_positive_nop_matches_footprint
     (state : State) (count : Nat) (wait : Option (Fin 256))
-    (accepted : checkParsedTopLine (.nop (count + 1) wait) = true) :
+    (accepted : checkParsedTopLine (.nop (count + 1) wait) = true)
+    (waitNone : wait = none) :
     UnitResource.hazardClock ∈
         (normalizedLineFootprint (.nop (count + 1) wait)).unitWrites ∧
       executeNormalizedLine (.nop (count + 1) wait) state =
@@ -3907,8 +3917,9 @@ theorem executeNormalizedLine_positive_nop_matches_footprint
         checkParsedTopLine (InstructionLine.toParsed
           (.nop ⟨count + 1, by omega⟩ wait)) = true := by
       simpa [InstructionLine.toParsed] using accepted
+    rw [waitNone] at acceptedInstruction
     simp [executeNormalizedLine, NormalizedLine.toInstruction?,
-      executeIntegerProducerInstructionLine, acceptedInstruction]
+      executeIntegerProducerInstructionLine, acceptedInstruction, waitNone]
 
 /-- Zero-count nop is erased by normalization. If constructed directly in the
 normalized AST, it cannot advance state and its footprint is empty. -/
@@ -4010,11 +4021,30 @@ theorem executeIntegerProducerInstructionLine_unsupported_rust_alu_failure
 
 theorem executeIntegerProducerInstructionLine_nop
     (count : {n : Nat // 0 < n}) (wait : Option (Fin 256)) (state : State)
-    (accepted : checkParsedTopLine (.nop count.val wait) = true) :
+    (accepted : checkParsedTopLine (.nop count.val wait) = true)
+    (waitNone : wait = none) :
     executeIntegerProducerInstructionLine (.nop count wait) state =
       .ok { state with hazardClock := state.hazardClock + count.val } := by
+  rw [waitNone] at accepted
   simp [executeIntegerProducerInstructionLine, InstructionLine.toParsed,
-    accepted, InstructionLine.cost]
+    accepted, InstructionLine.cost, waitNone]
+
+theorem executeIntegerProducerInstructionLine_wait_completed
+    (count : {n : Nat // 0 < n}) (tag : Fin 256) (state : State)
+    (accepted : checkParsedTopLine (.nop count.val (some tag)) = true)
+    (completed : state.mvCompletedTags tag = true) :
+    executeIntegerProducerInstructionLine (.nop count (some tag)) state =
+      .ok { state with hazardClock := state.hazardClock + count.val } := by
+  simp [executeIntegerProducerInstructionLine, InstructionLine.toParsed,
+    accepted, completed]
+
+theorem executeIntegerProducerInstructionLine_wait_pending_unknown
+    (count : {n : Nat // 0 < n}) (tag : Fin 256) (state : State)
+    (accepted : checkParsedTopLine (.nop count.val (some tag)) = true)
+    (pending : state.mvCompletedTags tag = false) :
+    executeIntegerProducerInstructionLine (.nop count (some tag)) state = .unknown := by
+  simp [executeIntegerProducerInstructionLine, InstructionLine.toParsed,
+    accepted, pending]
 
 theorem executeIntegerProducerInstructionLine_mvnop
     (transfer : NormalizedMv) (state : State)
@@ -4031,7 +4061,10 @@ theorem executeIntegerProducerInstructionLine_mv_transfer_success
     (notNop : transfer.kind ≠ .nop)
     (executed : executeParsedMvMemory state transfer.toParsed = .ok next) :
     executeIntegerProducerInstructionLine (.mv transfer) state =
-      .ok { next with hazardClock := next.hazardClock + 1 } := by
+      .ok { next with
+        hazardClock := next.hazardClock + 1
+        mvCompletedTags := fun tag =>
+          if transfer.toParsed.tag == some tag then true else next.mvCompletedTags tag } := by
   simp [executeIntegerProducerInstructionLine, InstructionLine.toParsed,
     accepted, notNop, executed]
 
