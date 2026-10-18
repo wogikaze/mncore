@@ -761,7 +761,9 @@ noncomputable def executeIntegerProducerInstructionLine
               | .ok next =>
                   .ok { next with hazardClock := next.hazardClock + InstructionLine.cost line }
         else .unknown
-    | .nop _ _ | .mv _ => .unknown
+    | .nop count none =>
+        .ok { state with hazardClock := state.hazardClock + count.val }
+    | .nop _ (some _) | .mv _ => .unknown
 
 noncomputable def integerProducerMachine : ProofsLean.PartialMachine where
   Line := InstructionLine
@@ -776,6 +778,14 @@ theorem integerProducerMachine_issue_failure (line : InstructionLine)
     (state : State) (rejected : checkParsedTopLine line.toParsed = false) :
     integerProducerMachine.step line state = .failure := by
   simp [integerProducerMachine, executeIntegerProducerInstructionLine, rejected]
+
+theorem executeIntegerProducerInstructionLine_nop_without_wait
+    (count : {n : Nat // 0 < n}) (state : State)
+    (accepted : checkParsedTopLine (.nop count.val none) = true) :
+    executeIntegerProducerInstructionLine (.nop count none) state =
+      .ok { state with hazardClock := state.hazardClock + count.val } := by
+  simp [executeIntegerProducerInstructionLine, InstructionLine.toParsed,
+    accepted, InstructionLine.cost]
 
 theorem executeIntegerProducerInstructionLine_pe_success
     (normalizedExpressions : List NormalizedExpr) (state nextPEs next : State)

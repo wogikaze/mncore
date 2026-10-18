@@ -91,6 +91,7 @@ import Lean
 #print axioms ProofsLean.MNCore.executeParsedMatrixWriteCycle
 #print axioms ProofsLean.MNCore.lowerParsedMatrixWrite?
 #print axioms ProofsLean.MNCore.integerProducerMachine_issue_failure
+#print axioms ProofsLean.MNCore.executeIntegerProducerInstructionLine_nop_without_wait
 #print axioms ProofsLean.MNCore.executeIntegerProducerInstructionLine_pe_success
 #print axioms ProofsLean.MNCore.UnitKind.mem_all
 #print axioms ProofsLean.MNCore.Issue.ParsedOp.producerUnit?_of_alu
