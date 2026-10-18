@@ -58,10 +58,22 @@ theorem parsedFloatMAUSource?_memory
       some (.memory resolved false) := by
   simp [parsedFloatMAUSource?, ParsedOperand.toParsedIntegerInput?, lowered]
 
+def parsedFloatMAUSourceSigned? (operand : ParsedOperand)
+    (context : ParsedIntegerContext) : Option (ParsedIntegerInput × Bool) :=
+  match operand with
+  | .mem _ neg false false none | .forward _ neg false false =>
+      (ParsedOperand.toParsedIntegerInput? operand .long context.group context.l2b
+        context.l1b context.mab context.pe context.cycle context.bar0 context.bar1
+        context.tWord).map (fun input => (input, neg))
+  | _ => none
+
 structure ParsedFloatFmaAccesses where
   sourceA : ParsedIntegerInput
   sourceB : ParsedIntegerInput
   sourceC : ParsedIntegerInput
+  negateA : Bool
+  negateB : Bool
+  negateC : Bool
   destination : Fin (Bank.capacity .lm1)
 
 def lowerParsedFloatFma? (expression : ParsedExpr) (context : ParsedIntegerContext) :
@@ -71,14 +83,14 @@ def lowerParsedFloatFma? (expression : ParsedExpr) (context : ParsedIntegerConte
   | _ => none
   match expression.sources, expression.destinations with
   | [sourceA, sourceB, sourceC], [.mem access false false false none] =>
-      let sourceA ← parsedFloatMAUSource? sourceA context
-      let sourceB ← parsedFloatMAUSource? sourceB context
-      let sourceC ← parsedFloatMAUSource? sourceC context
+      let (sourceA, negateA) ← parsedFloatMAUSourceSigned? sourceA context
+      let (sourceB, negateB) ← parsedFloatMAUSourceSigned? sourceB context
+      let (sourceC, negateC) ← parsedFloatMAUSourceSigned? sourceC context
       let destinationAccess ← ParsedOperand.toDirectMemoryAccess?
         (.mem access false false false none) context.pe context.cycle
         context.bar0 context.bar1 context.tWord
       let destination ← FloatPEMemory.lm1LongAddress? destinationAccess
-      some ⟨sourceA, sourceB, sourceC, destination⟩
+      some ⟨sourceA, sourceB, sourceC, negateA, negateB, negateC, destination⟩
   | _, _ => none
 
 structure ParsedFloatMultiplyAccesses where
@@ -87,15 +99,6 @@ structure ParsedFloatMultiplyAccesses where
   negateA : Bool
   negateB : Bool
   destination : Fin (Bank.capacity .lm1)
-
-def parsedFloatMAUSourceSigned? (operand : ParsedOperand)
-    (context : ParsedIntegerContext) : Option (ParsedIntegerInput × Bool) :=
-  match operand with
-  | .mem _ neg false false none | .forward _ neg false false =>
-      (ParsedOperand.toParsedIntegerInput? operand .long context.group context.l2b
-        context.l1b context.mab context.pe context.cycle context.bar0 context.bar1
-        context.tWord).map (fun input => (input, neg))
-  | _ => none
 
 def negateSingleBus (bus : BitVec 64) : BitVec 64 :=
   bus ^^^ (BitVec.ofNat 64 (2 ^ 63 + 2 ^ 31))
@@ -200,7 +203,11 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
           | .failure => .failure
           | .unknown => .unknown
           | .ok sourceC =>
-            let output := singleFmaBus sourceA.high sourceB.high sourceC.high
+            let left := if accesses.negateA then negateSingleBus sourceA.high else sourceA.high
+            let right := if accesses.negateB then negateSingleBus sourceB.high else sourceB.high
+            let accumulator := if accesses.negateC then
+              negateSingleBus sourceC.high else sourceC.high
+            let output := singleFmaBus left right accumulator
             let nextLM1 := FloatPEMemory.writePair currentFiles.lm1 accesses.destination output
             .ok ({ currentFiles with lm1 := nextLM1 }, ⟨output, 0⟩)
   | .mau .f false .mul none false =>
@@ -290,7 +297,10 @@ theorem executeParsedFloatMAUCycleAtPE_fma_success
       .ok busB)
     (readC : ParsedIntegerInput.readWithForwarding readFiles oldSlots cycle accesses.sourceC =
       .ok busC) :
-    let output := singleFmaBus busA.high busB.high busC.high
+    let output := singleFmaBus
+      (if accesses.negateA then negateSingleBus busA.high else busA.high)
+      (if accesses.negateB then negateSingleBus busB.high else busB.high)
+      (if accesses.negateC then negateSingleBus busC.high else busC.high)
     executeParsedFloatMAUCycleAtPE readFiles currentFiles oldSlots expression context cycle =
       .ok ({ currentFiles with lm1 :=
         (FloatPEMemory.writePair currentFiles.lm1 accesses.destination output) },

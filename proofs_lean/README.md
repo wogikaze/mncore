@@ -65,7 +65,7 @@ Welcome の後は Convert Endian を縦の2問目にする。有限性・範囲�
   各PEのALUF/MAUF/LBF/MREADF busとvalidity、mask directive、PE context、hazard clockをまとめるState型。
   一般Stateの初期値ポリシーはまだ仮定しない。Welcomeに必要なPE SRAMはRust emulatorの
   `Words::get`が未割当領域をzeroで読むことを確認した。
-- `WholeMachineStep.lean`: 4096 PEすべてに整数ALU/zero/immediate/matrixRead、単精度`fvadd`加減算のraw memory/forward source→LM1経路、`fvmul`のraw memory/forward source（符号反転対応）→LM1経路、および`fvfma`のraw memory/forward source→LM1経路、raw memory/forward sourceのD/F/G matrixWriteを含むPEラインを適用する全State遷移。`fvadd`はビット単位FMAに基づく値をdestinationとMAUFへ反映する。
+- `WholeMachineStep.lean`: 4096 PEすべてに整数ALU/zero/immediate/matrixRead、単精度`fvadd`加減算のraw memory/forward source→LM1経路、`fvmul`のraw memory/forward source（符号反転対応）→LM1経路、および`fvfma`のraw memory/forward source（各入力の符号反転対応）→LM1経路、raw memory/forward sourceのD/F/G matrixWriteを含むPEラインを適用する全State遷移。`fvadd`はビット単位FMAに基づく値をdestinationとMAUFへ反映する。
   ALUF/MREADF結果、MAU disabled、MREADFのzero、LBF保持のforwarding挙動も更新する。
   他のMAU演算・精度・変換属性付きsource、L1BM/L2BM producer、MV/block転送、PE/block hazard履歴、OMR混在宛先とmatrixWriteの変換付きsourceは未接続で`.unknown`。
 - `Footprint.lean`: 全`InstructionLine`（PE/nop/MV）と全`ParsedOp`の構文footprintを定義し、
