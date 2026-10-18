@@ -1439,6 +1439,27 @@ def executeParsedMatrixWritesAtMAB (readState currentState : State)
         if (group, l2b, l1b) = (coordinate.group, coordinate.l2b, coordinate.l1b)
         then nextStore else currentState.matrixRegisters group l2b l1b }
 
+theorem executeParsedMatrixWritesAtMAB_preserves_pe_state
+    (readState currentState : State) (coordinate : MABCoordinate)
+    (expressions : List ParsedExpr) (next : State)
+    (executed : executeParsedMatrixWritesAtMAB readState currentState coordinate
+      expressions = .ok next) :
+    next.peRegisters = currentState.peRegisters ∧
+      next.forwarding = currentState.forwarding ∧
+      next.forwardingValid = currentState.forwardingValid ∧
+      next.peContext = currentState.peContext := by
+  simp only [executeParsedMatrixWritesAtMAB] at executed
+  cases writeResult : executeParsedMatrixWritesAtMAB.applyWrites readState coordinate
+      (expressions.filter parsedExprIsMatrixWriteProducer)
+      (currentState.matrixRegisters coordinate.group coordinate.l2b coordinate.l1b) with
+  | failure => simp_all [writeResult]
+  | unknown => simp_all [writeResult]
+  | ok store =>
+      simp only [writeResult] at executed
+      injection executed with nextEq
+      subst next
+      simp
+
 def executeParsedMatrixWritesAtMABs (readState : State) (coordinates : List MABCoordinate)
     (expressions : List ParsedExpr) (currentState : State) :
     ProofsLean.StepResult State :=
@@ -1452,6 +1473,39 @@ def executeParsedMatrixWritesAtMABs (readState : State) (coordinates : List MABC
         | .unknown => .unknown
         | .ok nextState =>
             executeParsedMatrixWritesAtMABs readState rest expressions nextState
+
+theorem executeParsedMatrixWritesAtMABs_preserves_pe_state
+    (readState currentState next : State) (coordinates : List MABCoordinate)
+    (expressions : List ParsedExpr)
+    (executed : executeParsedMatrixWritesAtMABs readState coordinates expressions
+      currentState = .ok next) :
+    next.peRegisters = currentState.peRegisters ∧
+      next.forwarding = currentState.forwarding ∧
+      next.forwardingValid = currentState.forwardingValid ∧
+      next.peContext = currentState.peContext := by
+  induction coordinates generalizing currentState with
+  | nil =>
+      simp [executeParsedMatrixWritesAtMABs] at executed
+      cases executed
+      exact ⟨rfl, rfl, rfl, rfl⟩
+  | cons coordinate rest ih =>
+      simp only [executeParsedMatrixWritesAtMABs] at executed
+      split at executed
+      · cases executed
+        exact ⟨rfl, rfl, rfl, rfl⟩
+      · cases matrixWrite : executeParsedMatrixWritesAtMAB
+            readState currentState coordinate expressions with
+        | failure => simp [matrixWrite] at executed
+        | unknown => simp [matrixWrite] at executed
+        | ok intermediate =>
+            have remaining : executeParsedMatrixWritesAtMABs readState rest
+                expressions intermediate = .ok next := by
+              simpa [matrixWrite] using executed
+            rcases ih intermediate remaining with ⟨pe, forwarding, validity, context⟩
+            have frame := executeParsedMatrixWritesAtMAB_preserves_pe_state
+              readState currentState coordinate expressions intermediate matrixWrite
+            exact ⟨pe.trans frame.1, forwarding.trans frame.2.1,
+              validity.trans frame.2.2.1, context.trans frame.2.2.2⟩
 
 def parsedMatrixMAUFloatFormat : ParsedPrecision → Option RRN.FloatPrecision
   | .d => some .double

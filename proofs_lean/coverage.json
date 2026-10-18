@@ -1753,6 +1753,16 @@
         "audit_kind": "manual_source_crosswalk",
         "rust_runtime_differential": false,
         "formal_rust_lean_equivalence": false,
+        "commit_order_frame": {
+          "rust_source_order": "Rust computes all producers from pre-issue operands, applies matrix-register writes, then commits PE destinations.",
+          "lean_order": "The Lean whole-state line transition commits PE producer destinations, applies MAU PE destinations, then commits matrix-register writes.",
+          "noninterference_theorems": [
+            "ProofsLean.MNCore.executeParsedMatrixWritesAtMAB_preserves_pe_state",
+            "ProofsLean.MNCore.executeParsedMatrixWritesAtMABs_preserves_pe_state"
+          ],
+          "scope": "The matrix-write commit stage preserves PE registers, forwarding payloads and validity, and PE context. Combined with pre-issue source snapshots, this establishes that the matrix-write/PE-destination commit order cannot overwrite one another's state fields.",
+          "issue_source": "viz/core/src/issue.rs:check rejects duplicate PE memory-bank writers and multiple mask-register writers in one issue line."
+        },
         "remaining": "Run and preserve command/precision/row-mask/rounding/poison/forwarding differential vectors against the reference executor, then prove the Lean model covers those cases."
       }
     },
