@@ -8347,11 +8347,11 @@ theorem executeIntegerProducerInstructionLine_pe_never_unknown_of_stages
       ∀ coordinate, coordinate ∈ allMABCoordinates → ∀ blockFloatState,
         executeParsedBlockFloatAtMAB state blockFloatState expression coordinate
           noForward hasSingleLineMask ≠ .unknown)
-    (matrixTransitionKnown : ∀ expression,
+    (matrixCalculationKnown : ∀ expression,
       expression ∈ expressions.filter parsedExprIsMatrixMAUProducer →
-      ∀ coordinate, coordinate ∈ allMABCoordinates → ∀ mauState,
-        executeParsedMatrixMAUTransitionAtMAB state mauState expression coordinate
-          noForward hasSingleLineMask ≠ .unknown)
+      ∀ coordinate, coordinate ∈ allMABCoordinates →
+        ∀ cycle : Fin 4,
+          executeParsedMatrixMAUAtMAB state coordinate expression cycle ≠ .unknown)
     (resolved : forwardingSourceResolved state)
     (l1ToPEKnown : ∀ nextShared,
       executeParsedL1ToPEProducers state nextShared expressions noForward
@@ -8422,8 +8422,11 @@ theorem executeIntegerProducerInstructionLine_pe_never_unknown_of_stages
                           state nextBlockFloat expression allMABCoordinates
                           noForward hasSingleLineMask (by
                             intro mauState coordinate coordinateMember
-                            exact matrixTransitionKnown expression member coordinate
-                              coordinateMember mauState)
+                            apply executeParsedMatrixMAUTransitionAtMAB_known_never_unknown
+                            apply executeParsedMatrixMAUPEWritesAtMAB_known_never_unknown
+                            intro cycle
+                            exact matrixCalculationKnown expression member coordinate
+                              coordinateMember cycle)
                       have matrixStageKnown := executeParsedMatrixMAUAndWrites_resolved_never_unknown
                         state nextBlockFloat expressions noForward hasSingleLineMask
                         (mauProducerKnown nextBlockFloat) resolved
