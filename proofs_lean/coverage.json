@@ -2025,7 +2025,7 @@
             "shared-block producers",
             "L1-to-PE producers"
           ],
-          "scope_limit": "The matrix-MAU calculation condition is now an explicit format/source-lowering predicate per selected expression/MAB/cycle plus resolved forwarding. A matrix-read expression's four-cycle transition is known when operand lowering and flush selection resolve at each cycle. Integer ALU four-cycle execution is known from per-cycle lowering and source-read knownness; zero/immediate four-cycle execution is known when constant destinations lower, their writes are prepared without unknown, and flush selection resolves at each cycle. Composing producer expressions into the PE line, reducing constant-write preparation to parser-level constraints, float-MAU cycles, full Rust/Lean equivalence, and other line forms remain open.",
+          "scope_limit": "The matrix-MAU calculation condition is now an explicit format/source-lowering predicate per selected expression/MAB/cycle plus resolved forwarding. A matrix-read expression's four-cycle transition is known when operand lowering and flush selection resolve at each cycle. Integer ALU four-cycle execution is known from per-cycle lowering and source-read knownness; zero/immediate four-cycle execution is known when constant destinations lower, every memory target has known source reads, and flush selection resolves at each cycle. Deriving that memory-source property from the constant destination lowerer, composing producer expressions into the PE line, float-MAU cycles, full Rust/Lean equivalence, and other line forms remain open.",
           "derived_premises": [
             "ProofsLean.MNCore.executeParsedSharedBlockProducers_resolved_never_unknown",
             "ProofsLean.MNCore.executeParsedMatrixMAUAndWrites_resolved_never_unknown",
@@ -2035,6 +2035,9 @@
             "ProofsLean.MNCore.PEMemory.prepareParsedMatrixReadCycles_never_unknown",
             "ProofsLean.MNCore.PEMemory.prepareParsedIntegerALUCycles_never_unknown",
             "ProofsLean.MNCore.PEMemory.prepareParsedMaskedWriteWithForwarding_never_unknown_of_reads",
+            "ProofsLean.MNCore.PEMemory.prepareParsedMaskedWrite_never_unknown_of_reads",
+            "ProofsLean.MNCore.PEMemory.prepareParsedConstantTarget_never_unknown_of_reads",
+            "ProofsLean.MNCore.PEMemory.prepareParsedMaskedConstantWrites_never_unknown_of_reads",
             "ProofsLean.MNCore.PEMemory.prepareParsedIntegerALUExprCycle_constant_never_unknown_of_resolved"
           ],
           "theorems": [

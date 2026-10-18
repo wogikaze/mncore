@@ -3705,6 +3705,23 @@ def prepareParsedMaskedWrite (files : IntegerRegisterFiles)
       | .failure => .failure
       | .unknown => .unknown
 
+theorem prepareParsedMaskedWrite_never_unknown_of_reads
+    (files : IntegerRegisterFiles) (accesses : ParsedMaskedIntegerAccesses)
+    (reduced : Bool)
+    (readXKnown : ParsedIntegerInput.read files accesses.sourceX ≠ .unknown)
+    (readYKnown : ParsedIntegerInput.read files accesses.sourceY ≠ .unknown) :
+    prepareParsedMaskedWrite files accesses reduced ≠ .unknown := by
+  obtain ⟨request, hasRequest⟩ := accesses.hasRequest
+  unfold prepareParsedMaskedWrite
+  cases readX : ParsedIntegerInput.read files accesses.sourceX with
+  | failure => simp [readX]
+  | unknown => exact (readXKnown readX).elim
+  | ok x =>
+      cases readY : ParsedIntegerInput.read files accesses.sourceY with
+      | failure => simp [readX, readY]
+      | unknown => exact (readYKnown readY).elim
+      | ok y => simp [readX, readY, evaluateParsedIntegerAlu, hasRequest]
+
 
 def prepareParsedMaskedWriteWithForwarding (files : IntegerRegisterFiles)
     (slots : ProofsLean.MNCore.Forwarding.Slots) (cycle : Fin 4)
@@ -3752,6 +3769,19 @@ def prepareParsedConstantTarget (files : IntegerRegisterFiles) (cycle : Fin 4)
       .ok ⟨none, some (entry, cycle, 0), (fun _ => 0), ⟨BitVec.allOnes 4, true⟩⟩
   | .noWrite => .ok ⟨none, none, (fun _ => 0), ⟨BitVec.allOnes 4, true⟩⟩
 
+theorem prepareParsedConstantTarget_never_unknown_of_reads
+    (files : IntegerRegisterFiles) (cycle : Fin 4) (target : ParsedConstantDestination)
+    (known : ∀ accesses, target = .memory accesses →
+      ParsedIntegerInput.read files accesses.sourceX ≠ .unknown ∧
+      ParsedIntegerInput.read files accesses.sourceY ≠ .unknown) :
+    prepareParsedConstantTarget files cycle target ≠ .unknown := by
+  cases target with
+  | memory accesses =>
+      exact prepareParsedMaskedWrite_never_unknown_of_reads files accesses false
+        (known accesses rfl).1 (known accesses rfl).2
+  | maskRegister entry => simp [prepareParsedConstantTarget]
+  | noWrite => simp [prepareParsedConstantTarget]
+
 def evaluateParsedIntegerMaskSources (files : IntegerRegisterFiles) (op : ParsedOp)
     (sourceX sourceY : DirectMemoryAccess) (sourceXRounded sourceYRounded reduced : Bool) :
     ProofsLean.StepResult IntegerALU.BusResult :=
@@ -3791,6 +3821,33 @@ def prepareParsedMaskedConstantWrites (files : IntegerRegisterFiles) (cycle : Fi
           | .ok writes => .ok (write :: writes)
           | .failure => .failure
           | .unknown => .unknown
+
+theorem prepareParsedMaskedConstantWrites_never_unknown_of_reads
+    (files : IntegerRegisterFiles) (cycle : Fin 4)
+    (targets : List ParsedConstantDestination)
+    (known : ∀ target, target ∈ targets → ∀ accesses, target = .memory accesses →
+      ParsedIntegerInput.read files accesses.sourceX ≠ .unknown ∧
+      ParsedIntegerInput.read files accesses.sourceY ≠ .unknown) :
+    prepareParsedMaskedConstantWrites files cycle targets ≠ .unknown := by
+  induction targets with
+  | nil => simp [prepareParsedMaskedConstantWrites]
+  | cons target rest ih =>
+      have headKnown : prepareParsedConstantTarget files cycle target ≠ .unknown :=
+        prepareParsedConstantTarget_never_unknown_of_reads files cycle target
+          (fun accesses isMemory => known target (by simp) accesses isMemory)
+      have tailKnown : ∀ item, item ∈ rest → ∀ accesses, item = .memory accesses →
+          ParsedIntegerInput.read files accesses.sourceX ≠ .unknown ∧
+          ParsedIntegerInput.read files accesses.sourceY ≠ .unknown := by
+        intro item member accesses isMemory
+        exact known item (List.mem_cons_of_mem _ member) accesses isMemory
+      cases head : prepareParsedConstantTarget files cycle target with
+      | failure => simp [prepareParsedMaskedConstantWrites, head]
+      | unknown => exact (headKnown head).elim
+      | ok write =>
+          cases tail : prepareParsedMaskedConstantWrites files cycle rest with
+          | failure => simp [prepareParsedMaskedConstantWrites, head, tail]
+          | unknown => exact (ih tailKnown tail).elim
+          | ok writes => simp [prepareParsedMaskedConstantWrites, head, tail]
 
 theorem prepareParsedMaskedConstantWrites_preserves_order
     (files : IntegerRegisterFiles) (cycle : Fin 4)
@@ -4576,14 +4633,19 @@ theorem prepareParsedIntegerALUExprCycle_constant_never_unknown_of_resolved
       control.directive hasSingleLineMask control.context.group control.context.l2b
       control.context.l1b control.context.mab control.context.pe cycle
       control.context.bar0 control.context.bar1 control.context.tWord = some targets)
-    (targetsKnown : prepareParsedMaskedConstantWrites files cycle targets ≠ .unknown)
+    (targetReadsKnown : ∀ target, target ∈ targets → ∀ accesses,
+      target = .memory accesses →
+        ParsedIntegerInput.read files accesses.sourceX ≠ .unknown ∧
+        ParsedIntegerInput.read files accesses.sourceY ≠ .unknown)
     (flushSelection : Option PEWordSelection)
     (flushResolved : resolveFlushSelection? expression.flush files.maskRegisters cycle =
       some flushSelection) :
     prepareParsedIntegerALUExprCycle files oldSlots nextSlots expression control
       hasSingleLineMask noForward reduced cycle ≠ .unknown := by
   rcases isConstant with isZero | ⟨payload, sparse, isImmediate⟩
-  · unfold prepareParsedIntegerALUExprCycle
+  · have targetsKnown := prepareParsedMaskedConstantWrites_never_unknown_of_reads
+      files cycle targets targetReadsKnown
+    unfold prepareParsedIntegerALUExprCycle
     simp only [isZero, lowered]
     cases prepared : prepareParsedMaskedConstantWrites files cycle targets with
     | failure => simp [prepared]
@@ -4592,7 +4654,9 @@ theorem prepareParsedIntegerALUExprCycle_constant_never_unknown_of_resolved
         rw [flushResolved]
         cases noForward <;>
           simp [updateParsedIntegerALUForwardingCycle, ParsedOp.executionRequest]
-  · unfold prepareParsedIntegerALUExprCycle
+  · have targetsKnown := prepareParsedMaskedConstantWrites_never_unknown_of_reads
+      files cycle targets targetReadsKnown
+    unfold prepareParsedIntegerALUExprCycle
     simp only [isImmediate, lowered]
     cases prepared : prepareParsedMaskedConstantWrites files cycle targets with
     | failure => simp [prepared]
@@ -4739,7 +4803,9 @@ theorem parsedIntegerALUExprFourCycleStep_constant_never_unknown_of_resolved
           control.directive hasSingleLineMask control.context.group control.context.l2b
           control.context.l1b control.context.mab control.context.pe cycle
           control.context.bar0 control.context.bar1 control.context.tWord = some targets ∧
-        prepareParsedMaskedConstantWrites files cycle targets ≠ .unknown ∧
+        (∀ target, target ∈ targets → ∀ accesses, target = .memory accesses →
+          ParsedIntegerInput.read files accesses.sourceX ≠ .unknown ∧
+          ParsedIntegerInput.read files accesses.sourceY ≠ .unknown) ∧
         ∃ flushSelection,
           resolveFlushSelection? expression.flush files.maskRegisters cycle =
             some flushSelection) :
@@ -4747,11 +4813,11 @@ theorem parsedIntegerALUExprFourCycleStep_constant_never_unknown_of_resolved
       hasSingleLineMask noForward reduced ≠ .unknown := by
   apply parsedIntegerALUExprFourCycleStep_never_unknown
   intro cycle member outputSlots
-  obtain ⟨targets, lowered, targetsKnown, flushSelection, flushResolved⟩ :=
+  obtain ⟨targets, lowered, targetReadsKnown, flushSelection, flushResolved⟩ :=
     resolved cycle member
   exact prepareParsedIntegerALUExprCycle_constant_never_unknown_of_resolved files slots
     outputSlots expression control hasSingleLineMask noForward reduced cycle isConstant targets
-    lowered targetsKnown flushSelection flushResolved
+    lowered targetReadsKnown flushSelection flushResolved
 
 /-- Four-cycle issue-line transition for integer ALU, zero, and immediate
 producers. All
