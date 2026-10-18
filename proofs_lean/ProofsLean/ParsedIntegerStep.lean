@@ -3108,6 +3108,22 @@ theorem ParsedOperand.forHazardAddress_mem (access : Access)
     ParsedOperand.forHazardAddress (.mem access negated extended rounded mask) =
       .mem access false false false mask := rfl
 
+/-- Once operand modifiers are removed, every direct memory mode admitted by
+the address-mode guard has a concrete effective address for each cycle. -/
+theorem ParsedOperand.toHazardDirectAccess_isSome_of_valid
+    (access : Access) (mask : Option ParsedMask) (pe cycle : Fin 4)
+    (bar0 bar1 : BitVec 12) (tWord : BitVec 32)
+    (valid : ParsedOperand.directMemoryAddressModeValid
+      (.mem access false false false mask) = true) :
+    (ParsedOperand.toDirectMemoryAccessMode?
+      (ParsedOperand.forHazardAddress (.mem access false false false mask)) true
+      pe cycle bar0 bar1 tWord).isSome = true := by
+  cases bank : access.bank <;>
+    cases width : parsedWidth? access.region.width <;>
+      simp_all [ParsedOperand.directMemoryAddressModeValid, bank, width,
+        issueBankToRegisterBank, ParsedOperand.toDirectMemoryAccessMode?,
+        ParsedOperand.forHazardAddress, parsedWidth?]
+
 def ParsedOperand.toTimedPEHazardEvents? (operand : ParsedOperand) (write : Bool)
     (control : ParsedMaskExecutionControl) : Option (List TimedPEAccess) :=
   match operand with
