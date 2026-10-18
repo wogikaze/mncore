@@ -3672,17 +3672,73 @@ noncomputable def executeNormalizedLine (line : NormalizedLine) (state : State) 
       | none => .failure
       | some instruction => executeIntegerProducerInstructionLine instruction state
 
-/-- Execute a normalized source program in order, including zero-cost
-directives, while preserving transactional failure/unknown behavior. -/
+def parsedPEHazardEventsForPE? (state : State) (expressions : List ParsedExpr)
+    (pe : PEId) : Option (List PEMemory.TimedPEAccess) := do
+  let oldContext := state.peContext pe
+  let coordinates := ParsedIntegerContext.ofLinearIndex pe
+  let context := { coordinates with
+    bar0 := oldContext.bar0
+    bar1 := oldContext.bar1
+    tWord := oldContext.tWord }
+  let control : ParsedMaskExecutionControl :=
+    { directive := state.maskDirective
+      context := context
+      elapsedWords := state.hazardClock }
+  let perExpression ← expressions.mapM fun expression =>
+    PEMemory.ParsedExpr.toTimedPEHazardEvents? expression control
+  some perExpression.flatten
+
+def parsedPEHazardViolated (history current : List PEMemory.TimedPEAccess) : Bool :=
+  (PEMemory.peHazardConstraintsBetween history current).any fun constraint =>
+    constraint.distance < constraint.required
+
+def parsedNormalizedLinePEHazardEvents?
+    (state : State) (line : NormalizedLine) :
+    Option (List (List PEMemory.TimedPEAccess)) :=
+  match line.toInstruction? with
+  | none => some (List.replicate 4096 [])
+  | some (.nop _ _) | some (.mv _) => some (List.replicate 4096 [])
+  | some (.pe normalizedExpressions) => do
+      let expressions := normalizedExpressions.map NormalizedExpr.toParsed
+      (List.finRange 4096).mapM fun pe =>
+        parsedPEHazardEventsForPE? state expressions pe
+
+/-- Execute a normalized source program in order. The runner carries recent
+PE-memory accesses as validation history, rejects PE hazards before applying
+the line, and retains the transactional behavior of each datapath step. -/
+noncomputable def executeNormalizedProgramAux
+    : List NormalizedLine → State → (PEId → List PEMemory.TimedPEAccess) →
+      ProofsLean.StepResult State
+  | [], currentState, _ => .ok currentState
+  | line :: rest, currentState, history =>
+      match line with
+      | .maskDirective .. =>
+          match executeNormalizedLine line currentState with
+          | .failure => .failure
+          | .unknown => .unknown
+          | .ok next => executeNormalizedProgramAux rest next history
+      | _ =>
+          match parsedNormalizedLinePEHazardEvents? currentState line with
+          | none => .unknown
+          | some currentEvents =>
+              if (List.finRange 4096).any fun pe =>
+                  parsedPEHazardViolated (history pe) currentEvents[pe.val]! then
+                .failure
+              else
+                match executeNormalizedLine line currentState with
+                | .failure => .failure
+                | .unknown => .unknown
+                | .ok next =>
+                    let nextHistory := fun pe =>
+                      (history pe ++ currentEvents[pe.val]!).filter fun event =>
+                        event.startWord + 4 ≥ next.hazardClock
+                    executeNormalizedProgramAux rest next nextHistory
+termination_by remaining _ _ => remaining.length
+decreasing_by simp_wf; simp
+
 noncomputable def executeNormalizedProgram (lines : List NormalizedLine)
     (state : State) : ProofsLean.StepResult State :=
-  match lines with
-  | [] => .ok state
-  | line :: rest =>
-      match executeNormalizedLine line state with
-      | .failure => .failure
-      | .unknown => .unknown
-      | .ok next => executeNormalizedProgram rest next
+  executeNormalizedProgramAux lines state (fun _ => [])
 
 /-- Source-level program entry: apply the repository's normalization rules
 before executing, so stripped records and mask directives retain their
@@ -3777,7 +3833,8 @@ theorem executeNormalizedProgram_maskDirective_updates_state
     (entry : Fin 256) :
     executeNormalizedProgram [.maskDirective widthWords targets entry] state =
       .ok { state with maskDirective := ⟨widthWords, targets, entry⟩ } := by
-  simp [executeNormalizedProgram, executeNormalizedLine]
+  simp [executeNormalizedProgram, executeNormalizedProgramAux,
+    executeNormalizedLine]
 
 theorem executeParsedProgram_maskDirective_updates_state
     (state : State) (widthWords : Nat) (targets : ParsedMaskTargets)
@@ -3785,7 +3842,7 @@ theorem executeParsedProgram_maskDirective_updates_state
     executeParsedProgram [.maskDirective widthWords targets entry] state =
       .ok { state with maskDirective := ⟨widthWords, targets, entry⟩ } := by
   simp [executeParsedProgram, ParsedLine.normalizeForSubmission?,
-    executeNormalizedProgram, executeNormalizedLine]
+    executeNormalizedProgram, executeNormalizedProgramAux, executeNormalizedLine]
 
 noncomputable def integerProducerMachine : ProofsLean.PartialMachine where
   Line := InstructionLine
