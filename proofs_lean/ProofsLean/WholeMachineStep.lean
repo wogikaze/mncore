@@ -7021,6 +7021,20 @@ theorem executeParsedFloatReluProducers_multiple_fail
       noForward hasSingleLineMask = .failure := by
   simp [executeParsedFloatReluProducers, multiple]
 
+def parsedExprIsIntegerMatrixReadStageInput (expression : ParsedExpr) : Bool :=
+  parsedExprWaitTag? expression == none &&
+    !parsedExprIsL2BMProducer expression &&
+    !parsedExprIsMatrixWriteProducer expression &&
+    !parsedExprIsL1MwriteProducer expression &&
+    !parsedExprIsL1GatherProducer expression &&
+    !parsedExprIsL1ReduceProducer expression &&
+    !parsedExprIsL1ToPEProducer expression &&
+    !parsedExprIsMatrixMAUProducer expression &&
+    !parsedExprIsSupportedFloatMAUProducer expression &&
+    !parsedExprIsMslMsrProducer expression &&
+    !parsedExprIsBlockFloatProducer expression &&
+    !parsedExprIsFloatReluProducer expression
+
 def executeIntegerProducerLineAtPE (expressions : List ParsedExpr)
     (state : State) (pe : PEId) : ProofsLean.StepResult State :=
   let oldContext := state.peContext pe
@@ -7035,18 +7049,7 @@ def executeIntegerProducerLineAtPE (expressions : List ParsedExpr)
       elapsedWords := state.hazardClock }
   let oldSlots := stateForwardingSlots state pe
   let matrixStore := state.matrixRegisters context.group context.l2b context.l1b
-  let peExpressions := expressions.filter fun expression =>
-    parsedExprWaitTag? expression == none &&
-      !parsedExprIsMatrixWriteProducer expression &&
-      !parsedExprIsL1MwriteProducer expression &&
-      !parsedExprIsL1GatherProducer expression &&
-      !parsedExprIsL1ReduceProducer expression &&
-      !parsedExprIsL1ToPEProducer expression &&
-      !parsedExprIsMatrixMAUProducer expression &&
-      !parsedExprIsSupportedFloatMAUProducer expression &&
-      !parsedExprIsMslMsrProducer expression &&
-      !parsedExprIsBlockFloatProducer expression &&
-      !parsedExprIsFloatReluProducer expression
+  let peExpressions := expressions.filter parsedExprIsIntegerMatrixReadStageInput
   match parsedIntegerMatrixReadLineFourCycleStep (state.peRegisters pe) oldSlots
       matrixStore peExpressions control false with
   | .failure => .failure
