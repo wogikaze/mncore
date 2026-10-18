@@ -1425,7 +1425,7 @@ theorem parsedMatrixMAUCalculateRows_double_zero_store :
 
 def executeParsedMatrixMAUCalculationAtMAB (state : State) (coordinate : MABCoordinate)
     (expression : ParsedExpr) (cycle : Fin 4) :
-    ProofsLean.StepResult (List Nat × Bool) := Id.run do
+    ProofsLean.StepResult (List Nat × Bool × Bool) := Id.run do
   let (.mau precision true kind half round) := expression.op | return .unknown
   let matrixSide ← match expression.sources with
     | .matrix sideY _ none :: _ => pure sideY
@@ -1439,7 +1439,7 @@ def executeParsedMatrixMAUCalculationAtMAB (state : State) (coordinate : MABCoor
   let some vectorFormat := parsedMatrixMAUFloatFormat precision | return .failure
   let vectorValues ← match readParsedMatrixMAUSourceAtMAB state coordinate vector
       vectorFormat (parsedMatrixMAUVectorLanesPerPE precision) cycle with
-    | .failure => return .failure
+    | .failure => return .ok (List.replicate (parsedMatrixMAURowCount precision) 0, true, true)
     | .unknown => return .unknown
     | .ok values => pure values
   let accumulatorValues ← match accumulator with
@@ -1450,7 +1450,8 @@ def executeParsedMatrixMAUCalculationAtMAB (state : State) (coordinate : MABCoor
         | _ => RRN.FloatPrecision.single
       match readParsedMatrixMAUSourceAtMAB state coordinate source accumulatorFormat
           (parsedMatrixMAUAccumulatorLanesPerPE precision) cycle with
-      | .failure => return .failure
+      | .failure =>
+        return .ok (List.replicate (parsedMatrixMAURowCount precision) 0, true, true)
       | .unknown => return .unknown
       | .ok values => pure values
   let store := state.matrixRegisters coordinate.group coordinate.l2b coordinate.l1b
@@ -1464,7 +1465,7 @@ def executeParsedMatrixMAUCalculationAtMAB (state : State) (coordinate : MABCoor
   match parsedMatrixMAUCalculateRows? store coordinate matrixSide precision kind half round
       vectorValues accumulatorValues with
   | none => return .failure
-  | some rows => return .ok (rows, vectorInvalid || matrixInvalid)
+  | some rows => return .ok (rows, vectorInvalid || matrixInvalid, false)
 
 def parsedMatrixMAURowsPerPE : ParsedPrecision → Nat
   | .d => 1
@@ -1523,7 +1524,7 @@ def executeParsedMatrixMAUAtMAB (state : State) (coordinate : MABCoordinate)
   match executeParsedMatrixMAUCalculationAtMAB state coordinate expression cycle with
   | .failure => return .failure
   | .unknown => return .unknown
-  | .ok (rows, poison) =>
+  | .ok (rows, poison, flagsUnavailable) =>
     let (.mau precision true _ _ round) := expression.op | return .unknown
     let mut buses : Fin 4 → IntegerALU.Bus := fun _ => ⟨0, 0⟩
     let mut flags : Fin 4 → BitVec 4 := fun _ => 0
@@ -1532,7 +1533,8 @@ def executeParsedMatrixMAUAtMAB (state : State) (coordinate : MABCoordinate)
       | none => return .failure
       | some (bus, flag) =>
         buses := fun index => if index == pe then bus else buses index
-        flags := fun index => if index == pe then flag else flags index
+        flags := fun index => if index == pe then
+          (if flagsUnavailable then 0 else flag) else flags index
     return .ok (buses, flags, poison)
 
 
