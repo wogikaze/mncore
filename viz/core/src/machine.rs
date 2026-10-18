@@ -872,6 +872,31 @@ impl Machine {
         prec: Option<Prec>,
         unsigned: bool,
     ) -> Result<Output, ExecError> {
+        if self.tracer.borrow().is_none() && !matches!(name, AluOp::Msl | AluOp::Msr) {
+            let mut bus = vec![[[0u32; 4]; 4]; PES];
+            let mut flags = vec![[0u8; 4]; PES];
+            let pes = &self.pes;
+            let fwd_error = &self.fwd_error;
+            bus.par_chunks_mut(64)
+                .zip(flags.par_chunks_mut(64))
+                .enumerate()
+                .try_for_each(|(ci, (bc, fc))| -> Result<(), ExecError> {
+                    for (j, (b, f)) in bc.iter_mut().zip(fc.iter_mut()).enumerate() {
+                        let pe = ci * 64 + j;
+                        let (out, fl) =
+                            compute_alu_pe(&pes[pe], fwd_error, e, name, prec, unsigned, pe)?;
+                        *b = out;
+                        *f = fl;
+                    }
+                    Ok(())
+                })?;
+            return Ok(Output {
+                bus,
+                flags,
+                fwd: Some(FwdKind::Aluf),
+                poison: None,
+            });
+        }
         let n = name.inputs();
         let mut ins: Vec<Vec<[Bus; 4]>> = vec![vec![[[0; 4]; 4]; PES]; n];
         for (i, op) in e.srcs.iter().enumerate().take(n) {
@@ -936,6 +961,32 @@ impl Machine {
         half: Option<char>,
         round: bool,
     ) -> Result<Output, ExecError> {
+        if self.tracer.borrow().is_none() {
+            let mut bus = vec![[[0u32; 4]; 4]; PES];
+            let mut flags = vec![[0u8; 4]; PES];
+            let pes = &self.pes;
+            let fwd_error = &self.fwd_error;
+            bus.par_chunks_mut(64)
+                .zip(flags.par_chunks_mut(64))
+                .enumerate()
+                .try_for_each(|(ci, (bc, fc))| -> Result<(), ExecError> {
+                    for (j, (b, f)) in bc.iter_mut().zip(fc.iter_mut()).enumerate() {
+                        let pe = ci * 64 + j;
+                        let (out, fl) = compute_vec_pe(
+                            &pes[pe], fwd_error, e, prec, kind, half, round, pe,
+                        )?;
+                        *b = out;
+                        *f = fl;
+                    }
+                    Ok(())
+                })?;
+            return Ok(Output {
+                bus,
+                flags,
+                fwd: Some(FwdKind::Mauf),
+                poison: None,
+            });
+        }
         // Formats of the inputs a, b, c and of the output in the basic operation (SDM 3.6.9).
         let (fa, fc, fout): (Fmt, Fmt, Fmt) = match prec {
             Prec::D => (DOUBLE, DOUBLE, if round { SINGLE } else { DOUBLE }),
@@ -1971,7 +2022,72 @@ impl Machine {
             _ => f.man_bits,
         };
         let extended = name == AluOp::Bfe;
+        let blocks: Vec<Vec<(usize, usize)>> = match prec {
+            Prec::D => vec![(0..4).map(|p| (p, 0)).collect()],
+            Prec::F => vec![
+                (0..4).map(|p| (p, 0)).collect(),
+                (0..4).map(|p| (p, 1)).collect(),
+            ],
+            Prec::G => vec![(0..4).flat_map(|p| [(p, 0), (p, 1)]).collect()],
+            _ => vec![
+                (0..4).flat_map(|p| (0..4).map(move |k| (p, k))).collect(),
+                (0..4).flat_map(|p| (4..8).map(move |k| (p, k))).collect(),
+            ],
+        };
+        let w = f.width();
         let mut bus = vec![[[0u32; 4]; 4]; PES];
+        if self.tracer.borrow().is_none() {
+            let pes = &self.pes;
+            let fwd_error = &self.fwd_error;
+            let src = &e.srcs[0];
+            bus.par_chunks_mut(4)
+                .enumerate()
+                .try_for_each(|(mab, chunk)| -> Result<(), ExecError> {
+                    for c in 0..4 {
+                        let ins: Vec<Bus> = (0..4)
+                            .map(|p| {
+                                read_alu_input_pe(
+                                    &pes[mab * 4 + p],
+                                    fwd_error,
+                                    mab * 4 + p,
+                                    src,
+                                    Some(prec),
+                                    c,
+                                )
+                            })
+                            .collect::<Result<_, _>>()?;
+                        // Blocks: lists of (pe, element index within the PE's bus, width in bits).
+                        // Except for half precision, the LSB long word of the output is 0 (emulator).
+                        let mut outs: Vec<Bus> = if prec == Prec::H {
+                            ins.clone()
+                        } else {
+                            ins.iter().map(|b| [b[0], b[1], 0, 0]).collect()
+                        };
+                        for blk in &blocks {
+                            let vals: Vec<u64> = blk
+                                .iter()
+                                .map(|&(p, k)| unpack(&ins[p], w, k + 1)[k])
+                                .collect();
+                            let conv = float::block_float(f, &vals, keep, extended);
+                            for (&(p, k), v) in blk.iter().zip(conv) {
+                                let mut all = unpack(&outs[p], w, (128 / w) as usize);
+                                all[k] = v;
+                                outs[p] = pack(&all, w);
+                            }
+                        }
+                        for p in 0..4 {
+                            chunk[p][c] = outs[p];
+                        }
+                    }
+                    Ok(())
+                })?;
+            return Ok(Output {
+                bus,
+                flags: vec![[0; 4]; PES],
+                fwd: Some(FwdKind::Aluf),
+                poison: None,
+            });
+        }
         for mab in 0..PES / 4 {
             for c in 0..4 {
                 let ins: Vec<Bus> = (0..4)
@@ -1984,20 +2100,7 @@ impl Machine {
                 } else {
                     ins.iter().map(|b| [b[0], b[1], 0, 0]).collect()
                 };
-                let blocks: Vec<Vec<(usize, usize)>> = match prec {
-                    Prec::D => vec![(0..4).map(|p| (p, 0)).collect()],
-                    Prec::F => vec![
-                        (0..4).map(|p| (p, 0)).collect(),
-                        (0..4).map(|p| (p, 1)).collect(),
-                    ],
-                    Prec::G => vec![(0..4).flat_map(|p| [(p, 0), (p, 1)]).collect()],
-                    _ => vec![
-                        (0..4).flat_map(|p| (0..4).map(move |k| (p, k))).collect(),
-                        (0..4).flat_map(|p| (4..8).map(move |k| (p, k))).collect(),
-                    ],
-                };
-                let w = f.width();
-                for blk in blocks {
+                for blk in &blocks {
                     let vals: Vec<u64> = blk
                         .iter()
                         .map(|&(p, k)| unpack(&ins[p], w, k + 1)[k])
