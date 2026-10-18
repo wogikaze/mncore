@@ -3852,9 +3852,11 @@ structure HazardAwareState where
   machine : State
   peHistory : PEId → List PEMemory.TimedPEAccess
   blockHistory : List PEMemory.TimedBlockAccess
+  /-- PE line held at its issue boundary while its MV wait tag is incomplete. -/
+  stalledPEIssue : Option NormalizedLine
 
 def HazardAwareState.initial (state : State) : HazardAwareState :=
-  ⟨state, fun _ => [], []⟩
+  ⟨state, fun _ => [], [], none⟩
 
 def normalizedLineWaitTag? : NormalizedLine → Option (Fin 256)
   | .nop _ wait => wait
@@ -3892,7 +3894,7 @@ noncomputable def executeHazardAwareNormalizedLineCore (line : NormalizedLine)
           let nextBlockHistory :=
             (state.blockHistory ++ currentBlockEvents).filter fun event =>
               event.startWord + 4 ≥ next.hazardClock
-          return .ok ⟨next, nextPEHistory, nextBlockHistory⟩
+          return .ok ⟨next, nextPEHistory, nextBlockHistory, state.stalledPEIssue⟩
 
 /-- Deterministic program-runner profile: when a PE line waits, schedule the
 tagged completion immediately if its MV has already been issued. -/
@@ -3915,11 +3917,79 @@ issued tag independently, so traces can represent out-of-order MV completion. -/
 noncomputable def executeScheduledEvent (event : ScheduledEvent)
     (state : HazardAwareState) : ProofsLean.StepResult HazardAwareState :=
   match event with
-  | .issue line => executeHazardAwareNormalizedLineCore line state
+  | .issue line => if state.stalledPEIssue.isSome then .failure else
+      match line.toInstruction? with
+      | none => executeHazardAwareNormalizedLineCore line state
+      | some instruction =>
+          if !checkParsedTopLine instruction.toParsed then
+            .failure
+          else
+            match normalizedLineWaitTag? line with
+            | some tag =>
+                if state.machine.mvCompletedTags tag then
+                  executeHazardAwareNormalizedLineCore line state
+                else .ok { state with stalledPEIssue := some line }
+            | none => executeHazardAwareNormalizedLineCore line state
   | .completeMv tag =>
       match completePendingMvTag state.machine tag with
       | none => .unknown
-      | some machine => .ok { state with machine }
+      | some machine =>
+          let withCompletion := { state with machine }
+          match state.stalledPEIssue with
+          | none => .ok withCompletion
+          | some line =>
+              if normalizedLineWaitTag? line == some tag then
+                match executeHazardAwareNormalizedLineCore line withCompletion with
+                | .failure => .failure
+                | .unknown => .unknown
+                | .ok next => .ok { next with stalledPEIssue := none }
+              else .ok withCompletion
+
+theorem executeScheduledEvent_wait_enters_stall
+    (state : HazardAwareState) (line : NormalizedLine) (instruction : InstructionLine)
+    (tag : Fin 256)
+    (notAlreadyStalled : state.stalledPEIssue = none)
+    (instructionLine : line.toInstruction? = some instruction)
+    (legal : checkParsedTopLine instruction.toParsed = true)
+    (waitTag : normalizedLineWaitTag? line = some tag)
+    (incomplete : state.machine.mvCompletedTags tag = false) :
+    executeScheduledEvent (.issue line) state =
+      .ok { state with stalledPEIssue := some line } := by
+  simp [executeScheduledEvent, notAlreadyStalled, instructionLine, legal,
+    waitTag, incomplete]
+
+theorem executeScheduledEvent_rejects_issue_while_pe_waits
+    (state : HazardAwareState) (blocked line : NormalizedLine)
+    (stalled : state.stalledPEIssue = some blocked) :
+    executeScheduledEvent (.issue line) state = .failure := by
+  simp [executeScheduledEvent, stalled]
+
+theorem executeScheduledEvent_unrelated_completion_preserves_stalled_pe_line
+    (state : HazardAwareState) (line : NormalizedLine) (tag : Fin 256) (next : State)
+    (stalled : state.stalledPEIssue = some line)
+    (unrelated : (normalizedLineWaitTag? line == some tag) = false)
+    (completed : completePendingMvTag state.machine tag = some next) :
+    executeScheduledEvent (.completeMv tag) state =
+      .ok { state with machine := next } := by
+  simp [executeScheduledEvent, completed, stalled, unrelated]
+
+theorem executeScheduledEvent_completion_releases_stalled_pe_line
+    (state : HazardAwareState) (line : NormalizedLine) (tag : Fin 256)
+    (next : State) (resumedState : HazardAwareState)
+    (stalled : state.stalledPEIssue = some line)
+    (waitTag : normalizedLineWaitTag? line = some tag)
+    (completed : completePendingMvTag state.machine tag = some next)
+    (resumed : executeHazardAwareNormalizedLineCore line
+      { state with machine := next, stalledPEIssue := some line } =
+      .ok resumedState) :
+    executeScheduledEvent (.completeMv tag) state =
+      .ok { resumedState with stalledPEIssue := none } := by
+  have tagEq : (normalizedLineWaitTag? line == some tag) = true := by
+    simp [waitTag]
+  have stateStall : state.stalledPEIssue = some line := stalled
+  rw [executeScheduledEvent, completed, stateStall]
+  simp only [tagEq, ↓reduceIte]
+  rw [resumed]
 
 noncomputable def executeScheduledEvents
     : List ScheduledEvent → HazardAwareState → ProofsLean.StepResult HazardAwareState
@@ -3936,6 +4006,19 @@ operations, allowing the caller to extend the trace. -/
 noncomputable def executeScheduledProgram (events : List ScheduledEvent)
     (state : State) : ProofsLean.StepResult HazardAwareState :=
   executeScheduledEvents events (HazardAwareState.initial state)
+
+def scheduledIssueLines : List ScheduledEvent → List NormalizedLine
+  | [] => []
+  | .issue line :: rest => line :: scheduledIssueLines rest
+  | .completeMv _ :: rest => scheduledIssueLines rest
+
+/-- Run a completion schedule only when its issue events exactly preserve the
+source program's instruction order. Completion events may be interleaved. -/
+noncomputable def executeScheduledProgramForLines (lines : List NormalizedLine)
+    (events : List ScheduledEvent) (state : State) :
+    ProofsLean.StepResult HazardAwareState :=
+  if scheduledIssueLines events == lines then executeScheduledProgram events state
+  else .failure
 
 /-- Execute a normalized source program in order. The runner carries recent
 PE-memory accesses as validation history, rejects PE hazards before applying
