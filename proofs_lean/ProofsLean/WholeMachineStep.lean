@@ -84,7 +84,8 @@ def parsedExprIsSupportedPELineProducer (expression : ParsedExpr) : Bool :=
   | .mau .h true .fma _ _ | .mau .h true .passa _ _ => true
   | .mau .g false _ _ _ | .mau .l false _ _ _ | .mau .i false _ _ _
   | .mau .s false _ _ _ => true
-  | .matrixWrite .d | .matrixWrite .f | .matrixWrite .g | .matrixWrite .h => true
+  | .matrixWrite .d | .matrixWrite .f | .matrixWrite .g | .matrixWrite .h
+  | .matrixWrite .l | .matrixWrite .i | .matrixWrite .s => true
   | .l1bm (.mwrite _) | .l1bm (.m4write _) => true
   | .l1bm .pbcast | .l1bm .mbcast | .l1bm .m4bcast | .l1bm (.distrib _) => true
   | .l1bm (.gather _) | .l1bm (.reduce ..) | .l1bm (.reduce4 ..) => true
@@ -1230,7 +1231,7 @@ def prepareMatrixWriteBus (precision : ParsedPrecision) (bus : IntegerALU.Bus)
   else if negate then
     match precision with
     | .d => .ok { converted with high := converted.high ^^^ (BitVec.ofNat 64 (2 ^ 63)) }
-    | .f | .g => .ok { converted with high := negateSingleBus converted.high }
+    | .f | .g | .l | .i | .s => .ok { converted with high := negateSingleBus converted.high }
     | _ => .ok converted
   else .ok converted
 
@@ -1303,7 +1304,8 @@ def executeParsedMatrixWriteCycle (state : State) (coordinate : MABCoordinate)
           | .ok buses =>
               .ok (writeParsedDoubleMatrixStoreRow store coordinate.mab accesses.sideY
                 (doubleMatrixWriteRowAt accesses.row cycle) (fun pe => (buses pe).high))
-  | .matrixWrite .f | .matrixWrite .g =>
+  | .matrixWrite .f | .matrixWrite .g | .matrixWrite .l
+  | .matrixWrite .i | .matrixWrite .s =>
       match lowerParsedMatrixWriteResult expression (groupContext.at 0 cycle) with
       | .failure => .failure
       | .unknown => .unknown
