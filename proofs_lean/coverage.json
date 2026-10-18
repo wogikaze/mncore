@@ -1954,7 +1954,7 @@
           "helper": "ProofsLean.MNCore.writeParsedMatrixMAUDestinationsAtPE",
           "theorem": "ProofsLean.MNCore.writeParsedMatrixMAUDestinationsAtPE_never_unknown",
           "scope": "For each kind, successful memory/forward lowering across all four MAB cycles plus forwardingSourceResolved implies the complete ordered four-cycle/four-PE destination write executor cannot return .unknown. fma requires both vector and accumulator lowering at every cycle.",
-          "remaining": "Connect the successful source-lowering predicates to parser-produced instructions and lift PE writes through MAUF commit and the whole issue-line transition.",
+          "remaining": "Derive MAB transition knownness from source lowering for all coordinates and intermediate states, then connect through producer poison propagation and issue-line composition.",
           "ordered_cycle_pe_executor": "ProofsLean.MNCore.executeParsedMatrixMAUWriteCycles",
           "per_cycle_theorem": "ProofsLean.MNCore.executeParsedMatrixMAUPEWritesAtCycle_never_unknown",
           "all_cycles_theorem": "ProofsLean.MNCore.executeParsedMatrixMAUWriteCycles_never_unknown",
@@ -1964,7 +1964,10 @@
             "ProofsLean.MNCore.executeParsedMatrixMAUPEWritesAtMAB_add_lowered_never_unknown",
             "ProofsLean.MNCore.executeParsedMatrixMAUPEWritesAtMAB_passa_lowered_never_unknown",
             "ProofsLean.MNCore.executeParsedMatrixMAUPEWritesAtMAB_fma_lowered_never_unknown"
-          ]
+          ],
+          "transition_theorem": "ProofsLean.MNCore.executeParsedMatrixMAUTransitionAtMAB_known_never_unknown",
+          "mab_sequence_theorem": "ProofsLean.MNCore.executeParsedMatrixMAUAtMABs_known_never_unknown",
+          "mab_sequence_scope": "A sequence of MAB transitions is unknown-free when each transition is unknown-free for every intermediate committed state; the state-dependent premise explicitly follows the state threaded through the sequence."
         }
       }
     },

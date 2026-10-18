@@ -5535,6 +5535,19 @@ def executeParsedMatrixMAUTransitionAtMAB (readState currentState : State)
       .ok (commitParsedMatrixMAUPEState (List.finRange 4) currentState coordinate noForward
         files bar0 bar1 outputs poisoned)
 
+theorem executeParsedMatrixMAUTransitionAtMAB_known_never_unknown
+    (readState currentState : State) (expression : ParsedExpr)
+    (coordinate : MABCoordinate) (noForward hasSingleLineMask : Bool)
+    (writesKnown : executeParsedMatrixMAUPEWritesAtMAB readState currentState
+      expression coordinate hasSingleLineMask ≠ .unknown) :
+    executeParsedMatrixMAUTransitionAtMAB readState currentState expression coordinate
+      noForward hasSingleLineMask ≠ .unknown := by
+  cases writes : executeParsedMatrixMAUPEWritesAtMAB readState currentState expression
+      coordinate hasSingleLineMask with
+  | failure => simp [executeParsedMatrixMAUTransitionAtMAB, writes]
+  | unknown => exact (writesKnown writes).elim
+  | ok result => simp [executeParsedMatrixMAUTransitionAtMAB, writes]
+
 theorem commitParsedMatrixMAUPEState_preserves_matrix_registers
     (coordinates : List (Fin 4)) (currentState : State)
     (coordinate : MABCoordinate) (noForward : Bool)
@@ -5581,6 +5594,31 @@ def executeParsedMatrixMAUAtMABs (readState currentState : State)
       | .unknown => .unknown
       | .ok next => executeParsedMatrixMAUAtMABs readState next expression rest
           noForward hasSingleLineMask
+
+theorem executeParsedMatrixMAUAtMABs_known_never_unknown
+    (readState currentState : State) (expression : ParsedExpr)
+    (coordinates : List MABCoordinate) (noForward hasSingleLineMask : Bool)
+    (known : ∀ (state : State) coordinate, coordinate ∈ coordinates →
+      executeParsedMatrixMAUTransitionAtMAB readState state expression coordinate
+        noForward hasSingleLineMask ≠ .unknown) :
+    executeParsedMatrixMAUAtMABs readState currentState expression coordinates
+      noForward hasSingleLineMask ≠ .unknown := by
+  induction coordinates generalizing currentState with
+  | nil => simp [executeParsedMatrixMAUAtMABs]
+  | cons coordinate rest ih =>
+      have headKnown := known currentState coordinate (by simp)
+      have tailKnown : ∀ (state : State) item, item ∈ rest →
+          executeParsedMatrixMAUTransitionAtMAB readState state expression item
+            noForward hasSingleLineMask ≠ .unknown := by
+        intro state item member
+        exact known state item (List.mem_cons_of_mem _ member)
+      cases transition : executeParsedMatrixMAUTransitionAtMAB readState currentState
+          expression coordinate noForward hasSingleLineMask with
+      | failure => simp [executeParsedMatrixMAUAtMABs, transition]
+      | unknown => exact (headKnown transition).elim
+      | ok next =>
+          simpa [executeParsedMatrixMAUAtMABs, transition] using
+            ih next (fun state item member => tailKnown state item member)
 
 theorem executeParsedMatrixMAUAtMABs_preserves_matrix_registers
     (readState currentState next : State) (expression : ParsedExpr)
