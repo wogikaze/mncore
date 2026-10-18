@@ -1313,6 +1313,13 @@ def prepareMatrixWriteBus (precision : ParsedPrecision) (bus : IntegerALU.Bus)
     | _ => .ok converted
   else .ok converted
 
+theorem prepareMatrixWriteBus_never_unknown (precision : ParsedPrecision)
+    (bus : IntegerALU.Bus) (negate extend round twoRows : Bool) :
+    prepareMatrixWriteBus precision bus negate extend round twoRows ≠ .unknown := by
+  unfold prepareMatrixWriteBus
+  repeat (first | (split <;> try simp))
+  all_goals simp
+
 def halfMatrixWriteValues (buses : Fin 4 → IntegerALU.Bus) (negate : Bool)
     (laneOffset : Nat) : Fin 16 → BitVec 16 := fun index =>
   let pe : Fin 4 := ⟨index.val / 4, by have h := index.isLt; omega⟩
@@ -1337,39 +1344,117 @@ def writeParsedHalfMatrixStoreRow (old : ParsedMatrixReadStore)
       writeHalfMatrixPhysicalRow (old nextMab nextSide) row values
     else old nextMab nextSide
 
+def forwardingSourceResolved (state : State) : Prop :=
+  ∀ pe unit cycle,
+    state.forwardingValid pe unit cycle = false ∨
+      stateForwardingSlots state pe unit cycle ≠ .unknown
+
+def readParsedMatrixWriteBusPE (state : State) (coordinate : MABCoordinate)
+    (expression : ParsedExpr) (cycle pe : Fin 4) : ProofsLean.StepResult IntegerALU.Bus :=
+  let context := (matrixWriteGroupContext state coordinate).at pe cycle
+  match lowerParsedMatrixWriteResult expression context with
+  | .failure => .failure
+  | .unknown => .unknown
+  | .ok accesses =>
+      let physical := physicalPEId coordinate pe
+      let sourceValid := match accesses.source with
+        | .forward kind _ => state.forwardingValid physical
+            (ParsedIntegerInput.forwardUnit kind) cycle
+        | .memory .. | .fixed .. => true
+      if !sourceValid then .failure else
+      match ParsedIntegerInput.readWithForwarding (state.peRegisters physical)
+          (stateForwardingSlots state physical) cycle accesses.source with
+      | .failure => .failure
+      | .unknown => .unknown
+      | .ok bus =>
+          prepareMatrixWriteBus
+            (match expression.op with | .matrixWrite precision => precision | _ => .f)
+            bus accesses.negate accesses.extend accesses.round accesses.twoRows
+
+theorem readParsedMatrixWriteBusPE_resolved_never_unknown
+    (state : State) (coordinate : MABCoordinate) (expression : ParsedExpr)
+    (cycle pe : Fin 4) (resolved : forwardingSourceResolved state) :
+    readParsedMatrixWriteBusPE state coordinate expression cycle pe ≠ .unknown := by
+  cases lowered : lowerParsedMatrixWrite?
+      expression ((matrixWriteGroupContext state coordinate).at pe cycle) with
+  | none => simp [readParsedMatrixWriteBusPE, lowerParsedMatrixWriteResult, lowered]
+  | some accesses =>
+      cases source : accesses.source with
+      | memory access rounded =>
+          simp only [readParsedMatrixWriteBusPE, lowerParsedMatrixWriteResult, lowered,
+            source, ParsedIntegerInput.readWithForwarding, ParsedIntegerInput.read]
+          exact prepareMatrixWriteBus_never_unknown
+            (match expression.op with | .matrixWrite precision => precision | _ => .f)
+            _ accesses.negate accesses.extend accesses.round accesses.twoRows
+      | fixed value =>
+          simp only [readParsedMatrixWriteBusPE, lowerParsedMatrixWriteResult, lowered,
+            source, ParsedIntegerInput.readWithForwarding, ParsedIntegerInput.read]
+          exact prepareMatrixWriteBus_never_unknown
+            (match expression.op with | .matrixWrite precision => precision | _ => .f)
+            _ accesses.negate accesses.extend accesses.round accesses.twoRows
+      | forward kind rounded =>
+          by_cases valid : state.forwardingValid (physicalPEId coordinate pe)
+              (ParsedIntegerInput.forwardUnit kind) cycle
+          · have slotResolved := resolved (physicalPEId coordinate pe)
+                (ParsedIntegerInput.forwardUnit kind) cycle
+            rcases slotResolved with invalid | slotResolved
+            · simp [valid] at invalid
+            · cases slot : stateForwardingSlots state (physicalPEId coordinate pe)
+                  (ParsedIntegerInput.forwardUnit kind) cycle with
+              | known bus =>
+                  simp [readParsedMatrixWriteBusPE, lowerParsedMatrixWriteResult, lowered,
+                    source, valid, slot, ParsedIntegerInput.readWithForwarding]
+                  exact prepareMatrixWriteBus_never_unknown
+                    (match expression.op with | .matrixWrite precision => precision | _ => .f)
+                    _ accesses.negate accesses.extend accesses.round accesses.twoRows
+              | poison =>
+                  simp [readParsedMatrixWriteBusPE, lowerParsedMatrixWriteResult, lowered,
+                    source, valid, slot, ParsedIntegerInput.readWithForwarding]
+              | unknown => exact (slotResolved slot).elim
+          · simp [readParsedMatrixWriteBusPE, lowerParsedMatrixWriteResult, lowered,
+              source, valid, ParsedIntegerInput.readWithForwarding]
+
+def readParsedMatrixWriteBusesFrom (state : State) (coordinate : MABCoordinate)
+    (expression : ParsedExpr) (cycle : Fin 4) (remaining : List (Fin 4))
+    (buses : Fin 4 → IntegerALU.Bus) :
+    ProofsLean.StepResult (Fin 4 → IntegerALU.Bus) :=
+  match remaining with
+  | [] => .ok buses
+  | pe :: rest =>
+      match readParsedMatrixWriteBusPE state coordinate expression cycle pe with
+      | .failure => .failure
+      | .unknown => .unknown
+      | .ok bus => readParsedMatrixWriteBusesFrom state coordinate expression cycle rest
+          (fun index => if index = pe then bus else buses index)
+
 def readParsedMatrixWriteBuses (state : State) (coordinate : MABCoordinate)
     (expression : ParsedExpr) (cycle : Fin 4) :
     ProofsLean.StepResult (Fin 4 → IntegerALU.Bus) :=
-  let groupContext := matrixWriteGroupContext state coordinate
-  let rec readPEs (remaining : List (Fin 4)) (buses : Fin 4 → IntegerALU.Bus) :
-      ProofsLean.StepResult (Fin 4 → IntegerALU.Bus) :=
-    match remaining with
-    | [] => .ok buses
-    | pe :: rest =>
-        let context := groupContext.at pe cycle
-        match lowerParsedMatrixWriteResult expression context with
-        | .failure => .failure
-        | .unknown => .unknown
-        | .ok accesses =>
-            let sourceValid := match accesses.source with
-              | .forward kind _ => state.forwardingValid (physicalPEId coordinate pe)
-                  (ParsedIntegerInput.forwardUnit kind) cycle
-              | .memory .. | .fixed .. => true
-            if !sourceValid then .failure else
-            match ParsedIntegerInput.readWithForwarding
-                (state.peRegisters (physicalPEId coordinate pe))
-                (stateForwardingSlots state (physicalPEId coordinate pe)) cycle accesses.source with
-            | .failure => .failure
-            | .unknown => .unknown
-            | .ok bus =>
-              match prepareMatrixWriteBus
-                  (match expression.op with | .matrixWrite precision => precision | _ => .f)
-                  bus accesses.negate accesses.extend accesses.round accesses.twoRows with
-              | .failure => .failure
-              | .unknown => .unknown
-              | .ok converted =>
-                readPEs rest (fun index => if index = pe then converted else buses index)
-  readPEs parsedMatrixWritePEs (fun _ => ⟨0, 0⟩)
+  readParsedMatrixWriteBusesFrom state coordinate expression cycle parsedMatrixWritePEs
+    (fun _ => ⟨0, 0⟩)
+
+theorem readParsedMatrixWriteBuses_resolved_never_unknown
+    (state : State) (coordinate : MABCoordinate) (expression : ParsedExpr)
+    (cycle : Fin 4) (resolved : forwardingSourceResolved state) :
+    readParsedMatrixWriteBuses state coordinate expression cycle ≠ .unknown := by
+  change readParsedMatrixWriteBusesFrom state coordinate expression cycle
+    parsedMatrixWritePEs (fun _ => ⟨0, 0⟩) ≠ .unknown
+  have h : ∀ (remaining : List (Fin 4)) (buses : Fin 4 → IntegerALU.Bus),
+      readParsedMatrixWriteBusesFrom state coordinate expression cycle remaining buses ≠
+        .unknown := by
+    intro remaining
+    induction remaining with
+    | nil => intro buses; simp [readParsedMatrixWriteBusesFrom]
+    | cons pe rest ih =>
+        intro buses
+        have hpe := readParsedMatrixWriteBusPE_resolved_never_unknown
+          state coordinate expression cycle pe resolved
+        unfold readParsedMatrixWriteBusesFrom
+        cases result : readParsedMatrixWriteBusPE state coordinate expression cycle pe with
+        | failure => simp [result]
+        | unknown => exact (hpe result).elim
+        | ok bus => simp [result, ih]
+  exact h _ _
 
 def executeParsedMatrixWriteCycle (state : State) (coordinate : MABCoordinate)
     (expression : ParsedExpr) (store : ParsedMatrixReadStore) (cycle : Fin 4) :
@@ -2225,11 +2310,6 @@ theorem readRawL1MwriteBus_forward_never_unknown
             ParsedOperand.toParsedIntegerInput?, ParsedIntegerInput.readWithForwarding,
             valid, slot]
       | unknown => exact (slotResolved slot).elim
-
-def forwardingSourceResolved (state : State) : Prop :=
-  ∀ pe unit cycle,
-    state.forwardingValid pe unit cycle = false ∨
-      stateForwardingSlots state pe unit cycle ≠ .unknown
 
 theorem readParsedMatrixMAUSourcePE_lowering_miss_fails
     (state : State) (coordinate : MABCoordinate) (operand : ParsedOperand)
