@@ -40,6 +40,10 @@ def ParsedOperand.mayReadMaskDirective : ParsedOperand → Bool
   | .mem _ _ _ _ none | .bar _ _ none | .omr _ none => true
   | _ => false
 
+def ParsedOperand.isL1BMTurnaround : ParsedOperand → Bool
+  | .l1bm _ none => true
+  | _ => false
+
 def parsedOpUnitReads : ParsedOp → List UnitResource
   | .alu .. => [.alu]
   | .immediate .. | .zero => []
@@ -77,6 +81,8 @@ def parsedExprUnitReads (expression : ParsedExpr) : List UnitResource :=
         !(expression.destinations.any ParsedOperand.mayReadMaskDirective) then []
       else [.maskRegisters]) ++
     (if expression.destinations.any ParsedOperand.mayReadMaskDirective then [.maskControl]
+      else []) ++
+    (if expression.sources.any ParsedOperand.isL1BMTurnaround then [.l1bmTurnaround]
       else [])
 
 def parsedExprFootprint (expression : ParsedExpr) : Footprint :=
@@ -234,6 +240,11 @@ theorem ParsedExpr.variable_mask_reads_register_file (expression : ParsedExpr)
 theorem ParsedExpr.inherited_write_mask_reads_directive (expression : ParsedExpr)
     (reads : expression.destinations.any ParsedOperand.mayReadMaskDirective = true) :
     UnitResource.maskControl ∈ (parsedExprFootprint expression).unitReads := by
+  simp [parsedExprFootprint, parsedExprUnitReads, reads]
+
+theorem ParsedExpr.l1bm_turnaround_read_in_footprint (expression : ParsedExpr)
+    (reads : expression.sources.any ParsedOperand.isL1BMTurnaround = true) :
+    UnitResource.l1bmTurnaround ∈ (parsedExprFootprint expression).unitReads := by
   simp [parsedExprFootprint, parsedExprUnitReads, reads]
 
 theorem ParsedExpr.bar_write_in_footprint (expression : ParsedExpr)
