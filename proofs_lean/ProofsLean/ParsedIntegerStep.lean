@@ -4565,6 +4565,43 @@ theorem prepareParsedIntegerALUExprCycle_alu_never_unknown_of_resolved
       cases noForward <;>
         simp [isAlu, lowered, prepared, updateParsedIntegerALUForwardingCycle]
 
+theorem prepareParsedIntegerALUExprCycle_constant_never_unknown_of_resolved
+    (files : IntegerRegisterFiles) (oldSlots nextSlots : ProofsLean.MNCore.Forwarding.Slots)
+    (expression : ParsedExpr) (control : ParsedMaskExecutionControl)
+    (hasSingleLineMask noForward reduced : Bool) (cycle : Fin 4)
+    (isConstant : expression.op = .zero ∨
+      ∃ payload sparse, expression.op = .immediate payload sparse)
+    (targets : List ParsedConstantDestination)
+    (lowered : ParsedExpr.toDirectMaskedConstantWrites? expression files.maskRegisters
+      control.directive hasSingleLineMask control.context.group control.context.l2b
+      control.context.l1b control.context.mab control.context.pe cycle
+      control.context.bar0 control.context.bar1 control.context.tWord = some targets)
+    (targetsKnown : prepareParsedMaskedConstantWrites files cycle targets ≠ .unknown)
+    (flushSelection : Option PEWordSelection)
+    (flushResolved : resolveFlushSelection? expression.flush files.maskRegisters cycle =
+      some flushSelection) :
+    prepareParsedIntegerALUExprCycle files oldSlots nextSlots expression control
+      hasSingleLineMask noForward reduced cycle ≠ .unknown := by
+  rcases isConstant with isZero | ⟨payload, sparse, isImmediate⟩
+  · unfold prepareParsedIntegerALUExprCycle
+    simp only [isZero, lowered]
+    cases prepared : prepareParsedMaskedConstantWrites files cycle targets with
+    | failure => simp [prepared]
+    | unknown => exact (targetsKnown prepared).elim
+    | ok destinationWrites =>
+        rw [flushResolved]
+        cases noForward <;>
+          simp [updateParsedIntegerALUForwardingCycle, ParsedOp.executionRequest]
+  · unfold prepareParsedIntegerALUExprCycle
+    simp only [isImmediate, lowered]
+    cases prepared : prepareParsedMaskedConstantWrites files cycle targets with
+    | failure => simp [prepared]
+    | unknown => exact (targetsKnown prepared).elim
+    | ok destinationWrites =>
+        rw [flushResolved]
+        cases noForward <;>
+          simp [updateParsedIntegerALUForwardingCycle, ParsedOp.executionRequest]
+
 /-- Accumulate integer producer writes and forwarding values over an explicit
 cycle list. -/
 def prepareParsedIntegerALUCycles (files : IntegerRegisterFiles)
@@ -4689,6 +4726,32 @@ theorem parsedIntegerALUExprFourCycleStep_alu_never_unknown_of_resolved
   exact prepareParsedIntegerALUExprCycle_alu_never_unknown_of_resolved files slots
     outputSlots expression control hasSingleLineMask noForward reduced cycle isAlu accesses
     lowered readXKnown readYKnown
+
+theorem parsedIntegerALUExprFourCycleStep_constant_never_unknown_of_resolved
+    (files : IntegerRegisterFiles) (slots : ProofsLean.MNCore.Forwarding.Slots)
+    (expression : ParsedExpr) (control : ParsedMaskExecutionControl)
+    (hasSingleLineMask noForward reduced : Bool)
+    (isConstant : expression.op = .zero ∨
+      ∃ payload sparse, expression.op = .immediate payload sparse)
+    (resolved : ∀ cycle, cycle ∈ parsedIntegerALUCycles →
+      ∃ targets,
+        ParsedExpr.toDirectMaskedConstantWrites? expression files.maskRegisters
+          control.directive hasSingleLineMask control.context.group control.context.l2b
+          control.context.l1b control.context.mab control.context.pe cycle
+          control.context.bar0 control.context.bar1 control.context.tWord = some targets ∧
+        prepareParsedMaskedConstantWrites files cycle targets ≠ .unknown ∧
+        ∃ flushSelection,
+          resolveFlushSelection? expression.flush files.maskRegisters cycle =
+            some flushSelection) :
+    parsedIntegerALUExprFourCycleStep files slots expression control
+      hasSingleLineMask noForward reduced ≠ .unknown := by
+  apply parsedIntegerALUExprFourCycleStep_never_unknown
+  intro cycle member outputSlots
+  obtain ⟨targets, lowered, targetsKnown, flushSelection, flushResolved⟩ :=
+    resolved cycle member
+  exact prepareParsedIntegerALUExprCycle_constant_never_unknown_of_resolved files slots
+    outputSlots expression control hasSingleLineMask noForward reduced cycle isConstant targets
+    lowered targetsKnown flushSelection flushResolved
 
 /-- Four-cycle issue-line transition for integer ALU, zero, and immediate
 producers. All
