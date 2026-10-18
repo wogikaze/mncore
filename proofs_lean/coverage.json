@@ -1711,7 +1711,22 @@
     },
     {
       "area": "matrix_registers_and_matrix_operations",
-      "status": "partial_whole_machine_transition"
+      "status": "partial_whole_machine_transition",
+      "source_algorithm_audit": {
+        "rust_source": "viz/core/src/machine.rs:1350-1429; viz/core/src/float.rs:192-208,310-421",
+        "lean_source": "proofs_lean/ProofsLean/WholeMachineStep.lean:1428-1705; proofs_lean/ProofsLean/ParsedIntegerStep.lean:2511-2587; proofs_lean/ProofsLean/RRN.lean:239-380",
+        "checked_correspondences": [
+          "D/F/G/H matrix logical row counts and element strides; F dot products select columns 0,2,4,6",
+          "Per-PE input lane counts, FMA-only accumulator reads, and D/H output rounding formats",
+          "u/d row activation and inactive-row accumulator passthrough for FMA",
+          "Block-float exponent validation, dropped partial-product correction, adder-grid accumulator alignment, sticky-jammed addition, and final output encoding",
+          "Per-PE output packing and sign-derived MAU flags"
+        ],
+        "audit_kind": "manual_source_crosswalk",
+        "rust_runtime_differential": false,
+        "formal_rust_lean_equivalence": false,
+        "remaining": "Run and preserve command/precision/row-mask/rounding/poison/forwarding differential vectors against the reference executor, then prove the Lean model covers those cases."
+      }
     },
     {
       "area": "pe_rotations_and_coordinate_operands",
