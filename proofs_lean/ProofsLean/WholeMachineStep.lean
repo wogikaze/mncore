@@ -2204,9 +2204,12 @@ def lowerParsedL1ToPE? (expression : ParsedExpr) : Option ParsedL1ToPEAccess := 
   match expression.sources, expression.destinations with
   | [.l1bm width address], [destination@(.mem _ false false false _)] =>
       if width.val != 1 && width.val != 2 && width.val != 4 then none else
-      let sourceBase := address.map fun address =>
-        ⟨address.val % L1Transfer.l1bmLongWords,
-          Nat.mod_lt _ (by decide)⟩
+      let sourceOperand := ParsedOperand.l1bm width address
+      let sourceBase : Option (Fin L1Transfer.l1bmLongWords) :=
+        if ParsedOperand.isL1BMTurnaround sourceOperand then none else
+        address.map fun address =>
+          ⟨address.val % L1Transfer.l1bmLongWords,
+            Nat.mod_lt _ (by decide)⟩
       some ⟨sourceBase, width.val == 4, destination⟩
   | _, _ => none
 

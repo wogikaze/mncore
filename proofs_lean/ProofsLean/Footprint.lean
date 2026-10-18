@@ -44,6 +44,11 @@ def ParsedOperand.isL1BMTurnaround : ParsedOperand → Bool
   | .l1bm _ none => true
   | _ => false
 
+theorem ParsedOperand.isL1BMTurnaround_iff_missing_address (width : Fin 5)
+    (address : Option (Fin (2 ^ 32))) :
+    ParsedOperand.isL1BMTurnaround (.l1bm width address) = address.isNone := by
+  cases address <;> rfl
+
 def parsedOpUnitReads : ParsedOp → List UnitResource
   | .alu .. => [.alu]
   | .immediate .. | .zero => []
