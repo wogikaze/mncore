@@ -1,0 +1,17 @@
+imm ui"0x00000003" $nowrite
+llsl $mabid $aluf $t
+gbfn $lm64v $nowrite
+gbfn $lm72v $nowrite; gmwrite $aluf $lx0
+gbfn $lmt0v $t; gmwrite $aluf $lx4
+gbfn $lm80v $nowrite; gmmul $lx $aluf $lr0v4 $ln0v4
+gbfn $lm88v $nowrite; gmwrite $aluf $lx0; l1bmm@1 $mauf $lbi
+gmwrite $aluf $lx4; l1bmm $lbi $ln16v4
+gmmul $lx $t $lr2v4 $ln2v4
+l1bmm@1 $mauf $lbi
+l1bmm@2 $llr0v $llbi; l1bmm $lbi $ln18v4
+l1bmm@3 $llr0v $llbi; l1bmm $llbi $lln32v
+l1bmm@4 $llr0v $llbi; l1bmm $llbi $lln48v
+l1bmm@5 $llr0v $llbi; l1bmm $llbi $lln64v
+l1bmm@6 $llr0v $llbi; l1bmm $llbi $lln80v
+l1bmm@7 $llr0v $llbi; l1bmm $llbi $lln96v
+l1bmm $llbi $lln112v

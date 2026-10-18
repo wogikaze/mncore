@@ -1,0 +1,386 @@
+[
+ {
+  "dir": "1.a-b",
+  "slug": "mat_sub",
+  "lines": 3,
+  "file": "scratch/mnist_submit/1.a-b.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/mat_sub/",
+  "record": "matches current X"
+ },
+ {
+  "dir": "10.sumrow",
+  "slug": "sum_row",
+  "lines": 16,
+  "file": "scratch/mnist_submit/10.sumrow.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/sum_row/",
+  "record": "matches current X"
+ },
+ {
+  "dir": "11.maxrow",
+  "slug": "max_row",
+  "lines": 20,
+  "file": "scratch/mnist_submit/11.maxrow.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/max_row/",
+  "record": "matches current X"
+ },
+ {
+  "dir": "12.divrow-vec",
+  "slug": "div_row",
+  "lines": 29,
+  "file": "scratch/mnist_submit/12.divrow-vec.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/div_row/",
+  "record": "matches current X"
+ },
+ {
+  "dir": "13.exp-low-prec",
+  "slug": "exp_lowprec",
+  "lines": 9,
+  "file": "scratch/mnist_submit/13.exp-low-prec.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/exp_lowprec/",
+  "record": "new (golf wave2)"
+ },
+ {
+  "dir": "14.exp",
+  "slug": "exp",
+  "lines": 16,
+  "file": "scratch/mnist_submit/14.exp.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/exp/",
+  "record": "matches current X"
+ },
+ {
+  "dir": "15.onehot-mini",
+  "slug": "onehot_mini",
+  "lines": 7,
+  "file": "scratch/mnist_submit/15.onehot-mini.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/onehot_mini/",
+  "record": "matches current X"
+ },
+ {
+  "dir": "16.onehot",
+  "slug": "onehot",
+  "lines": 24,
+  "file": "scratch/mnist_submit/16.onehot.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/onehot/",
+  "record": "matches current X"
+ },
+ {
+  "dir": "17.dram-dl-256-16",
+  "slug": "dram_dl_256_16",
+  "lines": 5,
+  "file": "scratch/mnist_submit/17.dram-dl-256-16.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/dram_dl_256_16/",
+  "record": "matches current X"
+ },
+ {
+  "dir": "18.dram-ul-256-16",
+  "slug": "dram_ul_256_16",
+  "lines": 6,
+  "file": "scratch/mnist_submit/18.dram-ul-256-16.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/dram_ul_256_16/",
+  "record": "matches current X"
+ },
+ {
+  "dir": "19.dram-dl-256-16p",
+  "slug": "dram_dl_256_16p",
+  "lines": 19,
+  "file": "scratch/mnist_submit/19.dram-dl-256-16p.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/dram_dl_256_16p/",
+  "record": "matches current X"
+ },
+ {
+  "dir": "2.fmul7",
+  "slug": "mul_const",
+  "lines": 5,
+  "file": "scratch/mnist_submit/2.fmul7.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/mul_const/",
+  "record": "matches current X"
+ },
+ {
+  "dir": "20.dram-ul-256-16p",
+  "slug": "dram_ul_256_16p",
+  "lines": 10,
+  "file": "scratch/mnist_submit/20.dram-ul-256-16p.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/dram_ul_256_16p/",
+  "record": "matches current X"
+ },
+ {
+  "dir": "21.dram-dl-256-16-l2b",
+  "slug": "dram_dl_256_16_l2b",
+  "lines": 12,
+  "file": "scratch/mnist_submit/21.dram-dl-256-16-l2b.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/dram_dl_256_16_l2b/",
+  "record": "matches current X"
+ },
+ {
+  "dir": "22.dram-dl-1024-16",
+  "slug": "dram_dl_1024_16",
+  "lines": 8,
+  "file": "scratch/mnist_submit/22.dram-dl-1024-16.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/dram_dl_1024_16/",
+  "record": "matches current X"
+ },
+ {
+  "dir": "23.dram-dl-256-1024",
+  "slug": "dram_dl_256_1024",
+  "lines": 68,
+  "file": "scratch/mnist_submit/23.dram-dl-256-1024.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/dram_dl_256_1024/",
+  "record": "matches current X"
+ },
+ {
+  "dir": "24.dram-dl-16",
+  "slug": "dram_dl_16",
+  "lines": 4,
+  "file": "scratch/mnist_submit/24.dram-dl-16.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/dram_dl_16/",
+  "record": "new (golf swarm)"
+ },
+ {
+  "dir": "25.dram-ul-16",
+  "slug": "dram_ul_16",
+  "lines": 4,
+  "file": "scratch/mnist_submit/25.dram-ul-16.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/dram_ul_16/",
+  "record": "new (golf swarm)"
+ },
+ {
+  "dir": "26.dram-dl-16-1024",
+  "slug": "dram_dl_16_1024",
+  "lines": 39,
+  "file": "scratch/mnist_submit/26.dram-dl-16-1024.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/dram_dl_16_1024/",
+  "record": "matches current X"
+ },
+ {
+  "dir": "27.dram-ul-16-1024",
+  "slug": "dram_ul_16_1024",
+  "lines": 13,
+  "file": "scratch/mnist_submit/27.dram-ul-16-1024.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/dram_ul_16_1024/",
+  "record": "matches current X"
+ },
+ {
+  "dir": "28.dram-dl-16-16",
+  "slug": "dram_dl_16_16",
+  "lines": 7,
+  "file": "scratch/mnist_submit/28.dram-dl-16-16.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/dram_dl_16_16/",
+  "record": "new (golf swarm)"
+ },
+ {
+  "dir": "29.dram-ul-16-16",
+  "slug": "dram_ul_16_16",
+  "lines": 8,
+  "file": "scratch/mnist_submit/29.dram-ul-16-16.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/dram_ul_16_16/",
+  "record": "new (golf swarm)"
+ },
+ {
+  "dir": "3.relu",
+  "slug": "relu",
+  "lines": 2,
+  "file": "scratch/mnist_submit/3.relu.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/relu/",
+  "record": "matches current X"
+ },
+ {
+  "dir": "30.dram-dl-256",
+  "slug": "dram_dl_256",
+  "lines": 10,
+  "file": "scratch/mnist_submit/30.dram-dl-256.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/dram_dl_256/",
+  "record": "matches current X"
+ },
+ {
+  "dir": "31.dram-ul-256",
+  "slug": "dram_ul_256",
+  "lines": 7,
+  "file": "scratch/mnist_submit/31.dram-ul-256.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/dram_ul_256/",
+  "record": "matches current X"
+ },
+ {
+  "dir": "32.matmul-trb-mab-lm-4-8-8",
+  "slug": "matmul_trb_mab_lm_4_8_8",
+  "lines": 4,
+  "file": "scratch/mnist_submit/32.matmul-trb-mab-lm-4-8-8.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/matmul_trb_mab_lm_4_8_8/",
+  "record": "matches current X"
+ },
+ {
+  "dir": "33.matmul-trb-mab-lm-4-8-16",
+  "slug": "matmul_trb_mab_lm_4_8_16",
+  "lines": 6,
+  "file": "scratch/mnist_submit/33.matmul-trb-mab-lm-4-8-16.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/matmul_trb_mab_lm_4_8_16/",
+  "record": "new (golf swarm)"
+ },
+ {
+  "dir": "34.matmul-trb-mab-lm-4-16-8",
+  "slug": "matmul_trb_mab_lm_4_16_8",
+  "lines": 6,
+  "file": "scratch/mnist_submit/34.matmul-trb-mab-lm-4-16-8.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/matmul_trb_mab_lm_4_16_8/",
+  "record": "matches current X"
+ },
+ {
+  "dir": "35.matmul-trb-mab-lm-4-16-16",
+  "slug": "matmul_trb_mab_lm_4_16_16",
+  "lines": 6,
+  "file": "scratch/mnist_submit/35.matmul-trb-mab-lm-4-16-16.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/matmul_trb_mab_lm_4_16_16/",
+  "record": "matches current X"
+ },
+ {
+  "dir": "36.matmul-trb-pkg-lm-256-16-16",
+  "slug": "matmul_trb_pkg_lm_256_16_16",
+  "lines": 6,
+  "file": "scratch/mnist_submit/36.matmul-trb-pkg-lm-256-16-16.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/matmul_trb_pkg_lm_256_16_16/",
+  "record": "matches current X"
+ },
+ {
+  "dir": "37.matmul-trb-mab-lm-32-8-16",
+  "slug": "matmul_trb_mab_lm_32_8_16",
+  "lines": 17,
+  "file": "scratch/mnist_submit/37.matmul-trb-mab-lm-32-8-16.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/matmul_trb_mab_lm_32_8_16/",
+  "record": "matches current X"
+ },
+ {
+  "dir": "38.matmul-trb-pkg-lm-256-128-16",
+  "slug": "matmul_trb_pkg_lm_256_128_16",
+  "lines": 23,
+  "file": "scratch/mnist_submit/38.matmul-trb-pkg-lm-256-128-16.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/matmul_trb_pkg_lm_256_128_16/",
+  "record": "matches current X"
+ },
+ {
+  "dir": "39.matmul-trb-pkg-lmdram-256-1024-16",
+  "slug": "matmul_trb_pkg_lmdram_256_1024_16",
+  "lines": 29,
+  "file": "scratch/mnist_submit/39.matmul-trb-pkg-lmdram-256-1024-16.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/matmul_trb_pkg_lmdram_256_1024_16/",
+  "record": "matches current X"
+ },
+ {
+  "dir": "4.relu-grad",
+  "slug": "relu_grad",
+  "lines": 2,
+  "file": "scratch/mnist_submit/4.relu-grad.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/relu_grad/",
+  "record": "new (golf swarm, dirty-safe)"
+ },
+ {
+  "dir": "40.matmul-notr-mab-lm-4-8-8",
+  "slug": "matmul_notr_mab_lm_4_8_8",
+  "lines": 7,
+  "file": "scratch/mnist_submit/40.matmul-notr-mab-lm-4-8-8.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/matmul_notr_mab_lm_4_8_8/",
+  "record": "matches current X"
+ },
+ {
+  "dir": "41.matmul-notr-mab-lm-4-16-16",
+  "slug": "matmul_notr_mab_lm_4_16_16",
+  "lines": 13,
+  "file": "scratch/mnist_submit/41.matmul-notr-mab-lm-4-16-16.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/matmul_notr_mab_lm_4_16_16/",
+  "record": "matches current X"
+ },
+ {
+  "dir": "42.matmul-notr-pkg-lm-256-16-16",
+  "slug": "matmul_notr_pkg_lm_256_16_16",
+  "lines": 10,
+  "file": "scratch/mnist_submit/42.matmul-notr-pkg-lm-256-16-16.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/matmul_notr_pkg_lm_256_16_16/",
+  "record": "new (golf swarm)"
+ },
+ {
+  "dir": "43.matmul-tra-mab-lm-8-8-8",
+  "slug": "matmul_tra_mab_lm_8_8_8",
+  "lines": 8,
+  "file": "scratch/mnist_submit/43.matmul-tra-mab-lm-8-8-8.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/matmul_tra_mab_lm_8_8_8/",
+  "record": "matches current X"
+ },
+ {
+  "dir": "44.matmul-tra-mab-lm-16-8-16",
+  "slug": "matmul_tra_mab_lm_16_8_16",
+  "lines": 15,
+  "file": "scratch/mnist_submit/44.matmul-tra-mab-lm-16-8-16.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/matmul_tra_mab_lm_16_8_16/",
+  "record": "matches current X"
+ },
+ {
+  "dir": "45.matmul-tra-mab-lm-16-4-16",
+  "slug": "matmul_tra_mab_lm_16_4_16",
+  "lines": 14,
+  "file": "scratch/mnist_submit/45.matmul-tra-mab-lm-16-4-16.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/matmul_tra_mab_lm_16_4_16/",
+  "record": "new (golf swarm)"
+ },
+ {
+  "dir": "46.matmul-tra-pkg-lmdram-16-256-16",
+  "slug": "matmul_tra_pkg_lmdram_16_256_16",
+  "lines": 22,
+  "file": "scratch/mnist_submit/46.matmul-tra-pkg-lmdram-16-256-16.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/matmul_tra_pkg_lmdram_16_256_16/",
+  "record": "new (golf swarm)"
+ },
+ {
+  "dir": "47.matmul-tra-mab-lm-16-32-8",
+  "slug": "matmul_tra_mab_lm_16_32_8",
+  "lines": 17,
+  "file": "scratch/mnist_submit/47.matmul-tra-mab-lm-16-32-8.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/matmul_tra_mab_lm_16_32_8/",
+  "record": "matches current X"
+ },
+ {
+  "dir": "48.matmul-tra-pkg-lmdram-16-256-1024",
+  "slug": "matmul_tra_pkg_lmdram_16_256_1024",
+  "lines": 61,
+  "file": "scratch/mnist_submit/48.matmul-tra-pkg-lmdram-16-256-1024.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/matmul_tra_pkg_lmdram_16_256_1024/",
+  "record": "matches current X"
+ },
+ {
+  "dir": "5.addcol-vec",
+  "slug": "add_colvec",
+  "lines": 2,
+  "file": "scratch/mnist_submit/5.addcol-vec.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/add_colvec/",
+  "record": "new (golf swarm)"
+ },
+ {
+  "dir": "6.subrow-vec",
+  "slug": "sub_rowvec",
+  "lines": 24,
+  "file": "scratch/mnist_submit/6.subrow-vec.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/sub_rowvec/",
+  "record": "matches current X (reverted: dirty-unsafe)"
+ },
+ {
+  "dir": "7.sumcol-mini",
+  "slug": "sum_col_mini",
+  "lines": 4,
+  "file": "scratch/mnist_submit/7.sumcol-mini.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/sum_col_mini/",
+  "record": "matches current X"
+ },
+ {
+  "dir": "8.sumcol",
+  "slug": "sum_col",
+  "lines": 8,
+  "file": "scratch/mnist_submit/8.sumcol.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/sum_col/",
+  "record": "new (golf swarm)"
+ },
+ {
+  "dir": "9.sumrow-mini",
+  "slug": "sum_row_mini",
+  "lines": 6,
+  "file": "scratch/mnist_submit/9.sumrow-mini.vsm",
+  "submit_url": "https://mncore-challenge.preferred.jp/mnist/problem/sum_row_mini/",
+  "record": "matches current X"
+ }
+]

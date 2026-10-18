@@ -1,0 +1,10 @@
+imm ui"0x00000002" $nowrite
+llsl $l1bid $aluf $t
+nop
+l1bmm@0 $llmt0v32 $llb0
+l1bmm@0 $llmt128v32 $llb32
+nop
+l2bmd $lb0 $lc0
+l2bmd $lb32 $lc256
+nop
+mvp/n512 $lc0@.0 $d0

@@ -1,0 +1,9 @@
+hlrelud $msb1 $llm0vr $lt
+imm f"0.4078565239906311" $llr16/ll1000
+imm f"0.1759231686592102" $nowrite
+imm f"0.6306540369987488" $nowrite; hvfma $alufr $llt $llr16 $nowrite
+imm f"0.9707269668579102" $nowrite; hvfma $maufr $llt $aluf $nowrite
+imm f"1.0076225996017456" $nowrite; hvfma $maufr $llt $aluf $nowrite
+imm f"1.0020467042922974" $llr24/ll1000; hvfma $maufr $llt $aluf $lls0v
+fvfma $mauf $lm0v4 $aluf $ln0v4
+fvfma $ls2v4 $lm2v4 $llr24 $ln2v4

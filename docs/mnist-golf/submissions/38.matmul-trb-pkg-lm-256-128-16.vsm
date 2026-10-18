@@ -1,0 +1,23 @@
+gbfn $lm64v $nowrite
+gbfn $lm72v $nowrite; gmwrite $aluf $lx0
+gbfn $lm80v $nowrite; gmwrite $aluf $lx4
+gbfn $lm88v $nowrite; gmwrite $aluf $ly0
+gbfn $lm0v $t; gmwrite $aluf $ly4
+gmmul $lx $aluf $nowrite
+gbfn $lm8v $t; gmmul $ly $t $nowrite; l1bmrffadd $mauf $lbi
+gmmul $lx $aluf $nowrite; l1bmrffadd $mauf $lbi; l1bmm $lbi $ln0v4
+gbfn $lm16v $t; gmmul $ly $t $nowrite; l1bmrffadd $mauf $lbi; l1bmm $lbi $ln2v4
+gmmul $lx $aluf $nowrite; l1bmrffadd $mauf $lbi; l1bmm $lbi $ln16v4
+gbfn $lm24v $t; gmmul $ly $t $nowrite; l1bmrffadd $mauf $lbi; l1bmm $lbi $ln18v4
+gmmul $lx $aluf $nowrite; l1bmrffadd $mauf $lbi; l1bmm $lbi $ln32v4
+gbfn $lm32v $t; gmmul $ly $t $nowrite; l1bmrffadd $mauf $lbi; l1bmm $lbi $ln34v4
+gmmul $lx $aluf $nowrite; l1bmrffadd $mauf $lbi; l1bmm $lbi $ln48v4
+gbfn $lm40v $t; gmmul $ly $t $nowrite; l1bmrffadd $mauf $lbi; l1bmm $lbi $ln50v4
+gmmul $lx $aluf $nowrite; l1bmrffadd $mauf $lbi; l1bmm $lbi $ln64v4
+gbfn $lm48v $t; gmmul $ly $t $nowrite; l1bmrffadd $mauf $lbi; l1bmm $lbi $ln66v4
+gmmul $lx $aluf $nowrite; l1bmrffadd $mauf $lbi; l1bmm $lbi $ln80v4
+gbfn $lm56v $t; gmmul $ly $t $nowrite; l1bmrffadd $mauf $lbi; l1bmm $lbi $ln82v4
+gmmul $lx $aluf $nowrite; l1bmrffadd $mauf $lbi; l1bmm $lbi $ln96v4
+gmmul $ly $t $nowrite; l1bmrffadd $mauf $lbi; l1bmm $lbi $ln98v4
+l1bmrffadd $mauf $lbi; l1bmm $lbi $ln112v4
+l1bmm $lbi $ln114v4

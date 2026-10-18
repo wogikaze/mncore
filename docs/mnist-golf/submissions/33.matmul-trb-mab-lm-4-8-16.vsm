@@ -1,0 +1,6 @@
+hbfn/9 $lm[8,10,24,26]r $nowrite
+hbfn/9 $lm[12,14,28,30]r $nowrite; hmwrite $aluf $lx0
+hbfn/9 $lm[16,18,32,34]r $nowrite; hmwrite $aluf $lx4
+hbfn/9 $lm[20,22,36,38]r $nowrite; hmwrite $aluf $lx8
+hbfn/9 $lm0vr $nowrite; hmwrite $aluf $lx12
+hmmul $lx $aluf $lln0v4

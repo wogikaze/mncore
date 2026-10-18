@@ -1,0 +1,7 @@
+imm/0101 ui"0x3F800008" $lr0v
+ipackbit $subpeid $aluf $nowrite; hvpassar -$aluf $omr1; l1bmd+0 $m[0,0,1,1] $lbi
+linc $aluf $nowrite; l1bmd+0 $m[2,2,3,3] $lbi; l1bmd+0 $lbi $s0v
+iadd/$imr1 $aluf $lr0v $t; l1bmd+0 $lbi $s4v
+ixor $aluf $ls[0,0,2,2] $omr1
+ixor $t $ls[4,4,6,6] $omr2; hvpassar/$imr1 $lr2 $ln0v
+hvpassar/$imr2 $lr2 $ln8v

@@ -1,0 +1,29 @@
+imm ui"0x00000002" $nowrite
+llsl $mabid $aluf $t
+nop
+frsqrt $mt256v $nowrite; fvpassa $mt256v $r0v
+imm ui"0x40000000" $nowrite; fvmul $aluf $aluf $ls0v
+fvfma -$mauf $r0v $aluf $nowrite; l1bmd+0 $aluf $lbi
+fvmul $mauf $ls0v $ls0v; l1bmd+0 $lbi $nowrite
+imm ui"0x00000004" $nowrite; fvfma -$mauf $r0v $lbf $nowrite
+llsl $mabid $aluf $lmb; fvmul $mauf $ls0v $ls0v
+fvpassa $mauf $s1v2
+nop
+fvmul $lm0v $ls[0,0,2,2] $lr0v $ln0v; l1bmm@1 $ls[0,0,2,2] $lbi
+fvmul $lm8v $ls[4,4,6,6] $lr8v $ln8v; l1bmm@1 $ls[4,4,6,6] $lbi; l1bmm $lbi $nowrite
+fvmul $lm16v $lbf $ln16v; l1bmm $lbi $nowrite
+fvmul $lm24v $lbf $ln24v; l1bmm@2 $llr0v $llbi
+zero $lmb; l1bmm@3 $llr0v $llbi; l1bmm $llbi $lln32v
+l1bmm@4 $llr0v $llbi; l1bmm $llbi $lln48v
+l1bmm@5 $llr0v $llbi; l1bmm $llbi $lln64v
+l1bmm@6 $llr0v $llbi; l1bmm $llbi $lln80v
+l1bmm@7 $llr0v $llbi; l1bmm $llbi $lln96v
+l1bmm@8 $llr0v $llbi; l1bmm $llbi $lln112v
+l1bmm@9 $llr0v $llbi; l1bmm $llbi $lln128v
+l1bmm@10 $llr0v $llbi; l1bmm $llbi $lln144v
+l1bmm@11 $llr0v $llbi; l1bmm $llbi $lln160v
+l1bmm@12 $llr0v $llbi; l1bmm $llbi $lln176v
+l1bmm@13 $llr0v $llbi; l1bmm $llbi $lln192v
+l1bmm@14 $llr0v $llbi; l1bmm $llbi $lln208v
+l1bmm@15 $llr0v $llbi; l1bmm $llbi $lln224v
+l1bmm $llbi $lln240v
