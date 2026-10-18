@@ -1,42 +1,33 @@
 import ProofsLean.ProgramLegality
 
-/-! A four-cycle PE-line transition built from the existing integer register
-stepper. This is deliberately a one-PE fragment: forwarding, hazard timing,
-MV transfers, and non-integer units stay unknown. -/
+/-! A four-cycle PE-line transition built from the issue-line preparer. This is
+deliberately a one-PE fragment: block transfers, MAU/matrix/L1BM/L2BM units,
+and whole-machine hazard timing stay unknown. -/
 namespace ProofsLean.MNCore.PEMemory
 
 open ProofsLean.MNCore.Issue
 
 structure ParsedPEState where
   registers : IntegerRegisterFiles
+  forwarding : ProofsLean.MNCore.Forwarding.Slots
   control : ParsedMaskExecutionControl
-
-def executeParsedPECycles (expressions : List ParsedExpr)
-    (cycles : List (Fin 4)) (state : ParsedPEState) :
-    ProofsLean.StepResult ParsedPEState :=
-  match cycles with
-  | [] => .ok state
-  | cycle :: rest =>
-      let cycleControl :=
-        { state.control with context := { state.control.context with cycle := cycle } }
-      match parsedIntegerMaskedLineStep state.registers expressions cycleControl with
-      | .failure => .failure
-      | .unknown => .unknown
-      | .ok registers =>
-          executeParsedPECycles expressions rest { state with registers := registers }
 
 noncomputable def executeParsedPEInstructionLine (line : InstructionLine)
     (state : ParsedPEState) : ProofsLean.StepResult ParsedPEState :=
   if checkParsedTopLine line.toParsed then
     match line with
     | .pe expressions =>
-        match executeParsedPECycles (expressions.map NormalizedExpr.toParsed)
-            (List.finRange 4) state with
+        let parsedExpressions := expressions.map NormalizedExpr.toParsed
+        match parsedALUProducerLineFourCycleStep state.registers state.forwarding
+            parsedExpressions state.control false with
         | .failure => .failure
         | .unknown => .unknown
-        | .ok next =>
-            .ok { next with control := { next.control with
-              elapsedWords := next.control.elapsedWords + 1 } }
+        | .ok (registers, forwarding) =>
+            .ok { state with
+              registers := registers
+              forwarding := forwarding
+              control := { state.control with
+                elapsedWords := state.control.elapsedWords + 1 } }
     | .nop count none =>
         .ok { state with control := { state.control with
           elapsedWords := state.control.elapsedWords + count.val } }
@@ -44,9 +35,6 @@ noncomputable def executeParsedPEInstructionLine (line : InstructionLine)
     | .mv _ => .unknown
   else
     .failure
-
-theorem executeParsedPECycles_empty (state : ParsedPEState) :
-    executeParsedPECycles [] [] state = .ok state := rfl
 
 theorem executeParsedPEInstructionLine_issue_failure
     (line : InstructionLine) (state : ParsedPEState)
@@ -79,13 +67,18 @@ theorem instructionMachine_issue_failure
   executeParsedPEInstructionLine_issue_failure line state rejected
 
 theorem instructionMachine_accepted_pe_executes
-    (expressions : List NormalizedExpr) (state next : ParsedPEState)
+    (expressions : List NormalizedExpr) (state : ParsedPEState)
+    (nextRegisters : IntegerRegisterFiles)
+    (nextForwarding : ProofsLean.MNCore.Forwarding.Slots)
     (accepted : checkParsedTopLine (InstructionLine.pe expressions).toParsed = true)
-    (executed : executeParsedPECycles (expressions.map NormalizedExpr.toParsed)
-      (List.finRange 4) state = .ok next) :
+    (executed : parsedALUProducerLineFourCycleStep state.registers state.forwarding
+      (expressions.map NormalizedExpr.toParsed) state.control false =
+        .ok (nextRegisters, nextForwarding)) :
     instructionMachine.step (.pe expressions) state =
-      .ok { next with control := { next.control with
-        elapsedWords := next.control.elapsedWords + 1 } } := by
+      .ok { state with
+        registers := nextRegisters
+        forwarding := nextForwarding
+        control := { state.control with elapsedWords := state.control.elapsedWords + 1 } } := by
   simp [instructionMachine, executeParsedPEInstructionLine, accepted, executed]
 
 theorem instructionMachine_nop_advances

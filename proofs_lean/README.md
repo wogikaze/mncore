@@ -58,8 +58,9 @@ Welcome の後は Convert Endian を縦の2問目にする。有限性・範囲�
 - `Semantics.lean`: 完全な同時発行行から状態への遷移、失敗する実行、スコア、仕様、正しさ、反証入力。
 - `PartialSemantics.lean`: 未実装と既知の実行失敗を分離する。
   全命令・全状態で未実装がないことを証明しない限り、完全モデルへ変換できない。
-- `PEMachine.lean`: 1つのPEについて、整数register演算の4サイクルを既存のstepperで順次実行する。
-  Issue checker拒否は`failure`、MV/待ち制御/未実装演算は`unknown`。全PE状態、forwarding、hazard clock、footprint frameとは未接続。
+- `PEMachine.lean`: 1つのPEについて、整数ALU/zero/immediateラインを既存の4-cycle prepare-then-commit stepperへ接続する。
+  各cycle/式の読み出しは旧register filesと旧forwarding slotsを使い、ALUF出力を含む書込みを準備後にコミットする。
+  Issue checker拒否は`failure`、OMR混在宛先・MV/待ち制御/他演算器は`unknown`。全PE状態、block転送、hazard clock、footprint frameとは未接続。
 - `MachineState.lean`: Rust machine定数に合わせたPE 4096個（4×2×8×16×4）の5バンクregister files/OMR、L1BM 64バンク、L2BM/PDM/DRAM、
   各PEのALUF/MAUF/LBF/MREADF busとvalidity、mask directive、PE context、hazard clockをまとめるState型。
   一般Stateの初期値ポリシーはまだ仮定しない。Welcomeに必要なPE SRAMはRust emulatorの
