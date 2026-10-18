@@ -2003,19 +2003,21 @@ def parsedFloatReluShift (name : ParsedAluName) : Nat :=
   | _ => 0
 
 def parsedFloatReluBus (precision : ParsedPrecision) (name : ParsedAluName)
-    (left right : IntegerALU.Bus) : IntegerALU.Bus × BitVec 4 := Id.run do
+    (left : IntegerALU.Bus) (right? : Option IntegerALU.Bus) : IntegerALU.Bus × BitVec 4 := Id.run do
   let width := match precision with | .d => 64 | .f => 32 | _ => 16
   let lanes := 64 / width
   let shift := parsedFloatReluShift name
   let inputA := (List.range lanes).map fun lane =>
     (left.high.extractLsb' (64 - width * (lane + 1)) width).toNat
   let inputB := (List.range lanes).map fun lane =>
-    (right.high.extractLsb' (64 - width * (lane + 1)) width).toNat
+    ((right?.getD ⟨0, 0⟩).high.extractLsb' (64 - width * (lane + 1)) width).toNat
   let outputs : List (Nat × Bool) := (List.range lanes).map fun lane =>
     let a := inputA[lane]!
     let b := inputB[lane]!
-    let condition := a / 2 ^ (width - 1 - shift) % 2 == 0
-    (if condition then b else 2 ^ (width - 1), condition)
+    if name == .passa then (a, a == 0)
+    else
+      let condition := a / 2 ^ (width - 1 - shift) % 2 == 0
+      (if condition then b else 2 ^ (width - 1), condition)
   let packed := (List.range lanes).foldl (fun acc lane =>
     acc + (outputs[lane]!).1 * 2 ^ (64 - width * (lane + 1))) 0
   let conditions : List Bool := outputs.map fun output => output.2
@@ -2024,13 +2026,20 @@ def parsedFloatReluBus (precision : ParsedPrecision) (name : ParsedAluName)
     | 32 => (if conditions[0]! then 12 else 0) + (if conditions[1]! then 3 else 0)
     | _ => (List.range lanes).foldl (fun acc lane =>
         acc + (if conditions[lane]! then 1 else 0) * 2 ^ (3 - lane)) 0
-  return (⟨BitVec.ofNat 64 packed, left.low⟩, BitVec.ofNat 4 flags)
+  let high := if name == .passa then left.high else BitVec.ofNat 64 packed
+  return (⟨high, left.low⟩, BitVec.ofNat 4 flags)
 
 theorem parsedFloatReluBus_single_lane_sign_selection :
     parsedFloatReluBus .f .relu
       ⟨0x3f800000bf800000, 0x1122334455667788⟩
-      ⟨0x4000000040400000, 0⟩ =
+      (some ⟨0x4000000040400000, 0⟩) =
       (⟨0x4000000080000000, 0x1122334455667788⟩, 0xc) := by
+  decide
+
+theorem parsedFloatReluBus_float_passa_preserves_bus_and_sets_zero_flags :
+    parsedFloatReluBus .f .passa
+      ⟨0x000000003f800000, 0x1122334455667788⟩ none =
+      (⟨0x000000003f800000, 0x1122334455667788⟩, 0xc) := by
   decide
 
 def lowerParsedMslMsr? (expression : ParsedExpr) :
@@ -2054,20 +2063,29 @@ structure ParsedFloatReluAccesses where
   precision : ParsedPrecision
   name : ParsedAluName
   sourceA : ParsedIntegerInput
-  sourceB : ParsedIntegerInput
+  sourceB : Option ParsedIntegerInput
   destination : ParsedOperand
 
 def lowerParsedFloatRelu? (expression : ParsedExpr) (context : ParsedIntegerContext) :
     Option ParsedFloatReluAccesses := do
   let (name, precision) ← match expression.op with
     | .alu name (some precision) _ _ => do
-        guard (name == .relu || name == .relu0 || name == .relu1 || name == .relu2 ||
-          name == .relu3)
+        guard (name == .passa || name == .relu || name == .relu0 || name == .relu1 ||
+          name == .relu2 || name == .relu3)
         guard (precision == .d || precision == .f || precision == .h)
         some (name, precision)
     | _ => none
   match expression.sources, expression.destinations with
+  | [sourceA], [destination] => do
+      let sourceA ← ParsedOperand.toParsedIntegerInput? sourceA precision.laneWidth
+        context.group context.l2b context.l1b context.mab context.pe context.cycle
+        context.bar0 context.bar1 context.tWord
+      match destination with
+      | .mem .. | .bar .. | .omr .. | .nowrite => some ⟨precision, name, sourceA, none,
+          destination⟩
+      | _ => none
   | [sourceA, sourceB], [destination] => do
+      guard (name != .passa)
       let sourceA ← ParsedOperand.toParsedIntegerInput? sourceA precision.laneWidth
         context.group context.l2b context.l1b context.mab context.pe context.cycle
         context.bar0 context.bar1 context.tWord
@@ -2075,7 +2093,7 @@ def lowerParsedFloatRelu? (expression : ParsedExpr) (context : ParsedIntegerCont
         context.group context.l2b context.l1b context.mab context.pe context.cycle
         context.bar0 context.bar1 context.tWord
       match destination with
-      | .mem .. | .bar .. | .omr .. | .nowrite => some ⟨precision, name, sourceA, sourceB,
+      | .mem .. | .bar .. | .omr .. | .nowrite => some ⟨precision, name, sourceA, some sourceB,
           destination⟩
       | _ => none
   | _, _ => none
@@ -2246,7 +2264,7 @@ def executeParsedMslMsrProducers (readState currentState : State)
 def parsedExprIsFloatReluProducer (expression : ParsedExpr) : Bool :=
   match expression.op with
   | .alu name (some precision) _ _ =>
-      (name == .relu || name == .relu0 || name == .relu1 || name == .relu2 ||
+      (name == .passa || name == .relu || name == .relu0 || name == .relu1 || name == .relu2 ||
         name == .relu3) && (precision == .d || precision == .f || precision == .h)
   | _ => false
 
@@ -2273,8 +2291,15 @@ def executeParsedFloatReluAtPE (readState currentState : State)
         | .failure => .failure
         | .unknown => .unknown
         | .ok sourceA =>
-          match ParsedIntegerInput.readWithForwarding (readState.peRegisters pe)
-              (readState.forwarding pe) cycle accesses.sourceB with
+          let sourceBResult := match accesses.sourceB with
+            | none => ProofsLean.StepResult.ok none
+            | some sourceB =>
+                match ParsedIntegerInput.readWithForwarding (readState.peRegisters pe)
+                    (readState.forwarding pe) cycle sourceB with
+                | .failure => .failure
+                | .unknown => .unknown
+                | .ok value => .ok (some value)
+          match sourceBResult with
           | .failure => .failure
           | .unknown => .unknown
           | .ok sourceB =>
