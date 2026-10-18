@@ -1708,11 +1708,11 @@
     },
     {
       "area": "l1bm_transfers_turnaround_and_reductions",
-      "status": "unimplemented"
+      "status": "partial_datapath_only"
     },
     {
       "area": "l2bm_transfers_and_reductions",
-      "status": "unimplemented"
+      "status": "partial_datapath_only"
     },
     {
       "area": "mv_dram_pdm_all_transfer_and_reduction_modes",

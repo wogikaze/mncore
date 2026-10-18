@@ -1143,7 +1143,8 @@ def coverage_catalog() -> dict:
             "integer_16_32_64_and_signedness", "parallel_issue_and_memory_port_legality", "wide_access_and_lsb_passthrough",
             "immediates_fixed_operands_and_zero", "pe_rotations_and_coordinate_operands",
             "t_indirect_madpe_and_address_mapping", "masks_flush_and_mask_directives",
-            "forwarding_lifetime_and_latency") else "unimplemented"} for area in areas],
+            "forwarding_lifetime_and_latency", "l1bm_transfers_turnaround_and_reductions",
+            "l2bm_transfers_and_reductions") else "unimplemented"} for area in areas],
     }
 
 
