@@ -42,6 +42,19 @@ theorem stateForwardingSlots_valid_preserves_payload (state : State) (pe : PEId)
     stateForwardingSlots state pe unit cycle = state.forwarding pe unit cycle := by
   simp [stateForwardingSlots, valid]
 
+/-- At simulator startup every forwarding read fails exactly as Rust's
+uninitialized-register error path: the initial validity bit yields poison,
+which the shared parsed-input reader turns into a known execution failure. -/
+theorem rustSimulatorInitialState_forwarding_read_fails
+    (pe : PEId) (cycle : Fin 4) (kind : ParsedForward) :
+    ParsedIntegerInput.readWithForwarding
+      (rustSimulatorInitialState.peRegisters pe)
+      (stateForwardingSlots rustSimulatorInitialState pe) cycle
+      (.forward kind false) = .failure := by
+  apply parsedIntegerInput_forward_poison_fails
+  exact stateForwardingSlots_invalid_is_poison rustSimulatorInitialState pe
+    (ParsedIntegerInput.forwardUnit kind) cycle rfl
+
 /-- These legacy ALU names parse successfully in Rust, but `alu_lanes` has no
 implementation for them and returns `ExecError::Unsupported`. -/
 def parsedExprIsUnsupportedRustAlu (expression : ParsedExpr) : Bool :=
