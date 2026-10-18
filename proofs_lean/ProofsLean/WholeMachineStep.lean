@@ -3769,7 +3769,16 @@ def executeParsedBlockFloatProducer (readState currentState : State)
   | [] => .ok currentState
   | [expression] => executeParsedBlockFloatAtMABs readState currentState expression
       allMABCoordinates noForward hasSingleLineMask
-  | _ => .unknown
+  | _ => .failure
+
+theorem executeParsedBlockFloatProducer_multiple_fail
+    (readState currentState : State) (first second : ParsedExpr) (rest : List ParsedExpr)
+    (noForward hasSingleLineMask : Bool)
+    (multiple : List.filter parsedExprIsBlockFloatProducer (first :: second :: rest) =
+      first :: second :: rest) :
+    executeParsedBlockFloatProducer readState currentState (first :: second :: rest)
+      noForward hasSingleLineMask = .failure := by
+  simp [executeParsedBlockFloatProducer, multiple]
 
 def mslMsrSourcePE (pe : PEId) (isMsl : Bool) : PEId :=
   let localPE := pe.val % 4
@@ -3917,7 +3926,16 @@ def executeParsedMslMsrProducers (readState currentState : State)
   | [] => .ok currentState
   | [expression] => executeParsedMslMsrAtPEs readState currentState expression
       (List.finRange 4096) noForward hasSingleLineMask
-  | _ => .unknown
+  | _ => .failure
+
+theorem executeParsedMslMsrProducers_multiple_fail
+    (readState currentState : State) (first second : ParsedExpr) (rest : List ParsedExpr)
+    (noForward hasSingleLineMask : Bool)
+    (multiple : List.filter parsedExprIsMslMsrProducer (first :: second :: rest) =
+      first :: second :: rest) :
+    executeParsedMslMsrProducers readState currentState (first :: second :: rest)
+      noForward hasSingleLineMask = .failure := by
+  simp [executeParsedMslMsrProducers, multiple]
 
 def parsedExprIsFloatReluProducer (expression : ParsedExpr) : Bool :=
   match expression.op with
@@ -4032,7 +4050,16 @@ def executeParsedFloatReluProducers (readState currentState : State)
   | [] => .ok currentState
   | [expression] => executeParsedFloatReluAtPEs readState currentState expression
       (List.finRange 4096) noForward hasSingleLineMask
-  | _ => .unknown
+  | _ => .failure
+
+theorem executeParsedFloatReluProducers_multiple_fail
+    (readState currentState : State) (first second : ParsedExpr) (rest : List ParsedExpr)
+    (noForward hasSingleLineMask : Bool)
+    (multiple : List.filter parsedExprIsFloatReluProducer (first :: second :: rest) =
+      first :: second :: rest) :
+    executeParsedFloatReluProducers readState currentState (first :: second :: rest)
+      noForward hasSingleLineMask = .failure := by
+  simp [executeParsedFloatReluProducers, multiple]
 
 def executeIntegerProducerLineAtPE (expressions : List ParsedExpr)
     (state : State) (pe : PEId) : ProofsLean.StepResult State :=

@@ -1711,7 +1711,14 @@
     },
     {
       "area": "floating_16_32_64_rounding_and_special_values",
-      "status": "partial_datapath_only"
+      "status": "partial_datapath_only",
+      "alu_producer_multiplicity": {
+        "behavior": "Multiple recognized floating ALU producers in the same producer group return failure rather than unknown.",
+        "lean_executor": "ProofsLean.MNCore.executeParsedFloatReluProducers",
+        "failure_theorem": "ProofsLean.MNCore.executeParsedFloatReluProducers_multiple_fail",
+        "rust_reference": "viz/core/src/issue.rs::group assigns ALU operations to the alu issue group; duplicate groups are rejected by the issue checker.",
+        "scope_limit": "This covers only duplicate expressions all selected by this producer filter; general line issue legality remains governed by Issue.checkParsedTopLine."
+      }
     },
     {
       "area": "block_floating_conversion_and_mantissa_width",
@@ -1722,6 +1729,13 @@
         "failure_theorem": "ProofsLean.MNCore.executeParsedBlockFloatAtMAB_lowering_failure",
         "rust_reference": "viz/core/src/machine.rs::Machine::compute_bfn propagates read_alu_input errors and unsupported Machine::write errors as ExecError.",
         "scope_limit": "This classifies lowering failures; valid block-float read/write behavior still requires whole-machine Rust differential coverage."
+      },
+      "alu_producer_multiplicity": {
+        "behavior": "Multiple recognized block-float ALU producers in one producer group return failure rather than unknown.",
+        "lean_executor": "ProofsLean.MNCore.executeParsedBlockFloatProducer",
+        "failure_theorem": "ProofsLean.MNCore.executeParsedBlockFloatProducer_multiple_fail",
+        "rust_reference": "viz/core/src/issue.rs::group assigns ALU operations to the alu issue group; duplicate groups are rejected by the issue checker.",
+        "scope_limit": "This covers only duplicate expressions all selected by this producer filter; general line issue legality remains governed by Issue.checkParsedTopLine."
       }
     },
     {
@@ -1811,6 +1825,13 @@
     {
       "area": "pe_rotations_and_coordinate_operands",
       "status": "partial_datapath_only",
+      "alu_producer_multiplicity": {
+        "behavior": "Multiple recognized MSL/MSR ALU producers in one producer group return failure rather than unknown.",
+        "lean_executor": "ProofsLean.MNCore.executeParsedMslMsrProducers",
+        "failure_theorem": "ProofsLean.MNCore.executeParsedMslMsrProducers_multiple_fail",
+        "rust_reference": "viz/core/src/issue.rs::group assigns ALU operations to the alu issue group; duplicate groups are rejected by the issue checker.",
+        "scope_limit": "This covers only duplicate expressions all selected by this producer filter; PE rotation routing and general line issue legality remain separate."
+      },
       "msl_msr_known_lowering_failures": {
         "behavior": "A recognized msl/msr expression whose source/destination shape cannot be lowered now returns failure instead of unknown.",
         "lean_executor": "ProofsLean.MNCore.executeParsedMslMsrAtPE",
