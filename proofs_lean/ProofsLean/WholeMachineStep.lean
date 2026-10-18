@@ -2731,7 +2731,7 @@ def executeParsedL1ToPEAtPEs (readState currentState : State)
               bar1 := bar1
               tWord := readContext.tWord }
             match resolveFlushSelection? expression.flush maskRegisters cycle with
-            | none => .unknown
+            | none => .failure
             | some flushSelection =>
                 let bus := parsedOutputAfterFlush flushSelection
                   (l1ToPEBusAt readState expression access pe cycle)
@@ -2755,7 +2755,7 @@ def executeParsedL1ToPEAtPEs (readState currentState : State)
                         | _ => currentBar1
                       writeDestinations remaining nextFiles nextBar0 nextBar1
                 match writeDestinations access.destinations files bar0 bar1 with
-                | none => .unknown
+                | none => .failure
                 | some (nextFiles, nextBar0, nextBar1) =>
                     writeCycles cycles nextFiles nextBar0 nextBar1
       if access.sourceBase.isNone && !readState.l1bmTurnaroundValid then .failure

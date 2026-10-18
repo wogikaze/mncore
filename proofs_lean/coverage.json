@@ -1814,6 +1814,12 @@
         "lean_executor": "ProofsLean.MNCore.executeParsedL1PEToL1Producers",
         "supporting_theorem": "ProofsLean.MNCore.executeParsedL1PEToL1ProducerList_two_success",
         "scope_limit": "The composition theorem assumes each individual producer succeeds; L1BM datapath layout and source operand behavior still require command-level differential conformance."
+      },
+      "l1bm_to_pe_known_destination_failures": {
+        "behavior": "A failed flush-mask resolution or PE destination lowering now returns failure instead of unknown once the transfer and destination forms have been lowered.",
+        "lean_executor": "ProofsLean.MNCore.executeParsedL1ToPEAtPEs",
+        "rust_reference": "viz/core/src/machine.rs::Machine::write returns ExecError for unsupported PE destinations; mask selections are evaluated from the concrete machine mask state.",
+        "scope_limit": "This classifies concrete destination-resolution failures; it does not establish L1BM transfer command conformance against Rust."
       }
     },
     {
