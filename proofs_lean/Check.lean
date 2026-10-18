@@ -86,8 +86,8 @@ import Lean
 #print axioms ProofsLean.MNCore.executeParsedFloatMAUCycleAtPE_fma_success
 #print axioms ProofsLean.MNCore.extendHalfPairToSingleBus_lane_order
 #print axioms ProofsLean.MNCore.roundDoublePairToSingleBus_lane_order
-#print axioms ProofsLean.MNCore.prepareMatrixWriteBus_f_extended_lane_order
-#print axioms ProofsLean.MNCore.prepareMatrixWriteBus_d_extended_lane_order
+#print axioms ProofsLean.MNCore.prepareMatrixWriteBus
+#print axioms ProofsLean.MNCore.halfMatrixWriteValues
 #print axioms ProofsLean.MNCore.executeParsedMatrixWriteCycle
 #print axioms ProofsLean.MNCore.lowerParsedMatrixWrite?
 #print axioms ProofsLean.MNCore.integerProducerMachine_issue_failure

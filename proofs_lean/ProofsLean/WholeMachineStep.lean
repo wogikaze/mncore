@@ -21,7 +21,7 @@ def parsedExprIsSupportedPELineProducer (expression : ParsedExpr) : Bool :=
   | .alu .. | .zero | .immediate .. | .matrixRead .. | .wait .. | .noforward => true
   | .mau .f false .add none false | .mau .f false .mul none false
   | .mau .f false .fma none false => true
-  | .matrixWrite .d | .matrixWrite .f | .matrixWrite .g => true
+  | .matrixWrite .d | .matrixWrite .f | .matrixWrite .g | .matrixWrite .h => true
   | _ => false
 
 def parsedExprIsMatrixReadProducer (expression : ParsedExpr) : Bool :=
@@ -444,6 +444,7 @@ structure ParsedMatrixWriteAccesses where
   source : ParsedIntegerInput
   sideY : Bool
   row : Nat
+  twoRows : Bool
   negate : Bool
   extend : Bool
   round : Bool
@@ -451,7 +452,7 @@ structure ParsedMatrixWriteAccesses where
 def lowerParsedMatrixWrite? (expression : ParsedExpr) (context : ParsedIntegerContext) :
     Option ParsedMatrixWriteAccesses := do
   match expression.op, expression.sources, expression.destinations with
-  | .matrixWrite _, [source], [.matrix sideY _ (some row)] =>
+  | .matrixWrite _, [source], [.matrix sideY width (some row)] =>
       let (rawSource, negate, extend, round) ← match source with
         | .mem access negate extend round _ =>
             some (.mem access false false false none, negate, extend, round)
@@ -461,11 +462,11 @@ def lowerParsedMatrixWrite? (expression : ParsedExpr) (context : ParsedIntegerCo
       let source ← ParsedOperand.toParsedIntegerInput? rawSource .long
         context.group context.l2b context.l1b context.mab context.pe context.cycle
         context.bar0 context.bar1 context.tWord
-      some ⟨source, sideY, row.val, negate, extend, round⟩
+      some ⟨source, sideY, row.val, width.val == 4, negate, extend, round⟩
   | _, _, _ => none
 
 def prepareMatrixWriteBus (precision : ParsedPrecision) (bus : IntegerALU.Bus)
-    (negate extend round : Bool) : ProofsLean.StepResult IntegerALU.Bus :=
+    (negate extend round twoRows : Bool) : ProofsLean.StepResult IntegerALU.Bus :=
   let converted := match precision with
     | .d =>
         if extend then
@@ -477,8 +478,17 @@ def prepareMatrixWriteBus (precision : ParsedPrecision) (bus : IntegerALU.Bus)
         if extend then ⟨extendHalfPairToSingleBus bus.high, 0⟩
         else if round then ⟨roundDoublePairToSingleBus bus, 0⟩
         else bus
+    | .h =>
+        if round then
+          ⟨roundSingleWordToHalf (bus.high.extractLsb' 32 32) ++
+            roundSingleWordToHalf (bus.high.extractLsb' 0 32) ++
+            roundSingleWordToHalf (bus.low.extractLsb' 32 32) ++
+            roundSingleWordToHalf (bus.low.extractLsb' 0 32), 0⟩
+        else bus
     | _ => bus
-  if precision == .d && round && !extend then .failure
+  if precision == .h && extend then .failure
+  else if precision == .h && round && twoRows then .failure
+  else if precision == .d && round && !extend then .failure
   else if negate then
     match precision with
     | .d => .ok { converted with high := converted.high ^^^ (BitVec.ofNat 64 (2 ^ 63)) }
@@ -486,18 +496,29 @@ def prepareMatrixWriteBus (precision : ParsedPrecision) (bus : IntegerALU.Bus)
     | _ => .ok converted
   else .ok converted
 
-theorem prepareMatrixWriteBus_f_extended_lane_order :
-    prepareMatrixWriteBus .f
-      ⟨BitVec.ofNat 16 0x3e00 ++ BitVec.ofNat 16 0xc000 ++
-        BitVec.ofNat 16 0 ++ BitVec.ofNat 16 0, 0⟩ false true false =
-      .ok ⟨BitVec.ofNat 32 0x3f800000 ++ BitVec.ofNat 32 0xc0000000, 0⟩ := by
-  rfl
+def halfMatrixWriteValues (buses : Fin 4 → IntegerALU.Bus) (negate : Bool)
+    (laneOffset : Nat) : Fin 16 → BitVec 16 := fun index =>
+  let pe : Fin 4 := ⟨index.val / 4, by have h := index.isLt; omega⟩
+  let lane := index.val % 4 + laneOffset
+  let words := (buses pe).high ++ (buses pe).low
+  let value := words.extractLsb' (112 - 16 * lane) 16
+  if negate then value ^^^ (BitVec.ofNat 16 0x8000) else value
 
-theorem prepareMatrixWriteBus_d_extended_lane_order :
-    prepareMatrixWriteBus .d
-      ⟨BitVec.ofNat 32 0x3f800000 ++ BitVec.ofNat 32 0, 0⟩ false true false =
-      .ok ⟨BitVec.ofNat 64 0x3ff0000000000000, 0⟩ := by
-  rfl
+def writeHalfMatrixPhysicalRow (old : DoubleMatrixPhysicalFace)
+    (row : Fin 16) (values : Fin 16 → BitVec 16) : DoubleMatrixPhysicalFace :=
+  fun targetRow =>
+    if targetRow = row then
+      fun word => values ⟨2 * word.val, by have h := word.isLt; omega⟩ ++
+        values ⟨2 * word.val + 1, by have h := word.isLt; omega⟩
+    else old targetRow
+
+def writeParsedHalfMatrixStoreRow (old : ParsedMatrixReadStore)
+    (mab : Fin 16) (sideY : Bool) (row : Fin 16)
+    (values : Fin 16 → BitVec 16) : ParsedMatrixReadStore :=
+  fun nextMab nextSide =>
+    if nextMab = mab ∧ nextSide = sideY then
+      writeHalfMatrixPhysicalRow (old nextMab nextSide) row values
+    else old nextMab nextSide
 
 def readParsedMatrixWriteBuses (state : State) (coordinate : MABCoordinate)
     (expression : ParsedExpr) (cycle : Fin 4) :
@@ -520,7 +541,7 @@ def readParsedMatrixWriteBuses (state : State) (coordinate : MABCoordinate)
             | .ok bus =>
               match prepareMatrixWriteBus
                   (match expression.op with | .matrixWrite precision => precision | _ => .f)
-                  bus accesses.negate accesses.extend accesses.round with
+                  bus accesses.negate accesses.extend accesses.round accesses.twoRows with
               | .failure => .failure
               | .unknown => .unknown
               | .ok converted =>
@@ -552,6 +573,28 @@ def executeParsedMatrixWriteCycle (state : State) (coordinate : MABCoordinate)
           | .ok buses =>
               .ok (writeParsedSingleMatrixStoreRow store coordinate.mab accesses.sideY
                 (singleMatrixWriteRowAt accesses.row cycle) (singleMatrixWriteValues buses))
+  | .matrixWrite .h =>
+      match lowerParsedMatrixWrite? expression (groupContext.at 0 cycle) with
+      | none => .unknown
+      | some accesses =>
+          match readParsedMatrixWriteBuses state coordinate expression cycle with
+          | .failure => .failure
+          | .unknown => .unknown
+          | .ok buses =>
+              let rowNat := (accesses.row + (if accesses.twoRows then 2 else 1) * cycle.val) % 16
+              let row0 : Fin 16 := ⟨rowNat, Nat.mod_lt _ (by decide)⟩
+              let values0 := halfMatrixWriteValues buses accesses.negate 0
+              if accesses.twoRows then
+                if hlt : rowNat < 15 then
+                  let row1 : Fin 16 := ⟨rowNat + 1, by omega⟩
+                  let store0 := writeParsedHalfMatrixStoreRow store coordinate.mab
+                    accesses.sideY row0 values0
+                  let values1 := halfMatrixWriteValues buses accesses.negate 4
+                  .ok (writeParsedHalfMatrixStoreRow store0 coordinate.mab
+                    accesses.sideY row1 values1)
+                else .failure
+              else .ok (writeParsedHalfMatrixStoreRow store coordinate.mab
+                accesses.sideY row0 values0)
   | _ => .unknown
 
 def executeParsedMatrixWriteCycles (state : State) (coordinate : MABCoordinate)
