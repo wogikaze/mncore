@@ -6,6 +6,7 @@ import ProofsLean.FloatPEMemory
 vector `fvadd`/`fvmul`/`fvfma`, half-precision `hvadd`/`hvmul`/`hvfma`,
 double-precision `dvadd`/`dvmul`/`dvfma`,
 floating ALU `relu`/`relu0`/`relu1`/`relu2`/`relu3`,
+block-float ALU `bfn`/`bfe`,
 matrix-read, D/F/G/H matrix-write, L1BM `mwrite`/`m4write`/`gather`,
 and L1BM-to-PE `pbcast`/`mbcast`/`m4bcast`/`distrib` fragments. It runs the
 same issue-line transaction independently at every physical PE, then updates
@@ -2179,6 +2180,13 @@ def lowerParsedBlockFloat? (expression : ParsedExpr) : Option ParsedBlockFloatAc
       | _ => none
   | _, _ => none
 
+def parsedExprIsBlockFloatProducer (expression : ParsedExpr) : Bool :=
+  match expression.op with
+  | .alu .bfn (some precision) _ _ =>
+      precision == .d || precision == .f || precision == .g || precision == .h
+  | .alu .bfe (some .h) _ _ => true
+  | _ => false
+
 theorem lowerParsedBlockFloat_bfn_g_uses_pseudo_single_width (source destination : ParsedOperand) :
     lowerParsedBlockFloat?
       { op := .alu .bfn (some .g) false none, sources := [source],
@@ -2377,6 +2385,146 @@ def writeParsedMslMsrDestination? (files : PEMemory.IntegerRegisterFiles)
       some ⟨files, update⟩
   | .nowrite => some ⟨files, none⟩
   | _ => none
+
+def executeParsedBlockFloatAtMAB (readState currentState : State)
+    (expression : ParsedExpr) (coordinate : MABCoordinate)
+    (noForward hasSingleLineMask : Bool) : ProofsLean.StepResult State := Id.run do
+  let some accesses := lowerParsedBlockFloat? expression | return .unknown
+  let initialFiles := fun pe => currentState.peRegisters (physicalPEId coordinate pe)
+  let initialBar0 := fun pe =>
+    currentState.peContext (physicalPEId coordinate pe) |>.bar0
+  let initialBar1 := fun pe =>
+    currentState.peContext (physicalPEId coordinate pe) |>.bar1
+  let initialOutputs := fun _ _ => (⟨0, 0⟩ : IntegerALU.Bus)
+  let readCycle (cycle : Fin 4) : ProofsLean.StepResult (Fin 4 → IntegerALU.Bus) := Id.run do
+    let rec readPEs : List (Fin 4) → (Fin 4 → IntegerALU.Bus) →
+        ProofsLean.StepResult (Fin 4 → IntegerALU.Bus)
+      | [], buses => .ok buses
+      | pe :: rest, buses => Id.run do
+          let peId := physicalPEId coordinate pe
+          let oldContext := readState.peContext peId
+          let coords := ParsedIntegerContext.ofLinearIndex peId
+          let context := { coords with cycle := cycle, bar0 := oldContext.bar0, bar1 := oldContext.bar1, tWord := oldContext.tWord }
+          let some source := ParsedOperand.toParsedIntegerInput? accesses.source
+              accesses.precision.laneWidth context.group context.l2b context.l1b context.mab
+              context.pe cycle context.bar0 context.bar1 context.tWord
+            | return .unknown
+          match ParsedIntegerInput.readWithForwarding (readState.peRegisters peId)
+              (readState.forwarding peId) cycle source with
+          | .failure => return .failure
+          | .unknown => return .unknown
+          | .ok bus => return readPEs rest (fun other => if other == pe then bus else buses other)
+    readPEs (List.finRange 4) (fun _ => ⟨0, 0⟩)
+  let writeCycle (cycle : Fin 4) (buses : Fin 4 → IntegerALU.Bus)
+      (files : Fin 4 → PEMemory.IntegerRegisterFiles)
+      (bar0 bar1 : Fin 4 → BitVec 12)
+      (outputs : Fin 4 → Fin 4 → IntegerALU.Bus) :
+      ProofsLean.StepResult
+        (Fin 4 → (PEMemory.IntegerRegisterFiles × BitVec 12 × BitVec 12 ×
+          (Fin 4 → IntegerALU.Bus))) := Id.run do
+    let rec writePEs : List (Fin 4) → (Fin 4 → PEMemory.IntegerRegisterFiles) →
+        (Fin 4 → BitVec 12) → (Fin 4 → BitVec 12) →
+        (Fin 4 → Fin 4 → IntegerALU.Bus) →
+        ProofsLean.StepResult
+          (Fin 4 → (PEMemory.IntegerRegisterFiles × BitVec 12 × BitVec 12 ×
+            (Fin 4 → IntegerALU.Bus)))
+      | [], files, bar0, bar1, outputs => .ok fun pe =>
+          (files pe, bar0 pe, bar1 pe, outputs pe)
+      | pe :: rest, files, bar0, bar1, outputs => Id.run do
+          let peId := physicalPEId coordinate pe
+          let oldContext := currentState.peContext peId
+          let coords := ParsedIntegerContext.ofLinearIndex peId
+          let destinationContext := { coords with cycle := cycle, bar0 := bar0 pe, bar1 := bar1 pe, tWord := oldContext.tWord }
+          match resolveFlushSelection? expression.flush (files pe).maskRegisters cycle with
+          | none => return .unknown
+          | some flushSelection =>
+              let output := parsedOutputAfterFlush flushSelection (buses pe)
+              match writeParsedMslMsrDestination? (files pe) accesses.destination
+                  destinationContext output 0 cycle currentState.maskDirective hasSingleLineMask with
+              | none => return .unknown
+              | some write =>
+                  let nextBar0 := match write.barUpdate with
+                    | some (false, value) => value
+                    | _ => bar0 pe
+                  let nextBar1 := match write.barUpdate with
+                    | some (true, value) => value
+                    | _ => bar1 pe
+                  let nextFiles := fun other => if other == pe then write.files else files other
+                  let nextBar0s := fun other => if other == pe then nextBar0 else bar0 other
+                  let nextBar1s := fun other => if other == pe then nextBar1 else bar1 other
+                  let nextOutputs := fun other index =>
+                    if other == pe && index == cycle then output else outputs other index
+                  return writePEs rest nextFiles nextBar0s nextBar1s nextOutputs
+    writePEs (List.finRange 4) files bar0 bar1 outputs
+  let rec runCycles : List (Fin 4) →
+      (Fin 4 → PEMemory.IntegerRegisterFiles) → (Fin 4 → BitVec 12) →
+      (Fin 4 → BitVec 12) → (Fin 4 → Fin 4 → IntegerALU.Bus) →
+      ProofsLean.StepResult
+        (Fin 4 → (PEMemory.IntegerRegisterFiles × BitVec 12 × BitVec 12 ×
+          (Fin 4 → IntegerALU.Bus)))
+    | [], files, bar0, bar1, outputs => .ok fun pe =>
+        (files pe, bar0 pe, bar1 pe, outputs pe)
+    | cycle :: rest, files, bar0, bar1, outputs => Id.run do
+        match readCycle cycle with
+        | .failure => return .failure
+        | .unknown => return .unknown
+        | .ok inputBuses =>
+            let outputBuses := parsedBlockFloatMab accesses.precision accesses.keep
+              accesses.extended inputBuses
+            match writeCycle cycle outputBuses files bar0 bar1 outputs with
+            | .failure => return .failure
+            | .unknown => return .unknown
+            | .ok results =>
+                let nextFiles := fun pe => (results pe).1
+                let nextBar0 := fun pe => (results pe).2.1
+                let nextBar1 := fun pe => (results pe).2.2.1
+                let nextOutputs := fun pe index => (results pe).2.2.2 index
+                return runCycles rest nextFiles nextBar0 nextBar1 nextOutputs
+  match runCycles [0, 1, 2, 3] initialFiles initialBar0 initialBar1 initialOutputs with
+  | .failure => return .failure
+  | .unknown => return .unknown
+  | .ok results =>
+      let nextState := (List.finRange 4).foldl (fun state pe =>
+        let peId := physicalPEId coordinate pe
+        let (files, bar0, bar1, outputs) := results pe
+        let forwarding : Forwarding.Slots := fun unit cycle =>
+          if noForward then state.forwarding peId unit cycle
+          else if unit == .alu then .known (outputs cycle)
+          else state.forwarding peId unit cycle
+        let forwardingValid : Forwarding.Unit → Fin 4 → Bool := fun unit cycle =>
+          if noForward then state.forwardingValid peId unit cycle
+          else if unit == .alu then true
+          else state.forwardingValid peId unit cycle
+        { state with
+          peRegisters := fun other => if other == peId then files else state.peRegisters other
+          forwarding := fun other => if other == peId then forwarding else state.forwarding other
+          forwardingValid := fun other => if other == peId then forwardingValid else state.forwardingValid other
+          peContext := fun other => if other == peId then
+            { state.peContext other with bar0 := bar0, bar1 := bar1 }
+            else state.peContext other }) currentState
+      return .ok nextState
+
+def executeParsedBlockFloatAtMABs (readState currentState : State)
+    (expression : ParsedExpr) (coordinates : List MABCoordinate)
+    (noForward hasSingleLineMask : Bool) : ProofsLean.StepResult State :=
+  match coordinates with
+  | [] => .ok currentState
+  | coordinate :: rest =>
+      match executeParsedBlockFloatAtMAB readState currentState expression coordinate
+          noForward hasSingleLineMask with
+      | .failure => .failure
+      | .unknown => .unknown
+      | .ok next => executeParsedBlockFloatAtMABs readState next expression rest
+          noForward hasSingleLineMask
+
+def executeParsedBlockFloatProducer (readState currentState : State)
+    (expressions : List ParsedExpr) (noForward hasSingleLineMask : Bool) :
+    ProofsLean.StepResult State :=
+  match expressions.filter parsedExprIsBlockFloatProducer with
+  | [] => .ok currentState
+  | [expression] => executeParsedBlockFloatAtMABs readState currentState expression
+      allMABCoordinates noForward hasSingleLineMask
+  | _ => .unknown
 
 def mslMsrSourcePE (pe : PEId) (isMsl : Bool) : PEId :=
   let localPE := pe.val % 4
@@ -2634,6 +2782,7 @@ def executeIntegerProducerLineAtPE (expressions : List ParsedExpr)
       !parsedExprIsL1ToPEProducer expression &&
       !parsedExprIsSupportedFloatMAUProducer expression &&
       !parsedExprIsMslMsrProducer expression &&
+      !parsedExprIsBlockFloatProducer expression &&
       !parsedExprIsFloatReluProducer expression
   match parsedIntegerMatrixReadLineFourCycleStep (state.peRegisters pe) oldSlots
       matrixStore peExpressions control false with
@@ -2710,6 +2859,7 @@ noncomputable def executeIntegerProducerInstructionLine
         if expressions.all parsedExprIsSupportedPELineProducer then
           let peExpressions := expressions.filter (fun expression =>
             !parsedExprIsL2BMProducer expression && !parsedExprIsMslMsrProducer expression &&
+              !parsedExprIsBlockFloatProducer expression &&
               !parsedExprIsFloatReluProducer expression)
           match executeIntegerProducerLineAtPEs peExpressions (List.finRange 4096) state with
           | .failure => .failure
@@ -2727,12 +2877,17 @@ noncomputable def executeIntegerProducerInstructionLine
                 | .failure => .failure
                 | .unknown => .unknown
                 | .ok nextWithRelu =>
-                  match executeParsedMatrixWritesAtMABs state allMABCoordinates expressions
-                    nextWithRelu with
+                  match executeParsedBlockFloatProducer state nextWithRelu expressions noForward
+                      hasSingleLineMask with
                   | .failure => .failure
                   | .unknown => .unknown
-                  | .ok next =>
-                  let noForward := expressions.any parsedExprIsNoForwardProducer
+                  | .ok nextWithBlockFloat =>
+                    match executeParsedMatrixWritesAtMABs state allMABCoordinates expressions
+                      nextWithBlockFloat with
+                    | .failure => .failure
+                    | .unknown => .unknown
+                    | .ok next =>
+                      let noForward := expressions.any parsedExprIsNoForwardProducer
                   let hasPEToL1Producer := expressions.any fun expression =>
                     parsedExprIsL1MwriteProducer expression ||
                       parsedExprIsL1GatherProducer expression || parsedExprIsL1ReduceProducer expression
@@ -2823,7 +2978,7 @@ theorem executeIntegerProducerInstructionLine_mv_transfer_success
 
 theorem executeIntegerProducerInstructionLine_pe_success
     (normalizedExpressions : List NormalizedExpr)
-    (state nextPEs nextMsl nextRelu next nextL1 : State)
+    (state nextPEs nextMsl nextRelu nextBlockFloat next nextL1 : State)
     (accepted : checkParsedTopLine
       (InstructionLine.pe normalizedExpressions).toParsed = true)
     (supported : (normalizedExpressions.map NormalizedExpr.toParsed).all
@@ -2831,6 +2986,7 @@ theorem executeIntegerProducerInstructionLine_pe_success
     (executed : executeIntegerProducerLineAtPEs
       ((normalizedExpressions.map NormalizedExpr.toParsed).filter (fun expression =>
         !parsedExprIsL2BMProducer expression && !parsedExprIsMslMsrProducer expression &&
+          !parsedExprIsBlockFloatProducer expression &&
           !parsedExprIsFloatReluProducer expression))
       (List.finRange 4096) state =
         .ok nextPEs)
@@ -2844,8 +3000,13 @@ theorem executeIntegerProducerInstructionLine_pe_success
       (normalizedExpressions.any (parsedExprIsNoForwardProducer ∘ NormalizedExpr.toParsed))
       (normalizedExpressions.any (parsedExprHasSingleLineWriteMask ∘ NormalizedExpr.toParsed)) =
         .ok nextRelu)
+    (blockFloatWrites : executeParsedBlockFloatProducer state nextRelu
+      (normalizedExpressions.map NormalizedExpr.toParsed)
+      (normalizedExpressions.any (parsedExprIsNoForwardProducer ∘ NormalizedExpr.toParsed))
+      (normalizedExpressions.any (parsedExprHasSingleLineWriteMask ∘ NormalizedExpr.toParsed)) =
+        .ok nextBlockFloat)
     (matrixWrites : executeParsedMatrixWritesAtMABs state allMABCoordinates
-      (normalizedExpressions.map NormalizedExpr.toParsed) nextRelu = .ok next)
+      (normalizedExpressions.map NormalizedExpr.toParsed) nextBlockFloat = .ok next)
     (l1Writes : executeParsedL1MwriteProducers state next
       (normalizedExpressions.map NormalizedExpr.toParsed)
       (!(normalizedExpressions.any
@@ -2886,7 +3047,7 @@ theorem executeIntegerProducerInstructionLine_pe_success
               parsedExprIsL1GatherProducer expression.toParsed ||
               parsedExprIsL1ReduceProducer expression.toParsed) } := by
   simp [executeIntegerProducerInstructionLine, accepted, supported, executed, mslMsrWrites,
-    reluWrites,
+    reluWrites, blockFloatWrites,
     matrixWrites, l1Writes, gatherWrites, reduceWrites, l1ToPE, l2Writes, List.any_map]
   rfl
 
