@@ -1786,6 +1786,17 @@
           "scope": "For every successful matrix-MAU producer, including PE output commit across all MABs and global poison propagation, matrix registers equal their pre-issue values. The isolated PE commit helper also preserves L1BM and turnaround state, block memory, DAR/DARBUF, MV tags and queue, mask directive, and hazard clock.",
           "source": "proofs_lean/ProofsLean/WholeMachineStep.lean"
         },
+        "known_failure_classification": {
+          "behavior": "A matrix-MAU calculation with a missing or non-matrix first source, or a missing required vector/accumulator source, returns failure instead of unknown.",
+          "lean_theorems": [
+            "ProofsLean.MNCore.executeParsedMatrixMAUCalculationAtMAB_missing_matrix_operand_fails",
+            "ProofsLean.MNCore.executeParsedMatrixMAUCalculationAtMAB_wrong_matrix_operand_fails",
+            "ProofsLean.MNCore.executeParsedMatrixMAUCalculationAtMAB_missing_vector_operand_fails",
+            "ProofsLean.MNCore.executeParsedMatrixMAUCalculationAtMAB_missing_accumulator_operand_fails"
+          ],
+          "rust_reference": "viz/core/src/machine.rs::Machine::compute_mat explicitly rejects a non-matrix first source; viz/core/src/vsm.rs::parse_expr rejects too few operands before Machine::step.",
+          "scope": "For direct Lean AST inputs, malformed missing sources are classified as failure; parser-produced instructions reject insufficient source counts before execution. This does not establish complete Rust/Lean command conformance for valid matrix-MAU instructions."
+        },
         "remaining": "Run command-level Rust differentials for source operands, matrix layout, row masks, PE packing, flags, poison, and forwarding; the arithmetic-only comparison does not establish compute_mat or whole-machine conformance."
       }
     },

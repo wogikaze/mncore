@@ -1654,15 +1654,17 @@ def executeParsedMatrixMAUCalculationAtMAB (state : State) (coordinate : MABCoor
     (expression : ParsedExpr) (cycle : Fin 4) :
     ProofsLean.StepResult (List Nat × Bool × Bool) := Id.run do
   let (.mau precision true kind half round) := expression.op | return .unknown
+  -- Once this matrix-MAU executor is selected, malformed required sources
+  -- follow Rust's known operand-error path rather than an epistemic gap.
   let matrixSide ← match expression.sources with
     | .matrix sideY _ none :: _ => pure sideY
-    | _ => return .unknown
+    | _ => return .failure
   let (vector, accumulator) ← match kind, expression.sources with
     | .mul, [.matrix _ _ none, vector] => pure (vector, none)
     | .add, [.matrix _ _ none, vector] => pure (vector, none)
     | .passa, [.matrix _ _ none, vector] => pure (vector, none)
     | .fma, [.matrix _ _ none, vector, acc] => pure (vector, some acc)
-    | _, _ => return .unknown
+    | _, _ => return .failure
   let some vectorFormat := parsedMatrixMAUFloatFormat precision | return .failure
   let vectorValues ← match readParsedMatrixMAUSourceAtMAB state coordinate vector
       vectorFormat (parsedMatrixMAUVectorLanesPerPE precision) cycle with
@@ -1692,6 +1694,53 @@ def executeParsedMatrixMAUCalculationAtMAB (state : State) (coordinate : MABCoor
       vectorValues accumulatorValues with
   | none => return .failure
   | some rows => return .ok (rows, vectorInvalid || matrixInvalid, false)
+
+theorem executeParsedMatrixMAUCalculationAtMAB_missing_matrix_operand_fails
+    (state : State) (coordinate : MABCoordinate) (cycle : Fin 4)
+    (precision : ParsedPrecision) (kind : CalcKind) (half : Option Char)
+    (round : Bool) :
+    executeParsedMatrixMAUCalculationAtMAB state coordinate
+      { op := .mau precision true kind half round
+        sources := []
+        destinations := []
+        flush := none
+        text := "" } cycle = .failure := by
+  simp [executeParsedMatrixMAUCalculationAtMAB]
+
+theorem executeParsedMatrixMAUCalculationAtMAB_wrong_matrix_operand_fails
+    (state : State) (coordinate : MABCoordinate) (cycle : Fin 4)
+    (precision : ParsedPrecision) (kind : CalcKind) (half : Option Char)
+    (round : Bool) :
+    executeParsedMatrixMAUCalculationAtMAB state coordinate
+      { op := .mau precision true kind half round
+        sources := [.fixed .peid]
+        destinations := []
+        flush := none
+        text := "" } cycle = .failure := by
+  simp [executeParsedMatrixMAUCalculationAtMAB]
+
+theorem executeParsedMatrixMAUCalculationAtMAB_missing_vector_operand_fails
+    (state : State) (coordinate : MABCoordinate) (cycle : Fin 4)
+    (precision : ParsedPrecision) (kind : CalcKind) (half : Option Char)
+    (round : Bool) :
+    executeParsedMatrixMAUCalculationAtMAB state coordinate
+      { op := .mau precision true kind half round
+        sources := [.matrix false ⟨2, by decide⟩ none]
+        destinations := []
+        flush := none
+        text := "" } cycle = .failure := by
+  cases kind <;> simp [executeParsedMatrixMAUCalculationAtMAB]
+
+theorem executeParsedMatrixMAUCalculationAtMAB_missing_accumulator_operand_fails
+    (state : State) (coordinate : MABCoordinate) (cycle : Fin 4)
+    (precision : ParsedPrecision) (half : Option Char) (round : Bool) :
+    executeParsedMatrixMAUCalculationAtMAB state coordinate
+      { op := .mau precision true .fma half round
+        sources := [.matrix false ⟨2, by decide⟩ none, .fixed .peid]
+        destinations := []
+        flush := none
+        text := "" } cycle = .failure := by
+  simp [executeParsedMatrixMAUCalculationAtMAB]
 
 def parsedMatrixMAURowsPerPE : ParsedPrecision → Nat
   | .d => 1
