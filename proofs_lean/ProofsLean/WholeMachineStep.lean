@@ -2302,6 +2302,14 @@ def executeParsedL1ToPEAtPEs (readState currentState : State)
               forwardingValid := fun other => if other = pe then valid else currentState.forwardingValid other }
             executeParsedL1ToPEAtPEs readState next expression access rest noForward hasSingleLineMask
 
+theorem executeParsedL1ToPEAtPEs_initial_turnaround_failure
+    (currentState : State) (expression : ParsedExpr) (access : ParsedL1ToPEAccess)
+    (pe : PEId) (rest : List PEId) (noForward hasSingleLineMask : Bool)
+    (sourceIsTurnaround : access.sourceBase.isNone = true) :
+    executeParsedL1ToPEAtPEs rustSimulatorInitialState currentState expression access (pe :: rest)
+      noForward hasSingleLineMask = .failure := by
+  simp [executeParsedL1ToPEAtPEs, sourceIsTurnaround, rustSimulatorInitialState]
+
 def executeParsedL1ToPEProducer (readState currentState : State)
     (expression : ParsedExpr) (noForward hasSingleLineMask : Bool) : ProofsLean.StepResult State :=
   match lowerParsedL1ToPE? expression with
