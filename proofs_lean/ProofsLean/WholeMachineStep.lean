@@ -1927,6 +1927,23 @@ def readRawL1MwriteBus (state : State) (source : ParsedOperand)
       | _ => ParsedIntegerInput.readWithForwarding
           (state.peRegisters pe) (stateForwardingSlots state pe) cycle input
 
+theorem readRawL1MwriteBus_memory_never_unknown
+    (state : State) (access : Access) (negated extended rounded : Bool)
+    (mask : Option ParsedMask) (pe : PEId) (cycle : Fin 4) :
+    readRawL1MwriteBus state (.mem access negated extended rounded mask) pe cycle ≠
+      .unknown := by
+  cases h : ParsedOperand.toDirectMemoryAccess?
+      (.mem access false false false none) (ParsedIntegerContext.ofLinearIndex pe).pe cycle
+      (state.peContext pe).bar0 (state.peContext pe).bar1
+      (state.peContext pe).tWord with
+  | none =>
+      simp [readRawL1MwriteBus, rawL1MwriteSourceResult, rawL1MwriteSource?,
+        ParsedOperand.toParsedIntegerInput?, h]
+  | some resolved =>
+      simp [readRawL1MwriteBus, rawL1MwriteSourceResult, rawL1MwriteSource?,
+        ParsedOperand.toParsedIntegerInput?, h, ParsedIntegerInput.readWithForwarding,
+        ParsedIntegerInput.read]
+
 def readL1MwriteBusesAtBank (state : State) (access : ParsedL1MwriteAccess)
     (bank : Fin 64) (mab : Fin 16) (cycle : Fin 4) :
     ProofsLean.StepResult (Fin 4 → IntegerALU.Bus) :=
