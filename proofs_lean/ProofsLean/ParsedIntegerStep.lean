@@ -3178,6 +3178,54 @@ def ParsedOperand.toTimedPEHazardEvents? (operand : ParsedOperand) (write : Bool
               primary ++ indirect
   | _ => some []
 
+theorem ParsedOperand.toTimedPEHazardEvents?_isSome_of_valid
+    (operand : ParsedOperand) (write : Bool) (control : ParsedMaskExecutionControl)
+    (valid : ParsedOperand.directMemoryAddressModeValid operand = true) :
+    (ParsedOperand.toTimedPEHazardEvents? operand write control).isSome = true := by
+  cases operand with
+  | mem access negated extended rounded mask =>
+      have valid' : ParsedOperand.directMemoryAddressModeValid
+          (.mem access false false false mask) = true := by
+        simpa [ParsedOperand.directMemoryAddressModeValid] using valid
+      cases hbank : issueBankToRegisterBank access.bank with
+      | none => simp [ParsedOperand.toTimedPEHazardEvents?, hbank]
+      | some bank =>
+          have hmap := ParsedOperand.parsedHazardCycles_resolve_of_valid access mask
+            control.context valid'
+          have hmap' : (parsedHazardCycles.mapM fun cycle =>
+              ParsedOperand.toDirectMemoryAccessMode?
+                (ParsedOperand.forHazardAddress (.mem access negated extended rounded mask)) true
+                control.context.pe cycle control.context.bar0 control.context.bar1
+                control.context.tWord).isSome = true := by
+            simpa [ParsedOperand.forHazardAddress] using hmap
+          unfold ParsedOperand.toTimedPEHazardEvents?
+          dsimp only
+          cases resolved : parsedHazardCycles.mapM (fun cycle =>
+              ParsedOperand.toDirectMemoryAccessMode?
+                (ParsedOperand.forHazardAddress (.mem access negated extended rounded mask)) true
+                control.context.pe cycle control.context.bar0 control.context.bar1
+                control.context.tWord) with
+          | none => simp [resolved] at hmap'
+          | some accesses => simp [hbank, resolved]
+  | bar lm1 width mask => simp [ParsedOperand.directMemoryAddressModeValid,
+      ParsedOperand.toTimedPEHazardEvents?]
+  | forward kind neg ext rnd => simp [ParsedOperand.directMemoryAddressModeValid,
+      ParsedOperand.toTimedPEHazardEvents?]
+  | fixed kind => simp [ParsedOperand.directMemoryAddressModeValid,
+      ParsedOperand.toTimedPEHazardEvents?]
+  | omr entry mask => simp [ParsedOperand.directMemoryAddressModeValid,
+      ParsedOperand.toTimedPEHazardEvents?]
+  | matrix y width row => simp [ParsedOperand.directMemoryAddressModeValid,
+      ParsedOperand.toTimedPEHazardEvents?]
+  | nowrite => simp [ParsedOperand.directMemoryAddressModeValid,
+      ParsedOperand.toTimedPEHazardEvents?]
+  | l1bm width address => simp [ParsedOperand.directMemoryAddressModeValid,
+      ParsedOperand.toTimedPEHazardEvents?]
+  | l2bm address l2b => simp [ParsedOperand.directMemoryAddressModeValid,
+      ParsedOperand.toTimedPEHazardEvents?]
+  | dar address => simp [ParsedOperand.directMemoryAddressModeValid,
+      ParsedOperand.toTimedPEHazardEvents?]
+
 /-- The static PE hazard analyzer ignores the multiline mask directive; only a
 single-line mask attached to the memory operand affects written cycles. -/
 theorem ParsedOperand.toTimedPEHazardEvents?_directive_irrelevant
@@ -3195,6 +3243,41 @@ def ParsedExpr.toTimedPEHazardEvents? (expression : ParsedExpr)
   let writes ← expression.destinations.mapM fun operand =>
     ParsedOperand.toTimedPEHazardEvents? operand true control
   pure (reads.flatten ++ writes.flatten)
+
+theorem ParsedExpr.toTimedPEHazardEvents?_isSome_of_valid
+    (expression : ParsedExpr) (control : ParsedMaskExecutionControl)
+    (valid : (expression.sources ++ expression.destinations).all
+      ParsedOperand.directMemoryAddressModeValid = true) :
+    (ParsedExpr.toTimedPEHazardEvents? expression control).isSome = true := by
+  have sourceValid : ∀ operand, operand ∈ expression.sources →
+      ParsedOperand.directMemoryAddressModeValid operand = true := by
+    intro operand member
+    have inAll : operand ∈ expression.sources ++ expression.destinations := by
+      simp [member]
+    exact (List.all_eq_true.mp valid) operand inAll
+  have destinationValid : ∀ operand, operand ∈ expression.destinations →
+      ParsedOperand.directMemoryAddressModeValid operand = true := by
+    intro operand member
+    have inAll : operand ∈ expression.sources ++ expression.destinations := by
+      simp [member]
+    exact (List.all_eq_true.mp valid) operand inAll
+  have readsSome := list_mapM_isSome_of_forall expression.sources
+    (fun operand => ParsedOperand.toTimedPEHazardEvents? operand false control)
+    (fun operand member => ParsedOperand.toTimedPEHazardEvents?_isSome_of_valid
+      operand false control (sourceValid operand member))
+  have writesSome := list_mapM_isSome_of_forall expression.destinations
+    (fun operand => ParsedOperand.toTimedPEHazardEvents? operand true control)
+    (fun operand member => ParsedOperand.toTimedPEHazardEvents?_isSome_of_valid
+      operand true control (destinationValid operand member))
+  cases reads : expression.sources.mapM
+      (fun operand => ParsedOperand.toTimedPEHazardEvents? operand false control) with
+  | none => simp [reads] at readsSome
+  | some readEvents =>
+      cases writes : expression.destinations.mapM
+          (fun operand => ParsedOperand.toTimedPEHazardEvents? operand true control) with
+      | none => simp [writes] at writesSome
+      | some writeEvents =>
+          simp [ParsedExpr.toTimedPEHazardEvents?, reads, writes]
 
 theorem ParsedExpr.toTimedPEHazardEvents?_directive_irrelevant
     (expression : ParsedExpr) (control : ParsedMaskExecutionControl)
@@ -3214,6 +3297,26 @@ def ParsedMaskedIssueLine.toTimedPEHazardEvents?
       let perExpression ← expressions.mapM fun expression =>
         ParsedExpr.toTimedPEHazardEvents? expression control
       pure perExpression.flatten
+
+theorem ParsedMaskedIssueLine.toTimedPEHazardEvents?_isSome_of_valid
+    (line : ParsedMaskedIssueLine) (control : ParsedMaskExecutionControl)
+    (valid : match line with
+      | .nop => True
+      | .pe expressions => ∀ expression ∈ expressions,
+          (expression.sources ++ expression.destinations).all
+            ParsedOperand.directMemoryAddressModeValid = true) :
+    (ParsedMaskedIssueLine.toTimedPEHazardEvents? line control).isSome = true := by
+  cases line with
+  | nop => simp [ParsedMaskedIssueLine.toTimedPEHazardEvents?]
+  | pe expressions =>
+      have eventsSome := list_mapM_isSome_of_forall expressions
+        (fun expression => ParsedExpr.toTimedPEHazardEvents? expression control)
+        (fun expression member => ParsedExpr.toTimedPEHazardEvents?_isSome_of_valid
+          expression control (valid expression (by simp [member])))
+      cases mapped : expressions.mapM
+          (fun expression => ParsedExpr.toTimedPEHazardEvents? expression control) with
+      | none => simp [mapped] at eventsSome
+      | some perExpression => simp [ParsedMaskedIssueLine.toTimedPEHazardEvents?, mapped]
 
 theorem ParsedMaskedIssueLine.toTimedPEHazardEvents?_directive_irrelevant
     (line : ParsedMaskedIssueLine) (control : ParsedMaskExecutionControl)

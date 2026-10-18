@@ -4401,21 +4401,55 @@ noncomputable def executeNormalizedLine (line : NormalizedLine) (state : State) 
       | none => .failure
       | some instruction => executeIntegerProducerInstructionLine instruction state
 
-def parsedPEHazardEventsForPE? (state : State) (expressions : List ParsedExpr)
-    (pe : PEId) : Option (List PEMemory.TimedPEAccess) := do
+def parsedPEHazardControl (state : State) (pe : PEId) : ParsedMaskExecutionControl :=
   let oldContext := state.peContext pe
   let coordinates := ParsedIntegerContext.ofLinearIndex pe
   let context := { coordinates with
     bar0 := oldContext.bar0
     bar1 := oldContext.bar1
     tWord := oldContext.tWord }
-  let control : ParsedMaskExecutionControl :=
-    { directive := state.maskDirective
-      context := context
-      elapsedWords := state.hazardClock }
+  { directive := state.maskDirective
+    context := context
+    elapsedWords := state.hazardClock }
+
+def parsedPEHazardEventsForPE? (state : State) (expressions : List ParsedExpr)
+    (pe : PEId) : Option (List PEMemory.TimedPEAccess) := do
+  let control := parsedPEHazardControl state pe
   let perExpression ← expressions.mapM fun expression =>
     PEMemory.ParsedExpr.toTimedPEHazardEvents? expression control
   some perExpression.flatten
+
+theorem parsedPEHazardEventsForPE?_isSome_of_valid
+    (state : State) (expressions : List ParsedExpr) (pe : PEId)
+    (valid : expressions.all fun expression =>
+      (expression.sources ++ expression.destinations).all
+        PEMemory.ParsedOperand.directMemoryAddressModeValid = true) :
+    (parsedPEHazardEventsForPE? state expressions pe).isSome = true := by
+  let control := parsedPEHazardControl state pe
+  have eventsSome := PEMemory.list_mapM_isSome_of_forall expressions
+    (fun expression => PEMemory.ParsedExpr.toTimedPEHazardEvents? expression control)
+    (fun expression member => PEMemory.ParsedExpr.toTimedPEHazardEvents?_isSome_of_valid
+      expression control ((List.all_eq_true.mp valid) expression member))
+  unfold parsedPEHazardEventsForPE?
+  change (do
+    let perExpression ← expressions.mapM fun expression =>
+      PEMemory.ParsedExpr.toTimedPEHazardEvents? expression control
+    pure perExpression.flatten).isSome = true
+  cases mapped : expressions.mapM
+      (fun expression => PEMemory.ParsedExpr.toTimedPEHazardEvents? expression control) with
+  | none => simp [mapped] at eventsSome
+  | some perExpression => simp [mapped]
+
+theorem parsedPEHazardEventsForAllPEs_isSome_of_valid
+    (state : State) (expressions : List ParsedExpr)
+    (valid : expressions.all fun expression =>
+      (expression.sources ++ expression.destinations).all
+        PEMemory.ParsedOperand.directMemoryAddressModeValid = true) :
+    ((List.finRange 4096).mapM fun pe =>
+      parsedPEHazardEventsForPE? state expressions pe).isSome = true := by
+  apply PEMemory.list_mapM_isSome_of_forall
+  intro pe member
+  exact parsedPEHazardEventsForPE?_isSome_of_valid state expressions pe valid
 
 def parsedPEHazardViolated (history current : List PEMemory.TimedPEAccess) : Bool :=
   (PEMemory.peHazardConstraintsBetween history current).any fun constraint =>
@@ -4442,6 +4476,43 @@ def parsedNormalizedLinePEAddressModesValid (line : NormalizedLine) : Bool :=
         (expression.sources ++ expression.destinations).all
           PEMemory.ParsedOperand.directMemoryAddressModeValid
   | _ => true
+
+theorem parsedNormalizedLinePEHazardEvents?_isSome_of_valid
+    (state : State) (line : NormalizedLine)
+    (valid : parsedNormalizedLinePEAddressModesValid line = true) :
+    (parsedNormalizedLinePEHazardEvents? state line).isSome = true := by
+  cases line with
+  | pe normalizedExpressions =>
+      have parsedExpressionsValid :
+          ∀ expression ∈ normalizedExpressions.map NormalizedExpr.toParsed,
+            (∀ operand ∈ expression.sources,
+              PEMemory.ParsedOperand.directMemoryAddressModeValid operand = true) ∧
+            (∀ operand ∈ expression.destinations,
+              PEMemory.ParsedOperand.directMemoryAddressModeValid operand = true) := by
+        simpa [parsedNormalizedLinePEAddressModesValid, NormalizedLine.toInstruction?,
+          NormalizedExpr.toParsed, List.all_eq_true] using valid
+      have expressionsValid :
+          (normalizedExpressions.map NormalizedExpr.toParsed).all fun expression =>
+            (expression.sources ++ expression.destinations).all
+              PEMemory.ParsedOperand.directMemoryAddressModeValid = true := by
+        apply List.all_eq_true.mpr
+        intro expression member
+        apply List.all_eq_true.mpr
+        intro operand operandMember
+        rcases List.mem_append.mp operandMember with sourceMember | destinationMember
+        · exact (parsedExpressionsValid expression member).1 operand sourceMember
+        · exact (parsedExpressionsValid expression member).2 operand destinationMember
+      have allPEs := parsedPEHazardEventsForAllPEs_isSome_of_valid state
+        (normalizedExpressions.map NormalizedExpr.toParsed) expressionsValid
+      unfold parsedNormalizedLinePEHazardEvents?
+      simp only [NormalizedLine.toInstruction?]
+      change ((List.finRange 4096).mapM fun pe =>
+        parsedPEHazardEventsForPE? state (normalizedExpressions.map NormalizedExpr.toParsed) pe).isSome = true
+      exact allPEs
+  | nop count wait =>
+      cases count <;> rfl
+  | mv transfer => rfl
+  | maskDirective width targets entry => rfl
 
 def parsedBlockHazardViolated
     (history current : List PEMemory.TimedBlockAccess) : Bool :=
