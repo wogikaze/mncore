@@ -68,6 +68,9 @@ def parsedOpMayWriteL1BMTurnaround : ParsedOp → Bool
   | .l1bm (.reduce4 ..) => true
   | _ => false
 
+def parsedExprMayWriteL1BMTurnaround (expression : ParsedExpr) : Bool :=
+  parsedOpMayWriteL1BMTurnaround expression.op
+
 def parsedExprUnitReads (expression : ParsedExpr) : List UnitResource :=
   parsedOpUnitReads expression.op ++
     (if (expression.maskApplications.filterMap ParsedMask.variableEntry?).isEmpty &&

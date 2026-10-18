@@ -3383,9 +3383,8 @@ noncomputable def executeIntegerProducerInstructionLine
                     | .failure => .failure
                     | .unknown => .unknown
                     | .ok next =>
-                        let hasPEToL1Producer := expressions.any fun expression =>
-                          parsedExprIsL1MwriteProducer expression ||
-                            parsedExprIsL1GatherProducer expression || parsedExprIsL1ReduceProducer expression
+                        let hasPEToL1Producer :=
+                          expressions.any parsedExprMayWriteL1BMTurnaround
                         match executeParsedL1MwriteProducers state next expressions (!noForward) with
                         | .failure => .failure
                         | .unknown => .unknown
@@ -3679,9 +3678,7 @@ theorem executeIntegerProducerInstructionLine_pe_success
             parsedExprIsNoForwardProducer expression.toParsed = true
           then nextL2.l1bmTurnaroundValid
           else normalizedExpressions.any (fun expression =>
-            parsedExprIsL1MwriteProducer expression.toParsed ||
-              parsedExprIsL1GatherProducer expression.toParsed ||
-              parsedExprIsL1ReduceProducer expression.toParsed) } := by
+            parsedExprMayWriteL1BMTurnaround expression.toParsed) } := by
   simp [executeIntegerProducerInstructionLine, accepted, supported, noUnsupportedRustAlu,
     executed, mslMsrWrites,
     reluWrites, blockFloatWrites,
