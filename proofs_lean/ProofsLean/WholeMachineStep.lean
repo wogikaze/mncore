@@ -6671,6 +6671,31 @@ def executeParsedFloatReluAtPEs (readState currentState : State)
       | .ok next => executeParsedFloatReluAtPEs readState next expression rest
           noForward hasSingleLineMask
 
+theorem executeParsedFloatReluAtPEs_never_unknown
+    (readState : State) (expression : ParsedExpr) (pes : List PEId)
+    (currentState : State) (noForward hasSingleLineMask : Bool)
+    (known : ∀ pe, pe ∈ pes → ∀ state,
+      executeParsedFloatReluAtPE readState state expression pe
+        noForward hasSingleLineMask ≠ .unknown) :
+    executeParsedFloatReluAtPEs readState currentState expression pes
+      noForward hasSingleLineMask ≠ .unknown := by
+  induction pes generalizing currentState with
+  | nil => simp [executeParsedFloatReluAtPEs]
+  | cons pe rest ih =>
+      have headKnown := known pe (by simp) currentState
+      have restKnown : ∀ item, item ∈ rest → ∀ state,
+          executeParsedFloatReluAtPE readState state expression item
+            noForward hasSingleLineMask ≠ .unknown := by
+        intro item member state
+        exact known item (List.mem_cons_of_mem _ member) state
+      cases result : executeParsedFloatReluAtPE readState currentState expression pe
+          noForward hasSingleLineMask with
+      | failure => simp [executeParsedFloatReluAtPEs, result]
+      | unknown => exact (headKnown result).elim
+      | ok nextState =>
+          simp only [executeParsedFloatReluAtPEs, result]
+          exact ih nextState restKnown
+
 def executeParsedFloatReluProducers (readState currentState : State)
     (expressions : List ParsedExpr) (noForward hasSingleLineMask : Bool) :
     ProofsLean.StepResult State :=
@@ -6679,6 +6704,33 @@ def executeParsedFloatReluProducers (readState currentState : State)
   | [expression] => executeParsedFloatReluAtPEs readState currentState expression
       (List.finRange 4096) noForward hasSingleLineMask
   | _ => .failure
+
+set_option maxRecDepth 8192 in
+theorem executeParsedFloatReluProducers_per_pe_never_unknown
+    (readState currentState : State) (expressions : List ParsedExpr)
+    (noForward hasSingleLineMask : Bool)
+    (known : ∀ expression, expression ∈ expressions.filter parsedExprIsFloatReluProducer →
+      ∀ pe, pe ∈ List.finRange 4096 → ∀ state,
+        executeParsedFloatReluAtPE readState state expression pe
+          noForward hasSingleLineMask ≠ .unknown) :
+    executeParsedFloatReluProducers readState currentState expressions
+      noForward hasSingleLineMask ≠ .unknown := by
+  cases filtered : expressions.filter parsedExprIsFloatReluProducer with
+  | nil => simp [executeParsedFloatReluProducers, filtered]
+  | cons expression rest =>
+      cases rest with
+      | nil =>
+          have selectedKnown : ∀ pe, pe ∈ List.finRange 4096 → ∀ state,
+              executeParsedFloatReluAtPE readState state expression pe
+                noForward hasSingleLineMask ≠ .unknown := by
+            intro pe member state
+            exact known expression (by simp [filtered]) pe member state
+          simp only [executeParsedFloatReluProducers, filtered]
+          change executeParsedFloatReluAtPEs readState currentState expression
+            (List.finRange 4096) noForward hasSingleLineMask ≠ .unknown
+          exact executeParsedFloatReluAtPEs_never_unknown readState expression
+            (List.finRange 4096) currentState noForward hasSingleLineMask selectedKnown
+      | cons second remaining => simp [executeParsedFloatReluProducers, filtered]
 
 theorem executeParsedFloatReluProducers_multiple_fail
     (readState currentState : State) (first second : ParsedExpr) (rest : List ParsedExpr)
@@ -8178,8 +8230,11 @@ theorem executeIntegerProducerInstructionLine_pe_never_unknown_of_stages
       peState pe ≠ .unknown)
     (mslKnown : ∀ nextPEs, executeParsedMslMsrProducers state nextPEs expressions
       noForward hasSingleLineMask ≠ .unknown)
-    (reluKnown : ∀ nextMsl, executeParsedFloatReluProducers state nextMsl expressions
-      noForward hasSingleLineMask ≠ .unknown)
+    (reluPerPEKnown : ∀ expression,
+      expression ∈ expressions.filter parsedExprIsFloatReluProducer →
+      ∀ pe, pe ∈ List.finRange 4096 → ∀ reluState,
+        executeParsedFloatReluAtPE state reluState expression pe
+          noForward hasSingleLineMask ≠ .unknown)
     (blockFloatKnown : ∀ nextRelu, executeParsedBlockFloatProducer state nextRelu expressions
       noForward hasSingleLineMask ≠ .unknown)
     (matrixKnown : ∀ nextBlockFloat,
@@ -8225,7 +8280,10 @@ theorem executeIntegerProducerInstructionLine_pe_never_unknown_of_stages
           cases reluResult : executeParsedFloatReluProducers state nextMsl expressions
               noForward hasSingleLineMask with
           | failure => simp_all [expressions, noForward, hasSingleLineMask, List.any_map]
-          | unknown => exact (reluKnown nextMsl reluResult).elim
+          | unknown =>
+              have reluStageKnown := executeParsedFloatReluProducers_per_pe_never_unknown
+                state nextMsl expressions noForward hasSingleLineMask reluPerPEKnown
+              exact (reluStageKnown reluResult).elim
           | ok nextRelu =>
               cases blockResult : executeParsedBlockFloatProducer state nextRelu expressions
                   noForward hasSingleLineMask with
