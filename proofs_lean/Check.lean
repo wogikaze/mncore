@@ -77,6 +77,8 @@ import Lean
 #print axioms ProofsLean.MNCore.PEMemory.instructionMachine_issue_failure
 #print axioms ProofsLean.MNCore.PEMemory.instructionMachine_accepted_pe_executes
 #print axioms ProofsLean.MNCore.PEMemory.instructionMachine_nop_advances
+#print axioms ProofsLean.MNCore.integerProducerMachine_issue_failure
+#print axioms ProofsLean.MNCore.executeIntegerProducerInstructionLine_pe_success
 #print axioms ProofsLean.MNCore.UnitKind.mem_all
 #print axioms ProofsLean.MNCore.Issue.ParsedOp.producerUnit?_of_alu
 #print axioms ProofsLean.MNCore.Issue.ParsedOp.producerUnit?_of_mau

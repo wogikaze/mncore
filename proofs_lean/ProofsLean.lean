@@ -27,6 +27,7 @@ import ProofsLean.ControlNormalization
 import ProofsLean.ProgramLegality
 import ProofsLean.PEMachine
 import ProofsLean.MachineState
+import ProofsLean.WholeMachineStep
 import ProofsLean.Footprint
 import ProofsLean.PlusOne
 import ProofsLean.OperatorAbstraction

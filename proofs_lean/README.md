@@ -65,6 +65,9 @@ Welcome の後は Convert Endian を縦の2問目にする。有限性・範囲�
   各PEのALUF/MAUF/LBF/MREADF busとvalidity、mask directive、PE context、hazard clockをまとめるState型。
   一般Stateの初期値ポリシーはまだ仮定しない。Welcomeに必要なPE SRAMはRust emulatorの
   `Words::get`が未割当領域をzeroで読むことを確認した。
+- `WholeMachineStep.lean`: 4096 PEすべてに整数ALU/zero/immediateラインを適用する全State遷移。
+  ALUF結果、MAU disabled、MREADFのzero、LBF保持のforwarding挙動も更新する。
+  他producer unit、MV/block転送、PE/block hazard履歴、OMR混在宛先は未接続で`.unknown`。
 - `Footprint.lean`: 全`InstructionLine`（PE/nop/MV）と全`ParsedOp`の構文footprintを定義し、
   operand source/destination、functional unit、clockのread/write候補を記録する。
   destination readはmasked writeのpreserve可能性を含む保守的な記録。
