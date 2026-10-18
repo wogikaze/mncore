@@ -1345,6 +1345,11 @@ def readParsedMatrixWriteBuses (state : State) (coordinate : MABCoordinate)
         | .failure => .failure
         | .unknown => .unknown
         | .ok accesses =>
+            let sourceValid := match accesses.source with
+              | .forward kind _ => state.forwardingValid (physicalPEId coordinate pe)
+                  (ParsedIntegerInput.forwardUnit kind) cycle
+              | .memory .. | .fixed .. => true
+            if !sourceValid then .failure else
             match ParsedIntegerInput.readWithForwarding
                 (state.peRegisters (physicalPEId coordinate pe))
                 (stateForwardingSlots state (physicalPEId coordinate pe)) cycle accesses.source with
