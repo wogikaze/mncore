@@ -2,6 +2,7 @@ import ProofsLean.MachineState
 import ProofsLean.PEMachine
 import ProofsLean.FloatPEMemory
 import ProofsLean.Footprint
+import ProofsLean.HazardTrace
 
 /-! A whole-state transition for connected PE integer ALU, single-precision
 vector `fvadd`/`fvmul`/`fvfma`, half-precision `hvadd`/`hvmul`/`hvfma`,
@@ -3703,26 +3704,36 @@ def parsedNormalizedLinePEHazardEvents?
       (List.finRange 4096).mapM fun pe =>
         parsedPEHazardEventsForPE? state expressions pe
 
+def parsedBlockHazardViolated
+    (history current : List PEMemory.TimedBlockAccess) : Bool :=
+  (HazardTrace.blockHazardConstraintsBetween history current).any fun constraint =>
+    constraint.distance < constraint.required
+
 /-- Execute a normalized source program in order. The runner carries recent
 PE-memory accesses as validation history, rejects PE hazards before applying
 the line, and retains the transactional behavior of each datapath step. -/
 noncomputable def executeNormalizedProgramAux
     : List NormalizedLine → State → (PEId → List PEMemory.TimedPEAccess) →
+      List PEMemory.TimedBlockAccess →
       ProofsLean.StepResult State
-  | [], currentState, _ => .ok currentState
-  | line :: rest, currentState, history =>
+  | [], currentState, _, _ => .ok currentState
+  | line :: rest, currentState, history, blockHistory =>
       match line with
       | .maskDirective .. =>
           match executeNormalizedLine line currentState with
           | .failure => .failure
           | .unknown => .unknown
-          | .ok next => executeNormalizedProgramAux rest next history
+          | .ok next => executeNormalizedProgramAux rest next history blockHistory
       | _ =>
           match parsedNormalizedLinePEHazardEvents? currentState line with
           | none => .unknown
           | some currentEvents =>
+              let currentBlockEvents :=
+                HazardTrace.parsedLineBlockHazardEvents line.toParsed currentState.hazardClock
               if (List.finRange 4096).any fun pe =>
                   parsedPEHazardViolated (history pe) currentEvents[pe.val]! then
+                .failure
+              else if parsedBlockHazardViolated blockHistory currentBlockEvents then
                 .failure
               else
                 match executeNormalizedLine line currentState with
@@ -3732,13 +3743,16 @@ noncomputable def executeNormalizedProgramAux
                     let nextHistory := fun pe =>
                       (history pe ++ currentEvents[pe.val]!).filter fun event =>
                         event.startWord + 4 ≥ next.hazardClock
-                    executeNormalizedProgramAux rest next nextHistory
-termination_by remaining _ _ => remaining.length
+                    let nextBlockHistory :=
+                      (blockHistory ++ currentBlockEvents).filter fun event =>
+                        event.startWord + 4 ≥ next.hazardClock
+                    executeNormalizedProgramAux rest next nextHistory nextBlockHistory
+termination_by remaining _ _ _ => remaining.length
 decreasing_by simp_wf; simp
 
 noncomputable def executeNormalizedProgram (lines : List NormalizedLine)
     (state : State) : ProofsLean.StepResult State :=
-  executeNormalizedProgramAux lines state (fun _ => [])
+  executeNormalizedProgramAux lines state (fun _ => []) []
 
 /-- Source-level program entry: apply the repository's normalization rules
 before executing, so stripped records and mask directives retain their
