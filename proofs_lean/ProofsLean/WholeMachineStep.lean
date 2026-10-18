@@ -21,6 +21,26 @@ def parsedExprIsIntegerProducer (expression : ParsedExpr) : Bool :=
   | .alu .. | .zero | .immediate .. => true
   | _ => false
 
+/-- Forwarding payloads are meaningful only while their per-unit validity bit
+is set. Present invalid slots as poison to every source reader so existing
+read semantics consistently turn a disabled forwarding read into failure. -/
+def stateForwardingSlots (state : State) (pe : PEId) : Forwarding.Slots :=
+  fun unit cycle =>
+    if state.forwardingValid pe unit cycle then state.forwarding pe unit cycle
+    else .poison
+
+theorem stateForwardingSlots_invalid_is_poison (state : State) (pe : PEId)
+    (unit : Forwarding.Unit) (cycle : Fin 4)
+    (invalid : state.forwardingValid pe unit cycle = false) :
+    stateForwardingSlots state pe unit cycle = .poison := by
+  simp [stateForwardingSlots, invalid]
+
+theorem stateForwardingSlots_valid_preserves_payload (state : State) (pe : PEId)
+    (unit : Forwarding.Unit) (cycle : Fin 4)
+    (valid : state.forwardingValid pe unit cycle = true) :
+    stateForwardingSlots state pe unit cycle = state.forwarding pe unit cycle := by
+  simp [stateForwardingSlots, valid]
+
 /-- These legacy ALU names parse successfully in Rust, but `alu_lanes` has no
 implementation for them and returns `ExecError::Unsupported`. -/
 def parsedExprIsUnsupportedRustAlu (expression : ParsedExpr) : Bool :=
@@ -1130,7 +1150,7 @@ def readParsedMatrixWriteBuses (state : State) (coordinate : MABCoordinate)
         | some accesses =>
             match ParsedIntegerInput.readWithForwarding
                 (state.peRegisters (physicalPEId coordinate pe))
-                (state.forwarding (physicalPEId coordinate pe)) cycle accesses.source with
+                (stateForwardingSlots state (physicalPEId coordinate pe)) cycle accesses.source with
             | .failure => .failure
             | .unknown => .unknown
             | .ok bus =>
@@ -1579,9 +1599,9 @@ def readRawL1MwriteBus (state : State) (source : ParsedOperand)
           if !state.forwardingValid pe (ParsedIntegerInput.forwardUnit kind) cycle then
             .failure
           else ParsedIntegerInput.readWithForwarding
-            (state.peRegisters pe) (state.forwarding pe) cycle input
+            (state.peRegisters pe) (stateForwardingSlots state pe) cycle input
       | _ => ParsedIntegerInput.readWithForwarding
-          (state.peRegisters pe) (state.forwarding pe) cycle input
+          (state.peRegisters pe) (stateForwardingSlots state pe) cycle input
 
 def readL1MwriteBusesAtBank (state : State) (access : ParsedL1MwriteAccess)
     (bank : Fin 64) (mab : Fin 16) (cycle : Fin 4) :
@@ -2892,7 +2912,7 @@ def executeParsedBlockFloatAtMAB (readState currentState : State)
               context.pe cycle context.bar0 context.bar1 context.tWord
             | return .unknown
           match ParsedIntegerInput.readWithForwarding (readState.peRegisters peId)
-              (readState.forwarding peId) cycle source with
+              (stateForwardingSlots readState peId) cycle source with
           | .failure => return .failure
           | .unknown => return .unknown
           | .ok bus => return readPEs rest (fun other => if other == pe then bus else buses other)
@@ -3061,7 +3081,7 @@ def executeParsedMslMsrAtPE (readState currentState : State)
         | none => .unknown
         | some source =>
           match ParsedIntegerInput.readWithForwarding (readState.peRegisters sourcePE)
-              (readState.forwarding sourcePE) cycle source with
+              (stateForwardingSlots readState sourcePE) cycle source with
           | .failure => .failure
           | .unknown => .unknown
           | .ok sourceBus =>
@@ -3153,7 +3173,7 @@ def executeParsedFloatReluAtPE (readState currentState : State)
       | none => .unknown
       | some accesses =>
         match ParsedIntegerInput.readWithForwarding (readState.peRegisters pe)
-            (readState.forwarding pe) cycle accesses.sourceA with
+            (stateForwardingSlots readState pe) cycle accesses.sourceA with
         | .failure => .failure
         | .unknown => .unknown
         | .ok sourceA =>
@@ -3161,7 +3181,7 @@ def executeParsedFloatReluAtPE (readState currentState : State)
             | none => ProofsLean.StepResult.ok none
             | some sourceB =>
                 match ParsedIntegerInput.readWithForwarding (readState.peRegisters pe)
-                    (readState.forwarding pe) cycle sourceB with
+                    (stateForwardingSlots readState pe) cycle sourceB with
                 | .failure => .failure
                 | .unknown => .unknown
                 | .ok value => .ok (some value)
@@ -3244,7 +3264,7 @@ def executeIntegerProducerLineAtPE (expressions : List ParsedExpr)
     { directive := state.maskDirective
       context := context
       elapsedWords := state.hazardClock }
-  let oldSlots := state.forwarding pe
+  let oldSlots := stateForwardingSlots state pe
   let matrixStore := state.matrixRegisters context.group context.l2b context.l1b
   let peExpressions := expressions.filter fun expression =>
     !parsedExprIsMatrixWriteProducer expression &&
