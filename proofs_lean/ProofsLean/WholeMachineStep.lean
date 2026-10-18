@@ -4234,6 +4234,30 @@ theorem executeScheduledProgram_wait_enters_stall
     (HazardAwareState.initial machine) line instruction tag rfl
     instructionLine legal waitTag incomplete]
 
+theorem executeScheduledProgram_wait_releases_on_completion
+    (machine next : State) (line : NormalizedLine) (instruction : InstructionLine)
+    (tag : Fin 256) (resumedState : HazardAwareState)
+    (instructionLine : line.toInstruction? = some instruction)
+    (legal : checkParsedTopLine instruction.toParsed = true)
+    (waitTag : normalizedLineWaitTag? line = some tag)
+    (incomplete : machine.mvCompletedTags tag = false)
+    (completed : completePendingMvTag machine tag = some next)
+    (tagFinished : next.mvCompletedTags tag = true)
+    (resumed : executeHazardAwareNormalizedLineCore line
+      { (HazardAwareState.initial machine) with
+        machine := next, stalledPEIssue := some line } = .ok resumedState) :
+    executeScheduledProgram [.issue line, .completeMv tag] machine =
+      .ok { resumedState with stalledPEIssue := none } := by
+  unfold executeScheduledProgram
+  simp only [executeScheduledEvents]
+  rw [executeScheduledEvent_wait_enters_stall
+    (HazardAwareState.initial machine) line instruction tag rfl
+    instructionLine legal waitTag incomplete]
+  dsimp only
+  rw [executeScheduledEvent_completion_releases_stalled_pe_line
+    { (HazardAwareState.initial machine) with stalledPEIssue := some line }
+    line tag next resumedState rfl waitTag completed tagFinished resumed]
+
 def scheduledIssueLines : List ScheduledEvent → List NormalizedLine
   | [] => []
   | .issue line :: rest => line :: scheduledIssueLines rest
