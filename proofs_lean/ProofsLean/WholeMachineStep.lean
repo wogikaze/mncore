@@ -3445,7 +3445,7 @@ def executeIntegerProducerLineAtPE (expressions : List ParsedExpr)
       matrixStore peExpressions control false with
   | .failure => .failure
   | .unknown => .unknown
-  | .ok (registers, integerPreparedSlots) =>
+  | .ok (registers, integerPreparedSlots, matrixBarUpdates) =>
     match executeParsedFloatMAUsAtPE (state.peRegisters pe) registers oldSlots
         context expressions with
     | .failure => .failure
@@ -3467,13 +3467,21 @@ def executeIntegerProducerLineAtPE (expressions : List ParsedExpr)
       | .ok forwarding =>
           let forwardingValid := updateIntegerLineForwardingValid
             (state.forwardingValid pe) forwarding noForward
+          let (nextBar0, nextBar1) := matrixBarUpdates.foldl
+            (fun (bar0, bar1) update => match update with
+              | (false, value) => (value, bar1)
+              | (true, value) => (bar0, value))
+            (oldContext.bar0, oldContext.bar1)
           .ok { state with
             peRegisters := fun other =>
               if other = pe then registersWithFloat else state.peRegisters other
             forwarding := fun other =>
               if other = pe then forwarding else state.forwarding other
             forwardingValid := fun other =>
-              if other = pe then forwardingValid else state.forwardingValid other }
+              if other = pe then forwardingValid else state.forwardingValid other
+            peContext := fun other =>
+              if other = pe then { oldContext with bar0 := nextBar0, bar1 := nextBar1 }
+              else state.peContext other }
 
 def executeIntegerProducerLineAtPEs (expressions : List ParsedExpr)
     (pes : List PEId) (state : State) : ProofsLean.StepResult State :=
