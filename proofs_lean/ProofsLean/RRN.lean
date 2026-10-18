@@ -54,6 +54,11 @@ def FloatPrecision.exponentMax (precision : FloatPrecision) : Nat :=
 def FloatPrecision.bias (precision : FloatPrecision) : Nat :=
   2 ^ (precision.exponentBits - 1) - 1
 
+def FloatPrecision.mauMulFullBits : FloatPrecision → Option Nat
+  | .half => none
+  | .single => some 18
+  | .double => some 36
+
 /-- Round an unsigned significand right by `shift`, using round-to-nearest-even.
 The `shift ≥ 128` case matches the Rust u128 helper. -/
 def roundShift (value shift : Nat) : Nat :=
@@ -140,6 +145,115 @@ def extendFloatBits (input output : FloatPrecision) (bits : Nat) : Nat :=
     let binaryExponent := Int.ofNat exponent - Int.ofNat input.bias -
       Int.ofNat input.mantissaBits
     roundPack output negative significand binaryExponent
+
+/-! ### Vector MAU fused multiply-add -/
+
+inductive MAUValue where
+  | zero (negative : Bool)
+  | infinity (negative : Bool)
+  | finite (negative : Bool) (significand : Nat) (exponent : Int)
+  deriving DecidableEq, Repr
+
+def decodeMAUValue (precision : FloatPrecision) (bits : Nat) : MAUValue :=
+  let exponent := floatExponent precision bits
+  let negative := floatIsNegative precision bits
+  if exponent == 0 then .zero negative
+  else if exponent == precision.exponentMax then .infinity negative
+  else .finite negative
+    (2 ^ precision.mantissaBits + bits % 2 ^ precision.mantissaBits)
+    (Int.ofNat exponent - Int.ofNat precision.bias - Int.ofNat precision.mantissaBits)
+
+def encodeMAUValue (precision : FloatPrecision) : MAUValue → Nat
+  | .zero _ => 0
+  | .infinity negative => floatInfinity precision negative
+  | .finite negative significand exponent =>
+      roundPack precision negative significand exponent
+
+def multiplyMAUValues (precision : FloatPrecision) (left right : MAUValue) : MAUValue :=
+  let negative := match left, right with
+    | .zero leftNeg, .zero rightNeg => leftNeg != rightNeg
+    | .zero leftNeg, .infinity rightNeg => leftNeg != rightNeg
+    | .zero leftNeg, .finite rightNeg .. => leftNeg != rightNeg
+    | .infinity leftNeg, .zero rightNeg => leftNeg != rightNeg
+    | .infinity leftNeg, .infinity rightNeg => leftNeg != rightNeg
+    | .infinity leftNeg, .finite rightNeg .. => leftNeg != rightNeg
+    | .finite leftNeg .., .zero rightNeg => leftNeg != rightNeg
+    | .finite leftNeg .., .infinity rightNeg => leftNeg != rightNeg
+    | .finite leftNeg .., .finite rightNeg .. => leftNeg != rightNeg
+  match left, right with
+  | .zero _, _ | _, .zero _ => .zero negative
+  | .infinity _, _ | _, .infinity _ => .infinity negative
+  | .finite _ leftSig leftExp, .finite _ rightSig rightExp =>
+      let rawProduct := leftSig * rightSig
+      let product := match precision.mauMulFullBits with
+        | none => rawProduct
+        | some full =>
+            let lowBits := precision.mantissaBits - full
+            let lowMask := 2 ^ lowBits - 1
+            let dropped := (leftSig % 2 ^ lowBits) * (rightSig % 2 ^ lowBits)
+            if dropped == 0 then rawProduct
+            else rawProduct - dropped + 2 ^ (2 * lowBits - 2)
+      .finite negative product (leftExp + rightExp)
+
+def alignMAUAccumulator (value : MAUValue) (grid : Int) : MAUValue :=
+  match value with
+  | .finite negative significand exponent =>
+      if exponent >= grid then value else
+        let lead := exponent + Int.ofNat (Nat.log2 significand)
+        if lead - grid <= -2 then .zero false else
+          let shift := (grid - exponent).toNat
+          let kept := if shift >= 128 then 0 else significand / 2 ^ shift
+          let sticky := shift >= 128 || significand % 2 ^ shift != 0
+          .finite negative (kept + if sticky then 1 else 0) grid
+  | _ => value
+
+def addMAUValues : MAUValue → MAUValue → MAUValue
+  | .infinity negativeA, .infinity negativeB => .infinity (negativeA && negativeB)
+  | .infinity negative, _ | _, .infinity negative => .infinity negative
+  | .zero negativeA, .zero negativeB => .zero (negativeA && negativeB)
+  | .zero _, value | value, .zero _ => value
+  | .finite negativeA sigA expA, .finite negativeB sigB expB => Id.run do
+      let top : Nat := 125
+      let normalize (significand : Nat) (exponent : Int) :=
+        let p := Nat.log2 significand
+        (significand * 2 ^ (top - p), exponent - Int.ofNat (top - p))
+      let (sigA, expA) := normalize sigA expA
+      let (sigB, expB) := normalize sigB expB
+      let (negativeHigh, sigHigh, expHigh, sigLow, expLow) :=
+        if expA >= expB then (negativeA, sigA, expA, sigB, expB)
+        else (negativeB, sigB, expB, sigA, expA)
+      let distance := (expHigh - expLow).toNat
+      let shiftedLow := if distance == 0 then sigLow
+        else if distance >= 127 then if sigLow == 0 then 0 else 1
+        else sigLow / 2 ^ distance +
+          (if sigLow % 2 ^ distance != 0 then 1 else 0)
+      if negativeA == negativeB then
+        return .finite negativeHigh (sigHigh + shiftedLow) expHigh
+      else if sigHigh > shiftedLow then
+        return .finite negativeHigh (sigHigh - shiftedLow) expHigh
+      else if shiftedLow > sigHigh then
+        return .finite (!negativeHigh) (shiftedLow - sigHigh) expHigh
+      else return .zero false
+
+def vectorMAUFma (inputPrecision accumulatorPrecision outputPrecision : FloatPrecision)
+    (left right accumulator : Nat) : Nat :=
+  let leftValue := decodeMAUValue inputPrecision left
+  let rightValue := decodeMAUValue inputPrecision right
+  let accumulatorValue := decodeMAUValue accumulatorPrecision accumulator
+  let alignedAccumulator := match leftValue, rightValue with
+    | .finite _ _ leftExp, .finite _ _ rightExp =>
+        let mantissa := Int.ofNat inputPrecision.mantissaBits
+        let full := Int.ofNat (inputPrecision.mauMulFullBits.getD inputPrecision.mantissaBits)
+        alignMAUAccumulator accumulatorValue
+          (leftExp + rightExp + mantissa - full)
+    | _, _ => accumulatorValue
+  encodeMAUValue outputPrecision
+    (addMAUValues (multiplyMAUValues inputPrecision leftValue rightValue)
+      alignedAccumulator)
+
+theorem vectorMAUFma_half_one_plus_one_rounds_to_two :
+    vectorMAUFma .half .single .half 0x3e00 0x3e00 0x3f800000 = 0x4000 := by
+  decide
 
 /-- Reduce each native floating lane independently, including direct half
 precision RRN operations used by MV. -/
