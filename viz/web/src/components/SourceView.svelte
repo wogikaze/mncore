@@ -1,7 +1,7 @@
 <script lang="ts">
   import { app } from '../lib/state.svelte';
   import { player } from '../lib/player.svelte';
-  import type { Hazard } from '../lib/types';
+  import type { Hazard, LineInfo } from '../lib/types';
 
   let list: HTMLOListElement | undefined = $state();
 
@@ -34,11 +34,20 @@
     const what = h.kind === 'data race' ? `${h.res}${h.addr !== null ? ` @${h.addr}` : ''} の書き込み→読み出し` : `${h.res} のポート`;
     return `${h.rule} ${h.kind === 'data race' ? 'データ競合' : 'ポート衝突'}: ${what}（${l[h.from].lineno}行→${l[h.to].lineno}行、${h.distance}/${h.required}サイクル）`;
   }
+
+  /** Line numbers are 1-based; the step is the 0-based score position. */
+  function lineTitle(l: LineInfo, reasons?: Hazard[]): string {
+    const steps = l.words === 0 ? 'step なし' : l.words > 1 ? `step ${l.step}〜${l.step + l.words - 1}` : `step ${l.step}`;
+    const head = `${l.lineno}行目（${steps}）`;
+    if (!reasons) return head;
+    const why = reasons.length ? reasons.map(reason).join('\n') : 'どの規則にも必要とされていない（1ステップ削れる候補）';
+    return `${head}\n${why}`;
+  }
 </script>
 
 <section class="source">
   <header>
-    <span>VSM</span>
+    <span>VSM <small>行番号</small></span>
     {#if trace}
       <span class="score" title="公式スコア = 命令語数（j + m）">score {trace.score}</span>
     {/if}
@@ -55,8 +64,8 @@
           class:dim={l.words === 0}
           class:err={trace.error_line === i}
         >
-          <button onclick={() => { player.pause(); player.goto(i); }} title={reasons ? (reasons.length ? reasons.map(reason).join('\n') : 'どの規則にも必要とされていない（1ステップ削れる候補）') : ''}>
-            <span class="step">{l.words ? l.step : ''}</span>
+          <button onclick={() => { player.pause(); player.goto(i); }} title={lineTitle(l, reasons)}>
+            <span class="lineno">{l.lineno}</span>
             <span class="text">{l.text}</span>
             {#if reasons}
               <span class="badge" class:removable={reasons.length === 0}>{reasons.length ? `必要 ×${reasons.length}` : '削れる候補'}</span>
@@ -118,9 +127,15 @@
   li:hover button {
     background: var(--hover);
   }
-  .step {
+  .lineno {
     color: var(--muted);
     text-align: right;
+  }
+  header small {
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 400;
+    margin-left: 4px;
   }
   .text {
     overflow: hidden;
