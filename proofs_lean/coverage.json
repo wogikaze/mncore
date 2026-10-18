@@ -1716,7 +1716,7 @@
     },
     {
       "area": "mv_dram_pdm_all_transfer_and_reduction_modes",
-      "status": "unimplemented"
+      "status": "partial_datapath_only"
     },
     {
       "area": "dar_tags_wait_and_completion",
