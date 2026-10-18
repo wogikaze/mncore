@@ -2074,6 +2074,30 @@ theorem parsedFloatFtoiLane_unsigned_clamps_infinity :
     parsedFloatFtoiLane .f true 0x7f800000 = 0xffffffff := by
   decide
 
+def parsedFloatMaxPickLeft (precision : ParsedPrecision) (name : ParsedAluName)
+    (left right : Nat) : Bool := Id.run do
+  let format := parsedFloatFormat precision
+  let width := format.width
+  let mantissaBits := format.mantissaBits
+  let exponentLeft := left / 2 ^ mantissaBits % 2 ^ format.exponentBits
+  let exponentRight := right / 2 ^ mantissaBits % 2 ^ format.exponentBits
+  if left == right || (exponentLeft == 0 && exponentRight == 0) then return true
+  let signLeft := left / 2 ^ (width - 1) % 2 == 1
+  let signRight := right / 2 ^ (width - 1) % 2 == 1
+  let magnitudeLeft := if exponentLeft == 0 then 0 else left % 2 ^ (width - 1)
+  let magnitudeRight := if exponentRight == 0 then 0 else right % 2 ^ (width - 1)
+  let keyLeft : Int := if signLeft then -(Int.ofNat magnitudeLeft) else Int.ofNat magnitudeLeft
+  let keyRight : Int := if signRight then -(Int.ofNat magnitudeRight) else Int.ofNat magnitudeRight
+  return if name == .max then keyLeft >= keyRight else keyLeft <= keyRight
+
+theorem parsedFloatMaxPickLeft_ties_keep_left_zero_sign :
+    parsedFloatMaxPickLeft .f .max 0x80000000 0 = true := by
+  decide
+
+theorem parsedFloatMaxPickLeft_orders_signed_values :
+    parsedFloatMaxPickLeft .f .min 0x3f800000 0xc0000000 = false := by
+  decide
+
 theorem parsedFloatRsqrtLane_single_exact_table_entry :
     parsedFloatRsqrtLane .f 0x3f800000 = 0x3f7c0000 := by
   decide
@@ -2095,6 +2119,9 @@ def parsedFloatReluBus (precision : ParsedPrecision) (name : ParsedAluName) (uns
       a / 2 ^ (width - 1) % 2 == 0)
     else if name == .floor then (parsedFloatFloorLane precision a, false)
     else if name == .ftoi then (parsedFloatFtoiLane precision unsigned a, false)
+    else if name == .max || name == .min then
+      let pickLeft := parsedFloatMaxPickLeft precision name a b
+      (if pickLeft then a else b, pickLeft)
     else
       let condition := a / 2 ^ (width - 1 - shift) % 2 == 0
       (if condition then b else 2 ^ (width - 1), condition)
@@ -2108,6 +2135,13 @@ def parsedFloatReluBus (precision : ParsedPrecision) (name : ParsedAluName) (uns
         acc + (if conditions[lane]! then 1 else 0) * 2 ^ (3 - lane)) 0
   let high := if name == .passa then left.high else BitVec.ofNat 64 packed
   return (⟨high, left.low⟩, BitVec.ofNat 4 flags)
+
+theorem parsedFloatMaxBus_selects_each_lane_and_emits_flags :
+    parsedFloatReluBus .f .max false
+      ⟨0x3f800000c0000000, 0x1122334455667788⟩
+      (some ⟨0xc00000003f800000, 0⟩) =
+      (⟨0x3f8000003f800000, 0x1122334455667788⟩, 0xc) := by
+  decide
 
 theorem parsedFloatReluBus_single_lane_sign_selection :
     parsedFloatReluBus .f .relu false
@@ -2151,13 +2185,15 @@ def lowerParsedFloatRelu? (expression : ParsedExpr) (context : ParsedIntegerCont
     Option ParsedFloatReluAccesses := do
   let (name, precision, unsigned) ← match expression.op with
     | .alu name (some precision) unsigned _ => do
-        guard (name == .passa || name == .rsqrt || name == .floor || name == .ftoi || name == .relu || name == .relu0 || name == .relu1 ||
+        guard (name == .passa || name == .rsqrt || name == .floor || name == .ftoi ||
+          name == .max || name == .min || name == .relu || name == .relu0 || name == .relu1 ||
           name == .relu2 || name == .relu3)
         guard (precision == .d || precision == .f || precision == .h)
         some (name, precision, unsigned)
     | _ => none
   match expression.sources, expression.destinations with
   | [sourceA], [destination] => do
+      guard (name == .passa || name == .rsqrt || name == .floor || name == .ftoi)
       let sourceA ← ParsedOperand.toParsedIntegerInput? sourceA precision.laneWidth
         context.group context.l2b context.l1b context.mab context.pe context.cycle
         context.bar0 context.bar1 context.tWord
@@ -2166,7 +2202,8 @@ def lowerParsedFloatRelu? (expression : ParsedExpr) (context : ParsedIntegerCont
           destination⟩
       | _ => none
   | [sourceA, sourceB], [destination] => do
-      guard (name != .passa)
+      guard (name == .max || name == .min || name == .relu || name == .relu0 ||
+        name == .relu1 || name == .relu2 || name == .relu3)
       let sourceA ← ParsedOperand.toParsedIntegerInput? sourceA precision.laneWidth
         context.group context.l2b context.l1b context.mab context.pe context.cycle
         context.bar0 context.bar1 context.tWord
@@ -2345,7 +2382,8 @@ def executeParsedMslMsrProducers (readState currentState : State)
 def parsedExprIsFloatReluProducer (expression : ParsedExpr) : Bool :=
   match expression.op with
   | .alu name (some precision) _ _ =>
-      (name == .passa || name == .rsqrt || name == .floor || name == .ftoi || name == .relu || name == .relu0 || name == .relu1 || name == .relu2 ||
+      (name == .passa || name == .rsqrt || name == .floor || name == .ftoi || name == .max ||
+        name == .min || name == .relu || name == .relu0 || name == .relu1 || name == .relu2 ||
         name == .relu3) && (precision == .d || precision == .f || precision == .h)
   | _ => false
 
