@@ -1,52 +1,80 @@
-:root {
-  --bg: #fbfbfa;
-  --fg: #1d2127;
-  --muted: #6b7280;
-  --panel: #f1f2f1;
-  --line: #d9dbdb;
-  --hover: #eceeed;
-  --sel: #dbe8f7;
-  --accent: #2563b8;
-  --good: #1f7a4d;
-  --good-bg: #dff2e7;
-  --bad: #b42318;
-  --warn: #a15c07;
-  --warn-bg: #fbecd2;
-  --c-offchip: #8b5cf6;
-  --c-l2: #2f7fd1;
-  --c-l1: #0e9c8a;
-  --c-compute: #d97706;
-  --c-mau: #c2417a;
+/* Dark-first design system for the dataflow explorer. Colours carry meaning:
+   processing / memory / layer blocks and the three data paths. */
+:root,
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #0d1117;
+  --fg: #e6edf3;
+  --muted: #9aa7b5;
+  --panel: #151b23;
+  --panel-2: #1b232d;
+  --line: #2b3542;
+  --line-strong: #3d4a5a;
+  --hover: #222c37;
+  --sel: #1f3350;
+  --accent: #58a6ff;
+  --accent-soft: #1f3a5f;
+  --good: #3fb950;
+  --good-bg: #12301d;
+  --bad: #f85149;
+  --warn: #d29922;
+  --warn-bg: #33270e;
+  --c-offchip: #a371f7;
+  --c-l2: #58a6ff;
+  --c-l1: #2dd4bf;
+  --c-compute: #f0a020;
+  --c-mau: #f778ba;
+  --hw-proc: #8b98a8;
+  --hw-proc-line: #b6c2d1;
+  --hw-mem: #e3b341;
+  --hw-mem-line: #f2cc60;
+  --hw-layer: #1c3450;
+  --hw-layer-line: #3b82f6;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.4);
   --mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
   --sans: system-ui, -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
-  color-scheme: light dark;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #15171a;
-    --fg: #e6e8eb;
-    --muted: #9aa1ab;
-    --panel: #1e2125;
-    --line: #33383e;
-    --hover: #24282d;
-    --sel: #1f3350;
-    --accent: #6aa3ef;
-    --good: #5fcf96;
-    --good-bg: #173326;
-    --bad: #f07a6e;
-    --warn: #e9a74b;
-    --warn-bg: #3a2a12;
-    --c-offchip: #a78bfa;
-    --c-l2: #5ea2e8;
-    --c-l1: #2cc4b0;
-    --c-compute: #f59e0b;
-    --c-mau: #e0679c;
-  }
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #f6f8fa;
+  --fg: #1f2328;
+  --muted: #59636e;
+  --panel: #ffffff;
+  --panel-2: #f0f3f6;
+  --line: #d1d9e0;
+  --line-strong: #b7c1cc;
+  --hover: #eaeef2;
+  --sel: #dbeafe;
+  --accent: #0969da;
+  --accent-soft: #dbeafe;
+  --good: #1a7f37;
+  --good-bg: #dafbe1;
+  --bad: #cf222e;
+  --warn: #9a6700;
+  --warn-bg: #fff8c5;
+  --c-offchip: #8250df;
+  --c-l2: #0969da;
+  --c-l1: #0f766e;
+  --c-compute: #bc4c00;
+  --c-mau: #bf3989;
+  --hw-proc: #c9cdd2;
+  --hw-proc-line: #7d8590;
+  --hw-mem: #fde9b8;
+  --hw-mem-line: #d4a72c;
+  --hw-layer: #dce8fb;
+  --hw-layer-line: #6e9bd1;
+  --shadow: 0 1px 2px rgb(31 35 40 / 0.12);
 }
 
 * {
   box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
 }
 
 html,
@@ -55,6 +83,9 @@ body {
   background: var(--bg);
   color: var(--fg);
   font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.45;
+  overflow: hidden;
 }
 
 button,
@@ -64,10 +95,10 @@ textarea {
   font: inherit;
   font-size: 12px;
   color: var(--fg);
-  background: var(--panel);
+  background: var(--panel-2);
   border: 1px solid var(--line);
-  border-radius: 4px;
-  padding: 2px 8px;
+  border-radius: 5px;
+  padding: 3px 8px;
 }
 
 button {
@@ -76,4 +107,49 @@ button {
 
 button:hover {
   background: var(--hover);
+  border-color: var(--line-strong);
+}
+
+button:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+select {
+  padding: 2px 4px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 6px;
+  border: 2px solid var(--bg);
+}
+
+::selection {
+  background: var(--accent-soft);
+}
+
+code,
+pre {
+  font-family: var(--mono);
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+  margin-top: 0;
 }

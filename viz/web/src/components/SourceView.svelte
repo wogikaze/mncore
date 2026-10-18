@@ -49,7 +49,10 @@
   <header>
     <span>VSM <small>行番号</small></span>
     {#if trace}
-      <span class="score" title="公式スコア = 命令語数（j + m）">score {trace.score}</span>
+      <span class="stats">
+        {#if trace.nops.length}<span class="nopcount">NOP {trace.nops.length}</span>{/if}
+        <span class="score" title="公式スコア = 命令語数（j + m）">score {trace.score}</span>
+      </span>
     {/if}
   </header>
   {#if trace}
@@ -83,6 +86,11 @@
           {/each}
         </ul>
       </footer>
+    {:else}
+      <footer class="status">
+        <span>{trace.lines.filter((l) => l.words > 0).length} 命令・score {trace.score}</span>
+        <span>NOP {trace.nops.length}・競合 {trace.hazards.length}</span>
+      </footer>
     {/if}
   {/if}
 </section>
@@ -92,15 +100,28 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
+    height: 100%;
     font-family: var(--mono);
     font-size: 12px;
   }
   header {
     display: flex;
     justify-content: space-between;
-    padding: 6px 8px;
+    align-items: center;
+    padding: 5px 8px;
     border-bottom: 1px solid var(--line);
     color: var(--muted);
+    flex: none;
+    background: var(--panel);
+  }
+  .stats {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .nopcount {
+    color: var(--warn);
+    font-size: 10px;
   }
   .score {
     color: var(--accent);
@@ -117,12 +138,13 @@
     all: unset;
     box-sizing: border-box;
     display: grid;
-    grid-template-columns: 3.5em 1fr auto;
+    grid-template-columns: 3.2em minmax(0, 1fr) auto;
     gap: 6px;
     width: 100%;
-    padding: 1px 8px;
+    padding: 2px 8px;
     cursor: pointer;
     white-space: pre;
+    line-height: 1.5;
   }
   li:hover button {
     background: var(--hover);
@@ -148,7 +170,8 @@
     color: var(--warn);
   }
   .current button {
-    background: var(--sel) !important;
+    background: color-mix(in srgb, var(--accent) 14%, var(--panel)) !important;
+    box-shadow: inset 3px 0 var(--accent);
   }
   .linked button {
     box-shadow: inset 3px 0 var(--warn);
@@ -157,11 +180,12 @@
     box-shadow: inset 3px 0 var(--bad);
   }
   .badge {
-    font-size: 10px;
+    font-size: 9px;
     padding: 0 4px;
     border-radius: 3px;
     background: var(--warn-bg);
     color: var(--warn);
+    align-self: center;
   }
   .badge.removable {
     background: var(--good-bg);
@@ -170,12 +194,22 @@
   footer {
     border-top: 1px solid var(--line);
     padding: 6px 8px;
-    max-height: 30%;
+    max-height: 34%;
     overflow: auto;
     font-family: var(--sans);
+    font-size: 11px;
+    flex: none;
+    background: var(--panel-2);
   }
   footer ul {
     margin: 4px 0 0;
     padding-left: 16px;
+  }
+  footer.status {
+    display: flex;
+    justify-content: space-between;
+    color: var(--muted);
+    font-size: 10px;
+    padding: 4px 8px;
   }
 </style>

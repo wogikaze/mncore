@@ -5,10 +5,9 @@
   import { CATEGORY_COLORS, CATEGORY_NAMES, category } from '../lib/flows';
 
   const W = 1000;
-  const H = 56;
+  const H = 44;
   const trace = $derived(app.trace);
 
-  // One bar per line that occupies steps: stacked log-volume per category.
   const bars = $derived.by(() => {
     if (!trace) return [];
     const total = Math.max(1, trace.score);
@@ -20,15 +19,24 @@
         sums[c] = (sums[c] ?? 0) + f.longs;
       }
       const x = (l.step / total) * W;
-      const w = Math.max(0.6, (l.words / total) * W - 0.3);
-      let y = H;
+      const w = Math.max(0.8, (l.words / total) * W - 0.4);
+      let y = H - 4;
       const parts = Object.entries(sums).map(([c, v]) => {
-        const h = Math.min(H / 2, Math.log2(1 + v) * 1.4);
+        const h = Math.min(24, 4 + Math.log2(1 + v) * 1.1);
         y -= h;
         return { c, y, h, v };
       });
-      return [{ i, x, w, parts, nop: l.kind === 'nop', mv: l.kind === 'mv' }];
+      return [{ i, x, w, parts, nop: l.kind === 'nop' }];
     });
+  });
+
+  const ticks = $derived.by(() => {
+    const total = trace?.score ?? 0;
+    if (!total) return [];
+    const step = total <= 16 ? 1 : total <= 40 ? 5 : total <= 100 ? 10 : 20;
+    const out: { s: number; x: number }[] = [];
+    for (let s = 0; s <= total; s += step) out.push({ s, x: (s / total) * W });
+    return out;
   });
 
   const cursor = $derived.by(() => {
@@ -36,6 +44,8 @@
     const l = trace.lines[app.line];
     return ((l?.step ?? 0) / Math.max(1, trace.score)) * W;
   });
+
+  const current = $derived(trace?.lines[app.line]);
 
   let svg: SVGSVGElement | undefined = $state();
   let dragging = false;
@@ -83,18 +93,24 @@
 
 <section class="timeline">
   <div class="controls">
-    <button onclick={() => { player.pause(); app.prev(); player.progress = 1; }} title="前の行 (←)">⏮</button>
-    <button onclick={() => player.prevCycle()} title="前のサイクル (Shift+←)">◀︎</button>
-    <button onclick={() => player.toggle()} title="再生 / 停止 (Space)">{player.playing ? '❚❚ 停止' : '▶︎ 再生'}</button>
-    <button onclick={() => player.nextCycle()} title="次のサイクル (Shift+→)">▶︎</button>
-    <button onclick={() => { player.pause(); player.goto(nextLine()); }} title="次の行 (→)">⏭</button>
-    <span class="cyc">サイクル {player.progress >= 1 ? '—' : player.cycle}</span>
-    <label title="1ステップあたりの秒数">
-      速度 <input type="range" min="0.2" max="3" step="0.1" bind:value={app.stepSeconds} /> {app.stepSeconds.toFixed(1)}s
+    <div class="transport">
+      <button onclick={() => { player.pause(); app.prev(); player.progress = 1; }} title="前の行 (←)">⏮</button>
+      <button onclick={() => player.prevCycle()} title="前のサイクル (Shift+←)">◀</button>
+      <button class="play" onclick={() => player.toggle()} title="再生 / 停止 (Space)">{player.playing ? '❚❚' : '▶'}</button>
+      <button onclick={() => player.nextCycle()} title="次のサイクル (Shift+→)">▶</button>
+      <button onclick={() => { player.pause(); player.goto(nextLine()); }} title="次の行 (→)">⏭</button>
+    </div>
+    <label class="speed" title="1ステップあたりの秒数">
+      速度 <input type="range" min="0.2" max="3" step="0.1" bind:value={app.stepSeconds} />
+      <span>{app.stepSeconds.toFixed(1)}s</span>
     </label>
     {#if trace}
-      {@const l = trace.lines[app.line]}
-      <span class="pos">step {l?.step ?? 0} / {trace.score} ・ {l?.lineno}行</span>
+      <span class="pos">
+        <b>{current?.lineno}</b>行目・step <b>{current?.step ?? 0}</b> / {trace.score}
+        {#if current?.kind === 'nop'}<span class="nop">NOP</span>{/if}
+        {#if current?.kind === 'mv'}<span class="mv">MV</span>{/if}
+      </span>
+      <span class="cycle">サイクル {player.progress >= 1 ? '—' : player.cycle}</span>
       <span class="legend">
         {#each Object.entries(CATEGORY_COLORS) as [c, col]}
           <i style:background={col}></i>{CATEGORY_NAMES[c]}
@@ -102,11 +118,13 @@
       </span>
     {/if}
   </div>
+
   <svg
     bind:this={svg}
     viewBox="0 0 {W} {H}"
     preserveAspectRatio="none"
     role="slider"
+    aria-label="ステップ"
     aria-valuenow={app.line}
     tabindex="0"
     onpointerdown={(e) => {
@@ -118,42 +136,90 @@
     onpointermove={(e) => dragging && seekAt(e)}
     onpointerup={() => (dragging = false)}
   >
+    <rect class="bg" x="0" y="0" width={W} height={H} />
+    {#each ticks as t}
+      <line class="grid" x1={t.x} x2={t.x} y1="0" y2={H} />
+      <text class="tick" x={t.x + 2} y="9">{t.s}</text>
+    {/each}
     {#each bars as b (b.i)}
-      {#if b.nop}
-        <rect x={b.x} y="0" width={b.w} height={H} class="nopband"><title>nop</title></rect>
-      {/if}
+      {#if b.nop}<rect x={b.x} y="0" width={b.w} height={H} class="nopband" />{/if}
       {#each b.parts as p}
-        <rect x={b.x} y={p.y} width={b.w} height={p.h} fill={CATEGORY_COLORS[p.c]}>
+        <rect class="bar" x={b.x} y={p.y} width={b.w} height={p.h} fill={CATEGORY_COLORS[p.c]}>
           <title>{volume(p.v)}</title>
         </rect>
       {/each}
     {/each}
-    <line x1={cursor} x2={cursor} y1="0" y2={H} class="cursor" />
+    <line class="cursor" x1={cursor} x2={cursor} y1="0" y2={H} />
   </svg>
 </section>
 
 <style>
   .timeline {
-    border-top: 1px solid var(--line);
-    padding: 4px 8px 6px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 3px 10px 5px;
+    gap: 2px;
+    background: var(--panel);
   }
   .controls {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 12px;
-    margin-bottom: 4px;
+    gap: 10px;
+    font-size: 11px;
+    min-height: 30px;
+    flex-wrap: wrap;
   }
-  .controls button {
-    min-width: 2.2em;
+  .transport {
+    display: flex;
+    gap: 2px;
   }
-  .cyc {
+  .transport button {
+    min-width: 28px;
+    height: 24px;
+    padding: 0 5px;
+    font-size: 11px;
+  }
+  .transport .play {
+    min-width: 36px;
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .speed {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--muted);
+  }
+  .speed input {
+    width: 90px;
+    padding: 0;
+  }
+  .speed span {
     font-family: var(--mono);
-    min-width: 6em;
+    width: 28px;
   }
   .pos {
     font-family: var(--mono);
     color: var(--muted);
+    white-space: nowrap;
+  }
+  .pos b {
+    color: var(--fg);
+    font-size: 13px;
+  }
+  .nop {
+    color: var(--warn);
+    margin-left: 4px;
+  }
+  .mv {
+    color: var(--c-offchip);
+    margin-left: 4px;
+  }
+  .cycle {
+    font-family: var(--mono);
+    color: var(--muted);
+    white-space: nowrap;
   }
   .legend {
     margin-left: auto;
@@ -161,23 +227,41 @@
     gap: 4px;
     align-items: center;
     color: var(--muted);
+    white-space: nowrap;
   }
   .legend i {
     display: inline-block;
-    width: 9px;
-    height: 9px;
+    width: 7px;
+    height: 7px;
     border-radius: 2px;
-    margin-left: 8px;
+    margin-left: 6px;
   }
   svg {
     width: 100%;
-    height: 56px;
-    background: var(--panel);
+    flex: 1;
+    min-height: 30px;
+    max-height: 44px;
     cursor: pointer;
     touch-action: none;
   }
+  .bg {
+    fill: var(--panel-2);
+  }
+  .grid {
+    stroke: var(--line);
+    stroke-width: 0.6;
+  }
+  .tick {
+    font-family: var(--mono);
+    font-size: 10px;
+    fill: var(--muted);
+  }
+  .bar {
+    opacity: 0.78;
+  }
   .nopband {
-    fill: var(--warn-bg);
+    fill: var(--warn);
+    opacity: 0.18;
   }
   .cursor {
     stroke: var(--fg);

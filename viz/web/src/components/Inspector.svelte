@@ -2,12 +2,15 @@
   import { app } from '../lib/state.svelte';
   import { chainFrom, forwarded, producer, type Origin } from '../lib/provenance';
   import { format } from '../lib/numbers';
+  import { read } from '../lib/memory';
+  import { locLabel, peSummary, type ValueRow } from '../lib/hierarchy';
   import type { Access } from '../lib/types';
 
   const trace = $derived(app.trace);
   const line = $derived(trace?.lines[app.line]);
   const sel = $derived(app.selection);
   const selLine = $derived(sel?.line ?? app.line);
+
   const unitNames: Record<string, string> = {
     alu: 'ALU',
     mau: 'MAU（ベクトル）',
@@ -22,7 +25,6 @@
     other: 'その他',
   };
 
-  // Hazards that differ only in the L1B or L2B number are shown once, with the range of units.
   const related = $derived.by(() => {
     const hs = trace?.hazards.filter((h) => h.from === app.line || h.to === app.line) ?? [];
     const groups = new Map<string, { h: (typeof hs)[number]; units: number[] }>();
@@ -46,6 +48,8 @@
     return chainFrom(trace, sel);
   });
 
+  const summary = $derived(peSummary(line, app.pe, app.view));
+
   function describe(a: Access): string {
     const v = format(a.words.slice(0, app.view === 'f64' ? 2 : a.loc === 't' ? 2 : a.words.length), app.view).join(', ');
     const where =
@@ -59,20 +63,48 @@
     return `${where} = ${v}`;
   }
 
-  // Expand one input of an origin one level further.
   function origin(a: Access, at: number): Origin | null {
     if (!trace) return null;
     if (a.addr === null) return forwarded(trace, a.unit, a.loc, a.cycle, at);
     return producer(trace, a.unit, a.loc, a.addr, at - 1);
   }
+
+  /** Old value of a write in the current line, for before → after. */
+  function oldWords(r: ValueRow): number[] | null {
+    if (!app.timeline || r.addr === null) return null;
+    const per = r.loc === 't' ? 4 : 1;
+    const base = r.addr * per;
+    const unit = r.loc === 'l1bm' ? `l1b:${app.focusL1b}` : `pe:${app.pe}`;
+    return Array.from({ length: r.words.length }, (_, i) => read(app.before, unit, r.loc, base + i) ?? 0);
+  }
+
+  function changed(r: ValueRow): boolean {
+    const old = oldWords(r);
+    return Boolean(old && old.some((v, i) => v !== r.words[i]));
+  }
+
+  function preview(words: number[], n = 2): string {
+    const vals = format(words, app.view);
+    return vals.length > n ? `${vals.slice(0, n).join(' ')}…` : vals.join(' ');
+  }
+
+  function rowText(r: ValueRow): string {
+    return `${locLabel(r.loc, r.addr)} = ${preview(r.words, 4)}`;
+  }
+
+  function openRow(r: ValueRow, write: boolean) {
+    const loc = r.loc === 'l1bm_src' ? 'l1bm' : r.loc;
+    const unit = r.loc === 'l1bm_src' ? Math.floor(app.pe / 64) : app.pe;
+    app.selection = { unit, loc, addr: r.addr, line: write ? app.line : app.line - 1 };
+    app.detailTab = 'values';
+  }
 </script>
 
 <aside class="inspector">
   {#if trace}
-    <section>
-      <h3>結果</h3>
+    <section class="card summary">
       <div class="kv">
-        <span>スコア</span><b>{trace.score}</b>
+        <span>SCORE</span><b>{trace.score}</b>
         <span>出力</span>
         {#if trace.output.values}
           <b class:good={trace.output.failures === 0} class:bad={trace.output.failures > 0}>
@@ -88,34 +120,15 @@
       {#if trace.error}<p class="bad">停止: {trace.error}</p>{/if}
     </section>
 
-    {#if line}
-      <section>
-        <h3>{line.lineno}行目（step {line.step}{line.words > 1 ? `〜${line.step + line.words - 1}` : ''}）</h3>
-        <code>{line.text}</code>
-        {#each line.exprs as e, i}
-          <div class="expr"><span class="unit">{unitNames[e.unit]}</span> {e.text}{e.fwd ? `（→ $${e.fwd}）` : ''}</div>
-        {/each}
-        {#if related.length}
-          <h4>この行が関わる競合</h4>
-          <ul>
-            {#each related as h}
-              <li class:bad={h.distance < h.required}>
-                {h.rule} {h.kind === 'data race' ? 'データ競合' : 'ポート衝突'} {h.res}{h.addr !== null ? `@${h.addr}` : ''}:
-                {trace.lines[h.from].lineno}行 → {trace.lines[h.to].lineno}行、間隔 {h.distance} / 必要 {h.required} サイクル
-              </li>
-            {/each}
-          </ul>
-        {/if}
-      </section>
-    {/if}
-
-    <section>
-      <h3>値の来歴</h3>
-      {#if !sel}
-        <p class="muted">PE データパスの行か「PE メモリ」のセルをクリックすると、その値がどこから来たかをさかのぼります。</p>
-      {:else}
-        <p class="muted">
-          PE #{sel.unit} の {sel.addr !== null ? `${sel.loc}[${sel.addr}]` : `$${sel.loc}`}
+    {#if sel}
+      <section class="card">
+        <h3>
+          選択中の値
+          <button class="clear" onclick={() => (app.selection = null)}>解除</button>
+        </h3>
+        <p class="where">
+          {sel.loc === 'l1bm' ? `L1B #${sel.unit}` : `PE #${sel.unit}`} の
+          {sel.addr !== null ? locLabel(sel.loc, sel.addr) : `$${sel.loc}`}
           {#if sel.addr === null}
             （{trace.lines[selLine]?.lineno}行目で読んだ値）
           {:else if selLine < 0}
@@ -123,13 +136,12 @@
           {:else}
             （{trace.lines[selLine]?.lineno}行目の時点）
           {/if}
-          <button class="clear" onclick={() => (app.selection = null)}>解除</button>
         </p>
-        <p class="muted small">入力の値をクリックすると、その来歴に切り替わります。</p>
+        <p class="hint">入力の値をクリックすると、その来歴に切り替わります。</p>
         <ol class="chain">
           {#each origins as o}
             <li>
-              <button onclick={() => o.line >= 0 && app.seek(o.line)}>
+              <button class="stepbtn" onclick={() => o.line >= 0 && app.seek(o.line)}>
                 {o.line >= 0 ? `${trace.lines[o.line].lineno}行` : '初期値'}
               </button>
               <code>{o.expr}</code>
@@ -152,8 +164,68 @@
             <li class="muted">この位置への書き込みは記録にありません（初期値 0）。</li>
           {/each}
         </ol>
-      {/if}
-    </section>
+      </section>
+    {:else if line}
+      <section class="card">
+        <h3>
+          {line.lineno}行目
+          <span class="step">step {line.step}{line.words > 1 ? `〜${line.step + line.words - 1}` : ''}</span>
+        </h3>
+        <code class="instr">{line.text}</code>
+        {#each line.exprs as e}
+          <div class="expr"><span class="unit">{unitNames[e.unit] ?? e.unit}</span> {e.text}{e.fwd ? ` → $${e.fwd}` : ''}</div>
+        {/each}
+      </section>
+
+      <section class="card">
+        <h3>この行の値 <span class="step">PE {app.pe}</span></h3>
+        {#if line.kind !== 'pe'}
+          <p class="hint">MV / nop は PE のローカル値を更新しません。転送は「全体」「Group」「L1B」表示で確認できます。</p>
+        {:else}
+          <div class="vsec">
+            <h4>読み出し</h4>
+            {#each summary.reads.slice(0, 5) as r}
+              <button class="vrow" onclick={() => openRow(r, false)}><code>{rowText(r)}</code></button>
+            {:else}
+              <div class="muted">なし</div>
+            {/each}
+          </div>
+          <div class="vsec">
+            <h4>書き込み</h4>
+            {#each summary.writes.slice(0, 5) as r}
+              {@const old = oldWords(r)}
+              <button class="vrow" class:changed={changed(r)} onclick={() => openRow(r, true)}>
+                <span class="loc">{locLabel(r.loc, r.addr)}</span>
+                {#if old && changed(r)}
+                  <span class="old">{preview(old, 2)}</span>
+                  <span class="arrow">→</span>
+                {/if}
+                <code title={format(r.words, app.view).join(' ')}>{preview(r.words, 2)}</code>
+              </button>
+            {:else}
+              <div class="muted">なし</div>
+            {/each}
+          </div>
+          <p class="hint">値の行をクリックすると、その来歴を表示します。</p>
+        {/if}
+      </section>
+    {/if}
+
+    {#if related.length}
+      <section class="card">
+        <h3>この行の競合</h3>
+        <ul class="hazards">
+          {#each related as h}
+            <li class:bad={h.distance < h.required}>
+              <b>{h.rule}</b> {h.kind === 'data race' ? 'データ競合' : 'ポート衝突'}
+              {h.res}{h.addr !== null ? `@${h.addr}` : ''}:
+              {trace.lines[h.from].lineno}行 → {trace.lines[h.to].lineno}行、
+              {h.distance}/{h.required} サイクル
+            </li>
+          {/each}
+        </ul>
+      </section>
+    {/if}
   {:else if app.loading}
     <p class="muted">シミュレーション中…</p>
   {/if}
@@ -163,85 +235,169 @@
   .inspector {
     overflow: auto;
     font-size: 12px;
-    padding: 0 10px 10px;
+    padding: 6px 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+  }
+  .card {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 6px 8px;
+  }
+  .summary .kv {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1px 10px;
+  }
+  .summary .kv span {
+    color: var(--muted);
+    font-size: 10px;
+  }
+  .summary .kv b {
+    font-family: var(--mono);
+    font-size: 11px;
   }
   h3 {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 6px;
+    margin: 0 0 4px;
     font-size: 12px;
-    margin: 12px 0 4px;
+    color: var(--fg);
+  }
+  h4 {
+    margin: 0 0 2px;
+    font-size: 10px;
     color: var(--muted);
     font-weight: 600;
   }
-  h4 {
-    font-size: 11px;
-    margin: 8px 0 2px;
+  .step {
+    font-family: var(--mono);
+    font-size: 10px;
     color: var(--muted);
-  }
-  .kv {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 2px 10px;
+    font-weight: 400;
   }
   code {
-    display: block;
     font-family: var(--mono);
     font-size: 11px;
     white-space: pre-wrap;
     word-break: break-all;
   }
+  .instr {
+    display: block;
+    font-size: 12px;
+    color: var(--fg);
+    margin-bottom: 3px;
+  }
   .expr {
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: 10px;
+    color: var(--muted);
     margin-top: 2px;
   }
   .unit {
     font-family: var(--sans);
-    font-size: 10px;
+    font-size: 9px;
     background: var(--panel);
     border: 1px solid var(--line);
-    padding: 0 4px;
-    border-radius: 3px;
+    padding: 0 3px;
+    border-radius: 2px;
+    color: var(--fg);
   }
-  ul {
-    margin: 0;
-    padding-left: 16px;
+  .where {
+    margin: 0 0 2px;
+    font-family: var(--mono);
+    color: var(--fg);
+  }
+  .hint {
+    color: var(--muted);
+    font-size: 10px;
+    margin: 3px 0 0;
+  }
+  .vsec {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    margin-bottom: 4px;
+  }
+  .vrow {
+    all: unset;
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    font-family: var(--mono);
+    font-size: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    max-width: 100%;
+    border-radius: 2px;
+    padding: 0 2px;
+  }
+  .loc {
+    color: var(--muted);
+    flex: none;
+    min-width: 48px;
+  }
+  .vrow:hover {
+    background: var(--hover);
+  }
+  .vrow.changed code {
+    color: var(--c-compute);
+    font-weight: 600;
+  }
+  .old {
+    color: var(--muted);
+  }
+  .arrow {
+    color: var(--muted);
   }
   .chain {
-    padding-left: 18px;
-    margin: 4px 0;
+    padding-left: 16px;
+    margin: 4px 0 0;
   }
   .chain li {
-    margin-bottom: 8px;
+    margin-bottom: 6px;
   }
-  .chain button {
-    font-size: 11px;
+  .stepbtn {
+    font-size: 10px;
+    padding: 0 4px;
   }
   .inputs {
     font-family: var(--mono);
-    font-size: 10px;
+    font-size: 9px;
     display: flex;
     flex-wrap: wrap;
-    gap: 4px;
+    gap: 3px;
+    margin-top: 2px;
   }
-  .inputs .input {
+  .input {
     font-family: var(--mono);
-    font-size: 10px;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 3px;
+    font-size: 9px;
     padding: 0 3px;
-    cursor: pointer;
+    background: var(--panel);
   }
-  .inputs .input:hover {
+  .input:hover {
     border-color: var(--accent);
     color: var(--accent);
   }
-  .clear {
+  .hazards {
+    margin: 0;
+    padding-left: 14px;
     font-size: 10px;
-    padding: 0 4px;
-    margin-left: 6px;
+    line-height: 1.4;
   }
-  .small {
-    font-size: 10px;
+  .hazards li {
+    margin-bottom: 2px;
+  }
+  .clear {
+    font-size: 9px;
+    padding: 0 4px;
   }
   .muted {
     color: var(--muted);

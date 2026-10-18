@@ -3,6 +3,7 @@ import { loadIndex, loadProblem, runTrace } from './sim';
 import { MemoryTimeline, type Memory } from './memory';
 import type { Access, ProblemEntry, Selection, Trace } from './types';
 import type { View } from './numbers';
+import { groupOfMab, l1bOfMab, l2bOfMab, MAB_PER_GROUP, MAB_PER_L1B, type ScopeLevel } from './hierarchy';
 
 class AppState {
   problems = $state<ProblemEntry[]>([]);
@@ -21,7 +22,13 @@ class AppState {
   /** Which of the MAB's four PEs the data path and memory views show. */
   peIndex = $state(0);
   view = $state<View>('f32');
+  /** Which hierarchy level the main detail view shows. */
+  scope = $state<ScopeLevel>('pe');
+  /** Follow the current line's activity unless the user picked a scope. */
+  autoFollow = $state(true);
   selection = $state<Selection | null>(null);
+  /** Active tab of the right detail panel. */
+  detailTab = $state<'values' | 'memory' | 'occupancy'>('values');
   loading = $state(false);
   error = $state<string | null>(null);
   /** Guards against an older simulation finishing after a newer one. */
@@ -29,6 +36,18 @@ class AppState {
 
   get focusMab(): number {
     return Math.floor(this.focusPe / 4);
+  }
+
+  get focusGroup(): number {
+    return groupOfMab(this.focusMab);
+  }
+
+  get focusL2b(): number {
+    return l2bOfMab(this.focusMab);
+  }
+
+  get focusL1b(): number {
+    return l1bOfMab(this.focusMab);
   }
 
   /** The PE shown by the data path and memory views, from the traced MAB. */
@@ -59,6 +78,11 @@ class AppState {
       this.statement = p.statement;
       this.testcase = p.testcase;
       this.solution = p.solution;
+      this.focusPe = 0;
+      this.peIndex = 0;
+      this.scope = 'pe';
+      this.autoFollow = true;
+      this.detailTab = 'values';
       await this.simulate();
     } catch (e) {
       this.error = String(e);
@@ -104,6 +128,46 @@ class AppState {
     if (i === this.peIndex) return;
     this.peIndex = i;
     this.selection = null;
+  }
+
+  /** Manual scope choice stops auto-follow so it is not overwritten by the next line. */
+  setScope(level: ScopeLevel) {
+    this.scope = level;
+    this.autoFollow = false;
+  }
+
+  followCurrent() {
+    this.autoFollow = true;
+  }
+
+  async selectGroup(group: number) {
+    this.autoFollow = false;
+    this.scope = 'group';
+    if (group !== this.focusGroup) await this.setFocusMab(group * MAB_PER_GROUP);
+    this.scope = 'group';
+  }
+
+  async selectL1b(l1b: number) {
+    this.autoFollow = false;
+    this.scope = 'l1b';
+    if (l1b !== this.focusL1b) await this.setFocusMab(l1b * MAB_PER_L1B);
+    this.scope = 'l1b';
+  }
+
+  async selectMab(mab: number) {
+    this.autoFollow = false;
+    this.scope = 'mab';
+    if (mab !== this.focusMab) await this.setFocusMab(mab);
+    this.scope = 'mab';
+  }
+
+  selectPe(i: number) {
+    this.autoFollow = false;
+    this.scope = 'pe';
+    if (i !== this.peIndex) {
+      this.peIndex = i;
+      this.selection = null;
+    }
   }
 
   /** Follows one input of an expression read at `atLine` to its own provenance. */

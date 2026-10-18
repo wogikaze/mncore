@@ -17,7 +17,7 @@
   ] as const;
   type LocId = (typeof LOCS)[number]['id'];
 
-  const PAGE = 128; // long words per page
+  const PAGE = 64; // long words per page
   let loc = $state<LocId>('lm0');
   let page = $state(0);
   let jump = $state(0);
@@ -91,6 +91,7 @@
 
   function pick(addr: number) {
     app.selection = { unit: pe, loc, addr, line: app.line };
+    app.detailTab = 'values';
   }
 
   function cellText(words: number[]): string {
@@ -151,7 +152,7 @@
     <div class="pager">
       {#if pages > 1}
         <button onclick={() => (page = Math.max(0, page - 1))} disabled={page <= 0}>前</button>
-        <span>{pageStart}–{Math.min(info.words, pageStart + PAGE) - 1}</span>
+        <span>長語 {pageStart}–{Math.min(info.words, pageStart + PAGE) - 1}</span>
         <button onclick={() => (page = Math.min(pages - 1, page + 1))} disabled={page >= pages - 1}>次</button>
       {/if}
       <label>
@@ -201,15 +202,19 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
-    gap: 6px;
+    min-width: 0;
+    width: 100%;
+    gap: 4px;
     padding: 6px 8px;
     font-size: 12px;
+    overflow: auto;
   }
   header {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 4px;
     flex-wrap: wrap;
+    min-width: 0;
   }
   .tabs {
     display: flex;
@@ -227,8 +232,9 @@
   .pager {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     color: var(--muted);
+    flex-wrap: wrap;
   }
   .pager span {
     font-family: var(--mono);
@@ -241,25 +247,32 @@
   }
   .grid {
     display: grid;
-    grid-template-columns: repeat(16, minmax(48px, 1fr));
-    gap: 3px;
-    overflow: auto;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 2px;
+    overflow-x: hidden;
+    overflow-y: auto;
     align-content: start;
     min-height: 0;
+    min-width: 0;
+    width: 100%;
   }
   .grid.omr {
-    grid-template-columns: repeat(8, minmax(64px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(86px, 1fr));
   }
   .tgrid {
     display: grid;
     gap: 4px;
   }
   .cell {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     text-align: left;
     font-family: var(--mono);
     font-size: 10px;
     padding: 2px 4px;
     min-width: 0;
+    min-height: 33px;
     overflow: hidden;
   }
   .cell .a {
@@ -272,6 +285,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-size: 11px;
   }
   .cell.written {
     border-color: var(--c-compute);

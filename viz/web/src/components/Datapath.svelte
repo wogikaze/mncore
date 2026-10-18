@@ -5,19 +5,21 @@
   import { read } from '../lib/memory';
   import type { Access, ExprInfo, LineInfo } from '../lib/types';
 
+  let { chrome = true, cycle: externalCycle = undefined }: { chrome?: boolean; cycle?: number | null } = $props();
+
   // One PE's data path for the current step, unrolled left to right:
   // sources (memory rows read, forwarding registers, L1BM, matrix register)
   // -> one box per expression (input pins, output pin) -> destinations.
 
-  const W = 1100;
-  const SRC_X = 10;
-  const SRC_W = 300;
-  const UNIT_X = 430;
-  const UNIT_W = 230;
-  const DST_X = 790;
-  const DST_W = 300;
-  const ROW_H = 20;
-  const HEAD_H = 22;
+  const W = 830;
+  const SRC_X = 6;
+  const SRC_W = 250;
+  const UNIT_X = 320;
+  const UNIT_W = 200;
+  const DST_X = 580;
+  const DST_W = 244;
+  const ROW_H = 24;
+  const HEAD_H = 24;
   const GAP = 12;
 
   const trace = $derived(app.trace);
@@ -29,7 +31,25 @@
   const l2b = $derived(Math.floor(pe / 512));
   /** Cycle to emphasize; null shows all cycles alike. */
   let pinned = $state<number | null>(null);
-  const cycle = $derived(player.playing || player.progress < 1 ? player.cycle : pinned);
+  const cycle = $derived(
+    externalCycle !== undefined ? externalCycle : player.playing || player.progress < 1 ? player.cycle : pinned,
+  );
+
+  interface ConstRow {
+    expr: number;
+    label: string;
+    value: string;
+    y: number;
+  }
+
+  const constSources = $derived.by(() => {
+    const out: { expr: number; label: string; value: string }[] = [];
+    line?.exprs.forEach((e, i) => {
+      if (e.opcode === 'imm') out.push({ expr: i, label: '即値', value: e.srcs[0] ?? '0' });
+      else if (e.opcode === 'zero') out.push({ expr: i, label: 'ゼロ', value: '0' });
+    });
+    return out;
+  });
 
   const MEM_NAME: Record<string, string> = {
     grf0: 'GRF0 ($r)',
@@ -105,18 +125,24 @@
 
   function select(a: Access, source: boolean) {
     if (!clickable(a, source)) return;
+    // L1BM reads belong to the L1B's shared memory, not to the PE's address space.
+    const loc = a.loc === 'l1bm_src' ? 'l1bm' : a.loc;
+    const unit = a.loc === 'l1bm_src' ? Math.floor(pe / 64) : pe;
     app.selection = {
-      unit: pe,
-      loc: a.loc,
+      unit,
+      loc,
       addr: a.addr,
       line: observationLine(a, source),
       cycle: a.cycle,
     };
+    app.detailTab = 'values';
   }
 
   function selected(a: Access, source: boolean): boolean {
     const s = app.selection;
-    if (!s || s.unit !== pe || s.loc !== a.loc) return false;
+    const loc = a.loc === 'l1bm_src' ? 'l1bm' : a.loc;
+    const unit = a.loc === 'l1bm_src' ? Math.floor(pe / 64) : pe;
+    if (!s || s.unit !== unit || s.loc !== loc) return false;
     if (s.line !== observationLine(a, source)) return false;
     if (a.addr === null || s.addr === null) {
       if (a.addr !== s.addr) return false;
@@ -186,8 +212,16 @@
     const writes = mine.filter((a) => a.write && a.loc !== 'out');
 
     const srcBlocks = blocks(reads, ['grf0', 'grf1', 't', 'lm0', 'lm1', 'aluf', 'mauf', 'mreadf', 'lbf', 'l1bm_src'], 8, (k) => MEM_NAME[k] ?? k);
+    const constRows: ConstRow[] = srcBlocks.length === 0
+      ? constSources.map((c, i) => ({ ...c, y: 8 + HEAD_H + i * ROW_H }))
+      : [];
+    const constBlock = constRows.length ? { y: 8, h: HEAD_H + constRows.length * ROW_H + 4, rows: constRows } : null;
     // Matrix register as a source of matrix-vector products and transposed reads.
-    let y = srcBlocks.length ? srcBlocks[srcBlocks.length - 1].y + srcBlocks[srcBlocks.length - 1].h + GAP : 8;
+    let y = srcBlocks.length
+      ? srcBlocks[srcBlocks.length - 1].y + srcBlocks[srcBlocks.length - 1].h + GAP
+      : constBlock
+        ? constBlock.y + constBlock.h + GAP
+        : 8;
     const usesMatrix = line.exprs.some((e) => e.unit === 'matrix' || e.unit === 'mread');
     const matBlock = usesMatrix ? { y, h: HEAD_H + 16 * 5 + 10 } : null;
 
@@ -197,8 +231,8 @@
     line.exprs.forEach((info, i) => {
       if (!visible(info)) return;
       const nIn = Math.max(1, info.srcs.length);
-      const h = HEAD_H + nIn * 22 + 30;
-      const pins = info.srcs.map((s, k) => ({ label: s, y: uy + HEAD_H + 8 + k * 22 }));
+      const h = HEAD_H + nIn * 24 + 32;
+      const pins = info.srcs.map((s, k) => ({ label: s, y: uy + HEAD_H + 8 + k * 24 }));
       units.push({ expr: i, info, y: uy, h, pins, outY: uy + h - 16, outs: outs.filter((o) => o.expr === i) });
       uy += h + GAP;
     });
@@ -240,6 +274,15 @@
         }
       }
     }
+    if (constBlock) {
+      for (const r of constBlock.rows) {
+        const u = units.find((u) => u.expr === r.expr);
+        if (!u) continue;
+        const pin = u.pins[0];
+        const py = pin ? pin.y : u.y + HEAD_H + 8;
+        wires.push({ d: curve(SRC_X + SRC_W, r.y + ROW_H / 2, UNIT_X, py), kind: 'read', cycle: 0, label: r.value, expr: r.expr });
+      }
+    }
     if (matBlock) {
       for (const u of units.filter((u) => u.info.unit === 'matrix' || u.info.unit === 'mread')) {
         const mp = u.pins.findIndex((p) => /^\$l+[xy]/.test(p.label));
@@ -256,16 +299,22 @@
         }
       }
     }
-    const lastSrc = matBlock ? matBlock.y + matBlock.h : srcBlocks.length ? srcBlocks[srcBlocks.length - 1].y + srcBlocks[srcBlocks.length - 1].h : 0;
+    const lastSrc = matBlock
+      ? matBlock.y + matBlock.h
+      : constBlock
+        ? constBlock.y + constBlock.h
+        : srcBlocks.length
+          ? srcBlocks[srcBlocks.length - 1].y + srcBlocks[srcBlocks.length - 1].h
+          : 0;
     const lastDst = dstBlocks.length ? dstBlocks[dstBlocks.length - 1].y + dstBlocks[dstBlocks.length - 1].h : 0;
     const height = Math.max(160, lastSrc, uy, lastDst) + 8;
-    return { srcBlocks, matBlock, units, dstBlocks, wires, height };
+    return { srcBlocks, constBlock, matBlock, units, dstBlocks, wires, height };
   });
 
   function valueText(a: Access): string {
     const words = a.loc === 't' || a.loc === 'out' || a.loc.endsWith('f') ? a.words.slice(0, 2) : a.words;
-    if (app.view === 'f64') return format(words.slice(0, 2), 'f64').join(' ');
-    return format(words, app.view).join(', ');
+    const vals = format(words, app.view);
+    return vals.length > 2 ? `${vals.slice(0, 2).join(', ')}…` : vals.join(', ');
   }
 
   function rowValue(r: Row): string {
@@ -319,19 +368,20 @@
 
 {#snippet srcRow(r: Row, selected: boolean)}
   {#if selected}<rect class="selbar" x={SRC_X} y={r.y} width="2" height={ROW_H - 2} />{/if}
-  <text class="addr" x={SRC_X + 8} y={r.y + 14}>{r.label}</text>
-  <text class="val" x={SRC_X + 84} y={r.y + 14}>{rowValue(r)}</text>
-  <text class="cyc" x={SRC_X + SRC_W - 6} y={r.y + 14}>{r.accesses.map((x) => `c${x.cycle}`).join(' ')}</text>
+  <text class="addr" x={SRC_X + 8} y={r.y + 16}>{r.label}</text>
+  <text class="val" x={SRC_X + 84} y={r.y + 16}>{rowValue(r)}</text>
+  <text class="cyc" x={SRC_X + SRC_W - 6} y={r.y + 16}>{r.accesses.map((x) => `c${x.cycle}`).join(' ')}</text>
 {/snippet}
 
 {#snippet dstRow(r: Row, selected: boolean)}
   {#if selected}<rect class="selbar" x={DST_X} y={r.y} width="2" height={ROW_H - 2} />{/if}
-  <text class="addr" x={DST_X + 8} y={r.y + 14}>{r.label}</text>
-  <text class="val" x={DST_X + 84} y={r.y + 14}>{rowValue(r)}</text>
-  <text class="cyc" x={DST_X + DST_W - 6} y={r.y + 14}>{r.accesses.map((x) => `c${x.cycle}`).join(' ')}</text>
+  <text class="addr" x={DST_X + 8} y={r.y + 16}>{r.label}</text>
+  <text class="val" x={DST_X + 84} y={r.y + 16}>{rowValue(r)}</text>
+  <text class="cyc" x={DST_X + DST_W - 6} y={r.y + 16}>{r.accesses.map((x) => `c${x.cycle}`).join(' ')}</text>
 {/snippet}
 
 <section class="dp">
+  {#if chrome}
   <header>
     <div class="tabs">
       {#each pes as p, i}
@@ -369,15 +419,29 @@
       </select>
     </label>
   </header>
+  {/if}
   <div class="canvas">
     {#if layout && line}
-      <svg viewBox="0 0 {W} {layout.height}" width="100%" style:min-width="760px" preserveAspectRatio="xMidYMin meet">
+      <svg viewBox="0 0 {W} {layout.height}" width="100%" preserveAspectRatio="xMidYMin meet">
+        <defs>
+          <marker id="dp-arrow-read" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L8,4 L0,8 z" fill="var(--c-l2)" />
+          </marker>
+          <marker id="dp-arrow-write" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L8,4 L0,8 z" fill="var(--c-compute)" />
+          </marker>
+        </defs>
         <text class="colhead" x={SRC_X} y="4">読み出し元（このステップの前の値）</text>
         <text class="colhead" x={UNIT_X} y="4">演算器</text>
         <text class="colhead" x={DST_X} y="4">書き込み先（このステップの後の値）</text>
 
         {#each layout.wires as w}
-          <path class="wire {w.kind}" class:dim={!active(w.cycle)} d={w.d} />
+          <path
+            class="wire {w.kind}"
+            class:dim={!active(w.cycle)}
+            d={w.d}
+            marker-end={w.kind === 'read' ? 'url(#dp-arrow-read)' : 'url(#dp-arrow-write)'}
+          />
         {/each}
         {#each layout.wires as w}
           {#if active(w.cycle) && player.progress < 1}
@@ -385,6 +449,17 @@
           {/if}
         {/each}
 
+        {#if layout.constBlock}
+          <g class="block src">
+            <rect x={SRC_X} y={layout.constBlock.y} width={SRC_W} height={layout.constBlock.h} rx="5" />
+            <text class="btitle" x={SRC_X + 8} y={layout.constBlock.y + 15}>即値・固定値</text>
+            {#each layout.constBlock.rows as r}
+              <text class="addr" x={SRC_X + 8} y={r.y + 16}>{r.label}</text>
+              <text class="val" x={SRC_X + 84} y={r.y + 16}>{r.value}</text>
+              <text class="cyc" x={SRC_X + SRC_W - 6} y={r.y + 16}>c0</text>
+            {/each}
+          </g>
+        {/if}
         {#each layout.srcBlocks as b (b.key)}
           <g class="block src">
             <rect x={SRC_X} y={b.y} width={SRC_W} height={b.h} rx="5" />
@@ -548,17 +623,22 @@
     flex: 1;
     min-height: 0;
     overflow: auto;
-    padding: 4px 8px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
   }
   svg {
+    flex: none;
     overflow: visible;
+    margin-block: auto;
+    margin-inline: auto;
   }
   text {
-    font-size: 11px;
+    font-size: 14px;
     fill: var(--fg);
   }
   .colhead {
-    font-size: 10px;
+    font-size: 12px;
     fill: var(--muted);
   }
   .block rect {
@@ -573,7 +653,7 @@
   }
   .btitle {
     font-weight: 600;
-    font-size: 11px;
+    font-size: 14px;
   }
   .op {
     font-family: var(--mono);
@@ -591,7 +671,7 @@
   .cyc {
     text-anchor: end;
     fill: var(--muted);
-    font-size: 9px;
+    font-size: 12px;
   }
   .dim {
     opacity: 0.25;
@@ -615,10 +695,10 @@
     stroke: var(--fg);
   }
   .pinlabel {
-    font-size: 10px;
+    font-size: 12px;
   }
   .outval {
-    font-size: 10px;
+    font-size: 12px;
     fill: var(--accent);
   }
   .wire {

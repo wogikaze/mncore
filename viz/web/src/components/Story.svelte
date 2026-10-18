@@ -3,7 +3,7 @@
   import gsap from 'gsap';
   import { ScrollTrigger } from 'gsap/ScrollTrigger';
   import { app } from '../lib/state.svelte';
-  import ChipView from './ChipView.svelte';
+  import OverviewMap from './OverviewMap.svelte';
   import Datapath from './Datapath.svelte';
   import { player } from '../lib/player.svelte';
 
@@ -181,7 +181,7 @@
       {@const l = app.trace.lines[app.line]}
       <div class="now"><span>{l?.lineno}行目 ・ step {l?.step}</span><code>{l?.text}</code></div>
     {/if}
-    <div class="chip"><ChipView /></div>
+    <div class="chip"><OverviewMap large /></div>
     <div class="pe"><Datapath /></div>
   </aside>
 </div>
@@ -236,9 +236,9 @@
   .stage {
     position: sticky;
     top: 0;
-    height: calc(100vh - 42px);
+    height: calc(100vh - 44px);
     display: grid;
-    grid-template-rows: auto minmax(0, 0.8fr) minmax(0, 1.2fr);
+    grid-template-rows: auto minmax(0, 0.9fr) minmax(0, 1.1fr);
     border-left: 1px solid var(--line);
   }
   .now {
@@ -257,6 +257,9 @@
   .pe {
     display: flex;
     min-height: 0;
+  }
+  .chip {
+    padding-bottom: 4px;
   }
   .chip > :global(*),
   .pe > :global(*) {
