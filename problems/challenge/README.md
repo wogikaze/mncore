@@ -27,7 +27,7 @@ MNIST 特設問題とは別の問題セットです。各ディレクトリに�
 | [Transpose MAB](17.transpose-mab/problem.md) | [answer](17.transpose-mab/answer.md) | Accepted / 15 lines / sosuupoyo |
 | [Inversion Small](18.inversion-small/problem.md) | [answer](18.inversion-small/answer.md) | Accepted / 9 lines / logicmachine |
 | [Inversion](19.inversion/problem.md) | [answer](19.inversion/answer.md) | Accepted / 31 lines / sosuupoyo |
-| [FizzBuzz](20.fizzbuzz/problem.md) | [answer](20.fizzbuzz/answer.md) | Accepted / 98 lines / tails |
+| [FizzBuzz](20.fizzbuzz/problem.md) | [answer](20.fizzbuzz/answer.md) | Accepted / 93 lines / Wogikaze |
 | [Hello, world!](21.hello-world/problem.md) | [answer](21.hello-world/answer.md) | Accepted / 9 lines / syttrea |
 | [Bit Reverse](22.bit-reverse/problem.md) | [answer](22.bit-reverse/answer.md) | Accepted / 10 lines / syttrea |
 | [FizzBuzz PE](23.fizzbuzz-pe/problem.md) | [answer](23.fizzbuzz-pe/answer.md) | Accepted / 9 lines / syttrea |
