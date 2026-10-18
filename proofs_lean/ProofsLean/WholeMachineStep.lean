@@ -66,8 +66,8 @@ def parsedExprIsUnsupportedRustAlu (expression : ParsedExpr) : Bool :=
 def parsedExprIsSupportedPELineProducer (expression : ParsedExpr) : Bool :=
   match expression.op with
   | .alu .. | .zero | .immediate .. | .matrixRead .. | .wait .. | .noforward => true
-  | .mau .f false .add none false | .mau .f false .mul none false
-  | .mau .f false .fma none false | .mau .f false .passa _ false => true
+  | .mau .f false .add _ false | .mau .f false .mul _ false
+  | .mau .f false .fma _ false | .mau .f false .passa _ false => true
   | .mau .f false _ _ true => true
   | .mau .d false .passa _ _ | .mau .h false .passa _ _
   | .mau .h false .mul _ _ | .mau .h false .add _ _
@@ -136,8 +136,8 @@ def parsedExprIsNoForwardProducer (expression : ParsedExpr) : Bool :=
 
 def parsedExprIsSupportedFloatMAUProducer (expression : ParsedExpr) : Bool :=
   match expression.op with
-  | .mau .f false .add none false | .mau .f false .mul none false
-  | .mau .f false .fma none false | .mau .f false .passa _ false => true
+  | .mau .f false .add _ false | .mau .f false .mul _ false
+  | .mau .f false .fma _ false | .mau .f false .passa _ false => true
   | .mau .f false _ _ true => true
   | .mau .d false .passa _ _ | .mau .h false .passa _ _
   | .mau .h false .mul _ _ | .mau .h false .add _ _
@@ -225,7 +225,7 @@ structure ParsedFloatFmaAccesses where
 def lowerParsedFloatFma? (expression : ParsedExpr) (context : ParsedIntegerContext) :
     Option ParsedFloatFmaAccesses := do
   match expression.op with
-  | .mau .f false .fma none false => pure ()
+  | .mau .f false .fma _ false => pure ()
   | _ => none
   match expression.sources, expression.destinations with
   | [sourceA, sourceB, sourceC], destinations@(_ :: _) => do
@@ -314,7 +314,7 @@ theorem prepareDoubleMAUSource_round_double_three_halves :
 def lowerParsedFloatMultiply? (expression : ParsedExpr) (context : ParsedIntegerContext) :
     Option ParsedFloatMultiplyAccesses := do
   match expression.op with
-  | .mau .f false .mul none false => pure ()
+  | .mau .f false .mul _ false => pure ()
   | _ => none
   match expression.sources, expression.destinations with
   | [sourceA, sourceB], destinations@(_ :: _) => do
@@ -339,7 +339,7 @@ structure ParsedFloatAddAccesses where
 def lowerParsedFloatAddMachine? (expression : ParsedExpr) (context : ParsedIntegerContext) :
     Option ParsedFloatAddAccesses := do
   match expression.op with
-  | .mau .f false .add none false => pure ()
+  | .mau .f false .add _ false => pure ()
   | _ => none
   match expression.sources, expression.destinations with
   | [sourceA, sourceB], destinations@(_ :: _) => do
@@ -813,7 +813,7 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
     (context : ParsedIntegerContext) (cycle : Fin 4) :
     ProofsLean.StepResult (IntegerRegisterFiles × IntegerALU.Bus × BitVec 4) :=
   match expression.op with
-  | .mau .f false .fma none false =>
+  | .mau .f false .fma half false =>
     let cycleContext := { context with cycle := cycle }
     match lowerParsedFloatFma? expression cycleContext with
     | none => parsedFloatMAULoweringMiss expression
@@ -833,10 +833,11 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
             let left := prepareSingleMAUSource sourceA accesses.negateA accesses.extendA accesses.roundA
             let right := prepareSingleMAUSource sourceB accesses.negateB accesses.extendB accesses.roundB
             let accumulator := prepareSingleMAUSource sourceC accesses.negateC accesses.extendC accesses.roundC
-            let output := singleFmaBus left right accumulator
+            let output := if parsedMauHalfSelectsPE half cycleContext.pe then
+              singleFmaBus left right accumulator else singleFmaBus 0 0 accumulator
             .ok (currentFiles, ⟨output, 0⟩,
               parsedVectorMAUFlags .single false ⟨output, 0⟩)
-  | .mau .f false .mul none false =>
+  | .mau .f false .mul half false =>
     let cycleContext := { context with cycle := cycle }
     match lowerParsedFloatMultiply? expression cycleContext with
     | none => parsedFloatMAULoweringMiss expression
@@ -851,10 +852,11 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
         | .ok sourceB =>
           let left := prepareSingleMAUSource sourceA accesses.negateA accesses.extendA accesses.roundA
           let right := prepareSingleMAUSource sourceB accesses.negateB accesses.extendB accesses.roundB
-          let output := FloatMultiply.multiplyBus left right
+          let output := if parsedMauHalfSelectsPE half cycleContext.pe then
+              FloatMultiply.multiplyBus left right else FloatMultiply.multiplyBus 0 0
           .ok (currentFiles, ⟨output, 0⟩,
             parsedVectorMAUFlags .single false ⟨output, 0⟩)
-  | .mau .f false .add none false =>
+  | .mau .f false .add half false =>
     let cycleContext := { context with cycle := cycle }
     match lowerParsedFloatAddMachine? expression cycleContext with
     | none => parsedFloatMAULoweringMiss expression
@@ -869,7 +871,8 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
         | .ok sourceB =>
           let left := prepareSingleMAUSource sourceA accesses.negateA accesses.extendA accesses.roundA
           let right := prepareSingleMAUSource sourceB accesses.negateB accesses.extendB accesses.roundB
-          let output := FloatAdd.addBus left right
+          let output := if parsedMauHalfSelectsPE half cycleContext.pe then
+              FloatAdd.addBus left right else singleFmaBus 0 0 right
           .ok (currentFiles, ⟨output, 0⟩,
             parsedVectorMAUFlags .single false ⟨output, 0⟩)
   | .mau .f false .passa half false =>
@@ -1036,7 +1039,7 @@ theorem executeParsedFloatMAUCycleAtPE_mul_success
       (prepareSingleMAUSource busB accesses.negateB accesses.extendB accesses.roundB)
     executeParsedFloatMAUCycleAtPE readFiles currentFiles oldSlots expression context cycle =
       .ok (currentFiles, ⟨output, 0⟩, parsedVectorMAUFlags .single false ⟨output, 0⟩) := by
-  simp [executeParsedFloatMAUCycleAtPE, isMul, lowered, readA, readB]
+  simp [executeParsedFloatMAUCycleAtPE, parsedMauHalfSelectsPE, isMul, lowered, readA, readB]
 
 theorem executeParsedFloatMAUCycleAtPE_fma_success
     (readFiles currentFiles : IntegerRegisterFiles) (oldSlots : Forwarding.Slots)
@@ -1056,7 +1059,7 @@ theorem executeParsedFloatMAUCycleAtPE_fma_success
       (prepareSingleMAUSource busC accesses.negateC accesses.extendC accesses.roundC)
     executeParsedFloatMAUCycleAtPE readFiles currentFiles oldSlots expression context cycle =
       .ok (currentFiles, ⟨output, 0⟩, parsedVectorMAUFlags .single false ⟨output, 0⟩) := by
-  simp [executeParsedFloatMAUCycleAtPE, isFma, lowered, readA, readB, readC]
+  simp [executeParsedFloatMAUCycleAtPE, parsedMauHalfSelectsPE, isFma, lowered, readA, readB, readC]
 
 theorem executeParsedFloatMAUCycleAtPE_add_success
     (readFiles currentFiles : IntegerRegisterFiles) (oldSlots : Forwarding.Slots)
@@ -1074,7 +1077,7 @@ theorem executeParsedFloatMAUCycleAtPE_add_success
       (prepareSingleMAUSource busB accesses.negateB accesses.extendB accesses.roundB)
     executeParsedFloatMAUCycleAtPE readFiles currentFiles oldSlots expression context cycle =
       .ok (currentFiles, ⟨output, 0⟩, parsedVectorMAUFlags .single false ⟨output, 0⟩) := by
-  simp [executeParsedFloatMAUCycleAtPE, isAdd, lowered, readA, readB]
+  simp [executeParsedFloatMAUCycleAtPE, parsedMauHalfSelectsPE, isAdd, lowered, readA, readB]
 
 /-- Run vector-MAU cycles and commit the bus to all destinations in source
 order, carrying BAR updates into the following cycle. -/
