@@ -916,8 +916,13 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
         let prepared := (List.zip sources sourceBuses).map fun (source, bus) =>
           prepareDoubleMAUSource bus source.2.1 source.2.2.1 false
         let calculated := doubleMAUVectorBus kind roundOutput prepared
-        let output := if parsedMauHalfSelectsPE half cycleContext.pe then calculated
-          else (⟨0, 0⟩ : IntegerALU.Bus)
+        let inactivePrepared := match kind, prepared with
+          | .add, [_, accumulator] => [0, accumulator]
+          | .mul, [_, _] => [0, 0]
+          | .fma, [_, _, accumulator] => [0, 0, accumulator]
+          | _, _ => prepared
+        let inactive := doubleMAUVectorBus kind roundOutput inactivePrepared
+        let output := if parsedMauHalfSelectsPE half cycleContext.pe then calculated else inactive
         .ok (currentFiles, output, parsedVectorMAUFlags .double roundOutput output)
   | .mau .h false .mul half round =>
     let cycleContext := { context with cycle := cycle }
@@ -959,8 +964,9 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
           let accumulator := prepareHalfAddSource sourceCBus negateC extendC roundC true
           let ones := [0x3e00, 0x3e00, 0x3e00, 0x3e00]
           let calculated := prepareHalfFmaBus left ones accumulator round
-          let output := if parsedMauHalfSelectsPE half cycleContext.pe then calculated
-            else (⟨0, 0⟩ : IntegerALU.Bus)
+          let zeros := [0, 0, 0, 0]
+          let inactive := prepareHalfFmaBus zeros zeros accumulator round
+          let output := if parsedMauHalfSelectsPE half cycleContext.pe then calculated else inactive
           .ok (currentFiles, output, parsedVectorMAUFlags .half round output)
   | .mau .h false .fma half round =>
     let cycleContext := { context with cycle := cycle }
@@ -985,8 +991,9 @@ def executeParsedFloatMAUCycleAtPE (readFiles currentFiles : IntegerRegisterFile
             let right := prepareHalfAddSource sourceBBus negateB extendB roundB false
             let accumulator := prepareHalfAddSource sourceCBus negateC extendC roundC true
             let calculated := prepareHalfFmaBus left right accumulator round
-            let output := if parsedMauHalfSelectsPE half cycleContext.pe then calculated
-              else (⟨0, 0⟩ : IntegerALU.Bus)
+            let zeros := [0, 0, 0, 0]
+            let inactive := prepareHalfFmaBus zeros zeros accumulator round
+            let output := if parsedMauHalfSelectsPE half cycleContext.pe then calculated else inactive
             .ok (currentFiles, output, parsedVectorMAUFlags .half round output)
   | .mau .h false .passa half round =>
     let cycleContext := { context with cycle := cycle }
