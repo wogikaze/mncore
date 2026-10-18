@@ -166,7 +166,10 @@
         "scheduled_program_theorem": "ProofsLean.MNCore.executeScheduledProgram_wait_nop_releases_after_completion",
         "scope": "A positive nop with a valid wait tag, scheduled after an incomplete tag and then resumed after completion of the final operation with that tag.",
         "effect": "The scheduled run enters the stalled state, completes the named MV, resumes the nop, advances hazardClock by its count, emits no hazard events, prunes PE/block history, and clears the stalled marker.",
-        "remaining": "Wait-nop tags with multiple same-tag transfers or intervening untagged completions, plus general PE wait-line state effects, are not yet connected to a single end-to-end theorem."
+        "remaining": "The theorem assumes each completion transition and its tag-completion flag. Deriving those premises for arbitrary pending queues, schedules with more than two same-tag operations, and general PE wait-line effects remain open.",
+        "intermediate_completion_theorem": "ProofsLean.MNCore.executeScheduledEvent_incomplete_tag_completion_preserves_stall",
+        "two_completion_program_theorem": "ProofsLean.MNCore.executeScheduledProgram_wait_nop_releases_after_two_completions",
+        "two_completion_scope": "Two individually scheduled completions with the same tag; after the first, the tag remains incomplete and the PE stays stalled; after the second, the tag is complete and the nop resumes."
       }
     },
     "remaining": [
@@ -189,7 +192,8 @@
       "ProofsLean.MNCore.commitOperandWrites_frame",
       "ProofsLean.MNCore.NormalizedLine.footprint_eq_instructionLineFootprint",
       "ProofsLean.MNCore.executeHazardAwareNormalizedLineCore_positive_nop",
-      "ProofsLean.MNCore.executeScheduledProgram_wait_nop_releases_after_completion"
+      "ProofsLean.MNCore.executeScheduledProgram_wait_nop_releases_after_completion",
+      "ProofsLean.MNCore.executeScheduledProgram_wait_nop_releases_after_two_completions"
     ],
     "initialization_policy": "unspecified_pending_judge_evidence",
     "connected_to_machine_step": false,
@@ -217,6 +221,11 @@
         "runner_theorem": "ProofsLean.MNCore.executeHazardAwareNormalizedLine_completed_wait_nop",
         "scheduled_program_theorem": "ProofsLean.MNCore.executeScheduledProgram_wait_nop_releases_after_completion",
         "effect": "After the tag is complete, the positive wait nop advances the clock, emits no events, prunes old histories, and releases the stalled issue."
+      },
+      "completed_wait_nop_two_transfers": {
+        "intermediate_theorem": "ProofsLean.MNCore.executeScheduledEvent_incomplete_tag_completion_preserves_stall",
+        "scheduled_program_theorem": "ProofsLean.MNCore.executeScheduledProgram_wait_nop_releases_after_two_completions",
+        "effect": "A positive wait nop remains stalled through the first same-tag completion while the tag is incomplete; the second completion releases the nop, advances the clock by count, emits no hazard events, and prunes histories."
       }
     }
   },

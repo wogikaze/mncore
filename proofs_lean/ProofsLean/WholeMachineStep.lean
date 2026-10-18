@@ -4761,6 +4761,16 @@ theorem executeScheduledEvent_unrelated_completion_preserves_stalled_pe_line
       .ok { state with machine := next } := by
   simp [executeScheduledEvent, completed, stalled, unrelated]
 
+theorem executeScheduledEvent_incomplete_tag_completion_preserves_stall
+    (state : HazardAwareState) (line : NormalizedLine) (tag : Fin 256)
+    (next : State) (stalled : state.stalledPEIssue = some line)
+    (waitTag : normalizedLineWaitTag? line = some tag)
+    (completed : completePendingMvTag state.machine tag = some next)
+    (stillIncomplete : next.mvCompletedTags tag = false) :
+    executeScheduledEvent (.completeMv tag) state =
+      .ok { state with machine := next } := by
+  simp [executeScheduledEvent, completed, stalled, waitTag, stillIncomplete]
+
 theorem executeScheduledEvent_completion_releases_stalled_pe_line
     (state : HazardAwareState) (line : NormalizedLine) (tag : Fin 256)
     (next : State) (resumedState : HazardAwareState)
@@ -5082,6 +5092,55 @@ theorem executeScheduledProgram_wait_nop_releases_after_completion
         { next with hazardClock := next.hazardClock + (count + 1) } }
     instructionLine legal waitTag incomplete completed tagFinished resumed
   simpa [line, stalledState, HazardAwareState.initial] using schedule
+
+theorem executeScheduledProgram_wait_nop_releases_after_two_completions
+    (machine first next : State) (count : Nat) (tag : Fin 256)
+    (accepted : checkParsedTopLine (.nop (count + 1) (some tag)) = true)
+    (initiallyIncomplete : machine.mvCompletedTags tag = false)
+    (firstCompletion : completePendingMvTag machine tag = some first)
+    (stillIncomplete : first.mvCompletedTags tag = false)
+    (finalCompletion : completePendingMvTag first tag = some next)
+    (tagFinished : next.mvCompletedTags tag = true) :
+    executeScheduledProgram
+      [.issue (.nop (count + 1) (some tag)), .completeMv tag, .completeMv tag]
+      machine =
+      .ok { (HazardAwareState.initial next) with machine :=
+        { next with hazardClock := next.hazardClock + (count + 1) } } := by
+  let line : NormalizedLine := .nop (count + 1) (some tag)
+  let instruction : InstructionLine := .nop ⟨count + 1, by omega⟩ (some tag)
+  let stalledState := { (HazardAwareState.initial machine) with
+    stalledPEIssue := some line }
+  let intermediate := { stalledState with machine := first }
+  let resumedBase := { intermediate with machine := next }
+  let resumedState := { resumedBase with
+    machine := { next with hazardClock := next.hazardClock + (count + 1) } }
+  have instructionLine : line.toInstruction? = some instruction := rfl
+  have legal : checkParsedTopLine instruction.toParsed = true := by
+    simpa [instruction, InstructionLine.toParsed] using accepted
+  have waitTag : normalizedLineWaitTag? line = some tag := rfl
+  have resumed : executeHazardAwareNormalizedLineCore line resumedBase =
+      .ok resumedState := by
+    have core := executeHazardAwareNormalizedLineCore_completed_wait_nop
+      resumedBase count tag accepted tagFinished
+    simpa [line, resumedState, resumedBase, intermediate, stalledState,
+      HazardAwareState.initial] using core
+  have issue := executeScheduledEvent_wait_enters_stall
+    (HazardAwareState.initial machine) line instruction tag rfl
+    instructionLine legal waitTag initiallyIncomplete
+  have firstStep := executeScheduledEvent_incomplete_tag_completion_preserves_stall
+    stalledState line tag first rfl waitTag firstCompletion stillIncomplete
+  have finalStep := executeScheduledEvent_completion_releases_stalled_pe_line
+    intermediate line tag next resumedState rfl waitTag finalCompletion
+    tagFinished resumed
+  unfold executeScheduledProgram
+  simp only [executeScheduledEvents]
+  rw [issue]
+  simp only [executeScheduledEvents]
+  rw [firstStep]
+  simp only [executeScheduledEvents]
+  rw [finalStep]
+  simpa [resumedState, resumedBase, intermediate, stalledState,
+    HazardAwareState.initial, line]
 
 /-- Zero-count nop is erased by normalization. If constructed directly in the
 normalized AST, it cannot advance state and its footprint is empty. -/
