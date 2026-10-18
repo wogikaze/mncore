@@ -3854,20 +3854,55 @@ noncomputable def executeHazardAwareNormalizedLine (line : NormalizedLine)
               event.startWord + 4 ≥ next.hazardClock
           return .ok ⟨next, nextPEHistory, nextBlockHistory⟩
 
+def normalizedLineWaitTag? : NormalizedLine → Option (Fin 256)
+  | .nop _ wait => wait
+  | .pe expressions =>
+      (expressions.findSome? fun expression =>
+        parsedExprWaitTag? expression.toParsed)
+  | .mv _ | .maskDirective .. => none
+
+/-- Remove and return the next MV-stream line while retaining PE lines in
+their original order. This is used only while the PE stream is blocked at a
+wait, when later MV-stream instructions remain issuable. -/
+def takeFirstNormalizedMv : List NormalizedLine → Option (NormalizedLine × List NormalizedLine)
+  | [] => none
+  | line@(.mv _) :: rest => some (line, rest)
+  | line :: rest => do
+      let (mv, remaining) ← takeFirstNormalizedMv rest
+      some (mv, line :: remaining)
+
 /-- Execute a normalized source program in order. The runner carries recent
 PE-memory accesses as validation history, rejects PE hazards before applying
 the line, and retains the transactional behavior of each datapath step. -/
-noncomputable def executeNormalizedProgramAux
-    : List NormalizedLine → HazardAwareState →
+noncomputable def executeNormalizedProgramAuxFuel
+    : Nat → List NormalizedLine → HazardAwareState →
       ProofsLean.StepResult HazardAwareState
-  | [], currentState => .ok currentState
-  | line :: rest, currentState =>
+  | 0, [], currentState => .ok currentState
+  | 0, _ :: _, _ => .unknown
+  | _ + 1, [], currentState => .ok currentState
+  | fuel + 1, line :: rest, currentState =>
       match executeHazardAwareNormalizedLine line currentState with
       | .failure => .failure
-      | .unknown => .unknown
-      | .ok next => executeNormalizedProgramAux rest next
-termination_by remaining _ => remaining.length
-decreasing_by simp_wf
+      | .unknown =>
+          match normalizedLineWaitTag? line with
+          | none => .unknown
+          | some tag =>
+              if currentState.machine.mvCompletedTags tag then .unknown
+              else
+                match takeFirstNormalizedMv rest with
+                | none => .unknown
+                | some (mvLine, remaining) =>
+                    match executeHazardAwareNormalizedLine mvLine currentState with
+                    | .failure => .failure
+                    | .unknown => .unknown
+                    | .ok next =>
+                        executeNormalizedProgramAuxFuel fuel (line :: remaining) next
+      | .ok next => executeNormalizedProgramAuxFuel fuel rest next
+
+noncomputable def executeNormalizedProgramAux
+    (remaining : List NormalizedLine) (currentState : HazardAwareState) :
+    ProofsLean.StepResult HazardAwareState :=
+  executeNormalizedProgramAuxFuel remaining.length remaining currentState
 
 noncomputable def executeNormalizedProgram (lines : List NormalizedLine)
     (state : State) : ProofsLean.StepResult State :=
@@ -3972,7 +4007,8 @@ theorem executeNormalizedProgram_maskDirective_updates_state
     executeNormalizedProgram [.maskDirective widthWords targets entry] state =
       .ok { state with maskDirective := ⟨widthWords, targets, entry⟩ } := by
   simp [executeNormalizedProgram, executeNormalizedProgramAux,
-    executeHazardAwareNormalizedLine, HazardAwareState.initial, executeNormalizedLine]
+    executeNormalizedProgramAuxFuel, executeHazardAwareNormalizedLine,
+    HazardAwareState.initial, executeNormalizedLine]
 
 theorem executeParsedProgram_maskDirective_updates_state
     (state : State) (widthWords : Nat) (targets : ParsedMaskTargets)
@@ -3981,7 +4017,8 @@ theorem executeParsedProgram_maskDirective_updates_state
       .ok { state with maskDirective := ⟨widthWords, targets, entry⟩ } := by
   simp [executeParsedProgram, ParsedLine.normalizeForSubmission?,
     executeNormalizedProgram, executeNormalizedProgramAux,
-    executeHazardAwareNormalizedLine, HazardAwareState.initial, executeNormalizedLine]
+    executeNormalizedProgramAuxFuel, executeHazardAwareNormalizedLine,
+    HazardAwareState.initial, executeNormalizedLine]
 
 noncomputable def integerProducerMachine : ProofsLean.PartialMachine where
   Line := InstructionLine
