@@ -1990,7 +1990,9 @@
         "rust_reference": "viz/core/src/blocks.rs::Blocks::pe_to_l1 and reduce_buses return ExecError for unsupported operation/operand combinations.",
         "scope_limit": "The change classifies malformed or unsupported forms; valid L1BM reduction values and layouts still need command-level Rust differential coverage.",
         "reduce_direct_memory_unknown_free_theorem": "ProofsLean.MNCore.executeParsedL1ReduceAtAllBanks_direct_memory_never_unknown",
-        "reduce_direct_memory_unknown_free_scope": "For successfully lowered reduce/reduce4 with direct PE-memory source, the shared gather read and reduction write generation compose across all four cycles and 64 banks. Unsupported reduction writes remain known failure; Rust command conformance and result-layout differentials remain open."
+        "reduce_direct_memory_unknown_free_scope": "For successfully lowered reduce/reduce4 with direct PE-memory source, the shared gather read and reduction write generation compose across all four cycles and 64 banks. Unsupported reduction writes remain known failure; Rust command conformance and result-layout differentials remain open.",
+        "reduce_resolved_forward_unknown_free_theorem": "ProofsLean.MNCore.executeParsedL1ReduceAtAllBanks_resolved_forward_never_unknown",
+        "reduce_resolved_forward_unknown_free_scope": "For successfully lowered reduce/reduce4 with a forward source, the complete transition cannot return unknown when the read state satisfies forwardingSourceResolved. Unresolved valid slots remain unknown-producing, and Rust result-layout conformance remains open."
       }
     },
     {
