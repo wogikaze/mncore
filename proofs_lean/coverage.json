@@ -1949,7 +1949,9 @@
         "memory_read_unknown_free_scope": "For every direct memory source and PE/cycle, the raw L1 mwrite read is either failure or success; unresolved forwarding cannot arise from this source form.",
         "mwrite_pe_group_unknown_free_theorems": [
           "ProofsLean.MNCore.readL1MwritePEList_direct_memory_never_unknown",
+          "ProofsLean.MNCore.readL1MwritePEList_resolved_forward_never_unknown",
           "ProofsLean.MNCore.readL1MwriteBusesAtBank_direct_memory_never_unknown",
+          "ProofsLean.MNCore.readL1MwriteBusesAtBank_resolved_forward_never_unknown",
           "ProofsLean.MNCore.readL1M4writeGroupList_direct_memory_never_unknown",
           "ProofsLean.MNCore.readL1M4writeBusesAtBank_direct_memory_never_unknown",
           "ProofsLean.MNCore.executeL1MwriteCycleList_direct_memory_never_unknown",
@@ -1958,6 +1960,8 @@
           "ProofsLean.MNCore.executeParsedL1MwriteAtAllBanks_direct_memory_never_unknown"
         ],
         "mwrite_pe_group_unknown_free_scope": "For a successfully lowered mwrite or m4write whose PE source is direct memory, the guarantee composes across its PE/group reads, all four cycles, and all 64 banks; the complete producer transition cannot return unknown. Forwarding sources and command-level Rust conformance remain open.",
+        "forward_source_condition_theorem": "ProofsLean.MNCore.readRawL1MwriteBus_forward_never_unknown",
+        "forward_source_condition": "For a forwarding source, the raw read cannot return unknown if the forwarding slot is disabled or its stateForwardingSlots value is known/poison. A valid unresolved slot can still return unknown. The same condition composes across the selected PE group and one bank/MAB/cycle; all-cycle/all-bank composition remains open.",
         "rust_reference": "viz/core/src/vsm.rs::parse_operand separates PE-memory banks from L1BM/L2BM/OMR operands; viz/core/src/machine.rs::Machine::read_raw_untraced reports unsupported non-memory sources.",
         "scope_limit": "The Lean failure theorem covers malformed direct AST memory banks that cannot represent a Rust PE-memory operand. Parser-produced PE-memory reads still require source-level differential conformance."
       },

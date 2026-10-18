@@ -1944,6 +1944,36 @@ theorem readRawL1MwriteBus_memory_never_unknown
         ParsedOperand.toParsedIntegerInput?, h, ParsedIntegerInput.readWithForwarding,
         ParsedIntegerInput.read]
 
+theorem readRawL1MwriteBus_forward_never_unknown
+    (state : State) (kind : ParsedForward) (negated extended rounded : Bool)
+    (pe : PEId) (cycle : Fin 4)
+    (resolved : state.forwardingValid pe (ParsedIntegerInput.forwardUnit kind) cycle = false ∨
+      stateForwardingSlots state pe (ParsedIntegerInput.forwardUnit kind) cycle ≠ .unknown) :
+    readRawL1MwriteBus state (.forward kind negated extended rounded) pe cycle ≠
+      .unknown := by
+  cases valid : state.forwardingValid pe (ParsedIntegerInput.forwardUnit kind) cycle with
+  | false =>
+      simp [readRawL1MwriteBus, rawL1MwriteSourceResult, rawL1MwriteSource?,
+        ParsedOperand.toParsedIntegerInput?, valid]
+  | true =>
+      have slotResolved :
+          stateForwardingSlots state pe (ParsedIntegerInput.forwardUnit kind) cycle ≠
+            .unknown := by
+        rcases resolved with invalid | slotResolved
+        · simp [valid] at invalid
+        · exact slotResolved
+      cases slot : stateForwardingSlots state pe
+          (ParsedIntegerInput.forwardUnit kind) cycle with
+      | known bus =>
+          simp [readRawL1MwriteBus, rawL1MwriteSourceResult, rawL1MwriteSource?,
+            ParsedOperand.toParsedIntegerInput?, ParsedIntegerInput.readWithForwarding,
+            valid, slot]
+      | poison =>
+          simp [readRawL1MwriteBus, rawL1MwriteSourceResult, rawL1MwriteSource?,
+            ParsedOperand.toParsedIntegerInput?, ParsedIntegerInput.readWithForwarding,
+            valid, slot]
+      | unknown => exact (slotResolved slot).elim
+
 def readL1MwritePEList (state : State) (source : ParsedOperand)
     (coordinate : MABCoordinate) (cycle : Fin 4) :
     List (Fin 4) → (Fin 4 → IntegerALU.Bus) →
@@ -1978,6 +2008,35 @@ theorem readL1MwritePEList_direct_memory_never_unknown
           simp only [result]
           exact ih (fun index => if index = pe then bus else buses index)
 
+theorem readL1MwritePEList_resolved_forward_never_unknown
+    (state : State) (kind : ParsedForward) (negated extended rounded : Bool)
+    (coordinate : MABCoordinate) (cycle : Fin 4) (pes : List (Fin 4))
+    (buses : Fin 4 → IntegerALU.Bus)
+    (resolved : ∀ pe ∈ pes,
+      state.forwardingValid (physicalPEId coordinate pe)
+        (ParsedIntegerInput.forwardUnit kind) cycle = false ∨
+      stateForwardingSlots state (physicalPEId coordinate pe)
+        (ParsedIntegerInput.forwardUnit kind) cycle ≠ .unknown) :
+    readL1MwritePEList state (.forward kind negated extended rounded)
+      coordinate cycle pes buses ≠ .unknown := by
+  induction pes generalizing buses with
+  | nil => simp [readL1MwritePEList]
+  | cons pe rest ih =>
+      simp only [readL1MwritePEList]
+      cases result : readRawL1MwriteBus state
+          (.forward kind negated extended rounded)
+          (physicalPEId coordinate pe) cycle with
+      | failure => simp [result]
+      | unknown =>
+          have headResolved := resolved pe (by simp)
+          exact (readRawL1MwriteBus_forward_never_unknown state kind negated extended
+            rounded (physicalPEId coordinate pe) cycle headResolved result).elim
+      | ok bus =>
+          simp only [result]
+          apply ih
+          intro next member
+          exact resolved next (by simp [member])
+
 def readL1MwriteBusesAtBank (state : State) (access : ParsedL1MwriteAccess)
     (bank : Fin 64) (mab : Fin 16) (cycle : Fin 4) :
     ProofsLean.StepResult (Fin 4 → IntegerALU.Bus) :=
@@ -2001,6 +2060,23 @@ theorem readL1MwriteBusesAtBank_direct_memory_never_unknown
       ⟨bank.val / 8 % 2, by have h := bank.isLt; omega⟩,
       ⟨bank.val % 8, by have h := bank.isLt; omega⟩, mab⟩
     cycle (List.finRange 4) (fun _ => ⟨0, 0⟩)
+
+theorem readL1MwriteBusesAtBank_resolved_forward_never_unknown
+    (state : State) (access : ParsedL1MwriteAccess) (kind : ParsedForward)
+    (negated extended rounded : Bool) (bank : Fin 64) (mab : Fin 16)
+    (cycle : Fin 4)
+    (resolved : ∀ pe : PEId,
+      state.forwardingValid pe (ParsedIntegerInput.forwardUnit kind) cycle = false ∨
+      stateForwardingSlots state pe (ParsedIntegerInput.forwardUnit kind) cycle ≠ .unknown)
+    (source : access.source = .forward kind negated extended rounded) :
+    readL1MwriteBusesAtBank state access bank mab cycle ≠ .unknown := by
+  simp only [readL1MwriteBusesAtBank, source]
+  apply readL1MwritePEList_resolved_forward_never_unknown
+  intro pe member
+  exact resolved (physicalPEId
+    ⟨⟨bank.val / 16, by have h := bank.isLt; omega⟩,
+      ⟨bank.val / 8 % 2, by have h := bank.isLt; omega⟩,
+      ⟨bank.val % 8, by have h := bank.isLt; omega⟩, mab⟩ pe)
 
 def readL1M4writeGroupList (state : State) (access : ParsedL1MwriteAccess)
     (bank : Fin 64) (cycle : Fin 4) :
