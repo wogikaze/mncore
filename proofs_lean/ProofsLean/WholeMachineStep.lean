@@ -2141,6 +2141,51 @@ theorem readL1M4writeBusesAtBank_direct_memory_never_unknown
       negated extended rounded mask bank cycle (List.finRange 4)
       (fun _ _ => ⟨0, 0⟩) source
 
+def forwardingSourceResolved (state : State) : Prop :=
+  ∀ pe unit cycle,
+    state.forwardingValid pe unit cycle = false ∨
+      stateForwardingSlots state pe unit cycle ≠ .unknown
+
+theorem readL1M4writeGroupList_resolved_forward_never_unknown
+    (state : State) (access : ParsedL1MwriteAccess) (kind : ParsedForward)
+    (negated extended rounded : Bool) (bank : Fin 64) (cycle : Fin 4)
+    (groups : List (Fin 4)) (buses : Fin 4 → Fin 4 → IntegerALU.Bus)
+    (resolved : forwardingSourceResolved state)
+    (source : access.source = .forward kind negated extended rounded) :
+    readL1M4writeGroupList state access bank cycle groups buses ≠ .unknown := by
+  induction groups generalizing buses with
+  | nil => simp [readL1M4writeGroupList]
+  | cons group rest ih =>
+      simp only [readL1M4writeGroupList]
+      let mab : Fin 16 := ⟨group.val * 4 + access.mabGroup.val, by
+        have hg := group.isLt
+        have hm := access.mabGroup.isLt
+        omega⟩
+      cases result : readL1MwriteBusesAtBank state access bank mab cycle with
+      | failure => simp [result]
+      | unknown =>
+          exact (readL1MwriteBusesAtBank_resolved_forward_never_unknown state access
+            kind negated extended rounded bank mab cycle
+            (by
+              intro pe
+              exact resolved pe (ParsedIntegerInput.forwardUnit kind) cycle)
+            source result).elim
+      | ok groupBuses =>
+          simp only [result]
+          exact ih (fun nextGroup pe =>
+            if nextGroup = group then groupBuses pe else buses nextGroup pe)
+
+theorem readL1M4writeBusesAtBank_resolved_forward_never_unknown
+    (state : State) (access : ParsedL1MwriteAccess) (kind : ParsedForward)
+    (negated extended rounded : Bool) (bank : Fin 64) (cycle : Fin 4)
+    (resolved : forwardingSourceResolved state)
+    (source : access.source = .forward kind negated extended rounded) :
+    readL1M4writeBusesAtBank state access bank cycle ≠ .unknown := by
+  simpa [readL1M4writeBusesAtBank] using
+    readL1M4writeGroupList_resolved_forward_never_unknown state access kind
+      negated extended rounded bank cycle (List.finRange 4)
+      (fun _ _ => ⟨0, 0⟩) resolved source
+
 def l1MwriteTurnaroundWrites (twoLongWords : Bool)
     (buses : Fin 4 → IntegerALU.Bus) : List L1Transfer.L1TurnWrite :=
   (List.finRange 4).flatMap fun pe =>
