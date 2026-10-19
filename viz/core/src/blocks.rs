@@ -21,8 +21,10 @@ pub const DARBUF_ENTRIES: usize = 512;
 pub struct Blocks {
     pub l1bm: Vec<Vec<u64>>,
     pub l2bm: Vec<Vec<u64>>,
-    /// L1BM turnaround register ($lbi) of each L1B: up to 64 long words per cycle.
-    pub lbi: Vec<[[u64; 64]; 4]>,
+    /// L1BM turnaround register ($lbi) of each L1B and cycle: a 64-long-word MSB plane followed
+    /// by a 64-long-word LSB plane.  One-long-word transfers touch only the MSB plane; two-long
+    /// word transfers and reads that feed T use both (SDM 3.6.8.2).
+    pub lbi: Vec<[[u64; 128]; 4]>,
     /// Why $lbi cannot be read, if it cannot (written by a step without PE-to-L1BM transfer).
     pub lbi_error: Option<String>,
     /// DRAM address registers of the four groups (`$dar<addr>`, SDM 3.6.1.3).
@@ -40,7 +42,7 @@ impl Default for Blocks {
         Blocks {
             l1bm: vec![vec![0; L1BM_LONGS]; L1BS],
             l2bm: vec![vec![0; L2BM_LONGS]; L2BS],
-            lbi: vec![[[0; 64]; 4]; L1BS],
+            lbi: vec![[[0; 128]; 4]; L1BS],
             lbi_error: Some("the L1BM turnaround register has not been written".into()),
             dar: vec![[0; DAR_ENTRIES]; crate::mv::GROUPS],
             darbuf: vec![[0; DARBUF_ENTRIES]; crate::mv::GROUPS],
@@ -59,7 +61,7 @@ pub struct BlockWrites {
     pub expr: u16,
     pub l2bm: Vec<(usize, usize, u64)>,
     /// New turnaround contents per L1B, when a PE-to-L1BM transfer happened.
-    pub lbi: Option<Vec<[[u64; 64]; 4]>>,
+    pub lbi: Option<Vec<[[u64; 128]; 4]>>,
 }
 
 /// The L1BM operand of an L1BM expression: access length (2 or 4 words) and address (None
@@ -94,7 +96,7 @@ impl Blocks {
                 if let Some(e) = &self.lbi_error {
                     return Err(ExecError::Runtime(format!("reading $lbi failed: {e}")));
                 }
-                Ok(self.lbi[l1b][cycle][offset % 64])
+                Ok(self.lbi[l1b][cycle][offset % 128])
             }
         }
     }
@@ -114,30 +116,43 @@ impl Blocks {
                 for mab in 0..16 {
                     for pe in 0..4 {
                         // Offsets of the MSB and (if any) LSB long words read for this PE.
+                        // The turnaround register has a MSB and an LSB plane per cycle, so an
+                        // L1BM-to-PE transfer that writes T (always two long words) gets one
+                        // long word from each plane.
                         let (om, ol): (usize, Option<usize>) = match op {
                             L1Op::Pbcast => {
                                 let o = if addr.is_some() { c } else { 0 };
-                                (o, two.then_some(o + 4))
+                                if addr.is_none() {
+                                    (o, Some(o + 64))
+                                } else {
+                                    (o, two.then_some(o + 4))
+                                }
                             }
                             L1Op::Mbcast => {
-                                if two {
+                                if addr.is_none() {
+                                    (pe, Some(pe + 64))
+                                } else if two {
                                     (base(8) + pe, Some(base(8) + 4 + pe))
-                                } else if addr.is_none() {
-                                    // From the turnaround register, the LSB long word carries what
-                                    // a two long word transfer would (visible when writing T).
-                                    (pe, Some(4 + pe))
                                 } else {
                                     (base(4) + pe, None)
                                 }
                             }
                             L1Op::M4bcast => {
                                 let i = mab >> 2;
-                                if two { (base(32) + i * 8 + pe, Some(base(32) + i * 8 + 4 + pe)) } else { (base(16) + i * 4 + pe, None) }
+                                if addr.is_none() {
+                                    let o = if two { i * 8 + pe } else { i * 4 + pe };
+                                    (o, Some(o + 64))
+                                } else if two {
+                                    (base(32) + i * 8 + pe, Some(base(32) + i * 8 + 4 + pe))
+                                } else {
+                                    (base(16) + i * 4 + pe, None)
+                                }
                             }
                             L1Op::Distrib { mabdiff } => {
                                 // PE (mab, pe) receives what MAB (mab - mabdiff) would have.
                                 let src_mab = (mab as i32 - mabdiff as i32).rem_euclid(16) as usize;
-                                (base(64) + src_mab * 4 + pe, None)
+                                let o = base(64) + src_mab * 4 + pe;
+                                (o, if addr.is_none() { Some(o + 64) } else { None })
                             }
                             other => return Err(ExecError::Unsupported(format!("{other:?} is not an L1BM-to-PE transfer"))),
                         };
@@ -174,9 +189,13 @@ impl Blocks {
                     L1Op::Mwrite { mab } => {
                         for pe in 0..4 {
                             let b = &src[pe_of(mab as usize, pe)][c];
-                            items.push((pe, long(b, 0)));
+                            let hi = long(b, 0);
+                            items.push((pe, hi));
+                            turn.push((pe, hi));
                             if two {
-                                items.push((4 + pe, long(b, 1)));
+                                let lo = long(b, 1);
+                                items.push((4 + pe, lo));
+                                turn.push((64 + pe, lo));
                             }
                         }
                     }
@@ -185,10 +204,16 @@ impl Blocks {
                             for pe in 0..4 {
                                 let b = &src[pe_of(mo * 4 + mab as usize, pe)][c];
                                 if two {
-                                    items.push((mo * 8 + pe, long(b, 0)));
-                                    items.push((mo * 8 + 4 + pe, long(b, 1)));
+                                    let hi = long(b, 0);
+                                    let lo = long(b, 1);
+                                    items.push((mo * 8 + pe, hi));
+                                    items.push((mo * 8 + 4 + pe, lo));
+                                    turn.push((mo * 8 + pe, hi));
+                                    turn.push((64 + mo * 8 + pe, lo));
                                 } else {
-                                    items.push((mo * 4 + pe, long(b, 0)));
+                                    let hi = long(b, 0);
+                                    items.push((mo * 4 + pe, hi));
+                                    turn.push((mo * 4 + pe, hi));
                                 }
                             }
                         }
@@ -227,12 +252,21 @@ impl Blocks {
                                         (acc << 16) | ((l >> (32 - 32 * (j % 2) as u32)) & 0xffff)
                                     });
                                     items.push((group * 4 + pe, v));
+                                    turn.push((group * 4 + pe, v));
                                 } else if four {
-                                    items.push((group * 8 + pe, long(&res[pe], 0)));
-                                    items.push((group * 8 + 4 + pe, long(&res[pe], 1)));
+                                    let hi = long(&res[pe], 0);
+                                    let lo = long(&res[pe], 1);
+                                    items.push((group * 8 + pe, hi));
+                                    items.push((group * 8 + 4 + pe, lo));
+                                    turn.push((group * 8 + pe, hi));
+                                    turn.push((64 + group * 8 + pe, lo));
                                 } else {
-                                    items.push((pe, long(&res[pe], 0)));
-                                    items.push((4 + pe, long(&res[pe], 1)));
+                                    let hi = long(&res[pe], 0);
+                                    let lo = long(&res[pe], 1);
+                                    items.push((pe, hi));
+                                    items.push((4 + pe, lo));
+                                    turn.push((pe, hi));
+                                    turn.push((64 + pe, lo));
                                 }
                             }
                         }
@@ -246,22 +280,24 @@ impl Blocks {
                                 let red = reduce_buses(rrn, round, ext, two, &vals, !four)?;
                                 if two {
                                     let (o0, o1) = if four { (group * 8 + pe, group * 8 + 4 + pe) } else { (pe, 4 + pe) };
-                                    items.push((o0, long(&red, 0)));
-                                    items.push((o1, long(&red, 1)));
+                                    let (h0, h1) = (long(&red, 0), long(&red, 1));
+                                    items.push((o0, h0));
+                                    items.push((o1, h1));
+                                    turn.push((o0, h0));
+                                    turn.push((64 + o0, h1));
                                 } else {
                                     let o = if four { group * 4 + pe } else { pe };
-                                    items.push((o, long(&red, 0)));
+                                    let hi = long(&red, 0);
+                                    items.push((o, hi));
+                                    turn.push((o, hi));
                                 }
                             }
                         }
                     }
                     other => return Err(ExecError::Unsupported(format!("{other:?} is not a PE-to-L1BM transfer"))),
                 }
-                if turn.is_empty() {
-                    turn = items.clone();
-                }
                 for &(o, v) in &turn {
-                    lbi[l1b][c][o % 64] = v;
+                    lbi[l1b][c][o % 128] = v;
                 }
                 if let Some(a) = addr {
                     let step = match op {
@@ -509,4 +545,62 @@ fn extend_halves(b: &Bus) -> Bus {
         .map(|j| float::encode(SINGLE, float::decode(HALF, (msb >> (48 - 16 * j)) & 0xffff)))
         .collect();
     bus_of((s[0] << 32) | s[1], (s[2] << 32) | s[3])
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn apply_turnaround(b: &mut Blocks, mut w: BlockWrites) {
+        b.lbi = w.lbi.take().expect("PE-to-L1BM transfer updates the turnaround register");
+        b.lbi_error = None;
+        b.apply(w);
+    }
+
+    /// A one-long-word transfer writes only the MSB plane of the turnaround register.  A later
+    /// transfer to T (which is always two long words) still receives the LSB plane written by an
+    /// earlier two-long-word transfer; this is what `l1bmd $lbi $t` relies on in challenge 15.
+    #[test]
+    fn turnaround_lsb_plane_survives_one_long_transfers() {
+        let mut b = Blocks::default();
+        let mut src = vec![[[0u32; 4]; 4]; PES];
+        for pe in 0..4 {
+            src[pe][0] = bus_of(0x1000 + pe as u64, 0x2000 + pe as u64);
+        }
+        let mut w = BlockWrites::default();
+        b.pe_to_l1(
+            L1Op::Mwrite { mab: 0 },
+            &Operand::L1bm { wl: 4, addr: None },
+            &src,
+            false,
+            false,
+            &mut w,
+        )
+        .unwrap();
+        apply_turnaround(&mut b, w);
+
+        // The gather is one-long-word: it overwrites the MSB plane only.
+        let mut src = vec![[[0u32; 4]; 4]; PES];
+        for pe in 0..4 {
+            src[pe][0] = bus_of(0x3000 + pe as u64, 0);
+        }
+        let mut w = BlockWrites::default();
+        b.pe_to_l1(
+            L1Op::Gather { mabdiff: 0 },
+            &Operand::L1bm { wl: 2, addr: None },
+            &src,
+            false,
+            false,
+            &mut w,
+        )
+        .unwrap();
+        apply_turnaround(&mut b, w);
+
+        let (out, _) =
+            b.l1_to_pe(L1Op::Distrib { mabdiff: 0 }, &Operand::L1bm { wl: 2, addr: None }).unwrap();
+        // MAB 0 PE 0: gather value in the MSB plane, individual transfer in the LSB plane.
+        assert_eq!(out[0][0], bus_of(0x3000, 0x2000));
+        // MAB 1 PE 0 was never touched by the individual transfer, so its LSB plane stays zero.
+        assert_eq!(out[4][0], bus_of(0, 0));
+    }
 }
