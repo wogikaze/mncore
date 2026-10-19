@@ -72,3 +72,18 @@ forwarding レジスタを更新する命令式も各レジスタにつき 1 つ
 4. ✅ MV の全基本モードと DRAM 間接参照。
 5. ✅ オペランド形（`$mb`/`$nb`、`j`、T 間接、固定値）と noforward/wait。
 6. MAU の D/H、matrix MAU D/H、行列マスク、`$lbf`。
+
+## 最終検証（2026-10-19）
+
+| 項目 | 結果 |
+| --- | --- |
+| `gpu_alu_conformance` | 142 設定 / 524 行 PASS |
+| `gpu_l1_conformance` | 1,461 式 / 1,482 行 0 mismatch |
+| `gpu_mau_conformance` | 133 設定 / 7,640 行 0 mismatch |
+| `gpu_mem_conformance` | 697 ケース 0 mismatch |
+| `gpu_run_program mnist_train_step` | 2,635 PE 行 0 mismatch（lbf/forwarding 比較込み） |
+| `cargo test --release` | 23 件通過 |
+| `difftest_prog problems/3.relu` | 0 mismatch |
+
+命令形式の不足は解消した。残る差は実行時エラーの再現（不正 block-float、forwarding 無効の文言）と、
+DRAM 間接参照で `nd` 省略時に公式エミュレータがアクセスしない点だけ。
