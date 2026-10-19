@@ -8,8 +8,8 @@ CPU の `Sim` と GPU の `gpu_run_program` が同じ VSM を実行し、最終�
 | 分類 | 対応 | 主な不足 |
 | --- | --- | --- |
 | ALU | 全 32 opcode（zero/imm を含む）。`d/f/g/h/l/i/s`、unsigned、入力 `r`/`e`、zero-flush、複数出力（8 個まで）、OMR/T/BAR 出力、`msl`/`msr`、`bfe`/`bfn` 全精度・`hbfn/<n>`/`hbfe/<n>`、`lrelud`/`lreluo`/`ilrelud`。入力の `$mb`/`$nb` 加算・T 間接・`j` も全カーネルで対応 | `$lbf` 入力、9 個以上の出力、`hbfn/<n>` の n が 6..9 外。ALU の `e` は CPU と同じく no-op（SDM 3.6.12 は `r` のみ定義） |
-| MAU | f32 の FMA/MUL/ADD/PASSA。`$mb`/`$nb`・T 間接・`j` 付き入力、BAR 出力、`mauf` 更新 | D/H のベクトル MAU、H の行列、`neg/ext/rnd` の一部、flush、マスク |
-| 行列 | F/G/D の write/read、F/G の matrix MAU。入力の BAR・T 間接・`j`、read の BAR 出力 | H、D の matrix MAU、マスク付き読み書き、matrix MAU の BAR 出力 |
+| MAU | ベクトル MAU D/F/G/H の fma/mul/add/passa（u/d/round、neg/e/r、wl 1/2/4、LM/GRF/T/forwarding、nowrite、マスク/flush、T/OMR/複数出力）。matrix MAU D/F/G/H（mwrite/mread 含む）。`gpu_mau_conformance` 133 設定・7,640 行 | 不正 block-float 入力のエラー再現、matrix write のマスク（SDM に無い） |
+| 行列 | D/F/G/H の write/read、matrix MAU、row wrap、neg/e/r、nowrite、複数 PE 出力、マスク/flush、T/OMR/BAR | 不正 block-float 入力のエラー、matrix MAU BAR 出力の conformance（乱数が BF 不正になりやすい） |
 | L1BM | 全形式（1/2 長語、M4 系、全 RRN と `r`/`e`、`l1bmd` の分配・結合、`$lbi`、`$lbi` 以外の BAR/T/j 付き PE オペランド、BAR 出力） | `$lbf` フォワーディング値の保持（GPU は lbf レジスタを持たない） |
 | L2BM | 全形式（Bcast/Bcast2/Distrib/Gather/FromL1b/Reduce/Reduce2/Imcast、全 RRN、全 L1B 集合）と `l2bmdars`/`l2bmdarw`（DAR/DARBUF） | なし |
 | MV | 全 25 基本モード（mvnop、mvp の全組み合わせと並列形、mvb/mvb2/mvb4、mvd の 4 方向、mvr/mvr2/mvr4 の全 RRN）、DRAM 間接参照（`$di`、`nd`、送受信両方の間接） | DRAM 間接参照の `nd` 省略時の公式エミュレータとの差（下記） |
@@ -29,6 +29,8 @@ CPU の `Sim` と GPU の `gpu_run_program` が同じ VSM を実行し、最終�
   cargo run --release --bin gpu_mem_conformance
   ```
 - `gpu_l1_conformance` が L1BM の全形式を 7 section × 3 seed で比較する。
+- `gpu_mau_conformance` が MAU と行列の 133 設定・7,640 行を生成し、`mauf`/`aluf`/`mreadf`、
+  行列、OMR、T、4 メモリを比較する。
 - `gpu_alu_conformance` が ALU の全 opcode・精度・unsigned・`r`/`e`・flush・複数出力を網羅する
   VSM を生成する。142 config / 524 PE 行。各行の `aluf`・OMR・T と、最終的な
   4 メモリ全体を比較する。
