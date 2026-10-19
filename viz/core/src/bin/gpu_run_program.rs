@@ -13,6 +13,18 @@ use mncore_sim::machine::{MaskState, GRF_WORDS, LM_WORDS, PES};
 use mncore_sim::run::Sim;
 use mncore_sim::vsm::{self, Line, Op};
 
+fn fwd_written_by(expr: &mncore_sim::vsm::Expr) -> Option<usize> {
+    match &expr.op {
+        Op::Mau { .. } => Some(0),
+        Op::Alu { .. } | Op::Imm { .. } | Op::Zero => Some(1),
+        Op::MatRead { .. } => Some(2),
+        Op::L1(_) if matches!(expr.srcs.first(), Some(mncore_sim::vsm::Operand::L1bm { .. })) => {
+            Some(3)
+        }
+        _ => None,
+    }
+}
+
 fn main() {
     let path = std::env::args()
         .nth(1)
@@ -67,6 +79,8 @@ fn main() {
 
     let start = std::time::Instant::now();
     let mut pe_lines = 0usize;
+    // Forwarding registers readable in the next step: mauf, aluf, mreadf, lbf.
+    let mut fwd_enabled = [false; 4];
     for (lineno, line) in &program {
         match line {
             Line::Nop { .. } => {}
@@ -103,8 +117,32 @@ fn main() {
                 let update_forward = !exprs.iter().any(|e| matches!(e.op, Op::Noforward));
                 let has_mread = exprs.iter().any(|e| matches!(e.op, Op::MatRead { .. }));
                 for expr in exprs {
+                    for src in &expr.srcs {
+                        if let mncore_sim::vsm::Operand::Forward { kind, .. } = src {
+                            let index = match kind {
+                                mncore_sim::vsm::FwdKind::Mauf => 0,
+                                mncore_sim::vsm::FwdKind::Aluf => 1,
+                                mncore_sim::vsm::FwdKind::Mreadf => 2,
+                                mncore_sim::vsm::FwdKind::Lbf => 3,
+                            };
+                            if !fwd_enabled[index] {
+                                eprintln!(
+                                    "line {lineno}: forwarding register {kind:?} is not enabled"
+                                );
+                                std::process::exit(4);
+                            }
+                        }
+                    }
+                }
+                let mut fwd_written = [false; 4];
+                for expr in exprs {
                     if matches!(expr.op, Op::Noforward | Op::Wait(_)) {
                         continue;
+                    }
+                    if update_forward {
+                        if let Some(index) = fwd_written_by(expr) {
+                            fwd_written[index] = true;
+                        }
                     }
                     if let Some(line) = alu_line_from_expr(expr, mask) {
                         gpu.run_alu_line_with(&state, &line, update_forward)
@@ -137,6 +175,7 @@ fn main() {
                         std::process::exit(3);
                     }
                 }
+                fwd_enabled = if update_forward { fwd_written } else { [false; 4] };
                 // CPU steps without a matrix read expose zero on mreadf.
                 if update_forward && !has_mread {
                     gpu.clear_mreadf(&state).expect("clear mreadf");

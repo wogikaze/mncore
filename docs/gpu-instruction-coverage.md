@@ -14,7 +14,7 @@ CPU の `Sim` と GPU の `gpu_run_program` が同じ VSM を実行し、最終�
 | L2BM | 全形式（Bcast/Bcast2/Distrib/Gather/FromL1b/Reduce/Reduce2/Imcast、全 RRN、全 L1B 集合）と `l2bmdars`/`l2bmdarw`（DAR/DARBUF） | なし |
 | MV | 全 25 基本モード（mvnop、mvp の全組み合わせと並列形、mvb/mvb2/mvb4、mvd の 4 方向、mvr/mvr2/mvr4 の全 RRN）、DRAM 間接参照（`$di`、`nd`、送受信両方の間接） | DRAM 間接参照の `nd` 省略時の公式エミュレータとの差（下記） |
 | オペランド | ALU/MAU/L1BM/行列の直接 Mem、Forward（`aluf`/`mauf`/`mreadf`）、固定値 6 種、T、WL 1/2/4、複数出力、`r`/`e`、zero-flush、単一行マスク・`mask` ディレクティブ、`$mb`/`$nb` の読み書き、T 間接、`j`/madpe | `$lbf`、`hbfn` の範囲外 `<n>`、行列マスク、forwarding 無効時のエラー再現 |
-| 制御 | nop、mask、noforward（ALU/MAU/行列 read/L1BM 折り返しの更新抑止）、wait（タグ・同時発行の検証） | forwarding 無効状態（`IALU is disabled` 等）の再現 |
+| 制御 | nop、mask、noforward、wait、forwarding 有効/無効の追跡（無効な forward 読み出しは CPU と同じく実行前に失敗） | エラーメッセージ文言の一致 |
 
 ## テスト
 
