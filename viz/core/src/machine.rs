@@ -60,50 +60,98 @@ impl PeId {
     }
 }
 
-/// Lazily allocated word memory. Untouched memory reads as zero, like the emulator's SRAM.
-#[derive(Clone, Default)]
-pub struct Words {
-    data: Option<Box<[u32]>>,
-    len: usize,
-    /// `len - 1`. Every memory size is a power of two, so wrapping is a mask, not a division.
-    mask: usize,
+/// PE word memories in address-major (SoA) layout: `pe * len + (addr & (len - 1))`.
+///
+/// One contiguous allocation per memory kind removes the per-PE boxes and lets the fast path
+/// hand each PE a mutable slice of its own memory.
+pub struct Mem {
+    pub lm0: Vec<u32>,
+    pub lm1: Vec<u32>,
+    pub grf0: Vec<u32>,
+    pub grf1: Vec<u32>,
 }
 
-impl Words {
-    pub fn new(len: usize) -> Words {
-        assert!(len.is_power_of_two(), "Words length must be a power of two");
-        Words {
-            data: None,
-            len,
-            mask: len - 1,
+impl Mem {
+    pub fn new() -> Mem {
+        Mem {
+            lm0: vec![0; PES * LM_WORDS],
+            lm1: vec![0; PES * LM_WORDS],
+            grf0: vec![0; PES * GRF_WORDS],
+            grf1: vec![0; PES * GRF_WORDS],
         }
     }
-    pub fn len(&self) -> usize {
-        self.len
-    }
+}
+
+pub trait MemRead {
+    fn peek(&self, m: MemKind, pe: usize, addr: usize) -> u32;
+}
+
+pub trait MemWrite: MemRead {
+    fn poke(&mut self, m: MemKind, pe: usize, addr: usize, v: u32);
+}
+
+impl MemRead for Mem {
     #[inline]
-    pub fn get(&self, addr: usize) -> u32 {
-        match &self.data {
-            Some(d) => d[addr & self.mask],
-            None => 0,
+    fn peek(&self, m: MemKind, pe: usize, addr: usize) -> u32 {
+        match m {
+            MemKind::Lm0 => self.lm0[pe * LM_WORDS + (addr & (LM_WORDS - 1))],
+            MemKind::Lm1 => self.lm1[pe * LM_WORDS + (addr & (LM_WORDS - 1))],
+            MemKind::Grf0 => self.grf0[pe * GRF_WORDS + (addr & (GRF_WORDS - 1))],
+            MemKind::Grf1 => self.grf1[pe * GRF_WORDS + (addr & (GRF_WORDS - 1))],
+            other => panic!("not a PE word memory: {other:?}"),
         }
     }
+}
+
+impl MemWrite for Mem {
     #[inline]
-    pub fn set(&mut self, addr: usize, v: u32) {
-        let (len, mask) = (self.len, self.mask);
-        let d = self
-            .data
-            .get_or_insert_with(|| vec![0; len].into_boxed_slice());
-        d[addr & mask] = v;
+    fn poke(&mut self, m: MemKind, pe: usize, addr: usize, v: u32) {
+        match m {
+            MemKind::Lm0 => self.lm0[pe * LM_WORDS + (addr & (LM_WORDS - 1))] = v,
+            MemKind::Lm1 => self.lm1[pe * LM_WORDS + (addr & (LM_WORDS - 1))] = v,
+            MemKind::Grf0 => self.grf0[pe * GRF_WORDS + (addr & (GRF_WORDS - 1))] = v,
+            MemKind::Grf1 => self.grf1[pe * GRF_WORDS + (addr & (GRF_WORDS - 1))] = v,
+            other => panic!("not a PE word memory: {other:?}"),
+        }
+    }
+}
+
+/// One PE's four memory slices, handed to a parallel worker.
+pub struct MemPe<'a> {
+    lm0: &'a mut [u32],
+    lm1: &'a mut [u32],
+    grf0: &'a mut [u32],
+    grf1: &'a mut [u32],
+}
+
+impl MemRead for MemPe<'_> {
+    #[inline]
+    fn peek(&self, m: MemKind, _pe: usize, addr: usize) -> u32 {
+        match m {
+            MemKind::Lm0 => self.lm0[addr & (LM_WORDS - 1)],
+            MemKind::Lm1 => self.lm1[addr & (LM_WORDS - 1)],
+            MemKind::Grf0 => self.grf0[addr & (GRF_WORDS - 1)],
+            MemKind::Grf1 => self.grf1[addr & (GRF_WORDS - 1)],
+            other => panic!("not a PE word memory: {other:?}"),
+        }
+    }
+}
+
+impl MemWrite for MemPe<'_> {
+    #[inline]
+    fn poke(&mut self, m: MemKind, _pe: usize, addr: usize, v: u32) {
+        match m {
+            MemKind::Lm0 => self.lm0[addr & (LM_WORDS - 1)] = v,
+            MemKind::Lm1 => self.lm1[addr & (LM_WORDS - 1)] = v,
+            MemKind::Grf0 => self.grf0[addr & (GRF_WORDS - 1)] = v,
+            MemKind::Grf1 => self.grf1[addr & (GRF_WORDS - 1)] = v,
+            other => panic!("not a PE word memory: {other:?}"),
+        }
     }
 }
 
 #[derive(Clone)]
 pub struct Pe {
-    pub lm0: Words,
-    pub lm1: Words,
-    pub grf0: Words,
-    pub grf1: Words,
     pub t: [u32; T_WORDS],
     pub bar0: u32,
     pub bar1: u32,
@@ -119,10 +167,6 @@ pub struct Pe {
 impl Default for Pe {
     fn default() -> Pe {
         Pe {
-            lm0: Words::new(LM_WORDS),
-            lm1: Words::new(LM_WORDS),
-            grf0: Words::new(GRF_WORDS),
-            grf1: Words::new(GRF_WORDS),
             t: [0; T_WORDS],
             bar0: 0,
             bar1: 0,
@@ -135,26 +179,6 @@ impl Default for Pe {
     }
 }
 
-impl Pe {
-    pub fn mem(&self, m: MemKind) -> &Words {
-        match m {
-            MemKind::Lm0 => &self.lm0,
-            MemKind::Lm1 => &self.lm1,
-            MemKind::Grf0 => &self.grf0,
-            MemKind::Grf1 => &self.grf1,
-            _ => panic!("not a PE word memory: {m:?}"),
-        }
-    }
-    pub fn mem_mut(&mut self, m: MemKind) -> &mut Words {
-        match m {
-            MemKind::Lm0 => &mut self.lm0,
-            MemKind::Lm1 => &mut self.lm1,
-            MemKind::Grf0 => &mut self.grf0,
-            MemKind::Grf1 => &mut self.grf1,
-            _ => panic!("not a PE word memory: {m:?}"),
-        }
-    }
-}
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum ExecError {
@@ -190,6 +214,8 @@ pub type MatFace = [[u32; 8]; 16];
 
 pub struct Machine {
     pub pes: Vec<Pe>,
+    /// PE word memories (LM0, LM1, GRF0, GRF1) in address-major order.
+    pub mem: Mem,
     /// Why each forwarding register (aluf, mauf, mreadf, lbf) cannot be read, if it cannot.
     /// Like the emulator, an error is only raised when the register is actually read, e.g.
     /// when the previous step had no instruction for that unit ("IALU is disabled").
@@ -286,6 +312,7 @@ impl Machine {
         ];
         Machine {
             pes: vec![Pe::default(); PES],
+            mem: Mem::new(),
             fwd_error,
             blocks: Default::default(),
             tracer: Default::default(),
@@ -369,10 +396,9 @@ impl Machine {
             }
             Operand::Mem { mem, wl, addr, .. } => {
                 let a = self.word_addrs(pe, *mem, *wl, addr, cycle);
-                let m = p.mem(*mem);
                 let mut bus = [0; 4];
                 for i in 0..*wl as usize {
-                    bus[i] = m.get(a + i);
+                    bus[i] = self.mem.peek(*mem, pe, a + i);
                 }
                 bus
             }
@@ -506,37 +532,7 @@ impl Machine {
         for (ei, (e, out)) in outputs.iter().enumerate() {
             let flush = e.flush;
             if !tracing {
-                self.pes
-                    .par_iter_mut()
-                    .enumerate()
-                    .try_for_each(|(pe, p)| -> Result<(), ExecError> {
-                        for c in 0..4 {
-                            let mut bus = out.bus[pe][c];
-                            if let Some(sel) = flush {
-                                let f = mask_flags_pe(p, &mask_state, &sel, c);
-                                bus = apply_flush(bus, f, sel.ll);
-                            }
-                            let poison = out
-                                .poison
-                                .as_ref()
-                                .filter(|q| q.hits(pe, c))
-                                .map(|q| q.msg.as_str());
-                            for d in &e.dsts {
-                                write_pe(
-                                    p,
-                                    &mask_state,
-                                    pe,
-                                    d,
-                                    c,
-                                    bus,
-                                    out.flags[pe][c],
-                                    single_line_mask,
-                                    poison,
-                                )?;
-                            }
-                        }
-                        Ok(())
-                    })?;
+                self.write_output_parallel(e, out, flush, single_line_mask, mask_state)?;
                 continue;
             }
             let expr_index = exprs.iter().position(|x| std::ptr::eq(x, *e)).unwrap_or(ei) as u16;
@@ -717,11 +713,10 @@ impl Machine {
                     return Ok(());
                 }
                 let a = self.word_addrs(pe, *mem, *wl, addr, cycle);
-                let m = self.pes[pe].mem_mut(*mem);
                 for i in 0..*wl as usize {
                     if word_enabled(mflags, i) {
-                        let old = m.get(a + i);
-                        m.set(a + i, merge_word(old, bus[i], mflags, i));
+                        let old = self.mem.peek(*mem, pe, a + i);
+                        self.mem.poke(*mem, pe, a + i, merge_word(old, bus[i], mflags, i));
                     }
                 }
             }
@@ -911,6 +906,7 @@ impl Machine {
             let mut bus = vec![[[0u32; 4]; 4]; PES];
             let mut flags = vec![[0u8; 4]; PES];
             let pes = &self.pes;
+            let mem = &self.mem;
             let fwd_error = &self.fwd_error;
             bus.par_chunks_mut(64)
                 .zip(flags.par_chunks_mut(64))
@@ -919,7 +915,7 @@ impl Machine {
                     for (j, (b, f)) in bc.iter_mut().zip(fc.iter_mut()).enumerate() {
                         let pe = ci * 64 + j;
                         let (out, fl) =
-                            compute_alu_pe(&pes[pe], fwd_error, e, name, prec, unsigned, pe)?;
+                            compute_alu_pe(&pes[pe], mem, fwd_error, e, name, prec, unsigned, pe)?;
                         *b = out;
                         *f = fl;
                     }
@@ -937,6 +933,7 @@ impl Machine {
             let mut bus = vec![[[0u32; 4]; 4]; PES];
             let mut flags = vec![[0u8; 4]; PES];
             let pes = &self.pes;
+            let mem = &self.mem;
             let fwd_error = &self.fwd_error;
             let src = &e.srcs[0];
             let msl = name == AluOp::Msl;
@@ -949,6 +946,7 @@ impl Machine {
                         for c in 0..4 {
                             ins[p][c] = read_alu_input_pe(
                                 &pes[mab * 4 + p],
+                                mem,
                                 fwd_error,
                                 mab * 4 + p,
                                 src,
@@ -1042,6 +1040,7 @@ impl Machine {
             let mut bus = vec![[[0u32; 4]; 4]; PES];
             let mut flags = vec![[0u8; 4]; PES];
             let pes = &self.pes;
+            let mem = &self.mem;
             let fwd_error = &self.fwd_error;
             bus.par_chunks_mut(64)
                 .zip(flags.par_chunks_mut(64))
@@ -1050,7 +1049,7 @@ impl Machine {
                     for (j, (b, f)) in bc.iter_mut().zip(fc.iter_mut()).enumerate() {
                         let pe = ci * 64 + j;
                         let (out, fl) = compute_vec_pe(
-                            &pes[pe], fwd_error, e, prec, kind, half, round, pe,
+                            &pes[pe], mem, fwd_error, e, prec, kind, half, round, pe,
                         )?;
                         *b = out;
                         *f = fl;
@@ -1231,34 +1230,108 @@ impl Machine {
         Some(Ok(()))
     }
 
+    fn write_output_parallel(
+        &mut self,
+        e: &Expr,
+        out: &Output,
+        flush: Option<MaskSel>,
+        single_line_mask: bool,
+        mask_state: MaskState,
+    ) -> Result<(), ExecError> {
+        let Machine { pes, mem, .. } = self;
+        let Mem {
+            lm0,
+            lm1,
+            grf0,
+            grf1,
+        } = mem;
+        pes.par_iter_mut()
+            .zip(lm0.par_chunks_mut(LM_WORDS))
+            .zip(lm1.par_chunks_mut(LM_WORDS))
+            .zip(grf0.par_chunks_mut(GRF_WORDS))
+            .zip(grf1.par_chunks_mut(GRF_WORDS))
+            .enumerate()
+            .try_for_each(|(pe, ((((p, lm0), lm1), grf0), grf1))| {
+                let mut memory = MemPe {
+                    lm0,
+                    lm1,
+                    grf0,
+                    grf1,
+                };
+                for c in 0..4 {
+                    let mut bus = out.bus[pe][c];
+                    if let Some(sel) = flush {
+                        let f = mask_flags_pe(p, &mask_state, &sel, c);
+                        bus = apply_flush(bus, f, sel.ll);
+                    }
+                    let poison = out
+                        .poison
+                        .as_ref()
+                        .filter(|q| q.hits(pe, c))
+                        .map(|q| q.msg.as_str());
+                    for d in &e.dsts {
+                        write_pe(
+                            p,
+                            &mask_state,
+                            &mut memory,
+                            pe,
+                            d,
+                            c,
+                            bus,
+                            out.flags[pe][c],
+                            single_line_mask,
+                            poison,
+                        )?;
+                    }
+                }
+                Ok(())
+            })
+    }
+
     fn run_fast(
         &mut self,
         exprs: &[Expr],
         single_line_mask: bool,
         update_forward: bool,
     ) -> Result<(), ExecError> {
-        const CHUNK: usize = 32;
-        let pes = &mut self.pes;
-        let fwd_error = &self.fwd_error;
-        let mask_state = self.mask_state;
+        let Machine {
+            pes,
+            mem,
+            fwd_error,
+            mask_state,
+            ..
+        } = self;
+        let mask_state = *mask_state;
+        let Mem {
+            lm0,
+            lm1,
+            grf0,
+            grf1,
+        } = mem;
         thread_pool().install(|| {
-            pes.as_mut_slice()
-                .par_chunks_mut(CHUNK)
+            pes.par_iter_mut()
+                .zip(lm0.par_chunks_mut(LM_WORDS))
+                .zip(lm1.par_chunks_mut(LM_WORDS))
+                .zip(grf0.par_chunks_mut(GRF_WORDS))
+                .zip(grf1.par_chunks_mut(GRF_WORDS))
                 .enumerate()
-                .try_for_each(|(ci, chunk)| -> Result<(), ExecError> {
-                    for (j, p) in chunk.iter_mut().enumerate() {
-                        let pe = ci * CHUNK + j;
-                        run_fast_pe(
-                            p,
-                            fwd_error,
-                            &mask_state,
-                            exprs,
-                            single_line_mask,
-                            update_forward,
-                            pe,
-                        )?;
-                    }
-                    Ok(())
+                .try_for_each(|(pe, ((((p, lm0), lm1), grf0), grf1))| {
+                    let mut memory = MemPe {
+                        lm0,
+                        lm1,
+                        grf0,
+                        grf1,
+                    };
+                    run_fast_pe(
+                        p,
+                        &mut memory,
+                        fwd_error,
+                        &mask_state,
+                        exprs,
+                        single_line_mask,
+                        update_forward,
+                        pe,
+                    )
                 })
         })
     }
@@ -2168,6 +2241,7 @@ impl Machine {
         let mut bus = vec![[[0u32; 4]; 4]; PES];
         if self.tracer.borrow().is_none() {
             let pes = &self.pes;
+            let mem = &self.mem;
             let fwd_error = &self.fwd_error;
             let src = &e.srcs[0];
             bus.par_chunks_mut(4)
@@ -2178,6 +2252,7 @@ impl Machine {
                             .map(|p| {
                                 read_alu_input_pe(
                                     &pes[mab * 4 + p],
+                                    mem,
                                     fwd_error,
                                     mab * 4 + p,
                                     src,
@@ -2318,8 +2393,9 @@ fn word_addrs_pe(p: &Pe, pe: usize, mem: MemKind, wl: u8, addr: &Addr, cycle: us
     (bar + t + addr.cycles[cycle] as usize + maadj) & !(wl - 1)
 }
 
-fn read_raw_pe(
+fn read_raw_pe<M: MemRead>(
     p: &Pe,
+    memory: &M,
     fwd_error: &[Option<String>; 4],
     pe: usize,
     op: &Operand,
@@ -2332,10 +2408,9 @@ fn read_raw_pe(
         }
         Operand::Mem { mem, wl, addr, .. } => {
             let a = word_addrs_pe(p, pe, *mem, *wl, addr, cycle);
-            let m = p.mem(*mem);
             let mut bus = [0; 4];
             for i in 0..*wl as usize {
-                bus[i] = m.get(a + i);
+                bus[i] = memory.peek(*mem, pe, a + i);
             }
             bus
         }
@@ -2361,8 +2436,9 @@ fn read_raw_pe(
     })
 }
 
-fn read_alu_input_pe(
+fn read_alu_input_pe<M: MemRead>(
     p: &Pe,
+    memory: &M,
     fwd_error: &[Option<String>; 4],
     pe: usize,
     op: &Operand,
@@ -2387,7 +2463,7 @@ fn read_alu_input_pe(
         };
         return Ok(splat(lane, bits));
     }
-    let bus = read_raw_pe(p, fwd_error, pe, op, cycle)?;
+    let bus = read_raw_pe(p, memory, fwd_error, pe, op, cycle)?;
     let rnd = matches!(
         op,
         Operand::Mem { rnd: true, .. } | Operand::Forward { rnd: true, .. }
@@ -2395,8 +2471,9 @@ fn read_alu_input_pe(
     Ok(if rnd { round_bus(bus) } else { bus })
 }
 
-fn compute_alu_pe(
+fn compute_alu_pe<M: MemRead>(
     p: &Pe,
+    memory: &M,
     fwd_error: &[Option<String>; 4],
     e: &Expr,
     name: AluOp,
@@ -2414,9 +2491,9 @@ fn compute_alu_pe(
     let mut x = [[0u32; 4]; 4];
     let mut y = [[0u32; 4]; 4];
     for c in 0..4 {
-        x[c] = read_alu_input_pe(p, fwd_error, pe, &e.srcs[0], prec, c)?;
+        x[c] = read_alu_input_pe(p, memory, fwd_error, pe, &e.srcs[0], prec, c)?;
         if n > 1 {
-            y[c] = read_alu_input_pe(p, fwd_error, pe, &e.srcs[1], prec, c)?;
+            y[c] = read_alu_input_pe(p, memory, fwd_error, pe, &e.srcs[1], prec, c)?;
         }
     }
     let mut bus = [[0u32; 4]; 4];
@@ -2443,8 +2520,9 @@ fn compute_alu_pe(
     Ok((bus, flags))
 }
 
-fn compute_vec_pe(
+fn compute_vec_pe<M: MemRead>(
     p: &Pe,
+    memory: &M,
     fwd_error: &[Option<String>; 4],
     e: &Expr,
     prec: Prec,
@@ -2480,7 +2558,7 @@ fn compute_vec_pe(
     let read_vals = |idx: Option<usize>, f: Fmt, c: usize| -> Result<Option<[Val; 4]>, ExecError> {
         let Some(i) = idx else { return Ok(None) };
         let op = &e.srcs[i];
-        let bus = read_raw_pe(p, fwd_error, pe, op, c)?;
+        let bus = read_raw_pe(p, memory, fwd_error, pe, op, c)?;
         let (neg, ext, rnd) = match op {
             Operand::Mem { neg, ext, rnd, .. } | Operand::Forward { neg, ext, rnd, .. } => {
                 (*neg, *ext, *rnd)
@@ -2536,8 +2614,9 @@ fn compute_vec_pe(
     Ok((bus, flags))
 }
 
-fn compute_expr_pe(
+fn compute_expr_pe<M: MemRead>(
     p: &Pe,
+    memory: &M,
     fwd_error: &[Option<String>; 4],
     e: &Expr,
     pe: usize,
@@ -2548,14 +2627,14 @@ fn compute_expr_pe(
             prec,
             unsigned,
             ..
-        } => compute_alu_pe(p, fwd_error, e, *name, *prec, *unsigned, pe)?,
+        } => compute_alu_pe(p, memory, fwd_error, e, *name, *prec, *unsigned, pe)?,
         Op::Mau {
             prec,
             kind,
             half,
             round,
             matrix: false,
-        } => compute_vec_pe(p, fwd_error, e, *prec, *kind, *half, *round, pe)?,
+        } => compute_vec_pe(p, memory, fwd_error, e, *prec, *kind, *half, *round, pe)?,
         Op::Zero => ([[0; 4]; 4], [0; 4]),
         Op::Imm { value, u } => {
             let bus = if *u {
@@ -2592,9 +2671,10 @@ fn mask_flags_pe(p: &Pe, _st: &MaskState, sel: &MaskSel, cycle: usize) -> u8 {
     }
 }
 
-fn write_pe(
+fn write_pe<M: MemWrite>(
     p: &mut Pe,
     st: &MaskState,
+    memory: &mut M,
     pe: usize,
     d: &Operand,
     cycle: usize,
@@ -2661,11 +2741,10 @@ fn write_pe(
                 return Ok(());
             }
             let a = word_addrs_pe(p, pe, *mem, *wl, addr, cycle);
-            let m = p.mem_mut(*mem);
             for i in 0..*wl as usize {
                 if word_enabled(mflags, i) {
-                    let old = m.get(a + i);
-                    m.set(a + i, merge_word(old, bus[i], mflags, i));
+                    let old = memory.peek(*mem, pe, a + i);
+                    memory.poke(*mem, pe, a + i, merge_word(old, bus[i], mflags, i));
                 }
             }
         }
@@ -2703,8 +2782,9 @@ fn write_pe(
     Ok(())
 }
 
-fn run_fast_pe(
+fn run_fast_pe<M: MemWrite>(
     p: &mut Pe,
+    memory: &mut M,
     fwd_error: &[Option<String>; 4],
     mask_state: &MaskState,
     exprs: &[Expr],
@@ -2718,7 +2798,7 @@ fn run_fast_pe(
             return Ok(());
         }
         let kind = op_fwd_kind(e);
-        let (buses, flags) = compute_expr_pe(p, fwd_error, e, pe)?;
+        let (buses, flags) = compute_expr_pe(p, &*memory, fwd_error, e, pe)?;
         for c in 0..4 {
             let mut bus = buses[c];
             if let Some(sel) = e.flush {
@@ -2726,7 +2806,7 @@ fn run_fast_pe(
                 bus = apply_flush(bus, f, sel.ll);
             }
             for d in &e.dsts {
-                write_pe(p, mask_state, pe, d, c, bus, flags[c], single_line_mask, None)?;
+                write_pe(p, mask_state, memory, pe, d, c, bus, flags[c], single_line_mask, None)?;
             }
             if update_forward {
                 if let Some(kind) = kind {
@@ -2744,7 +2824,7 @@ fn run_fast_pe(
     let mut buses = [[[0u32; 4]; 4]; MAX_STEP_EXPRS];
     let mut flags = [[0u8; 4]; MAX_STEP_EXPRS];
     for (ei, e) in exprs.iter().enumerate() {
-        let (b, f) = compute_expr_pe(p, fwd_error, e, pe)?;
+        let (b, f) = compute_expr_pe(p, &*memory, fwd_error, e, pe)?;
         buses[ei] = b;
         flags[ei] = f;
     }
@@ -2756,7 +2836,7 @@ fn run_fast_pe(
                 bus = apply_flush(bus, f, sel.ll);
             }
             for d in &e.dsts {
-                write_pe(p, mask_state, pe, d, c, bus, flags[ei][c], single_line_mask, None)?;
+                write_pe(p, mask_state, memory, pe, d, c, bus, flags[ei][c], single_line_mask, None)?;
             }
         }
     }

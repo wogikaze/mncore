@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 
-use crate::machine::{ExecError, Machine, MaskState, PeId, PES};
+use crate::machine::{ExecError, Machine, MaskState, MemRead, MemWrite, PeId, PES};
 use crate::vsm::{DebugLoc, Line, MemKind};
 
 /// Key of one dumped value: memory name as printed by the emulator (`LM0`, `GREG1`, `TREG`,
@@ -139,17 +139,31 @@ impl Sim {
                         };
                         t.pe(pe, 0, name, true, Some(loc.addr), &words);
                     }
-                    let m = self.m.pes[pe].mem_mut(loc.mem);
                     match loc.wl {
                         1 => {
                             for i in 0..count as usize {
-                                m.set(loc.addr as usize + i, (payload[i] >> 32) as u32);
+                                self.m.mem.poke(
+                                    loc.mem,
+                                    pe,
+                                    loc.addr as usize + i,
+                                    (payload[i] >> 32) as u32,
+                                );
                             }
                         }
                         2 => {
                             for i in 0..count as usize {
-                                m.set(loc.addr as usize + 2 * i, (payload[i] >> 32) as u32);
-                                m.set(loc.addr as usize + 2 * i + 1, payload[i] as u32);
+                                self.m.mem.poke(
+                                    loc.mem,
+                                    pe,
+                                    loc.addr as usize + 2 * i,
+                                    (payload[i] >> 32) as u32,
+                                );
+                                self.m.mem.poke(
+                                    loc.mem,
+                                    pe,
+                                    loc.addr as usize + 2 * i + 1,
+                                    payload[i] as u32,
+                                );
                             }
                         }
                         _ => return Err(ExecError::Unsupported("d set with two long word access".into())),
@@ -236,10 +250,10 @@ impl Sim {
             if loc.wl != 2 {
                 return Err(ExecError::Unsupported("d get with word or two long word access".into()));
             }
-            let m = p.mem(loc.mem);
             for i in 0..count as usize {
                 let a = loc.addr as usize + 2 * i;
-                let v = ((m.get(a) as u64) << 32) | m.get(a + 1) as u64;
+                let v = ((self.m.mem.peek(loc.mem, pe, a) as u64) << 32)
+                    | self.m.mem.peek(loc.mem, pe, a + 1) as u64;
                 self.dump.insert((name.into(), pname.clone(), a as u32), v);
             }
         }
