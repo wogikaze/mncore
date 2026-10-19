@@ -21,7 +21,6 @@ type CuContext = *mut c_void;
 type CuStream = *mut c_void;
 type CuStreamCreate = unsafe extern "C" fn(*mut CuStream, u32) -> CuResult;
 type CuStreamDestroy = unsafe extern "C" fn(CuStream) -> CuResult;
-type CuStreamSynchronize = unsafe extern "C" fn(CuStream) -> CuResult;
 type CuGraph = *mut c_void;
 type CuGraphExec = *mut c_void;
 type CuStreamBeginCapture = unsafe extern "C" fn(CuStream, u32) -> CuResult;
@@ -2004,7 +2003,6 @@ pub struct Gpu {
     cu_sync: CuCtxSync,
     cu_stream_create: CuStreamCreate,
     cu_stream_destroy: CuStreamDestroy,
-    cu_stream_sync: CuStreamSynchronize,
     cu_begin_capture: CuStreamBeginCapture,
     cu_end_capture: CuStreamEndCapture,
     cu_instantiate: CuGraphInstantiateWithFlags,
@@ -2046,8 +2044,6 @@ impl Gpu {
             load!(cuda, b"cuStreamCreate\0", CuStreamCreate);
         let cu_stream_destroy: CuStreamDestroy =
             load!(cuda, b"cuStreamDestroy_v2\0", CuStreamDestroy);
-        let cu_stream_sync: CuStreamSynchronize =
-            load!(cuda, b"cuStreamSynchronize\0", CuStreamSynchronize);
         let cu_begin_capture: CuStreamBeginCapture =
             load!(cuda, b"cuStreamBeginCapture\0", CuStreamBeginCapture);
         let cu_end_capture: CuStreamEndCapture =
@@ -2289,7 +2285,6 @@ impl Gpu {
             cu_sync,
             cu_stream_create,
             cu_stream_destroy,
-            cu_stream_sync,
             cu_begin_capture,
             cu_end_capture,
             cu_instantiate,
@@ -2536,7 +2531,7 @@ impl Gpu {
             },
             "upload mats",
         )?;
-        Ok(())
+        self.sync()
     }
 
     /// Downloads the four device memories.
@@ -2583,7 +2578,8 @@ impl Gpu {
                 )
             },
             "upload l1bm",
-        )
+        )?;
+        self.sync()
     }
 
     /// Downloads the L1BM long words.
@@ -2618,7 +2614,8 @@ impl Gpu {
                 )
             },
             "upload l2bm",
-        )
+        )?;
+        self.sync()
     }
 
     /// Downloads the L2BM long words.
@@ -2653,7 +2650,8 @@ impl Gpu {
                 )
             },
             "upload l1bi",
-        )
+        )?;
+        self.sync()
     }
 
     /// Downloads the L1BM turnaround registers.
@@ -2688,27 +2686,32 @@ impl Gpu {
                 )
             },
             "upload mask",
-        )
+        )?;
+        self.sync()
     }
 
     /// Uploads the aluf forwarding register (4 cycles x 4 words per PE).
     pub fn upload_aluf(&self, state: &GpuState, words: &[u32]) -> Result<(), String> {
-        self.upload_forward(state.aluf, words, "upload aluf")
+        self.upload_forward(state.aluf, words, "upload aluf")?;
+        self.sync()
     }
 
     /// Uploads the mauf forwarding register (4 cycles x 4 words per PE).
     pub fn upload_mauf(&self, state: &GpuState, words: &[u32]) -> Result<(), String> {
-        self.upload_forward(state.mauf, words, "upload mauf")
+        self.upload_forward(state.mauf, words, "upload mauf")?;
+        self.sync()
     }
 
     /// Uploads the mreadf forwarding register (4 cycles x 4 words per PE).
     pub fn upload_mreadf(&self, state: &GpuState, words: &[u32]) -> Result<(), String> {
-        self.upload_forward(state.mreadf, words, "upload mreadf")
+        self.upload_forward(state.mreadf, words, "upload mreadf")?;
+        self.sync()
     }
 
     /// Uploads the L1BM-to-PE forwarding register (4 cycles x 4 words per PE).
     pub fn upload_lbf(&self, state: &GpuState, words: &[u32]) -> Result<(), String> {
-        self.upload_forward(state.lbf, words, "upload lbf")
+        self.upload_forward(state.lbf, words, "upload lbf")?;
+        self.sync()
     }
 
     /// Downloads the L1BM-to-PE forwarding register.
@@ -2753,7 +2756,8 @@ impl Gpu {
                 )
             },
             "upload t",
-        )
+        )?;
+        self.sync()
     }
 
     /// Uploads all four PDM groups (4 x `mv::PDM_LONGS` long words, group-major).
@@ -2774,7 +2778,8 @@ impl Gpu {
                 )
             },
             "upload pdm",
-        )
+        )?;
+        self.sync()
     }
 
     /// Downloads all four PDM groups.
@@ -2815,7 +2820,8 @@ impl Gpu {
                 )
             },
             "upload dram",
-        )
+        )?;
+        self.sync()
     }
 
     /// Downloads the truncated device DRAM.
@@ -2852,7 +2858,8 @@ impl Gpu {
                 )
             },
             "upload mats",
-        )
+        )?;
+        self.sync()
     }
 
     /// Downloads the matrix registers.
@@ -2966,7 +2973,7 @@ impl Gpu {
                 what,
             )?;
         }
-        Ok(())
+        self.sync()
     }
 
     /// Downloads the LM0/LM1 base address registers.
@@ -2994,7 +3001,8 @@ impl Gpu {
         self.check(
             unsafe { (self.cu_htod)(state.dar, words.as_ptr() as *const c_void, n * 4) },
             "upload dar",
-        )
+        )?;
+        self.sync()
     }
 
     /// Downloads all four group DARs.
@@ -3017,7 +3025,8 @@ impl Gpu {
         self.check(
             unsafe { (self.cu_htod)(state.darbuf, words.as_ptr() as *const c_void, n * 4) },
             "upload darbuf",
-        )
+        )?;
+        self.sync()
     }
 
     /// Downloads all four group DAR write buffers.
@@ -3036,7 +3045,8 @@ impl Gpu {
         self.check(
             unsafe { (self.cu_htod)(state.dar_addr, addr.as_ptr() as *const c_void, 8) },
             "upload dar_addr",
-        )
+        )?;
+        self.sync()
     }
 
     /// Reads `[dar_write_addr, darbuf_read_addr]`.
@@ -3113,13 +3123,23 @@ impl Gpu {
     }
 
     /// Waits for all previously enqueued kernels.
+    /// Waits until every command issued so far has finished.
+    ///
+    /// This synchronizes the context rather than the command stream. On the
+    /// WSL2 driver (`/dev/dxg`) a stream sync reports success while the work
+    /// queued on this stream still has not reached the device: a kernel
+    /// launched right after host uploads is then lost, and its writes never
+    /// appear in later downloads. Synchronizing the context retires the work
+    /// in both cases, and it covers the default stream that the synchronous
+    /// `cuMemcpyHtoD_v2`/`cuMemcpyDtoH_v2` uploads and downloads use.
     pub fn sync(&self) -> Result<(), String> {
-        self.check(unsafe { (self.cu_stream_sync)(self.stream) }, "cuStreamSynchronize")
+        self.check(unsafe { (self.cu_sync)() }, "cuCtxSynchronize")
     }
 
     /// Launches one vector MAU line for all 4,096 PEs and four cycles.
     pub fn run_mau_line(&self, state: &GpuState, line: &MauLine) -> Result<(), String> {
-        self.run_mau_line_with(state, line, true)
+        self.run_mau_line_with(state, line, true)?;
+        self.sync()
     }
 
     /// Launches one vector MAU line, optionally suppressing the `mauf` update (`noforward`).
@@ -3186,7 +3206,8 @@ impl Gpu {
     /// Launches one ALU line. One thread handles one MAB so that all inputs of the four PEs
     /// are read before any destination (including msl/msr's neighbour PE) is written.
     pub fn run_alu_line(&self, state: &GpuState, line: &AluLine) -> Result<(), String> {
-        self.run_alu_line_with(state, line, true)
+        self.run_alu_line_with(state, line, true)?;
+        self.sync()
     }
 
     /// Launches one ALU line, optionally suppressing the forwarding-register update
@@ -3355,7 +3376,8 @@ impl Gpu {
                 )
             },
             "cuLaunchKernel(l2_line)",
-        )
+        )?;
+        self.sync()
     }
 
     /// Launches one L2BM reduction or internal multicast.
@@ -3542,12 +3564,13 @@ impl Gpu {
                 "cuLaunchKernel(mv_line)",
             )?;
         }
-        Ok(())
+        self.sync()
     }
 
     /// Launches one PE-to-L1BM transfer.
     pub fn run_l1_write_line(&self, state: &GpuState, line: &L1WriteLine) -> Result<(), String> {
-        self.run_l1_write_line_with(state, line, true)
+        self.run_l1_write_line_with(state, line, true)?;
+        self.sync()
     }
 
     /// Launches one PE-to-L1BM transfer, optionally suppressing the `$lbi`
@@ -3744,24 +3767,23 @@ impl Gpu {
         args.push(&mut fp as *mut i32 as *mut c_void);
         args.push(&mut fll as *mut i32 as *mut c_void);
         let grid = (crate::machine::PES as u32 + 255) / 256;
-        self.check(
-            unsafe {
-                (self.cu_launch)(
-                    self.l1_function,
-                    grid,
-                    1,
-                    1,
-                    256,
-                    1,
-                    1,
-                    0,
-                    self.stream,
-                    args.as_mut_ptr(),
-                    std::ptr::null_mut(),
-                )
-            },
-            "cuLaunchKernel(l1_read_line)",
-        )
+        let launch_code = unsafe {
+            (self.cu_launch)(
+                self.l1_function,
+                grid,
+                1,
+                1,
+                256,
+                1,
+                1,
+                0,
+                self.stream,
+                args.as_mut_ptr(),
+                std::ptr::null_mut(),
+            )
+        };
+        self.check(launch_code, "cuLaunchKernel(l1_read_line)")?;
+        self.sync()
     }
 
     /// Launches one matrix-register write (`dmwrite`/`fmwrite`/`gmwrite`/`hmwrite`).
@@ -3815,12 +3837,14 @@ impl Gpu {
                 )
             },
             "cuLaunchKernel(mat_write_line)",
-        )
+        )?;
+        self.sync()
     }
 
     /// Launches one matrix-register read (`dmread`/`fmread`/`gmread`/`hmread`).
     pub fn run_mat_read_line(&self, state: &GpuState, line: &MatReadLine) -> Result<(), String> {
-        self.run_mat_read_line_with(state, line, true)
+        self.run_mat_read_line_with(state, line, true)?;
+        self.sync()
     }
 
     /// Launches one matrix-register read, optionally suppressing the `mreadf` update.
@@ -3884,7 +3908,8 @@ impl Gpu {
 
     /// Launches one matrix MAU line (`dmfma`/`fmmul`/`gmfma`/`hmfma` and friends).
     pub fn run_mat_mau_line(&self, state: &GpuState, line: &MatMauLine) -> Result<(), String> {
-        self.run_mat_mau_line_with(state, line, true)
+        self.run_mat_mau_line_with(state, line, true)?;
+        self.sync()
     }
 
     /// Launches one matrix MAU line, optionally suppressing the `mauf` update.

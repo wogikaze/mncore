@@ -264,7 +264,8 @@ struct Section {
     lines: Vec<String>,
     /// Replaces the seeded DAR contents (used by the indirect MV section).
     dar: Option<Vec<u32>>,
-    /// Replaces the seeded DRAM capacity? No: every section uses `DRAM_LONGS`.
+    /// Line index at which each case begins (one more than `lines` at the end).
+    case_starts: Vec<usize>,
     cases: usize,
 }
 
@@ -274,16 +275,28 @@ impl Section {
             name,
             lines: Vec::new(),
             dar,
+            case_starts: Vec::new(),
             cases: 0,
         }
     }
     fn push(&mut self, line: String) {
+        self.case_starts.push(self.lines.len());
         self.cases += 1;
         self.lines.push(line);
     }
     fn raw(&mut self, line: String) {
+        self.case_starts.push(self.lines.len());
         self.cases += 1;
         self.lines.push(line);
+    }
+
+    /// `(first case, last case + 1)` selected by `START_CASE`/`END_CASE`
+    /// (cases count from 1 within the section).
+    fn case_range(&self) -> (usize, usize) {
+        let read = |name: &str| std::env::var(name).ok().and_then(|v| v.parse::<usize>().ok());
+        let start = read("START_CASE").unwrap_or(1).max(1);
+        let end = read("END_CASE").unwrap_or(usize::MAX).min(self.cases + 1);
+        (start, end.max(start))
     }
 }
 
@@ -829,8 +842,22 @@ fn main() {
     let mut total_cases = 0usize;
     let mut total_mismatches = 0usize;
     for (si, section) in sections.iter().enumerate() {
-        total_cases += section.cases;
-        let text = section.lines.join("\n");
+        // `START_CASE`/`END_CASE` run only part of a section, from the same
+        // seeded state, so a failing case can be isolated. `ONLY` picks
+        // sections by name; both unset runs everything.
+        if let Ok(only) = std::env::var("ONLY") {
+            if !section.name.contains(&only) {
+                continue;
+            }
+        }
+        let (first, last) = section.case_range();
+        let case_lines = || {
+            section.case_starts[first - 1]
+                ..if last > section.cases { section.lines.len() } else { section.case_starts[last] }
+        };
+        let lines = &section.lines[case_lines()];
+        total_cases += last - first;
+        let text = lines.join("\n");
         let parsed = vsm::parse(&text).unwrap_or_else(|e| {
             eprintln!("{}: parse {}:{}: {}", section.name, e.line, e.msg, text.lines().nth(e.line - 1).unwrap_or(""));
             std::process::exit(3);
@@ -876,10 +903,11 @@ fn main() {
             std::process::exit(3);
         });
         total_mismatches += bad;
+        let selected = last - first;
         if bad == 0 {
-            println!("PASS {:<34} {:>4} cases", section.name, section.cases);
+            println!("PASS {:<34} {:>4} cases", section.name, selected);
         } else {
-            println!("FAIL {:<34} {:>4} cases, {bad} mismatching values", section.name, section.cases);
+            println!("FAIL {:<34} {:>4} cases, {bad} mismatching values", section.name, selected);
         }
         let _ = si;
     }

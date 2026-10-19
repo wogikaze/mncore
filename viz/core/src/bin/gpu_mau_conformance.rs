@@ -1412,9 +1412,34 @@ fn main() {
     gpu.upload_mauf(&state, &mauf).expect("upload mauf");
     gpu.upload_mreadf(&state, &mreadf).expect("upload mreadf");
 
+    // Case selection: START_CASE / END_CASE count entries from 1 (end
+    // exclusive), so a failing line can be re-run on its own with the state
+    // rebuilt from the seed. `ONLY` filters on the entry label.
+    let read = |name: &str| std::env::var(name).ok().and_then(|v| v.parse::<usize>().ok());
+    let start_case = read("START_CASE").unwrap_or(1).max(1);
+    let end_case = read("END_CASE").unwrap_or(usize::MAX);
+    let only = std::env::var("ONLY").ok();
+    if only.is_some() || start_case != 1 || end_case != usize::MAX {
+        println!(
+            "selection: cases {start_case}..{} ONLY={only:?}",
+            end_case.min(b.entries.len() + 1)
+        );
+    }
+
     let mut bad = 0usize;
     let mut last_action = None;
-    for entry in &b.entries {
+    let mut selected = 0usize;
+    for (index, entry) in b.entries.iter().enumerate() {
+        let case = index + 1;
+        if case < start_case || case >= end_case {
+            continue;
+        }
+        if let Some(only) = &only {
+            if !entry.label.contains(only.as_str()) {
+                continue;
+            }
+        }
+        selected += 1;
         sim.exec(&entry.line)
             .unwrap_or_else(|e| {
                 panic!(
@@ -1497,7 +1522,10 @@ fn main() {
         }
         last_action = Some(action);
         if bad != 0 {
-            println!("conformance failed at {} (`{}`)", entry.label, entry.text);
+            println!(
+                "conformance failed at case {case}: {} (`{}`)",
+                entry.label, entry.text
+            );
             std::process::exit(1);
         }
     }
@@ -1539,7 +1567,7 @@ fn main() {
     }
 
     println!(
-        "{} lines, {} configurations, {} mismatches",
+        "{selected} of {} lines, {} configurations, {} mismatches",
         b.entries.len(),
         b.configs.len(),
         bad

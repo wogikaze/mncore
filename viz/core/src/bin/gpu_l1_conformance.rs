@@ -79,6 +79,9 @@ struct Section {
     lines: Vec<String>,
     matrix: BTreeMap<(String, String), usize>,
     regions: Vec<Region>,
+    /// For each generated case, its `(form, option)` and the half-open range of
+    /// `lines` it spans. Used to name a case and to reset the seed before it.
+    case_ranges: Vec<(String, String, usize, usize)>,
     cases: usize,
 }
 
@@ -89,6 +92,7 @@ impl Section {
             lines: Vec::new(),
             matrix: BTreeMap::new(),
             regions: Vec::new(),
+            case_ranges: Vec::new(),
             cases: 0,
         }
     }
@@ -159,23 +163,20 @@ impl Gen {
     }
 
     fn case(&mut self, form: &str, option: &str, line: String) {
-        self.s.cases += 1;
-        *self
-            .s
-            .matrix
-            .entry((form.to_string(), option.to_string()))
-            .or_insert(0) += 1;
-        self.s.lines.push(line);
+        self.case_lines(form, option, &[line]);
     }
 
     fn case_lines(&mut self, form: &str, option: &str, lines: &[String]) {
+        let start = self.s.lines.len();
+        self.s.lines.extend(lines.iter().cloned());
+        let name = (form.to_string(), option.to_string());
+        self.s.case_ranges.push((name.0, name.1, start, self.s.lines.len()));
         self.s.cases += 1;
         *self
             .s
             .matrix
             .entry((form.to_string(), option.to_string()))
             .or_insert(0) += 1;
-        self.s.lines.extend(lines.iter().cloned());
     }
 
     fn directive(&mut self, text: &str) {
@@ -1647,18 +1648,20 @@ struct SectionRun {
     labels: BTreeMap<String, usize>,
 }
 
-fn run_section(gpu: &Gpu, section: &Section, seed: &Seed) -> Result<SectionRun, String> {
-    let mut lines = section.lines.clone();
-    if let Ok(n) = std::env::var("LIMIT").unwrap_or_default().parse::<usize>() {
-        lines.truncate(n);
-    }
+/// Runs `lines` on the CPU `Sim` and on the GPU, both starting from `seed`, and
+/// compares every PE memory, T, L1BM, L2BM, `$lbi` and mask register.
+///
+/// `label` names the unit under test (one case or a whole section) in errors.
+fn run_case(
+    gpu: &Gpu,
+    section: &Section,
+    lines: &[String],
+    seed: &Seed,
+    label: &str,
+) -> Result<SectionRun, String> {
     let source = lines.join("\n");
     let program = vsm::parse(&source).map_err(|e| {
-        let text = section
-            .lines
-            .get(e.line.saturating_sub(1))
-            .cloned()
-            .unwrap_or_default();
+        let text = lines.get(e.line.saturating_sub(1)).cloned().unwrap_or_default();
         format!(
             "section {}: parse error at line {}: {} (source: {text})",
             section.name, e.line, e.msg
@@ -1669,22 +1672,20 @@ fn run_section(gpu: &Gpu, section: &Section, seed: &Seed) -> Result<SectionRun, 
     let mut sim = Sim::new();
     install_cpu(&mut sim, seed);
     sim.run(&program).map_err(|e| {
-        let text = section
-            .lines
-            .get(e.line.saturating_sub(1))
-            .cloned()
-            .unwrap_or_default();
+        let text = lines.get(e.line.saturating_sub(1)).cloned().unwrap_or_default();
         format!(
-            "section {}: CPU error at line {}: {} (source: {text})",
+            "section {}: {label}: CPU error at line {}: {} (source: {text})",
             section.name, e.line, e.msg
         )
     })?;
 
-    // GPU.
+    // GPU. The state is rewritten from the seed so that every case starts from
+    // exactly the state the CPU reference saw.
     let state = gpu
         .allocate_state()
         .map_err(|e| format!("allocate_state: {e}"))?;
-    install_gpu(gpu, &state, seed).map_err(|e| format!("section {}: upload: {e}", section.name))?;
+    install_gpu(gpu, &state, seed)
+        .map_err(|e| format!("section {}: {label}: upload: {e}", section.name))?;
     let mut mask = MaskState::default();
     let mut actions = 0usize;
     for (lineno, line) in &program {
@@ -1729,7 +1730,6 @@ fn run_section(gpu: &Gpu, section: &Section, seed: &Seed) -> Result<SectionRun, 
     }
     gpu.sync()
         .map_err(|e| format!("section {}: sync: {e}", section.name))?;
-
     // Compare every PE memory, T, L1BM, L2BM and $lbi.
     let mut out = (
         vec![0u32; PES * LM_WORDS],
@@ -1821,6 +1821,94 @@ fn run_section(gpu: &Gpu, section: &Section, seed: &Seed) -> Result<SectionRun, 
     })
 }
 
+/// A selected run of cases `START_CASE..END_CASE` (end exclusive) of one
+/// section, where cases are numbered from 1 in generation order within a
+/// section. `START_CASE`/`END_CASE` unset or `0` select the whole section.
+struct CaseRange {
+    start: usize,
+    end: usize,
+}
+
+impl CaseRange {
+    fn from_env(section: &Section) -> CaseRange {
+        let read = |name: &str| std::env::var(name).ok().and_then(|v| v.parse::<usize>().ok());
+        let start = read("START_CASE").unwrap_or(1).max(1);
+        let end = read("END_CASE").unwrap_or(usize::MAX);
+        CaseRange {
+            start,
+            end: end.min(section.case_ranges.len() + 1),
+        }
+    }
+
+    fn contains(&self, case_index: usize) -> bool {
+        case_index >= self.start && case_index < self.end
+    }
+}
+
+/// Runs every case of a section from the seed. Each case starts from the seed
+/// state on both machines, so a mismatch belongs to that case alone.
+fn run_section(
+    gpu: &Gpu,
+    section: &Section,
+    seed: &Seed,
+    range: &CaseRange,
+    detail: bool,
+) -> SectionReport {
+    let mut report = SectionReport::default();
+    report.selected = (range.start..range.end)
+        .filter(|&i| i <= section.case_ranges.len())
+        .count();
+    for (index, (form, option, start, end)) in section.case_ranges.iter().enumerate() {
+        let case_index = index + 1;
+        if !range.contains(case_index) {
+            continue;
+        }
+        report.cases += 1;
+        let label = format!("case {case_index} {form} / {option}");
+        match run_case(gpu, section, &section.lines[*start..*end], seed, &label) {
+            Ok(run) => {
+                report.actions += run.actions;
+                report.lines += run.lines;
+                report.mismatches += run.mismatches;
+                if run.mismatches == 0 {
+                    report.passed += 1;
+                } else {
+                    report.failed += 1;
+                    for (k, v) in run.labels {
+                        *report.labels.entry(k).or_insert(0) += v;
+                    }
+                    report.failures.push((case_index, label, run.mismatches));
+                    if detail {
+                        println!(
+                            "    case {case_index}: {form} / {option}  MISMATCH ({} values)",
+                            run.mismatches
+                        );
+                    }
+                }
+            }
+            Err(error) => {
+                report.failed += 1;
+                report.errors.push(error);
+            }
+        }
+    }
+    report
+}
+
+#[derive(Default)]
+struct SectionReport {
+    cases: usize,
+    selected: usize,
+    passed: usize,
+    failed: usize,
+    actions: usize,
+    lines: usize,
+    mismatches: usize,
+    labels: BTreeMap<String, usize>,
+    failures: Vec<(usize, String, usize)>,
+    errors: Vec<String>,
+}
+
 fn main() {
     let sections = [
         section_read(),
@@ -1840,6 +1928,10 @@ fn main() {
         "GPU L1BM conformance: {} sections, {seed_count} seed(s)",
         sections.len()
     );
+    if let Ok(range) = std::env::var("START_CASE").or_else(|_| std::env::var("END_CASE")) {
+        println!("case range: {range} (START_CASE={:?}, END_CASE={:?})",
+            std::env::var("START_CASE"), std::env::var("END_CASE"));
+    }
     println!();
     println!("{:<30} {:<42} {:>5}", "form", "option", "cases");
     println!("{}", "-".repeat(80));
@@ -1863,9 +1955,11 @@ fn main() {
     };
 
     let mut failed = 0usize;
+    let mut total_cases = 0usize;
     let mut total_mismatches = 0usize;
     let mut total_actions = 0usize;
     let mut total_lines = 0usize;
+    let mut all_failures: Vec<(u64, usize, String, usize)> = Vec::new();
     for seed_index in 0..seed_count {
         let seed = make_seed(
             0x0123_4567_89ab_cdefu64
@@ -1876,44 +1970,53 @@ fn main() {
             if let Ok(only) = std::env::var("ONLY") {
                 if !section.name.contains(&only) { continue; }
             }
-            match run_section(&gpu, section, &seed) {
-                Ok(run) => {
-                    total_actions += run.actions;
-                    total_lines += run.lines;
-                    total_mismatches += run.mismatches;
-                    if run.mismatches == 0 {
-                        println!(
-                            "  section {:<10} cases {:>4}  expressions {:>4}  lines {:>4}  ok",
-                            section.name, section.cases, run.actions, run.lines
-                        );
-                    } else {
-                        failed += 1;
-                        println!(
-                            "  section {:<10} cases {:>4}  expressions {:>4}  lines {:>4}  MISMATCH ({})",
-                            section.name, section.cases, run.actions, run.lines, run.mismatches
-                        );
-                        for (label, count) in run.labels {
-                            println!("    {count:>8} mismatches in {label}");
-                        }
-                    }
+            let range = CaseRange::from_env(section);
+            let report = run_section(&gpu, section, &seed, &range, true);
+            total_cases += report.cases;
+            total_actions += report.actions;
+            total_lines += report.lines;
+            total_mismatches += report.mismatches;
+            for error in &report.errors {
+                failed += 1;
+                eprintln!("  {error}");
+            }
+            if report.failed == 0 && report.errors.is_empty() {
+                println!(
+                    "  section {:<12} cases {:>4}  expressions {:>4}  lines {:>4}  ok",
+                    section.name, report.cases, report.actions, report.lines
+                );
+            } else {
+                failed += report.failed.max(1);
+                println!(
+                    "  section {:<12} cases {:>4}  passed {:>4}  failed {:>4}  expressions {:>4}  MISMATCH ({})",
+                    section.name, report.cases, report.passed, report.failed, report.actions, report.mismatches
+                );
+                for (label, count) in &report.labels {
+                    println!("    {count:>8} mismatches in {label}");
                 }
-                Err(error) => {
-                    failed += 1;
-                    eprintln!("  {error}");
+                for (case_index, label, count) in report.failures {
+                    all_failures.push((seed_index, case_index, format!("{}: {label}", section.name), count));
                 }
             }
         }
     }
 
     println!();
+    if !all_failures.is_empty() {
+        println!("failing cases (re-run one with START_CASE=<n> END_CASE=<n+1> ONLY=<section>):");
+        for (seed_index, case_index, label, count) in &all_failures {
+            println!("  seed {seed_index} case {case_index:>4}  {label}  ({count} values)");
+        }
+        println!();
+    }
     if total_mismatches == 0 && failed == 0 {
         println!(
-            "OK: {} sections x {seed_count} seeds, {total_actions} expressions, {total_lines} lines, 0 mismatches (PE memories, T, L1BM, L2BM, $lbi)",
+            "OK: {} sections x {seed_count} seeds, {total_cases} cases, {total_actions} expressions, {total_lines} lines, 0 mismatches (PE memories, T, L1BM, L2BM, $lbi)",
             sections.len()
         );
     } else {
         println!(
-            "FAIL: {failed} section runs failed, {total_mismatches} mismatched values"
+            "FAIL: {failed} case runs failed, {total_mismatches} mismatched values"
         );
         std::process::exit(1);
     }
