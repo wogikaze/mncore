@@ -201,7 +201,7 @@ __device__ __forceinline__ int mem_len(int which) {
 // of this kernel yet.
 extern "C" __global__ void mau_line(
     unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
-    unsigned* mauf, unsigned* aluf, unsigned* mask,
+    unsigned* mauf, unsigned* aluf, unsigned* mask, unsigned* t,
     int kind,
     int amem, unsigned a0, unsigned a1, unsigned a2, unsigned a3, int awl, int aneg,
     int bmem, unsigned b0, unsigned b1, unsigned b2, unsigned b3, int bwl, int bneg,
@@ -314,12 +314,12 @@ extern "C" __global__ void mau_line(
 // the other ALU opcodes are not part of this kernel yet.
 extern "C" __global__ void alu_line(
     unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
-    unsigned* mauf, unsigned* aluf, unsigned* mask,
+    unsigned* mauf, unsigned* aluf, unsigned* mask, unsigned* t,
     int kind,
     int amem, unsigned a0, unsigned a1, unsigned a2, unsigned a3, int awl,
     int bmem, unsigned b0, unsigned b1, unsigned b2, unsigned b3, int bwl,
     int dmem, unsigned d0, unsigned d1, unsigned d2, unsigned d3, int dwl,
-    int omr, unsigned imm, int imm_u) {
+    int omr, int tdst, unsigned imm, int imm_u) {
     int pe = blockIdx.x * blockDim.x + threadIdx.x;
     if (pe >= 4096) return;
     unsigned ab[4] = {a0, a1, a2, a3};
@@ -339,6 +339,8 @@ extern "C" __global__ void alu_line(
                 av[i] = mauf[pe * 16 + c * 4 + i];
             } else if (amem == 5) {
                 av[i] = aluf[pe * 16 + c * 4 + i];
+            } else if (amem == 6) {
+                av[i] = t[pe * 16 + c * 4 + i];
             } else {
                 av[i] = (i < awl) ? pa[pe * la + ab[c] + i] : 0;
             }
@@ -346,6 +348,8 @@ extern "C" __global__ void alu_line(
                 bv[i] = mauf[pe * 16 + c * 4 + i];
             } else if (bmem == 5) {
                 bv[i] = aluf[pe * 16 + c * 4 + i];
+            } else if (bmem == 6) {
+                bv[i] = t[pe * 16 + c * 4 + i];
             } else {
                 bv[i] = (i < bwl) ? pb[pe * lb + bb[c] + i] : 0;
             }
@@ -439,7 +443,11 @@ extern "C" __global__ void alu_line(
             }
             flags = 0;
         }
-        if (omr > 0) {
+        if (tdst) {
+            for (int i = 0; i < 4; ++i) {
+                t[pe * 16 + c * 4 + i] = out[i];
+            }
+        } else if (omr > 0) {
             unsigned old = mask[pe * 16 + omr];
             unsigned field = 0xfu << (4 * c);
             mask[pe * 16 + omr] = (old & ~field) | ((unsigned)flags << (4 * c));

@@ -98,6 +98,14 @@ fn mem_source(op: &Operand, allow_neg: bool, allow_mask: bool) -> Option<MauSrc>
         MemKind::Lm1 => 1,
         MemKind::Grf0 => 2,
         MemKind::Grf1 => 3,
+        MemKind::T => {
+            return Some(MauSrc {
+                mem: 6,
+                wl: 4,
+                base: [0; 4],
+                neg: *neg,
+            })
+        }
         _ => return None,
     };
     Some(MauSrc {
@@ -338,6 +346,9 @@ pub fn alu_line_from_expr(expr: &Expr) -> Option<AluLine> {
         _ => (0, false),
     };
     let dst = match &expr.dsts[0] {
+        Operand::Mem {
+            mem: MemKind::T, ..
+        } => AluDst::T,
         Operand::Mem { .. } => AluDst::Mem(mem_source(&expr.dsts[0], false, false)?),
         Operand::Omr { entry, mask: None } if (1..=15).contains(entry) => AluDst::Omr(*entry),
         Operand::Nowrite => AluDst::None,
@@ -357,6 +368,7 @@ pub fn alu_line_from_expr(expr: &Expr) -> Option<AluLine> {
 #[derive(Clone, Copy, Debug)]
 pub enum AluDst {
     Mem(MauSrc),
+    T,
     Omr(u8),
     None,
 }
@@ -412,6 +424,7 @@ pub struct GpuState {
     mauf: u64,
     aluf: u64,
     mask: u64,
+    t: u64,
     free: CuMemFree,
 }
 
@@ -425,6 +438,7 @@ impl Drop for GpuState {
             (self.free)(self.mauf);
             (self.free)(self.aluf);
             (self.free)(self.mask);
+            (self.free)(self.t);
         }
     }
 }
@@ -631,7 +645,7 @@ impl Gpu {
         let lm_bytes = crate::machine::PES * crate::machine::LM_WORDS * 4;
         let grf_bytes = crate::machine::PES * crate::machine::GRF_WORDS * 4;
         let fwd_bytes = crate::machine::PES * 16 * 4;
-        let mut buffers = [0u64; 7];
+        let mut buffers = [0u64; 8];
         let sizes = [
             lm_bytes,
             lm_bytes,
@@ -640,8 +654,9 @@ impl Gpu {
             fwd_bytes,
             fwd_bytes,
             fwd_bytes,
+            fwd_bytes,
         ];
-        for i in 0..7 {
+        for i in 0..8 {
             let code = unsafe { (self.cu_mem_alloc)(&mut buffers[i], sizes[i]) };
             if let Err(error) = self.check(code, "cuMemAlloc(state)") {
                 for buffer in &buffers[..i] {
@@ -658,6 +673,7 @@ impl Gpu {
             mauf: buffers[4],
             aluf: buffers[5],
             mask: buffers[6],
+            t: buffers[7],
             free: self.cu_mem_free,
         })
     }
@@ -697,6 +713,7 @@ impl Gpu {
             (state.mauf, "upload mauf"),
             (state.aluf, "upload aluf"),
             (state.mask, "upload mask"),
+            (state.t, "upload t"),
         ] {
             self.check(
                 unsafe {
@@ -757,6 +774,38 @@ impl Gpu {
         Ok(out)
     }
 
+    /// Downloads aluf (4 cycles x 4 words per PE).
+    pub fn download_aluf(&self, state: &GpuState) -> Result<Vec<u32>, String> {
+        let mut out = vec![0u32; crate::machine::PES * 16];
+        self.check(
+            unsafe {
+                (self.cu_dtoh)(
+                    out.as_mut_ptr() as *mut c_void,
+                    state.aluf,
+                    out.len() * 4,
+                )
+            },
+            "download aluf",
+        )?;
+        Ok(out)
+    }
+
+    /// Downloads the T registers (16 words per PE).
+    pub fn download_t(&self, state: &GpuState) -> Result<Vec<u32>, String> {
+        let mut out = vec![0u32; crate::machine::PES * 16];
+        self.check(
+            unsafe {
+                (self.cu_dtoh)(
+                    out.as_mut_ptr() as *mut c_void,
+                    state.t,
+                    out.len() * 4,
+                )
+            },
+            "download t",
+        )?;
+        Ok(out)
+    }
+
     /// Waits for all previously enqueued kernels.
     pub fn sync(&self) -> Result<(), String> {
         self.check(unsafe { (self.cu_sync)() }, "cuCtxSynchronize")
@@ -776,6 +825,7 @@ impl Gpu {
         let mut mauf = state.mauf;
         let mut aluf = state.aluf;
         let mut mask_state = state.mask;
+        let mut t = state.t;
         let mut kind = line.kind as i32;
         let mut amem = line.a.mem as i32;
         let mut a = line.a.base;
@@ -804,6 +854,7 @@ impl Gpu {
             &mut mauf as *mut u64 as *mut c_void,
             &mut aluf as *mut u64 as *mut c_void,
             &mut mask_state as *mut u64 as *mut c_void,
+            &mut t as *mut u64 as *mut c_void,
             &mut kind as *mut i32 as *mut c_void,
             &mut amem as *mut i32 as *mut c_void,
             &mut a[0] as *mut u32 as *mut c_void,
@@ -867,6 +918,7 @@ impl Gpu {
         let mut mauf = state.mauf;
         let mut aluf = state.aluf;
         let mut mask = state.mask;
+        let mut t = state.t;
         let mut kind = line.kind as i32;
         let mut amem = line.a.mem as i32;
         let mut a = line.a.base;
@@ -876,10 +928,11 @@ impl Gpu {
         let mut bwl = line.b.wl as i32;
         let mut imm = line.imm;
         let mut imm_u = line.imm_u as i32;
-        let (mut dmem, mut d, mut dwl, mut omr) = match line.dst {
-            AluDst::Mem(dst) => (dst.mem as i32, dst.base, dst.wl as i32, 0i32),
-            AluDst::Omr(entry) => (0i32, [0u32; 4], 0i32, entry as i32),
-            AluDst::None => (0i32, [0u32; 4], 0i32, 0i32),
+        let (mut dmem, mut d, mut dwl, mut omr, mut tdst) = match line.dst {
+            AluDst::Mem(dst) => (dst.mem as i32, dst.base, dst.wl as i32, 0i32, 0i32),
+            AluDst::T => (0i32, [0u32; 4], 0i32, 0i32, 1i32),
+            AluDst::Omr(entry) => (0i32, [0u32; 4], 0i32, entry as i32, 0i32),
+            AluDst::None => (0i32, [0u32; 4], 0i32, 0i32, 0i32),
         };
         let mut args = [
             &mut lm0 as *mut u64 as *mut c_void,
@@ -889,6 +942,7 @@ impl Gpu {
             &mut mauf as *mut u64 as *mut c_void,
             &mut aluf as *mut u64 as *mut c_void,
             &mut mask as *mut u64 as *mut c_void,
+            &mut t as *mut u64 as *mut c_void,
             &mut kind as *mut i32 as *mut c_void,
             &mut amem as *mut i32 as *mut c_void,
             &mut a[0] as *mut u32 as *mut c_void,
@@ -909,6 +963,7 @@ impl Gpu {
             &mut d[3] as *mut u32 as *mut c_void,
             &mut dwl as *mut i32 as *mut c_void,
             &mut omr as *mut i32 as *mut c_void,
+            &mut tdst as *mut i32 as *mut c_void,
             &mut imm as *mut u32 as *mut c_void,
             &mut imm_u as *mut i32 as *mut c_void,
         ];

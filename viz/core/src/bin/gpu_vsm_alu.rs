@@ -37,6 +37,9 @@ fn main() {
         "zero $ln{}v",
         "imm f\"0.5\" $r{}v",
         "imm i\"1\" $s{}v",
+        "imm f\"0.5\" $t",
+        "fpassa $t $r{}v",
+        "zero $t",
     ];
     let mut text = String::new();
     for i in 0..lines {
@@ -107,6 +110,14 @@ fn main() {
     gpu.sync().expect("sync");
     let gpu_elapsed = gpu_start.elapsed();
     let gpu_mask = gpu.download_mask(&state).expect("download mask");
+    let gpu_t = gpu.download_t(&state).expect("download t");
+    let gpu_aluf = gpu.download_aluf(&state).expect("download aluf");
+    let alu_bad = (0..PES).find(|&pe| {
+        (0..4).any(|c| (0..4).any(|i| sim.m.pes[pe].aluf[c][i] != gpu_aluf[pe * 16 + c * 4 + i]))
+    });
+    if let Some(pe) = alu_bad {
+        eprintln!("aluf mismatch at pe {pe}: cpu {:?} gpu {:?}", sim.m.pes[pe].aluf, &gpu_aluf[pe * 16..pe * 16 + 16]);
+    }
     let mut out = (
         vec![0u32; lm_len],
         vec![0u32; lm_len],
@@ -116,6 +127,20 @@ fn main() {
     gpu.download_state(&state, &mut out.0, &mut out.1, &mut out.2, &mut out.3)
         .expect("download");
     let mut mismatches = 0usize;
+    for pe in 0..PES {
+        for i in 0..16 {
+            if sim.m.pes[pe].t[i] != gpu_t[pe * 16 + i] {
+                if mismatches == 0 {
+                    println!(
+                        "t first mismatch at pe {pe} word {i}: cpu {:08x} gpu {:08x}",
+                        sim.m.pes[pe].t[i],
+                        gpu_t[pe * 16 + i]
+                    );
+                }
+                mismatches += 1;
+            }
+        }
+    }
     for pe in 0..PES {
         for entry in 0..16 {
             let cpu = sim.m.pes[pe].mask[entry] as u32;
