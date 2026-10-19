@@ -1766,12 +1766,13 @@ extern "C" __global__ void l1_read_line(
 // register $lbi as the destination; the turnaround is updated either way.
 extern "C" __global__ void l1_write_line(
     unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1, unsigned* t,
-    unsigned* mauf, unsigned* aluf, unsigned* mreadf, unsigned* lbf,
+    unsigned* mauf, unsigned* aluf, unsigned* mreadf, unsigned* lbf, unsigned* omr,
     unsigned long long* l1bm, unsigned long long* lbi,
     unsigned* bar0, unsigned* bar1, int update_lbi,
     int op, int mab_sel, int mabdiff, int has_addr, unsigned addr, int dwl,
     int smem, unsigned s0, unsigned s1, unsigned s2, unsigned s3, int swl,
-    int st, int sma, int two_src, int bits, int rrn, int round_it, int ext) {
+    int st, int sma, int two_src, int bits, int rrn, int round_it, int ext,
+    int fk, int fe, int fp, int fll) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx >= 256) return;
     int l1b = idx >> 2;
@@ -1791,6 +1792,7 @@ extern "C" __global__ void l1_write_line(
             int pe = l1b * 64 + mab_sel * 4 + sub;
             unsigned bus[4];
             read_pe_bus(bus, smem, lm0, lm1, grf0, grf1, t, mauf, aluf, mreadf, lbf, pe, c, sb, swl, st, sma, bar0, bar1);
+            if (fk != 0) flush_bus(bus, mask_flags_cycle(omr, pe, fk, fe, fp, c), fll);
             unsigned long long v0 = bus_long(bus, 0);
             int step = (dwl == 4) ? 8 : 4;
             unsigned off = (unsigned)sub;
@@ -1810,6 +1812,8 @@ extern "C" __global__ void l1_write_line(
                 int pe = l1b * 64 + m * 4 + sub;
                 unsigned bus[4];
                 read_pe_bus(bus, smem, lm0, lm1, grf0, grf1, t, mauf, aluf, mreadf, lbf, pe, c, sb, swl, st, sma, bar0, bar1);
+                if (fk != 0) flush_bus(bus, mask_flags_cycle(omr, pe, fk, fe, fp, c), fll);
+            if (fk != 0) flush_bus(bus, mask_flags_cycle(omr, pe, fk, fe, fp, c), fll);
                 unsigned long long v = bus_long(bus, 0);
                 int dst_mab = (m + mabdiff) % 16;
                 if (dst_mab < 0) dst_mab += 16;
@@ -1826,6 +1830,8 @@ extern "C" __global__ void l1_write_line(
                 int pe = l1b * 64 + mab * 4 + sub;
                 unsigned bus[4];
                 read_pe_bus(bus, smem, lm0, lm1, grf0, grf1, t, mauf, aluf, mreadf, lbf, pe, c, sb, swl, st, sma, bar0, bar1);
+                if (fk != 0) flush_bus(bus, mask_flags_cycle(omr, pe, fk, fe, fp, c), fll);
+            if (fk != 0) flush_bus(bus, mask_flags_cycle(omr, pe, fk, fe, fp, c), fll);
                 unsigned long long v0 = bus_long(bus, 0);
                 unsigned off0 = (dwl == 4) ? (unsigned)(mo * 8 + sub)
                                            : (unsigned)(mo * 4 + sub);
@@ -1859,6 +1865,8 @@ extern "C" __global__ void l1_write_line(
                     int pe = l1b * 64 + mab * 4 + sub;
                     unsigned bus[4];
                     read_pe_bus(bus, smem, lm0, lm1, grf0, grf1, t, mauf, aluf, mreadf, lbf, pe, c, sb, swl, st, sma, bar0, bar1);
+                if (fk != 0) flush_bus(bus, mask_flags_cycle(omr, pe, fk, fe, fp, c), fll);
+            if (fk != 0) flush_bus(bus, mask_flags_cycle(omr, pe, fk, fe, fp, c), fll);
                     v0[m] = bus_long(bus, 0);
                     v1[m] = bus_long(bus, 1);
                     if (ext) {

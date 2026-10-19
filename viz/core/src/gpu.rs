@@ -1060,6 +1060,8 @@ pub struct L1WriteLine {
     pub bits: u32,
     /// RRN kind: 0 fadd, 1 max, 2 min, 3 iadd, 4 band, 5 and, 6 bor, 7 or.
     pub rrn: u8,
+    /// Zero-flush mask applied to the PE source bus.
+    pub flush: MaskInfo,
 }
 
 /// Builds the source side of an L1BM write. Unlike `mem_source` this accepts
@@ -1161,6 +1163,7 @@ pub fn l1_write_line_from_expr(expr: &Expr) -> Option<L1WriteLine> {
         round,
         bits,
         rrn,
+        flush: expr.flush.map(mask_info_of).unwrap_or(NO_MASK),
     })
 }
 
@@ -3567,6 +3570,7 @@ impl Gpu {
         let mut aluf = state.aluf;
         let mut mreadf = state.mreadf;
         let mut lbf = state.lbf;
+        let mut omr = state.mask;
         let mut l1bm = state.l1bm;
         let mut lbi = state.lbi;
         let mut bar0 = state.bar0;
@@ -3584,6 +3588,10 @@ impl Gpu {
         let mut st = line.src.t_indirect as i32;
         let mut sma = madpe_arg(line.src.madpe);
         let mut two_src = line.two_src as i32;
+        let mut fk = line.flush.kind as i32;
+        let mut fe = line.flush.entry as i32;
+        let mut fp = line.flush.pattern as i32;
+        let mut fll = line.flush.ll as i32;
         let mut bits = line.bits as i32;
         let mut rrn = line.rrn as i32;
         let mut round_it = line.round as i32;
@@ -3598,6 +3606,7 @@ impl Gpu {
             &mut aluf as *mut u64 as *mut c_void,
             &mut mreadf as *mut u64 as *mut c_void,
             &mut lbf as *mut u64 as *mut c_void,
+            &mut omr as *mut u64 as *mut c_void,
             &mut l1bm as *mut u64 as *mut c_void,
             &mut lbi as *mut u64 as *mut c_void,
             &mut bar0 as *mut u64 as *mut c_void,
@@ -3622,6 +3631,10 @@ impl Gpu {
             &mut rrn as *mut i32 as *mut c_void,
             &mut round_it as *mut i32 as *mut c_void,
             &mut ext as *mut i32 as *mut c_void,
+            &mut fk as *mut i32 as *mut c_void,
+            &mut fe as *mut i32 as *mut c_void,
+            &mut fp as *mut i32 as *mut c_void,
+            &mut fll as *mut i32 as *mut c_void,
         ];
         self.check(
             unsafe {
