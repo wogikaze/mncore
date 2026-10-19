@@ -414,74 +414,33 @@ cargo run --release --bin gpu_vsm_matrix -- 100
 - `gpu_coverage` の matrix 式は 216 個のうち 184 個が対応（書き込み 96/112、読み出し 40/56、MAU 48/48）。
   残り 32 個は double 精度の `dmwrite`/`dmread`。
 
-## 現状（L2 縮約・MV・行列対応後）
+## 現状（GPU 全体実行）
 
-GPU 側でビット一致する範囲:
+`gpu_run_program` が `benchmarks/mnist_train_step.vsm` を GPU だけで実行する。
 
-- f32 vfma、ALU（Passa、Xor、Max、Rsqrt、Bfn、Msr、Zero、Imm）、MAU（FMA/MUL/ADD/PASSA、マスク、`mauf`/`aluf`）、T レジスタ。
-- L1BM の読み出し（Mbcast、Distrib、Pbcast）と書き込み（Mwrite）。
-- L2BM の Distrib、Bcast、FromL1b、縮約（`l2bmr`、`l2bmr2`）、内部マルチキャスト（`l2bmi`）。RRN は 24 種類すべて。
-- MV（PDM/DRAM/L2BM のコピー、broadcast、distribution、RRN reduction）。
-- 行列レジスタ（F/G の write/read/matrix MAU）。`mats`、`mauf`、`mreadf` を VRAM に保持する。
+```sh
+cd viz/core
+cargo run --release --bin gpu_run_program -- benchmarks/mnist_train_step.vsm
+```
 
-実プログラムの被覆:
+結果:
 
-- PE 行 2,635 のうち 1,717 行（約 65%）が、すべての式を GPU で扱える。
-- MAU 478/724、ALU 909/985、L1 264/292、L2 387/493、MV 168/168、行列 184/216。
+- 2,635 PE 行、168 MV 文を実行し、mismatch 0。
+- CPU 1.74 秒、GPU 36 ms。
+- 比較対象は LM0/LM1/GRF0/GRF1、行列レジスタ、OMR、L1BM、L2BM、PDM、DRAM。
 
-未達:
+対応済み:
 
-- `mnist_train_step` 全体の GPU 実行。
-- L2BM の Bcast2 と、L1B 集合を指定した Distrib。
-- double/half 精度の行列演算と、マスク付きの行列読み出し・MAU 書き込み。
-- L1BM の turnaround レジスタ `$lbi`。
-- DRAM はデバイス容量ぶんだけ（全 128 GiB は載せない）。間接 DRAM アクセスは CPU も未対応。
+- ALU/MAU、マスク、`mauf`/`aluf`/`mreadf`、T。
+- L1BM の読み書き・Gather・reduction。
+- L2BM の全転送・reduction・内部マルチキャスト。
+- 行列の F/G/D（write/read/matrix MAU）。
+- MV の全 168 文。
 
-検証:
+制約:
 
-- `cargo test --release` 20 件。
-- `difftest_prog` の relu と matmul で 0 mismatch。
-- GPU の各テスト（vfma、MAU、ALU、マスク、L1、L2、L2 縮約、MV、行列）で 0 mismatch。
-
-GPU カーネルはすべて NVRTC + CUDA Driver API で実行時にコンパイルする。
-`nvcc` は不要。
-
-### Bcast2 と L1B 集合付き転送
-
-`l2bmb2` と、`@[..]` で L1B 集合を指定した `l2bmd`/`l2bmb` にも対応した。
-`gpu_vsm_l2` は 5 種類（Distrib、Bcast、FromL1b、Bcast2、部分集合 Distrib）を混ぜて 0 mismatch。
-
-## 追加の ALU/MAU/L2 対応
-
-- MAU の `$nowrite` デスティネーションと、T レジスタをソースにする MAU。
-- L2BM の Gather（`l2bmd $lb... $lc...`）。
-- ALU の `ipassa`、`iadd`、`ilsl`、`frelu`、`ffloor`。
-
-`gpu_unsupported` は、現在の GPU ディスクリプタが拒否する PE 式をオペコード別に表示する。
-
-現状:
-
-- MAU 676/676、L2 493/493。
-- すべての式が対応する PE 行は 1,864 / 2,635（約 71%）。
-
-残りは行列の D/H、`gbfn $mreadf`、`fftoi`、L1 の Gather/reduction、固定オペランド。
-
-## L1 Gather、gbfn $mreadf、fftoi
-
-- L1BM の Gather（`l1bmd $ln... $lb...`）を追加。
-- `gbfn` の `$mreadf` ソースを追加。`gmread` の後に `gbfn $mreadf $nowrite` を実行する `gpu_vsm_gbfn` で比較。
-- ALU の `fftoi` を追加。
-
-現状:
-
-- MAU 676/676、L2 493/493、ALU 982/985。
-- すべての式が対応する PE 行は 1,908 / 2,635（約 72%）。
-- 残りは行列 D/H 32、L1 reduction 16、固定オペランド 3。
-
-### 被覆の数え直し
-
-`gpu_coverage` が「行列以外の MAU」を対応済みとして数えていなかったため、以前の行被覆は過小だった。
-修正後:
-
-- **2,584 / 2,635 PE 行（98.1%）** がすべての式を GPU で扱える。
-- 未対応は 51 行だけ: 行列 D/H 32、L1 reduction 16、固定オペランド 3。
+- デバイスの DRAM はプログラムが必要とする 264,064 ロングワード/グループだけを持つ。
+  CPU の全 128 GiB は載せない。範囲外は拒否する。
+- マスク付きの行列読み出し・MAU 書き込み、L1BM turnaround `$lbi`、
+  不正 block-float 入力のエラー検出は未対応。
+- カーネルは NVRTC + CUDA Driver API で実行時にコンパイルする。

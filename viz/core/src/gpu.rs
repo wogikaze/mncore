@@ -12,7 +12,7 @@ use libloading::Library;
 use crate::blockop::{L1Op, L2Op, Rrn, RrnOp};
 use crate::machine::MaskState;
 use crate::mv::{Mv, MvKind, MvOperand};
-use crate::vsm::{Expr, FwdKind, MauKind, MaskSel, MaskSource, MemKind, Op, Operand, Prec};
+use crate::vsm::{Expr, FixedKind, FwdKind, MauKind, MaskSel, MaskSource, MemKind, Op, Operand, Prec};
 
 type CuResult = c_int;
 type CuDevice = c_int;
@@ -122,6 +122,14 @@ fn mem_source(op: &Operand, allow_neg: bool, allow_mask: bool) -> Option<MauSrc>
 }
 
 fn line_source(op: &Operand) -> Option<MauSrc> {
+    if matches!(op, Operand::Fixed(FixedKind::Subpeid)) {
+        return Some(MauSrc {
+            mem: 9,
+            wl: 1,
+            base: [0; 4],
+            neg: false,
+        });
+    }
     if let Operand::Forward {
         kind,
         neg,
@@ -305,13 +313,13 @@ pub struct MauLine {
 }
 
 /// Builds an `AluLine` for a PE-local f32 Passa expression.
-pub fn alu_line_from_expr(expr: &Expr) -> Option<AluLine> {
+pub fn alu_line_from_expr(expr: &Expr, mask_state: MaskState) -> Option<AluLine> {
     let (kind, need_b, has_source) = match &expr.op {
         Op::Zero => (5u8, false, false),
         Op::Imm { .. } => (6u8, false, false),
         Op::Alu {
             name: crate::vsm::AluOp::Passa,
-            prec: Some(Prec::F | Prec::I),
+            prec: Some(Prec::F | Prec::I | Prec::L),
             ..
         } => (0u8, false, true),
         Op::Alu {
@@ -373,7 +381,7 @@ pub fn alu_line_from_expr(expr: &Expr) -> Option<AluLine> {
         base: [0; 4],
         neg: false,
     };
-    let a = if has_source {
+    let mut a = if has_source {
         let a = line_source(&expr.srcs[0])?;
         if a.neg {
             return None;
@@ -382,6 +390,9 @@ pub fn alu_line_from_expr(expr: &Expr) -> Option<AluLine> {
     } else {
         dummy
     };
+    if kind == 0 && a.mem == 9 && matches!(expr.op, Op::Alu { prec: Some(Prec::L), .. }) {
+        a.mem = 10;
+    }
     let b = if need_b {
         let b = line_source(&expr.srcs[1])?;
         if b.neg {
@@ -395,13 +406,20 @@ pub fn alu_line_from_expr(expr: &Expr) -> Option<AluLine> {
         Op::Imm { value, u } => (*value, *u),
         _ => (0, false),
     };
-    let dst = match &expr.dsts[0] {
+    let none = MaskInfo { kind: 0, entry: 0, pattern: 0, ll: false };
+    let (dst, mask) = match &expr.dsts[0] {
         Operand::Mem {
             mem: MemKind::T, ..
-        } => AluDst::T,
-        Operand::Mem { .. } => AluDst::Mem(mem_source(&expr.dsts[0], false, false)?),
-        Operand::Omr { entry, mask: None } if (1..=15).contains(entry) => AluDst::Omr(*entry),
-        Operand::Nowrite => AluDst::None,
+        } => (AluDst::T, none),
+        Operand::Mem { .. } => {
+            let single_line = matches!(&expr.dsts[0], Operand::Mem { mask: Some(_), .. });
+            let dst = mem_source(&expr.dsts[0], false, true)?;
+            (AluDst::Mem(dst), resolve_mask(&expr.dsts[0], mask_state, single_line))
+        }
+        Operand::Omr { entry, mask: None } if (1..=15).contains(entry) => {
+            (AluDst::Omr(*entry), none)
+        }
+        Operand::Nowrite => (AluDst::None, none),
         _ => return None,
     };
     Some(AluLine {
@@ -411,6 +429,7 @@ pub fn alu_line_from_expr(expr: &Expr) -> Option<AluLine> {
         dst,
         imm,
         imm_u,
+        mask,
     })
 }
 
@@ -461,6 +480,32 @@ pub fn l1_read_line_from_expr(expr: &Expr) -> Option<L1ReadLine> {
         wl,
         dst,
     })
+}
+
+/// An L1BM reduction (l1bmr...).
+#[derive(Clone, Copy, Debug)]
+pub struct L1ReduceLine {
+    pub addr: u32,
+    pub wl: u8,
+    pub src: MauSrc,
+}
+
+pub fn l1_reduce_line_from_expr(expr: &Expr) -> Option<L1ReduceLine> {
+    let Op::L1(L1Op::Reduce { rrn, round: false }) = &expr.op else {
+        return None;
+    };
+    if rrn.op != RrnOp::Fadd || rrn.prec != 'f' {
+        return None;
+    }
+    let (wl, addr) = match expr.dsts.first()? {
+        Operand::L1bm { wl, addr: Some(addr) } => (*wl, *addr),
+        _ => return None,
+    };
+    if wl != 2 && wl != 4 {
+        return None;
+    }
+    let src = mem_source(expr.srcs.first()?, false, false)?;
+    Some(L1ReduceLine { addr, wl, src })
 }
 
 /// An L1BM write from one MAB (l1bmm@mab).
@@ -1022,7 +1067,7 @@ fn directive_mask_applies(op: &Operand, state: MaskState) -> bool {
 /// 32-bit element precisions (F and G).
 pub fn mat_write_line_from_expr(expr: &Expr) -> Option<MatWriteLine> {
     let Op::MatWrite {
-        prec: prec @ (Prec::F | Prec::G),
+        prec: prec @ (Prec::F | Prec::G | Prec::D),
     } = &expr.op
     else {
         return None;
@@ -1056,7 +1101,7 @@ pub fn mat_write_line_from_expr(expr: &Expr) -> Option<MatWriteLine> {
 /// merge masked writes yet.
 pub fn mat_read_line_from_expr(expr: &Expr, mask_state: MaskState) -> Option<MatReadLine> {
     let Op::MatRead {
-        prec: prec @ (Prec::F | Prec::G),
+        prec: prec @ (Prec::F | Prec::G | Prec::D),
     } = &expr.op
     else {
         return None;
@@ -1100,7 +1145,7 @@ pub fn mat_read_line_from_expr(expr: &Expr, mask_state: MaskState) -> Option<Mat
 /// Builds a `MatMauLine` for a matrix MAU expression (`fmfma`, `gmmul`, ...).
 pub fn mat_mau_line_from_expr(expr: &Expr, mask_state: MaskState) -> Option<MatMauLine> {
     let Op::Mau {
-        prec: prec @ (Prec::F | Prec::G),
+        prec: prec @ (Prec::F | Prec::G | Prec::D),
         matrix: true,
         kind,
         half: None,
@@ -1178,6 +1223,7 @@ pub struct AluLine {
     pub dst: AluDst,
     pub imm: u32,
     pub imm_u: bool,
+    pub mask: MaskInfo,
 }
 
 /// LM0, LM1, GRF0 and GRF1 in device memory, in the same PE-major layout as
@@ -1245,6 +1291,7 @@ pub struct Gpu {
     bfn_function: CuFunction,
     l1_function: CuFunction,
     l1_write_function: CuFunction,
+    l1_reduce_function: CuFunction,
     l2_function: CuFunction,
     l2_reduce_function: CuFunction,
     mv_function: CuFunction,
@@ -1416,6 +1463,11 @@ impl Gpu {
             unsafe { cu_get_function(&mut l1_write_function, module, b"l1_write_line\0".as_ptr() as *const c_char) },
             "cuModuleGetFunction(l1_write_line)",
         )?;
+        let mut l1_reduce_function: CuFunction = std::ptr::null_mut();
+        check(
+            unsafe { cu_get_function(&mut l1_reduce_function, module, b"l1_reduce_line\0".as_ptr() as *const c_char) },
+            "cuModuleGetFunction(l1_reduce_line)",
+        )?;
         let mut l2_function: CuFunction = std::ptr::null_mut();
         check(
             unsafe { cu_get_function(&mut l2_function, module, b"l2_line\0".as_ptr() as *const c_char) },
@@ -1480,6 +1532,7 @@ impl Gpu {
             bfn_function,
             l1_function,
             l1_write_function,
+            l1_reduce_function,
             l2_function,
             l2_reduce_function,
             mv_function,
@@ -2051,6 +2104,10 @@ impl Gpu {
         let mut bwl = line.b.wl as i32;
         let mut imm = line.imm;
         let mut imm_u = line.imm_u as i32;
+        let mut mask_kind = line.mask.kind as i32;
+        let mut mask_entry = line.mask.entry as i32;
+        let mut mask_pattern = line.mask.pattern as i32;
+        let mut mask_ll = line.mask.ll as i32;
         let (mut dmem, mut d, mut dwl, mut omr, mut tdst) = match line.dst {
             AluDst::Mem(dst) => (dst.mem as i32, dst.base, dst.wl as i32, 0i32, 0i32),
             AluDst::T => (0i32, [0u32; 4], 0i32, 0i32, 1i32),
@@ -2089,6 +2146,10 @@ impl Gpu {
             &mut tdst as *mut i32 as *mut c_void,
             &mut imm as *mut u32 as *mut c_void,
             &mut imm_u as *mut i32 as *mut c_void,
+            &mut mask_kind as *mut i32 as *mut c_void,
+            &mut mask_entry as *mut i32 as *mut c_void,
+            &mut mask_pattern as *mut i32 as *mut c_void,
+            &mut mask_ll as *mut i32 as *mut c_void,
         ];
         let grid = (crate::machine::PES as u32 + 255) / 256;
         self.check(
@@ -2359,6 +2420,51 @@ impl Gpu {
         Ok(())
     }
 
+    /// Launches one L1BM reduction.
+    pub fn run_l1_reduce_line(&self, state: &GpuState, line: &L1ReduceLine) -> Result<(), String> {
+        let mut lm0 = state.lm0;
+        let mut lm1 = state.lm1;
+        let mut grf0 = state.grf0;
+        let mut grf1 = state.grf1;
+        let mut l1bm = state.l1bm;
+        let mut smem = line.src.mem as i32;
+        let mut s = line.src.base;
+        let mut swl = line.src.wl as i32;
+        let mut addr = line.addr;
+        let mut args = [
+            &mut lm0 as *mut u64 as *mut c_void,
+            &mut lm1 as *mut u64 as *mut c_void,
+            &mut grf0 as *mut u64 as *mut c_void,
+            &mut grf1 as *mut u64 as *mut c_void,
+            &mut l1bm as *mut u64 as *mut c_void,
+            &mut smem as *mut i32 as *mut c_void,
+            &mut s[0] as *mut u32 as *mut c_void,
+            &mut s[1] as *mut u32 as *mut c_void,
+            &mut s[2] as *mut u32 as *mut c_void,
+            &mut s[3] as *mut u32 as *mut c_void,
+            &mut swl as *mut i32 as *mut c_void,
+            &mut addr as *mut u32 as *mut c_void,
+        ];
+        self.check(
+            unsafe {
+                (self.cu_launch)(
+                    self.l1_reduce_function,
+                    4,
+                    1,
+                    1,
+                    256,
+                    1,
+                    1,
+                    0,
+                    std::ptr::null_mut(),
+                    args.as_mut_ptr(),
+                    std::ptr::null_mut(),
+                )
+            },
+            "cuLaunchKernel(l1_reduce_line)",
+        )
+    }
+
     /// Launches one l1bmm@mab write.
     pub fn run_l1_write_line(&self, state: &GpuState, line: &L1WriteLine) -> Result<(), String> {
         let mut lm0 = state.lm0;
@@ -2467,8 +2573,8 @@ impl Gpu {
 
     /// Launches one matrix-register write (`fmwrite`/`gmwrite`).
     pub fn run_mat_write_line(&self, state: &GpuState, line: &MatWriteLine) -> Result<(), String> {
-        if !matches!(line.prec, Prec::F | Prec::G) {
-            return Err("mat_write_line supports f32 and pseudo-single".into());
+        if !matches!(line.prec, Prec::F | Prec::G | Prec::D) {
+            return Err("mat_write_line supports f32, pseudo-single and double".into());
         }
         let mut lm0 = state.lm0;
         let mut lm1 = state.lm1;
@@ -2477,6 +2583,7 @@ impl Gpu {
         let mut mauf = state.mauf;
         let mut aluf = state.aluf;
         let mut mats = state.mats;
+        let mut prec = if line.prec == Prec::D { 1i32 } else { 0i32 };
         let mut side = line.side as i32;
         let mut addr = line.addr;
         let mut smem = line.src.mem as i32;
@@ -2491,6 +2598,7 @@ impl Gpu {
             &mut mauf as *mut u64 as *mut c_void,
             &mut aluf as *mut u64 as *mut c_void,
             &mut mats as *mut u64 as *mut c_void,
+            &mut prec as *mut i32 as *mut c_void,
             &mut side as *mut i32 as *mut c_void,
             &mut addr as *mut u32 as *mut c_void,
             &mut smem as *mut i32 as *mut c_void,
@@ -2524,8 +2632,8 @@ impl Gpu {
 
     /// Launches one matrix-register read (`fmread`/`gmread`).
     pub fn run_mat_read_line(&self, state: &GpuState, line: &MatReadLine) -> Result<(), String> {
-        if !matches!(line.prec, Prec::F | Prec::G) {
-            return Err("mat_read_line supports f32 and pseudo-single".into());
+        if !matches!(line.prec, Prec::F | Prec::G | Prec::D) {
+            return Err("mat_read_line supports f32, pseudo-single and double".into());
         }
         let mut lm0 = state.lm0;
         let mut lm1 = state.lm1;
@@ -2533,6 +2641,7 @@ impl Gpu {
         let mut grf1 = state.grf1;
         let mut mreadf = state.mreadf;
         let mut mats = state.mats;
+        let mut prec = if line.prec == Prec::D { 1i32 } else { 0i32 };
         let mut side = line.side as i32;
         let mut addr = line.addr;
         let mut dmem = line.dst.mem as i32;
@@ -2545,6 +2654,7 @@ impl Gpu {
             &mut grf1 as *mut u64 as *mut c_void,
             &mut mreadf as *mut u64 as *mut c_void,
             &mut mats as *mut u64 as *mut c_void,
+            &mut prec as *mut i32 as *mut c_void,
             &mut side as *mut i32 as *mut c_void,
             &mut addr as *mut u32 as *mut c_void,
             &mut dmem as *mut i32 as *mut c_void,

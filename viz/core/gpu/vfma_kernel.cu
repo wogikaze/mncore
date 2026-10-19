@@ -329,7 +329,8 @@ extern "C" __global__ void alu_line(
     int amem, unsigned a0, unsigned a1, unsigned a2, unsigned a3, int awl,
     int bmem, unsigned b0, unsigned b1, unsigned b2, unsigned b3, int bwl,
     int dmem, unsigned d0, unsigned d1, unsigned d2, unsigned d3, int dwl,
-    int omr, int tdst, unsigned imm, int imm_u) {
+    int omr, int tdst, unsigned imm, int imm_u,
+    int mask_kind, int mask_entry, int mask_pattern, int mask_ll) {
     int pe = blockIdx.x * blockDim.x + threadIdx.x;
     if (pe >= 4096) return;
     unsigned ab[4] = {a0, a1, a2, a3};
@@ -351,6 +352,10 @@ extern "C" __global__ void alu_line(
                 av[i] = aluf[pe * 16 + c * 4 + i];
             } else if (amem == 6) {
                 av[i] = t[pe * 16 + c * 4 + i];
+            } else if (amem == 9) {
+                av[i] = (unsigned)(pe & 3);
+            } else if (amem == 10) {
+                av[i] = (i & 1) ? (unsigned)(pe & 3) : 0;
             } else {
                 av[i] = (i < awl) ? pa[pe * la + ab[c] + i] : 0;
             }
@@ -360,6 +365,8 @@ extern "C" __global__ void alu_line(
                 bv[i] = aluf[pe * 16 + c * 4 + i];
             } else if (bmem == 6) {
                 bv[i] = t[pe * 16 + c * 4 + i];
+            } else if (bmem == 9) {
+                bv[i] = (unsigned)(pe & 3);
             } else {
                 bv[i] = (i < bwl) ? pb[pe * lb + bb[c] + i] : 0;
             }
@@ -535,8 +542,35 @@ extern "C" __global__ void alu_line(
             unsigned field = 0xfu << (4 * c);
             mask[pe * 16 + omr] = (old & ~field) | ((unsigned)flags << (4 * c));
         } else {
+            unsigned flags = 0xf;
+            if (mask_kind == 1) {
+                flags = (mask_entry >= 1 && mask_entry <= 15)
+                    ? ((mask[pe * 16 + mask_entry] >> (4 * c)) & 0xf)
+                    : (((mask_entry >> (3 - c)) & 1) ? 0xf : 0);
+            } else if (mask_kind == 2) {
+                flags = ((mask_pattern >> c) & 1) ? 0xf : 0;
+            }
             for (int i = 0; i < dwl; ++i) {
-                pd[pe * ld + db[c] + i] = out[i];
+                int enabled;
+                if (mask_kind == 0) {
+                    enabled = 1;
+                } else if (mask_ll) {
+                    enabled = (flags >> (3 - i)) & 1;
+                } else if (i < 2) {
+                    enabled = ((flags >> (2 - 2 * i)) & 3) != 0;
+                } else {
+                    enabled = 1;
+                }
+                if (!enabled) continue;
+                unsigned value = out[i];
+                if (mask_kind != 0 && !mask_ll && i < 2) {
+                    unsigned hi = (flags >> (3 - 2 * i)) & 1;
+                    unsigned lo = (flags >> (2 - 2 * i)) & 1;
+                    unsigned m = (hi ? 0xffff0000u : 0) | (lo ? 0x0000ffffu : 0);
+                    unsigned old = pd[pe * ld + db[c] + i];
+                    value = (old & ~m) | (value & m);
+                }
+                pd[pe * ld + db[c] + i] = value;
             }
         }
         for (int i = 0; i < 4; ++i) {
@@ -1093,13 +1127,38 @@ __device__ __forceinline__ unsigned long long mat_fma_bits(
 extern "C" __global__ void mat_write_line(
     unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
     unsigned* mauf, unsigned* aluf, unsigned* mats,
-    int side, unsigned addr, int smem,
+    int prec, int side, unsigned addr, int smem,
     unsigned s0, unsigned s1, unsigned s2, unsigned s3, int swl, int sneg) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx >= 4096) return;
     int mab = idx >> 2;
     int c = idx & 3;
     unsigned sb[4] = {s0, s1, s2, s3};
+    if (prec == 1) {
+        unsigned* p = pick_mem(smem, lm0, lm1, grf0, grf1);
+        int l = mem_len(smem);
+        for (int q = 0; q < 4; ++q) {
+            int pe = mab * 4 + q;
+            unsigned w0 = 0, w1 = 0;
+            if (smem == 4) {
+                w0 = mauf[pe * 16 + c * 4];
+                w1 = mauf[pe * 16 + c * 4 + 1];
+            } else if (smem == 5) {
+                w0 = aluf[pe * 16 + c * 4];
+                w1 = aluf[pe * 16 + c * 4 + 1];
+            } else {
+                if (swl > 0) w0 = p[pe * l + sb[c]];
+                if (swl > 1) w1 = p[pe * l + sb[c] + 1];
+            }
+            unsigned long long v = ((unsigned long long)w0 << 32) | w1;
+            if (sneg) v ^= (1ULL << 63);
+            int row = (int)((addr + (unsigned)c) % 4u);
+            int base = ((mab * 2 + side) * 16 + row * 4) * 8;
+            mats[base + 2 * q] = (unsigned)(v >> 32);
+            mats[base + 2 * q + 1] = (unsigned)v;
+        }
+        return;
+    }
     unsigned* ps = pick_mem(smem, lm0, lm1, grf0, grf1);
     int ls = mem_len(smem);
     unsigned vals[8];
@@ -1131,7 +1190,7 @@ extern "C" __global__ void mat_write_line(
 extern "C" __global__ void mat_read_line(
     unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
     unsigned* mreadf, unsigned* mats,
-    int side, unsigned addr, int dmem,
+    int prec, int side, unsigned addr, int dmem,
     unsigned d0, unsigned d1, unsigned d2, unsigned d3, int dwl) {
     int pe = blockIdx.x * blockDim.x + threadIdx.x;
     if (pe >= 4096) return;
@@ -1142,13 +1201,20 @@ extern "C" __global__ void mat_read_line(
     int ld = mem_len(dmem);
     int base = (mab * 2 + side) * 16 * 8;
     for (int c = 0; c < 4; ++c) {
-        int col = (int)((addr + (unsigned)c) % 8u);
-        unsigned bus[4] = {
-            mats[base + (4 * p) * 8 + col],
-            mats[base + (4 * p + 2) * 8 + col],
-            0,
-            0,
-        };
+        int col = (int)((addr + (unsigned)c) % (prec == 1 ? 4u : 8u));
+        unsigned bus[4];
+        if (prec == 1) {
+            int word = base + p * 4 * 8 + col * 2;
+            bus[0] = mats[word];
+            bus[1] = mats[word + 1];
+            bus[2] = 0;
+            bus[3] = 0;
+        } else {
+            bus[0] = mats[base + (4 * p) * 8 + col];
+            bus[1] = mats[base + (4 * p + 2) * 8 + col];
+            bus[2] = 0;
+            bus[3] = 0;
+        }
         for (int i = 0; i < dwl; ++i) {
             pd[pe * ld + db[c] + i] = bus[i];
         }
@@ -1247,4 +1313,37 @@ extern "C" __global__ void mat_mau_line(
             }
         }
     }
+}
+
+// One l1bmrffadd reduction: 16 MABs per L1B, 4 PEs and 4 cycles.
+extern "C" __global__ void l1_reduce_line(
+    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
+    unsigned long long* l1bm,
+    int smem, unsigned s0, unsigned s1, unsigned s2, unsigned s3, int swl,
+    unsigned addr) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= 1024) return;
+    int pe_sub = idx & 3;
+    int c = (idx >> 2) & 3;
+    int l1b = idx >> 4;
+    unsigned sb[4] = {s0, s1, s2, s3};
+    unsigned* ps = pick_mem(smem, lm0, lm1, grf0, grf1);
+    int ls = mem_len(smem);
+    unsigned long long v0[16];
+    unsigned long long v1[16];
+    for (int m = 0; m < 16; ++m) {
+        int pe = l1b * 64 + m * 4 + pe_sub;
+        v0[m] = (smem < 4 && swl > 0) ? ps[pe * ls + sb[c]] : 0;
+        v1[m] = (smem < 4 && swl > 1) ? ps[pe * ls + sb[c] + 1] : 0;
+    }
+    unsigned long long st0[4];
+    unsigned long long st1[4];
+    for (int g = 0; g < 4; ++g) {
+        st0[g] = rrn_reduce(0, 32, v0 + g * 4, 4);
+        st1[g] = rrn_reduce(0, 32, v1 + g * 4, 4);
+    }
+    unsigned long long r0 = rrn_reduce(0, 32, st0, 4);
+    unsigned long long r1 = rrn_reduce(0, 32, st1, 4);
+    l1bm[l1b * 8192 + (addr + (unsigned)c * 4 + (unsigned)pe_sub) % 8192] =
+        (r0 << 32) | r1;
 }

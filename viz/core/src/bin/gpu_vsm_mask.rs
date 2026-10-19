@@ -44,7 +44,7 @@ fn main() {
             }
             Line::Pe(exprs) => {
                 let expr = &exprs[0];
-                if let Some(line) = alu_line_from_expr(expr) {
+                if let Some(line) = alu_line_from_expr(expr, state) {
                     actions.push(Action::Alu(line));
                 } else if let Some(line) = mau_line_from_expr(expr, state) {
                     actions.push(Action::Mau(line));

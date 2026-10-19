@@ -3,7 +3,7 @@
 //! Usage: gpu_coverage [program.vsm]
 
 use mncore_sim::gpu::{
-    alu_line_from_expr, bfn_line_from_expr, l1_read_line_from_expr, l1_write_line_from_expr,
+    alu_line_from_expr, bfn_line_from_expr, l1_read_line_from_expr, l1_reduce_line_from_expr, l1_write_line_from_expr,
     l2_line_from_expr, l2_reduce_line_from_expr, mat_mau_line_from_expr, mat_read_line_from_expr,
     mat_write_line_from_expr, mau_line_from_expr, mv_line_from_mv,
 };
@@ -99,14 +99,14 @@ fn main() {
                 }
             } else if let Op::L1(_) = expr.op {
                 l1_exprs += 1;
-                if l1_read_line_from_expr(expr).is_some() || l1_write_line_from_expr(expr).is_some() {
+                if l1_read_line_from_expr(expr).is_some() || l1_write_line_from_expr(expr).is_some() || l1_reduce_line_from_expr(expr).is_some() {
                     l1_supported += 1;
                 } else {
                     all_supported = false;
                 }
             } else if matches!(expr.op, Op::Alu { .. } | Op::Zero | Op::Imm { .. }) {
                 alu_exprs += 1;
-                if alu_line_from_expr(expr).is_some() || bfn_line_from_expr(expr).is_some() {
+                if alu_line_from_expr(expr, mask_state).is_some() || bfn_line_from_expr(expr).is_some() {
                     alu_supported += 1;
                 } else {
                     all_supported = false;

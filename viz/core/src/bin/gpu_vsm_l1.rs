@@ -4,7 +4,8 @@
 
 use mncore_sim::blocks::{L1BM_LONGS, L1BS};
 use mncore_sim::gpu::{
-    l1_read_line_from_expr, l1_write_line_from_expr, Gpu, L1ReadLine, L1WriteLine,
+    l1_read_line_from_expr, l1_reduce_line_from_expr, l1_write_line_from_expr, Gpu, L1ReadLine,
+    L1ReduceLine, L1WriteLine,
 };
 use mncore_sim::machine::{GRF_WORDS, LM_WORDS, PES};
 use mncore_sim::run::Sim;
@@ -18,11 +19,12 @@ fn main() {
     enum Action {
         Read(L1ReadLine),
         Write(L1WriteLine),
+        Reduce(L1ReduceLine),
     }
     let mut text = String::new();
     for i in 0..lines {
         let offset = (i % 16) * 4;
-        match i % 5 {
+        match i % 6 {
             0 => text.push_str(&format!(
                 "l1bmm@{} $lln{}v $llb{}\n",
                 i % 16,
@@ -32,6 +34,7 @@ fn main() {
             1 => text.push_str(&format!("l1bmm $llb{} $llm{}v\n", offset, offset)),
             2 => text.push_str(&format!("l1bmd $lb{} $lm{}v\n", offset, offset)),
             3 => text.push_str(&format!("l1bmp $lb{} $lm{}v\n", offset, offset)),
+            4 => text.push_str(&format!("l1bmrffadd $ln{}v $lb{}\n", offset, offset)),
             _ => text.push_str(&format!("l1bmd $ln{}v $lb{}\n", offset, offset)),
         }
     }
@@ -46,6 +49,8 @@ fn main() {
             actions.push(Action::Read(line));
         } else if let Some(line) = l1_write_line_from_expr(expr) {
             actions.push(Action::Write(line));
+        } else if let Some(line) = l1_reduce_line_from_expr(expr) {
+            actions.push(Action::Reduce(line));
         } else {
             eprintln!("unsupported: {expr:?}");
             std::process::exit(1);
@@ -97,6 +102,7 @@ fn main() {
         match action {
             Action::Read(line) => gpu.run_l1_read_line(&state, line).expect("l1 read"),
             Action::Write(line) => gpu.run_l1_write_line(&state, line).expect("l1 write"),
+            Action::Reduce(line) => gpu.run_l1_reduce_line(&state, line).expect("l1 reduce"),
         }
     }
     gpu.sync().expect("sync");

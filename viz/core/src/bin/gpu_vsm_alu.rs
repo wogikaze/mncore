@@ -5,7 +5,7 @@
 use mncore_sim::gpu::{
     alu_line_from_expr, bfn_line_from_expr, mau_line_from_expr, AluLine, BfnLine, Gpu, MauLine,
 };
-use mncore_sim::machine::{GRF_WORDS, LM_WORDS, PES};
+use mncore_sim::machine::{GRF_WORDS, LM_WORDS, MaskState, PES};
 use mncore_sim::run::Sim;
 use mncore_sim::vsm::{self, Line};
 
@@ -46,6 +46,8 @@ fn main() {
         "frelu $m{}v $r{}v $n{}v",
         "ffloor $r{}v $r{}v",
         "fftoi $r{}v $s{}v",
+        "iadd $subpeid $r{}v $r{}v",
+        "lpassa $subpeid $r{}v",
     ];
     let mut text = String::new();
     for i in 0..lines {
@@ -60,7 +62,7 @@ fn main() {
             panic!("expected PE line");
         };
         let expr = &exprs[0];
-        if let Some(line) = alu_line_from_expr(expr) {
+        if let Some(line) = alu_line_from_expr(expr, MaskState::default()) {
             actions.push(Action::Alu(line));
         } else if let Some(line) = bfn_line_from_expr(expr) {
             actions.push(Action::Bfn(line));

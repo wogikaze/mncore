@@ -61,6 +61,12 @@ fn main() {
             dst + 32
         ));
     }
+    for i in 0..rounds {
+        let dst = 256 + (i % 16) * 8;
+        let row = i % 4;
+        text.push_str(&format!("dmwrite $ln{dst}v $lx{row}\n"));
+        text.push_str(&format!("dmread $lx{row} $lr{dst}v\n"));
+    }
     let program = vsm::parse(&text).expect("parse");
     let mut actions = Vec::new();
     for (_, line) in &program {
@@ -71,7 +77,7 @@ fn main() {
             panic!("expected one expression per line");
         }
         let expr = &exprs[0];
-        if let Some(line) = alu_line_from_expr(expr) {
+        if let Some(line) = alu_line_from_expr(expr, MaskState::default()) {
             actions.push(Action::Alu(line));
         } else if let Some(line) = mat_write_line_from_expr(expr) {
             actions.push(Action::Write(line));
