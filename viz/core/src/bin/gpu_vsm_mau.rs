@@ -3,107 +3,11 @@
 //!
 //! Usage: gpu_vsm_mau [lines]
 
-use mncore_sim::gpu::{Gpu, MauLine, MauSrc};
+use mncore_sim::gpu::{mau_line_from_expr, Gpu};
 use mncore_sim::machine::{GRF_WORDS, LM_WORDS, PES};
 use mncore_sim::run::Sim;
-use mncore_sim::vsm::{self, Expr, Line, MauKind, MemKind, Op, Operand, Prec};
+use mncore_sim::vsm::{self, Line};
 
-fn mem_source(op: &Operand, wl: u8) -> Option<MauSrc> {
-    let Operand::Mem {
-        mem,
-        wl: op_wl,
-        addr,
-        neg,
-        ext,
-        rnd,
-        mask,
-    } = op
-    else {
-        return None;
-    };
-    if *op_wl != wl || *neg || *ext || *rnd || mask.is_some() {
-        return None;
-    }
-    if addr.t_indirect || addr.madpe.is_some() {
-        return None;
-    }
-    let mem = match mem {
-        MemKind::Lm0 => 0,
-        MemKind::Lm1 => 1,
-        MemKind::Grf0 => 2,
-        MemKind::Grf1 => 3,
-        _ => return None,
-    };
-    Some(MauSrc {
-        mem,
-        base: addr.cycles.map(|c| c & !(wl as u32 - 1)),
-    })
-}
-
-fn source(op: &Operand, wl: u8) -> Option<MauSrc> {
-    if let Operand::Forward {
-        kind: mncore_sim::vsm::FwdKind::Mauf,
-        neg: false,
-        ext: false,
-        rnd: false,
-    } = op
-    {
-        return Some(MauSrc {
-            mem: 4,
-            base: [0; 4],
-        });
-    }
-    mem_source(op, wl)
-}
-
-fn descriptor(expr: &Expr) -> Option<MauLine> {
-    let Op::Mau {
-        prec: Prec::F,
-        matrix: false,
-        kind,
-        half: None,
-        round: false,
-    } = &expr.op
-    else {
-        return None;
-    };
-    if expr.flush.is_some() || expr.dsts.len() != 1 {
-        return None;
-    }
-    let Operand::Mem { wl, .. } = &expr.dsts[0] else {
-        return None;
-    };
-    if *wl != 1 && *wl != 2 {
-        return None;
-    }
-    let wl = *wl;
-    let zero = MauSrc {
-        mem: 0,
-        base: [0; 4],
-    };
-    let kind = match kind {
-        MauKind::Fma => 0,
-        MauKind::Mul => 1,
-        MauKind::Add => 2,
-        MauKind::Passa => 3,
-    };
-    let a = source(expr.srcs.first()?, wl)?;
-    let (b, c) = match kind {
-        0 => (source(expr.srcs.get(1)?, wl)?, source(expr.srcs.get(2)?, wl)?),
-        1 => (source(expr.srcs.get(1)?, wl)?, zero),
-        2 => (zero, source(expr.srcs.get(1)?, wl)?),
-        _ => (zero, zero),
-    };
-    let dst = mem_source(&expr.dsts[0], wl)?;
-    Some(MauLine {
-        kind,
-        wl,
-        a,
-        b,
-        c,
-        dst,
-    })
-}
 
 fn main() {
     let lines: usize = std::env::args()
@@ -116,6 +20,8 @@ fn main() {
         "fvmul $m{}v $r{}v $n{}v",
         "fvfma $m{}v $r{}v $n{}v $r{}v",
         "fvadd $r{}v $mauf $n{}v",
+        "fvpassa $llm{}v $llr{}v",
+        "fvadd $m{}v -$r{}v $n{}v",
     ];
     let mut text = String::new();
     for i in 0..lines {
@@ -132,7 +38,7 @@ fn main() {
         if exprs.len() != 1 {
             panic!("expected one expression per line");
         }
-        match descriptor(&exprs[0]) {
+        match mau_line_from_expr(&exprs[0]) {
             Some(line) => descriptors.push(line),
             None => {
                 eprintln!("unsupported: {:?} {:?}", exprs[0].op, exprs[0]);

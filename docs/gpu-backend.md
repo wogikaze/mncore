@@ -122,3 +122,24 @@ MAU 行の後で各 PE の `mauf` を更新し、`$mauf` をソースに取れ�
 - CPU 1.28 秒、GPU 26.6 ms。
 
 `aluf`、`lbf`、`mreadf` はまだ未対応。
+
+### アクセス長と neg
+
+オペランドごとに `wl = 1/2/4` を持てるようにした。
+同じ行でも `$llm0v`（4 ワード）と `$lr0v`（2 ワード）を混在できる。
+f32 のレーンは 2 本で、ソースの `wl` が 1 なら 2 本目は 0 として読む。
+`wl = 4` のデスティネーションは 3、4 ワード目に 0 を書く。
+`-$r0v` のような neg も、f32 の符号ビット反転として扱う。
+
+`gpu_coverage` で実プログラムの MAU 行のうち何割を今のカーネルが扱えるか数えられる。
+
+```sh
+cd viz/core
+cargo run --release --bin gpu_coverage -- benchmarks/mnist_train_step.vsm
+```
+
+現状:
+
+- MAU 式 724 個のうち 292 個が対応。
+- PE 行 2,635 のうち、対応 MAU だけで構成される行は 292。
+- 残りは `aluf`/`lbf`/`mreadf` の forward が 255、wl=4 が 203、neg が 160（重複あり）。

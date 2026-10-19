@@ -9,6 +9,8 @@ use std::path::Path;
 
 use libloading::Library;
 
+use crate::vsm::{Expr, FwdKind, MauKind, MemKind, Op, Operand, Prec};
+
 type CuResult = c_int;
 type CuDevice = c_int;
 type CuContext = *mut c_void;
@@ -66,12 +68,116 @@ macro_rules! load {
     }};
 }
 
+fn mem_source(op: &Operand, allow_neg: bool) -> Option<MauSrc> {
+    let Operand::Mem {
+        mem,
+        wl,
+        addr,
+        neg,
+        ext,
+        rnd,
+        mask,
+    } = op
+    else {
+        return None;
+    };
+    if (*wl != 1 && *wl != 2 && *wl != 4) || (!allow_neg && *neg) || *ext || *rnd || mask.is_some() {
+        return None;
+    }
+    if addr.t_indirect || addr.madpe.is_some() {
+        return None;
+    }
+    let mem = match mem {
+        MemKind::Lm0 => 0,
+        MemKind::Lm1 => 1,
+        MemKind::Grf0 => 2,
+        MemKind::Grf1 => 3,
+        _ => return None,
+    };
+    Some(MauSrc {
+        mem,
+        wl: *wl,
+        base: addr.cycles.map(|c| c & !(*wl as u32 - 1)),
+        neg: *neg,
+    })
+}
+
+fn line_source(op: &Operand) -> Option<MauSrc> {
+    if let Operand::Forward {
+        kind: FwdKind::Mauf,
+        neg,
+        ext: false,
+        rnd: false,
+    } = op
+    {
+        return Some(MauSrc {
+            mem: 4,
+            wl: 4,
+            base: [0; 4],
+            neg: *neg,
+        });
+    }
+    mem_source(op, true)
+}
+
+/// Builds a `MauLine` for a PE-local f32 MAU expression. Returns `None` for
+/// anything the current kernel does not handle (masks, T, base registers,
+/// neg/ext/rnd, other forwarding registers, other precisions).
+pub fn mau_line_from_expr(expr: &Expr) -> Option<MauLine> {
+    let Op::Mau {
+        prec: Prec::F,
+        matrix: false,
+        kind,
+        half: None,
+        round: false,
+    } = &expr.op
+    else {
+        return None;
+    };
+    if expr.flush.is_some() || expr.dsts.len() != 1 {
+        return None;
+    }
+    let zero = MauSrc {
+        mem: 0,
+        wl: 1,
+        base: [0; 4],
+        neg: false,
+    };
+    let kind = match kind {
+        MauKind::Fma => 0,
+        MauKind::Mul => 1,
+        MauKind::Add => 2,
+        MauKind::Passa => 3,
+    };
+    let a = line_source(expr.srcs.first()?)?;
+    let (b, c) = match kind {
+        0 => (
+            line_source(expr.srcs.get(1)?)?,
+            line_source(expr.srcs.get(2)?)?,
+        ),
+        1 => (line_source(expr.srcs.get(1)?)?, zero),
+        2 => (zero, line_source(expr.srcs.get(1)?)?),
+        _ => (zero, zero),
+    };
+    let dst = mem_source(&expr.dsts[0], false)?;
+    Some(MauLine {
+        kind,
+        wl: dst.wl,
+        a,
+        b,
+        c,
+        dst,
+    })
+}
+
 /// One source or destination of a MAU line: memory kind (0 LM0, 1 LM1,
 /// 2 GRF0, 3 GRF1) and the already-aligned base word address per cycle.
 #[derive(Clone, Copy, Debug)]
 pub struct MauSrc {
     pub mem: u8,
+    pub wl: u8,
     pub base: [u32; 4],
+    pub neg: bool,
 }
 
 /// A PE-local f32 MAU expression, with kind 0 FMA, 1 MUL, 2 ADD, 3 PASSA.
@@ -396,8 +502,10 @@ impl Gpu {
 
     /// Launches one f32 MAU line for all 4,096 PEs and four cycles.
     pub fn run_mau_line(&self, state: &GpuState, line: &MauLine) -> Result<(), String> {
-        if line.wl != 1 && line.wl != 2 {
-            return Err("mau_line supports wl = 1 or 2".into());
+        for src in [line.a, line.b, line.c, line.dst] {
+            if src.wl != 1 && src.wl != 2 && src.wl != 4 {
+                return Err("mau_line supports wl = 1, 2 or 4".into());
+            }
         }
         let mut lm0 = state.lm0;
         let mut lm1 = state.lm1;
@@ -405,15 +513,21 @@ impl Gpu {
         let mut grf1 = state.grf1;
         let mut mauf = state.mauf;
         let mut kind = line.kind as i32;
-        let mut wl = line.wl as i32;
         let mut amem = line.a.mem as i32;
         let mut a = line.a.base;
+        let mut awl = line.a.wl as i32;
+        let mut aneg = line.a.neg as i32;
         let mut bmem = line.b.mem as i32;
         let mut b = line.b.base;
+        let mut bwl = line.b.wl as i32;
+        let mut bneg = line.b.neg as i32;
         let mut cmem = line.c.mem as i32;
         let mut c = line.c.base;
+        let mut cwl = line.c.wl as i32;
+        let mut cneg = line.c.neg as i32;
         let mut dmem = line.dst.mem as i32;
         let mut d = line.dst.base;
+        let mut dwl = line.dst.wl as i32;
         let mut args = [
             &mut lm0 as *mut u64 as *mut c_void,
             &mut lm1 as *mut u64 as *mut c_void,
@@ -421,27 +535,33 @@ impl Gpu {
             &mut grf1 as *mut u64 as *mut c_void,
             &mut mauf as *mut u64 as *mut c_void,
             &mut kind as *mut i32 as *mut c_void,
-            &mut wl as *mut i32 as *mut c_void,
             &mut amem as *mut i32 as *mut c_void,
             &mut a[0] as *mut u32 as *mut c_void,
             &mut a[1] as *mut u32 as *mut c_void,
             &mut a[2] as *mut u32 as *mut c_void,
             &mut a[3] as *mut u32 as *mut c_void,
+            &mut awl as *mut i32 as *mut c_void,
+            &mut aneg as *mut i32 as *mut c_void,
             &mut bmem as *mut i32 as *mut c_void,
             &mut b[0] as *mut u32 as *mut c_void,
             &mut b[1] as *mut u32 as *mut c_void,
             &mut b[2] as *mut u32 as *mut c_void,
             &mut b[3] as *mut u32 as *mut c_void,
+            &mut bwl as *mut i32 as *mut c_void,
+            &mut bneg as *mut i32 as *mut c_void,
             &mut cmem as *mut i32 as *mut c_void,
             &mut c[0] as *mut u32 as *mut c_void,
             &mut c[1] as *mut u32 as *mut c_void,
             &mut c[2] as *mut u32 as *mut c_void,
             &mut c[3] as *mut u32 as *mut c_void,
+            &mut cwl as *mut i32 as *mut c_void,
+            &mut cneg as *mut i32 as *mut c_void,
             &mut dmem as *mut i32 as *mut c_void,
             &mut d[0] as *mut u32 as *mut c_void,
             &mut d[1] as *mut u32 as *mut c_void,
             &mut d[2] as *mut u32 as *mut c_void,
             &mut d[3] as *mut u32 as *mut c_void,
+            &mut dwl as *mut i32 as *mut c_void,
         ];
         let grid = ((crate::machine::PES * 4) as u32 + 255) / 256;
         self.check(

@@ -107,7 +107,9 @@ fn make_src(next: &mut impl FnMut() -> u64, mem: u8) -> MauSrc {
     let base = ((next() as usize) % (max + 1)) * 2;
     MauSrc {
         mem,
+        wl: 2,
         base: [base as u32, (base + 2) as u32, (base + 4) as u32, (base + 6) as u32],
+        neg: false,
     }
 }
 

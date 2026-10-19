@@ -195,18 +195,20 @@ __device__ __forceinline__ int mem_len(int which) {
 }
 
 // One f32 MAU line. Each thread handles one PE, reads all four cycles
-// before writing, and processes two lanes (wl = 2). Masks, forwarding and
-// the neg/ext/rnd options are not part of this kernel yet.
+// before writing, and computes the two f32 lanes. Every operand has its own
+// access length; lanes beyond a source's length read as zero. Masks, T,
+// base registers, ext/rnd and the other forwarding registers are not part
+// of this kernel yet.
 extern "C" __global__ void mau_line(
     unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
     unsigned* mauf,
-    int kind, int wl,
-    int amem, unsigned a0, unsigned a1, unsigned a2, unsigned a3,
-    int bmem, unsigned b0, unsigned b1, unsigned b2, unsigned b3,
-    int cmem, unsigned c0, unsigned c1, unsigned c2, unsigned c3,
-    int dmem, unsigned d0, unsigned d1, unsigned d2, unsigned d3) {
+    int kind,
+    int amem, unsigned a0, unsigned a1, unsigned a2, unsigned a3, int awl, int aneg,
+    int bmem, unsigned b0, unsigned b1, unsigned b2, unsigned b3, int bwl, int bneg,
+    int cmem, unsigned c0, unsigned c1, unsigned c2, unsigned c3, int cwl, int cneg,
+    int dmem, unsigned d0, unsigned d1, unsigned d2, unsigned d3, int dwl) {
     int pe = blockIdx.x * blockDim.x + threadIdx.x;
-    if (pe >= 4096 || (wl != 1 && wl != 2)) return;
+    if (pe >= 4096) return;
     unsigned ab[4] = {a0, a1, a2, a3};
     unsigned bb[4] = {b0, b1, b2, b3};
     unsigned cb[4] = {c0, c1, c2, c3};
@@ -223,29 +225,34 @@ extern "C" __global__ void mau_line(
     unsigned one = 0x3f800000u;
     unsigned values[4][2];
     for (int c = 0; c < 4; ++c) {
-        for (int l = 0; l < wl; ++l) {
+        for (int l = 0; l < 2; ++l) {
             unsigned av = (amem == 4)
                 ? mauf[pe * 16 + c * 4 + l]
-                : pa[pe * la + ab[c] + l];
+                : (l < awl ? pa[pe * la + ab[c] + l] : 0);
+            if (aneg) av ^= 0x80000000u;
             unsigned bv;
             unsigned cv;
             if (kind == 0) {
                 bv = (bmem == 4)
                     ? mauf[pe * 16 + c * 4 + l]
-                    : pb[pe * lb + bb[c] + l];
+                    : (l < bwl ? pb[pe * lb + bb[c] + l] : 0);
                 cv = (cmem == 4)
                     ? mauf[pe * 16 + c * 4 + l]
-                    : pc[pe * lc + cb[c] + l];
+                    : (l < cwl ? pc[pe * lc + cb[c] + l] : 0);
+                if (bneg) bv ^= 0x80000000u;
+                if (cneg) cv ^= 0x80000000u;
             } else if (kind == 1) {
                 bv = (bmem == 4)
                     ? mauf[pe * 16 + c * 4 + l]
-                    : pb[pe * lb + bb[c] + l];
+                    : (l < bwl ? pb[pe * lb + bb[c] + l] : 0);
+                if (bneg) bv ^= 0x80000000u;
                 cv = 0;
             } else if (kind == 2) {
                 bv = one;
                 cv = (cmem == 4)
                     ? mauf[pe * 16 + c * 4 + l]
-                    : pc[pe * lc + cb[c] + l];
+                    : (l < cwl ? pc[pe * lc + cb[c] + l] : 0);
+                if (cneg) cv ^= 0x80000000u;
             } else {
                 bv = one;
                 cv = 0;
@@ -254,11 +261,11 @@ extern "C" __global__ void mau_line(
         }
     }
     for (int c = 0; c < 4; ++c) {
-        for (int l = 0; l < wl; ++l) {
-            pd[pe * ld + db[c] + l] = values[c][l];
+        for (int l = 0; l < dwl; ++l) {
+            pd[pe * ld + db[c] + l] = (l < 2) ? values[c][l] : 0;
         }
         mauf[pe * 16 + c * 4] = values[c][0];
-        mauf[pe * 16 + c * 4 + 1] = (wl == 2) ? values[c][1] : 0;
+        mauf[pe * 16 + c * 4 + 1] = values[c][1];
         mauf[pe * 16 + c * 4 + 2] = 0;
         mauf[pe * 16 + c * 4 + 3] = 0;
     }
