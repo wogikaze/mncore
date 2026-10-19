@@ -73,17 +73,21 @@ forwarding レジスタを更新する命令式も各レジスタにつき 1 つ
 5. ✅ オペランド形（`$mb`/`$nb`、`j`、T 間接、固定値）と noforward/wait。
 6. MAU の D/H、matrix MAU D/H、行列マスク、`$lbf`。
 
-## 最終検証（2026-10-19）
+## 最終検証（2026-10-20）
 
 | 項目 | 結果 |
 | --- | --- |
-| `gpu_alu_conformance` | 142 設定 / 524 行 PASS |
-| `gpu_l1_conformance` | 1,461 式 / 1,482 行 0 mismatch |
+| `gpu_alu_conformance` | 142 設定 / 524 行 0 mismatch |
+| `gpu_l1_conformance` | 1,329 ケース × 3 seed 0 mismatch |
 | `gpu_mau_conformance` | 133 設定 / 7,640 行 0 mismatch |
 | `gpu_mem_conformance` | 697 ケース 0 mismatch |
-| `gpu_run_program mnist_train_step` | 2,635 PE 行 0 mismatch（lbf/forwarding 比較込み） |
-| `cargo test --release` | 23 件通過 |
-| `difftest_prog problems/3.relu` | 0 mismatch |
+| `gpu_run_program mnist_train_step` | 1,572 PE 行 0 mismatch（lbf/forwarding 比較込み） |
+| `difftest_prog` 全 73 問題 + 全 challenge 解 | 0 mismatch |
+| `cargo test --release` | 28 件通過 |
+
+全問題の比較は `viz/core/scripts/check-conformance.sh`（`--gpu` で GPU 側も）と
+`tests/problem_conformance.rs` で回帰ガードにした。詳細は
+[gpu-backend.md](gpu-backend.md) の「検証の一本化」を参照。
 
 命令形式の不足は解消した。残る差は実行時エラーの再現（不正 block-float、forwarding 無効の文言）と、
 DRAM 間接参照で `nd` 省略時に公式エミュレータがアクセスしない点だけ。

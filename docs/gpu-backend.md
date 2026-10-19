@@ -575,3 +575,59 @@ PASS: every memory, BAR, DAR, mask and forwarding register matches
 内訳はカーネル本体の実行が支配的で、Graph でホスト側の起動オーバーヘッドを
 ほぼ除去しても 1 割程度の短縮にとどまる。さらなる高速化には、複数命令を
 1 カーネルに融合するか、デバイス側で命令列を解釈する常駐カーネルが必要。
+
+## 検証の一本化（2026-10-20）
+
+計測中に、conformance の失敗の大半が**カーネルの論理ではなくドライバ層**だったことが分かった。
+WSL2 の `/dev/dxg` では `cuStreamSynchronize` が成功を返しても、そのストリームに積んだ
+カーネルがまだデバイスに届いていないことがある。アップロード直後の最初のカーネルが
+そのまま失われ、状態がシードのまま残っていた。
+
+対策として `Gpu::sync` は `cuCtxSynchronize` を呼び、**各 step の起動後**に同期する
+（元の Python 試作 `check_vfma.py` と同じ）。1 step あたり約 72 µs。
+コピー直前だけの同期では L1 の 3 ケースが再現したため、step ごとの同期が必須。
+
+同期を入れた後、次の 3 件は**CPU 側のセマンティクス**の誤りだったと判明した。
+いずれも公式エミュレータを基準に修正し、カーネルも同じ規則に揃えた。
+
+- `hvadd`/`hvfma` は加数 `c` を積の格子に合わせない。half は部分積を全精度で保持し、
+  格子を持たない（SDM 4.3）。single/double だけが `mul_full_bits` を持つ。
+- `lrelud`/`lreluo`/`ilrelud` は x が条件、y が値。x が非負なら y をそのまま通す
+  （SDM 3.6.12.18）。
+- L1BM の turnaround レジスタ `$lbi` は 1 サイクルあたり **2 本の 64 長語プレーン**
+  （MSB 0..63、LSB 64..127）。1 長語転送は MSB プレーンだけを書き、2 長語転送と
+  T へ書く読み出しは両方を使う（SDM 3.6.8.2）。
+- BAR への書き込み（`$mb`/`$nb`）は、1 語アクセスなら `bus[0]`、長語アクセスなら
+  `bus[1]` の下位 12 bit を取る。
+
+### 回帰ガード
+
+同じ種類のずれを二度見逃さないため、公式エミュレータとの比較をテストにした。
+
+```sh
+cd viz/core
+./scripts/check-conformance.sh          # CPU と公式の全問題比較 + cargo test
+./scripts/check-conformance.sh --gpu    # 上の 4 ハーネスと gpu_run_program も
+```
+
+- `tests/problem_conformance.rs` は全問題と全 challenge 解を `difftest_prog` で回し、
+  1 つでも食い違えば失敗する。代表 6 問は通常の `cargo test` で走り、
+  全体は `--ignored` で明示的に回す（1 ケースごとにエミュレータを起動するため）。
+- `scripts/check-conformance.sh` はビルド、`cargo test`、全問題比較、`--gpu` で
+  4 ハーネスと `gpu_run_program` をまとめて実行する。worktree に `judge/` が無い場合は
+  共有のエミュレータを `MNCORE_EMU_DIR` で指し、黙ってスキップしない。
+
+現状（2026-10-20）:
+
+| 項目 | 結果 |
+| --- | --- |
+| `gpu_alu_conformance` | 142 設定 / 524 行 0 mismatch |
+| `gpu_l1_conformance` | 1,329 ケース × 3 seed 0 mismatch |
+| `gpu_mau_conformance` | 133 設定 / 7,640 行 0 mismatch |
+| `gpu_mem_conformance` | 697 ケース 0 mismatch |
+| `gpu_run_program mnist_train_step` | 1,572 PE 行 0 mismatch |
+| `problem_conformance`（全 73 問題・全解） | 0 mismatch |
+| `cargo test --release` | 28 件通過 |
+
+`gpu_run_program` の GPU 時間は per-step 同期の分だけ増える（1,572 行で約 0.3 秒、
+同期なしは約 0.08 秒）。正しさを優先して同期を残している。
