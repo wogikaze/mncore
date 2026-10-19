@@ -104,14 +104,19 @@ fn mem_source(op: &Operand, allow_neg: bool) -> Option<MauSrc> {
 
 fn line_source(op: &Operand) -> Option<MauSrc> {
     if let Operand::Forward {
-        kind: FwdKind::Mauf,
+        kind,
         neg,
         ext: false,
         rnd: false,
     } = op
     {
+        let mem = match kind {
+            FwdKind::Mauf => 4,
+            FwdKind::Aluf => 5,
+            _ => return None,
+        };
         return Some(MauSrc {
-            mem: 4,
+            mem,
             wl: 4,
             base: [0; 4],
             neg: *neg,
@@ -191,6 +196,34 @@ pub struct MauLine {
     pub dst: MauSrc,
 }
 
+/// Builds an `AluLine` for a PE-local f32 Passa expression.
+pub fn alu_line_from_expr(expr: &Expr) -> Option<AluLine> {
+    let Op::Alu {
+        name: crate::vsm::AluOp::Passa,
+        prec: Some(Prec::F),
+        ..
+    } = &expr.op
+    else {
+        return None;
+    };
+    if expr.flush.is_some() || expr.srcs.len() != 1 || expr.dsts.len() != 1 {
+        return None;
+    }
+    let src = line_source(&expr.srcs[0])?;
+    if src.neg {
+        return None;
+    }
+    let dst = mem_source(&expr.dsts[0], false)?;
+    Some(AluLine { src, dst })
+}
+
+/// A single f32 ALU Passa expression.
+#[derive(Clone, Copy, Debug)]
+pub struct AluLine {
+    pub src: MauSrc,
+    pub dst: MauSrc,
+}
+
 /// LM0, LM1, GRF0 and GRF1 in device memory, in the same PE-major layout as
 /// `machine::Mem`.
 pub struct GpuState {
@@ -199,6 +232,7 @@ pub struct GpuState {
     grf0: u64,
     grf1: u64,
     mauf: u64,
+    aluf: u64,
     free: CuMemFree,
 }
 
@@ -210,6 +244,7 @@ impl Drop for GpuState {
             (self.free)(self.grf0);
             (self.free)(self.grf1);
             (self.free)(self.mauf);
+            (self.free)(self.aluf);
         }
     }
 }
@@ -220,6 +255,7 @@ pub struct Gpu {
     context: CuContext,
     function: CuFunction,
     mau_function: CuFunction,
+    alu_function: CuFunction,
     cu_ctx_destroy: CuCtxDestroy,
     cu_mem_alloc: CuMemAlloc,
     cu_mem_free: CuMemFree,
@@ -360,12 +396,18 @@ impl Gpu {
             unsafe { cu_get_function(&mut mau_function, module, b"mau_line\0".as_ptr() as *const c_char) },
             "cuModuleGetFunction(mau_line)",
         )?;
+        let mut alu_function: CuFunction = std::ptr::null_mut();
+        check(
+            unsafe { cu_get_function(&mut alu_function, module, b"alu_line\0".as_ptr() as *const c_char) },
+            "cuModuleGetFunction(alu_line)",
+        )?;
         Ok(Gpu {
             _cuda: cuda,
             _nvrtc: nvrtc,
             context,
             function,
             mau_function,
+            alu_function,
             cu_ctx_destroy,
             cu_mem_alloc,
             cu_mem_free,
@@ -401,10 +443,10 @@ impl Gpu {
     pub fn allocate_state(&self) -> Result<GpuState, String> {
         let lm_bytes = crate::machine::PES * crate::machine::LM_WORDS * 4;
         let grf_bytes = crate::machine::PES * crate::machine::GRF_WORDS * 4;
-        let mauf_bytes = crate::machine::PES * 16 * 4;
-        let mut buffers = [0u64; 5];
-        let sizes = [lm_bytes, lm_bytes, grf_bytes, grf_bytes, mauf_bytes];
-        for i in 0..5 {
+        let fwd_bytes = crate::machine::PES * 16 * 4;
+        let mut buffers = [0u64; 6];
+        let sizes = [lm_bytes, lm_bytes, grf_bytes, grf_bytes, fwd_bytes, fwd_bytes];
+        for i in 0..6 {
             let code = unsafe { (self.cu_mem_alloc)(&mut buffers[i], sizes[i]) };
             if let Err(error) = self.check(code, "cuMemAlloc(state)") {
                 for buffer in &buffers[..i] {
@@ -419,6 +461,7 @@ impl Gpu {
             grf0: buffers[2],
             grf1: buffers[3],
             mauf: buffers[4],
+            aluf: buffers[5],
             free: self.cu_mem_free,
         })
     }
@@ -453,17 +496,20 @@ impl Gpu {
             unsafe { (self.cu_htod)(state.grf1, grf1.as_ptr() as *const c_void, grf * 4) },
             "upload grf1",
         )?;
-        let mauf = vec![0u32; crate::machine::PES * 16];
-        self.check(
-            unsafe {
-                (self.cu_htod)(
-                    state.mauf,
-                    mauf.as_ptr() as *const c_void,
-                    mauf.len() * 4,
-                )
-            },
-            "upload mauf",
-        )
+        let forward = vec![0u32; crate::machine::PES * 16];
+        for (pointer, what) in [(state.mauf, "upload mauf"), (state.aluf, "upload aluf")] {
+            self.check(
+                unsafe {
+                    (self.cu_htod)(
+                        pointer,
+                        forward.as_ptr() as *const c_void,
+                        forward.len() * 4,
+                    )
+                },
+                what,
+            )?;
+        }
+        Ok(())
     }
 
     /// Downloads the four device memories.
@@ -512,6 +558,7 @@ impl Gpu {
         let mut grf0 = state.grf0;
         let mut grf1 = state.grf1;
         let mut mauf = state.mauf;
+        let mut aluf = state.aluf;
         let mut kind = line.kind as i32;
         let mut amem = line.a.mem as i32;
         let mut a = line.a.base;
@@ -534,6 +581,7 @@ impl Gpu {
             &mut grf0 as *mut u64 as *mut c_void,
             &mut grf1 as *mut u64 as *mut c_void,
             &mut mauf as *mut u64 as *mut c_void,
+            &mut aluf as *mut u64 as *mut c_void,
             &mut kind as *mut i32 as *mut c_void,
             &mut amem as *mut i32 as *mut c_void,
             &mut a[0] as *mut u32 as *mut c_void,
@@ -581,6 +629,61 @@ impl Gpu {
                 )
             },
             "cuLaunchKernel(mau_line)",
+        )
+    }
+
+    /// Launches one f32 ALU Passa line for all 4,096 PEs.
+    pub fn run_alu_line(&self, state: &GpuState, line: &AluLine) -> Result<(), String> {
+        let mut lm0 = state.lm0;
+        let mut lm1 = state.lm1;
+        let mut grf0 = state.grf0;
+        let mut grf1 = state.grf1;
+        let mut mauf = state.mauf;
+        let mut aluf = state.aluf;
+        let mut smem = line.src.mem as i32;
+        let mut s = line.src.base;
+        let mut swl = line.src.wl as i32;
+        let mut dmem = line.dst.mem as i32;
+        let mut d = line.dst.base;
+        let mut dwl = line.dst.wl as i32;
+        let mut args = [
+            &mut lm0 as *mut u64 as *mut c_void,
+            &mut lm1 as *mut u64 as *mut c_void,
+            &mut grf0 as *mut u64 as *mut c_void,
+            &mut grf1 as *mut u64 as *mut c_void,
+            &mut mauf as *mut u64 as *mut c_void,
+            &mut aluf as *mut u64 as *mut c_void,
+            &mut smem as *mut i32 as *mut c_void,
+            &mut s[0] as *mut u32 as *mut c_void,
+            &mut s[1] as *mut u32 as *mut c_void,
+            &mut s[2] as *mut u32 as *mut c_void,
+            &mut s[3] as *mut u32 as *mut c_void,
+            &mut swl as *mut i32 as *mut c_void,
+            &mut dmem as *mut i32 as *mut c_void,
+            &mut d[0] as *mut u32 as *mut c_void,
+            &mut d[1] as *mut u32 as *mut c_void,
+            &mut d[2] as *mut u32 as *mut c_void,
+            &mut d[3] as *mut u32 as *mut c_void,
+            &mut dwl as *mut i32 as *mut c_void,
+        ];
+        let grid = (crate::machine::PES as u32 + 255) / 256;
+        self.check(
+            unsafe {
+                (self.cu_launch)(
+                    self.alu_function,
+                    grid,
+                    1,
+                    1,
+                    256,
+                    1,
+                    1,
+                    0,
+                    std::ptr::null_mut(),
+                    args.as_mut_ptr(),
+                    std::ptr::null_mut(),
+                )
+            },
+            "cuLaunchKernel(alu_line)",
         )
     }
 

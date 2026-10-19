@@ -143,3 +143,26 @@ cargo run --release --bin gpu_coverage -- benchmarks/mnist_train_step.vsm
 - MAU 式 724 個のうち 292 個が対応。
 - PE 行 2,635 のうち、対応 MAU だけで構成される行は 292。
 - 残りは `aluf`/`lbf`/`mreadf` の forward が 255、wl=4 が 203、neg が 160（重複あり）。
+
+## ALU Passa と aluf
+
+`fpassa` を ALU カーネルで実行し、`aluf` を VRAM に保持する。
+MAU 行は `$aluf` をソースに取れる。
+
+`gpu_vsm_alu` は `fpassa` と `$aluf` を使う MAU 行を交互に並べて比較する。
+
+```sh
+cd viz/core
+cargo run --release --bin gpu_vsm_alu -- 1000
+```
+
+- 1,000 行で mismatch 0。
+- CPU 0.60 秒、GPU 15.5 ms。
+
+`gpu_coverage` の現状:
+
+- MAU 式 724 個のうち 435 個が対応（`aluf` の分が増えた）。
+- ALU 式 924 個のうち `fpassa` の 256 個が対応。
+- すべての式が対応する行は 256。
+
+次は `ixor` と OMR（マスクレジスタ）への書き込み、およびマスク付き MAU 書き込み。

@@ -2,7 +2,7 @@
 //!
 //! Usage: gpu_coverage [program.vsm]
 
-use mncore_sim::gpu::mau_line_from_expr;
+use mncore_sim::gpu::{alu_line_from_expr, mau_line_from_expr};
 use mncore_sim::vsm::{self, Line, Op};
 
 fn main() {
@@ -15,7 +15,10 @@ fn main() {
     let mut pe_lines = 0usize;
     let mut mau_exprs = 0usize;
     let mut mau_supported = 0usize;
+    let mut alu_exprs = 0usize;
+    let mut alu_supported = 0usize;
     let mut single_mau_supported = 0usize;
+    let mut supported_lines = 0usize;
     let mut t_indirect = 0usize;
     let mut madpe = 0usize;
     let mut neg = 0usize;
@@ -31,7 +34,18 @@ fn main() {
         };
         pe_lines += 1;
         let mut all_mau = true;
+        let mut all_supported = true;
         for expr in exprs {
+            if matches!(expr.op, Op::Alu { .. }) {
+                alu_exprs += 1;
+                if alu_line_from_expr(expr).is_some() {
+                    alu_supported += 1;
+                } else {
+                    all_supported = false;
+                }
+            } else {
+                all_supported = false;
+            }
             if matches!(expr.op, Op::Mau { .. }) {
                 mau_exprs += 1;
                 for op in expr.srcs.iter().chain(expr.dsts.iter()) {
@@ -87,10 +101,15 @@ fn main() {
         if all_mau && !exprs.is_empty() {
             single_mau_supported += 1;
         }
+        if all_supported && !exprs.is_empty() {
+            supported_lines += 1;
+        }
     }
     println!("program: {path}");
     println!("lines: {lines}, PE lines: {pe_lines}");
     println!("MAU expressions: {mau_exprs}, supported: {mau_supported}");
+    println!("ALU expressions: {alu_exprs}, supported (Passa only): {alu_supported}");
+    println!("lines with every expression supported: {supported_lines}");
     println!("lines consisting only of supported MAU expressions: {single_mau_supported}");
     println!(
         "features: t={t_indirect} madpe={madpe} neg={neg} ext={ext} rnd={rnd} mask={masked} wl4={wl4} other_forward={other_forward}"

@@ -201,7 +201,7 @@ __device__ __forceinline__ int mem_len(int which) {
 // of this kernel yet.
 extern "C" __global__ void mau_line(
     unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
-    unsigned* mauf,
+    unsigned* mauf, unsigned* aluf,
     int kind,
     int amem, unsigned a0, unsigned a1, unsigned a2, unsigned a3, int awl, int aneg,
     int bmem, unsigned b0, unsigned b1, unsigned b2, unsigned b3, int bwl, int bneg,
@@ -228,30 +228,40 @@ extern "C" __global__ void mau_line(
         for (int l = 0; l < 2; ++l) {
             unsigned av = (amem == 4)
                 ? mauf[pe * 16 + c * 4 + l]
-                : (l < awl ? pa[pe * la + ab[c] + l] : 0);
+                : (amem == 5)
+                    ? aluf[pe * 16 + c * 4 + l]
+                    : (l < awl ? pa[pe * la + ab[c] + l] : 0);
             if (aneg) av ^= 0x80000000u;
             unsigned bv;
             unsigned cv;
             if (kind == 0) {
                 bv = (bmem == 4)
                     ? mauf[pe * 16 + c * 4 + l]
-                    : (l < bwl ? pb[pe * lb + bb[c] + l] : 0);
+                    : (bmem == 5)
+                        ? aluf[pe * 16 + c * 4 + l]
+                        : (l < bwl ? pb[pe * lb + bb[c] + l] : 0);
                 cv = (cmem == 4)
                     ? mauf[pe * 16 + c * 4 + l]
-                    : (l < cwl ? pc[pe * lc + cb[c] + l] : 0);
+                    : (cmem == 5)
+                        ? aluf[pe * 16 + c * 4 + l]
+                        : (l < cwl ? pc[pe * lc + cb[c] + l] : 0);
                 if (bneg) bv ^= 0x80000000u;
                 if (cneg) cv ^= 0x80000000u;
             } else if (kind == 1) {
                 bv = (bmem == 4)
                     ? mauf[pe * 16 + c * 4 + l]
-                    : (l < bwl ? pb[pe * lb + bb[c] + l] : 0);
+                    : (bmem == 5)
+                        ? aluf[pe * 16 + c * 4 + l]
+                        : (l < bwl ? pb[pe * lb + bb[c] + l] : 0);
                 if (bneg) bv ^= 0x80000000u;
                 cv = 0;
             } else if (kind == 2) {
                 bv = one;
                 cv = (cmem == 4)
                     ? mauf[pe * 16 + c * 4 + l]
-                    : (l < cwl ? pc[pe * lc + cb[c] + l] : 0);
+                    : (cmem == 5)
+                        ? aluf[pe * 16 + c * 4 + l]
+                        : (l < cwl ? pc[pe * lc + cb[c] + l] : 0);
                 if (cneg) cv ^= 0x80000000u;
             } else {
                 bv = one;
@@ -268,5 +278,40 @@ extern "C" __global__ void mau_line(
         mauf[pe * 16 + c * 4 + 1] = values[c][1];
         mauf[pe * 16 + c * 4 + 2] = 0;
         mauf[pe * 16 + c * 4 + 3] = 0;
+    }
+}
+
+// One f32 ALU Passa line: copy a bus and publish it as aluf. Masks, T,
+// base registers and the other ALU opcodes are not part of this kernel yet.
+extern "C" __global__ void alu_line(
+    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
+    unsigned* mauf, unsigned* aluf,
+    int smem, unsigned s0, unsigned s1, unsigned s2, unsigned s3, int swl,
+    int dmem, unsigned d0, unsigned d1, unsigned d2, unsigned d3, int dwl) {
+    int pe = blockIdx.x * blockDim.x + threadIdx.x;
+    if (pe >= 4096) return;
+    unsigned sb[4] = {s0, s1, s2, s3};
+    unsigned db[4] = {d0, d1, d2, d3};
+    unsigned* ps = pick_mem(smem, lm0, lm1, grf0, grf1);
+    unsigned* pd = pick_mem(dmem, lm0, lm1, grf0, grf1);
+    int ls = mem_len(smem);
+    int ld = mem_len(dmem);
+    for (int c = 0; c < 4; ++c) {
+        unsigned bus[4];
+        for (int i = 0; i < 4; ++i) {
+            if (smem == 4) {
+                bus[i] = mauf[pe * 16 + c * 4 + i];
+            } else if (smem == 5) {
+                bus[i] = aluf[pe * 16 + c * 4 + i];
+            } else {
+                bus[i] = (i < swl) ? ps[pe * ls + sb[c] + i] : 0;
+            }
+        }
+        for (int i = 0; i < dwl; ++i) {
+            pd[pe * ld + db[c] + i] = bus[i];
+        }
+        for (int i = 0; i < 4; ++i) {
+            aluf[pe * 16 + c * 4 + i] = bus[i];
+        }
     }
 }
