@@ -63,166 +63,22 @@ class ReduceSumOperator(BaseOperator):
                 
 
                 lines.append(f'''
-                    fvpassa $m0v4 $nowrite
-                    fvadd $m1v4 $mauf $nowrite
-                    fvadd $m2v4 $mauf $nowrite
-                    fvadd $m3v4 $mauf $r0v
-                    msr $mauf $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $n0v
-                    fvpassa $m16v4 $nowrite
-                    fvadd $m17v4 $mauf $nowrite
-                    fvadd $m18v4 $mauf $nowrite
-                    fvadd $m19v4 $mauf $r0v
-                    msr $mauf $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $n4v
-                    fvpassa $m32v4 $nowrite
-                    fvadd $m33v4 $mauf $nowrite
-                    fvadd $m34v4 $mauf $nowrite
-                    fvadd $m35v4 $mauf $r0v
-                    msr $mauf $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $n8v
-                    fvpassa $m48v4 $nowrite
-                    fvadd $m49v4 $mauf $nowrite
-                    fvadd $m50v4 $mauf $nowrite
-                    fvadd $m51v4 $mauf $r0v
-                    msr $mauf $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $n12v
-                    fvpassa $m64v4 $nowrite
-                    fvadd $m65v4 $mauf $nowrite
-                    fvadd $m66v4 $mauf $nowrite
-                    fvadd $m67v4 $mauf $r0v
-                    msr $mauf $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $n16v
-                    fvpassa $m80v4 $nowrite
-                    fvadd $m81v4 $mauf $nowrite
-                    fvadd $m82v4 $mauf $nowrite
-                    fvadd $m83v4 $mauf $r0v
-                    msr $mauf $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $n20v
-                    fvpassa $m96v4 $nowrite
-                    fvadd $m97v4 $mauf $nowrite
-                    fvadd $m98v4 $mauf $nowrite
-                    fvadd $m99v4 $mauf $r0v
-                    msr $mauf $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $n24v
-                    fvpassa $m112v4 $nowrite
-                    fvadd $m113v4 $mauf $nowrite
-                    fvadd $m114v4 $mauf $nowrite
-                    fvadd $m115v4 $mauf $r0v
-                    msr $mauf $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $n28v
-                    fvpassa $m128v4 $nowrite
-                    fvadd $m129v4 $mauf $nowrite
-                    fvadd $m130v4 $mauf $nowrite
-                    fvadd $m131v4 $mauf $r0v
-                    msr $mauf $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $n32v
-                    fvpassa $m144v4 $nowrite
-                    fvadd $m145v4 $mauf $nowrite
-                    fvadd $m146v4 $mauf $nowrite
-                    fvadd $m147v4 $mauf $r0v
-                    msr $mauf $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $n36v
-                    fvpassa $m160v4 $nowrite
-                    fvadd $m161v4 $mauf $nowrite
-                    fvadd $m162v4 $mauf $nowrite
-                    fvadd $m163v4 $mauf $r0v
-                    msr $mauf $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $n40v
-                    fvpassa $m176v4 $nowrite
-                    fvadd $m177v4 $mauf $nowrite
-                    fvadd $m178v4 $mauf $nowrite
-                    fvadd $m179v4 $mauf $r0v
-                    msr $mauf $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $n44v
-                    fvpassa $m192v4 $nowrite
-                    fvadd $m193v4 $mauf $nowrite
-                    fvadd $m194v4 $mauf $nowrite
-                    fvadd $m195v4 $mauf $r0v
-                    msr $mauf $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $n48v
-                    fvpassa $m208v4 $nowrite
-                    fvadd $m209v4 $mauf $nowrite
-                    fvadd $m210v4 $mauf $nowrite
-                    fvadd $m211v4 $mauf $r0v
-                    msr $mauf $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $n52v
-                    fvpassa $m224v4 $nowrite
-                    fvadd $m225v4 $mauf $nowrite
-                    fvadd $m226v4 $mauf $nowrite
-                    fvadd $m227v4 $mauf $r0v
-                    msr $mauf $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $n56v
-                    fvpassa $m240v4 $nowrite
-                    fvadd $m241v4 $mauf $nowrite
-                    fvadd $m242v4 $mauf $nowrite
-                    fvadd $m243v4 $mauf $r0v
-                    msr $mauf $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $n60v
+imm ui"0x00000004" $nowrite
+ilsl $mabid $aluf $lt
+imm ui"0x3FC00000" $nowrite
+fbfn $mt0v4 $nowrite; fmwrite $aluf $lx0
+fbfn $mt1v4 $nowrite; fmmul $lx $aluf $nowrite
+fbfn $mt2v4 $nowrite; fmfma $lx $aluf $mauf $nowrite
+fbfn $mt3v4 $nowrite; fmfma $lx $aluf $mauf $nowrite
+fmfma $lx $aluf $mauf $r0v $s0v $n0v
+l1bmm4@1 $mauf $lbi
+l1bmm4@2 $s0v $lbi; l1bmm4 $lbi $r4v $n4v
+l1bmm4@3 $lls0 $llbi; l1bmm4 $lbi $r8v $n8v
+l1bmm4 $llbi $llr12/ll1000 $lln12/ll1000
+l1bmm@4 $llr0v $llbi
+l1bmm@8 $llr0v $llbi; l1bmm $llbi $lln16v
+l1bmm@12 $llr0v $llbi; l1bmm $llbi $lln32v
+l1bmm $llbi $lln48v
                 ''')
 
                 return lines

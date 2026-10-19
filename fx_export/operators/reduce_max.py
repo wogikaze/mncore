@@ -33,151 +33,26 @@ class ReduceMaxOperator(BaseOperator):
                 # 問題名：「MaxRow」
                 
                 lines.append(f'''
-fvpassa $m0v4 $nowrite
-fmax $m1v4 $mauf $nowrite
-fmax $m2v4 $aluf $nowrite
-fmax $m3v4 $aluf $r0v
-msr $aluf $s0v
+imm ui"0x00000004" $nowrite
+llsl $mabid $aluf $t
+nop
+fpassa $mt0v4 $nowrite
+fmax $mt1v4 $aluf $nowrite
+fmax $mt2v4 $aluf $nowrite
+fmax $mt3v4 $aluf $r0v
+msl $aluf $nowrite
 fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $n0v;fvpassa $m16v4 $nowrite
-fmax $m17v4 $mauf $nowrite
-fmax $m18v4 $aluf $nowrite
-fmax $m19v4 $aluf $r0v
-msr $aluf $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $n4v;fvpassa $m32v4 $nowrite
-fmax $m33v4 $mauf $nowrite
-fmax $m34v4 $aluf $nowrite
-fmax $m35v4 $aluf $r0v
-msr $aluf $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $n8v;fvpassa $m48v4 $nowrite
-fmax $m49v4 $mauf $nowrite
-fmax $m50v4 $aluf $nowrite
-fmax $m51v4 $aluf $r0v
-msr $aluf $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $n12v;fvpassa $m64v4 $nowrite
-fmax $m65v4 $mauf $nowrite
-fmax $m66v4 $aluf $nowrite
-fmax $m67v4 $aluf $r0v
-msr $aluf $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $n16v;fvpassa $m80v4 $nowrite
-fmax $m81v4 $mauf $nowrite
-fmax $m82v4 $aluf $nowrite
-fmax $m83v4 $aluf $r0v
-msr $aluf $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $n20v;fvpassa $m96v4 $nowrite
-fmax $m97v4 $mauf $nowrite
-fmax $m98v4 $aluf $nowrite
-fmax $m99v4 $aluf $r0v
-msr $aluf $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $n24v;fvpassa $m112v4 $nowrite
-fmax $m113v4 $mauf $nowrite
-fmax $m114v4 $aluf $nowrite
-fmax $m115v4 $aluf $r0v
-msr $aluf $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $n28v;fvpassa $m128v4 $nowrite
-fmax $m129v4 $mauf $nowrite
-fmax $m130v4 $aluf $nowrite
-fmax $m131v4 $aluf $r0v
-msr $aluf $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $n32v;fvpassa $m144v4 $nowrite
-fmax $m145v4 $mauf $nowrite
-fmax $m146v4 $aluf $nowrite
-fmax $m147v4 $aluf $r0v
-msr $aluf $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $n36v;fvpassa $m160v4 $nowrite
-fmax $m161v4 $mauf $nowrite
-fmax $m162v4 $aluf $nowrite
-fmax $m163v4 $aluf $r0v
-msr $aluf $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $n40v;fvpassa $m176v4 $nowrite
-fmax $m177v4 $mauf $nowrite
-fmax $m178v4 $aluf $nowrite
-fmax $m179v4 $aluf $r0v
-msr $aluf $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $n44v;fvpassa $m192v4 $nowrite
-fmax $m193v4 $mauf $nowrite
-fmax $m194v4 $aluf $nowrite
-fmax $m195v4 $aluf $r0v
-msr $aluf $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $n48v;fvpassa $m208v4 $nowrite
-fmax $m209v4 $mauf $nowrite
-fmax $m210v4 $aluf $nowrite
-fmax $m211v4 $aluf $r0v
-msr $aluf $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $n52v;fvpassa $m224v4 $nowrite
-fmax $m225v4 $mauf $nowrite
-fmax $m226v4 $aluf $nowrite
-fmax $m227v4 $aluf $r0v
-msr $aluf $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $n56v;fvpassa $m240v4 $nowrite
-fmax $m241v4 $mauf $nowrite
-fmax $m242v4 $aluf $nowrite
-fmax $m243v4 $aluf $r0v
-msr $aluf $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $n60v
+msl $aluf $nowrite
+msl $aluf $nowrite
+fmax $aluf $r0v $r0v $s0v $n0v
+l1bmm4@1 $aluf $lbi
+l1bmm4@2 $s0v $lbi; l1bmm4 $lbi $r4v $n4v
+l1bmm4@3 $lls0 $llbi; l1bmm4 $lbi $r8v $n8v
+l1bmm4 $llbi $llr12/ll1000 $lln12/ll1000
+l1bmm@4 $llr0v $llbi
+l1bmm@8 $llr0v $llbi; l1bmm $llbi $lln16v
+l1bmm@12 $llr0v $llbi; l1bmm $llbi $lln32v
+l1bmm $llbi $lln48v
                 ''')
                 return lines
         raise NotImplementedError

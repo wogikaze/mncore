@@ -491,151 +491,26 @@ nop/3
 # Output0: _max, shape=[256], addr=0, layout=((4_L2B:2, 32:1, 2_W:1)), len=64, location=LM1, tag=default
 
 
-fvpassa $m0v4 $nowrite
-fmax $m1v4 $mauf $nowrite
-fmax $m2v4 $aluf $nowrite
-fmax $m3v4 $aluf $r0v
-msr $aluf $s0v
+imm ui"0x00000004" $nowrite
+llsl $mabid $aluf $t
+nop
+fpassa $mt0v4 $nowrite
+fmax $mt1v4 $aluf $nowrite
+fmax $mt2v4 $aluf $nowrite
+fmax $mt3v4 $aluf $r0v
+msl $aluf $nowrite
 fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $n0v;fvpassa $m16v4 $nowrite
-fmax $m17v4 $mauf $nowrite
-fmax $m18v4 $aluf $nowrite
-fmax $m19v4 $aluf $r0v
-msr $aluf $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $n4v;fvpassa $m32v4 $nowrite
-fmax $m33v4 $mauf $nowrite
-fmax $m34v4 $aluf $nowrite
-fmax $m35v4 $aluf $r0v
-msr $aluf $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $n8v;fvpassa $m48v4 $nowrite
-fmax $m49v4 $mauf $nowrite
-fmax $m50v4 $aluf $nowrite
-fmax $m51v4 $aluf $r0v
-msr $aluf $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $n12v;fvpassa $m64v4 $nowrite
-fmax $m65v4 $mauf $nowrite
-fmax $m66v4 $aluf $nowrite
-fmax $m67v4 $aluf $r0v
-msr $aluf $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $n16v;fvpassa $m80v4 $nowrite
-fmax $m81v4 $mauf $nowrite
-fmax $m82v4 $aluf $nowrite
-fmax $m83v4 $aluf $r0v
-msr $aluf $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $n20v;fvpassa $m96v4 $nowrite
-fmax $m97v4 $mauf $nowrite
-fmax $m98v4 $aluf $nowrite
-fmax $m99v4 $aluf $r0v
-msr $aluf $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $n24v;fvpassa $m112v4 $nowrite
-fmax $m113v4 $mauf $nowrite
-fmax $m114v4 $aluf $nowrite
-fmax $m115v4 $aluf $r0v
-msr $aluf $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $n28v;fvpassa $m128v4 $nowrite
-fmax $m129v4 $mauf $nowrite
-fmax $m130v4 $aluf $nowrite
-fmax $m131v4 $aluf $r0v
-msr $aluf $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $n32v;fvpassa $m144v4 $nowrite
-fmax $m145v4 $mauf $nowrite
-fmax $m146v4 $aluf $nowrite
-fmax $m147v4 $aluf $r0v
-msr $aluf $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $n36v;fvpassa $m160v4 $nowrite
-fmax $m161v4 $mauf $nowrite
-fmax $m162v4 $aluf $nowrite
-fmax $m163v4 $aluf $r0v
-msr $aluf $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $n40v;fvpassa $m176v4 $nowrite
-fmax $m177v4 $mauf $nowrite
-fmax $m178v4 $aluf $nowrite
-fmax $m179v4 $aluf $r0v
-msr $aluf $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $n44v;fvpassa $m192v4 $nowrite
-fmax $m193v4 $mauf $nowrite
-fmax $m194v4 $aluf $nowrite
-fmax $m195v4 $aluf $r0v
-msr $aluf $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $n48v;fvpassa $m208v4 $nowrite
-fmax $m209v4 $mauf $nowrite
-fmax $m210v4 $aluf $nowrite
-fmax $m211v4 $aluf $r0v
-msr $aluf $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $n52v;fvpassa $m224v4 $nowrite
-fmax $m225v4 $mauf $nowrite
-fmax $m226v4 $aluf $nowrite
-fmax $m227v4 $aluf $r0v
-msr $aluf $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $n56v;fvpassa $m240v4 $nowrite
-fmax $m241v4 $mauf $nowrite
-fmax $m242v4 $aluf $nowrite
-fmax $m243v4 $aluf $r0v
-msr $aluf $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $r0v
-msr $s0v $s0v
-fmax $aluf $r0v $n60v
+msl $aluf $nowrite
+msl $aluf $nowrite
+fmax $aluf $r0v $r0v $s0v $n0v
+l1bmm4@1 $aluf $lbi
+l1bmm4@2 $s0v $lbi; l1bmm4 $lbi $r4v $n4v
+l1bmm4@3 $lls0 $llbi; l1bmm4 $lbi $r8v $n8v
+l1bmm4 $llbi $llr12/ll1000 $lln12/ll1000
+l1bmm@4 $llr0v $llbi
+l1bmm@8 $llr0v $llbi; l1bmm $llbi $lln16v
+l1bmm@12 $llr0v $llbi; l1bmm $llbi $lln32v
+l1bmm $llbi $lln48v
                 
 
 nop/3
@@ -1014,166 +889,22 @@ nop/3
 # Output0: _sum, shape=[256], addr=0, layout=((4_L2B:2, 32:1, 2_W:1)), len=64, location=LM1, tag=default
 
 
-                    fvpassa $m0v4 $nowrite
-                    fvadd $m1v4 $mauf $nowrite
-                    fvadd $m2v4 $mauf $nowrite
-                    fvadd $m3v4 $mauf $r0v
-                    msr $mauf $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $n0v
-                    fvpassa $m16v4 $nowrite
-                    fvadd $m17v4 $mauf $nowrite
-                    fvadd $m18v4 $mauf $nowrite
-                    fvadd $m19v4 $mauf $r0v
-                    msr $mauf $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $n4v
-                    fvpassa $m32v4 $nowrite
-                    fvadd $m33v4 $mauf $nowrite
-                    fvadd $m34v4 $mauf $nowrite
-                    fvadd $m35v4 $mauf $r0v
-                    msr $mauf $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $n8v
-                    fvpassa $m48v4 $nowrite
-                    fvadd $m49v4 $mauf $nowrite
-                    fvadd $m50v4 $mauf $nowrite
-                    fvadd $m51v4 $mauf $r0v
-                    msr $mauf $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $n12v
-                    fvpassa $m64v4 $nowrite
-                    fvadd $m65v4 $mauf $nowrite
-                    fvadd $m66v4 $mauf $nowrite
-                    fvadd $m67v4 $mauf $r0v
-                    msr $mauf $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $n16v
-                    fvpassa $m80v4 $nowrite
-                    fvadd $m81v4 $mauf $nowrite
-                    fvadd $m82v4 $mauf $nowrite
-                    fvadd $m83v4 $mauf $r0v
-                    msr $mauf $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $n20v
-                    fvpassa $m96v4 $nowrite
-                    fvadd $m97v4 $mauf $nowrite
-                    fvadd $m98v4 $mauf $nowrite
-                    fvadd $m99v4 $mauf $r0v
-                    msr $mauf $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $n24v
-                    fvpassa $m112v4 $nowrite
-                    fvadd $m113v4 $mauf $nowrite
-                    fvadd $m114v4 $mauf $nowrite
-                    fvadd $m115v4 $mauf $r0v
-                    msr $mauf $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $n28v
-                    fvpassa $m128v4 $nowrite
-                    fvadd $m129v4 $mauf $nowrite
-                    fvadd $m130v4 $mauf $nowrite
-                    fvadd $m131v4 $mauf $r0v
-                    msr $mauf $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $n32v
-                    fvpassa $m144v4 $nowrite
-                    fvadd $m145v4 $mauf $nowrite
-                    fvadd $m146v4 $mauf $nowrite
-                    fvadd $m147v4 $mauf $r0v
-                    msr $mauf $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $n36v
-                    fvpassa $m160v4 $nowrite
-                    fvadd $m161v4 $mauf $nowrite
-                    fvadd $m162v4 $mauf $nowrite
-                    fvadd $m163v4 $mauf $r0v
-                    msr $mauf $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $n40v
-                    fvpassa $m176v4 $nowrite
-                    fvadd $m177v4 $mauf $nowrite
-                    fvadd $m178v4 $mauf $nowrite
-                    fvadd $m179v4 $mauf $r0v
-                    msr $mauf $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $n44v
-                    fvpassa $m192v4 $nowrite
-                    fvadd $m193v4 $mauf $nowrite
-                    fvadd $m194v4 $mauf $nowrite
-                    fvadd $m195v4 $mauf $r0v
-                    msr $mauf $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $n48v
-                    fvpassa $m208v4 $nowrite
-                    fvadd $m209v4 $mauf $nowrite
-                    fvadd $m210v4 $mauf $nowrite
-                    fvadd $m211v4 $mauf $r0v
-                    msr $mauf $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $n52v
-                    fvpassa $m224v4 $nowrite
-                    fvadd $m225v4 $mauf $nowrite
-                    fvadd $m226v4 $mauf $nowrite
-                    fvadd $m227v4 $mauf $r0v
-                    msr $mauf $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $n56v
-                    fvpassa $m240v4 $nowrite
-                    fvadd $m241v4 $mauf $nowrite
-                    fvadd $m242v4 $mauf $nowrite
-                    fvadd $m243v4 $mauf $r0v
-                    msr $mauf $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $r0v
-                    msr $s0v $s0v
-                    fvadd $aluf $r0v $n60v
+imm ui"0x00000004" $nowrite
+ilsl $mabid $aluf $lt
+imm ui"0x3FC00000" $nowrite
+fbfn $mt0v4 $nowrite; fmwrite $aluf $lx0
+fbfn $mt1v4 $nowrite; fmmul $lx $aluf $nowrite
+fbfn $mt2v4 $nowrite; fmfma $lx $aluf $mauf $nowrite
+fbfn $mt3v4 $nowrite; fmfma $lx $aluf $mauf $nowrite
+fmfma $lx $aluf $mauf $r0v $s0v $n0v
+l1bmm4@1 $mauf $lbi
+l1bmm4@2 $s0v $lbi; l1bmm4 $lbi $r4v $n4v
+l1bmm4@3 $lls0 $llbi; l1bmm4 $lbi $r8v $n8v
+l1bmm4 $llbi $llr12/ll1000 $lln12/ll1000
+l1bmm@4 $llr0v $llbi
+l1bmm@8 $llr0v $llbi; l1bmm $llbi $lln16v
+l1bmm@12 $llr0v $llbi; l1bmm $llbi $lln32v
+l1bmm $llbi $lln48v
                 
 
 nop/3
@@ -3495,7 +3226,7 @@ nop/3
 # Input1: lr_sgd_update_17, shape=N/A, type=initializer, tag=default
 # Output0: grad_fc2_weight_scaled, shape=[16, 16], addr=0, layout=((16:2), (2:1, 4_PE:1, 2_W:1)), len=64, location=LM1, tag=default
 
-imm f"0.009999945759773254" $t
+imm f"0.009999956004321575" $t
 fvmul $aluf $lm0v $ln0v
 fvmul $t $lm8v $ln8v
 fvmul $t $lm16v $ln16v
@@ -3656,7 +3387,7 @@ nop/3
 # Input1: lr_sgd_update_18, shape=N/A, type=initializer, tag=default
 # Output0: grad_fc2_bias_scaled, shape=[16], addr=0, layout=((2:1, 4_PE:1, 2_W:1)), len=4, location=LM1, tag=default
 
-imm f"0.009999945759773254" $t
+imm f"0.009999956004321575" $t
 fvmul $aluf $lm0v $ln0v
 
 nop/3
@@ -4086,7 +3817,7 @@ nop/3
 # Input1: lr_sgd_update_15, shape=N/A, type=initializer, tag=default
 # Output0: grad_fc1_weight_scaled, shape=[16, 1024], addr=0, layout=((16:1), (8_MAB:2, 8_L1B:1, 2_MAB:1, 4_PE:1, 2_W:1)), len=32, location=LM1, tag=default
 
-imm f"0.009999945759773254" $t
+imm f"0.009999956004321575" $t
 fvmul $aluf $lm0v $ln0v
 fvmul $t $lm8v $ln8v
 fvmul $t $lm16v $ln16v
@@ -4347,7 +4078,7 @@ nop/3
 # Input1: lr_sgd_update_16, shape=N/A, type=initializer, tag=default
 # Output0: grad_fc1_bias_scaled, shape=[16], addr=0, layout=((2:1, 4_PE:1, 2_W:1)), len=4, location=LM1, tag=default
 
-imm f"0.009999945759773254" $t
+imm f"0.009999956004321575" $t
 fvmul $aluf $lm0v $ln0v
 
 nop/3
