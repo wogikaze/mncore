@@ -226,15 +226,25 @@ impl OffChip {
     }
 
     /// Executes an MV instruction.
+    ///
+    /// DRAM indirect mode (SDM 3.5.6) walks the transfer in 16-long-word chunks,
+    /// independently of the basic mode. Chunk `i` uses DAR entry
+    /// `(M + i / N) % 1024` and the long-word address `16 * (DAR[entry] + i % N)`;
+    /// without `nd` (`N` infinite) it uses `DAR[(M + i) % 1024]` and offset 0.
+    /// With no `nd` the address word is selected by `M + i` exactly as in SDM
+    /// 3.5.6. The measured official emulator uses 16 long words per address word
+    /// (the SDM text's "6 long words" is inconsistent with its own example and
+    /// with the emulator).
     pub fn exec(&mut self, b: &mut Blocks, mv: &Mv) -> Result<(), ExecError> {
         let (Some(src), Some(dst)) = (mv.src, mv.dst) else { return Ok(()) };
         let unsupported = || ExecError::Unsupported(format!("MV instruction `{}`", mv.text));
-        if matches!(src, MvOperand::Dram { indirect: true, .. }) || matches!(dst, MvOperand::Dram { indirect: true, .. }) {
-            return Err(ExecError::Unsupported(format!("DRAM indirect access in `{}`", mv.text)));
+        if mv.nd == Some(0) {
+            return Err(ExecError::Unsupported(format!("nd0 in `{}`", mv.text)));
         }
         // Reads are done before writes, so overlapping source and destination behave like a copy.
         let mut writes: Vec<(Loc, u64)> = Vec::new();
         let n = mv.size / 64;
+        let nd = mv.nd.map(|n| n as u64);
         let groups = |o: MvOperand| -> Vec<usize> {
             let g = match o {
                 MvOperand::Pdm { group, .. } | MvOperand::Dram { group, .. } | MvOperand::L2bm { group, .. } => group,
@@ -251,6 +261,22 @@ impl OffChip {
                 MvOperand::L2bm { addr, .. } => Loc::L2bm(g, c, addr + off),
             }
         };
+        // One 16-long-word DRAM chunk in the order the transfer walks the DRAM side.
+        let dram = |o: MvOperand, g: usize, chunk: u64, k: u64| -> Loc {
+            let MvOperand::Dram { addr, indirect, .. } = o else {
+                unreachable!("dram() called for a non-DRAM operand")
+            };
+            if !indirect {
+                return Loc::Dram(g, addr + 16 * chunk + k);
+            }
+            let (entry, off) = match nd {
+                Some(n) => ((addr + chunk / n) % crate::blocks::DAR_ENTRIES as u64, chunk % n),
+                None => ((addr + chunk) % crate::blocks::DAR_ENTRIES as u64, 0),
+            };
+            let word = (b.dar[g][entry as usize] as u64 + off) & 0xffff_ffff;
+            Loc::Dram(g, (word.wrapping_mul(16) + k) % DRAM_LONGS)
+        };
+        let is_dram = |o: MvOperand| matches!(o, MvOperand::Dram { .. });
         let l2b_of = |o: MvOperand| match o {
             MvOperand::L2bm { l2b, .. } => l2b,
             _ => None,
@@ -268,7 +294,18 @@ impl OffChip {
                 let (cs, cd) = (l2b_of(src).unwrap_or(0) as usize, l2b_of(dst).unwrap_or(0) as usize);
                 for (gs, gd) in pairs {
                     for k in 0..n * 64 {
-                        writes.push((at(dst, gd, cd, k), self.read(b, at(src, gs, cs, k))));
+                        let (chunk, kk) = (k / 16, k % 16);
+                        let value = if is_dram(src) {
+                            self.read(b, dram(src, gs, chunk, kk))
+                        } else {
+                            self.read(b, at(src, gs, cs, k))
+                        };
+                        let loc = if is_dram(dst) {
+                            dram(dst, gd, chunk, kk)
+                        } else {
+                            at(dst, gd, cd, k)
+                        };
+                        writes.push((loc, value));
                     }
                 }
             }
@@ -276,9 +313,9 @@ impl OffChip {
                 // DRAM -> both L2BMs of every group.
                 for g in 0..GROUPS {
                     for k in 0..n * 64 {
-                        let v = self.read(b, at(src, g, 0, k));
+                        let value = self.read(b, dram(src, g, k / 16, k % 16));
                         for c in 0..2 {
-                            writes.push((at(dst, g, c, k), v));
+                            writes.push((at(dst, g, c, k), value));
                         }
                     }
                 }
@@ -295,11 +332,11 @@ impl OffChip {
                         }
                     }
                 }
-                Dram { addr, .. } => {
+                Dram { .. } => {
                     for i in 0..n {
                         for gd in 0..GROUPS {
                             for k in 0..16 {
-                                let v = self.read(b, Loc::Dram(gd, addr + 16 * i + k));
+                                let v = self.read(b, dram(src, gd, 4 * i + gd as u64, k));
                                 for g in 0..GROUPS {
                                     for c in 0..2 {
                                         writes.push((at(dst, g, c, 64 * i + gd as u64 * 16 + k), v));
@@ -312,12 +349,12 @@ impl OffChip {
                 _ => return Err(unsupported()),
             },
             MvKind::B4 => {
-                let Dram { addr, .. } = src else { return Err(unsupported()) };
+                let Dram { .. } = src else { return Err(unsupported()) };
                 for i in 0..n {
                     for c in 0..2 {
                         for gs in 0..GROUPS {
                             for k in 0..16 {
-                                let v = self.read(b, Loc::Dram(gs, addr + 32 * i + c as u64 * 16 + k));
+                                let v = self.read(b, dram(src, gs, 2 * i + c as u64, k));
                                 for g in 0..GROUPS {
                                     writes.push((at(dst, g, c, 64 * i + gs as u64 * 16 + k), v));
                                 }
@@ -365,17 +402,17 @@ impl OffChip {
                         for g in 0..GROUPS {
                             for k in 0..16 {
                                 let v = self.read(b, Loc::Pdm(gp, addr + 64 * i + g as u64 * 16 + k));
-                                writes.push((at(dst, g, 0, 16 * i + k), v));
+                                writes.push((dram(dst, g, 4 * i + g as u64, k), v));
                             }
                         }
                     }
                 }
-                (Dram { addr, .. }, Pdm { .. }) => {
+                (Dram { .. }, Pdm { .. }) => {
                     let gp = groups(dst)[0];
                     for i in 0..n {
                         for g in 0..GROUPS {
                             for k in 0..16 {
-                                let v = self.read(b, Loc::Dram(g, addr + 16 * i + k));
+                                let v = self.read(b, dram(src, g, 4 * i + g as u64, k));
                                 writes.push((at(dst, gp, 0, 64 * i + g as u64 * 16 + k), v));
                             }
                         }
@@ -388,13 +425,18 @@ impl OffChip {
                 for g in groups(dst) {
                     for k in 0..n * 64 {
                         let vals = [self.read(b, at(src, g, 0, k)), self.read(b, at(src, g, 1, k))];
-                        writes.push((at(dst, g, 0, k), reduce_long(op, &vals)));
+                        let loc = if is_dram(dst) {
+                            dram(dst, g, k / 16, k % 16)
+                        } else {
+                            at(dst, g, 0, k)
+                        };
+                        writes.push((loc, reduce_long(op, &vals)));
                     }
                 }
             }
             MvKind::R(op) => {
                 // All 8 L2BMs: 2-element reduction within each group, then 4 across groups.
-                let reduced = |off: u64| -> u64 {
+                let reduced = |b: &Blocks, off: u64| -> u64 {
                     let per_group: Vec<u64> = (0..GROUPS)
                         .map(|g| reduce_long(op, &[self.read(b, at(src, g, 0, off)), self.read(b, at(src, g, 1, off))]))
                         .collect();
@@ -404,14 +446,17 @@ impl OffChip {
                     Pdm { .. } => {
                         let gp = groups(dst)[0];
                         for k in 0..n * 64 {
-                            writes.push((at(dst, gp, 0, k), reduced(k)));
+                            writes.push((at(dst, gp, 0, k), reduced(b, k)));
                         }
                     }
                     Dram { .. } => {
                         for i in 0..n {
                             for g in 0..GROUPS {
                                 for k in 0..16 {
-                                    writes.push((at(dst, g, 0, 16 * i + k), reduced(64 * i + g as u64 * 16 + k)));
+                                    writes.push((
+                                        dram(dst, g, 4 * i + g as u64, k),
+                                        reduced(b, 64 * i + g as u64 * 16 + k),
+                                    ));
                                 }
                             }
                         }
@@ -427,7 +472,7 @@ impl OffChip {
                             for k in 0..16 {
                                 let off = 64 * i + g as u64 * 16 + k;
                                 let vals: Vec<u64> = (0..GROUPS).map(|gs| self.read(b, at(src, gs, c, off))).collect();
-                                writes.push((at(dst, g, 0, 32 * i + c as u64 * 16 + k), reduce_long(op, &vals)));
+                                writes.push((dram(dst, g, 2 * i + c as u64, k), reduce_long(op, &vals)));
                             }
                         }
                     }
@@ -462,6 +507,61 @@ fn reduce_long(op: Rrn, vals: &[u64]) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn dram_indirect_chunks() {
+        let mut b = Blocks::default();
+        let mut off = OffChip::default();
+        b.dar[0][0] = 100;
+        b.dar[0][1] = 1;
+        b.dar[0][2] = 200;
+        b.dar[0][3] = 2;
+        for i in 0..128 {
+            off.pdm[0].set(i, 0x1000 + i);
+        }
+        // nd4: chunks 0..3 use DAR[0] + i, so addresses 1600, 1616, 1632, 1648.
+        let mv = parse("mvp/n128nd4 $p0@0 $di0@0").unwrap();
+        off.exec(&mut b, &mv).unwrap();
+        for chunk in 0..8u64 {
+            let entry = (chunk / 4) as usize;
+            let off_in_entry = chunk % 4;
+            let addr = 16 * (b.dar[0][entry] as u64 + off_in_entry);
+            for k in 0..16 {
+                assert_eq!(
+                    off.dram[0].get(addr + k),
+                    0x1000 + chunk * 16 + k,
+                    "chunk {chunk} at {addr} + {k}"
+                );
+            }
+        }
+        // Without nd each chunk uses the next DAR entry.
+        let mut b = Blocks::default();
+        let mut off = OffChip::default();
+        b.dar[1][5] = 7;
+        b.dar[1][6] = 9;
+        for i in 0..128 {
+            off.pdm[1].set(i, 0x2000 + i);
+        }
+        let mv = parse("mvp/n128 $p0@1 $di5@1").unwrap();
+        off.exec(&mut b, &mv).unwrap();
+        assert_eq!(off.dram[1].get(16 * 7), 0x2000);
+        assert_eq!(off.dram[1].get(16 * 9), 0x2010);
+    }
+
+    #[test]
+    fn l2_dar() {
+        let mut sim = crate::run::Sim::new();
+        sim.m.blocks.l2bm[0][0] = 0x1234_5678_9abc_def0;
+        sim.m.blocks.l2bm[2][0] = 0x1111_2222_3333_4444;
+        let lines = crate::vsm::parse("l2bmdars $lc0@.0 $dar2;l2bmdarw").unwrap();
+        sim.run(&lines).unwrap();
+        assert_eq!(sim.m.blocks.dar[0][2], 0x1234_5678);
+        assert_eq!(sim.m.blocks.dar[0][3], 0x9abc_def0);
+        assert_eq!(sim.m.blocks.dar[1][2], 0x1111_2222);
+        assert_eq!(sim.m.blocks.dar[1][3], 0x3333_4444);
+        assert_eq!(sim.m.blocks.darw_addr, 6);
+        assert_eq!(sim.m.blocks.darbuf_read_addr, 4);
+    }
 
     #[test]
     fn parse_mv() {

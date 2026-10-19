@@ -3,7 +3,7 @@
 //! Usage: gpu_mau [lines]
 
 use mncore_sim::float::{self, SINGLE};
-use mncore_sim::gpu::{Gpu, MaskInfo, MauLine, MauSrc};
+use mncore_sim::gpu::{Gpu, MauLine, MauSrc};
 use mncore_sim::machine::{GRF_WORDS, LM_WORDS, PES};
 
 fn mem_len(mem: u8) -> usize {
@@ -110,6 +110,7 @@ fn make_src(next: &mut impl FnMut() -> u64, mem: u8) -> MauSrc {
         wl: 2,
         base: [base as u32, (base + 2) as u32, (base + 4) as u32, (base + 6) as u32],
         neg: false,
+        ..MauSrc::default()
     }
 }
 

@@ -95,9 +95,6 @@ fn mem_source(op: &Operand, allow_neg: bool, allow_mask: bool) -> Option<MauSrc>
     {
         return None;
     }
-    if addr.t_indirect || addr.madpe.is_some() {
-        return None;
-    }
     let mem = match mem {
         MemKind::Lm0 => 0,
         MemKind::Lm1 => 1,
@@ -109,6 +106,7 @@ fn mem_source(op: &Operand, allow_neg: bool, allow_mask: bool) -> Option<MauSrc>
                 wl: 4,
                 base: [0; 4],
                 neg: *neg,
+                ..MauSrc::default()
             })
         }
         _ => return None,
@@ -116,20 +114,14 @@ fn mem_source(op: &Operand, allow_neg: bool, allow_mask: bool) -> Option<MauSrc>
     Some(MauSrc {
         mem,
         wl: *wl,
-        base: addr.cycles.map(|c| c & !(*wl as u32 - 1)),
+        base: addr.cycles,
         neg: *neg,
+        t_indirect: addr.t_indirect,
+        madpe: addr.madpe.unwrap_or(MADPE_NONE),
     })
 }
 
 fn line_source(op: &Operand) -> Option<MauSrc> {
-    if matches!(op, Operand::Fixed(FixedKind::Subpeid)) {
-        return Some(MauSrc {
-            mem: 9,
-            wl: 1,
-            base: [0; 4],
-            neg: false,
-        });
-    }
     if let Operand::Forward {
         kind,
         neg,
@@ -148,6 +140,7 @@ fn line_source(op: &Operand) -> Option<MauSrc> {
             wl: 4,
             base: [0; 4],
             neg: *neg,
+            ..MauSrc::default()
         });
     }
     mem_source(op, true, false)
@@ -163,8 +156,12 @@ fn resolve_mask(op: &Operand, state: MaskState, single_line: bool) -> MaskInfo {
         pattern: 0,
         ll: false,
     };
-    let Operand::Mem { mem, mask, .. } = op else {
-        return none;
+    let (mem, explicit) = match op {
+        Operand::Mem { mem, mask, .. } => (*mem, *mask),
+        Operand::Bar { lm1, mask, .. } => {
+            (if *lm1 { MemKind::Lm1 } else { MemKind::Lm0 }, *mask)
+        }
+        _ => return none,
     };
     let directive = if single_line {
         None
@@ -187,7 +184,7 @@ fn resolve_mask(op: &Operand, state: MaskState, single_line: bool) -> MaskInfo {
             None
         }
     };
-    let Some(sel) = mask.or(directive) else {
+    let Some(sel) = explicit.or(directive) else {
         return none;
     };
     match sel.source {
@@ -227,6 +224,7 @@ pub fn mau_line_from_expr(expr: &Expr, mask_state: MaskState) -> Option<MauLine>
         wl: 1,
         base: [0; 4],
         neg: false,
+        ..MauSrc::default()
     };
     let kind = match kind {
         MauKind::Fma => 0,
@@ -245,10 +243,12 @@ pub fn mau_line_from_expr(expr: &Expr, mask_state: MaskState) -> Option<MauLine>
         _ => (zero, zero),
     };
     let dst_op = &expr.dsts[0];
-    let single_line = expr
-        .dsts
-        .iter()
-        .any(|d| matches!(d, Operand::Mem { mask: Some(_), .. }));
+    let single_line = expr.dsts.iter().any(|d| {
+        matches!(
+            d,
+            Operand::Mem { mask: Some(_), .. } | Operand::Bar { mask: Some(_), .. }
+        )
+    });
     let none = MaskInfo {
         kind: 0,
         entry: 0,
@@ -262,8 +262,20 @@ pub fn mau_line_from_expr(expr: &Expr, mask_state: MaskState) -> Option<MauLine>
                 wl: 0,
                 base: [0; 4],
                 neg: false,
+                ..MauSrc::default()
             },
             none,
+        )
+    } else if let Operand::Bar { lm1, .. } = dst_op {
+        (
+            MauSrc {
+                mem: BAR_MEM0 + *lm1 as u8,
+                wl: 1,
+                base: [0; 4],
+                neg: false,
+                ..MauSrc::default()
+            },
+            resolve_mask(dst_op, mask_state, single_line),
         )
     } else {
         let dst = mem_source(dst_op, false, true)?;
@@ -289,7 +301,30 @@ pub struct MauSrc {
     pub wl: u8,
     pub base: [u32; 4],
     pub neg: bool,
+    /// `t`: add the cycle's T register word to the address (LM0 in the SDM).
+    pub t_indirect: bool,
+    /// `j<madpe>`: PEs at or below this PE number add one access length.
+    pub madpe: u8,
 }
+
+impl Default for MauSrc {
+    fn default() -> Self {
+        MauSrc {
+            mem: 0,
+            wl: 1,
+            base: [0; 4],
+            neg: false,
+            t_indirect: false,
+            madpe: MADPE_NONE,
+        }
+    }
+}
+
+/// `madpe` is absent.
+pub const MADPE_NONE: u8 = 255;
+/// `MauSrc.mem` values for a base-address-register destination.
+pub const BAR_MEM0: u8 = 10;
+pub const BAR_MEM1: u8 = 11;
 
 /// Resolved write mask: kind 0 none, 1 OMR entry, 2 fixed pattern.
 #[derive(Clone, Copy, Debug)]
@@ -415,6 +450,10 @@ pub struct AluSrc {
     pub fixed: u32,
     pub neg: u32,
     pub ext: u32,
+    /// `t`: add the cycle's T register word to the address.
+    pub t_indirect: u32,
+    /// `j<madpe>` + 1, or 0 when absent.
+    pub madpe: u32,
 }
 
 /// A resolved ALU destination: 0 PE memory, 1 T, 2 OMR, 3 `$nowrite`.
@@ -430,6 +469,8 @@ pub struct AluDstDesc {
     pub mask_entry: u32,
     pub mask_pattern: u32,
     pub mask_ll: u32,
+    pub t_indirect: u32,
+    pub madpe: u32,
 }
 
 /// The complete description of one ALU or block-float line, passed by value to CUDA.
@@ -459,6 +500,15 @@ pub struct AluDesc {
 
 pub type AluLine = AluDesc;
 pub type BfnLine = AluDesc;
+
+/// Converts a stored `madpe` byte (255 = absent) to the kernel's -1 form.
+fn madpe_arg(madpe: u8) -> i32 {
+    if madpe == MADPE_NONE {
+        -1
+    } else {
+        madpe as i32
+    }
+}
 
 fn fixed_code(kind: FixedKind) -> u32 {
     match kind {
@@ -510,7 +560,7 @@ fn alu_source(op: &Operand) -> Option<AluSrc> {
             rnd,
             ..
         } => {
-            if addr.t_indirect || addr.madpe.is_some() || !matches!(wl, 1 | 2 | 4) {
+            if !matches!(wl, 1 | 2 | 4) {
                 return None;
             }
             if *mem == MemKind::T {
@@ -525,11 +575,13 @@ fn alu_source(op: &Operand) -> Option<AluSrc> {
                     _ => return None,
                 };
                 src.wl = *wl as u32;
-                src.base = addr.cycles.map(|c| c & !(*wl as u32 - 1));
+                src.base = addr.cycles;
             }
             src.neg = *neg as u32;
             src.ext = *ext as u32;
             src.rnd = *rnd as u32;
+            src.t_indirect = addr.t_indirect as u32;
+            src.madpe = addr.madpe.map_or(0, |m| m as u32 + 1);
             Some(src)
         }
         _ => None,
@@ -579,6 +631,14 @@ fn resolve_dst_mask(
                 _ => false,
             },
         ),
+        Operand::Bar { lm1, mask, .. } => (
+            *mask,
+            if *lm1 {
+                state.targets.lm1
+            } else {
+                state.targets.lm0
+            },
+        ),
         Operand::Omr { mask, .. } => (*mask, state.targets.mask_reg),
         _ => (None, false),
     };
@@ -594,17 +654,17 @@ fn resolve_dst_mask(
 }
 
 fn alu_dst_desc(op: &Operand, state: MaskState, single_line: bool) -> Option<AluDstDesc> {
-    let (kind, mem, wl, base, entry) = match op {
+    let (kind, mem, wl, base, entry, t_indirect, madpe) = match op {
         Operand::Mem {
             mem: MemKind::T, ..
-        } => (1, 0, 4, [0; 4], 0),
+        } => (1, 0, 4, [0; 4], 0, 0, 0),
         Operand::Mem {
             mem,
             wl,
             addr,
             ..
         } => {
-            if addr.t_indirect || addr.madpe.is_some() || !matches!(wl, 1 | 2 | 4) {
+            if !matches!(wl, 1 | 2 | 4) {
                 return None;
             }
             let mem = match mem {
@@ -614,15 +674,32 @@ fn alu_dst_desc(op: &Operand, state: MaskState, single_line: bool) -> Option<Alu
                 MemKind::Grf1 => 3,
                 _ => return None,
             };
-            (0, mem, *wl as u32, addr.cycles.map(|c| c & !(*wl as u32 - 1)), 0)
+            (
+                0,
+                mem,
+                *wl as u32,
+                addr.cycles,
+                0,
+                addr.t_indirect as u32,
+                addr.madpe.map_or(0, |m| m as u32 + 1),
+            )
         }
+        Operand::Bar { lm1, wl, .. } => (
+            4,
+            *lm1 as u32,
+            *wl as u32,
+            [0; 4],
+            0,
+            0,
+            0,
+        ),
         Operand::Omr { entry, .. } => {
             if !(1..=15).contains(entry) {
                 return None;
             }
-            (2, 0, 0, [0; 4], *entry as u32)
+            (2, 0, 0, [0; 4], *entry as u32, 0, 0)
         }
-        Operand::Nowrite => (3, 0, 0, [0; 4], 0),
+        Operand::Nowrite => (3, 0, 0, [0; 4], 0, 0, 0),
         _ => return None,
     };
     let (mask_kind, mask_entry, mask_pattern, mask_ll) = resolve_dst_mask(op, state, single_line)?;
@@ -636,6 +713,8 @@ fn alu_dst_desc(op: &Operand, state: MaskState, single_line: bool) -> Option<Alu
         mask_entry,
         mask_pattern,
         mask_ll,
+        t_indirect,
+        madpe,
     })
 }
 
@@ -799,6 +878,7 @@ fn empty_l1_dst() -> L1Dst {
             wl: 0,
             base: [0; 4],
             neg: false,
+            ..MauSrc::default()
         },
         mask: NO_MASK,
     }
@@ -863,13 +943,25 @@ pub fn l1_read_line_from_expr(expr: &Expr, mask_state: MaskState) -> Option<L1Re
     if expr.dsts.is_empty() || expr.dsts.len() > 4 {
         return None;
     }
-    let single_line = expr
-        .dsts
-        .iter()
-        .any(|d| matches!(d, Operand::Mem { mask: Some(_), .. }));
+    let single_line = expr.dsts.iter().any(|d| {
+        matches!(
+            d,
+            Operand::Mem { mask: Some(_), .. } | Operand::Bar { mask: Some(_), .. }
+        )
+    });
     let mut dsts = [empty_l1_dst(); 4];
     for (i, d) in expr.dsts.iter().enumerate() {
-        let dst = mem_source(d, false, true)?;
+        let dst = if let Operand::Bar { lm1, .. } = d {
+            MauSrc {
+                mem: BAR_MEM0 + *lm1 as u8,
+                wl: 1,
+                base: [0; 4],
+                neg: false,
+                ..MauSrc::default()
+            }
+        } else {
+            mem_source(d, false, true)?
+        };
         dsts[i] = L1Dst {
             dst,
             mask: resolve_mask(d, mask_state, single_line),
@@ -925,7 +1017,7 @@ fn l1_write_source(op: &Operand) -> Option<MauSrc> {
     else {
         return None;
     };
-    if !matches!(wl, 1 | 2 | 4) || addr.t_indirect || addr.madpe.is_some() {
+    if !matches!(wl, 1 | 2 | 4) {
         return None;
     }
     let mem = match mem {
@@ -939,8 +1031,10 @@ fn l1_write_source(op: &Operand) -> Option<MauSrc> {
     Some(MauSrc {
         mem,
         wl: *wl,
-        base: addr.cycles.map(|c| c & !(*wl as u32 - 1)),
+        base: addr.cycles,
         neg: false,
+        t_indirect: addr.t_indirect,
+        madpe: addr.madpe.unwrap_or(MADPE_NONE),
     })
 }
 
@@ -1004,6 +1098,8 @@ pub struct MvRef {
     pub group: u8,
     pub l2b: u8,
     pub addr: u64,
+    /// `$di...`: the address is a DAR entry, not a DRAM long word address.
+    pub indirect: bool,
 }
 
 const MV_GROUP_NONE: u8 = 255;
@@ -1035,6 +1131,8 @@ pub struct MvLine {
     pub snapshot: bool,
     pub rrn_op: u8,
     pub rrn_bits: u8,
+    /// `nd<N>` DAR entry reuse count; 0 means omitted (unbounded).
+    pub nd: u64,
 }
 
 fn mv_ref(op: MvOperand) -> Option<MvRef> {
@@ -1051,22 +1149,19 @@ fn mv_ref(op: MvOperand) -> Option<MvRef> {
             group: group(g)?,
             l2b: 0,
             addr,
+            indirect: false,
         }),
         MvOperand::Dram {
             addr,
             group: g,
             indirect,
-        } => {
-            if indirect {
-                return None;
-            }
-            Some(MvRef {
-                mem: 1,
-                group: group(g)?,
-                l2b: 0,
-                addr,
-            })
-        }
+        } => Some(MvRef {
+            mem: 1,
+            group: group(g)?,
+            l2b: 0,
+            addr,
+            indirect,
+        }),
         MvOperand::L2bm {
             addr,
             group: g,
@@ -1082,6 +1177,7 @@ fn mv_ref(op: MvOperand) -> Option<MvRef> {
                 group: group(g)?,
                 l2b,
                 addr,
+                indirect: false,
             })
         }
     }
@@ -1111,6 +1207,7 @@ pub fn mv_line_from_mv(mv: &Mv) -> Option<MvLine> {
             group: MV_GROUP_NONE,
             l2b: 0,
             addr: 0,
+            indirect: false,
         };
         return Some(MvLine {
             mode: MV_MODE_NOP,
@@ -1121,13 +1218,19 @@ pub fn mv_line_from_mv(mv: &Mv) -> Option<MvLine> {
             snapshot: false,
             rrn_op: 0,
             rrn_bits: 0,
+            nd: 0,
         });
+    }
+    if mv.nd == Some(0) {
+        // CPU `mv.rs` rejects nd0 as an undefined DAR reuse count.
+        return None;
     }
     let (src_op, dst_op) = (mv.src?, mv.dst?);
     let src = mv_ref(src_op)?;
     let dst = mv_ref(dst_op)?;
     // The CPU does `size / 64` blocks of 64 long words; a smaller remainder is ignored.
     let size = (mv.size / 64) * 64;
+    let nd = mv.nd.unwrap_or(0) as u64;
     let line = |mode, size, src, dst, parallel, snapshot, (rrn_op, rrn_bits)| MvLine {
         mode,
         size,
@@ -1137,6 +1240,7 @@ pub fn mv_line_from_mv(mv: &Mv) -> Option<MvLine> {
         snapshot,
         rrn_op,
         rrn_bits,
+        nd,
     };
     match mv.kind {
         MvKind::Nop => None,
@@ -1269,11 +1373,17 @@ impl MvLine {
     pub fn dram_longs_needed(&self) -> u64 {
         let mut need = 1;
         for r in [self.src, self.dst] {
-            if r.mem == 1 {
+            if r.mem == 1 && !r.indirect {
                 need = need.max(r.addr.saturating_add(self.size));
             }
         }
         need
+    }
+
+    /// Whether either DRAM side uses a DAR entry (`$di`). Such statements need
+    /// a device DRAM capacity that cannot be derived from the statement alone.
+    pub fn uses_indirect(&self) -> bool {
+        (self.src.mem == 1 && self.src.indirect) || (self.dst.mem == 1 && self.dst.indirect)
     }
 
     /// Scratch long words needed by the two-pass snapshot of an overlapping `mvp`.
@@ -1306,6 +1416,8 @@ pub struct L2Line {
     pub a1: u32,
     pub l1b: u8,
     pub mask: u8,
+    /// L2B number of `l2bmdars` (0 or 1).
+    pub l2b: u8,
 }
 
 pub fn l2_line_from_expr(expr: &Expr) -> Option<L2Line> {
@@ -1319,6 +1431,43 @@ pub fn l2_line_from_expr(expr: &Expr) -> Option<L2Line> {
             _ => None,
         }
     };
+    if *op == L2Op::Dars {
+        let (a0, l2b) = match expr.srcs.first()? {
+            Operand::L2bm {
+                addr,
+                l2b: Some(l2b),
+            } => (*addr, *l2b),
+            _ => return None,
+        };
+        if l2b >= 2 {
+            return None;
+        }
+        let a1 = match expr.dsts.first()? {
+            Operand::Dar { addr } if (*addr as usize) < crate::blocks::DAR_ENTRIES => *addr,
+            _ => return None,
+        };
+        return Some(L2Line {
+            op: 5,
+            a0,
+            a1,
+            l1b: 0,
+            mask: 0xff,
+            l2b,
+        });
+    }
+    if *op == L2Op::Darw {
+        if !expr.srcs.is_empty() || !expr.dsts.is_empty() {
+            return None;
+        }
+        return Some(L2Line {
+            op: 6,
+            a0: 0,
+            a1: 0,
+            l1b: 0,
+            mask: 0xff,
+            l2b: 0,
+        });
+    }
     let a0 = addr_of(expr.srcs.first()?)?;
     let a1 = addr_of(expr.dsts.first()?)?;
     match op {
@@ -1328,6 +1477,7 @@ pub fn l2_line_from_expr(expr: &Expr) -> Option<L2Line> {
             a1,
             l1b: 0,
             mask: set.mask,
+            l2b: 0,
         }),
         L2Op::Bcast { set } => Some(L2Line {
             op: 1,
@@ -1335,6 +1485,7 @@ pub fn l2_line_from_expr(expr: &Expr) -> Option<L2Line> {
             a1,
             l1b: 0,
             mask: set.mask,
+            l2b: 0,
         }),
         L2Op::Bcast2 { set } => Some(L2Line {
             op: 3,
@@ -1342,6 +1493,7 @@ pub fn l2_line_from_expr(expr: &Expr) -> Option<L2Line> {
             a1,
             l1b: 0,
             mask: set.mask,
+            l2b: 0,
         }),
         L2Op::Gather => Some(L2Line {
             op: 4,
@@ -1349,6 +1501,7 @@ pub fn l2_line_from_expr(expr: &Expr) -> Option<L2Line> {
             a1,
             l1b: 0,
             mask: 0xff,
+            l2b: 0,
         }),
         L2Op::FromL1b { l1b } => Some(L2Line {
             op: 2,
@@ -1356,6 +1509,7 @@ pub fn l2_line_from_expr(expr: &Expr) -> Option<L2Line> {
             a1,
             l1b: *l1b,
             mask: 0xff,
+            l2b: 0,
         }),
         _ => None,
     }
@@ -1460,6 +1614,8 @@ pub enum AluDst {
     Mem(MauSrc),
     T,
     Omr(u8),
+    /// `$mb` / `$nb`: the boolean selects LM1.
+    Bar(bool),
     None,
 }
 
@@ -1477,15 +1633,22 @@ pub struct MatMauLine {
 
 /// Whether the multi-line mask directive of `state` affects a PE memory write.
 fn directive_mask_applies(op: &Operand, state: MaskState) -> bool {
-    let Operand::Mem { mem, .. } = op else {
-        return false;
-    };
-    let on = match mem {
-        MemKind::Grf0 => state.targets.grf0,
-        MemKind::Grf1 => state.targets.grf1,
-        MemKind::T => state.targets.t,
-        MemKind::Lm0 => state.targets.lm0,
-        MemKind::Lm1 => state.targets.lm1,
+    let on = match op {
+        Operand::Mem { mem, .. } => match mem {
+            MemKind::Grf0 => state.targets.grf0,
+            MemKind::Grf1 => state.targets.grf1,
+            MemKind::T => state.targets.t,
+            MemKind::Lm0 => state.targets.lm0,
+            MemKind::Lm1 => state.targets.lm1,
+            _ => false,
+        },
+        Operand::Bar { lm1, .. } => {
+            if *lm1 {
+                state.targets.lm1
+            } else {
+                state.targets.lm0
+            }
+        }
         _ => false,
     };
     on && state.entry != 0
@@ -1552,7 +1715,20 @@ pub fn mat_read_line_from_expr(expr: &Expr, mask_state: MaskState) -> Option<Mat
             wl: 0,
             base: [0; 4],
             neg: false,
+            ..MauSrc::default()
         },
+        Operand::Bar { lm1, mask, .. } => {
+            if mask.is_some() || directive_mask_applies(&expr.dsts[0], mask_state) {
+                return None;
+            }
+            MauSrc {
+                mem: BAR_MEM0 + *lm1 as u8,
+                wl: 1,
+                base: [0; 4],
+                neg: false,
+                ..MauSrc::default()
+            }
+        }
         Operand::Mem { .. } if !directive_mask_applies(&expr.dsts[0], mask_state) => {
             let dst = mem_source(&expr.dsts[0], false, false)?;
             if dst.mem >= 6 {
@@ -1616,10 +1792,17 @@ pub fn mat_mau_line_from_expr(expr: &Expr, mask_state: MaskState) -> Option<MatM
             wl: 1,
             base: [0; 4],
             neg: false,
+            ..MauSrc::default()
         }
     };
     let dst = match &expr.dsts[0] {
         Operand::Nowrite => AluDst::None,
+        Operand::Bar { lm1, mask, .. } => {
+            if mask.is_some() || directive_mask_applies(&expr.dsts[0], mask_state) {
+                return None;
+            }
+            AluDst::Bar(*lm1)
+        }
         Operand::Mem { .. } => {
             if directive_mask_applies(&expr.dsts[0], mask_state) {
                 return None;
@@ -1668,6 +1851,15 @@ pub struct GpuState {
     mats: u64,
     /// Matrix read forwarding register, 4 cycles x 4 words per PE.
     mreadf: u64,
+    /// Base address registers (`$mb`/`$nb`), one word per PE.
+    bar0: u64,
+    bar1: u64,
+    /// DAR and DAR buffer of the four groups, and the two address counters.
+    dar: u64,
+    darbuf: u64,
+    dar_addr: u64,
+    /// Count of indirect MV accesses outside the device DRAM (checked by the driver).
+    mv_errors: u64,
     free: CuMemFree,
 }
 
@@ -1691,6 +1883,12 @@ impl Drop for GpuState {
                 self.scratch,
                 self.mats,
                 self.mreadf,
+                self.bar0,
+                self.bar1,
+                self.dar,
+                self.darbuf,
+                self.dar_addr,
+                self.mv_errors,
             ] {
                 if pointer != 0 {
                     (self.free)(pointer);
@@ -1716,6 +1914,7 @@ pub struct Gpu {
     mat_write_function: CuFunction,
     mat_read_function: CuFunction,
     mat_mau_function: CuFunction,
+    zero_mreadf_function: CuFunction,
     cu_ctx_destroy: CuCtxDestroy,
     cu_mem_alloc: CuMemAlloc,
     cu_mem_free: CuMemFree,
@@ -1935,6 +2134,17 @@ impl Gpu {
             },
             "cuModuleGetFunction(mat_mau_line)",
         )?;
+        let mut zero_mreadf_function: CuFunction = std::ptr::null_mut();
+        check(
+            unsafe {
+                cu_get_function(
+                    &mut zero_mreadf_function,
+                    module,
+                    b"zero_mreadf\0".as_ptr() as *const c_char,
+                )
+            },
+            "cuModuleGetFunction(zero_mreadf)",
+        )?;
         Ok(Gpu {
             _cuda: cuda,
             _nvrtc: nvrtc,
@@ -1951,6 +2161,7 @@ impl Gpu {
             mat_write_function,
             mat_read_function,
             mat_mau_function,
+            zero_mreadf_function,
             cu_ctx_destroy,
             cu_mem_alloc,
             cu_mem_free,
@@ -2006,6 +2217,11 @@ impl Gpu {
         let l2bm_bytes = crate::blocks::L2BS * crate::blocks::L2BM_LONGS * 8;
         let lbi_bytes = crate::blocks::L1BS * 4 * 64 * 8;
         let mats_bytes = MAT_WORDS * 4;
+        let bar_bytes = crate::machine::PES * 4;
+        let dar_bytes = crate::mv::GROUPS * crate::blocks::DAR_ENTRIES * 4;
+        let darbuf_bytes = crate::mv::GROUPS * crate::blocks::DARBUF_ENTRIES * 4;
+        let dar_addr_bytes = 2 * 4;
+        let mv_error_bytes = 4;
         let mut sizes = vec![
             lm_bytes,
             lm_bytes,
@@ -2020,6 +2236,12 @@ impl Gpu {
             lbi_bytes,
             mats_bytes,
             fwd_bytes,
+            bar_bytes,
+            bar_bytes,
+            dar_bytes,
+            darbuf_bytes,
+            dar_addr_bytes,
+            mv_error_bytes,
         ];
         let want_mv = dram_longs > 0;
         if want_mv {
@@ -2060,9 +2282,15 @@ impl Gpu {
             lbi: buffers[10],
             mats: buffers[11],
             mreadf: buffers[12],
-            pdm: if want_mv { buffers[13] } else { 0 },
-            dram: if want_mv { buffers[14] } else { 0 },
-            scratch: if want_mv { buffers[15] } else { 0 },
+            bar0: buffers[13],
+            bar1: buffers[14],
+            dar: buffers[15],
+            darbuf: buffers[16],
+            dar_addr: buffers[17],
+            mv_errors: buffers[18],
+            pdm: if want_mv { buffers[19] } else { 0 },
+            dram: if want_mv { buffers[20] } else { 0 },
+            scratch: if want_mv { buffers[21] } else { 0 },
             dram_longs: if want_mv { dram_longs } else { 0 },
             scratch_longs: if want_mv { scratch_longs } else { 0 },
             free: self.cu_mem_free,
@@ -2118,6 +2346,46 @@ impl Gpu {
                 what,
             )?;
         }
+        let bar = vec![0u32; crate::machine::PES];
+        for (pointer, what) in [
+            (state.bar0, "upload bar0"),
+            (state.bar1, "upload bar1"),
+        ] {
+            self.check(
+                unsafe {
+                    (self.cu_htod)(pointer, bar.as_ptr() as *const c_void, bar.len() * 4)
+                },
+                what,
+            )?;
+        }
+        let dar = vec![0u32; crate::mv::GROUPS * crate::blocks::DAR_ENTRIES];
+        self.check(
+            unsafe {
+                (self.cu_htod)(state.dar, dar.as_ptr() as *const c_void, dar.len() * 4)
+            },
+            "upload dar",
+        )?;
+        let darbuf = vec![0u32; crate::mv::GROUPS * crate::blocks::DARBUF_ENTRIES];
+        self.check(
+            unsafe {
+                (self.cu_htod)(state.darbuf, darbuf.as_ptr() as *const c_void, darbuf.len() * 4)
+            },
+            "upload darbuf",
+        )?;
+        let dar_addr = [0u32; 2];
+        self.check(
+            unsafe {
+                (self.cu_htod)(state.dar_addr, dar_addr.as_ptr() as *const c_void, 8)
+            },
+            "upload dar_addr",
+        )?;
+        let mv_error = [0u32; 1];
+        self.check(
+            unsafe {
+                (self.cu_htod)(state.mv_errors, mv_error.as_ptr() as *const c_void, 4)
+            },
+            "upload mv_errors",
+        )?;
         let mats = vec![0u32; MAT_WORDS];
         self.check(
             unsafe {
@@ -2449,6 +2717,38 @@ impl Gpu {
         Ok(out)
     }
 
+    /// Downloads mauf (4 cycles x 4 words per PE).
+    pub fn download_mauf(&self, state: &GpuState) -> Result<Vec<u32>, String> {
+        let mut out = vec![0u32; crate::machine::PES * 16];
+        self.check(
+            unsafe {
+                (self.cu_dtoh)(
+                    out.as_mut_ptr() as *mut c_void,
+                    state.mauf,
+                    out.len() * 4,
+                )
+            },
+            "download mauf",
+        )?;
+        Ok(out)
+    }
+
+    /// Downloads mreadf (4 cycles x 4 words per PE).
+    pub fn download_mreadf(&self, state: &GpuState) -> Result<Vec<u32>, String> {
+        let mut out = vec![0u32; crate::machine::PES * 16];
+        self.check(
+            unsafe {
+                (self.cu_dtoh)(
+                    out.as_mut_ptr() as *mut c_void,
+                    state.mreadf,
+                    out.len() * 4,
+                )
+            },
+            "download mreadf",
+        )?;
+        Ok(out)
+    }
+
     /// Downloads the T registers (16 words per PE).
     pub fn download_t(&self, state: &GpuState) -> Result<Vec<u32>, String> {
         let mut out = vec![0u32; crate::machine::PES * 16];
@@ -2465,6 +2765,114 @@ impl Gpu {
         Ok(out)
     }
 
+    /// Uploads the LM0/LM1 base address registers (`$mb`, `$nb`).
+    pub fn upload_bar(&self, state: &GpuState, bar0: &[u32], bar1: &[u32]) -> Result<(), String> {
+        let n = crate::machine::PES;
+        if bar0.len() != n || bar1.len() != n {
+            return Err("BAR slice has the wrong length".into());
+        }
+        for (pointer, words, what) in [
+            (state.bar0, bar0, "upload bar0"),
+            (state.bar1, bar1, "upload bar1"),
+        ] {
+            self.check(
+                unsafe { (self.cu_htod)(pointer, words.as_ptr() as *const c_void, n * 4) },
+                what,
+            )?;
+        }
+        Ok(())
+    }
+
+    /// Downloads the LM0/LM1 base address registers.
+    pub fn download_bar(&self, state: &GpuState) -> Result<(Vec<u32>, Vec<u32>), String> {
+        let n = crate::machine::PES;
+        let mut bar0 = vec![0u32; n];
+        let mut bar1 = vec![0u32; n];
+        self.check(
+            unsafe { (self.cu_dtoh)(bar0.as_mut_ptr() as *mut c_void, state.bar0, n * 4) },
+            "download bar0",
+        )?;
+        self.check(
+            unsafe { (self.cu_dtoh)(bar1.as_mut_ptr() as *mut c_void, state.bar1, n * 4) },
+            "download bar1",
+        )?;
+        Ok((bar0, bar1))
+    }
+
+    /// Uploads all four group DARs (1024 32-bit entries each, group-major).
+    pub fn upload_dar(&self, state: &GpuState, words: &[u32]) -> Result<(), String> {
+        let n = crate::mv::GROUPS * crate::blocks::DAR_ENTRIES;
+        if words.len() != n {
+            return Err("DAR slice has the wrong length".into());
+        }
+        self.check(
+            unsafe { (self.cu_htod)(state.dar, words.as_ptr() as *const c_void, n * 4) },
+            "upload dar",
+        )
+    }
+
+    /// Downloads all four group DARs.
+    pub fn download_dar(&self, state: &GpuState) -> Result<Vec<u32>, String> {
+        let n = crate::mv::GROUPS * crate::blocks::DAR_ENTRIES;
+        let mut out = vec![0u32; n];
+        self.check(
+            unsafe { (self.cu_dtoh)(out.as_mut_ptr() as *mut c_void, state.dar, n * 4) },
+            "download dar",
+        )?;
+        Ok(out)
+    }
+
+    /// Uploads all four group DAR write buffers (512 32-bit address words each).
+    pub fn upload_darbuf(&self, state: &GpuState, words: &[u32]) -> Result<(), String> {
+        let n = crate::mv::GROUPS * crate::blocks::DARBUF_ENTRIES;
+        if words.len() != n {
+            return Err("DAR buffer slice has the wrong length".into());
+        }
+        self.check(
+            unsafe { (self.cu_htod)(state.darbuf, words.as_ptr() as *const c_void, n * 4) },
+            "upload darbuf",
+        )
+    }
+
+    /// Downloads all four group DAR write buffers.
+    pub fn download_darbuf(&self, state: &GpuState) -> Result<Vec<u32>, String> {
+        let n = crate::mv::GROUPS * crate::blocks::DARBUF_ENTRIES;
+        let mut out = vec![0u32; n];
+        self.check(
+            unsafe { (self.cu_dtoh)(out.as_mut_ptr() as *mut c_void, state.darbuf, n * 4) },
+            "download darbuf",
+        )?;
+        Ok(out)
+    }
+
+    /// Sets the DAR write address and the DAR buffer read address.
+    pub fn upload_dar_addr(&self, state: &GpuState, addr: [u32; 2]) -> Result<(), String> {
+        self.check(
+            unsafe { (self.cu_htod)(state.dar_addr, addr.as_ptr() as *const c_void, 8) },
+            "upload dar_addr",
+        )
+    }
+
+    /// Reads `[dar_write_addr, darbuf_read_addr]`.
+    pub fn download_dar_addr(&self, state: &GpuState) -> Result<[u32; 2], String> {
+        let mut out = [0u32; 2];
+        self.check(
+            unsafe { (self.cu_dtoh)(out.as_mut_ptr() as *mut c_void, state.dar_addr, 8) },
+            "download dar_addr",
+        )?;
+        Ok(out)
+    }
+
+    /// Number of indirect MV accesses that fell outside the device DRAM.
+    pub fn download_mv_errors(&self, state: &GpuState) -> Result<u32, String> {
+        let mut out = [0u32; 1];
+        self.check(
+            unsafe { (self.cu_dtoh)(out.as_mut_ptr() as *mut c_void, state.mv_errors, 4) },
+            "download mv_errors",
+        )?;
+        Ok(out[0])
+    }
+
     /// Waits for all previously enqueued kernels.
     pub fn sync(&self) -> Result<(), String> {
         self.check(unsafe { (self.cu_sync)() }, "cuCtxSynchronize")
@@ -2472,6 +2880,16 @@ impl Gpu {
 
     /// Launches one f32 MAU line for all 4,096 PEs and four cycles.
     pub fn run_mau_line(&self, state: &GpuState, line: &MauLine) -> Result<(), String> {
+        self.run_mau_line_with(state, line, true)
+    }
+
+    /// Launches one MAU line, optionally suppressing the `mauf` update (`noforward`).
+    pub fn run_mau_line_with(
+        &self,
+        state: &GpuState,
+        line: &MauLine,
+        update_forward: bool,
+    ) -> Result<(), String> {
         for src in [line.a, line.b, line.c] {
             if src.wl != 1 && src.wl != 2 && src.wl != 4 {
                 return Err("mau_line supports wl = 1, 2 or 4".into());
@@ -2488,22 +2906,34 @@ impl Gpu {
         let mut aluf = state.aluf;
         let mut mask_state = state.mask;
         let mut t = state.t;
+        let mut mreadf = state.mreadf;
+        let mut bar0 = state.bar0;
+        let mut bar1 = state.bar1;
+        let mut update_forward = update_forward as i32;
         let mut kind = line.kind as i32;
         let mut amem = line.a.mem as i32;
         let mut a = line.a.base;
         let mut awl = line.a.wl as i32;
         let mut aneg = line.a.neg as i32;
+        let mut at = line.a.t_indirect as i32;
+        let mut ama = madpe_arg(line.a.madpe);
         let mut bmem = line.b.mem as i32;
         let mut b = line.b.base;
         let mut bwl = line.b.wl as i32;
         let mut bneg = line.b.neg as i32;
+        let mut bt = line.b.t_indirect as i32;
+        let mut bma = madpe_arg(line.b.madpe);
         let mut cmem = line.c.mem as i32;
         let mut c = line.c.base;
         let mut cwl = line.c.wl as i32;
         let mut cneg = line.c.neg as i32;
+        let mut ct = line.c.t_indirect as i32;
+        let mut cma = madpe_arg(line.c.madpe);
         let mut dmem = line.dst.mem as i32;
         let mut d = line.dst.base;
         let mut dwl = line.dst.wl as i32;
+        let mut dt = line.dst.t_indirect as i32;
+        let mut dma = madpe_arg(line.dst.madpe);
         let mut mask_kind = line.mask.kind as i32;
         let mut mask_entry = line.mask.entry as i32;
         let mut mask_pattern = line.mask.pattern as i32;
@@ -2517,6 +2947,10 @@ impl Gpu {
             &mut aluf as *mut u64 as *mut c_void,
             &mut mask_state as *mut u64 as *mut c_void,
             &mut t as *mut u64 as *mut c_void,
+            &mut mreadf as *mut u64 as *mut c_void,
+            &mut bar0 as *mut u64 as *mut c_void,
+            &mut bar1 as *mut u64 as *mut c_void,
+            &mut update_forward as *mut i32 as *mut c_void,
             &mut kind as *mut i32 as *mut c_void,
             &mut amem as *mut i32 as *mut c_void,
             &mut a[0] as *mut u32 as *mut c_void,
@@ -2525,6 +2959,8 @@ impl Gpu {
             &mut a[3] as *mut u32 as *mut c_void,
             &mut awl as *mut i32 as *mut c_void,
             &mut aneg as *mut i32 as *mut c_void,
+            &mut at as *mut i32 as *mut c_void,
+            &mut ama as *mut i32 as *mut c_void,
             &mut bmem as *mut i32 as *mut c_void,
             &mut b[0] as *mut u32 as *mut c_void,
             &mut b[1] as *mut u32 as *mut c_void,
@@ -2532,6 +2968,8 @@ impl Gpu {
             &mut b[3] as *mut u32 as *mut c_void,
             &mut bwl as *mut i32 as *mut c_void,
             &mut bneg as *mut i32 as *mut c_void,
+            &mut bt as *mut i32 as *mut c_void,
+            &mut bma as *mut i32 as *mut c_void,
             &mut cmem as *mut i32 as *mut c_void,
             &mut c[0] as *mut u32 as *mut c_void,
             &mut c[1] as *mut u32 as *mut c_void,
@@ -2539,12 +2977,16 @@ impl Gpu {
             &mut c[3] as *mut u32 as *mut c_void,
             &mut cwl as *mut i32 as *mut c_void,
             &mut cneg as *mut i32 as *mut c_void,
+            &mut ct as *mut i32 as *mut c_void,
+            &mut cma as *mut i32 as *mut c_void,
             &mut dmem as *mut i32 as *mut c_void,
             &mut d[0] as *mut u32 as *mut c_void,
             &mut d[1] as *mut u32 as *mut c_void,
             &mut d[2] as *mut u32 as *mut c_void,
             &mut d[3] as *mut u32 as *mut c_void,
             &mut dwl as *mut i32 as *mut c_void,
+            &mut dt as *mut i32 as *mut c_void,
+            &mut dma as *mut i32 as *mut c_void,
             &mut mask_kind as *mut i32 as *mut c_void,
             &mut mask_entry as *mut i32 as *mut c_void,
             &mut mask_pattern as *mut i32 as *mut c_void,
@@ -2574,6 +3016,17 @@ impl Gpu {
     /// Launches one ALU line. One thread handles one MAB so that all inputs of the four PEs
     /// are read before any destination (including msl/msr's neighbour PE) is written.
     pub fn run_alu_line(&self, state: &GpuState, line: &AluLine) -> Result<(), String> {
+        self.run_alu_line_with(state, line, true)
+    }
+
+    /// Launches one ALU line, optionally suppressing the forwarding-register update
+    /// (`noforward`, SDM 3.6.6).
+    pub fn run_alu_line_with(
+        &self,
+        state: &GpuState,
+        line: &AluLine,
+        update_forward: bool,
+    ) -> Result<(), String> {
         let mut lm0 = state.lm0;
         let mut lm1 = state.lm1;
         let mut grf0 = state.grf0;
@@ -2583,6 +3036,9 @@ impl Gpu {
         let mut mask = state.mask;
         let mut t = state.t;
         let mut mreadf = state.mreadf;
+        let mut bar0 = state.bar0;
+        let mut bar1 = state.bar1;
+        let mut update_forward = update_forward as i32;
         let mut desc = *line;
         let mut args = [
             &mut lm0 as *mut u64 as *mut c_void,
@@ -2594,6 +3050,9 @@ impl Gpu {
             &mut mask as *mut u64 as *mut c_void,
             &mut t as *mut u64 as *mut c_void,
             &mut mreadf as *mut u64 as *mut c_void,
+            &mut bar0 as *mut u64 as *mut c_void,
+            &mut bar1 as *mut u64 as *mut c_void,
+            &mut update_forward as *mut i32 as *mut c_void,
             &mut desc as *mut AluDesc as *mut c_void,
         ];
         let grid = (crate::machine::PES / 4) as u32;
@@ -2620,6 +3079,16 @@ impl Gpu {
     /// Launches one block-float line (`bfn`/`bfe`). One thread handles one MAB and reads all
     /// four cycles before writing, matching the CPU's read-all-then-write order.
     pub fn run_bfn_line(&self, state: &GpuState, line: &BfnLine) -> Result<(), String> {
+        self.run_bfn_line_with(state, line, true)
+    }
+
+    /// Launches one block-float line, optionally under `noforward`.
+    pub fn run_bfn_line_with(
+        &self,
+        state: &GpuState,
+        line: &BfnLine,
+        update_forward: bool,
+    ) -> Result<(), String> {
         let mut lm0 = state.lm0;
         let mut lm1 = state.lm1;
         let mut grf0 = state.grf0;
@@ -2629,6 +3098,9 @@ impl Gpu {
         let mut mask = state.mask;
         let mut t = state.t;
         let mut mreadf = state.mreadf;
+        let mut bar0 = state.bar0;
+        let mut bar1 = state.bar1;
+        let mut update_forward = update_forward as i32;
         let mut desc = *line;
         let mut args = [
             &mut lm0 as *mut u64 as *mut c_void,
@@ -2640,6 +3112,9 @@ impl Gpu {
             &mut mask as *mut u64 as *mut c_void,
             &mut t as *mut u64 as *mut c_void,
             &mut mreadf as *mut u64 as *mut c_void,
+            &mut bar0 as *mut u64 as *mut c_void,
+            &mut bar1 as *mut u64 as *mut c_void,
+            &mut update_forward as *mut i32 as *mut c_void,
             &mut desc as *mut AluDesc as *mut c_void,
         ];
         let grid = (crate::machine::PES / 4) as u32;
@@ -2667,19 +3142,27 @@ impl Gpu {
     pub fn run_l2_line(&self, state: &GpuState, line: &L2Line) -> Result<(), String> {
         let mut l1bm = state.l1bm;
         let mut l2bm = state.l2bm;
+        let mut darbuf = state.darbuf;
+        let mut dar = state.dar;
+        let mut dar_addr = state.dar_addr;
         let mut op = line.op as i32;
         let mut a0 = line.a0;
         let mut a1 = line.a1;
         let mut l1b = line.l1b as i32;
         let mut mask = line.mask as i32;
+        let mut l2b = line.l2b as i32;
         let mut args = [
             &mut l1bm as *mut u64 as *mut c_void,
             &mut l2bm as *mut u64 as *mut c_void,
+            &mut darbuf as *mut u64 as *mut c_void,
+            &mut dar as *mut u64 as *mut c_void,
+            &mut dar_addr as *mut u64 as *mut c_void,
             &mut op as *mut i32 as *mut c_void,
             &mut a0 as *mut u32 as *mut c_void,
             &mut a1 as *mut u32 as *mut c_void,
             &mut l1b as *mut i32 as *mut c_void,
             &mut mask as *mut i32 as *mut c_void,
+            &mut l2b as *mut i32 as *mut c_void,
         ];
         self.check(
             unsafe {
@@ -2746,6 +3229,31 @@ impl Gpu {
         )
     }
 
+    /// Clears mreadf, matching a CPU step without a matrix read.
+    pub fn clear_mreadf(&self, state: &GpuState) -> Result<(), String> {
+        let mut mreadf = state.mreadf;
+        let mut args = [&mut mreadf as *mut u64 as *mut c_void];
+        let grid = ((crate::machine::PES * 16) as u32 + 255) / 256;
+        self.check(
+            unsafe {
+                (self.cu_launch)(
+                    self.zero_mreadf_function,
+                    grid,
+                    1,
+                    1,
+                    256,
+                    1,
+                    1,
+                    0,
+                    std::ptr::null_mut(),
+                    args.as_mut_ptr(),
+                    std::ptr::null_mut(),
+                )
+            },
+            "cuLaunchKernel(zero_mreadf)",
+        )
+    }
+
     /// Launches one MV statement. An overlapping `mvp` is run as two passes
     /// through a scratch buffer so that all reads precede all writes, like the
     /// CPU's write list.
@@ -2761,7 +3269,7 @@ impl Gpu {
             return Ok(());
         }
         for r in [line.src, line.dst] {
-            if r.mem == 1 {
+            if r.mem == 1 && !r.indirect {
                 let end = r.addr.saturating_add(line.size);
                 if end > crate::mv::DRAM_LONGS {
                     return Err(format!(
@@ -2810,6 +3318,11 @@ impl Gpu {
             let mut size = line.size;
             let mut rrn_op = line.rrn_op as i32;
             let mut rrn_bits = line.rrn_bits as i32;
+            let mut dar = state.dar;
+            let mut mv_errors = state.mv_errors;
+            let mut src_indirect = line.src.indirect as i32;
+            let mut dst_indirect = line.dst.indirect as i32;
+            let mut nd = line.nd;
             let mut args = [
                 &mut pdm as *mut u64 as *mut c_void,
                 &mut dram as *mut u64 as *mut c_void,
@@ -2830,6 +3343,11 @@ impl Gpu {
                 &mut size as *mut u64 as *mut c_void,
                 &mut rrn_op as *mut i32 as *mut c_void,
                 &mut rrn_bits as *mut i32 as *mut c_void,
+                &mut dar as *mut u64 as *mut c_void,
+                &mut mv_errors as *mut u64 as *mut c_void,
+                &mut src_indirect as *mut i32 as *mut c_void,
+                &mut dst_indirect as *mut i32 as *mut c_void,
+                &mut nd as *mut u64 as *mut c_void,
             ];
             self.check(
                 unsafe {
@@ -2855,6 +3373,17 @@ impl Gpu {
 
     /// Launches one PE-to-L1BM transfer.
     pub fn run_l1_write_line(&self, state: &GpuState, line: &L1WriteLine) -> Result<(), String> {
+        self.run_l1_write_line_with(state, line, true)
+    }
+
+    /// Launches one PE-to-L1BM transfer, optionally suppressing the `$lbi`
+    /// update (`noforward`).
+    pub fn run_l1_write_line_with(
+        &self,
+        state: &GpuState,
+        line: &L1WriteLine,
+        update_lbi: bool,
+    ) -> Result<(), String> {
         if line.wl != 2 && line.wl != 4 {
             return Err(format!("unsupported L1BM access length {}", line.wl));
         }
@@ -2865,6 +3394,9 @@ impl Gpu {
         let mut t = state.t;
         let mut l1bm = state.l1bm;
         let mut lbi = state.lbi;
+        let mut bar0 = state.bar0;
+        let mut bar1 = state.bar1;
+        let mut update_lbi = update_lbi as i32;
         let mut op = line.op as i32;
         let mut mab = line.mab as i32;
         let mut mabdiff = line.mabdiff as i32;
@@ -2874,6 +3406,8 @@ impl Gpu {
         let mut smem = line.src.mem as i32;
         let mut s = line.src.base;
         let mut swl = line.src.wl as i32;
+        let mut st = line.src.t_indirect as i32;
+        let mut sma = madpe_arg(line.src.madpe);
         let mut two_src = line.two_src as i32;
         let mut bits = line.bits as i32;
         let mut rrn = line.rrn as i32;
@@ -2887,6 +3421,9 @@ impl Gpu {
             &mut t as *mut u64 as *mut c_void,
             &mut l1bm as *mut u64 as *mut c_void,
             &mut lbi as *mut u64 as *mut c_void,
+            &mut bar0 as *mut u64 as *mut c_void,
+            &mut bar1 as *mut u64 as *mut c_void,
+            &mut update_lbi as *mut i32 as *mut c_void,
             &mut op as *mut i32 as *mut c_void,
             &mut mab as *mut i32 as *mut c_void,
             &mut mabdiff as *mut i32 as *mut c_void,
@@ -2899,6 +3436,8 @@ impl Gpu {
             &mut s[2] as *mut u32 as *mut c_void,
             &mut s[3] as *mut u32 as *mut c_void,
             &mut swl as *mut i32 as *mut c_void,
+            &mut st as *mut i32 as *mut c_void,
+            &mut sma as *mut i32 as *mut c_void,
             &mut two_src as *mut i32 as *mut c_void,
             &mut bits as *mut i32 as *mut c_void,
             &mut rrn as *mut i32 as *mut c_void,
@@ -2942,6 +3481,8 @@ impl Gpu {
         let mut l1bm = state.l1bm;
         let mut lbi = state.lbi;
         let mut omr = state.mask;
+        let mut bar0 = state.bar0;
+        let mut bar1 = state.bar1;
         let mut op = line.op as i32;
         let mut has_addr = line.addr.is_some() as i32;
         let mut addr = line.addr.unwrap_or(0);
@@ -2955,6 +3496,8 @@ impl Gpu {
         let mut mke = [0i32; 4];
         let mut mkp = [0i32; 4];
         let mut mkl = [0i32; 4];
+        let mut dt = [0i32; 4];
+        let mut dma = [0i32; 4];
         for i in 0..4 {
             let d = line.dsts[i];
             dm[i] = d.dst.mem as i32;
@@ -2964,6 +3507,8 @@ impl Gpu {
             mke[i] = d.mask.entry as i32;
             mkp[i] = d.mask.pattern as i32;
             mkl[i] = d.mask.ll as i32;
+            dt[i] = d.dst.t_indirect as i32;
+            dma[i] = madpe_arg(d.dst.madpe);
         }
         let mut fk = line.flush.kind as i32;
         let mut fe = line.flush.entry as i32;
@@ -2978,6 +3523,8 @@ impl Gpu {
             &mut l1bm as *mut u64 as *mut c_void,
             &mut lbi as *mut u64 as *mut c_void,
             &mut omr as *mut u64 as *mut c_void,
+            &mut bar0 as *mut u64 as *mut c_void,
+            &mut bar1 as *mut u64 as *mut c_void,
             &mut op as *mut i32 as *mut c_void,
             &mut has_addr as *mut i32 as *mut c_void,
             &mut addr as *mut u32 as *mut c_void,
@@ -2995,6 +3542,8 @@ impl Gpu {
             args.push(&mut mke[i] as *mut i32 as *mut c_void);
             args.push(&mut mkp[i] as *mut i32 as *mut c_void);
             args.push(&mut mkl[i] as *mut i32 as *mut c_void);
+            args.push(&mut dt[i] as *mut i32 as *mut c_void);
+            args.push(&mut dma[i] as *mut i32 as *mut c_void);
         }
         args.push(&mut fk as *mut i32 as *mut c_void);
         args.push(&mut fe as *mut i32 as *mut c_void);
@@ -3033,6 +3582,9 @@ impl Gpu {
         let mut mauf = state.mauf;
         let mut aluf = state.aluf;
         let mut mats = state.mats;
+        let mut t = state.t;
+        let mut bar0 = state.bar0;
+        let mut bar1 = state.bar1;
         let mut prec = if line.prec == Prec::D { 1i32 } else { 0i32 };
         let mut side = line.side as i32;
         let mut addr = line.addr;
@@ -3040,6 +3592,8 @@ impl Gpu {
         let mut s = line.src.base;
         let mut swl = line.src.wl as i32;
         let mut sneg = line.src.neg as i32;
+        let mut st = line.src.t_indirect as i32;
+        let mut sma = madpe_arg(line.src.madpe);
         let mut args = [
             &mut lm0 as *mut u64 as *mut c_void,
             &mut lm1 as *mut u64 as *mut c_void,
@@ -3048,6 +3602,9 @@ impl Gpu {
             &mut mauf as *mut u64 as *mut c_void,
             &mut aluf as *mut u64 as *mut c_void,
             &mut mats as *mut u64 as *mut c_void,
+            &mut t as *mut u64 as *mut c_void,
+            &mut bar0 as *mut u64 as *mut c_void,
+            &mut bar1 as *mut u64 as *mut c_void,
             &mut prec as *mut i32 as *mut c_void,
             &mut side as *mut i32 as *mut c_void,
             &mut addr as *mut u32 as *mut c_void,
@@ -3058,6 +3615,8 @@ impl Gpu {
             &mut s[3] as *mut u32 as *mut c_void,
             &mut swl as *mut i32 as *mut c_void,
             &mut sneg as *mut i32 as *mut c_void,
+            &mut st as *mut i32 as *mut c_void,
+            &mut sma as *mut i32 as *mut c_void,
         ];
         let grid = (crate::machine::PES as u32 + 255) / 256;
         self.check(
@@ -3082,6 +3641,16 @@ impl Gpu {
 
     /// Launches one matrix-register read (`fmread`/`gmread`).
     pub fn run_mat_read_line(&self, state: &GpuState, line: &MatReadLine) -> Result<(), String> {
+        self.run_mat_read_line_with(state, line, true)
+    }
+
+    /// Launches one matrix-register read, optionally under `noforward`.
+    pub fn run_mat_read_line_with(
+        &self,
+        state: &GpuState,
+        line: &MatReadLine,
+        update_forward: bool,
+    ) -> Result<(), String> {
         if !matches!(line.prec, Prec::F | Prec::G | Prec::D) {
             return Err("mat_read_line supports f32, pseudo-single and double".into());
         }
@@ -3091,12 +3660,18 @@ impl Gpu {
         let mut grf1 = state.grf1;
         let mut mreadf = state.mreadf;
         let mut mats = state.mats;
+        let mut t = state.t;
+        let mut bar0 = state.bar0;
+        let mut bar1 = state.bar1;
+        let mut update_forward = update_forward as i32;
         let mut prec = if line.prec == Prec::D { 1i32 } else { 0i32 };
         let mut side = line.side as i32;
         let mut addr = line.addr;
         let mut dmem = line.dst.mem as i32;
         let mut d = line.dst.base;
         let mut dwl = line.dst.wl as i32;
+        let mut dt = line.dst.t_indirect as i32;
+        let mut dma = madpe_arg(line.dst.madpe);
         let mut args = [
             &mut lm0 as *mut u64 as *mut c_void,
             &mut lm1 as *mut u64 as *mut c_void,
@@ -3104,6 +3679,10 @@ impl Gpu {
             &mut grf1 as *mut u64 as *mut c_void,
             &mut mreadf as *mut u64 as *mut c_void,
             &mut mats as *mut u64 as *mut c_void,
+            &mut t as *mut u64 as *mut c_void,
+            &mut bar0 as *mut u64 as *mut c_void,
+            &mut bar1 as *mut u64 as *mut c_void,
+            &mut update_forward as *mut i32 as *mut c_void,
             &mut prec as *mut i32 as *mut c_void,
             &mut side as *mut i32 as *mut c_void,
             &mut addr as *mut u32 as *mut c_void,
@@ -3113,6 +3692,8 @@ impl Gpu {
             &mut d[2] as *mut u32 as *mut c_void,
             &mut d[3] as *mut u32 as *mut c_void,
             &mut dwl as *mut i32 as *mut c_void,
+            &mut dt as *mut i32 as *mut c_void,
+            &mut dma as *mut i32 as *mut c_void,
         ];
         let grid = (crate::machine::PES as u32 + 255) / 256;
         self.check(
@@ -3137,6 +3718,16 @@ impl Gpu {
 
     /// Launches one matrix MAU line (`fmfma`/`gmmul` and friends).
     pub fn run_mat_mau_line(&self, state: &GpuState, line: &MatMauLine) -> Result<(), String> {
+        self.run_mat_mau_line_with(state, line, true)
+    }
+
+    /// Launches one matrix MAU line, optionally under `noforward`.
+    pub fn run_mat_mau_line_with(
+        &self,
+        state: &GpuState,
+        line: &MatMauLine,
+        update_forward: bool,
+    ) -> Result<(), String> {
         let prec = match line.prec {
             Prec::F => 0i32,
             Prec::G => 1i32,
@@ -3149,6 +3740,10 @@ impl Gpu {
         let mut mauf = state.mauf;
         let mut aluf = state.aluf;
         let mut mats = state.mats;
+        let mut t = state.t;
+        let mut bar0 = state.bar0;
+        let mut bar1 = state.bar1;
+        let mut update_forward = update_forward as i32;
         let mut prec = prec;
         let mut side = line.side as i32;
         let mut kind = line.kind as i32;
@@ -3156,13 +3751,30 @@ impl Gpu {
         let mut x = line.x.base;
         let mut xwl = line.x.wl as i32;
         let mut xneg = line.x.neg as i32;
+        let mut xt = line.x.t_indirect as i32;
+        let mut xma = madpe_arg(line.x.madpe);
         let mut ymem = line.y.mem as i32;
         let mut y = line.y.base;
         let mut ywl = line.y.wl as i32;
         let mut yneg = line.y.neg as i32;
-        let (mut dmem, mut d, mut dwl) = match line.dst {
-            AluDst::Mem(dst) => (dst.mem as i32, dst.base, dst.wl as i32),
-            _ => (0i32, [0u32; 4], 0i32),
+        let mut yt = line.y.t_indirect as i32;
+        let mut yma = madpe_arg(line.y.madpe);
+        let (mut dmem, mut d, mut dwl, mut dt, mut dma) = match line.dst {
+            AluDst::Mem(dst) => (
+                dst.mem as i32,
+                dst.base,
+                dst.wl as i32,
+                dst.t_indirect as i32,
+                madpe_arg(dst.madpe),
+            ),
+            AluDst::Bar(lm1) => (
+                if lm1 { BAR_MEM1 } else { BAR_MEM0 } as i32,
+                [0u32; 4],
+                0i32,
+                0i32,
+                -1i32,
+            ),
+            _ => (0i32, [0u32; 4], 0i32, 0i32, -1i32),
         };
         let mut args = [
             &mut lm0 as *mut u64 as *mut c_void,
@@ -3172,6 +3784,10 @@ impl Gpu {
             &mut mauf as *mut u64 as *mut c_void,
             &mut aluf as *mut u64 as *mut c_void,
             &mut mats as *mut u64 as *mut c_void,
+            &mut t as *mut u64 as *mut c_void,
+            &mut bar0 as *mut u64 as *mut c_void,
+            &mut bar1 as *mut u64 as *mut c_void,
+            &mut update_forward as *mut i32 as *mut c_void,
             &mut prec as *mut i32 as *mut c_void,
             &mut side as *mut i32 as *mut c_void,
             &mut kind as *mut i32 as *mut c_void,
@@ -3182,6 +3798,8 @@ impl Gpu {
             &mut x[3] as *mut u32 as *mut c_void,
             &mut xwl as *mut i32 as *mut c_void,
             &mut xneg as *mut i32 as *mut c_void,
+            &mut xt as *mut i32 as *mut c_void,
+            &mut xma as *mut i32 as *mut c_void,
             &mut ymem as *mut i32 as *mut c_void,
             &mut y[0] as *mut u32 as *mut c_void,
             &mut y[1] as *mut u32 as *mut c_void,
@@ -3189,12 +3807,16 @@ impl Gpu {
             &mut y[3] as *mut u32 as *mut c_void,
             &mut ywl as *mut i32 as *mut c_void,
             &mut yneg as *mut i32 as *mut c_void,
+            &mut yt as *mut i32 as *mut c_void,
+            &mut yma as *mut i32 as *mut c_void,
             &mut dmem as *mut i32 as *mut c_void,
             &mut d[0] as *mut u32 as *mut c_void,
             &mut d[1] as *mut u32 as *mut c_void,
             &mut d[2] as *mut u32 as *mut c_void,
             &mut d[3] as *mut u32 as *mut c_void,
             &mut dwl as *mut i32 as *mut c_void,
+            &mut dt as *mut i32 as *mut c_void,
+            &mut dma as *mut i32 as *mut c_void,
         ];
         let grid = ((crate::machine::PES / 4) as u32 + 255) / 256;
         self.check(
@@ -3333,7 +3955,15 @@ mod mv_tests {
         assert_eq!(line.mode, MV_MODE_R4);
         assert_eq!((line.rrn_op, line.rrn_bits), (1, 64));
 
-        assert!(descriptor("mvp/n256nd4 $p1600@1 $di512@2").is_none());
+        let line = descriptor("mvp/n256nd4 $p1600@1 $di512@2").unwrap();
+        assert!(line.dst.indirect);
+        assert!(line.uses_indirect());
+        assert_eq!(line.nd, 4);
+        assert_eq!(line.dst.addr, 512);
+        assert_eq!(line.dram_longs_needed(), 1);
+        let line = descriptor("mvp/n64 $p0@0 $di7@1").unwrap();
+        assert_eq!(line.nd, 0);
+        assert!(line.uses_indirect());
         assert!(descriptor("mvp/n64i9f $p0@0 $lc0@.0").is_none());
         assert!(descriptor("mvb/n64i9f $p0@0 $d0@0").is_none());
         assert_eq!(descriptor("mvnop").unwrap().mode, MV_MODE_NOP);

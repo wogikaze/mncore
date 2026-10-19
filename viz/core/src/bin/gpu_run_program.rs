@@ -11,7 +11,7 @@ use mncore_sim::gpu::{
 };
 use mncore_sim::machine::{MaskState, GRF_WORDS, LM_WORDS, PES};
 use mncore_sim::run::Sim;
-use mncore_sim::vsm::{self, Line};
+use mncore_sim::vsm::{self, Line, Op};
 
 fn main() {
     let path = std::env::args()
@@ -23,15 +23,24 @@ fn main() {
     let mut mask = MaskState::default();
     let mut dram_longs = 0u64;
     let mut scratch_longs = 1u64;
+    let mut indirect = false;
     for (_, line) in &program {
         if let Line::Mv(mv) = line {
             if let Some(desc) = mv_line_from_mv(mv) {
                 dram_longs = dram_longs.max(desc.dram_longs_needed());
                 scratch_longs = scratch_longs.max(desc.scratch_longs_needed());
+                indirect |= desc.uses_indirect();
             }
         }
     }
-    eprintln!("mv capacity: dram_longs={dram_longs}, scratch={scratch_longs}");
+    if indirect {
+        // A DAR entry decides the address at run time, so the device DRAM size
+        // cannot be derived from the statement. One million long words per group
+        // (8 MiB) is enough for the checked-in programs; the kernel counts every
+        // out-of-range indirect access, and the run fails if the count is nonzero.
+        dram_longs = dram_longs.max(1 << 20);
+    }
+    eprintln!("mv capacity: dram_longs={dram_longs}, scratch={scratch_longs}, indirect={indirect}");
 
     let gpu = match Gpu::new() {
         Ok(gpu) => gpu,
@@ -70,15 +79,44 @@ fn main() {
             }
             Line::Pe(exprs) => {
                 pe_lines += 1;
+                if let Err(error) = mncore_sim::issue::check(exprs) {
+                    eprintln!("line {lineno}: {error}");
+                    std::process::exit(3);
+                }
+                // SDM 3.6.4/3.6.13: a wait must accompany another PE expression and
+                // its tag must be nonzero. The backend runs every MV to completion
+                // in stream order, so an issued wait is already satisfied.
+                let wait = exprs.iter().any(|e| matches!(e.op, Op::Wait(_)));
+                if wait {
+                    if exprs.len() < 2 {
+                        eprintln!("line {lineno}: wait without another PE expression");
+                        std::process::exit(3);
+                    }
+                    if exprs
+                        .iter()
+                        .any(|e| matches!(e.op, Op::Wait(0)))
+                    {
+                        eprintln!("line {lineno}: wait tag 0 is invalid");
+                        std::process::exit(3);
+                    }
+                }
+                let update_forward = !exprs.iter().any(|e| matches!(e.op, Op::Noforward));
+                let has_mread = exprs.iter().any(|e| matches!(e.op, Op::MatRead { .. }));
                 for expr in exprs {
+                    if matches!(expr.op, Op::Noforward | Op::Wait(_)) {
+                        continue;
+                    }
                     if let Some(line) = alu_line_from_expr(expr, mask) {
-                        gpu.run_alu_line(&state, &line).expect("alu");
+                        gpu.run_alu_line_with(&state, &line, update_forward)
+                            .expect("alu");
                     } else if let Some(line) = bfn_line_from_expr_state(expr, mask) {
-                        gpu.run_bfn_line(&state, &line).expect("bfn");
+                        gpu.run_bfn_line_with(&state, &line, update_forward)
+                            .expect("bfn");
                     } else if let Some(line) = l1_read_line_from_expr(expr, mask) {
                         gpu.run_l1_read_line(&state, &line).expect("l1 read");
                     } else if let Some(line) = l1_write_line_from_expr(expr) {
-                        gpu.run_l1_write_line(&state, &line).expect("l1 write");
+                        gpu.run_l1_write_line_with(&state, &line, update_forward)
+                            .expect("l1 write");
                     } else if let Some(line) = l2_line_from_expr(expr) {
                         gpu.run_l2_line(&state, &line).expect("l2");
                     } else if let Some(line) = l2_reduce_line_from_expr(expr) {
@@ -86,15 +124,22 @@ fn main() {
                     } else if let Some(line) = mat_write_line_from_expr(expr) {
                         gpu.run_mat_write_line(&state, &line).expect("mat write");
                     } else if let Some(line) = mat_read_line_from_expr(expr, mask) {
-                        gpu.run_mat_read_line(&state, &line).expect("mat read");
+                        gpu.run_mat_read_line_with(&state, &line, update_forward)
+                            .expect("mat read");
                     } else if let Some(line) = mat_mau_line_from_expr(expr, mask) {
-                        gpu.run_mat_mau_line(&state, &line).expect("mat mau");
+                        gpu.run_mat_mau_line_with(&state, &line, update_forward)
+                            .expect("mat mau");
                     } else if let Some(line) = mau_line_from_expr(expr, mask) {
-                        gpu.run_mau_line(&state, &line).expect("mau");
+                        gpu.run_mau_line_with(&state, &line, update_forward)
+                            .expect("mau");
                     } else {
                         eprintln!("line {lineno}: no GPU descriptor for {:?}", expr.text);
                         std::process::exit(3);
                     }
+                }
+                // CPU steps without a matrix read expose zero on mreadf.
+                if update_forward && !has_mread {
+                    gpu.clear_mreadf(&state).expect("clear mreadf");
                 }
             }
             other => {
@@ -105,6 +150,10 @@ fn main() {
     }
     gpu.sync().expect("sync");
     let gpu_elapsed = start.elapsed();
+    let mv_errors = gpu.download_mv_errors(&state).expect("mv errors");
+    if mv_errors != 0 {
+        println!("{mv_errors} indirect MV accesses fell outside the device DRAM");
+    }
 
     let cpu_start = std::time::Instant::now();
     let mut sim = Sim::new();
@@ -178,6 +227,79 @@ fn main() {
             }
         }
     }
+    let (bar0, bar1) = gpu.download_bar(&state).expect("bar");
+    for pe in 0..PES {
+        if sim.m.pes[pe].bar0 != bar0[pe] {
+            println!("bar0 first mismatch pe {pe}");
+            bad += 1;
+        }
+        if sim.m.pes[pe].bar1 != bar1[pe] {
+            println!("bar1 first mismatch pe {pe}");
+            bad += 1;
+        }
+    }
+    let lbi = gpu.download_l1bi(&state).expect("lbi");
+    for l1b in 0..L1BS {
+        for c in 0..4 {
+            for o in 0..64 {
+                if sim.m.blocks.lbi[l1b][c][o] != lbi[(l1b * 4 + c) * 64 + o] {
+                    println!("lbi first mismatch l1b {l1b} cycle {c} offset {o}");
+                    bad += 1;
+                    break;
+                }
+            }
+        }
+    }
+    let dar = gpu.download_dar(&state).expect("dar");
+    for g in 0..mncore_sim::mv::GROUPS {
+        for e in 0..mncore_sim::blocks::DAR_ENTRIES {
+            if sim.m.blocks.dar[g][e] != dar[g * mncore_sim::blocks::DAR_ENTRIES + e] {
+                println!("dar first mismatch group {g} entry {e}");
+                bad += 1;
+                break;
+            }
+        }
+    }
+    let darbuf = gpu.download_darbuf(&state).expect("darbuf");
+    for g in 0..mncore_sim::mv::GROUPS {
+        for e in 0..mncore_sim::blocks::DARBUF_ENTRIES {
+            if sim.m.blocks.darbuf[g][e] != darbuf[g * mncore_sim::blocks::DARBUF_ENTRIES + e] {
+                println!("darbuf first mismatch group {g} entry {e}");
+                bad += 1;
+                break;
+            }
+        }
+    }
+    let dar_addr = gpu.download_dar_addr(&state).expect("dar addr");
+    if [sim.m.blocks.darw_addr as u32, sim.m.blocks.darbuf_read_addr as u32] != dar_addr {
+        println!("dar address mismatch");
+        bad += 1;
+    }
+    let aluf = gpu.download_aluf(&state).expect("aluf");
+    let mauf = gpu.download_mauf(&state).expect("mauf");
+    let mreadf = gpu.download_mreadf(&state).expect("mreadf");
+    for pe in 0..PES {
+        for c in 0..4 {
+            for w in 0..4 {
+                let i = pe * 16 + c * 4 + w;
+                if sim.m.pes[pe].aluf[c][w] != aluf[i] {
+                    println!("aluf first mismatch pe {pe} cycle {c} word {w}");
+                    bad += 1;
+                    break;
+                }
+                if sim.m.pes[pe].mauf[c][w] != mauf[i] {
+                    println!("mauf first mismatch pe {pe} cycle {c} word {w}");
+                    bad += 1;
+                    break;
+                }
+                if sim.m.pes[pe].mreadf[c][w] != mreadf[i] {
+                    println!("mreadf first mismatch pe {pe} cycle {c} word {w}");
+                    bad += 1;
+                    break;
+                }
+            }
+        }
+    }
     if dram_longs > 0 {
         let pdm = gpu.download_pdm(&state).expect("pdm");
         for g in 0..mncore_sim::mv::GROUPS {
@@ -204,7 +326,7 @@ fn main() {
         "{} PE lines, {} mismatches, cpu {:?}, gpu {:?}",
         pe_lines, bad, cpu_elapsed, gpu_elapsed
     );
-    if bad != 0 {
+    if bad != 0 || mv_errors != 0 {
         std::process::exit(1);
     }
 }

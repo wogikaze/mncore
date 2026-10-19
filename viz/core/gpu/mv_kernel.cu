@@ -191,6 +191,52 @@ __device__ __forceinline__ unsigned long long mv_reduce8(
     return out;
 }
 
+// DRAM address of one 16-long-word indirect chunk (SDM 3.5.6, measured
+// against the official emulator). The address word covers 16 long words, and
+// chunk i of a transfer uses DAR[(M + i/N) % 1024] + i % N; without `nd` each
+// chunk advances the DAR entry. `nd` is the same for both DRAM operands.
+#define MV_DRAM_LONGS 536870912ULL
+
+__device__ __forceinline__ unsigned long long mv_dram_addr(
+    const unsigned* dar, int group, unsigned long long m, int indirect,
+    unsigned long long nd, unsigned long long chunk, unsigned long long k) {
+    if (!indirect) return m + 16 * chunk + k;
+    unsigned long long entry = nd ? ((m + chunk / nd) % 1024ULL)
+                                  : ((m + chunk) % 1024ULL);
+    unsigned long long off = nd ? (chunk % nd) : 0ULL;
+    unsigned long long word =
+        ((unsigned long long)dar[group * 1024 + entry] + off) & 0xffffffffULL;
+    return (word * 16ULL + k) % MV_DRAM_LONGS;
+}
+
+__device__ __forceinline__ unsigned long long mv_dram_read(
+    const unsigned* dar, unsigned* mv_errors, int group, unsigned long long m,
+    int indirect, unsigned long long nd, unsigned long long chunk,
+    unsigned long long k, const unsigned long long* dram,
+    unsigned long long dram_longs) {
+    unsigned long long a =
+        mv_dram_addr(dar, group, m, indirect, nd, chunk, k);
+    if (a >= dram_longs) {
+        atomicAdd(mv_errors, 1u);
+        return 0;
+    }
+    return dram[(unsigned long long)group * dram_longs + a];
+}
+
+__device__ __forceinline__ void mv_dram_write(
+    const unsigned* dar, unsigned* mv_errors, int group, unsigned long long m,
+    int indirect, unsigned long long nd, unsigned long long chunk,
+    unsigned long long k, unsigned long long value,
+    unsigned long long* dram, unsigned long long dram_longs) {
+    unsigned long long a =
+        mv_dram_addr(dar, group, m, indirect, nd, chunk, k);
+    if (a >= dram_longs) {
+        atomicAdd(mv_errors, 1u);
+        return;
+    }
+    dram[(unsigned long long)group * dram_longs + a] = value;
+}
+
 // mode 0  mvp (parallel or single group, phase 2, or snapshot phases 0/1)
 // mode 1  mvb from PDM (broadcast to both L2BMs of every group)
 // mode 2  mvb from DRAM (gather 16 words per group, broadcast to L2BMs)
@@ -211,7 +257,9 @@ extern "C" __global__ void mv_line(
     int mode, int phase, int parallel,
     int src_mem, int src_group, int src_l2b, unsigned long long src_addr,
     int dst_mem, int dst_group, int dst_l2b, unsigned long long dst_addr,
-    unsigned long long size, int rrn_op, int rrn_bits) {
+    unsigned long long size, int rrn_op, int rrn_bits,
+    const unsigned* dar, unsigned* mv_errors, int src_indirect,
+    int dst_indirect, unsigned long long nd) {
     unsigned long long idx =
         (unsigned long long)blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -228,16 +276,30 @@ extern "C" __global__ void mv_line(
             gd = dst_group;
             k = idx;
         }
+        unsigned long long chunk = k / 16;
+        unsigned long long kk = k % 16;
         if (phase == 0) {
-            scratch[idx] = mv_read(src_mem, gs, src_l2b, src_addr + k,
-                                   pdm, dram, l2bm, dram_longs);
+            scratch[idx] = (src_mem == 1)
+                ? mv_dram_read(dar, mv_errors, gs, src_addr, src_indirect, nd,
+                               chunk, kk, dram, dram_longs)
+                : mv_read(src_mem, gs, src_l2b, src_addr + k,
+                          pdm, dram, l2bm, dram_longs);
             return;
         }
-        unsigned long long value = phase == 1
+        unsigned long long value = (phase == 1)
             ? scratch[idx]
-            : mv_read(src_mem, gs, src_l2b, src_addr + k, pdm, dram, l2bm, dram_longs);
-        mv_write(dst_mem, gd, dst_l2b, dst_addr + k, value,
-                 pdm, dram, l2bm, dram_longs);
+            : (src_mem == 1
+                ? mv_dram_read(dar, mv_errors, gs, src_addr, src_indirect, nd,
+                               chunk, kk, dram, dram_longs)
+                : mv_read(src_mem, gs, src_l2b, src_addr + k,
+                          pdm, dram, l2bm, dram_longs));
+        if (dst_mem == 1) {
+            mv_dram_write(dar, mv_errors, gd, dst_addr, dst_indirect, nd,
+                          chunk, kk, value, dram, dram_longs);
+        } else {
+            mv_write(dst_mem, gd, dst_l2b, dst_addr + k, value,
+                     pdm, dram, l2bm, dram_longs);
+        }
         return;
     }
 
@@ -256,9 +318,11 @@ extern "C" __global__ void mv_line(
     if (mode == 2) {
         if (idx >= size) return;
         int gd = (int)((idx % 64) / 16);
-        unsigned long long src_off = 16 * (idx / 64) + idx % 16;
+        unsigned long long chunk = idx / 16;
+        unsigned long long kk = idx % 16;
         unsigned long long value =
-            mv_read(1, gd, 0, src_addr + src_off, pdm, dram, l2bm, dram_longs);
+            mv_dram_read(dar, mv_errors, gd, src_addr, src_indirect, nd,
+                         chunk, kk, dram, dram_longs);
         for (int g = 0; g < 4; ++g) {
             for (int c = 0; c < 2; ++c) {
                 mv_write(2, g, c, dst_addr + idx, value, pdm, dram, l2bm, dram_longs);
@@ -272,7 +336,10 @@ extern "C" __global__ void mv_line(
         int g = (int)(idx / size);
         unsigned long long k = idx % size;
         unsigned long long value =
-            mv_read(1, g, 0, src_addr + k, pdm, dram, l2bm, dram_longs);
+            (src_mem == 1)
+                ? mv_dram_read(dar, mv_errors, g, src_addr, src_indirect, nd,
+                               k / 16, k % 16, dram, dram_longs)
+                : mv_read(src_mem, g, 0, src_addr + k, pdm, dram, l2bm, dram_longs);
         for (int c = 0; c < 2; ++c) {
             mv_write(2, g, c, dst_addr + k, value, pdm, dram, l2bm, dram_longs);
         }
@@ -288,15 +355,14 @@ extern "C" __global__ void mv_line(
         int c = (int)((rem % 32) / 16);
         int k = (int)(rem % 16);
         unsigned long long l2_off = 64 * i + 16 * j + k;
-        unsigned long long pdm_off = idx;
         if (mode == 4) {
-            unsigned long long value = mv_read(0, src_group, 0, src_addr + pdm_off,
+            unsigned long long value = mv_read(0, src_group, 0, src_addr + idx,
                                                pdm, dram, l2bm, dram_longs);
             mv_write(2, g, c, dst_addr + l2_off, value, pdm, dram, l2bm, dram_longs);
         } else {
             unsigned long long value = mv_read(2, g, c, src_addr + l2_off,
                                                pdm, dram, l2bm, dram_longs);
-            mv_write(0, dst_group, 0, dst_addr + pdm_off, value,
+            mv_write(0, dst_group, 0, dst_addr + idx, value,
                      pdm, dram, l2bm, dram_longs);
         }
         return;
@@ -304,18 +370,19 @@ extern "C" __global__ void mv_line(
 
     if (mode == 6 || mode == 7) {
         if (idx >= size) return;
-        unsigned long long i = idx / 64;
-        int g = (int)((idx % 64) / 16);
-        int k = (int)(idx % 16);
-        unsigned long long dram_off = 16 * i + k;
+        unsigned long long chunk = idx / 16;
+        unsigned long long k = idx % 16;
         if (mode == 6) {
             unsigned long long value = mv_read(0, src_group, 0, src_addr + idx,
                                                pdm, dram, l2bm, dram_longs);
-            mv_write(1, g, 0, dst_addr + dram_off, value, pdm, dram, l2bm, dram_longs);
+            mv_dram_write(dar, mv_errors, (int)((idx % 64) / 16), dst_addr,
+                          dst_indirect, nd, chunk, k, value, dram, dram_longs);
         } else {
-            unsigned long long value = mv_read(1, g, 0, src_addr + dram_off,
-                                               pdm, dram, l2bm, dram_longs);
-            mv_write(0, dst_group, 0, dst_addr + idx, value, pdm, dram, l2bm, dram_longs);
+            unsigned long long value =
+                mv_dram_read(dar, mv_errors, (int)((idx % 64) / 16), src_addr,
+                             src_indirect, nd, chunk, k, dram, dram_longs);
+            mv_write(0, dst_group, 0, dst_addr + idx, value,
+                     pdm, dram, l2bm, dram_longs);
         }
         return;
     }
@@ -326,10 +393,11 @@ extern "C" __global__ void mv_line(
         int c = (int)((idx % 128) / 64);
         int gs = (int)((idx % 64) / 16);
         int k = (int)(idx % 16);
-        unsigned long long src_off = 32 * i + 16 * c + k;
         unsigned long long dst_off = 64 * i + 16 * gs + k;
         unsigned long long value =
-            mv_read(1, gs, 0, src_addr + src_off, pdm, dram, l2bm, dram_longs);
+            mv_dram_read(dar, mv_errors, gs, src_addr, src_indirect, nd,
+                         2 * i + (unsigned long long)c, (unsigned long long)k,
+                         dram, dram_longs);
         for (int g = 0; g < 4; ++g) {
             mv_write(2, g, c, dst_addr + dst_off, value, pdm, dram, l2bm, dram_longs);
         }
@@ -349,10 +417,9 @@ extern "C" __global__ void mv_line(
         if (mode == 9) {
             mv_write(0, dst_group, 0, dst_addr + idx, value, pdm, dram, l2bm, dram_longs);
         } else {
-            unsigned long long i = idx / 64;
-            int g = (int)((idx % 64) / 16);
-            int k = (int)(idx % 16);
-            mv_write(1, g, 0, dst_addr + 16 * i + k, value, pdm, dram, l2bm, dram_longs);
+            mv_dram_write(dar, mv_errors, (int)((idx % 64) / 16), dst_addr,
+                          dst_indirect, nd, idx / 16, idx % 16, value,
+                          dram, dram_longs);
         }
         return;
     }
@@ -367,7 +434,12 @@ extern "C" __global__ void mv_line(
             mv_read(2, g, 1, src_addr + k, pdm, dram, l2bm, dram_longs),
         };
         unsigned long long value = mv_reduce_n(rrn_op, rrn_bits, vals, 2);
-        mv_write(dst_mem, g, 0, dst_addr + k, value, pdm, dram, l2bm, dram_longs);
+        if (dst_mem == 1) {
+            mv_dram_write(dar, mv_errors, g, dst_addr, dst_indirect, nd,
+                          k / 16, k % 16, value, dram, dram_longs);
+        } else {
+            mv_write(dst_mem, g, 0, dst_addr + k, value, pdm, dram, l2bm, dram_longs);
+        }
         return;
     }
 
@@ -383,8 +455,9 @@ extern "C" __global__ void mv_line(
             vals[gs] = mv_read(2, gs, c, src_addr + off, pdm, dram, l2bm, dram_longs);
         }
         unsigned long long value = mv_reduce_n(rrn_op, rrn_bits, vals, 4);
-        mv_write(1, g, 0, dst_addr + 32 * i + 16 * c + k, value,
-                 pdm, dram, l2bm, dram_longs);
+        mv_dram_write(dar, mv_errors, g, dst_addr, dst_indirect, nd,
+                      2 * i + (unsigned long long)c, (unsigned long long)k,
+                      value, dram, dram_longs);
         return;
     }
 }

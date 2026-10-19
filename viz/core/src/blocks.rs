@@ -12,8 +12,12 @@ pub const L1BS: usize = PES / 64;
 pub const L2BS: usize = L1BS / 8;
 pub const L1BM_LONGS: usize = 8 * 1024;
 pub const L2BM_LONGS: usize = 32 * 1024;
+/// DRAM address registers (SDM 3.6.1.3): one 1,024-entry register file per group.
+pub const DAR_ENTRIES: usize = 1024;
+/// DAR write buffers (SDM 3.6.7.10): 512 address words per group.
+pub const DARBUF_ENTRIES: usize = 512;
 
-/// Memories of the L2B/L1B levels.
+/// Memories of the L2B/L1B levels and the DAR path.
 pub struct Blocks {
     pub l1bm: Vec<Vec<u64>>,
     pub l2bm: Vec<Vec<u64>>,
@@ -21,6 +25,14 @@ pub struct Blocks {
     pub lbi: Vec<[[u64; 64]; 4]>,
     /// Why $lbi cannot be read, if it cannot (written by a step without PE-to-L1BM transfer).
     pub lbi_error: Option<String>,
+    /// DRAM address registers of the four groups (`$dar<addr>`, SDM 3.6.1.3).
+    pub dar: Vec<[u32; DAR_ENTRIES]>,
+    /// DAR write buffers of the four groups (`l2bmdars`, SDM 3.6.7.10).
+    pub darbuf: Vec<[u32; DARBUF_ENTRIES]>,
+    /// Next DAR entry written by `l2bmdarw` (`MEM.darw_addr`).
+    pub darw_addr: usize,
+    /// Next DAR buffer entry read by `l2bmdarw` (`MEM.darbuf_read_addr`).
+    pub darbuf_read_addr: usize,
 }
 
 impl Default for Blocks {
@@ -30,6 +42,10 @@ impl Default for Blocks {
             l2bm: vec![vec![0; L2BM_LONGS]; L2BS],
             lbi: vec![[[0; 64]; 4]; L1BS],
             lbi_error: Some("the L1BM turnaround register has not been written".into()),
+            dar: vec![[0; DAR_ENTRIES]; crate::mv::GROUPS],
+            darbuf: vec![[0; DARBUF_ENTRIES]; crate::mv::GROUPS],
+            darw_addr: 0,
+            darbuf_read_addr: 0,
         }
     }
 }
@@ -267,8 +283,12 @@ impl Blocks {
         Ok(())
     }
 
-    /// Computes an L2BM expression.
-    pub fn l2(&self, e: &Expr, op: L2Op, w: &mut BlockWrites) -> Result<(), ExecError> {
+    /// Computes an L2BM expression. `l2bmdars` / `l2bmdarw` update the DAR
+    /// state immediately; every other form appends writes to `w`.
+    pub fn l2(&mut self, e: &Expr, op: L2Op, w: &mut BlockWrites) -> Result<(), ExecError> {
+        if matches!(op, L2Op::Dars | L2Op::Darw) {
+            return self.l2_dar(e, op);
+        }
         let addr = |o: &Operand| -> Result<usize, ExecError> {
             match o {
                 Operand::L1bm { addr: Some(a), .. } => Ok(*a as usize),
@@ -276,9 +296,6 @@ impl Blocks {
                 other => Err(ExecError::Unsupported(format!("L2BM operand {other:?}"))),
             }
         };
-        if matches!(op, L2Op::Dars | L2Op::Darw) {
-            return Err(ExecError::Unsupported("l2bmdars / l2bmdarw (DAR)".into()));
-        }
         let a0 = addr(e.srcs.first().ok_or_else(|| ExecError::Unsupported("missing operand".into()))?)?;
         let a1 = addr(e.dsts.first().ok_or_else(|| ExecError::Unsupported("missing operand".into()))?)?;
         for l2 in 0..L2BS {
@@ -351,6 +368,63 @@ impl Blocks {
                     L2Op::Dars | L2Op::Darw => unreachable!(),
                 }
             }
+        }
+        Ok(())
+    }
+
+    /// `l2bmdars` / `l2bmdarw` (SDM 3.6.7.10).
+    ///
+    /// `l2bmdars` reads 64 long words per cycle from one L2B of every group and
+    /// splits each into two 32-bit address words (MSB first) in the group's
+    /// DAR buffer. It also sets the DAR write address from `$dar<addr>` and
+    /// resets the DAR buffer read address. `l2bmdarw` then copies four address
+    /// words per group from the buffer into DAR.
+    fn l2_dar(&mut self, e: &Expr, op: L2Op) -> Result<(), ExecError> {
+        match op {
+            L2Op::Dars => {
+                let (addr, l2b) = match e.srcs.first() {
+                    Some(Operand::L2bm { addr, l2b: Some(l2b) }) => (*addr as usize, *l2b as usize),
+                    other => {
+                        return Err(ExecError::Unsupported(format!(
+                            "l2bmdars source {other:?} (needs $lc<addr>@.<l2b>)"
+                        )))
+                    }
+                };
+                let dar = match e.dsts.first() {
+                    Some(Operand::Dar { addr }) if (*addr as usize) < DAR_ENTRIES => *addr as usize,
+                    other => {
+                        return Err(ExecError::Unsupported(format!(
+                            "l2bmdars destination {other:?} (needs $dar<addr> below {DAR_ENTRIES})"
+                        )))
+                    }
+                };
+                if l2b >= 2 {
+                    return Err(ExecError::Unsupported(format!("l2bmdars L2B number {l2b}")));
+                }
+                for cycle in 0..4 {
+                    for group in 0..crate::mv::GROUPS {
+                        let src = &self.l2bm[group * 2 + l2b];
+                        for i in 0..64 {
+                            let long = src[(addr + cycle * 64 + i) % L2BM_LONGS];
+                            self.darbuf[group][cycle * 128 + 2 * i] = (long >> 32) as u32;
+                            self.darbuf[group][cycle * 128 + 2 * i + 1] = long as u32;
+                        }
+                    }
+                }
+                self.darw_addr = dar;
+                self.darbuf_read_addr = 0;
+            }
+            L2Op::Darw => {
+                for _ in 0..4 {
+                    for group in 0..crate::mv::GROUPS {
+                        self.dar[group][self.darw_addr] =
+                            self.darbuf[group][self.darbuf_read_addr];
+                    }
+                    self.darw_addr = (self.darw_addr + 1) % DAR_ENTRIES;
+                    self.darbuf_read_addr = (self.darbuf_read_addr + 1) % DARBUF_ENTRIES;
+                }
+            }
+            _ => unreachable!(),
         }
         Ok(())
     }

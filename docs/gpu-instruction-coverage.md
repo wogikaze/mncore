@@ -7,32 +7,66 @@ CPU の `Sim` と GPU の `gpu_run_program` が同じ VSM を実行し、最終�
 
 | 分類 | 対応 | 主な不足 |
 | --- | --- | --- |
-| ALU | 全 32 opcode（zero/imm を除く ALU_OPS と `zero`/`imm`）。`d/f/g/h/l/i/s`、unsigned、入力 `r`/`e`、zero-flush、複数出力、OMR/T 出力、`msl`/`msr`、`bfe`/`bfn` 全精度・`hbfn/<n>`/`hbfe/<n>`、`lrelud`/`lreluo`/`ilrelud` | `$mb`/`$nb` 出力、`j`・T 間接アドレス、`$lbf` 入力、9 個以上の出力、`hbfn/<n>` の n が 6..9 外。ALU の `e` は CPU と同じく no-op（SDM 3.6.12 は `r` のみ定義） |
-| MAU | f32 の FMA/MUL/ADD/PASSA、D の行列 write/read | D/H のベクトル MAU、H の行列、`neg/ext/rnd` の一部、flush |
-| 行列 | F/G/D の write/read、F/G の matrix MAU | H、D の matrix MAU、マスク付き読み書き、T ソース |
-| L1BM | SDM 3.6.8 の全形式: 1/2 長語、M4、全 24 RRN、`ext`/`round`、`$lbi`、Gather/Distrib、マスク/flush（`gpu_l1_conformance`） | `$lbf`、L1BM 書き込みの forwarding ソース、BAR/T 間接/`j`、`$lbi` の未定義読み出しエラー |
-| L2BM | Bcast, Bcast2, Distrib, Gather, FromL1b, Imcast, Reduce/Reduce2 全 RRN | `l2bmdars` / `l2bmdarw`（DAR） |
-| MV | `mnist_train_step` の 168 文 | 文書上の全 variant の適合テスト、DAR 連携 |
-| オペランド | ALU: 直接 Mem、Forward（`aluf`/`mauf`/`mreadf`）、固定値 6 種、T、WL 1/2/4、複数出力、`r`/`e`、zero-flush、単一行マスク・`mask` ディレクティブ | ベースアドレスレジスタ `$mb`/`$nb`、`j`・T 間接、`$lbf`、`hbfn` の範囲外 `<n>`、行列マスク |
-| 制御 | nop, mask, noforward/wait の一部 | `wait` の MV 待機意味論、並列発行条件の完全な検証 |
+| ALU | 全 32 opcode（zero/imm を含む）。`d/f/g/h/l/i/s`、unsigned、入力 `r`/`e`、zero-flush、複数出力（8 個まで）、OMR/T/BAR 出力、`msl`/`msr`、`bfe`/`bfn` 全精度・`hbfn/<n>`/`hbfe/<n>`、`lrelud`/`lreluo`/`ilrelud`。入力の `$mb`/`$nb` 加算・T 間接・`j` も全カーネルで対応 | `$lbf` 入力、9 個以上の出力、`hbfn/<n>` の n が 6..9 外。ALU の `e` は CPU と同じく no-op（SDM 3.6.12 は `r` のみ定義） |
+| MAU | f32 の FMA/MUL/ADD/PASSA。`$mb`/`$nb`・T 間接・`j` 付き入力、BAR 出力、`mauf` 更新 | D/H のベクトル MAU、H の行列、`neg/ext/rnd` の一部、flush、マスク |
+| 行列 | F/G/D の write/read、F/G の matrix MAU。入力の BAR・T 間接・`j`、read の BAR 出力 | H、D の matrix MAU、マスク付き読み書き、matrix MAU の BAR 出力 |
+| L1BM | 全形式（1/2 長語、M4 系、全 RRN と `r`/`e`、`l1bmd` の分配・結合、`$lbi`、`$lbi` 以外の BAR/T/j 付き PE オペランド、BAR 出力） | `$lbf` フォワーディング値の保持（GPU は lbf レジスタを持たない） |
+| L2BM | 全形式（Bcast/Bcast2/Distrib/Gather/FromL1b/Reduce/Reduce2/Imcast、全 RRN、全 L1B 集合）と `l2bmdars`/`l2bmdarw`（DAR/DARBUF） | なし |
+| MV | 全 25 基本モード（mvnop、mvp の全組み合わせと並列形、mvb/mvb2/mvb4、mvd の 4 方向、mvr/mvr2/mvr4 の全 RRN）、DRAM 間接参照（`$di`、`nd`、送受信両方の間接） | DRAM 間接参照の `nd` 省略時の公式エミュレータとの差（下記） |
+| オペランド | ALU/MAU/L1BM/行列の直接 Mem、Forward（`aluf`/`mauf`/`mreadf`）、固定値 6 種、T、WL 1/2/4、複数出力、`r`/`e`、zero-flush、単一行マスク・`mask` ディレクティブ、`$mb`/`$nb` の読み書き、T 間接、`j`/madpe | `$lbf`、`hbfn` の範囲外 `<n>`、行列マスク、forwarding 無効時のエラー再現 |
+| 制御 | nop、mask、noforward（ALU/MAU/行列 read/L1BM 折り返しの更新抑止）、wait（タグ・同時発行の検証） | forwarding 無効状態（`IALU is disabled` 等）の再現 |
 
 ## テスト
 
-- `gpu_run_program` が `mnist_train_step`（PE 行 2,635）を CPU と比較し、全状態一致。
-- `gpu_alu_conformance` が ALU の全 opcode・精度・unsigned・`r`/`e`・flush・複数出力を網羅する
-  VSM を生成する。現在 142 config / 524 PE 行。各行の `aluf`・OMR・T と、最終的な
-  4 メモリ全体を比較する。
+- `gpu_run_program` が `mnist_train_step`（PE 行 2,635）を CPU と比較し、LM0/LM1/GRF0/GRF1、
+  行列、OMR、T、`aluf`/`mauf`/`mreadf`、L1BM、L2BM、`$lbi`、BAR、PDM、DRAM、DAR の
+  全状態が一致する。
+- `gpu_mem_conformance` が L2BM・DAR・MV・オペランド・制御の各形式を生成し、CPU `Sim` と
+  GPU の全メモリを比較する。現在 697 case。詳細は
+  [gpu-backend.md](gpu-backend.md#メモリパスの適合テストgpu_mem_conformance)。
   ```sh
   cd viz/core
-  cargo run --release --bin gpu_alu_conformance
+  cargo run --release --bin gpu_mem_conformance
   ```
-- 既存の `gpu_vsm_alu`、`gpu_vsm_mask`、`gpu_vsm_gbfn`、`gpu_vsm_matrix` も引き続き 0 mismatch。
+- `gpu_l1_conformance` が L1BM の全形式を 7 section × 3 seed で比較する。
+- `gpu_alu_conformance` が ALU の全 opcode・精度・unsigned・`r`/`e`・flush・複数出力を網羅する
+  VSM を生成する。142 config / 524 PE 行。各行の `aluf`・OMR・T と、最終的な
+  4 メモリ全体を比較する。
+- 既存の `gpu_vsm_alu`、`gpu_vsm_mask`、`gpu_vsm_gbfn`、`gpu_vsm_matrix`、`gpu_vsm_mv`、
+  `gpu_vsm_l2`、`gpu_vsm_l2red` も引き続き 0 mismatch。
+
+## DRAM 間接参照のアドレス語
+
+SDM 3.5.6 の本文はアドレス語の単位を「6 長語」と書くが、同じ節の例と公式エミュレータは
+16 長語単位で計算する。CPU と GPU は公式エミュレータに合わせて
+
+```
+chunk i (16 長語) の DRAM アドレス = 16 * (DAR[(M + i/N) % 1024] + i % N)
+```
+
+を使う（`nd` 省略時は `16 * DAR[(M + i) % 1024]`）。DAR のエントリ自体は 32 bit で、
+L2BM の 1 長語が 2 アドレス語（MSB が偶数番地）になる。
+この解釈は、DAR を使う `problems/challenge/16.count-up` を CPU `Sim` と公式エミュレータで
+実行し、84,000 値が一致することで確認した。
+
+公式エミュレータは `nd` を省略した `$di` を受け付けるが、その場合 DRAM アクセスを
+行わない（観測）。SDM は「N は無限大」と定義しているため、本実装は SDM に従って
+`DAR[M+i]` を使う。`nd0` は CPU と同じくエラーにする。
+
+## 複数命令式の 1 ステップ実行
+
+CPU は 1 ステップ内の全命令式の入力を読んでから書き込みを適用する。GPU は命令式ごとに
+カーネルを順に起動する。アセンブラが受理する行では、同一グループの命令式は 1 つまで、
+同一 PE メモリへの書き込みは 1 つまで、同一メモリの読み出しアドレスは全命令式で同一、
+forwarding レジスタを更新する命令式も各レジスタにつき 1 つだけなので、順次実行しても
+最終状態は CPU と一致する（`gpu_mem_conformance` の複数命令式を含む制御 section で確認）。
+アセンブラの並列発行条件を満たさない行は `issue::check` が拒否する。
 
 ## 進め方
 
-1. ✅ ALU の全 opcode・精度・unsigned・`r`/`e`・flush・複数出力（`gpu_alu_conformance`）。
-2. MAU の D/H、matrix MAU D/H、マスク。
-3. L1BM の 2 長語・M4・全 RRN・`$lbi`。
-4. L2BM の DAR。
-5. オペランド形（ベース、`j`、複数出力）と `wait`。
-6. `gpu_conformance` を全命令に広げ、`cargo test` に組み込む。
+1. ✅ ALU の全 opcode・精度・unsigned・`r`/`e`・flush・複数出力。
+2. ✅ L1BM の全形式。
+3. ✅ L2BM の DAR を含む全形式。
+4. ✅ MV の全基本モードと DRAM 間接参照。
+5. ✅ オペランド形（`$mb`/`$nb`、`j`、T 間接、固定値）と noforward/wait。
+6. MAU の D/H、matrix MAU D/H、行列マスク、`$lbf`。

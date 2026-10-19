@@ -356,7 +356,8 @@ PDM と DRAM をデバイスに置き、MV を 1 文 1 カーネル（`mv_line`�
   RRN は fadd（half/single/double）と iadd、band、and、bor、or、max、min。
   fadd は CPU と同じ 2 段階の丸めを行う。
 - `mvnop`。
-- 間接 DRAM アクセス（`$di...`）は CPU も未対応なので対象外。
+- 間接 DRAM アクセス（`$di...`、`nd`、送受信両方の間接）と DAR 連携。
+  DAR の実装は後述する。
 
 `mvp` のコピー元とコピー先が同じメモリレベル・同じグループにある場合、CPU は
 全読み出しの後に全書き込みを行う。GPU ではソースをスクラッチに落としてから書く
@@ -441,8 +442,8 @@ cargo run --release --bin gpu_run_program -- benchmarks/mnist_train_step.vsm
 
 - デバイスの DRAM はプログラムが必要とする 264,064 ロングワード/グループだけを持つ。
   CPU の全 128 GiB は載せない。範囲外は拒否する。
-- マスク付きの行列読み出し・MAU 書き込み、L1BM turnaround `$lbi`、
-  不正 block-float 入力のエラー検出は未対応。
+- マスク付きの行列読み出し・MAU 書き込み、不正 block-float 入力のエラー検出は未対応。
+- forwarding 無効時のエラー（`IALU is disabled` など）は再現しない。
 - カーネルは NVRTC + CUDA Driver API で実行時にコンパイルする。
 
 ## 全命令への拡張
@@ -488,3 +489,76 @@ cargo run --release --bin gpu_alu_conformance
 142 configs, 34 opcodes, 524 PE lines, ...
 PASS: aluf, OMR, T and all four memories match
 ```
+
+
+## BAR、T 間接、`j`、DAR、noforward/wait
+
+オペランドアドレスは SDM 3.6.1.6 の
+
+```
+BAR + (T[C] if t-indirect else 0) + ADDR + ADRI*C + (WL if j and PE <= madpe else 0)
+```
+
+を CPU と同じく各サイクルで計算し、アクセス語長にアラインする。GPU は BAR
+（`$mb`/`$nb`、PE ごとに 32 bit）と T をデバイスに持ち、ALU・MAU・L1BM・行列の
+全カーネルが同じ `pe_word_addr` ヘルパを使う。BAR への書き込みは ALU のほか、
+MAU・L1BM→PE 転送・行列読み出しの出力先としても受け付ける（`$mb`/`$nb`、下位 12 bit）。
+`noforward` のステップでは `aluf`、`mauf`、`mreadf`、`$lbi` の更新を各カーネルの
+フラグで抑止する。CPU は行列読み出しのないステップで `mreadf` を 0 にするので、
+GPU も `zero_mreadf` カーネルで同じにする。
+
+`wait` は SDM 3.6.13 のとおりタグと同時発行を検証する。MV はこのバックエンドでも
+発行時に完了する（CPU `Sim` と公式エミュレータと同じ）ため、先行する MV は同じ
+ストリーム内で完了しており、`wait` 自体は追加の停止を必要としない。
+
+DAR はグループごとに 1,024 エントリ、DARBUF は 512 アドレス語。`l2bmdars` は
+L2BM の 64 長語/サイクルを 128 アドレス語（MSB が偶数番地）に分けて DARBUF へ書き、
+DAR 書き込み開始アドレスを設定して DARBUF 読み出しアドレスを 0 にする。
+`l2bmdarw` は 4 サイクルで 4 エントリを DARBUF から DAR へ移す。
+MV の `$di` は 16 長語ごとに DAR を引き、`nd` で同じエントリを連続使用する。
+間接アドレスがデバイス DRAM の範囲外になった場合はカーネルが `mv_errors` を
+インクリメントし、ドライバが 0 でない場合に実行を失敗させる。
+
+## メモリパスの適合テスト（gpu_mem_conformance）
+
+`gpu_mem_conformance` は次の section を生成し、同じ初期状態から CPU `Sim` と GPU で
+実行して全メモリを比較する。1 つでも不一致があれば終了コード 1。
+
+- L2BM transfers: `l2bmb`/`l2bmb2`/`l2bmd`/`l2bm@`/`l2bmd` (gather) を全 L1B 集合で。
+- L2BM reductions: 全 24 RRN の `l2bmr`/`l2bmr2`、全 L1B 集合、`l2bmi` の immode 0..6。
+- L2BM DAR: `l2bmdars` の l2b 0/1・境界アドレス・DAR 開始位置、`l2bmdarw` の連続実行。
+- MV basic modes: SDM 3.5.8.1–3.5.8.25 の全モード、並列形、重なり `mvp`、タグ・優先度。
+- MV reductions: 全 24 RRN の `mvr`/`mvr2`/`mvr4`。
+- MV DRAM indirect: 送信・受信・両方の `$di`、`nd` の有無、mvb/mvb2/mvb4/mvd/mvr 系。
+- operand addressing: BAR/T 間接/`j` を ALU・MAU・L1BM・行列で、固定値 6 種、
+  BAR 出力、T、OMR マスク。
+- noforward and wait: `aluf`/`mauf`/`mreadf`/`$lbi` の更新抑止、複数命令式、wait。
+
+比較対象は LM0/LM1/GRF0/GRF1、T、OMR、`aluf`/`mauf`/`mreadf`、行列、L1BM、L2BM、
+`$lbi`、BAR、PDM、DRAM、DAR、DARBUF、DAR アドレス。
+
+```sh
+cd viz/core
+cargo run --release --bin gpu_mem_conformance
+```
+
+出力例（697 case）:
+
+```
+GPU memory conformance: 8 sections, DRAM 262144 long words/group
+
+PASS L2BM transfers                       90 cases
+PASS L2BM reductions                     182 cases
+PASS L2BM DAR (l2bmdars/l2bmdarw)        163 cases
+PASS MV basic modes                       25 cases
+PASS MV reductions                       122 cases
+PASS MV DRAM indirect (DAR)               45 cases
+PASS operand addressing                   54 cases
+PASS noforward and wait                   16 cases
+
+697 cases, 0 mismatching values
+PASS: every memory, BAR, DAR, mask and forwarding register matches
+```
+
+`gpu_run_program` も最終状態として BAR、`$lbi`、DAR、DARBUF、`aluf`/`mauf`/`mreadf`
+まで比較する。`mnist_train_step` は 2,635 PE 行・168 MV 文で 0 mismatch。
