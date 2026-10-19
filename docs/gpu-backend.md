@@ -445,3 +445,8 @@ GPU 側でビット一致する範囲:
 
 GPU カーネルはすべて NVRTC + CUDA Driver API で実行時にコンパイルする。
 `nvcc` は不要。
+
+### Bcast2 と L1B 集合付き転送
+
+`l2bmb2` と、`@[..]` で L1B 集合を指定した `l2bmd`/`l2bmb` にも対応した。
+`gpu_vsm_l2` は 5 種類（Distrib、Bcast、FromL1b、Bcast2、部分集合 Distrib）を混ぜて 0 mismatch。

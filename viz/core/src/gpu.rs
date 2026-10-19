@@ -760,6 +760,7 @@ pub struct L2Line {
     pub a0: u32,
     pub a1: u32,
     pub l1b: u8,
+    pub mask: u8,
 }
 
 pub fn l2_line_from_expr(expr: &Expr) -> Option<L2Line> {
@@ -776,9 +777,34 @@ pub fn l2_line_from_expr(expr: &Expr) -> Option<L2Line> {
     let a0 = addr_of(expr.srcs.first()?)?;
     let a1 = addr_of(expr.dsts.first()?)?;
     match op {
-        L2Op::Distrib { set } if set.mask == 0xff => Some(L2Line { op: 0, a0, a1, l1b: 0 }),
-        L2Op::Bcast { set } if set.mask == 0xff => Some(L2Line { op: 1, a0, a1, l1b: 0 }),
-        L2Op::FromL1b { l1b } => Some(L2Line { op: 2, a0, a1, l1b: *l1b }),
+        L2Op::Distrib { set } => Some(L2Line {
+            op: 0,
+            a0,
+            a1,
+            l1b: 0,
+            mask: set.mask,
+        }),
+        L2Op::Bcast { set } => Some(L2Line {
+            op: 1,
+            a0,
+            a1,
+            l1b: 0,
+            mask: set.mask,
+        }),
+        L2Op::Bcast2 { set } => Some(L2Line {
+            op: 3,
+            a0,
+            a1,
+            l1b: 0,
+            mask: set.mask,
+        }),
+        L2Op::FromL1b { l1b } => Some(L2Line {
+            op: 2,
+            a0,
+            a1,
+            l1b: *l1b,
+            mask: 0xff,
+        }),
         _ => None,
     }
 }
@@ -2088,6 +2114,7 @@ impl Gpu {
         let mut a0 = line.a0;
         let mut a1 = line.a1;
         let mut l1b = line.l1b as i32;
+        let mut mask = line.mask as i32;
         let mut args = [
             &mut l1bm as *mut u64 as *mut c_void,
             &mut l2bm as *mut u64 as *mut c_void,
@@ -2095,6 +2122,7 @@ impl Gpu {
             &mut a0 as *mut u32 as *mut c_void,
             &mut a1 as *mut u32 as *mut c_void,
             &mut l1b as *mut i32 as *mut c_void,
+            &mut mask as *mut i32 as *mut c_void,
         ];
         self.check(
             unsafe {
