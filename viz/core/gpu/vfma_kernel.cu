@@ -573,3 +573,46 @@ extern "C" __global__ void bfn_line(
         }
     }
 }
+
+// One L1BM-to-PE read: op 0 is Mbcast, op 1 is Distrib.
+extern "C" __global__ void l1_read_line(
+    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
+    unsigned long long* l1bm,
+    int op, unsigned addr, int mabdiff, int swl,
+    int dmem, unsigned d0, unsigned d1, unsigned d2, unsigned d3, int dwl) {
+    int pe = blockIdx.x * blockDim.x + threadIdx.x;
+    if (pe >= 4096) return;
+    int l1b = pe / 64;
+    int mab = (pe / 4) % 16;
+    int sub = pe % 4;
+    unsigned db[4] = {d0, d1, d2, d3};
+    unsigned* pd = pick_mem(dmem, lm0, lm1, grf0, grf1);
+    int ld = mem_len(dmem);
+    int base = l1b * 8192;
+    for (int c = 0; c < 4; ++c) {
+        int om;
+        int ol = -1;
+        if (op == 0) {
+            if (swl == 4) {
+                om = c * 8 + sub;
+                ol = om + 4;
+            } else {
+                om = c * 4 + sub;
+            }
+        } else {
+            int src_mab = (mab - mabdiff + 16) % 16;
+            om = c * 64 + src_mab * 4 + sub;
+        }
+        unsigned long long m = l1bm[base + (addr + om) % 8192];
+        unsigned long long l = (ol >= 0) ? l1bm[base + (addr + ol) % 8192] : 0;
+        unsigned bus[4] = {
+            (unsigned)(m >> 32),
+            (unsigned)m,
+            (unsigned)(l >> 32),
+            (unsigned)l,
+        };
+        for (int i = 0; i < dwl; ++i) {
+            pd[pe * ld + db[c] + i] = bus[i];
+        }
+    }
+}

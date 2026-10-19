@@ -9,6 +9,7 @@ use std::path::Path;
 
 use libloading::Library;
 
+use crate::blockop::L1Op;
 use crate::machine::MaskState;
 use crate::vsm::{Expr, FwdKind, MauKind, MaskSel, MaskSource, MemKind, Op, Operand, Prec};
 
@@ -373,6 +374,45 @@ pub enum AluDst {
     None,
 }
 
+/// An L1BM-to-PE read: Mbcast (op 0) or Distrib (op 1).
+#[derive(Clone, Copy, Debug)]
+pub struct L1ReadLine {
+    pub op: u8,
+    pub addr: u32,
+    pub mabdiff: i16,
+    pub wl: u8,
+    pub dst: MauSrc,
+}
+
+pub fn l1_read_line_from_expr(expr: &Expr) -> Option<L1ReadLine> {
+    let Op::L1(op) = &expr.op else {
+        return None;
+    };
+    let (kind, mabdiff) = match op {
+        L1Op::Mbcast => (0u8, 0i16),
+        L1Op::Distrib { mabdiff } => (1u8, *mabdiff),
+        _ => return None,
+    };
+    let (wl, addr) = match expr.srcs.first()? {
+        Operand::L1bm {
+            wl,
+            addr: Some(addr),
+        } => (*wl, *addr),
+        _ => return None,
+    };
+    if wl != 2 && wl != 4 {
+        return None;
+    }
+    let dst = mem_source(expr.dsts.first()?, false, false)?;
+    Some(L1ReadLine {
+        op: kind,
+        addr,
+        mabdiff,
+        wl,
+        dst,
+    })
+}
+
 /// A gbfn (block-float) line.
 #[derive(Clone, Copy, Debug)]
 pub struct BfnLine {
@@ -425,6 +465,7 @@ pub struct GpuState {
     aluf: u64,
     mask: u64,
     t: u64,
+    l1bm: u64,
     free: CuMemFree,
 }
 
@@ -439,6 +480,7 @@ impl Drop for GpuState {
             (self.free)(self.aluf);
             (self.free)(self.mask);
             (self.free)(self.t);
+            (self.free)(self.l1bm);
         }
     }
 }
@@ -451,6 +493,7 @@ pub struct Gpu {
     mau_function: CuFunction,
     alu_function: CuFunction,
     bfn_function: CuFunction,
+    l1_function: CuFunction,
     cu_ctx_destroy: CuCtxDestroy,
     cu_mem_alloc: CuMemAlloc,
     cu_mem_free: CuMemFree,
@@ -601,6 +644,11 @@ impl Gpu {
             unsafe { cu_get_function(&mut bfn_function, module, b"bfn_line\0".as_ptr() as *const c_char) },
             "cuModuleGetFunction(bfn_line)",
         )?;
+        let mut l1_function: CuFunction = std::ptr::null_mut();
+        check(
+            unsafe { cu_get_function(&mut l1_function, module, b"l1_read_line\0".as_ptr() as *const c_char) },
+            "cuModuleGetFunction(l1_read_line)",
+        )?;
         Ok(Gpu {
             _cuda: cuda,
             _nvrtc: nvrtc,
@@ -609,6 +657,7 @@ impl Gpu {
             mau_function,
             alu_function,
             bfn_function,
+            l1_function,
             cu_ctx_destroy,
             cu_mem_alloc,
             cu_mem_free,
@@ -645,7 +694,8 @@ impl Gpu {
         let lm_bytes = crate::machine::PES * crate::machine::LM_WORDS * 4;
         let grf_bytes = crate::machine::PES * crate::machine::GRF_WORDS * 4;
         let fwd_bytes = crate::machine::PES * 16 * 4;
-        let mut buffers = [0u64; 8];
+        let l1bm_bytes = crate::blocks::L1BS * crate::blocks::L1BM_LONGS * 8;
+        let mut buffers = [0u64; 9];
         let sizes = [
             lm_bytes,
             lm_bytes,
@@ -655,8 +705,9 @@ impl Gpu {
             fwd_bytes,
             fwd_bytes,
             fwd_bytes,
+            l1bm_bytes,
         ];
-        for i in 0..8 {
+        for i in 0..9 {
             let code = unsafe { (self.cu_mem_alloc)(&mut buffers[i], sizes[i]) };
             if let Err(error) = self.check(code, "cuMemAlloc(state)") {
                 for buffer in &buffers[..i] {
@@ -674,6 +725,7 @@ impl Gpu {
             aluf: buffers[5],
             mask: buffers[6],
             t: buffers[7],
+            l1bm: buffers[8],
             free: self.cu_mem_free,
         })
     }
@@ -755,6 +807,24 @@ impl Gpu {
         self.check(
             unsafe { (self.cu_dtoh)(grf1.as_mut_ptr() as *mut c_void, state.grf1, grf * 4) },
             "download grf1",
+        )
+    }
+
+    /// Uploads the L1BM long words (L1BS x L1BM_LONGS).
+    pub fn upload_l1bm(&self, state: &GpuState, words: &[u64]) -> Result<(), String> {
+        let count = crate::blocks::L1BS * crate::blocks::L1BM_LONGS;
+        if words.len() != count {
+            return Err("L1BM slice has the wrong length".into());
+        }
+        self.check(
+            unsafe {
+                (self.cu_htod)(
+                    state.l1bm,
+                    words.as_ptr() as *const c_void,
+                    count * 8,
+                )
+            },
+            "upload l1bm",
         )
     }
 
@@ -1041,6 +1111,58 @@ impl Gpu {
                 )
             },
             "cuLaunchKernel(bfn_line)",
+        )
+    }
+
+    /// Launches one L1BM-to-PE read line.
+    pub fn run_l1_read_line(&self, state: &GpuState, line: &L1ReadLine) -> Result<(), String> {
+        let mut lm0 = state.lm0;
+        let mut lm1 = state.lm1;
+        let mut grf0 = state.grf0;
+        let mut grf1 = state.grf1;
+        let mut l1bm = state.l1bm;
+        let mut op = line.op as i32;
+        let mut addr = line.addr;
+        let mut mabdiff = line.mabdiff as i32;
+        let mut swl = line.wl as i32;
+        let mut dmem = line.dst.mem as i32;
+        let mut d = line.dst.base;
+        let mut dwl = line.dst.wl as i32;
+        let mut args = [
+            &mut lm0 as *mut u64 as *mut c_void,
+            &mut lm1 as *mut u64 as *mut c_void,
+            &mut grf0 as *mut u64 as *mut c_void,
+            &mut grf1 as *mut u64 as *mut c_void,
+            &mut l1bm as *mut u64 as *mut c_void,
+            &mut op as *mut i32 as *mut c_void,
+            &mut addr as *mut u32 as *mut c_void,
+            &mut mabdiff as *mut i32 as *mut c_void,
+            &mut swl as *mut i32 as *mut c_void,
+            &mut dmem as *mut i32 as *mut c_void,
+            &mut d[0] as *mut u32 as *mut c_void,
+            &mut d[1] as *mut u32 as *mut c_void,
+            &mut d[2] as *mut u32 as *mut c_void,
+            &mut d[3] as *mut u32 as *mut c_void,
+            &mut dwl as *mut i32 as *mut c_void,
+        ];
+        let grid = (crate::machine::PES as u32 + 255) / 256;
+        self.check(
+            unsafe {
+                (self.cu_launch)(
+                    self.l1_function,
+                    grid,
+                    1,
+                    1,
+                    256,
+                    1,
+                    1,
+                    0,
+                    std::ptr::null_mut(),
+                    args.as_mut_ptr(),
+                    std::ptr::null_mut(),
+                )
+            },
+            "cuLaunchKernel(l1_read_line)",
         )
     }
 
