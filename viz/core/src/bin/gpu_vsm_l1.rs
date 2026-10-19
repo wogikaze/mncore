@@ -4,10 +4,9 @@
 
 use mncore_sim::blocks::{L1BM_LONGS, L1BS};
 use mncore_sim::gpu::{
-    l1_read_line_from_expr, l1_reduce_line_from_expr, l1_write_line_from_expr, Gpu, L1ReadLine,
-    L1ReduceLine, L1WriteLine,
+    l1_read_line_from_expr, l1_write_line_from_expr, Gpu, L1ReadLine, L1WriteLine,
 };
-use mncore_sim::machine::{GRF_WORDS, LM_WORDS, PES};
+use mncore_sim::machine::{MaskState, GRF_WORDS, LM_WORDS, PES};
 use mncore_sim::run::Sim;
 use mncore_sim::vsm::{self, Line};
 
@@ -19,7 +18,6 @@ fn main() {
     enum Action {
         Read(L1ReadLine),
         Write(L1WriteLine),
-        Reduce(L1ReduceLine),
     }
     let mut text = String::new();
     for i in 0..lines {
@@ -45,12 +43,10 @@ fn main() {
             panic!("expected PE line");
         };
         let expr = &exprs[0];
-        if let Some(line) = l1_read_line_from_expr(expr) {
+        if let Some(line) = l1_read_line_from_expr(expr, MaskState::default()) {
             actions.push(Action::Read(line));
         } else if let Some(line) = l1_write_line_from_expr(expr) {
             actions.push(Action::Write(line));
-        } else if let Some(line) = l1_reduce_line_from_expr(expr) {
-            actions.push(Action::Reduce(line));
         } else {
             eprintln!("unsupported: {expr:?}");
             std::process::exit(1);
@@ -102,7 +98,6 @@ fn main() {
         match action {
             Action::Read(line) => gpu.run_l1_read_line(&state, line).expect("l1 read"),
             Action::Write(line) => gpu.run_l1_write_line(&state, line).expect("l1 write"),
-            Action::Reduce(line) => gpu.run_l1_reduce_line(&state, line).expect("l1 reduce"),
         }
     }
     gpu.sync().expect("sync");

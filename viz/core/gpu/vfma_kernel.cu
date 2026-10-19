@@ -1127,88 +1127,6 @@ extern "C" __global__ void bfn_line(
     }
 }
 
-// One L1BM-to-PE read: op 0 is Mbcast, op 1 is Distrib.
-extern "C" __global__ void l1_read_line(
-    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
-    unsigned long long* l1bm,
-    int op, unsigned addr, int mabdiff, int swl,
-    int dmem, unsigned d0, unsigned d1, unsigned d2, unsigned d3, int dwl) {
-    int pe = blockIdx.x * blockDim.x + threadIdx.x;
-    if (pe >= 4096) return;
-    int l1b = pe / 64;
-    int mab = (pe / 4) % 16;
-    int sub = pe % 4;
-    unsigned db[4] = {d0, d1, d2, d3};
-    unsigned* pd = pick_mem(dmem, lm0, lm1, grf0, grf1);
-    int ld = mem_len(dmem);
-    int base = l1b * 8192;
-    for (int c = 0; c < 4; ++c) {
-        int om;
-        int ol = -1;
-        if (op == 0) {
-            if (swl == 4) {
-                om = c * 8 + sub;
-                ol = om + 4;
-            } else {
-                om = c * 4 + sub;
-            }
-        } else if (op == 2) {
-            om = c;
-            if (swl == 4) ol = c + 4;
-        } else {
-            int src_mab = (mab - mabdiff + 16) % 16;
-            om = c * 64 + src_mab * 4 + sub;
-        }
-        unsigned long long m = l1bm[base + (addr + om) % 8192];
-        unsigned long long l = (ol >= 0) ? l1bm[base + (addr + ol) % 8192] : 0;
-        unsigned bus[4] = {
-            (unsigned)(m >> 32),
-            (unsigned)m,
-            (unsigned)(l >> 32),
-            (unsigned)l,
-        };
-        for (int i = 0; i < dwl; ++i) {
-            pd[pe * ld + db[c] + i] = bus[i];
-        }
-    }
-}
-
-// One l1bmm@mab write: the selected MAB's PEs store two long words per cycle.
-extern "C" __global__ void l1_write_line(
-    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
-    unsigned long long* l1bm,
-    int op, int mab_sel, int mabdiff, unsigned addr, int dwl,
-    int smem, unsigned s0, unsigned s1, unsigned s2, unsigned s3, int swl) {
-    int pe = blockIdx.x * blockDim.x + threadIdx.x;
-    if (pe >= 4096) return;
-    int mab = (pe / 4) % 16;
-    int dst_mab = (mab + mabdiff + 16) % 16;
-    if (op == 0 && mab != mab_sel) return;
-    int l1b = pe / 64;
-    int sub = pe % 4;
-    unsigned sb[4] = {s0, s1, s2, s3};
-    unsigned* ps = pick_mem(smem, lm0, lm1, grf0, grf1);
-    int ls = mem_len(smem);
-    int base = l1b * 8192;
-    int step = (dwl == 4) ? 8 : 4;
-    for (int c = 0; c < 4; ++c) {
-        unsigned bus[4];
-        for (int i = 0; i < 4; ++i) {
-            bus[i] = (smem < 4 && i >= swl) ? 0 : ps[pe * ls + sb[c] + i];
-        }
-        unsigned long long msb = ((unsigned long long)bus[0] << 32) | bus[1];
-        unsigned long long lsb = ((unsigned long long)bus[2] << 32) | bus[3];
-        if (op == 1) {
-            l1bm[base + (addr + c * 64 + dst_mab * 4 + sub) % 8192] = msb;
-        } else {
-            l1bm[base + (addr + c * step + sub) % 8192] = msb;
-            if (dwl == 4) {
-                l1bm[base + (addr + c * step + 4 + sub) % 8192] = lsb;
-            }
-        }
-    }
-}
-
 // L2BM transfers. op 0: Distrib L2->L1BM; op 1: Bcast L2->L1BM;
 // op 2: FromL1b L1BM->L2BM.
 extern "C" __global__ void l2_line(
@@ -1345,11 +1263,13 @@ __device__ __forceinline__ long long rrn_key(unsigned long long v, int bits) {
     return neg ? -(long long)mag - 1 : (long long)mag;
 }
 
-// One reduction stage over `n` raw elements of the RRN precision.
-__device__ __forceinline__ unsigned long long rrn_reduce(
-    int kind, int bits, const unsigned long long* vals, int n) {
+// One reduction stage over `n` raw elements of the RRN precision. `out_bits`
+// is the precision the floating-point addition rounds to (16 for the `r`
+// option, otherwise the input precision).
+__device__ __forceinline__ unsigned long long rrn_reduce_out(
+    int kind, int bits, int out_bits, const unsigned long long* vals, int n) {
     unsigned long long m = rrn_mask(bits);
-    if (kind == 0) return rrn_fadd(rrn_fmt(bits), vals, n, rrn_fmt(bits));
+    if (kind == 0) return rrn_fadd(rrn_fmt(bits), vals, n, rrn_fmt(out_bits));
     if (kind == 1 || kind == 2) {
         long long best = rrn_key(vals[0], bits);
         unsigned long long pick = vals[0];
@@ -1389,6 +1309,11 @@ __device__ __forceinline__ unsigned long long rrn_reduce(
     return 0;
 }
 
+__device__ __forceinline__ unsigned long long rrn_reduce(
+    int kind, int bits, const unsigned long long* vals, int n) {
+    return rrn_reduce_out(kind, bits, bits, vals, n);
+}
+
 // Reduces long words lane by lane in one stage (L2BM reductions).
 __device__ __forceinline__ unsigned long long rrn_reduce_longs(
     int kind, int bits, const unsigned long long* vals, int n) {
@@ -1402,6 +1327,404 @@ __device__ __forceinline__ unsigned long long rrn_reduce_longs(
         out |= (rrn_reduce(kind, bits, lane_vals, n) & m) << sh;
     }
     return out;
+}
+
+// Mask flags of one cycle and PE (SDM 3.6.2). `kind` is 0 none, 1 OMR entry,
+// 2 fixed pattern; the layout matches machine.rs.
+__device__ __forceinline__ unsigned mask_flags_cycle(
+    const unsigned* omr, int pe, int kind, int entry, int pattern, int c) {
+    if (kind == 2) return ((pattern >> c) & 1) ? 0xfu : 0u;
+    if (kind == 1) {
+        if (entry == 0) return 0xfu;
+        if (entry <= 15) return (omr[pe * 16 + entry] >> (4 * c)) & 0xfu;
+        return ((entry >> (3 - c)) & 1) ? 0xfu : 0u;
+    }
+    return 0xfu;
+}
+
+__device__ __forceinline__ bool word_enabled_cycle(unsigned f, int ll, int i) {
+    if (ll) return ((f >> (3 - i)) & 1) != 0;
+    if (i < 2) return ((f >> (2 - 2 * i)) & 3) != 0;
+    return true;
+}
+
+__device__ __forceinline__ unsigned merge_word_cycle(
+    unsigned old, unsigned value, unsigned f, int ll, int i) {
+    if (!ll && i < 2) {
+        unsigned hi = (f >> (3 - 2 * i)) & 1;
+        unsigned lo = (f >> (2 - 2 * i)) & 1;
+        unsigned m = (hi ? 0xffff0000u : 0u) | (lo ? 0x0000ffffu : 0u);
+        return (old & ~m) | (value & m);
+    }
+    return value;
+}
+
+__device__ __forceinline__ void flush_bus(unsigned* bus, unsigned f, int ll) {
+    for (int i = 0; i < 4; ++i) {
+        if (ll) {
+            if (((f >> (3 - i)) & 1) == 0) bus[i] = 0;
+        } else if (i < 2) {
+            unsigned hi = (f >> (3 - 2 * i)) & 1;
+            unsigned lo = (f >> (2 - 2 * i)) & 1;
+            unsigned m = (hi ? 0xffff0000u : 0u) | (lo ? 0x0000ffffu : 0u);
+            bus[i] &= m;
+        }
+    }
+}
+
+// Reads the four words of a PE operand for one cycle. `base` is the
+// per-cycle, already aligned word address.
+__device__ __forceinline__ void read_pe_bus(
+    unsigned* bus, int mem, unsigned* lm0, unsigned* lm1, unsigned* grf0,
+    unsigned* grf1, unsigned* t, int pe, int c, const unsigned* base, int wl) {
+    if (mem == 6) {
+        for (int i = 0; i < 4; ++i) bus[i] = t[pe * 16 + c * 4 + i];
+        return;
+    }
+    unsigned* p = pick_mem(mem, lm0, lm1, grf0, grf1);
+    int l = mem_len(mem);
+    for (int i = 0; i < 4; ++i) {
+        bus[i] = (i < wl) ? p[pe * l + base[c] + i] : 0;
+    }
+}
+
+// Writes one PE operand for one cycle under a resolved mask.
+__device__ __forceinline__ void write_pe_bus(
+    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1, unsigned* t,
+    int mem, int pe, int c, unsigned base, int wl, const unsigned* bus,
+    unsigned flags, int ll, int kind) {
+    if (kind == 0) {
+        if (mem == 6) {
+            for (int i = 0; i < 4; ++i) t[pe * 16 + c * 4 + i] = bus[i];
+        } else {
+            unsigned* p = pick_mem(mem, lm0, lm1, grf0, grf1);
+            int l = mem_len(mem);
+            for (int i = 0; i < wl; ++i) p[pe * l + base + i] = bus[i];
+        }
+        return;
+    }
+    unsigned* p = (mem == 6) ? t : pick_mem(mem, lm0, lm1, grf0, grf1);
+    int l = (mem == 6) ? 16 : mem_len(mem);
+    int off = (mem == 6) ? c * 4 : (int)base;
+    int words = (mem == 6) ? 4 : wl;
+    for (int i = 0; i < words; ++i) {
+        if (!word_enabled_cycle(flags, ll, i)) continue;
+        unsigned old = p[pe * l + off + i];
+        p[pe * l + off + i] = merge_word_cycle(old, bus[i], flags, ll, i);
+    }
+}
+
+__device__ __forceinline__ unsigned long long bus_long(const unsigned* bus, int k) {
+    return ((unsigned long long)bus[2 * k] << 32) | bus[2 * k + 1];
+}
+
+// A half long word as four singles (SDM 3.6.8.4). Decoding zero always yields
+// a positive zero, like float::encode(SINGLE, decode(HALF, ..)) on the CPU.
+__device__ __forceinline__ void extend_half_long(
+    unsigned long long msb, unsigned long long* out) {
+    unsigned s[4];
+    for (int j = 0; j < 4; ++j) {
+        unsigned h = (unsigned)((msb >> (48 - 16 * j)) & 0xffffu);
+        unsigned sign = (h >> 15) & 1;
+        unsigned e = (h >> 9) & 0x3f;
+        unsigned man = h & 0x1ff;
+        if (e == 0) {
+            s[j] = 0;
+        } else if (e == 63) {
+            s[j] = (sign << 31) | (0xffu << 23);
+        } else {
+            s[j] = (sign << 31) | ((e + 96) << 23) | (man << 14);
+        }
+    }
+    out[0] = ((unsigned long long)s[0] << 32) | s[1];
+    out[1] = ((unsigned long long)s[2] << 32) | s[3];
+}
+
+// Packs four 16-bit results of a rounding reduction into one long word, in
+// the order measured with the emulator (CPU: pe_to_l1's rounded branch).
+__device__ __forceinline__ unsigned long long pack_rounded(
+    unsigned long long r0, unsigned long long r1) {
+    unsigned long long v = 0;
+    for (int j = 0; j < 4; ++j) {
+        unsigned long long l = (j < 2) ? r0 : r1;
+        unsigned long long h = (l >> (32 - 32 * (j & 1))) & 0xffffu;
+        v = (v << 16) | h;
+    }
+    return v;
+}
+
+// One L1BM-to-PE read: op 0 Mbcast, 1 Distrib, 2 Pbcast, 3 M4bcast.
+// `has_addr` says whether the L1BM operand is an address (else $lbi).
+extern "C" __global__ void l1_read_line(
+    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1, unsigned* t,
+    unsigned long long* l1bm, unsigned long long* lbi, unsigned* omr,
+    int op, int has_addr, unsigned addr, int mabdiff, int wl, int ndst,
+    int dm0, unsigned d00, unsigned d01, unsigned d02, unsigned d03, int dw0,
+    int mk0, int mke0, int mkp0, int mkl0,
+    int dm1, unsigned d10, unsigned d11, unsigned d12, unsigned d13, int dw1,
+    int mk1, int mke1, int mkp1, int mkl1,
+    int dm2, unsigned d20, unsigned d21, unsigned d22, unsigned d23, int dw2,
+    int mk2, int mke2, int mkp2, int mkl2,
+    int dm3, unsigned d30, unsigned d31, unsigned d32, unsigned d33, int dw3,
+    int mk3, int mke3, int mkp3, int mkl3,
+    int fk, int fe, int fp, int fll) {
+    int pe = blockIdx.x * blockDim.x + threadIdx.x;
+    if (pe >= 4096) return;
+    int l1b = pe >> 6;
+    int mab = (pe >> 2) & 15;
+    int sub = pe & 3;
+    int dm[4] = {dm0, dm1, dm2, dm3};
+    unsigned db[4][4] = {
+        {d00, d01, d02, d03},
+        {d10, d11, d12, d13},
+        {d20, d21, d22, d23},
+        {d30, d31, d32, d33},
+    };
+    int dw[4] = {dw0, dw1, dw2, dw3};
+    int mk[4] = {mk0, mk1, mk2, mk3};
+    int mke[4] = {mke0, mke1, mke2, mke3};
+    int mkp[4] = {mkp0, mkp1, mkp2, mkp3};
+    int mkl[4] = {mkl0, mkl1, mkl2, mkl3};
+    int base_l1 = l1b * 8192;
+    for (int c = 0; c < 4; ++c) {
+        unsigned om;
+        unsigned ol = 0;
+        bool has_ol = false;
+        if (op == 2) {
+            // Pbcast: addr + cycle, and the next long word for two long words.
+            om = has_addr ? (unsigned)c : 0u;
+            if (wl == 4) {
+                ol = om + 4;
+                has_ol = true;
+            }
+        } else if (op == 0) {
+            // Mbcast: four MAB lanes; from $lbi even a one long word read has
+            // the second long word at 4 + sub (CPU blocks.rs).
+            if (wl == 4) {
+                unsigned b = has_addr ? (unsigned)(c * 8) : 0u;
+                om = b + (unsigned)sub;
+                ol = om + 4;
+                has_ol = true;
+            } else if (!has_addr) {
+                om = (unsigned)sub;
+                ol = (unsigned)(4 + sub);
+                has_ol = true;
+            } else {
+                om = (unsigned)(c * 4) + (unsigned)sub;
+            }
+        } else if (op == 3) {
+            // M4bcast: [[4 (MAB high bits)][2 (long word)][4 (PE)]].
+            int i = mab >> 2;
+            if (wl == 4) {
+                unsigned b = has_addr ? (unsigned)(c * 32) : 0u;
+                om = b + (unsigned)(i * 8) + (unsigned)sub;
+                ol = om + 4;
+                has_ol = true;
+            } else {
+                unsigned b = has_addr ? (unsigned)(c * 16) : 0u;
+                om = b + (unsigned)(i * 4) + (unsigned)sub;
+            }
+        } else {
+            // Distrib: the source MAB is shifted by -mabdiff.
+            int sm = (mab - mabdiff) % 16;
+            if (sm < 0) sm += 16;
+            unsigned b = has_addr ? (unsigned)(c * 64) : 0u;
+            om = b + (unsigned)(sm * 4) + (unsigned)sub;
+        }
+        unsigned long long m;
+        unsigned long long l = 0;
+        if (has_addr) {
+            m = l1bm[base_l1 + (int)(((unsigned long long)addr + om) % 8192)];
+            if (has_ol) {
+                l = l1bm[base_l1 + (int)(((unsigned long long)addr + ol) % 8192)];
+            }
+        } else {
+            int b = (l1b * 4 + c) * 64;
+            m = lbi[b + (int)(om % 64)];
+            if (has_ol) l = lbi[b + (int)(ol % 64)];
+        }
+        unsigned bus[4] = {
+            (unsigned)(m >> 32),
+            (unsigned)m,
+            (unsigned)(l >> 32),
+            (unsigned)l,
+        };
+        if (fk != 0) {
+            unsigned f = mask_flags_cycle(omr, pe, fk, fe, fp, c);
+            flush_bus(bus, f, fll);
+        }
+        for (int d = 0; d < ndst; ++d) {
+            unsigned f = 0;
+            if (mk[d] != 0) {
+                f = mask_flags_cycle(omr, pe, mk[d], mke[d], mkp[d], c);
+            }
+            write_pe_bus(
+                lm0, lm1, grf0, grf1, t, dm[d], pe, c, db[d][c], dw[d], bus,
+                f, mkl[d], mk[d]);
+        }
+    }
+}
+
+// One PE-to-L1BM transfer. op 0 Mwrite, 1 Gather, 2 M4write, 3 Reduce
+// (16x1), 4 Reduce4 (4x4). `has_addr` selects L1BM or the turnaround
+// register $lbi as the destination; the turnaround is updated either way.
+extern "C" __global__ void l1_write_line(
+    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1, unsigned* t,
+    unsigned long long* l1bm, unsigned long long* lbi,
+    int op, int mab_sel, int mabdiff, int has_addr, unsigned addr, int dwl,
+    int smem, unsigned s0, unsigned s1, unsigned s2, unsigned s3, int swl,
+    int two_src, int bits, int rrn, int round_it, int ext) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= 256) return;
+    int l1b = idx >> 2;
+    int sub = idx & 3;
+    int base_l1 = l1b * 8192;
+    int lbi_base = l1b * 4 * 64;
+    unsigned sb[4] = {s0, s1, s2, s3};
+    int red_longs;
+    if (round_it) {
+        red_longs = (dwl == 4 || two_src || ext) ? 2 : 1;
+    } else {
+        red_longs = (dwl == 4 || ext) ? 2 : 1;
+    }
+    for (int c = 0; c < 4; ++c) {
+        if (op == 0) {
+            int pe = l1b * 64 + mab_sel * 4 + sub;
+            unsigned bus[4];
+            read_pe_bus(bus, smem, lm0, lm1, grf0, grf1, t, pe, c, sb, swl);
+            unsigned long long v0 = bus_long(bus, 0);
+            int step = (dwl == 4) ? 8 : 4;
+            unsigned off = (unsigned)sub;
+            if (has_addr) {
+                l1bm[base_l1 + (int)(((unsigned long long)addr + (unsigned long long)(c * step) + off) % 8192)] = v0;
+            }
+            lbi[lbi_base + c * 64 + (int)off] = v0;
+            if (dwl == 4) {
+                unsigned long long v1 = bus_long(bus, 1);
+                if (has_addr) {
+                    l1bm[base_l1 + (int)(((unsigned long long)addr + (unsigned long long)(c * step) + off + 4) % 8192)] = v1;
+                }
+                lbi[lbi_base + c * 64 + (int)off + 4] = v1;
+            }
+        } else if (op == 1) {
+            for (int m = 0; m < 16; ++m) {
+                int pe = l1b * 64 + m * 4 + sub;
+                unsigned bus[4];
+                read_pe_bus(bus, smem, lm0, lm1, grf0, grf1, t, pe, c, sb, swl);
+                unsigned long long v = bus_long(bus, 0);
+                int dst_mab = (m + mabdiff) % 16;
+                if (dst_mab < 0) dst_mab += 16;
+                unsigned off = (unsigned)(dst_mab * 4 + sub);
+                if (has_addr) {
+                    l1bm[base_l1 + (int)(((unsigned long long)addr + (unsigned long long)(c * 64) + off) % 8192)] = v;
+                }
+                lbi[lbi_base + c * 64 + m * 4 + sub] = v;
+            }
+        } else if (op == 2) {
+            int step = (dwl == 4) ? 32 : 16;
+            for (int mo = 0; mo < 4; ++mo) {
+                int mab = mo * 4 + mab_sel;
+                int pe = l1b * 64 + mab * 4 + sub;
+                unsigned bus[4];
+                read_pe_bus(bus, smem, lm0, lm1, grf0, grf1, t, pe, c, sb, swl);
+                unsigned long long v0 = bus_long(bus, 0);
+                unsigned off0 = (dwl == 4) ? (unsigned)(mo * 8 + sub)
+                                           : (unsigned)(mo * 4 + sub);
+                if (has_addr) {
+                    l1bm[base_l1 + (int)(((unsigned long long)addr + (unsigned long long)(c * step) + off0) % 8192)] = v0;
+                }
+                lbi[lbi_base + c * 64 + (int)off0] = v0;
+                if (dwl == 4) {
+                    unsigned long long v1 = bus_long(bus, 1);
+                    unsigned off1 = off0 + 4;
+                    if (has_addr) {
+                        l1bm[base_l1 + (int)(((unsigned long long)addr + (unsigned long long)(c * step) + off1) % 8192)] = v1;
+                    }
+                    lbi[lbi_base + c * 64 + (int)off1] = v1;
+                }
+            }
+        } else {
+            int four = (op == 4);
+            int groups = four ? 4 : 1;
+            int n = four ? 4 : 16;
+            int step;
+            if (round_it) step = four ? 16 : 4;
+            else if (ext) step = four ? 32 : 8;
+            else if (dwl == 4) step = four ? 32 : 8;
+            else step = four ? 16 : 4;
+            for (int g = 0; g < groups; ++g) {
+                unsigned long long v0[16];
+                unsigned long long v1[16];
+                for (int m = 0; m < n; ++m) {
+                    int mab = four ? g * 4 + m : m;
+                    int pe = l1b * 64 + mab * 4 + sub;
+                    unsigned bus[4];
+                    read_pe_bus(bus, smem, lm0, lm1, grf0, grf1, t, pe, c, sb, swl);
+                    v0[m] = bus_long(bus, 0);
+                    v1[m] = bus_long(bus, 1);
+                    if (ext) {
+                        unsigned long long e[2];
+                        extend_half_long(v0[m], e);
+                        v0[m] = e[0];
+                        v1[m] = e[1];
+                    }
+                }
+                unsigned long long res[2] = {0, 0};
+                int lanes = 64 / bits;
+                unsigned long long mask = rrn_mask(bits);
+                for (int k = 0; k < red_longs; ++k) {
+                    unsigned long long r = 0;
+                    for (int lane = 0; lane < lanes; ++lane) {
+                        int sh = 64 - bits * (lane + 1);
+                        unsigned long long lv[16];
+                        for (int m = 0; m < n; ++m) {
+                            unsigned long long lw = (k == 0) ? v0[m] : v1[m];
+                            lv[m] = (lw >> sh) & mask;
+                        }
+                        unsigned long long rr;
+                        if (four) {
+                            rr = rrn_reduce_out(rrn, bits, round_it ? 16 : bits, lv, 4);
+                        } else {
+                            unsigned long long st[4];
+                            for (int q = 0; q < 4; ++q) {
+                                st[q] = rrn_reduce_out(rrn, bits, bits, lv + 4 * q, 4);
+                            }
+                            rr = rrn_reduce_out(rrn, bits, round_it ? 16 : bits, st, 4);
+                        }
+                        r |= (rr & mask) << sh;
+                    }
+                    res[k] = r;
+                }
+                unsigned off;
+                if (round_it) {
+                    off = (unsigned)((four ? g * 4 : 0) + sub);
+                    unsigned long long v = pack_rounded(res[0], red_longs > 1 ? res[1] : 0);
+                    if (has_addr) {
+                        l1bm[base_l1 + (int)(((unsigned long long)addr + (unsigned long long)(c * step) + off) % 8192)] = v;
+                    }
+                    lbi[lbi_base + c * 64 + (int)off] = v;
+                } else {
+                    // With `e` the CPU writes both reduced long words even to a
+                    // one long word destination (blocks.rs ext branch).
+                    if (dwl == 4 || ext) {
+                        off = (unsigned)((four ? g * 8 : 0) + sub);
+                        if (has_addr) {
+                            l1bm[base_l1 + (int)(((unsigned long long)addr + (unsigned long long)(c * step) + off) % 8192)] = res[0];
+                            l1bm[base_l1 + (int)(((unsigned long long)addr + (unsigned long long)(c * step) + off + 4) % 8192)] = res[1];
+                        }
+                        lbi[lbi_base + c * 64 + (int)off] = res[0];
+                        lbi[lbi_base + c * 64 + (int)off + 4] = res[1];
+                    } else {
+                        off = (unsigned)((four ? g * 4 : 0) + sub);
+                        if (has_addr) {
+                            l1bm[base_l1 + (int)(((unsigned long long)addr + (unsigned long long)(c * step) + off) % 8192)] = res[0];
+                        }
+                        lbi[lbi_base + c * 64 + (int)off] = res[0];
+                    }
+                }
+            }
+        }
+    }
 }
 
 // L2BM reductions and internal multicast. op 0: l2bmr (Reduce), op 1: l2bmr2
@@ -1747,37 +2070,4 @@ extern "C" __global__ void mat_mau_line(
             }
         }
     }
-}
-
-// One l1bmrffadd reduction: 16 MABs per L1B, 4 PEs and 4 cycles.
-extern "C" __global__ void l1_reduce_line(
-    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
-    unsigned long long* l1bm,
-    int smem, unsigned s0, unsigned s1, unsigned s2, unsigned s3, int swl,
-    unsigned addr) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx >= 1024) return;
-    int pe_sub = idx & 3;
-    int c = (idx >> 2) & 3;
-    int l1b = idx >> 4;
-    unsigned sb[4] = {s0, s1, s2, s3};
-    unsigned* ps = pick_mem(smem, lm0, lm1, grf0, grf1);
-    int ls = mem_len(smem);
-    unsigned long long v0[16];
-    unsigned long long v1[16];
-    for (int m = 0; m < 16; ++m) {
-        int pe = l1b * 64 + m * 4 + pe_sub;
-        v0[m] = (smem < 4 && swl > 0) ? ps[pe * ls + sb[c]] : 0;
-        v1[m] = (smem < 4 && swl > 1) ? ps[pe * ls + sb[c] + 1] : 0;
-    }
-    unsigned long long st0[4];
-    unsigned long long st1[4];
-    for (int g = 0; g < 4; ++g) {
-        st0[g] = rrn_reduce(0, 32, v0 + g * 4, 4);
-        st1[g] = rrn_reduce(0, 32, v1 + g * 4, 4);
-    }
-    unsigned long long r0 = rrn_reduce(0, 32, st0, 4);
-    unsigned long long r1 = rrn_reduce(0, 32, st1, 4);
-    l1bm[l1b * 8192 + (addr + (unsigned)c * 4 + (unsigned)pe_sub) % 8192] =
-        (r0 << 32) | r1;
 }

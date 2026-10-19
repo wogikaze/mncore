@@ -778,17 +778,71 @@ pub fn bfn_line_from_expr_state(expr: &Expr, mask_state: MaskState) -> Option<Bf
     })
 }
 
-/// An L1BM-to-PE read: Mbcast (op 0) or Distrib (op 1).
+/// One PE destination of an L1BM-to-PE read.
 #[derive(Clone, Copy, Debug)]
-pub struct L1ReadLine {
-    pub op: u8,
-    pub addr: u32,
-    pub mabdiff: i16,
-    pub wl: u8,
+pub struct L1Dst {
     pub dst: MauSrc,
+    pub mask: MaskInfo,
 }
 
-pub fn l1_read_line_from_expr(expr: &Expr) -> Option<L1ReadLine> {
+const NO_MASK: MaskInfo = MaskInfo {
+    kind: 0,
+    entry: 0,
+    pattern: 0,
+    ll: false,
+};
+
+fn empty_l1_dst() -> L1Dst {
+    L1Dst {
+        dst: MauSrc {
+            mem: 0,
+            wl: 0,
+            base: [0; 4],
+            neg: false,
+        },
+        mask: NO_MASK,
+    }
+}
+
+fn mask_info_of(sel: MaskSel) -> MaskInfo {
+    match sel.source {
+        MaskSource::Entry(entry) => MaskInfo {
+            kind: 1,
+            entry,
+            pattern: 0,
+            ll: sel.ll,
+        },
+        MaskSource::Pattern(p) => MaskInfo {
+            kind: 2,
+            entry: 0,
+            pattern: p
+                .iter()
+                .enumerate()
+                .fold(0u8, |acc, (i, &on)| acc | ((on as u8) << i)),
+            ll: sel.ll,
+        },
+    }
+}
+
+/// An L1BM-to-PE read (SDM 3.6.8.6 to 3.6.8.9, 3.6.8.14, 3.6.8.15 and 3.6.8.20).
+///
+/// `addr` is `None` when the operand is the turnaround register `$lbi`.
+/// Every PE destination carries its resolved single-line or directive mask,
+/// and `flush` is the `/<mask>` zero-flush option of the expression.
+#[derive(Clone, Copy, Debug)]
+pub struct L1ReadLine {
+    /// 0 Mbcast, 1 Distrib, 2 Pbcast, 3 M4bcast.
+    pub op: u8,
+    pub addr: Option<u32>,
+    pub mabdiff: i16,
+    /// Access length of the L1BM operand in long words (2 or 4).
+    pub wl: u8,
+    pub ndst: u8,
+    pub dsts: [L1Dst; 4],
+    pub flush: MaskInfo,
+}
+
+pub fn l1_read_line_from_expr(expr: &Expr, mask_state: MaskState) -> Option<L1ReadLine> {
     let Op::L1(op) = &expr.op else {
         return None;
     };
@@ -796,82 +850,136 @@ pub fn l1_read_line_from_expr(expr: &Expr) -> Option<L1ReadLine> {
         L1Op::Mbcast => (0u8, 0i16),
         L1Op::Distrib { mabdiff } => (1u8, *mabdiff),
         L1Op::Pbcast => (2u8, 0i16),
+        L1Op::M4bcast => (3u8, 0i16),
         _ => return None,
     };
     let (wl, addr) = match expr.srcs.first()? {
-        Operand::L1bm {
-            wl,
-            addr: Some(addr),
-        } => (*wl, *addr),
+        Operand::L1bm { wl, addr } => (*wl, *addr),
         _ => return None,
     };
     if wl != 2 && wl != 4 {
         return None;
     }
-    let dst = mem_source(expr.dsts.first()?, false, false)?;
+    if expr.dsts.is_empty() || expr.dsts.len() > 4 {
+        return None;
+    }
+    let single_line = expr
+        .dsts
+        .iter()
+        .any(|d| matches!(d, Operand::Mem { mask: Some(_), .. }));
+    let mut dsts = [empty_l1_dst(); 4];
+    for (i, d) in expr.dsts.iter().enumerate() {
+        let dst = mem_source(d, false, true)?;
+        dsts[i] = L1Dst {
+            dst,
+            mask: resolve_mask(d, mask_state, single_line),
+        };
+    }
+    let flush = expr.flush.map(mask_info_of).unwrap_or(NO_MASK);
     Some(L1ReadLine {
         op: kind,
         addr,
         mabdiff,
         wl,
-        dst,
+        ndst: expr.dsts.len() as u8,
+        dsts,
+        flush,
     })
 }
 
-/// An L1BM reduction (l1bmr...).
-#[derive(Clone, Copy, Debug)]
-pub struct L1ReduceLine {
-    pub addr: u32,
-    pub wl: u8,
-    pub src: MauSrc,
-}
-
-pub fn l1_reduce_line_from_expr(expr: &Expr) -> Option<L1ReduceLine> {
-    let Op::L1(L1Op::Reduce { rrn, round: false }) = &expr.op else {
-        return None;
-    };
-    if rrn.op != RrnOp::Fadd || rrn.prec != 'f' {
-        return None;
-    }
-    let (wl, addr) = match expr.dsts.first()? {
-        Operand::L1bm { wl, addr: Some(addr) } => (*wl, *addr),
-        _ => return None,
-    };
-    if wl != 2 && wl != 4 {
-        return None;
-    }
-    let src = mem_source(expr.srcs.first()?, false, false)?;
-    Some(L1ReduceLine { addr, wl, src })
-}
-
-/// An L1BM write from one MAB (l1bmm@mab).
+/// A PE-to-L1BM transfer: `l1bmm@`, `l1bmm4@`, `l1bmr`, `l1bmr4` and
+/// `l1bmd` (gather).
 #[derive(Clone, Copy, Debug)]
 pub struct L1WriteLine {
+    /// 0 Mwrite, 1 Gather, 2 M4write, 3 Reduce (16x1), 4 Reduce4 (4x4).
     pub op: u8,
     pub mab: u8,
     pub mabdiff: i16,
-    pub addr: u32,
+    /// `None` writes only the turnaround register `$lbi`.
+    pub addr: Option<u32>,
+    /// Access length of the L1BM operand in long words (2 or 4).
     pub wl: u8,
     pub src: MauSrc,
+    /// Whether the PE operand is two long words (SDM 3.6.8.3).
+    pub two_src: bool,
+    pub ext: bool,
+    pub round: bool,
+    /// Element width of the RRN in bits (16, 32 or 64).
+    pub bits: u32,
+    /// RRN kind: 0 fadd, 1 max, 2 min, 3 iadd, 4 band, 5 and, 6 bor, 7 or.
+    pub rrn: u8,
+}
+
+/// Builds the source side of an L1BM write. Unlike `mem_source` this accepts
+/// the `e` precision-extension option, which only L1BM reductions use.
+fn l1_write_source(op: &Operand) -> Option<MauSrc> {
+    let Operand::Mem {
+        mem,
+        wl,
+        addr,
+        neg: false,
+        rnd: false,
+        mask: None,
+        ..
+    } = op
+    else {
+        return None;
+    };
+    if !matches!(wl, 1 | 2 | 4) || addr.t_indirect || addr.madpe.is_some() {
+        return None;
+    }
+    let mem = match mem {
+        MemKind::Lm0 => 0,
+        MemKind::Lm1 => 1,
+        MemKind::Grf0 => 2,
+        MemKind::Grf1 => 3,
+        MemKind::T => 6,
+        _ => return None,
+    };
+    Some(MauSrc {
+        mem,
+        wl: *wl,
+        base: addr.cycles.map(|c| c & !(*wl as u32 - 1)),
+        neg: false,
+    })
 }
 
 pub fn l1_write_line_from_expr(expr: &Expr) -> Option<L1WriteLine> {
-    let (op, mab, mabdiff) = match &expr.op {
-        Op::L1(L1Op::Mwrite { mab }) => (0u8, *mab, 0i16),
-        Op::L1(L1Op::Gather { mabdiff }) => (1u8, 0u8, *mabdiff),
+    let (op, mab, mabdiff, reduction) = match &expr.op {
+        Op::L1(L1Op::Mwrite { mab }) if *mab < 16 => (0u8, *mab, 0i16, None),
+        Op::L1(L1Op::Gather { mabdiff }) => (1u8, 0u8, *mabdiff, None),
+        Op::L1(L1Op::M4write { mab }) if *mab < 4 => (2u8, *mab, 0i16, None),
+        Op::L1(L1Op::Reduce { rrn, round }) => (3u8, 0u8, 0i16, Some((*rrn, *round))),
+        Op::L1(L1Op::Reduce4 { rrn, round }) => (4u8, 0u8, 0i16, Some((*rrn, *round))),
         _ => return None,
     };
     let (wl, addr) = match expr.dsts.first()? {
-        Operand::L1bm {
-            wl,
-            addr: Some(addr),
-        } => (*wl, *addr),
+        Operand::L1bm { wl, addr } => (*wl, *addr),
         _ => return None,
     };
     if wl != 2 && wl != 4 {
         return None;
     }
-    let src = mem_source(expr.srcs.first()?, false, false)?;
+    let src_op = expr.srcs.first()?;
+    let src = l1_write_source(src_op)?;
+    let two_src = src.wl == 4;
+    let mut ext = matches!(src_op, Operand::Mem { ext: true, .. });
+    let mut round = false;
+    let mut bits = 32u32;
+    let mut rrn = 0u8;
+    if let Some((r, rnd)) = reduction {
+        bits = r.bits();
+        rrn = mv_rrn_code(r);
+        round = rnd;
+        // Half-precision fadd is single-precision fadd with `e` and `r`
+        // (SDM 3.6.8.5).
+        if r.prec == 'h' && r.op == RrnOp::Fadd {
+            bits = 32;
+            rrn = 0;
+            ext = true;
+            round = true;
+        }
+    }
     Some(L1WriteLine {
         op,
         mab,
@@ -879,6 +987,11 @@ pub fn l1_write_line_from_expr(expr: &Expr) -> Option<L1WriteLine> {
         addr,
         wl,
         src,
+        two_src,
+        ext,
+        round,
+        bits,
+        rrn,
     })
 }
 
@@ -1542,6 +1655,8 @@ pub struct GpuState {
     t: u64,
     l1bm: u64,
     l2bm: u64,
+    /// L1BM turnaround registers ($lbi): L1BS x 4 cycles x 64 long words.
+    lbi: u64,
     /// PDM (4 x `mv::PDM_LONGS`) and a truncated DRAM (4 x `dram_longs`).
     /// Both are zero when the state was allocated without MV support.
     pdm: u64,
@@ -1570,6 +1685,7 @@ impl Drop for GpuState {
                 self.t,
                 self.l1bm,
                 self.l2bm,
+                self.lbi,
                 self.pdm,
                 self.dram,
                 self.scratch,
@@ -1594,7 +1710,6 @@ pub struct Gpu {
     bfn_function: CuFunction,
     l1_function: CuFunction,
     l1_write_function: CuFunction,
-    l1_reduce_function: CuFunction,
     l2_function: CuFunction,
     l2_reduce_function: CuFunction,
     mv_function: CuFunction,
@@ -1766,11 +1881,6 @@ impl Gpu {
             unsafe { cu_get_function(&mut l1_write_function, module, b"l1_write_line\0".as_ptr() as *const c_char) },
             "cuModuleGetFunction(l1_write_line)",
         )?;
-        let mut l1_reduce_function: CuFunction = std::ptr::null_mut();
-        check(
-            unsafe { cu_get_function(&mut l1_reduce_function, module, b"l1_reduce_line\0".as_ptr() as *const c_char) },
-            "cuModuleGetFunction(l1_reduce_line)",
-        )?;
         let mut l2_function: CuFunction = std::ptr::null_mut();
         check(
             unsafe { cu_get_function(&mut l2_function, module, b"l2_line\0".as_ptr() as *const c_char) },
@@ -1835,7 +1945,6 @@ impl Gpu {
             bfn_function,
             l1_function,
             l1_write_function,
-            l1_reduce_function,
             l2_function,
             l2_reduce_function,
             mv_function,
@@ -1895,6 +2004,7 @@ impl Gpu {
         let fwd_bytes = crate::machine::PES * 16 * 4;
         let l1bm_bytes = crate::blocks::L1BS * crate::blocks::L1BM_LONGS * 8;
         let l2bm_bytes = crate::blocks::L2BS * crate::blocks::L2BM_LONGS * 8;
+        let lbi_bytes = crate::blocks::L1BS * 4 * 64 * 8;
         let mats_bytes = MAT_WORDS * 4;
         let mut sizes = vec![
             lm_bytes,
@@ -1907,6 +2017,7 @@ impl Gpu {
             fwd_bytes,
             l1bm_bytes,
             l2bm_bytes,
+            lbi_bytes,
             mats_bytes,
             fwd_bytes,
         ];
@@ -1946,11 +2057,12 @@ impl Gpu {
             t: buffers[7],
             l1bm: buffers[8],
             l2bm: buffers[9],
-            mats: buffers[10],
-            mreadf: buffers[11],
-            pdm: if want_mv { buffers[12] } else { 0 },
-            dram: if want_mv { buffers[13] } else { 0 },
-            scratch: if want_mv { buffers[14] } else { 0 },
+            lbi: buffers[10],
+            mats: buffers[11],
+            mreadf: buffers[12],
+            pdm: if want_mv { buffers[13] } else { 0 },
+            dram: if want_mv { buffers[14] } else { 0 },
+            scratch: if want_mv { buffers[15] } else { 0 },
             dram_longs: if want_mv { dram_longs } else { 0 },
             scratch_longs: if want_mv { scratch_longs } else { 0 },
             free: self.cu_mem_free,
@@ -2117,6 +2229,77 @@ impl Gpu {
             "download l2bm",
         )?;
         Ok(out)
+    }
+
+    /// Uploads the L1BM turnaround registers (`[l1b][cycle][offset]`, 64 per cycle).
+    pub fn upload_l1bi(&self, state: &GpuState, words: &[u64]) -> Result<(), String> {
+        let count = crate::blocks::L1BS * 4 * 64;
+        if words.len() != count {
+            return Err("L1BM turnaround slice has the wrong length".into());
+        }
+        self.check(
+            unsafe {
+                (self.cu_htod)(
+                    state.lbi,
+                    words.as_ptr() as *const c_void,
+                    count * 8,
+                )
+            },
+            "upload l1bi",
+        )
+    }
+
+    /// Downloads the L1BM turnaround registers.
+    pub fn download_l1bi(&self, state: &GpuState) -> Result<Vec<u64>, String> {
+        let count = crate::blocks::L1BS * 4 * 64;
+        let mut out = vec![0u64; count];
+        self.check(
+            unsafe {
+                (self.cu_dtoh)(
+                    out.as_mut_ptr() as *mut c_void,
+                    state.lbi,
+                    count * 8,
+                )
+            },
+            "download l1bi",
+        )?;
+        Ok(out)
+    }
+
+    /// Uploads the mask register file (16 entries per PE).
+    pub fn upload_mask(&self, state: &GpuState, words: &[u32]) -> Result<(), String> {
+        let count = crate::machine::PES * 16;
+        if words.len() != count {
+            return Err("mask slice has the wrong length".into());
+        }
+        self.check(
+            unsafe {
+                (self.cu_htod)(
+                    state.mask,
+                    words.as_ptr() as *const c_void,
+                    count * 4,
+                )
+            },
+            "upload mask",
+        )
+    }
+
+    /// Uploads the T registers (16 words per PE).
+    pub fn upload_t(&self, state: &GpuState, words: &[u32]) -> Result<(), String> {
+        let count = crate::machine::PES * 16;
+        if words.len() != count {
+            return Err("T slice has the wrong length".into());
+        }
+        self.check(
+            unsafe {
+                (self.cu_htod)(
+                    state.t,
+                    words.as_ptr() as *const c_void,
+                    count * 4,
+                )
+            },
+            "upload t",
+        )
     }
 
     /// Uploads all four PDM groups (4 x `mv::PDM_LONGS` long words, group-major).
@@ -2670,75 +2853,44 @@ impl Gpu {
         Ok(())
     }
 
-    /// Launches one L1BM reduction.
-    pub fn run_l1_reduce_line(&self, state: &GpuState, line: &L1ReduceLine) -> Result<(), String> {
-        let mut lm0 = state.lm0;
-        let mut lm1 = state.lm1;
-        let mut grf0 = state.grf0;
-        let mut grf1 = state.grf1;
-        let mut l1bm = state.l1bm;
-        let mut smem = line.src.mem as i32;
-        let mut s = line.src.base;
-        let mut swl = line.src.wl as i32;
-        let mut addr = line.addr;
-        let mut args = [
-            &mut lm0 as *mut u64 as *mut c_void,
-            &mut lm1 as *mut u64 as *mut c_void,
-            &mut grf0 as *mut u64 as *mut c_void,
-            &mut grf1 as *mut u64 as *mut c_void,
-            &mut l1bm as *mut u64 as *mut c_void,
-            &mut smem as *mut i32 as *mut c_void,
-            &mut s[0] as *mut u32 as *mut c_void,
-            &mut s[1] as *mut u32 as *mut c_void,
-            &mut s[2] as *mut u32 as *mut c_void,
-            &mut s[3] as *mut u32 as *mut c_void,
-            &mut swl as *mut i32 as *mut c_void,
-            &mut addr as *mut u32 as *mut c_void,
-        ];
-        self.check(
-            unsafe {
-                (self.cu_launch)(
-                    self.l1_reduce_function,
-                    4,
-                    1,
-                    1,
-                    256,
-                    1,
-                    1,
-                    0,
-                    std::ptr::null_mut(),
-                    args.as_mut_ptr(),
-                    std::ptr::null_mut(),
-                )
-            },
-            "cuLaunchKernel(l1_reduce_line)",
-        )
-    }
-
-    /// Launches one l1bmm@mab write.
+    /// Launches one PE-to-L1BM transfer.
     pub fn run_l1_write_line(&self, state: &GpuState, line: &L1WriteLine) -> Result<(), String> {
+        if line.wl != 2 && line.wl != 4 {
+            return Err(format!("unsupported L1BM access length {}", line.wl));
+        }
         let mut lm0 = state.lm0;
         let mut lm1 = state.lm1;
         let mut grf0 = state.grf0;
         let mut grf1 = state.grf1;
+        let mut t = state.t;
         let mut l1bm = state.l1bm;
+        let mut lbi = state.lbi;
         let mut op = line.op as i32;
         let mut mab = line.mab as i32;
         let mut mabdiff = line.mabdiff as i32;
-        let mut addr = line.addr;
+        let mut has_addr = line.addr.is_some() as i32;
+        let mut addr = line.addr.unwrap_or(0);
         let mut dwl = line.wl as i32;
         let mut smem = line.src.mem as i32;
         let mut s = line.src.base;
         let mut swl = line.src.wl as i32;
+        let mut two_src = line.two_src as i32;
+        let mut bits = line.bits as i32;
+        let mut rrn = line.rrn as i32;
+        let mut round_it = line.round as i32;
+        let mut ext = line.ext as i32;
         let mut args = [
             &mut lm0 as *mut u64 as *mut c_void,
             &mut lm1 as *mut u64 as *mut c_void,
             &mut grf0 as *mut u64 as *mut c_void,
             &mut grf1 as *mut u64 as *mut c_void,
+            &mut t as *mut u64 as *mut c_void,
             &mut l1bm as *mut u64 as *mut c_void,
+            &mut lbi as *mut u64 as *mut c_void,
             &mut op as *mut i32 as *mut c_void,
             &mut mab as *mut i32 as *mut c_void,
             &mut mabdiff as *mut i32 as *mut c_void,
+            &mut has_addr as *mut i32 as *mut c_void,
             &mut addr as *mut u32 as *mut c_void,
             &mut dwl as *mut i32 as *mut c_void,
             &mut smem as *mut i32 as *mut c_void,
@@ -2747,13 +2899,17 @@ impl Gpu {
             &mut s[2] as *mut u32 as *mut c_void,
             &mut s[3] as *mut u32 as *mut c_void,
             &mut swl as *mut i32 as *mut c_void,
+            &mut two_src as *mut i32 as *mut c_void,
+            &mut bits as *mut i32 as *mut c_void,
+            &mut rrn as *mut i32 as *mut c_void,
+            &mut round_it as *mut i32 as *mut c_void,
+            &mut ext as *mut i32 as *mut c_void,
         ];
-        let grid = (crate::machine::PES as u32 + 255) / 256;
         self.check(
             unsafe {
                 (self.cu_launch)(
                     self.l1_write_function,
-                    grid,
+                    1,
                     1,
                     1,
                     256,
@@ -2769,37 +2925,81 @@ impl Gpu {
         )
     }
 
-    /// Launches one L1BM-to-PE read line.
+    /// Launches one L1BM-to-PE read line, including all PE destinations and
+    /// their masks.
     pub fn run_l1_read_line(&self, state: &GpuState, line: &L1ReadLine) -> Result<(), String> {
+        if line.wl != 2 && line.wl != 4 {
+            return Err(format!("unsupported L1BM access length {}", line.wl));
+        }
+        if line.ndst == 0 || line.ndst as usize > 4 {
+            return Err(format!("unsupported L1BM destination count {}", line.ndst));
+        }
         let mut lm0 = state.lm0;
         let mut lm1 = state.lm1;
         let mut grf0 = state.grf0;
         let mut grf1 = state.grf1;
+        let mut t = state.t;
         let mut l1bm = state.l1bm;
+        let mut lbi = state.lbi;
+        let mut omr = state.mask;
         let mut op = line.op as i32;
-        let mut addr = line.addr;
+        let mut has_addr = line.addr.is_some() as i32;
+        let mut addr = line.addr.unwrap_or(0);
         let mut mabdiff = line.mabdiff as i32;
-        let mut swl = line.wl as i32;
-        let mut dmem = line.dst.mem as i32;
-        let mut d = line.dst.base;
-        let mut dwl = line.dst.wl as i32;
-        let mut args = [
+        let mut wl = line.wl as i32;
+        let mut ndst = line.ndst as i32;
+        let mut dm = [0i32; 4];
+        let mut db = [[0u32; 4]; 4];
+        let mut dw = [0i32; 4];
+        let mut mk = [0i32; 4];
+        let mut mke = [0i32; 4];
+        let mut mkp = [0i32; 4];
+        let mut mkl = [0i32; 4];
+        for i in 0..4 {
+            let d = line.dsts[i];
+            dm[i] = d.dst.mem as i32;
+            db[i] = d.dst.base;
+            dw[i] = d.dst.wl as i32;
+            mk[i] = d.mask.kind as i32;
+            mke[i] = d.mask.entry as i32;
+            mkp[i] = d.mask.pattern as i32;
+            mkl[i] = d.mask.ll as i32;
+        }
+        let mut fk = line.flush.kind as i32;
+        let mut fe = line.flush.entry as i32;
+        let mut fp = line.flush.pattern as i32;
+        let mut fll = line.flush.ll as i32;
+        let mut args: Vec<*mut c_void> = vec![
             &mut lm0 as *mut u64 as *mut c_void,
             &mut lm1 as *mut u64 as *mut c_void,
             &mut grf0 as *mut u64 as *mut c_void,
             &mut grf1 as *mut u64 as *mut c_void,
+            &mut t as *mut u64 as *mut c_void,
             &mut l1bm as *mut u64 as *mut c_void,
+            &mut lbi as *mut u64 as *mut c_void,
+            &mut omr as *mut u64 as *mut c_void,
             &mut op as *mut i32 as *mut c_void,
+            &mut has_addr as *mut i32 as *mut c_void,
             &mut addr as *mut u32 as *mut c_void,
             &mut mabdiff as *mut i32 as *mut c_void,
-            &mut swl as *mut i32 as *mut c_void,
-            &mut dmem as *mut i32 as *mut c_void,
-            &mut d[0] as *mut u32 as *mut c_void,
-            &mut d[1] as *mut u32 as *mut c_void,
-            &mut d[2] as *mut u32 as *mut c_void,
-            &mut d[3] as *mut u32 as *mut c_void,
-            &mut dwl as *mut i32 as *mut c_void,
+            &mut wl as *mut i32 as *mut c_void,
+            &mut ndst as *mut i32 as *mut c_void,
         ];
+        for i in 0..4 {
+            args.push(&mut dm[i] as *mut i32 as *mut c_void);
+            for j in 0..4 {
+                args.push(&mut db[i][j] as *mut u32 as *mut c_void);
+            }
+            args.push(&mut dw[i] as *mut i32 as *mut c_void);
+            args.push(&mut mk[i] as *mut i32 as *mut c_void);
+            args.push(&mut mke[i] as *mut i32 as *mut c_void);
+            args.push(&mut mkp[i] as *mut i32 as *mut c_void);
+            args.push(&mut mkl[i] as *mut i32 as *mut c_void);
+        }
+        args.push(&mut fk as *mut i32 as *mut c_void);
+        args.push(&mut fe as *mut i32 as *mut c_void);
+        args.push(&mut fp as *mut i32 as *mut c_void);
+        args.push(&mut fll as *mut i32 as *mut c_void);
         let grid = (crate::machine::PES as u32 + 255) / 256;
         self.check(
             unsafe {

@@ -3,12 +3,12 @@
 use std::collections::BTreeMap;
 
 use mncore_sim::gpu::{
-    alu_line_from_expr, bfn_line_from_expr, l1_read_line_from_expr, l1_reduce_line_from_expr, l1_write_line_from_expr,
+    alu_line_from_expr, bfn_line_from_expr, l1_read_line_from_expr, l1_write_line_from_expr,
     l2_line_from_expr, l2_reduce_line_from_expr, mat_mau_line_from_expr, mat_read_line_from_expr,
     mat_write_line_from_expr, mau_line_from_expr,
 };
 use mncore_sim::machine::MaskState;
-use mncore_sim::vsm::{self, Line, Op};
+use mncore_sim::vsm::{self, Line};
 
 fn main() {
     let path = std::env::args()
@@ -35,9 +35,8 @@ fn main() {
                 for expr in exprs {
                     let ok = alu_line_from_expr(expr, mask).is_some()
                         || bfn_line_from_expr(expr).is_some()
-                        || l1_read_line_from_expr(expr).is_some()
+                        || l1_read_line_from_expr(expr, mask).is_some()
                         || l1_write_line_from_expr(expr).is_some()
-                    || l1_reduce_line_from_expr(expr).is_some()
                         || l2_line_from_expr(expr).is_some()
                         || l2_reduce_line_from_expr(expr).is_some()
                         || mat_mau_line_from_expr(expr, mask).is_some()
