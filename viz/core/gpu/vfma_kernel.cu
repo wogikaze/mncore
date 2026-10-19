@@ -253,7 +253,7 @@ struct AluDesc {
     AluSrc a;
     AluSrc b;
     unsigned ndst;
-    AluDstDesc dst[8];
+    AluDstDesc dst[16];
     unsigned flush_kind;
     unsigned flush_entry;
     unsigned flush_pattern;
@@ -721,7 +721,7 @@ struct MauLineDesc {
     AluSrc b;
     AluSrc c;
     unsigned ndst;
-    AluDstDesc dst[8];
+    AluDstDesc dst[16];
     unsigned flush_kind;
     unsigned flush_entry;
     unsigned flush_pattern;
@@ -916,7 +916,7 @@ extern "C" __global__ void mau_line(
             unsigned mf = mask_flags_dev(mask + pe * 16, d.flush_kind, d.flush_entry, d.flush_pattern, c);
             alu_apply_flush(bus, mf, d.flush_ll != 0);
         }
-        for (unsigned k = 0; k < d.ndst && k < 8; ++k) {
+        for (unsigned k = 0; k < d.ndst && k < 16; ++k) {
             alu_write_dst(d.dst[k], pe, c, bus, flags[c], lm0, lm1, grf0, grf1,
                           mask, t, bar0, bar1);
         }
@@ -1060,7 +1060,7 @@ extern "C" __global__ void alu_line(
                 unsigned mf = mask_flags_dev(mask + pe * 16, d.flush_kind, d.flush_entry, d.flush_pattern, c);
                 alu_apply_flush(bus, mf, d.flush_ll != 0);
             }
-            for (unsigned k = 0; k < d.ndst && k < 8; ++k) {
+            for (unsigned k = 0; k < d.ndst && k < 16; ++k) {
                 alu_write_dst(d.dst[k], pe, c, bus, fl[p][c], lm0, lm1, grf0, grf1, mask, t, bar0, bar1);
             }
             // The CPU model stores the zero-flushed output in the forwarding register too.
@@ -1246,7 +1246,7 @@ extern "C" __global__ void bfn_line(
                 unsigned mf = mask_flags_dev(mask + pe * 16, d.flush_kind, d.flush_entry, d.flush_pattern, c);
                 alu_apply_flush(busw, mf, d.flush_ll != 0);
             }
-            for (unsigned k = 0; k < d.ndst && k < 8; ++k) {
+            for (unsigned k = 0; k < d.ndst && k < 16; ++k) {
                 alu_write_dst(d.dst[k], pe, c, busw, 0, lm0, lm1, grf0, grf1, mask, t, bar0, bar1);
             }
             // The CPU model stores the zero-flushed output in the forwarding register too.
@@ -1994,7 +1994,7 @@ struct MatReadLineDesc {
     unsigned side;
     unsigned addr;
     unsigned ndst;
-    AluDstDesc dst[8];
+    AluDstDesc dst[16];
     unsigned flush_kind;
     unsigned flush_entry;
     unsigned flush_pattern;
@@ -2010,7 +2010,7 @@ struct MatMauLineDesc {
     AluSrc x;
     AluSrc y;
     unsigned ndst;
-    AluDstDesc dst[8];
+    AluDstDesc dst[16];
     unsigned flush_kind;
     unsigned flush_entry;
     unsigned flush_pattern;
@@ -2257,7 +2257,7 @@ extern "C" __global__ void mat_read_line(
             unsigned mf = mask_flags_dev(mask + pe * 16, d.flush_kind, d.flush_entry, d.flush_pattern, c);
             alu_apply_flush(bus, mf, d.flush_ll != 0);
         }
-        for (unsigned k = 0; k < d.ndst && k < 8; ++k) {
+        for (unsigned k = 0; k < d.ndst && k < 16; ++k) {
             alu_write_dst(d.dst[k], pe, c, bus, 0, lm0, lm1, grf0, grf1,
                           mask, t, bar0, bar1);
         }
@@ -2363,7 +2363,7 @@ extern "C" __global__ void mat_mau_line(
                 alu_apply_flush(bus, mf, d.flush_ll != 0);
             }
             unsigned fl = mau_flags_dev(&out[p * per_pe], per_pe, fout);
-            for (unsigned k = 0; k < d.ndst && k < 8; ++k) {
+            for (unsigned k = 0; k < d.ndst && k < 16; ++k) {
                 alu_write_dst(d.dst[k], pe, c, bus, fl, lm0, lm1, grf0, grf1,
                               mask, t, bar0, bar1);
             }

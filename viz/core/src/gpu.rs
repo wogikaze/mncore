@@ -269,7 +269,7 @@ pub fn mau_line_from_expr(expr: &Expr, mask_state: MaskState) -> Option<MauLine>
         MauKind::Add => (expr.srcs.first()?, &Operand::Nowrite, expr.srcs.get(1)?, 2),
         MauKind::Passa => (expr.srcs.first()?, &Operand::Nowrite, &Operand::Nowrite, 1),
     };
-    if expr.srcs.len() != want || expr.dsts.is_empty() || expr.dsts.len() > 8 {
+    if expr.srcs.len() != want || expr.dsts.is_empty() || expr.dsts.len() > 16 {
         return None;
     }
     let source = |op: &Operand, f| {
@@ -291,7 +291,7 @@ pub fn mau_line_from_expr(expr: &Expr, mask_state: MaskState) -> Option<MauLine>
         zero
     };
     let single_line = expr.dsts.iter().any(has_explicit_mask);
-    let mut dst = [AluDstDesc::default(); 8];
+    let mut dst = [AluDstDesc::default(); 16];
     for (i, operand) in expr.dsts.iter().enumerate() {
         dst[i] = alu_dst_desc(operand, mask_state, single_line)?;
     }
@@ -378,7 +378,7 @@ pub struct MauLine {
     pub b: AluSrc,
     pub c: AluSrc,
     pub ndst: u32,
-    pub dst: [AluDstDesc; 8],
+    pub dst: [AluDstDesc; 16],
     pub flush_kind: u32,
     pub flush_entry: u32,
     pub flush_pattern: u32,
@@ -529,7 +529,7 @@ pub struct AluDesc {
     pub a: AluSrc,
     pub b: AluSrc,
     pub ndst: u32,
-    pub dst: [AluDstDesc; 8],
+    pub dst: [AluDstDesc; 16],
     pub flush_kind: u32,
     pub flush_entry: u32,
     pub flush_pattern: u32,
@@ -785,7 +785,7 @@ pub fn alu_line_from_expr(expr: &Expr, mask_state: MaskState) -> Option<AluLine>
     } else if !expr.srcs.is_empty() {
         return None;
     }
-    if expr.dsts.is_empty() || expr.dsts.len() > 8 {
+    if expr.dsts.is_empty() || expr.dsts.len() > 16 {
         return None;
     }
     let a = if has_source {
@@ -806,7 +806,7 @@ pub fn alu_line_from_expr(expr: &Expr, mask_state: MaskState) -> Option<AluLine>
                 | Operand::Bar { mask: Some(_), .. }
         )
     });
-    let mut dst = [AluDstDesc::default(); 8];
+    let mut dst = [AluDstDesc::default(); 16];
     for (i, operand) in expr.dsts.iter().enumerate() {
         dst[i] = alu_dst_desc(operand, mask_state, single_line)?;
     }
@@ -861,7 +861,7 @@ pub fn bfn_line_from_expr_state(expr: &Expr, mask_state: MaskState) -> Option<Bf
     if prec == Prec::H && arg != 0 && !(6..=9).contains(&arg) {
         return None;
     }
-    if expr.srcs.len() != 1 || expr.dsts.is_empty() || expr.dsts.len() > 8 {
+    if expr.srcs.len() != 1 || expr.dsts.is_empty() || expr.dsts.len() > 16 {
         return None;
     }
     let single_line = expr.dsts.iter().any(|d| {
@@ -872,7 +872,7 @@ pub fn bfn_line_from_expr_state(expr: &Expr, mask_state: MaskState) -> Option<Bf
                 | Operand::Bar { mask: Some(_), .. }
         )
     });
-    let mut dst = [AluDstDesc::default(); 8];
+    let mut dst = [AluDstDesc::default(); 16];
     for (i, operand) in expr.dsts.iter().enumerate() {
         dst[i] = alu_dst_desc(operand, mask_state, single_line)?;
     }
@@ -1662,7 +1662,7 @@ pub struct MatReadLine {
     pub side: u32,
     pub addr: u32,
     pub ndst: u32,
-    pub dst: [AluDstDesc; 8],
+    pub dst: [AluDstDesc; 16],
     pub flush_kind: u32,
     pub flush_entry: u32,
     pub flush_pattern: u32,
@@ -1683,7 +1683,7 @@ pub struct MatMauLine {
     pub x: AluSrc,
     pub y: AluSrc,
     pub ndst: u32,
-    pub dst: [AluDstDesc; 8],
+    pub dst: [AluDstDesc; 16],
     pub flush_kind: u32,
     pub flush_entry: u32,
     pub flush_pattern: u32,
@@ -1712,12 +1712,12 @@ fn mat_prec(prec: &Prec) -> Option<Prec> {
     matches!(prec, Prec::D | Prec::F | Prec::G | Prec::H).then_some(*prec)
 }
 
-fn mat_dsts(expr: &Expr, mask_state: MaskState) -> Option<([AluDstDesc; 8], u32)> {
-    if expr.dsts.is_empty() || expr.dsts.len() > 8 {
+fn mat_dsts(expr: &Expr, mask_state: MaskState) -> Option<([AluDstDesc; 16], u32)> {
+    if expr.dsts.is_empty() || expr.dsts.len() > 16 {
         return None;
     }
     let single_line = expr.dsts.iter().any(has_explicit_mask);
-    let mut dst = [AluDstDesc::default(); 8];
+    let mut dst = [AluDstDesc::default(); 16];
     for (i, operand) in expr.dsts.iter().enumerate() {
         dst[i] = alu_dst_desc(operand, mask_state, single_line)?;
     }
@@ -2989,7 +2989,7 @@ impl Gpu {
         line: &MauLine,
         update_forward: bool,
     ) -> Result<(), String> {
-        if line.prec > 3 || line.kind > 3 || line.half > 2 || line.ndst > 8 {
+        if line.prec > 3 || line.kind > 3 || line.half > 2 || line.ndst > 16 {
             return Err("mau_line descriptor is out of range".into());
         }
         let mut lm0 = state.lm0;
@@ -3680,7 +3680,7 @@ impl Gpu {
         line: &MatReadLine,
         update_forward: bool,
     ) -> Result<(), String> {
-        if line.prec > 3 || line.side > 1 || line.ndst > 8 {
+        if line.prec > 3 || line.side > 1 || line.ndst > 16 {
             return Err("mat_read_line descriptor is out of range".into());
         }
         let mut lm0 = state.lm0;
@@ -3744,7 +3744,7 @@ impl Gpu {
         line: &MatMauLine,
         update_forward: bool,
     ) -> Result<(), String> {
-        if line.prec > 3 || line.side > 1 || line.kind > 3 || line.half > 2 || line.ndst > 8 {
+        if line.prec > 3 || line.side > 1 || line.kind > 3 || line.half > 2 || line.ndst > 16 {
             return Err("mat_mau_line descriptor is out of range".into());
         }
         let mut lm0 = state.lm0;

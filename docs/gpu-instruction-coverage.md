@@ -7,7 +7,7 @@ CPU の `Sim` と GPU の `gpu_run_program` が同じ VSM を実行し、最終�
 
 | 分類 | 対応 | 主な不足 |
 | --- | --- | --- |
-| ALU | 全 32 opcode（zero/imm を含む）。`d/f/g/h/l/i/s`、unsigned、入力 `r`/`e`、zero-flush、複数出力（8 個まで）、OMR/T/BAR 出力、`msl`/`msr`、`bfe`/`bfn` 全精度・`hbfn/<n>`/`hbfe/<n>`、`lrelud`/`lreluo`/`ilrelud`。入力の `$mb`/`$nb` 加算・T 間接・`j` も全カーネルで対応 | `$lbf`・forwarding の全ソース（ALU/MAU/行列/L1BM 書き込み）、9 個以上の出力、`hbfn/<n>` の n が 6..9 外。ALU の `e` は CPU と同じく no-op（SDM 3.6.12 は `r` のみ定義） |
+| ALU | 全 32 opcode（zero/imm を含む）。`d/f/g/h/l/i/s`、unsigned、入力 `r`/`e`、zero-flush、複数出力（8 個まで）、OMR/T/BAR 出力、`msl`/`msr`、`bfe`/`bfn` 全精度・`hbfn/<n>`/`hbfe/<n>`、`lrelud`/`lreluo`/`ilrelud`。入力の `$mb`/`$nb` 加算・T 間接・`j` も全カーネルで対応 | `$lbf`・forwarding の全ソース（ALU/MAU/行列/L1BM 書き込み）、最大 16 出力（`issue::check` により同一メモリ種別への複数出力は不可）、`hbfn/<n>` の n が 6..9 外。ALU の `e` は CPU と同じく no-op（SDM 3.6.12 は `r` のみ定義） |
 | MAU | ベクトル MAU D/F/G/H の fma/mul/add/passa（u/d/round、neg/e/r、wl 1/2/4、LM/GRF/T/forwarding、nowrite、マスク/flush、T/OMR/複数出力）。matrix MAU D/F/G/H（mwrite/mread 含む）。`gpu_mau_conformance` 133 設定・7,640 行 | 不正 block-float 入力のエラー再現、matrix write のマスク（SDM に無い） |
 | 行列 | D/F/G/H の write/read、matrix MAU、row wrap、neg/e/r、nowrite、複数 PE 出力、マスク/flush、T/OMR/BAR | 不正 block-float 入力のエラー、matrix MAU BAR 出力の conformance（乱数が BF 不正になりやすい） |
 | L1BM | 全形式（1/2 長語、M4 系、全 RRN と `r`/`e`、`l1bmd` の分配・結合、`$lbi`、BAR/T/j、BAR 出力、`$lbf`/`$aluf`/`$mauf`/`$mreadf` ソース） | forwarding 無効時のエラー再現 |
