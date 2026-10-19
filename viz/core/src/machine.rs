@@ -94,10 +94,18 @@ impl MemRead for Mem {
     #[inline]
     fn peek(&self, m: MemKind, pe: usize, addr: usize) -> u32 {
         match m {
-            MemKind::Lm0 => self.lm0[pe * LM_WORDS + (addr & (LM_WORDS - 1))],
-            MemKind::Lm1 => self.lm1[pe * LM_WORDS + (addr & (LM_WORDS - 1))],
-            MemKind::Grf0 => self.grf0[pe * GRF_WORDS + (addr & (GRF_WORDS - 1))],
-            MemKind::Grf1 => self.grf1[pe * GRF_WORDS + (addr & (GRF_WORDS - 1))],
+            MemKind::Lm0 => unsafe {
+                *self.lm0.get_unchecked(pe * LM_WORDS + (addr & (LM_WORDS - 1)))
+            },
+            MemKind::Lm1 => unsafe {
+                *self.lm1.get_unchecked(pe * LM_WORDS + (addr & (LM_WORDS - 1)))
+            },
+            MemKind::Grf0 => unsafe {
+                *self.grf0.get_unchecked(pe * GRF_WORDS + (addr & (GRF_WORDS - 1)))
+            },
+            MemKind::Grf1 => unsafe {
+                *self.grf1.get_unchecked(pe * GRF_WORDS + (addr & (GRF_WORDS - 1)))
+            },
             other => panic!("not a PE word memory: {other:?}"),
         }
     }
@@ -107,10 +115,18 @@ impl MemWrite for Mem {
     #[inline]
     fn poke(&mut self, m: MemKind, pe: usize, addr: usize, v: u32) {
         match m {
-            MemKind::Lm0 => self.lm0[pe * LM_WORDS + (addr & (LM_WORDS - 1))] = v,
-            MemKind::Lm1 => self.lm1[pe * LM_WORDS + (addr & (LM_WORDS - 1))] = v,
-            MemKind::Grf0 => self.grf0[pe * GRF_WORDS + (addr & (GRF_WORDS - 1))] = v,
-            MemKind::Grf1 => self.grf1[pe * GRF_WORDS + (addr & (GRF_WORDS - 1))] = v,
+            MemKind::Lm0 => unsafe {
+                *self.lm0.get_unchecked_mut(pe * LM_WORDS + (addr & (LM_WORDS - 1))) = v
+            },
+            MemKind::Lm1 => unsafe {
+                *self.lm1.get_unchecked_mut(pe * LM_WORDS + (addr & (LM_WORDS - 1))) = v
+            },
+            MemKind::Grf0 => unsafe {
+                *self.grf0.get_unchecked_mut(pe * GRF_WORDS + (addr & (GRF_WORDS - 1))) = v
+            },
+            MemKind::Grf1 => unsafe {
+                *self.grf1.get_unchecked_mut(pe * GRF_WORDS + (addr & (GRF_WORDS - 1))) = v
+            },
             other => panic!("not a PE word memory: {other:?}"),
         }
     }
@@ -128,10 +144,10 @@ impl MemRead for MemPe<'_> {
     #[inline]
     fn peek(&self, m: MemKind, _pe: usize, addr: usize) -> u32 {
         match m {
-            MemKind::Lm0 => self.lm0[addr & (LM_WORDS - 1)],
-            MemKind::Lm1 => self.lm1[addr & (LM_WORDS - 1)],
-            MemKind::Grf0 => self.grf0[addr & (GRF_WORDS - 1)],
-            MemKind::Grf1 => self.grf1[addr & (GRF_WORDS - 1)],
+            MemKind::Lm0 => unsafe { *self.lm0.get_unchecked(addr & (LM_WORDS - 1)) },
+            MemKind::Lm1 => unsafe { *self.lm1.get_unchecked(addr & (LM_WORDS - 1)) },
+            MemKind::Grf0 => unsafe { *self.grf0.get_unchecked(addr & (GRF_WORDS - 1)) },
+            MemKind::Grf1 => unsafe { *self.grf1.get_unchecked(addr & (GRF_WORDS - 1)) },
             other => panic!("not a PE word memory: {other:?}"),
         }
     }
@@ -141,10 +157,18 @@ impl MemWrite for MemPe<'_> {
     #[inline]
     fn poke(&mut self, m: MemKind, _pe: usize, addr: usize, v: u32) {
         match m {
-            MemKind::Lm0 => self.lm0[addr & (LM_WORDS - 1)] = v,
-            MemKind::Lm1 => self.lm1[addr & (LM_WORDS - 1)] = v,
-            MemKind::Grf0 => self.grf0[addr & (GRF_WORDS - 1)] = v,
-            MemKind::Grf1 => self.grf1[addr & (GRF_WORDS - 1)] = v,
+            MemKind::Lm0 => unsafe {
+                *self.lm0.get_unchecked_mut(addr & (LM_WORDS - 1)) = v
+            },
+            MemKind::Lm1 => unsafe {
+                *self.lm1.get_unchecked_mut(addr & (LM_WORDS - 1)) = v
+            },
+            MemKind::Grf0 => unsafe {
+                *self.grf0.get_unchecked_mut(addr & (GRF_WORDS - 1)) = v
+            },
+            MemKind::Grf1 => unsafe {
+                *self.grf1.get_unchecked_mut(addr & (GRF_WORDS - 1)) = v
+            },
             other => panic!("not a PE word memory: {other:?}"),
         }
     }
