@@ -1,0 +1,332 @@
+//! Minimal CUDA Driver API and NVRTC wrapper for the GPU backend.
+//!
+//! The libraries are loaded at runtime so the CPU build does not need a CUDA
+//! toolchain. On WSL the driver comes from `/usr/lib/wsl/lib/libcuda.so.1`;
+//! NVRTC comes from the PyTorch CUDA wheels unless `NVRTC_LIB` is set.
+
+use std::ffi::{c_char, c_int, c_void, CStr, CString};
+use std::path::Path;
+
+use libloading::Library;
+
+type CuResult = c_int;
+type CuDevice = c_int;
+type CuContext = *mut c_void;
+type CuModule = *mut c_void;
+type CuFunction = *mut c_void;
+type CuDevicePtr = u64;
+
+type CuInit = unsafe extern "C" fn(u32) -> CuResult;
+type CuDeviceGet = unsafe extern "C" fn(*mut CuDevice, c_int) -> CuResult;
+type CuDeviceGetAttribute = unsafe extern "C" fn(*mut c_int, c_int, CuDevice) -> CuResult;
+type CuCtxCreate = unsafe extern "C" fn(*mut CuContext, u32, CuDevice) -> CuResult;
+type CuCtxDestroy = unsafe extern "C" fn(CuContext) -> CuResult;
+type CuCtxSync = unsafe extern "C" fn() -> CuResult;
+type CuModuleLoad = unsafe extern "C" fn(*mut CuModule, *const c_void, u32, *const c_void, *const c_void) -> CuResult;
+type CuModuleGetFunction = unsafe extern "C" fn(*mut CuFunction, CuModule, *const c_char) -> CuResult;
+type CuMemAlloc = unsafe extern "C" fn(*mut CuDevicePtr, usize) -> CuResult;
+type CuMemFree = unsafe extern "C" fn(CuDevicePtr) -> CuResult;
+type CuMemcpyHtoD = unsafe extern "C" fn(CuDevicePtr, *const c_void, usize) -> CuResult;
+type CuMemcpyDtoH = unsafe extern "C" fn(*mut c_void, CuDevicePtr, usize) -> CuResult;
+type CuLaunchKernel = unsafe extern "C" fn(
+    CuFunction,
+    u32,
+    u32,
+    u32,
+    u32,
+    u32,
+    u32,
+    u32,
+    *mut c_void,
+    *mut *mut c_void,
+    *mut *mut c_void,
+) -> CuResult;
+type CuGetErrorString = unsafe extern "C" fn(CuResult, *mut *const c_char) -> CuResult;
+
+type NvrtcResult = c_int;
+type NvrtcProgram = *mut c_void;
+type NvrtcCreate = unsafe extern "C" fn(
+    *mut NvrtcProgram,
+    *const c_char,
+    *const c_char,
+    c_int,
+    *const *const c_char,
+    *const *const c_char,
+) -> NvrtcResult;
+type NvrtcCompile = unsafe extern "C" fn(NvrtcProgram, c_int, *const *const c_char) -> NvrtcResult;
+type NvrtcGetSize = unsafe extern "C" fn(NvrtcProgram, *mut usize) -> NvrtcResult;
+type NvrtcGet = unsafe extern "C" fn(NvrtcProgram, *mut c_char) -> NvrtcResult;
+type NvrtcDestroy = unsafe extern "C" fn(*mut NvrtcProgram) -> NvrtcResult;
+
+macro_rules! load {
+    ($lib:expr, $name:literal, $ty:ty) => {{
+        let symbol: libloading::Symbol<'_, $ty> = unsafe { $lib.get($name) }
+            .map_err(|e| format!("{}: {e}", String::from_utf8_lossy(&$name[..$name.len() - 1])))?;
+        *symbol
+    }};
+}
+
+pub struct Gpu {
+    _cuda: Library,
+    _nvrtc: Library,
+    context: CuContext,
+    function: CuFunction,
+    cu_ctx_destroy: CuCtxDestroy,
+    cu_mem_alloc: CuMemAlloc,
+    cu_mem_free: CuMemFree,
+    cu_htod: CuMemcpyHtoD,
+    cu_dtoh: CuMemcpyDtoH,
+    cu_launch: CuLaunchKernel,
+    cu_sync: CuCtxSync,
+    cu_error: CuGetErrorString,
+}
+
+unsafe impl Send for Gpu {}
+
+impl Gpu {
+    /// Initializes the first GPU and compiles the vfma kernel.
+    pub fn new() -> Result<Gpu, String> {
+        let cuda = unsafe { Library::new("libcuda.so.1") }
+            .map_err(|e| format!("libcuda.so.1: {e}"))?;
+        let nvrtc = load_nvrtc()?;
+
+        let cu_init: CuInit = load!(cuda, b"cuInit\0", CuInit);
+        let cu_device_get: CuDeviceGet = load!(cuda, b"cuDeviceGet\0", CuDeviceGet);
+        let cu_attr: CuDeviceGetAttribute =
+            load!(cuda, b"cuDeviceGetAttribute\0", CuDeviceGetAttribute);
+        let cu_ctx_create: CuCtxCreate = load!(cuda, b"cuCtxCreate_v2\0", CuCtxCreate);
+        let cu_ctx_destroy: CuCtxDestroy = load!(cuda, b"cuCtxDestroy_v2\0", CuCtxDestroy);
+        let cu_module_load: CuModuleLoad =
+            load!(cuda, b"cuModuleLoadDataEx\0", CuModuleLoad);
+        let cu_get_function: CuModuleGetFunction =
+            load!(cuda, b"cuModuleGetFunction\0", CuModuleGetFunction);
+        let cu_mem_alloc: CuMemAlloc = load!(cuda, b"cuMemAlloc_v2\0", CuMemAlloc);
+        let cu_mem_free: CuMemFree = load!(cuda, b"cuMemFree_v2\0", CuMemFree);
+        let cu_htod: CuMemcpyHtoD = load!(cuda, b"cuMemcpyHtoD_v2\0", CuMemcpyHtoD);
+        let cu_dtoh: CuMemcpyDtoH = load!(cuda, b"cuMemcpyDtoH_v2\0", CuMemcpyDtoH);
+        let cu_launch: CuLaunchKernel = load!(cuda, b"cuLaunchKernel\0", CuLaunchKernel);
+        let cu_sync: CuCtxSync = load!(cuda, b"cuCtxSynchronize\0", CuCtxSync);
+        let cu_error: CuGetErrorString = load!(cuda, b"cuGetErrorString\0", CuGetErrorString);
+
+        let nvrtc_create: NvrtcCreate = load!(nvrtc, b"nvrtcCreateProgram\0", NvrtcCreate);
+        let nvrtc_compile: NvrtcCompile = load!(nvrtc, b"nvrtcCompileProgram\0", NvrtcCompile);
+        let nvrtc_log_size: NvrtcGetSize = load!(nvrtc, b"nvrtcGetProgramLogSize\0", NvrtcGetSize);
+        let nvrtc_log: NvrtcGet = load!(nvrtc, b"nvrtcGetProgramLog\0", NvrtcGet);
+        let nvrtc_ptx_size: NvrtcGetSize = load!(nvrtc, b"nvrtcGetPTXSize\0", NvrtcGetSize);
+        let nvrtc_ptx: NvrtcGet = load!(nvrtc, b"nvrtcGetPTX\0", NvrtcGet);
+        let nvrtc_destroy: NvrtcDestroy = load!(nvrtc, b"nvrtcDestroyProgram\0", NvrtcDestroy);
+
+        let check = |code: CuResult, what: &str| -> Result<(), String> {
+            if code == 0 {
+                return Ok(());
+            }
+            let mut text: *const c_char = std::ptr::null();
+            unsafe { cu_error(code, &mut text) };
+            let message = if text.is_null() {
+                format!("error {code}")
+            } else {
+                unsafe { CStr::from_ptr(text) }
+                    .to_string_lossy()
+                    .into_owned()
+            };
+            Err(format!("{what}: {message}"))
+        };
+
+        unsafe { cu_init(0) };
+        let mut device: CuDevice = 0;
+        check(unsafe { cu_device_get(&mut device, 0) }, "cuDeviceGet")?;
+        let mut major: c_int = 0;
+        let mut minor: c_int = 0;
+        let _ = unsafe { cu_attr(&mut major, 75, device) };
+        let _ = unsafe { cu_attr(&mut minor, 76, device) };
+        if major == 0 {
+            major = 8;
+            minor = 6;
+        }
+        let mut context: CuContext = std::ptr::null_mut();
+        check(unsafe { cu_ctx_create(&mut context, 0, device) }, "cuCtxCreate")?;
+
+        let source = include_str!("../gpu/vfma_kernel.cu");
+        let source_c = CString::new(source).map_err(|e| e.to_string())?;
+        let name = CString::new("vfma.cu").unwrap();
+        let mut program: NvrtcProgram = std::ptr::null_mut();
+        let created = unsafe {
+            nvrtc_create(
+                &mut program,
+                source_c.as_ptr(),
+                name.as_ptr(),
+                0,
+                std::ptr::null(),
+                std::ptr::null(),
+            )
+        };
+        if created != 0 {
+            check(unsafe { cu_ctx_destroy(context) }, "cuCtxDestroy")?;
+            return Err(format!("nvrtcCreateProgram: {created}"));
+        }
+        let arch = CString::new(format!("--gpu-architecture=compute_{major}{minor}")).unwrap();
+        let int128 = CString::new("--device-int128").unwrap();
+        let options = [arch.as_ptr(), int128.as_ptr()];
+        let compiled = unsafe { nvrtc_compile(program, 2, options.as_ptr()) };
+        if compiled != 0 {
+            let mut size = 0usize;
+            unsafe { nvrtc_log_size(program, &mut size) };
+            let mut log = vec![0u8; size.max(1)];
+            if size > 0 {
+                unsafe { nvrtc_log(program, log.as_mut_ptr() as *mut c_char) };
+            }
+            unsafe { nvrtc_destroy(&mut program) };
+            unsafe { cu_ctx_destroy(context) };
+            return Err(format!(
+                "nvrtcCompileProgram: {}",
+                String::from_utf8_lossy(&log)
+            ));
+        }
+        let mut ptx_size = 0usize;
+        unsafe { nvrtc_ptx_size(program, &mut ptx_size) };
+        let mut ptx = vec![0u8; ptx_size];
+        unsafe { nvrtc_ptx(program, ptx.as_mut_ptr() as *mut c_char) };
+        unsafe { nvrtc_destroy(&mut program) };
+
+        let mut module: CuModule = std::ptr::null_mut();
+        check(
+            unsafe {
+                cu_module_load(
+                    &mut module,
+                    ptx.as_ptr() as *const c_void,
+                    0,
+                    std::ptr::null(),
+                    std::ptr::null(),
+                )
+            },
+            "cuModuleLoadDataEx",
+        )?;
+        let mut function: CuFunction = std::ptr::null_mut();
+        check(
+            unsafe { cu_get_function(&mut function, module, b"vfma_f32\0".as_ptr() as *const c_char) },
+            "cuModuleGetFunction",
+        )?;
+        Ok(Gpu {
+            _cuda: cuda,
+            _nvrtc: nvrtc,
+            context,
+            function,
+            cu_ctx_destroy,
+            cu_mem_alloc,
+            cu_mem_free,
+            cu_htod,
+            cu_dtoh,
+            cu_launch,
+            cu_sync,
+            cu_error,
+        })
+    }
+
+    fn error(&self, code: CuResult) -> String {
+        let mut text: *const c_char = std::ptr::null();
+        unsafe { (self.cu_error)(code, &mut text) };
+        if text.is_null() {
+            format!("error {code}")
+        } else {
+            unsafe { CStr::from_ptr(text) }
+                .to_string_lossy()
+                .into_owned()
+        }
+    }
+
+    fn check(&self, code: CuResult, what: &str) -> Result<(), String> {
+        if code == 0 {
+            Ok(())
+        } else {
+            Err(format!("{what}: {}", self.error(code)))
+        }
+    }
+
+    /// Runs the f32 vfma kernel over three equal-length input slices.
+    pub fn vfma_f32(&self, a: &[u32], b: &[u32], c: &[u32]) -> Result<Vec<u32>, String> {
+        let n = a.len();
+        if b.len() != n || c.len() != n {
+            return Err("vfma slices differ in length".into());
+        }
+        if n == 0 {
+            return Ok(Vec::new());
+        }
+        let size = n * 4;
+        let mut buffers = [0u64; 4];
+        for buffer in &mut buffers {
+            self.check(unsafe { (self.cu_mem_alloc)(buffer, size) }, "cuMemAlloc")?;
+        }
+        let result = (|| -> Result<(), String> {
+            self.check(unsafe { (self.cu_htod)(buffers[0], a.as_ptr() as *const c_void, size) }, "upload a")?;
+            self.check(unsafe { (self.cu_htod)(buffers[1], b.as_ptr() as *const c_void, size) }, "upload b")?;
+            self.check(unsafe { (self.cu_htod)(buffers[2], c.as_ptr() as *const c_void, size) }, "upload c")?;
+            let args = [
+                &mut buffers[0] as *mut u64 as *mut c_void,
+                &mut buffers[1] as *mut u64 as *mut c_void,
+                &mut buffers[2] as *mut u64 as *mut c_void,
+                &mut buffers[3] as *mut u64 as *mut c_void,
+            ];
+            let mut count = n as i32;
+            let mut all = [
+                args[0], args[1], args[2], args[3],
+                &mut count as *mut i32 as *mut c_void,
+            ];
+            let grid = ((n as u32) + 255) / 256;
+            self.check(
+                unsafe {
+                    (self.cu_launch)(
+                        self.function,
+                        grid,
+                        1,
+                        1,
+                        256,
+                        1,
+                        1,
+                        0,
+                        std::ptr::null_mut(),
+                        all.as_mut_ptr(),
+                        std::ptr::null_mut(),
+                    )
+                },
+                "cuLaunchKernel",
+            )?;
+            self.check(unsafe { (self.cu_sync)() }, "cuCtxSynchronize")?;
+            Ok(())
+        })();
+        let mut out = vec![0u32; n];
+        if result.is_ok() {
+            self.check(
+                unsafe { (self.cu_dtoh)(out.as_mut_ptr() as *mut c_void, buffers[3], size) },
+                "download",
+            )?;
+        }
+        for buffer in buffers {
+            let _ = unsafe { (self.cu_mem_free)(buffer) };
+        }
+        result.map(|()| out)
+    }
+}
+
+impl Drop for Gpu {
+    fn drop(&mut self) {
+        unsafe { (self.cu_ctx_destroy)(self.context) };
+    }
+}
+
+fn load_nvrtc() -> Result<Library, String> {
+    if let Ok(path) = std::env::var("NVRTC_LIB") {
+        return unsafe { Library::new(path) }.map_err(|e| format!("NVRTC_LIB: {e}"));
+    }
+    let home = std::env::var("HOME").unwrap_or_default();
+    let candidates = [
+        format!("{home}/.local/lib/python3.10/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.so.12"),
+        format!("{home}/.local/lib/python3.11/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.so.12"),
+        format!("{home}/.local/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.so.12"),
+    ];
+    for path in candidates {
+        if Path::new(&path).exists() {
+            return unsafe { Library::new(&path) }.map_err(|e| format!("{path}: {e}"));
+        }
+    }
+    unsafe { Library::new("libnvrtc.so.12") }.map_err(|e| format!("libnvrtc.so.12: {e}"))
+}

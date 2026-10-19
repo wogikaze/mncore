@@ -4,6 +4,8 @@ pub mod blocks;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod emu;
 pub mod float;
+#[cfg(target_os = "linux")]
+pub mod gpu;
 pub mod hazard;
 pub mod issue;
 pub mod machine;

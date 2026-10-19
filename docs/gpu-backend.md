@@ -44,3 +44,23 @@ CPU の `fvfma` は 1 行あたり約 3.8 ms（500 行のマイクロベンチ�
 - 起動オーバーヘッドは 1 行 5〜10 µs。3,558 行で 28〜36 ms なので、全体では支配的にならない。
 - f32 の vfma は確認済みだが、half と double、block-float はまだ移植していない。
 - GPU の状態を毎行ホストに戻すと PCIe 転送が支配的になる。状態は VRAM に置いたままにする。
+
+## Rust ラッパー
+
+[viz/core/src/gpu.rs](../viz/core/src/gpu.rs) は `libloading` で `libcuda.so.1` と NVRTC を実行時に読み、カーネルのコンパイル、コンテキスト、バッファ、起動を Rust から扱う。
+[viz/core/src/bin/gpu_vfma.rs](../viz/core/src/bin/gpu_vfma.rs) は CPU の `float::vfma` と全ビットを比較する。
+
+```sh
+cd viz/core
+cargo run --release --bin gpu_vfma -- 1000000
+```
+
+結果:
+
+- 100 万組で mismatch 0。
+- CPU は約 15 Mvfma/s。
+- GPU は入出力の 12 MB 転送を含めて約 89 Mvfma/s。
+
+この計測は毎回 4 本のバッファを確保し、入力と出力を PCIe で往復させる。
+実際のバックエンドでは状態を VRAM に置いたままにするので、この転送は毎行には入らない。
+転送を含めた数値は、状態を毎回ホストと往復させてはいけないことの確認でもある。
