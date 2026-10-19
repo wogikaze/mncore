@@ -11,7 +11,7 @@ fn rng(state: &mut u64) -> u64 {
     state.wrapping_mul(0x2545_F491_4F6C_DD1D)
 }
 
-const DRAM_LONGS: u64 = 65536;
+const DRAM_LONGS: u64 = 1 << 20;
 const PDM_LONGS: u64 = 512 * 1024;
 
 struct Init {
@@ -139,6 +139,8 @@ fn seed_sim(sim: &mut Sim, init: &Init) {
 
 fn count(a: &Sim, b: &Sim) -> usize {
     let mut d = 0;
+    let dram_only = std::env::var("DRAM_ONLY").is_ok();
+    if !dram_only {
     for i in 0..PES * LM_WORDS {
         if a.m.mem.lm0[i] != b.m.mem.lm0[i] {
             d += 1;
@@ -154,6 +156,7 @@ fn count(a: &Sim, b: &Sim) -> usize {
         if a.m.mem.grf1[i] != b.m.mem.grf1[i] {
             d += 1;
         }
+    }
     }
     for g in 0..4usize {
         for i in 0..DRAM_LONGS {
