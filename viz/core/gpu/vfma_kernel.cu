@@ -859,10 +859,12 @@ extern "C" __global__ void mau_line(
     Fmt fa = mau_fmt(d.prec);
     Fmt fc = (d.prec == 3) ? Fmt{8, 23, 18} : fa;
     // Half precision accumulates in single and only rounds to half on request.
+    // The `r` suffix halves the output element width: double to single, single
+    // and pseudo-single to half (SDM 3.6.9.25).
     Fmt fout = (d.prec == 3) ? Fmt{8, 23, 18} : fa;
     if (d.round) {
         if (d.prec == 0) fout = {8, 23, 18};
-        else if (d.prec == 3) fout = {6, 9, -1};
+        else fout = {6, 9, -1};
     }
     int lanes = (d.prec == 0) ? 1 : (d.prec == 3) ? 4 : 2;
     Val av[4][4];

@@ -239,8 +239,7 @@ pub struct MaskInfo {
 /// Every list source, T, the three forwarding registers, the `e`/`r` input
 /// options, `(u|d)` half selection, output rounding, write masks, zero-flush
 /// masks and up to eight destinations are carried to the generic `mau_line`
-/// kernel. Forms the CPU model rejects (for example rounding a single output)
-/// also return `None`.
+/// kernel. Forms only the CPU model rejects also return `None`.
 pub fn mau_line_from_expr(expr: &Expr, mask_state: MaskState) -> Option<MauLine> {
     let Op::Mau {
         prec: prec @ (Prec::D | Prec::F | Prec::G | Prec::H),
@@ -252,11 +251,8 @@ pub fn mau_line_from_expr(expr: &Expr, mask_state: MaskState) -> Option<MauLine>
     else {
         return None;
     };
-    // SDM 3.6.9.25 defines output rounding for double (to single) and half
-    // (to half); the CPU model rejects `fv*r`, and pseudo-single follows single.
-    if *round && matches!(prec, Prec::F | Prec::G) {
-        return None;
-    }
+    // SDM 3.6.9.25 halves the output element width: double to single, single and
+    // pseudo-single to half. The `fv*r` spelling is the wildcard for the `r` suffix.
     let (fa, fc, lanes) = match prec {
         Prec::D => (DOUBLE, DOUBLE, 1usize),
         Prec::F | Prec::G => (SINGLE, SINGLE, 2),

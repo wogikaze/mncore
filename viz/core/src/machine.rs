@@ -1089,9 +1089,12 @@ impl Machine {
             });
         }
         // Formats of the inputs a, b, c and of the output in the basic operation (SDM 3.6.9).
+        // The `r` suffix halves the output element width (SDM 3.6.9.25): double to single,
+        // single and pseudo-single to half, and half keeps its single accumulator but stores
+        // halves. The `fv*r` spelling in the SDM is the wildcard for `fvmul`/`fvmulr`.
         let (fa, fc, fout): (Fmt, Fmt, Fmt) = match prec {
             Prec::D => (DOUBLE, DOUBLE, if round { SINGLE } else { DOUBLE }),
-            Prec::F | Prec::G => (SINGLE, SINGLE, SINGLE),
+            Prec::F | Prec::G => (SINGLE, SINGLE, if round { HALF } else { SINGLE }),
             Prec::H => (HALF, SINGLE, if round { HALF } else { SINGLE }),
             _ => {
                 return Err(ExecError::Unsupported(format!(
@@ -1099,9 +1102,6 @@ impl Machine {
                 )))
             }
         };
-        if matches!(prec, Prec::F | Prec::G) && round {
-            return Err(ExecError::Unsupported("fv*r".into()));
-        }
         let lanes_n = match prec {
             Prec::D => 1,
             Prec::F | Prec::G => 2,
@@ -1211,10 +1211,8 @@ impl Machine {
             Op::Mau {
                 prec,
                 matrix: false,
-                round,
                 ..
-            } => matches!(prec, Prec::D | Prec::F | Prec::G | Prec::H)
-                && !(matches!(prec, Prec::F | Prec::G) && *round),
+            } => matches!(prec, Prec::D | Prec::F | Prec::G | Prec::H),
             _ => false,
         });
         if !supported {
@@ -1722,7 +1720,11 @@ fn alu_lanes(
             AluOp::Floor => (float_floor(fmt_of(prec), a), false),
             AluOp::Ftoi => (float_ftoi(fmt_of(prec), a, unsigned, bits), false),
             AluOp::Lrelud | AluOp::Lreluo | AluOp::Ilrelud => {
-                (float_lrelu(name, fmt_of(prec), b), msb(a, 0) == 0)
+                // SDM 3.6.12.18: x is the condition and y the value, so a non-negative x
+                // passes y through unchanged; only a negative x applies the leaky transform.
+                let pass = msb(a, 0) == 0;
+                let r = if pass { b } else { float_lrelu(name, fmt_of(prec), b) };
+                (r, pass)
             }
             other => return Err(ExecError::Unsupported(format!("ALU {other:?}"))),
         };
@@ -2610,9 +2612,10 @@ fn compute_vec_pe<M: MemRead>(
     round: bool,
     pe: usize,
 ) -> Result<([Bus; 4], [u8; 4]), ExecError> {
+    // See `compute_vec`: the `r` suffix selects half output for single and pseudo-single.
     let (fa, fc, fout): (Fmt, Fmt, Fmt) = match prec {
         Prec::D => (DOUBLE, DOUBLE, if round { SINGLE } else { DOUBLE }),
-        Prec::F | Prec::G => (SINGLE, SINGLE, SINGLE),
+        Prec::F | Prec::G => (SINGLE, SINGLE, if round { HALF } else { SINGLE }),
         Prec::H => (HALF, SINGLE, if round { HALF } else { SINGLE }),
         _ => {
             return Err(ExecError::Unsupported(format!(
@@ -2620,9 +2623,6 @@ fn compute_vec_pe<M: MemRead>(
             )))
         }
     };
-    if matches!(prec, Prec::F | Prec::G) && round {
-        return Err(ExecError::Unsupported("fv*r".into()));
-    }
     let lanes_n = match prec {
         Prec::D => 1,
         Prec::F | Prec::G => 2,
@@ -2953,6 +2953,33 @@ fn mat_get_face(face: &[MatFace; 2], side: usize, prec: Prec, row: usize, col: u
 }
 
 #[cfg(test)]
+mod output_rounding_tests {
+    use crate::run::Sim;
+
+    #[test]
+    fn single_output_rounding_writes_packed_halves() {
+        // Values from the emulator probe: fvmul keeps two f32 in one long word, while fvmulr
+        // rounds each lane to MN-Core half and packs both into the high word of the long word
+        // (SDM 3.6.9.25: word count unchanged, half the width per element).
+        let src = "\
+d set $lm0n0b0m0p0 1 3F9E0419C2F6E979
+imm f\"1.0\" $t
+nop
+fvmul $lm0v $t $ln0v
+fvmulr $lm0v $t $ls0v
+d get $ln0n0c0b0m0p0 1
+d get $ls0n0c0b0m0p0 1
+";
+        let lines = crate::vsm::parse(src).unwrap();
+        let mut sim = Sim::new();
+        sim.run(&lines).unwrap();
+        let key = |mem: &str| (mem.to_string(), "n0c0b0m0p0".to_string(), 0);
+        assert_eq!(sim.dump.get(&key("LM1")).copied(), Some(0x3F9E_0419_C2F6_E979));
+        assert_eq!(sim.dump.get(&key("GREG1")).copied(), Some(0x3E78_CBDC_0000_0000));
+    }
+}
+
+#[cfg(test)]
 mod lrelu_tests {
     use super::*;
 
@@ -2968,43 +2995,57 @@ mod lrelu_tests {
     #[test]
     fn single_leaky_relu() {
         let one = 0x3f80_0000; // 1.0f
-        assert_eq!(relu(AluOp::Lrelud, Prec::F, 0, one), (0x3f00_0000, 0xf)); // 0.5
-        assert_eq!(relu(AluOp::Lreluo, Prec::F, 0, one), (0x3e00_0000, 0xf)); // 0.125
-        assert_eq!(relu(AluOp::Ilrelud, Prec::F, 0, one), (0x4000_0000, 0xf)); // 2.0
+        let neg_zero = 0x8000_0000; // x < 0
+        // SDM 3.6.12.18: a non-negative x passes y through and sets the flags.
+        assert_eq!(relu(AluOp::Lrelud, Prec::F, 0, one), (one, 0xf));
+        assert_eq!(relu(AluOp::Lreluo, Prec::F, 0, one), (one, 0xf));
+        assert_eq!(relu(AluOp::Ilrelud, Prec::F, 0, one), (one, 0xf));
+        // A negative x applies y/2, y/8 or 2y and clears the flags.
+        assert_eq!(relu(AluOp::Lrelud, Prec::F, neg_zero, one), (0x3f00_0000, 0));
+        assert_eq!(relu(AluOp::Lreluo, Prec::F, neg_zero, one), (0x3e00_0000, 0));
+        assert_eq!(relu(AluOp::Ilrelud, Prec::F, neg_zero, one), (0x4000_0000, 0));
+        assert_eq!(relu(AluOp::Relu, Prec::F, neg_zero, one), (0x8000_0000, 0));
+        // y keeps its sign on both branches.
         let neg_one = 0xbf80_0000;
-        assert_eq!(relu(AluOp::Lrelud, Prec::F, 0, neg_one), (0xbf00_0000, 0xf));
-        assert_eq!(relu(AluOp::Lreluo, Prec::F, 0, neg_one), (0xbe00_0000, 0xf));
-        // The negative first input disables the pass-through and clears the flags.
-        assert_eq!(relu(AluOp::Lrelud, Prec::F, 0x8000_0000, one), (0x3f00_0000, 0));
-        assert_eq!(relu(AluOp::Relu, Prec::F, 0x8000_0000, one), (0x8000_0000, 0));
+        assert_eq!(relu(AluOp::Lrelud, Prec::F, 0, neg_one), (neg_one, 0xf));
+        assert_eq!(relu(AluOp::Lrelud, Prec::F, neg_zero, neg_one), (0xbf00_0000, 0));
     }
 
     #[test]
     fn single_leaky_relu_underflow_and_overflow() {
+        let neg_zero = 0x8000_0000;
         // Zero and the minimum normals underflow to -0 (negative sign bit) for /2 and /8.
-        assert_eq!(relu(AluOp::Lrelud, Prec::F, 0, 0x8000_0000), (0x8000_0000, 0xf));
-        assert_eq!(relu(AluOp::Lrelud, Prec::F, 0, 0x0080_0000), (0x8000_0000, 0xf));
-        assert_eq!(relu(AluOp::Lreluo, Prec::F, 0, 0x0100_0000), (0x8000_0000, 0xf));
-        assert_eq!(relu(AluOp::Lreluo, Prec::F, 0, 0x0180_0000), (0x8000_0000, 0xf));
+        assert_eq!(relu(AluOp::Lrelud, Prec::F, neg_zero, neg_zero), (neg_zero, 0));
+        assert_eq!(relu(AluOp::Lrelud, Prec::F, neg_zero, 0x0080_0000), (neg_zero, 0));
+        assert_eq!(relu(AluOp::Lreluo, Prec::F, neg_zero, 0x0100_0000), (neg_zero, 0));
+        assert_eq!(relu(AluOp::Lreluo, Prec::F, neg_zero, 0x0180_0000), (neg_zero, 0));
+        // A non-negative x never underflows because it passes y through.
+        assert_eq!(relu(AluOp::Lrelud, Prec::F, 0, 0x0080_0000), (0x0080_0000, 0xf));
         // An increment turns zero into the minimum normal and overflows to infinity.
-        assert_eq!(relu(AluOp::Ilrelud, Prec::F, 0, 0), (0x0080_0000, 0xf));
-        assert_eq!(relu(AluOp::Ilrelud, Prec::F, 0, 0x8000_0000), (0x8080_0000, 0xf));
-        assert_eq!(relu(AluOp::Ilrelud, Prec::F, 0, 0x7f00_0000), (0x7f80_0000, 0xf));
-        assert_eq!(relu(AluOp::Ilrelud, Prec::F, 0, 0x7f80_0000), (0x7f80_0000, 0xf));
-        assert_eq!(relu(AluOp::Lrelud, Prec::F, 0, 0x7f80_0000), (0x7f80_0000, 0xf));
+        assert_eq!(relu(AluOp::Ilrelud, Prec::F, neg_zero, 0), (0x0080_0000, 0));
+        assert_eq!(relu(AluOp::Ilrelud, Prec::F, neg_zero, neg_zero), (0x8080_0000, 0));
+        assert_eq!(relu(AluOp::Ilrelud, Prec::F, neg_zero, 0x7f00_0000), (0x7f80_0000, 0));
+        assert_eq!(relu(AluOp::Ilrelud, Prec::F, neg_zero, 0x7f80_0000), (0x7f80_0000, 0));
+        assert_eq!(relu(AluOp::Lrelud, Prec::F, neg_zero, 0x7f80_0000), (0x7f80_0000, 0));
     }
 
     #[test]
     fn half_and_double_leaky_relu() {
+        let neg_zero = 0x8000_0000_0000_0000u64;
         // Half 1.0 is 0x3e00; halving decrements the 6-bit exponent by one.
-        assert_eq!(relu(AluOp::Lrelud, Prec::H, 0, 0x3e00), (0x3c00, 0xf));
-        assert_eq!(relu(AluOp::Ilrelud, Prec::H, 0, 0), (0x0200, 0xf));
+        assert_eq!(relu(AluOp::Lrelud, Prec::H, 0x8000, 0x3e00), (0x3c00, 0));
+        assert_eq!(relu(AluOp::Lrelud, Prec::H, 0, 0x3e00), (0x3e00, 0xf));
+        assert_eq!(relu(AluOp::Ilrelud, Prec::H, 0x8000, 0), (0x0200, 0));
         // Double 1.0 is 0x3ff0000000000000.
         assert_eq!(
-            relu(AluOp::Lrelud, Prec::D, 0, 0x3ff0_0000_0000_0000),
-            (0x3fe0_0000_0000_0000, 0xf)
+            relu(AluOp::Lrelud, Prec::D, neg_zero, 0x3ff0_0000_0000_0000),
+            (0x3fe0_0000_0000_0000, 0)
         );
-        assert_eq!(relu(AluOp::Lrelud, Prec::D, 0, 0x8000_0000_0000_0000), (0x8000_0000_0000_0000, 0xf));
+        assert_eq!(
+            relu(AluOp::Lrelud, Prec::D, 0, 0x3ff0_0000_0000_0000),
+            (0x3ff0_0000_0000_0000, 0xf)
+        );
+        assert_eq!(relu(AluOp::Lrelud, Prec::D, neg_zero, neg_zero), (neg_zero, 0));
     }
 }
 

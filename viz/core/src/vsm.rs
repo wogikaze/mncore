@@ -960,6 +960,24 @@ mod tests {
     }
 
     #[test]
+    fn rounded_mau_output_option() {
+        // SDM 3.6.9.25 writes the output-rounding forms as `fv*r` in the instruction table;
+        // `*` is the wildcard for the optional `r` suffix, so `fvmulr` is the rounded form.
+        let lines = parse("fvmulr $lm0v $ln0v $ls0v").unwrap();
+        let Line::Pe(exprs) = &lines[0].1 else { panic!("expected a PE line") };
+        assert!(matches!(
+            exprs[0].op,
+            Op::Mau { prec: Prec::F, matrix: false, kind: MauKind::Mul, round: true, .. }
+        ));
+        let lines = parse("fvmul $lm0v $ln0v $ls0v").unwrap();
+        let Line::Pe(exprs) = &lines[0].1 else { panic!("expected a PE line") };
+        assert!(matches!(
+            exprs[0].op,
+            Op::Mau { prec: Prec::F, matrix: false, kind: MauKind::Mul, round: false, .. }
+        ));
+    }
+
+    #[test]
     fn classify_opcodes() {
         assert!(matches!(classify("fvfma"), Some(Op::Mau { prec: Prec::F, matrix: false, kind: MauKind::Fma, .. })));
         assert!(matches!(classify("dmfmaur"), Some(Op::Mau { prec: Prec::D, matrix: true, half: Some('u'), round: true, .. })));
