@@ -197,3 +197,15 @@ cargo run --release --bin gpu_vsm_mask -- 500
 
 - 500 ラウンド（2,500 行）で mismatch 0。
 - CPU 2.04 秒、GPU 38 ms。
+
+## ALU Max と Rsqrt
+
+`fmax` と `frsqrt` を ALU カーネルに追加した。
+`fmax` は f32 の符号付き絶対値キーで比較し、`frsqrt` は CPU と同じ `MANT5` テーブルを使う。
+どちらもデスティネーションなし（`$nowrite`）を受け付け、`aluf` を更新する。
+
+`gpu_vsm_alu` に両方を混ぜて 2,000 行を実行し、mismatch 0。
+CPU 1.35 秒、GPU 41 ms。
+
+ALU 式 924 個のうち 672 個（`fpassa`、`ixor`、`fmax`、`frsqrt`）が対応。
+すべての式が対応する行は 657。

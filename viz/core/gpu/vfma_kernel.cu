@@ -355,12 +355,58 @@ extern "C" __global__ void alu_line(
         if (kind == 0) {
             for (int i = 0; i < 4; ++i) out[i] = av[i];
             flags = ((av[0] == 0) ? 0xc : 0) | ((av[1] == 0) ? 0x3 : 0);
-        } else {
+        } else if (kind == 1) {
             out[0] = av[0] ^ bv[0];
             out[1] = av[1] ^ bv[1];
             out[2] = av[2];
             out[3] = av[3];
             flags = ((out[0] == 0) ? 0xc : 0) | ((out[1] == 0) ? 0x3 : 0);
+        } else if (kind == 2) {
+            int pick0 = 0;
+            int pick1 = 0;
+            for (int l = 0; l < 2; ++l) {
+                unsigned a = av[l];
+                unsigned b = bv[l];
+                bool pick;
+                if (a == b) {
+                    pick = true;
+                } else if (((a >> 23) & 0xff) == 0 && ((b >> 23) & 0xff) == 0) {
+                    pick = true;
+                } else {
+                    unsigned am = (a & 0x7fffffffu);
+                    unsigned bm = (b & 0x7fffffffu);
+                    if (((a >> 23) & 0xff) == 0) am = 0;
+                    if (((b >> 23) & 0xff) == 0) bm = 0;
+                    long long ka = (a >> 31) ? -(long long)am : (long long)am;
+                    long long kb = (b >> 31) ? -(long long)bm : (long long)bm;
+                    pick = ka >= kb;
+                }
+                out[l] = pick ? a : b;
+                if (pick) {
+                    if (l == 0) pick0 = 1;
+                    else pick1 = 1;
+                }
+            }
+            out[2] = av[2];
+            out[3] = av[3];
+            flags = (pick0 ? 0xc : 0) | (pick1 ? 0x3 : 0);
+        } else {
+            const unsigned MANT5[2][16] = {
+                {13, 11, 10, 9, 8, 7, 6, 5, 4, 4, 3, 2, 2, 1, 1, 0},
+                {31, 30, 28, 26, 25, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13},
+            };
+            unsigned sign0 = (av[0] >> 31) & 1;
+            unsigned sign1 = (av[1] >> 31) & 1;
+            for (int l = 0; l < 2; ++l) {
+                unsigned v = av[l];
+                unsigned e = (v >> 23) & 0xff;
+                unsigned top4 = (v >> 19) & 15;
+                unsigned out_e = 127 + 64 - 1 - ((e + 1) / 2);
+                out[l] = (out_e << 23) | (MANT5[e & 1][top4] << 18);
+            }
+            out[2] = av[2];
+            out[3] = av[3];
+            flags = ((sign0 == 0) ? 0xc : 0) | ((sign1 == 0) ? 0x3 : 0);
         }
         if (omr > 0) {
             unsigned old = mask[pe * 16 + omr];

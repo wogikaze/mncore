@@ -284,6 +284,16 @@ pub fn alu_line_from_expr(expr: &Expr) -> Option<AluLine> {
             prec: Some(Prec::I),
             ..
         } => (1u8, true),
+        Op::Alu {
+            name: crate::vsm::AluOp::Max,
+            prec: Some(Prec::F),
+            ..
+        } => (2u8, true),
+        Op::Alu {
+            name: crate::vsm::AluOp::Rsqrt,
+            prec: Some(Prec::F),
+            ..
+        } => (3u8, false),
         _ => return None,
     };
     if expr.flush.is_some() || expr.srcs.len() != if need_b { 2 } else { 1 } || expr.dsts.len() != 1 {

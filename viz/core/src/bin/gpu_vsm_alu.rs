@@ -18,6 +18,10 @@ fn main() {
         "fpassa $r{} $n{}",
         "fvmul $r{} $aluf $n{}",
         "ixor $m{} $r{} $omr1",
+        "fmax $m{}v $aluf $nowrite",
+        "fmax $m{}v $aluf $r{}v",
+        "frsqrt $m{}v $nowrite",
+        "frsqrt $m{}v $r{}v",
     ];
     let mut text = String::new();
     for i in 0..lines {
@@ -36,7 +40,7 @@ fn main() {
         if let Some(line) = alu_line_from_expr(expr) {
             alu.push(Some(line));
             mau.push(None);
-        } else if let Some(line) = mau_line_from_expr(expr) {
+        } else if let Some(line) = mau_line_from_expr(expr, Default::default()) {
             alu.push(None);
             mau.push(Some(line));
         } else {

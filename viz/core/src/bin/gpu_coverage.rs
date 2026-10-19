@@ -118,7 +118,7 @@ fn main() {
     println!("program: {path}");
     println!("lines: {lines}, PE lines: {pe_lines}");
     println!("MAU expressions: {mau_exprs}, supported: {mau_supported}");
-    println!("ALU expressions: {alu_exprs}, supported (Passa/Xor): {alu_supported}");
+    println!("ALU expressions: {alu_exprs}, supported (Passa/Xor/Max/Rsqrt): {alu_supported}");
     println!("lines with every expression supported: {supported_lines}");
     println!("lines consisting only of supported MAU expressions: {single_mau_supported}");
     println!(
