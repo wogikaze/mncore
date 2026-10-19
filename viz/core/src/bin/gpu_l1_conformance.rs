@@ -1648,7 +1648,11 @@ struct SectionRun {
 }
 
 fn run_section(gpu: &Gpu, section: &Section, seed: &Seed) -> Result<SectionRun, String> {
-    let source = section.lines.join("\n");
+    let mut lines = section.lines.clone();
+    if let Ok(n) = std::env::var("LIMIT").unwrap_or_default().parse::<usize>() {
+        lines.truncate(n);
+    }
+    let source = lines.join("\n");
     let program = vsm::parse(&source).map_err(|e| {
         let text = section
             .lines
@@ -1869,6 +1873,9 @@ fn main() {
         );
         println!("seed {seed_index}:");
         for section in &sections {
+            if let Ok(only) = std::env::var("ONLY") {
+                if !section.name.contains(&only) { continue; }
+            }
             match run_section(&gpu, section, &seed) {
                 Ok(run) => {
                     total_actions += run.actions;
