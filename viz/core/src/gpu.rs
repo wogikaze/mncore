@@ -312,218 +312,470 @@ pub struct MauLine {
     pub mask: MaskInfo,
 }
 
-/// Builds an `AluLine` for a PE-local f32 Passa expression.
-pub fn alu_line_from_expr(expr: &Expr, mask_state: MaskState) -> Option<AluLine> {
-    let (kind, need_b, has_source) = match &expr.op {
-        Op::Zero => (5u8, false, false),
-        Op::Imm { .. } => (6u8, false, false),
-        Op::Alu {
-            name: crate::vsm::AluOp::Passa,
-            prec: Some(Prec::F | Prec::I | Prec::L),
-            ..
-        } => (0u8, false, true),
-        Op::Alu {
-            name: crate::vsm::AluOp::Xor,
-            prec: Some(Prec::I),
-            ..
-        } => (1u8, true, true),
-        Op::Alu {
-            name: crate::vsm::AluOp::Max,
-            prec: Some(Prec::F),
-            ..
-        } => (2u8, true, true),
-        Op::Alu {
-            name: crate::vsm::AluOp::Rsqrt,
-            prec: Some(Prec::F),
-            ..
-        } => (3u8, false, true),
-        Op::Alu {
-            name: crate::vsm::AluOp::Msr,
-            ..
-        } => (4u8, false, true),
-        Op::Alu {
-            name: crate::vsm::AluOp::Add,
-            prec: Some(Prec::I),
-            ..
-        } => (7u8, true, true),
-        Op::Alu {
-            name: crate::vsm::AluOp::Lsl,
-            prec: Some(Prec::I),
-            ..
-        } => (8u8, true, true),
-        Op::Alu {
-            name: crate::vsm::AluOp::Relu,
-            prec: Some(Prec::F),
-            ..
-        } => (9u8, true, true),
-        Op::Alu {
-            name: crate::vsm::AluOp::Floor,
-            prec: Some(Prec::F),
-            ..
-        } => (10u8, false, true),
-        Op::Alu {
-            name: crate::vsm::AluOp::Ftoi,
-            prec: Some(Prec::F),
-            ..
-        } => (11u8, false, true),
-        Op::Alu {
-            name: crate::vsm::AluOp::Min,
-            prec: Some(Prec::F),
-            ..
-        } => (12u8, true, true),
-        Op::Alu {
-            name: crate::vsm::AluOp::Sub,
-            prec: Some(Prec::I),
-            ..
-        } => (13u8, true, true),
-        Op::Alu {
-            name: crate::vsm::AluOp::Inc,
-            prec: Some(Prec::I),
-            ..
-        } => (14u8, false, true),
-        Op::Alu {
-            name: crate::vsm::AluOp::Dec,
-            prec: Some(Prec::I),
-            ..
-        } => (15u8, false, true),
-        Op::Alu {
-            name: crate::vsm::AluOp::Not,
-            prec: Some(Prec::I),
-            ..
-        } => (16u8, false, true),
-        Op::Alu {
-            name: crate::vsm::AluOp::Lnot,
-            prec: Some(Prec::I),
-            ..
-        } => (17u8, false, true),
-        Op::Alu {
-            name: crate::vsm::AluOp::And,
-            prec: Some(Prec::I),
-            ..
-        } => (18u8, true, true),
-        Op::Alu {
-            name: crate::vsm::AluOp::Or,
-            prec: Some(Prec::I),
-            ..
-        } => (19u8, true, true),
-        Op::Alu {
-            name: crate::vsm::AluOp::Msl,
-            ..
-        } => (20u8, false, true),
-        Op::Alu {
-            name: crate::vsm::AluOp::Packbit,
-            prec: Some(Prec::I),
-            ..
-        } => (21u8, true, true),
-        Op::Alu {
-            name: crate::vsm::AluOp::Lsr,
-            prec: Some(Prec::I),
-            ..
-        } => (22u8, true, true),
-        Op::Alu {
-            name: crate::vsm::AluOp::Bsl,
-            prec: Some(Prec::I),
-            ..
-        } => (23u8, true, true),
-        Op::Alu {
-            name: crate::vsm::AluOp::Bsr,
-            prec: Some(Prec::I),
-            ..
-        } => (24u8, true, true),
-        Op::Alu {
-            name: crate::vsm::AluOp::Relu0,
-            prec: Some(Prec::F),
-            ..
-        } => (25u8, true, true),
-        Op::Alu {
-            name: crate::vsm::AluOp::Relu1,
-            prec: Some(Prec::F),
-            ..
-        } => (26u8, true, true),
-        Op::Alu {
-            name: crate::vsm::AluOp::Relu2,
-            prec: Some(Prec::F),
-            ..
-        } => (27u8, true, true),
-        Op::Alu {
-            name: crate::vsm::AluOp::Relu3,
-            prec: Some(Prec::F),
-            ..
-        } => (28u8, true, true),
-        _ => return None,
-    };
-    let want_sources = if need_b { 2 } else { 1 };
-    if expr.flush.is_some()
-        || expr.srcs.len() != if has_source { want_sources } else { 0 }
-        || expr.dsts.len() != 1
-    {
-        return None;
+/// ALU opcode ids shared with `vfma_kernel.cu`.
+mod alu_op {
+    pub const ZERO: u32 = 0;
+    pub const IMM: u32 = 1;
+    pub const MSL: u32 = 2;
+    pub const MSR: u32 = 3;
+    pub const PASSA: u32 = 4;
+    pub const INC: u32 = 5;
+    pub const DEC: u32 = 6;
+    pub const NOT: u32 = 7;
+    pub const LNOT: u32 = 8;
+    pub const RSQRT: u32 = 9;
+    pub const FLOOR: u32 = 10;
+    pub const FTOI: u32 = 11;
+    pub const MAX: u32 = 12;
+    pub const MIN: u32 = 13;
+    pub const PACKBIT: u32 = 14;
+    pub const AND: u32 = 15;
+    pub const OR: u32 = 16;
+    pub const XOR: u32 = 17;
+    pub const ADD: u32 = 18;
+    pub const SUB: u32 = 19;
+    pub const LSL: u32 = 20;
+    pub const LSR: u32 = 21;
+    pub const BSL: u32 = 22;
+    pub const BSR: u32 = 23;
+    pub const RELU: u32 = 24;
+    pub const RELU0: u32 = 25;
+    pub const RELU1: u32 = 26;
+    pub const RELU2: u32 = 27;
+    pub const RELU3: u32 = 28;
+    pub const LRELUD: u32 = 29;
+    pub const LRELUO: u32 = 30;
+    pub const ILRELUD: u32 = 31;
+    pub const BFN: u32 = 32;
+    pub const BFE: u32 = 33;
+}
+
+fn alu_op_id(name: crate::vsm::AluOp) -> u32 {
+    use crate::vsm::AluOp as A;
+    match name {
+        A::Msl => alu_op::MSL,
+        A::Msr => alu_op::MSR,
+        A::Passa => alu_op::PASSA,
+        A::Inc => alu_op::INC,
+        A::Dec => alu_op::DEC,
+        A::Not => alu_op::NOT,
+        A::Lnot => alu_op::LNOT,
+        A::Rsqrt => alu_op::RSQRT,
+        A::Floor => alu_op::FLOOR,
+        A::Ftoi => alu_op::FTOI,
+        A::Max => alu_op::MAX,
+        A::Min => alu_op::MIN,
+        A::Packbit => alu_op::PACKBIT,
+        A::And => alu_op::AND,
+        A::Or => alu_op::OR,
+        A::Xor => alu_op::XOR,
+        A::Add => alu_op::ADD,
+        A::Sub => alu_op::SUB,
+        A::Lsl => alu_op::LSL,
+        A::Lsr => alu_op::LSR,
+        A::Bsl => alu_op::BSL,
+        A::Bsr => alu_op::BSR,
+        A::Relu => alu_op::RELU,
+        A::Relu0 => alu_op::RELU0,
+        A::Relu1 => alu_op::RELU1,
+        A::Relu2 => alu_op::RELU2,
+        A::Relu3 => alu_op::RELU3,
+        A::Lrelud => alu_op::LRELUD,
+        A::Lreluo => alu_op::LRELUO,
+        A::Ilrelud => alu_op::ILRELUD,
+        A::Bfn => alu_op::BFN,
+        A::Bfe => alu_op::BFE,
     }
-    let dummy = MauSrc {
-        mem: 0,
-        wl: 1,
-        base: [0; 4],
-        neg: false,
-    };
-    let mut a = if has_source {
-        let a = line_source(&expr.srcs[0])?;
-        if a.neg {
-            return None;
-        }
-        a
-    } else {
-        dummy
-    };
-    if kind == 0 && a.mem == 9 && matches!(expr.op, Op::Alu { prec: Some(Prec::L), .. }) {
-        a.mem = 10;
+}
+
+/// Precision code shared with `vfma_kernel.cu`: 0 D, 1 F, 2 G, 3 H, 4 L, 5 I, 6 S, 7 none.
+fn alu_prec_code(prec: Option<Prec>) -> u32 {
+    match prec {
+        Some(Prec::D) => 0,
+        Some(Prec::F) => 1,
+        Some(Prec::G) => 2,
+        Some(Prec::H) => 3,
+        Some(Prec::L) => 4,
+        Some(Prec::I) => 5,
+        Some(Prec::S) => 6,
+        None => 7,
     }
-    let b = if need_b {
-        let b = line_source(&expr.srcs[1])?;
-        if b.neg {
-            return None;
+}
+
+/// A resolved ALU input. `mem` 0..3 are LM0, LM1, GRF0 and GRF1, 4 is mauf, 5 is aluf,
+/// 6 is T and 8 is mreadf. `fixed` is nonzero for table 3.5 operands.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default)]
+pub struct AluSrc {
+    pub mem: u32,
+    pub wl: u32,
+    pub base: [u32; 4],
+    pub rnd: u32,
+    /// 1 l2bid, 2 l1bid, 3 mabid, 4 peid, 5 subpeid, 6 msb1.
+    pub fixed: u32,
+    pub neg: u32,
+    pub ext: u32,
+}
+
+/// A resolved ALU destination: 0 PE memory, 1 T, 2 OMR, 3 `$nowrite`.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default)]
+pub struct AluDstDesc {
+    pub kind: u32,
+    pub mem: u32,
+    pub wl: u32,
+    pub base: [u32; 4],
+    pub entry: u32,
+    pub mask_kind: u32,
+    pub mask_entry: u32,
+    pub mask_pattern: u32,
+    pub mask_ll: u32,
+}
+
+/// The complete description of one ALU or block-float line, passed by value to CUDA.
+///
+/// All fields are `u32` so the Rust and CUDA layouts agree without padding. `a`/`b` carry the
+/// first/second input, `dst[..ndst]` the destinations, and the `flush_*` fields the zero-flush
+/// mask of SDM 3.6.2.2.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default)]
+pub struct AluDesc {
+    pub op: u32,
+    pub prec: u32,
+    pub unsigned: u32,
+    /// Mantissa length of `hbfn/<n>` and `hbfe/<n>`.
+    pub arg: u32,
+    pub imm: u32,
+    pub imm_u: u32,
+    pub a: AluSrc,
+    pub b: AluSrc,
+    pub ndst: u32,
+    pub dst: [AluDstDesc; 8],
+    pub flush_kind: u32,
+    pub flush_entry: u32,
+    pub flush_pattern: u32,
+    pub flush_ll: u32,
+}
+
+pub type AluLine = AluDesc;
+pub type BfnLine = AluDesc;
+
+fn fixed_code(kind: FixedKind) -> u32 {
+    match kind {
+        FixedKind::L2bid => 1,
+        FixedKind::L1bid => 2,
+        FixedKind::Mabid => 3,
+        FixedKind::Peid => 4,
+        FixedKind::Subpeid => 5,
+        FixedKind::Msb1 => 6,
+    }
+}
+
+/// Resolves one ALU input operand. `neg`/`ext` are carried for completeness but are no-ops for
+/// ALU instructions in the CPU model (SDM 3.6.12 defines only the `r` option), and the kernel
+/// treats them the same way.
+fn alu_source(op: &Operand) -> Option<AluSrc> {
+    let mut src = AluSrc::default();
+    match op {
+        Operand::Fixed(kind) => {
+            src.mem = 0;
+            src.wl = 1;
+            src.fixed = fixed_code(*kind);
+            return Some(src);
         }
-        b
+        Operand::Forward {
+            kind,
+            neg,
+            ext,
+            rnd,
+        } => {
+            src.mem = match kind {
+                FwdKind::Mauf => 4,
+                FwdKind::Aluf => 5,
+                FwdKind::Mreadf => 8,
+                FwdKind::Lbf => return None,
+            };
+            src.wl = 4;
+            src.neg = *neg as u32;
+            src.ext = *ext as u32;
+            src.rnd = *rnd as u32;
+            return Some(src);
+        }
+        Operand::Mem {
+            mem,
+            wl,
+            addr,
+            neg,
+            ext,
+            rnd,
+            ..
+        } => {
+            if addr.t_indirect || addr.madpe.is_some() || !matches!(wl, 1 | 2 | 4) {
+                return None;
+            }
+            if *mem == MemKind::T {
+                src.mem = 6;
+                src.wl = 4;
+            } else {
+                src.mem = match mem {
+                    MemKind::Lm0 => 0,
+                    MemKind::Lm1 => 1,
+                    MemKind::Grf0 => 2,
+                    MemKind::Grf1 => 3,
+                    _ => return None,
+                };
+                src.wl = *wl as u32;
+                src.base = addr.cycles.map(|c| c & !(*wl as u32 - 1));
+            }
+            src.neg = *neg as u32;
+            src.ext = *ext as u32;
+            src.rnd = *rnd as u32;
+            Some(src)
+        }
+        _ => None,
+    }
+}
+
+/// Encodes a mask selector as (kind, entry, pattern, ll).
+fn mask_selector_fields(sel: Option<MaskSel>) -> (u32, u32, u32, u32) {
+    match sel {
+        None => (0, 0, 0, 0),
+        Some(MaskSel {
+            ll,
+            source: MaskSource::Entry(entry),
+        }) => (1, entry as u32, 0, ll as u32),
+        Some(MaskSel {
+            ll,
+            source: MaskSource::Pattern(pattern),
+        }) => (
+            2,
+            0,
+            pattern
+                .iter()
+                .enumerate()
+                .fold(0u32, |acc, (i, on)| acc | ((*on as u32) << i)),
+            ll as u32,
+        ),
+    }
+}
+
+/// Resolves the write mask of one destination. `single_line` is the line-wide flag of SDM
+/// 3.6.2.1: when any destination carries an explicit mask, multi-line mask directives do not
+/// apply anywhere in that line.
+fn resolve_dst_mask(
+    op: &Operand,
+    state: MaskState,
+    single_line: bool,
+) -> Option<(u32, u32, u32, u32)> {
+    let (explicit, target) = match op {
+        Operand::Mem { mem, mask, .. } => (
+            *mask,
+            match mem {
+                MemKind::Lm0 => state.targets.lm0,
+                MemKind::Lm1 => state.targets.lm1,
+                MemKind::Grf0 => state.targets.grf0,
+                MemKind::Grf1 => state.targets.grf1,
+                MemKind::T => state.targets.t,
+                _ => false,
+            },
+        ),
+        Operand::Omr { mask, .. } => (*mask, state.targets.mask_reg),
+        _ => (None, false),
+    };
+    let directive = if !single_line && target && state.entry != 0 {
+        Some(MaskSel {
+            ll: state.wl == 4,
+            source: MaskSource::Entry(state.entry),
+        })
     } else {
-        dummy
+        None
     };
-    let (imm, imm_u) = match &expr.op {
-        Op::Imm { value, u } => (*value, *u),
-        _ => (0, false),
-    };
-    let none = MaskInfo { kind: 0, entry: 0, pattern: 0, ll: false };
-    let (dst, mask) = match &expr.dsts[0] {
+    Some(mask_selector_fields(explicit.or(directive)))
+}
+
+fn alu_dst_desc(op: &Operand, state: MaskState, single_line: bool) -> Option<AluDstDesc> {
+    let (kind, mem, wl, base, entry) = match op {
         Operand::Mem {
             mem: MemKind::T, ..
-        } => (AluDst::T, none),
-        Operand::Mem { .. } => {
-            let single_line = matches!(&expr.dsts[0], Operand::Mem { mask: Some(_), .. });
-            let dst = mem_source(&expr.dsts[0], false, true)?;
-            (AluDst::Mem(dst), resolve_mask(&expr.dsts[0], mask_state, single_line))
+        } => (1, 0, 4, [0; 4], 0),
+        Operand::Mem {
+            mem,
+            wl,
+            addr,
+            ..
+        } => {
+            if addr.t_indirect || addr.madpe.is_some() || !matches!(wl, 1 | 2 | 4) {
+                return None;
+            }
+            let mem = match mem {
+                MemKind::Lm0 => 0,
+                MemKind::Lm1 => 1,
+                MemKind::Grf0 => 2,
+                MemKind::Grf1 => 3,
+                _ => return None,
+            };
+            (0, mem, *wl as u32, addr.cycles.map(|c| c & !(*wl as u32 - 1)), 0)
         }
-        Operand::Omr { entry, mask: None } if (1..=15).contains(entry) => {
-            (AluDst::Omr(*entry), none)
+        Operand::Omr { entry, .. } => {
+            if !(1..=15).contains(entry) {
+                return None;
+            }
+            (2, 0, 0, [0; 4], *entry as u32)
         }
-        Operand::Nowrite => (AluDst::None, none),
+        Operand::Nowrite => (3, 0, 0, [0; 4], 0),
         _ => return None,
     };
-    Some(AluLine {
+    let (mask_kind, mask_entry, mask_pattern, mask_ll) = resolve_dst_mask(op, state, single_line)?;
+    Some(AluDstDesc {
         kind,
-        a,
-        b,
-        dst,
-        imm,
-        imm_u,
-        mask,
+        mem,
+        wl,
+        base,
+        entry,
+        mask_kind,
+        mask_entry,
+        mask_pattern,
+        mask_ll,
     })
 }
 
-/// Destination of an ALU line: a PE memory, an OMR entry, or nowhere.
-#[derive(Clone, Copy, Debug)]
-pub enum AluDst {
-    Mem(MauSrc),
-    T,
-    Omr(u8),
-    None,
+fn alu_flush(expr: &Expr) -> (u32, u32, u32, u32) {
+    mask_selector_fields(expr.flush)
+}
+
+/// Builds the descriptor of one ALU expression. Covers every opcode of SDM 3.6.12 that the
+/// parser accepts except `bfn`/`bfe`, which are built by `bfn_line_from_expr`.
+pub fn alu_line_from_expr(expr: &Expr, mask_state: MaskState) -> Option<AluLine> {
+    let (op, prec, unsigned, need_b, has_source, imm, imm_u) = match &expr.op {
+        Op::Zero => (alu_op::ZERO, None, false, false, false, 0, false),
+        Op::Imm { value, u } => (alu_op::IMM, None, false, false, false, *value, *u),
+        Op::Alu {
+            name: crate::vsm::AluOp::Bfn | crate::vsm::AluOp::Bfe,
+            ..
+        } => return None,
+        Op::Alu {
+            name,
+            prec,
+            unsigned,
+            ..
+        } => (alu_op_id(*name), *prec, *unsigned, name.inputs() == 2, true, 0, false),
+        _ => return None,
+    };
+    if has_source {
+        if expr.srcs.len() != if need_b { 2 } else { 1 } {
+            return None;
+        }
+    } else if !expr.srcs.is_empty() {
+        return None;
+    }
+    if expr.dsts.is_empty() || expr.dsts.len() > 8 {
+        return None;
+    }
+    let a = if has_source {
+        alu_source(&expr.srcs[0])?
+    } else {
+        AluSrc::default()
+    };
+    let b = if need_b {
+        alu_source(&expr.srcs[1])?
+    } else {
+        AluSrc::default()
+    };
+    let single_line = expr.dsts.iter().any(|d| {
+        matches!(
+            d,
+            Operand::Mem { mask: Some(_), .. }
+                | Operand::Omr { mask: Some(_), .. }
+                | Operand::Bar { mask: Some(_), .. }
+        )
+    });
+    let mut dst = [AluDstDesc::default(); 8];
+    for (i, operand) in expr.dsts.iter().enumerate() {
+        dst[i] = alu_dst_desc(operand, mask_state, single_line)?;
+    }
+    let (flush_kind, flush_entry, flush_pattern, flush_ll) = alu_flush(expr);
+    Some(AluDesc {
+        op,
+        prec: alu_prec_code(prec),
+        unsigned: unsigned as u32,
+        arg: 0,
+        imm,
+        imm_u: imm_u as u32,
+        a,
+        b,
+        ndst: expr.dsts.len() as u32,
+        dst,
+        flush_kind,
+        flush_entry,
+        flush_pattern,
+        flush_ll,
+    })
+}
+
+/// Builds the descriptor of a `bfn` or `bfe` expression (SDM 3.6.12.12) with the
+/// default (no) write-mask directive.
+pub fn bfn_line_from_expr(expr: &Expr) -> Option<BfnLine> {
+    bfn_line_from_expr_state(expr, MaskState::default())
+}
+
+/// Builds the descriptor of a `bfn`/`bfe` expression with the current `mask` directive.
+pub fn bfn_line_from_expr_state(expr: &Expr, mask_state: MaskState) -> Option<BfnLine> {
+    let Op::Alu {
+        name,
+        prec,
+        arg,
+        ..
+    } = &expr.op
+    else {
+        return None;
+    };
+    let (op, prec) = match (name, prec) {
+        (crate::vsm::AluOp::Bfn, Some(prec @ (Prec::D | Prec::F | Prec::G | Prec::H))) => {
+            (alu_op::BFN, *prec)
+        }
+        (crate::vsm::AluOp::Bfe, Some(prec @ Prec::H)) => (alu_op::BFE, *prec),
+        _ => return None,
+    };
+    let arg = arg.unwrap_or(0);
+    if prec != Prec::H && arg != 0 {
+        return None;
+    }
+    // The SDM defines 6..9 mantissa bits for the half-precision forms.
+    if prec == Prec::H && arg != 0 && !(6..=9).contains(&arg) {
+        return None;
+    }
+    if expr.srcs.len() != 1 || expr.dsts.is_empty() || expr.dsts.len() > 8 {
+        return None;
+    }
+    let single_line = expr.dsts.iter().any(|d| {
+        matches!(
+            d,
+            Operand::Mem { mask: Some(_), .. }
+                | Operand::Omr { mask: Some(_), .. }
+                | Operand::Bar { mask: Some(_), .. }
+        )
+    });
+    let mut dst = [AluDstDesc::default(); 8];
+    for (i, operand) in expr.dsts.iter().enumerate() {
+        dst[i] = alu_dst_desc(operand, mask_state, single_line)?;
+    }
+    let (flush_kind, flush_entry, flush_pattern, flush_ll) = alu_flush(expr);
+    Some(AluDesc {
+        op,
+        prec: alu_prec_code(Some(prec)),
+        unsigned: 0,
+        arg: arg as u32,
+        imm: 0,
+        imm_u: 0,
+        a: alu_source(&expr.srcs[0])?,
+        b: AluSrc::default(),
+        ndst: expr.dsts.len() as u32,
+        dst,
+        flush_kind,
+        flush_entry,
+        flush_pattern,
+        flush_ll,
+    })
 }
 
 /// An L1BM-to-PE read: Mbcast (op 0) or Distrib (op 1).
@@ -1069,36 +1321,6 @@ pub fn l2_reduce_line_from_expr(expr: &Expr) -> Option<L2RedLine> {
     }
 }
 
-/// A gbfn (block-float) line.
-#[derive(Clone, Copy, Debug)]
-pub struct BfnLine {
-    pub src: MauSrc,
-    pub dst: AluDst,
-}
-
-/// Builds a BfnLine for a gbfn expression.
-pub fn bfn_line_from_expr(expr: &Expr) -> Option<BfnLine> {
-    let Op::Alu {
-        name: crate::vsm::AluOp::Bfn,
-        prec: Some(Prec::G),
-        arg: None,
-        ..
-    } = &expr.op
-    else {
-        return None;
-    };
-    if expr.flush.is_some() || expr.srcs.len() != 1 || expr.dsts.len() != 1 {
-        return None;
-    }
-    let src = line_source(&expr.srcs[0])?;
-    let dst = match &expr.dsts[0] {
-        Operand::Nowrite => AluDst::None,
-        Operand::Mem { .. } => AluDst::Mem(mem_source(&expr.dsts[0], false, false)?),
-        _ => return None,
-    };
-    Some(BfnLine { src, dst })
-}
-
 /// A matrix-register write (`fmwrite`/`gmwrite`): each MAB writes one face row
 /// per cycle from its four PEs.
 #[derive(Clone, Copy, Debug)]
@@ -1117,6 +1339,15 @@ pub struct MatReadLine {
     pub side: u8,
     pub addr: u32,
     pub dst: MauSrc,
+}
+
+/// Destination of a matrix MAU line: a PE memory, an OMR entry, or nowhere.
+#[derive(Clone, Copy, Debug)]
+pub enum AluDst {
+    Mem(MauSrc),
+    T,
+    Omr(u8),
+    None,
 }
 
 /// A matrix MAU line (`fmfma`/`gmmul` and friends).
@@ -1296,18 +1527,6 @@ pub fn mat_mau_line_from_expr(expr: &Expr, mask_state: MaskState) -> Option<MatM
         y,
         dst,
     })
-}
-
-/// A single ALU line. Kind 0 is Passa and kind 1 is Xor.
-#[derive(Clone, Copy, Debug)]
-pub struct AluLine {
-    pub kind: u8,
-    pub a: MauSrc,
-    pub b: MauSrc,
-    pub dst: AluDst,
-    pub imm: u32,
-    pub imm_u: bool,
-    pub mask: MaskInfo,
 }
 
 /// LM0, LM1, GRF0 and GRF1 in device memory, in the same PE-major layout as
@@ -2169,7 +2388,8 @@ impl Gpu {
         )
     }
 
-    /// Launches one ALU line for all 4,096 PEs.
+    /// Launches one ALU line. One thread handles one MAB so that all inputs of the four PEs
+    /// are read before any destination (including msl/msr's neighbour PE) is written.
     pub fn run_alu_line(&self, state: &GpuState, line: &AluLine) -> Result<(), String> {
         let mut lm0 = state.lm0;
         let mut lm1 = state.lm1;
@@ -2179,25 +2399,8 @@ impl Gpu {
         let mut aluf = state.aluf;
         let mut mask = state.mask;
         let mut t = state.t;
-        let mut kind = line.kind as i32;
-        let mut amem = line.a.mem as i32;
-        let mut a = line.a.base;
-        let mut awl = line.a.wl as i32;
-        let mut bmem = line.b.mem as i32;
-        let mut b = line.b.base;
-        let mut bwl = line.b.wl as i32;
-        let mut imm = line.imm;
-        let mut imm_u = line.imm_u as i32;
-        let mut mask_kind = line.mask.kind as i32;
-        let mut mask_entry = line.mask.entry as i32;
-        let mut mask_pattern = line.mask.pattern as i32;
-        let mut mask_ll = line.mask.ll as i32;
-        let (mut dmem, mut d, mut dwl, mut omr, mut tdst) = match line.dst {
-            AluDst::Mem(dst) => (dst.mem as i32, dst.base, dst.wl as i32, 0i32, 0i32),
-            AluDst::T => (0i32, [0u32; 4], 0i32, 0i32, 1i32),
-            AluDst::Omr(entry) => (0i32, [0u32; 4], 0i32, entry as i32, 0i32),
-            AluDst::None => (0i32, [0u32; 4], 0i32, 0i32, 0i32),
-        };
+        let mut mreadf = state.mreadf;
+        let mut desc = *line;
         let mut args = [
             &mut lm0 as *mut u64 as *mut c_void,
             &mut lm1 as *mut u64 as *mut c_void,
@@ -2207,40 +2410,15 @@ impl Gpu {
             &mut aluf as *mut u64 as *mut c_void,
             &mut mask as *mut u64 as *mut c_void,
             &mut t as *mut u64 as *mut c_void,
-            &mut kind as *mut i32 as *mut c_void,
-            &mut amem as *mut i32 as *mut c_void,
-            &mut a[0] as *mut u32 as *mut c_void,
-            &mut a[1] as *mut u32 as *mut c_void,
-            &mut a[2] as *mut u32 as *mut c_void,
-            &mut a[3] as *mut u32 as *mut c_void,
-            &mut awl as *mut i32 as *mut c_void,
-            &mut bmem as *mut i32 as *mut c_void,
-            &mut b[0] as *mut u32 as *mut c_void,
-            &mut b[1] as *mut u32 as *mut c_void,
-            &mut b[2] as *mut u32 as *mut c_void,
-            &mut b[3] as *mut u32 as *mut c_void,
-            &mut bwl as *mut i32 as *mut c_void,
-            &mut dmem as *mut i32 as *mut c_void,
-            &mut d[0] as *mut u32 as *mut c_void,
-            &mut d[1] as *mut u32 as *mut c_void,
-            &mut d[2] as *mut u32 as *mut c_void,
-            &mut d[3] as *mut u32 as *mut c_void,
-            &mut dwl as *mut i32 as *mut c_void,
-            &mut omr as *mut i32 as *mut c_void,
-            &mut tdst as *mut i32 as *mut c_void,
-            &mut imm as *mut u32 as *mut c_void,
-            &mut imm_u as *mut i32 as *mut c_void,
-            &mut mask_kind as *mut i32 as *mut c_void,
-            &mut mask_entry as *mut i32 as *mut c_void,
-            &mut mask_pattern as *mut i32 as *mut c_void,
-            &mut mask_ll as *mut i32 as *mut c_void,
+            &mut mreadf as *mut u64 as *mut c_void,
+            &mut desc as *mut AluDesc as *mut c_void,
         ];
-        let grid = (crate::machine::PES as u32 + 255) / 256;
+        let grid = (crate::machine::PES / 4) as u32;
         self.check(
             unsafe {
                 (self.cu_launch)(
                     self.alu_function,
-                    grid,
+                    (grid + 255) / 256,
                     1,
                     1,
                     256,
@@ -2256,7 +2434,8 @@ impl Gpu {
         )
     }
 
-    /// Launches one gbfn line for all 1,024 MABs and four cycles.
+    /// Launches one block-float line (`bfn`/`bfe`). One thread handles one MAB and reads all
+    /// four cycles before writing, matching the CPU's read-all-then-write order.
     pub fn run_bfn_line(&self, state: &GpuState, line: &BfnLine) -> Result<(), String> {
         let mut lm0 = state.lm0;
         let mut lm1 = state.lm1;
@@ -2264,14 +2443,10 @@ impl Gpu {
         let mut grf1 = state.grf1;
         let mut mauf = state.mauf;
         let mut aluf = state.aluf;
+        let mut mask = state.mask;
+        let mut t = state.t;
         let mut mreadf = state.mreadf;
-        let mut smem = line.src.mem as i32;
-        let mut s = line.src.base;
-        let mut swl = line.src.wl as i32;
-        let (mut dmem, mut d, mut dwl) = match line.dst {
-            AluDst::Mem(dst) => (dst.mem as i32, dst.base, dst.wl as i32),
-            _ => (0i32, [0u32; 4], 0i32),
-        };
+        let mut desc = *line;
         let mut args = [
             &mut lm0 as *mut u64 as *mut c_void,
             &mut lm1 as *mut u64 as *mut c_void,
@@ -2279,26 +2454,17 @@ impl Gpu {
             &mut grf1 as *mut u64 as *mut c_void,
             &mut mauf as *mut u64 as *mut c_void,
             &mut aluf as *mut u64 as *mut c_void,
+            &mut mask as *mut u64 as *mut c_void,
+            &mut t as *mut u64 as *mut c_void,
             &mut mreadf as *mut u64 as *mut c_void,
-            &mut smem as *mut i32 as *mut c_void,
-            &mut s[0] as *mut u32 as *mut c_void,
-            &mut s[1] as *mut u32 as *mut c_void,
-            &mut s[2] as *mut u32 as *mut c_void,
-            &mut s[3] as *mut u32 as *mut c_void,
-            &mut swl as *mut i32 as *mut c_void,
-            &mut dmem as *mut i32 as *mut c_void,
-            &mut d[0] as *mut u32 as *mut c_void,
-            &mut d[1] as *mut u32 as *mut c_void,
-            &mut d[2] as *mut u32 as *mut c_void,
-            &mut d[3] as *mut u32 as *mut c_void,
-            &mut dwl as *mut i32 as *mut c_void,
+            &mut desc as *mut AluDesc as *mut c_void,
         ];
-        let grid = (crate::machine::PES as u32 + 255) / 256;
+        let grid = (crate::machine::PES / 4) as u32;
         self.check(
             unsafe {
                 (self.cu_launch)(
                     self.bfn_function,
-                    grid,
+                    (grid + 255) / 256,
                     1,
                     1,
                     256,

@@ -450,3 +450,41 @@ cargo run --release --bin gpu_run_program -- benchmarks/mnist_train_step.vsm
 SDM 3.6 の全 PE 命令式への拡張を開始した。現状と不足は
 [gpu-instruction-coverage.md](gpu-instruction-coverage.md) にまとめている。
 直近では ALU の Min、Sub、Inc、Dec、Not、Lnot、And、Or を追加した。
+
+## ALU 全命令と block float
+
+ALU カーネル `alu_line` と block-float カーネル `bfn_line` は、Rust 側で組み立てた
+`AluDesc`（全フィールド `u32`、`repr(C)`）を値渡しで受け取る。
+1 スレッドが 1 MAB（4 PE）の 4 サイクルを担当し、全入力を読んでから全出力を書くので、
+`msl`/`msr` の隣接 PE 読み出しや、ソースとデスティネーションが同じメモリを指す場合も
+CPU の「読んでから書く」順序と一致する。
+
+対応範囲:
+
+- ALU 全 opcode: `msl`/`msr`、`passa`、`inc`/`dec`、`not`/`lnot`、`rsqrt`、`floor`、
+  `ftoi`、`max`/`min`、`packbit`、`and`/`or`/`xor`、`add`/`sub`、`lsl`/`lsr`/`bsl`/`bsr`、
+  `relu`/`relu0..3`、`lrelud`/`lreluo`/`ilrelud`、`zero`、`imm`/`immu`。
+- 精度 `d/f/h/l/i/s`（`g` は `bfn` のみ）。16/32/64 bit のレーン幅で同じカーネルを使う。
+- 符号なしオプション（`inc/dec/add/sub/lsr/ftoi/max/min`）と、そのマスクフラグ。
+- ALU 入力の `r`（単精度→半精度丸め）と `e`（CPU と同じく no-op）。
+- zero-flush マスク（固定パターン・OMR エントリ・`ll`）、単一行書き込みマスク、
+  `mask` ディレクティブ。
+- 1 命令式あたり最大 8 個の出力（PE メモリ、T、OMR、`$nowrite`）。
+- `bfn`/`bfe` は `d/f/g/h` と `hbfn/<n>`/`hbfe/<n>`（n=6..9）。
+  拡張表現を含む `float::block_float` を CUDA に移植した。
+
+検証は `gpu_alu_conformance` が行う。ALU の全 opcode・精度・unsigned・`r`/`e`・
+zero-flush・複数出力について 142 config / 524 PE 行を生成し、CPU の `Sim` と比較する。
+各行の `aluf`・OMR・T を比較し、最後に LM0/LM1/GRF0/GRF1 の全ワードを比較する。
+
+```sh
+cd viz/core
+cargo run --release --bin gpu_alu_conformance
+```
+
+出力例:
+
+```
+142 configs, 34 opcodes, 524 PE lines, ...
+PASS: aluf, OMR, T and all four memories match
+```

@@ -1711,6 +1711,9 @@ fn alu_lanes(
             AluOp::Rsqrt => (float_rsqrt(fmt_of(prec), a), msb(a, 0) == 0),
             AluOp::Floor => (float_floor(fmt_of(prec), a), false),
             AluOp::Ftoi => (float_ftoi(fmt_of(prec), a, unsigned, bits), false),
+            AluOp::Lrelud | AluOp::Lreluo | AluOp::Ilrelud => {
+                (float_lrelu(name, fmt_of(prec), b), msb(a, 0) == 0)
+            }
             other => return Err(ExecError::Unsupported(format!("ALU {other:?}"))),
         };
         out[i] = r & mask;
@@ -1801,6 +1804,48 @@ fn float_floor(fmt: Fmt, v: u64) -> u64 {
             }
             float::round_pack(fmt, neg, int, 0)
         }
+    }
+}
+
+/// Leaky-ReLU variants (SDM 3.6.12.18).
+///
+/// `lrelud`/`lreluo` halve or eighth the second input by decrementing its exponent, and
+/// `ilrelud` doubles it by incrementing its exponent. SDM 3.6.12.18 defines an underflow result
+/// as a value with a negative sign bit and zero exponent/mantissa (that is, -0), and an overflow
+/// result as an all-ones exponent with the sign and mantissa of the input. Infinities have no
+/// further encoding to underflow to, so they stay unchanged.
+fn float_lrelu(name: AluOp, fmt: Fmt, y: u64) -> u64 {
+    let m = fmt.man_bits;
+    let zero = 1u64 << (fmt.width() - 1);
+    let e = (y >> m) & fmt.exp_max();
+    let emax = fmt.exp_max();
+    match name {
+        AluOp::Lrelud => {
+            if e == emax {
+                y
+            } else if e <= 1 {
+                zero
+            } else {
+                y - (1u64 << m)
+            }
+        }
+        AluOp::Lreluo => {
+            if e == emax {
+                y
+            } else if e <= 3 {
+                zero
+            } else {
+                y - (3u64 << m)
+            }
+        }
+        AluOp::Ilrelud => {
+            if e == emax {
+                y
+            } else {
+                y + (1u64 << m)
+            }
+        }
+        _ => y,
     }
 }
 
@@ -2893,5 +2938,61 @@ fn mat_get_face(face: &[MatFace; 2], side: usize, prec: Prec, row: usize, col: u
         Prec::D => ((r[2 * col] as u64) << 32) | r[2 * col + 1] as u64,
         Prec::H => ((r[col / 2] >> if col % 2 == 0 { 16 } else { 0 }) & 0xffff) as u64,
         _ => r[col] as u64,
+    }
+}
+
+#[cfg(test)]
+mod lrelu_tests {
+    use super::*;
+
+    fn relu(name: AluOp, prec: Prec, x: u64, y: u64) -> (u64, u8) {
+        let bits = prec_bits(Some(prec));
+        let n = (64 / bits) as usize;
+        let xs = vec![x; n];
+        let ys = vec![y; n];
+        let (out, flags) = alu_lanes(name, prec, false, &xs, &ys).unwrap();
+        (out[0], flags)
+    }
+
+    #[test]
+    fn single_leaky_relu() {
+        let one = 0x3f80_0000; // 1.0f
+        assert_eq!(relu(AluOp::Lrelud, Prec::F, 0, one), (0x3f00_0000, 0xf)); // 0.5
+        assert_eq!(relu(AluOp::Lreluo, Prec::F, 0, one), (0x3e00_0000, 0xf)); // 0.125
+        assert_eq!(relu(AluOp::Ilrelud, Prec::F, 0, one), (0x4000_0000, 0xf)); // 2.0
+        let neg_one = 0xbf80_0000;
+        assert_eq!(relu(AluOp::Lrelud, Prec::F, 0, neg_one), (0xbf00_0000, 0xf));
+        assert_eq!(relu(AluOp::Lreluo, Prec::F, 0, neg_one), (0xbe00_0000, 0xf));
+        // The negative first input disables the pass-through and clears the flags.
+        assert_eq!(relu(AluOp::Lrelud, Prec::F, 0x8000_0000, one), (0x3f00_0000, 0));
+        assert_eq!(relu(AluOp::Relu, Prec::F, 0x8000_0000, one), (0x8000_0000, 0));
+    }
+
+    #[test]
+    fn single_leaky_relu_underflow_and_overflow() {
+        // Zero and the minimum normals underflow to -0 (negative sign bit) for /2 and /8.
+        assert_eq!(relu(AluOp::Lrelud, Prec::F, 0, 0x8000_0000), (0x8000_0000, 0xf));
+        assert_eq!(relu(AluOp::Lrelud, Prec::F, 0, 0x0080_0000), (0x8000_0000, 0xf));
+        assert_eq!(relu(AluOp::Lreluo, Prec::F, 0, 0x0100_0000), (0x8000_0000, 0xf));
+        assert_eq!(relu(AluOp::Lreluo, Prec::F, 0, 0x0180_0000), (0x8000_0000, 0xf));
+        // An increment turns zero into the minimum normal and overflows to infinity.
+        assert_eq!(relu(AluOp::Ilrelud, Prec::F, 0, 0), (0x0080_0000, 0xf));
+        assert_eq!(relu(AluOp::Ilrelud, Prec::F, 0, 0x8000_0000), (0x8080_0000, 0xf));
+        assert_eq!(relu(AluOp::Ilrelud, Prec::F, 0, 0x7f00_0000), (0x7f80_0000, 0xf));
+        assert_eq!(relu(AluOp::Ilrelud, Prec::F, 0, 0x7f80_0000), (0x7f80_0000, 0xf));
+        assert_eq!(relu(AluOp::Lrelud, Prec::F, 0, 0x7f80_0000), (0x7f80_0000, 0xf));
+    }
+
+    #[test]
+    fn half_and_double_leaky_relu() {
+        // Half 1.0 is 0x3e00; halving decrements the 6-bit exponent by one.
+        assert_eq!(relu(AluOp::Lrelud, Prec::H, 0, 0x3e00), (0x3c00, 0xf));
+        assert_eq!(relu(AluOp::Ilrelud, Prec::H, 0, 0), (0x0200, 0xf));
+        // Double 1.0 is 0x3ff0000000000000.
+        assert_eq!(
+            relu(AluOp::Lrelud, Prec::D, 0, 0x3ff0_0000_0000_0000),
+            (0x3fe0_0000_0000_0000, 0xf)
+        );
+        assert_eq!(relu(AluOp::Lrelud, Prec::D, 0, 0x8000_0000_0000_0000), (0x8000_0000_0000_0000, 0xf));
     }
 }

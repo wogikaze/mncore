@@ -4,7 +4,7 @@
 
 use mncore_sim::blocks::{L1BM_LONGS, L1BS, L2BM_LONGS, L2BS};
 use mncore_sim::gpu::{
-    alu_line_from_expr, bfn_line_from_expr, l1_read_line_from_expr, l1_reduce_line_from_expr,
+    alu_line_from_expr, bfn_line_from_expr_state, l1_read_line_from_expr, l1_reduce_line_from_expr,
     l1_write_line_from_expr, l2_line_from_expr, l2_reduce_line_from_expr, mat_mau_line_from_expr,
     mat_read_line_from_expr, mat_write_line_from_expr, mau_line_from_expr, mv_line_from_mv, Gpu,
     MAT_WORDS,
@@ -73,7 +73,7 @@ fn main() {
                 for expr in exprs {
                     if let Some(line) = alu_line_from_expr(expr, mask) {
                         gpu.run_alu_line(&state, &line).expect("alu");
-                    } else if let Some(line) = bfn_line_from_expr(expr) {
+                    } else if let Some(line) = bfn_line_from_expr_state(expr, mask) {
                         gpu.run_bfn_line(&state, &line).expect("bfn");
                     } else if let Some(line) = l1_read_line_from_expr(expr) {
                         gpu.run_l1_read_line(&state, &line).expect("l1 read");

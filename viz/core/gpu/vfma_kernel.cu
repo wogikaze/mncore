@@ -319,328 +319,627 @@ extern "C" __global__ void mau_line(
     }
 }
 
-// One f32 ALU line: Passa (kind 0) or Xor (kind 1). A destination can be a
-// PE memory, OMR entry (omr > 0) or nowhere (dwl = 0). Masks on the write and
-// the other ALU opcodes are not part of this kernel yet.
+// ---------------------------------------------------------------------------
+// Full ALU instruction set (SDM 3.6.12) and block-float conversion (3.6.12.12).
+//
+// A descriptor built by `gpu::alu_line_from_expr` is passed by value. One
+// thread handles one MAB (four PEs) and all four cycles: all inputs are read
+// before anything is written, so msl/msr and overlapping memory destinations
+// behave like the CPU model.
+// ---------------------------------------------------------------------------
+
+struct AluSrc {
+    unsigned mem;
+    unsigned wl;
+    unsigned base[4];
+    unsigned rnd;
+    unsigned fixed;
+    unsigned neg;
+    unsigned ext;
+};
+
+struct AluDstDesc {
+    unsigned kind;
+    unsigned mem;
+    unsigned wl;
+    unsigned base[4];
+    unsigned entry;
+    unsigned mask_kind;
+    unsigned mask_entry;
+    unsigned mask_pattern;
+    unsigned mask_ll;
+};
+
+struct AluDesc {
+    unsigned op;
+    unsigned prec;
+    unsigned uns;
+    unsigned arg;
+    unsigned imm;
+    unsigned imm_u;
+    AluSrc a;
+    AluSrc b;
+    unsigned ndst;
+    AluDstDesc dst[8];
+    unsigned flush_kind;
+    unsigned flush_entry;
+    unsigned flush_pattern;
+    unsigned flush_ll;
+};
+
+enum {
+    AOP_ZERO = 0, AOP_IMM = 1, AOP_MSL = 2, AOP_MSR = 3, AOP_PASSA = 4,
+    AOP_INC = 5, AOP_DEC = 6, AOP_NOT = 7, AOP_LNOT = 8, AOP_RSQRT = 9,
+    AOP_FLOOR = 10, AOP_FTOI = 11, AOP_MAX = 12, AOP_MIN = 13,
+    AOP_PACKBIT = 14, AOP_AND = 15, AOP_OR = 16, AOP_XOR = 17,
+    AOP_ADD = 18, AOP_SUB = 19, AOP_LSL = 20, AOP_LSR = 21, AOP_BSL = 22,
+    AOP_BSR = 23, AOP_RELU = 24, AOP_RELU0 = 25, AOP_RELU1 = 26,
+    AOP_RELU2 = 27, AOP_RELU3 = 28, AOP_LRELUD = 29, AOP_LRELUO = 30,
+    AOP_ILRELUD = 31, AOP_BFN = 32, AOP_BFE = 33
+};
+
+__device__ __forceinline__ int alu_prec_bits(unsigned p) {
+    if (p == 0 || p == 4) return 64; // D, L
+    if (p == 3 || p == 6) return 16; // H, S
+    return 32;                       // F, G, I, none
+}
+
+__device__ __forceinline__ bool alu_is_float(unsigned p) {
+    return p == 0 || p == 1 || p == 3;
+}
+
+__device__ __forceinline__ Fmt alu_fmt(unsigned p) {
+    if (p == 0) return {11, 52, 36}; // double
+    if (p == 3) return {6, 9, -1};   // half
+    return {8, 23, 18};              // single
+}
+
+__device__ __forceinline__ unsigned long long alu_mask(int bits) {
+    return bits == 64 ? ~0ULL : ((1ULL << bits) - 1);
+}
+
+__device__ __forceinline__ long long alu_sext(unsigned long long v, int bits) {
+    if (bits == 64) return (long long)v;
+    return (long long)(v << (64 - bits)) >> (64 - bits);
+}
+
+__device__ __forceinline__ void alu_unpack(const unsigned b[4], int bits, unsigned long long out[4]) {
+    unsigned __int128 full = ((unsigned __int128)b[0] << 96) |
+                             ((unsigned __int128)b[1] << 64) |
+                             ((unsigned __int128)b[2] << 32) | b[3];
+    int n = 64 / bits;
+    unsigned __int128 m = (((unsigned __int128)1) << bits) - 1;
+    for (int i = 0; i < n; ++i) {
+        out[i] = (unsigned long long)((full >> (128 - bits * (i + 1))) & m);
+    }
+}
+
+__device__ __forceinline__ void alu_pack_lanes(const unsigned long long in[4], int bits, unsigned out[4]) {
+    unsigned __int128 full = 0;
+    int n = 64 / bits;
+    unsigned __int128 m = (((unsigned __int128)1) << bits) - 1;
+    for (int i = 0; i < n; ++i) {
+        full |= ((unsigned __int128)(in[i] & (unsigned long long)m)) << (128 - bits * (i + 1));
+    }
+    out[0] = (unsigned)(full >> 96);
+    out[1] = (unsigned)(full >> 64);
+}
+
+__device__ __forceinline__ void alu_splat(unsigned long long lane, int bits, unsigned out[4]) {
+    unsigned __int128 full = 0;
+    int n = 128 / bits;
+    unsigned __int128 m = (((unsigned __int128)1) << bits) - 1;
+    for (int i = 0; i < n; ++i) {
+        full |= ((unsigned __int128)(lane & (unsigned long long)m)) << (128 - bits * (i + 1));
+    }
+    out[0] = (unsigned)(full >> 96);
+    out[1] = (unsigned)(full >> 64);
+    out[2] = (unsigned)(full >> 32);
+    out[3] = (unsigned)full;
+}
+
+__device__ __forceinline__ unsigned long long alu_fixed_value(unsigned kind, int pe, int bits) {
+    int group = pe / 1024;
+    int l2b = (pe / 512) & 1;
+    int l1b = (pe / 64) & 7;
+    int mab = (pe / 4) & 15;
+    int sub = pe & 3;
+    switch (kind) {
+        case 1: return (unsigned long long)(group * 2 + l2b);
+        case 2: return (unsigned long long)l1b;
+        case 3: return (unsigned long long)mab;
+        case 4: return (unsigned long long)(mab * 4 + sub);
+        case 5: return (unsigned long long)sub;
+        case 6: return 1ULL << (bits - 1);
+        default: return 0;
+    }
+}
+
+__device__ __forceinline__ unsigned long long encode_val(Fmt f, Val v) {
+    if (v.kind == 0) return 0;
+    if (v.kind == 1) return inf_bits(f, v.neg);
+    return round_pack(f, v.neg, v.sig, v.exp);
+}
+
+__device__ __forceinline__ void round_bus_dev(const unsigned in[4], unsigned out[4]) {
+    Fmt s = {8, 23, 18};
+    Fmt h = {6, 9, -1};
+    unsigned long long hh[4];
+    for (int i = 0; i < 4; ++i) hh[i] = encode_val(h, decode(s, in[i]));
+    out[0] = (unsigned)((hh[0] << 16) | hh[1]);
+    out[1] = (unsigned)((hh[2] << 16) | hh[3]);
+    out[2] = 0;
+    out[3] = 0;
+}
+
+// Reads one input bus for one PE and cycle and applies the `r` operand option.
+__device__ __forceinline__ void alu_read_src(
+    const AluSrc& s, int pe, int c,
+    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
+    unsigned* mauf, unsigned* aluf, unsigned* t, unsigned* mreadf,
+    int bits, unsigned out[4]) {
+    for (int i = 0; i < 4; ++i) out[i] = 0;
+    if (s.fixed != 0) {
+        unsigned long long lane = alu_fixed_value(s.fixed, pe, bits);
+        alu_splat(lane, bits, out);
+    } else if (s.mem < 4) {
+        unsigned* p = pick_mem((int)s.mem, lm0, lm1, grf0, grf1);
+        int len = mem_len((int)s.mem);
+        unsigned base = s.base[c];
+        for (unsigned i = 0; i < s.wl && i < 4; ++i) {
+            out[i] = p[pe * len + (int)((base + i) & (unsigned)(len - 1))];
+        }
+    } else if (s.mem == 4) {
+        for (int i = 0; i < 4; ++i) out[i] = mauf[pe * 16 + c * 4 + i];
+    } else if (s.mem == 5) {
+        for (int i = 0; i < 4; ++i) out[i] = aluf[pe * 16 + c * 4 + i];
+    } else if (s.mem == 6) {
+        for (int i = 0; i < 4; ++i) out[i] = t[pe * 16 + c * 4 + i];
+    } else if (s.mem == 8) {
+        for (int i = 0; i < 4; ++i) out[i] = mreadf[pe * 16 + c * 4 + i];
+    }
+    if (s.rnd) {
+        unsigned r[4];
+        round_bus_dev(out, r);
+        for (int i = 0; i < 4; ++i) out[i] = r[i];
+    }
+    // `neg` and `ext` are no-ops for ALU instructions in the CPU model.
+}
+
+__device__ __forceinline__ unsigned alu_flags(const bool cond[4], int bits) {
+    if (bits == 64) return cond[0] ? 0xf : 0;
+    if (bits == 32) return (cond[0] ? 0xc : 0) | (cond[1] ? 0x3 : 0);
+    unsigned f = 0;
+    for (int i = 0; i < 4; ++i) f |= (cond[i] ? 1u : 0u) << (3 - i);
+    return f;
+}
+
+__device__ __forceinline__ unsigned long long float_rsqrt_dev(Fmt f, unsigned long long v) {
+    const unsigned MANT5[2][16] = {
+        {13, 11, 10, 9, 8, 7, 6, 5, 4, 4, 3, 2, 2, 1, 1, 0},
+        {31, 30, 28, 26, 25, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13},
+    };
+    unsigned m = (unsigned)f.man_bits;
+    unsigned long long e = (v >> m) & exp_max(f);
+    unsigned long long top4 = (v >> (m - 4)) & 15;
+    unsigned long long bias = (unsigned long long)((1LL << (f.exp_bits - 1)) - 1);
+    unsigned long long out_e = bias + (bias + 1) / 2 - 1 - (e + 1) / 2;
+    return (out_e << m) | ((unsigned long long)MANT5[e & 1][top4] << (m - 5));
+}
+
+__device__ __forceinline__ unsigned long long float_floor_dev(Fmt f, unsigned long long v) {
+    Val x = decode(f, v);
+    if (x.kind != 2) return v;
+    if (x.exp >= 0) return v;
+    unsigned sh = (unsigned)(-x.exp);
+    unsigned __int128 sig = x.sig;
+    unsigned __int128 iv = (sh >= 128) ? 0 : (sig >> sh);
+    bool frac = sh >= 128 || (sig & ((((unsigned __int128)1) << sh) - 1)) != 0;
+    if (x.neg && frac) iv += 1;
+    if (iv == 0) return x.neg ? (1ULL << (width(f) - 1)) : 0;
+    return round_pack(f, x.neg, iv, 0);
+}
+
+__device__ __forceinline__ unsigned long long float_ftoi_dev(
+    Fmt f, unsigned long long v, bool uns, int bits) {
+    Val x = decode(f, v);
+    bool neg = false;
+    bool overflow = false;
+    unsigned __int128 mag = 0;
+    if (x.kind == 1) {
+        neg = x.neg;
+        overflow = true;
+    } else if (x.kind == 2) {
+        neg = x.neg;
+        if (x.exp >= 0) {
+            if (x.exp > 70) {
+                overflow = true;
+            } else {
+                mag = x.sig << x.exp;
+            }
+        } else if (-x.exp >= 127) {
+            mag = 0;
+        } else {
+            mag = x.sig >> (unsigned)(-x.exp);
+        }
+    }
+    unsigned long long mask = alu_mask(bits);
+    unsigned __int128 smax = (((unsigned __int128)1) << (bits - 1)) - 1;
+    unsigned __int128 smin = -(((unsigned __int128)1) << (bits - 1));
+    unsigned __int128 umax = (((unsigned __int128)1) << bits) - 1;
+    if (uns) {
+        if (overflow) return (unsigned long long)umax & mask;
+        unsigned __int128 r = mag > umax ? umax : mag;
+        return (unsigned long long)r & mask;
+    }
+    __int128 s;
+    if (overflow) {
+        s = neg ? (__int128)smin : (__int128)smax;
+    } else if (neg) {
+        s = -(__int128)mag;
+        if (s < (__int128)smin) s = (__int128)smin;
+    } else {
+        s = (__int128)mag;
+        if (s > (__int128)smax) s = (__int128)smax;
+    }
+    return (unsigned long long)(long long)s & mask;
+}
+
+__device__ __forceinline__ bool float_max_pick_dev(Fmt f, unsigned long long a, unsigned long long b, bool max) {
+    if (a == b) return true;
+    int bits = width(f);
+    unsigned long long ea = (a >> f.man_bits) & exp_max(f);
+    unsigned long long eb = (b >> f.man_bits) & exp_max(f);
+    if (ea == 0 && eb == 0) return true;
+    unsigned long long ma = a & ((1ULL << (bits - 1)) - 1);
+    unsigned long long mb = b & ((1ULL << (bits - 1)) - 1);
+    if (ea == 0) ma = 0;
+    if (eb == 0) mb = 0;
+    long long ka = (a >> (bits - 1)) ? -(long long)ma : (long long)ma;
+    long long kb = (b >> (bits - 1)) ? -(long long)mb : (long long)mb;
+    return max ? ka >= kb : ka <= kb;
+}
+
+__device__ __forceinline__ unsigned long long float_lrelu_dev(unsigned op, Fmt f, unsigned long long y) {
+    unsigned m = (unsigned)f.man_bits;
+    unsigned long long zero = 1ULL << (width(f) - 1);
+    unsigned long long e = (y >> m) & exp_max(f);
+    unsigned long long emax = exp_max(f);
+    if (op == AOP_LRELUD) {
+        if (e == emax) return y;
+        if (e <= 1) return zero;
+        return y - (1ULL << m);
+    }
+    if (op == AOP_LRELUO) {
+        if (e == emax) return y;
+        if (e <= 3) return zero;
+        return y - (3ULL << m);
+    }
+    if (e == emax) return y;
+    return y + (1ULL << m);
+}
+
+__device__ __forceinline__ bool is_alu_two_input(unsigned op) {
+    return op >= AOP_MAX && op <= AOP_ILRELUD;
+}
+
+// Computes one lane of an ALU operation. Returns the mask-flag condition.
+__device__ __forceinline__ bool alu_lane(
+    unsigned op, int bits, Fmt f, bool is_float, bool uns, unsigned long long a,
+    unsigned long long b, unsigned long long& r) {
+    unsigned long long mask = alu_mask(bits);
+    long long sa = alu_sext(a, bits);
+    long long sb = alu_sext(b, bits);
+    bool c = false;
+    switch (op) {
+        case AOP_INC: case AOP_DEC: case AOP_ADD: case AOP_SUB: {
+            unsigned long long rhs = (op == AOP_INC || op == AOP_DEC) ? 1ULL : b;
+            bool sub = (op == AOP_DEC || op == AOP_SUB);
+            r = (sub ? a - rhs : a + rhs) & mask;
+            c = (bits < 64) ? (((r >> (bits - 1)) & 1) == 0) : (((r >> 63) & 1) == 0);
+            if (is_float) c = false;
+            break;
+        }
+        case AOP_NOT:
+            r = (~a) & mask;
+            c = r == 0;
+            break;
+        case AOP_LNOT:
+            r = (a == 0) ? 1ULL : 0ULL;
+            c = a != 0;
+            break;
+        case AOP_AND: r = a & b; c = (a & b) == 0; break;
+        case AOP_OR: r = a | b; c = (a | b) == 0; break;
+        case AOP_XOR: r = a ^ b; c = (a ^ b) == 0; break;
+        case AOP_LSL: case AOP_LSR: case AOP_BSL: case AOP_BSR: {
+            unsigned s = (unsigned)(b % (unsigned long long)(2 * bits));
+            if (op == AOP_LSL) {
+                r = (s >= (unsigned)bits) ? 0 : ((a << s) & mask);
+            } else if (op == AOP_LSR) {
+                r = uns ? ((s >= (unsigned)bits) ? 0 : (a >> s))
+                        : ((unsigned long long)(sa >> (s < 63 ? s : 63)) & mask);
+            } else {
+                unsigned sh = (s >= (unsigned)bits) ? (s - bits) : s;
+                if (sh == 0) {
+                    r = a;
+                } else if (op == AOP_BSL) {
+                    r = ((a << sh) | (a >> (bits - sh))) & mask;
+                } else {
+                    r = ((a >> sh) | (a << (bits - sh))) & mask;
+                }
+            }
+            c = r == 0;
+            break;
+        }
+        case AOP_MAX: case AOP_MIN: {
+            bool pick;
+            if (is_float) {
+                pick = float_max_pick_dev(f, a, b, op == AOP_MAX);
+            } else if (uns) {
+                pick = (op == AOP_MAX) ? (a >= b) : (a <= b);
+            } else {
+                pick = (op == AOP_MAX) ? (sa >= sb) : (sa <= sb);
+            }
+            r = pick ? a : b;
+            c = pick;
+            break;
+        }
+        case AOP_PACKBIT: {
+            unsigned long long msb = (b >> (bits - 1)) & 1;
+            r = ((a << 1) | msb) & mask;
+            c = msb == 0;
+            break;
+        }
+        case AOP_RELU: case AOP_RELU0: case AOP_RELU1: case AOP_RELU2: case AOP_RELU3: {
+            int k = (op == AOP_RELU1) ? 1 : (op == AOP_RELU2) ? 2 : (op == AOP_RELU3) ? 3 : 0;
+            unsigned long long bit = (a >> (bits - 1 - k)) & 1;
+            r = (bit == 0) ? b : (1ULL << (bits - 1));
+            c = bit == 0;
+            break;
+        }
+        case AOP_RSQRT:
+            r = float_rsqrt_dev(f, a);
+            c = ((a >> (bits - 1)) & 1) == 0;
+            break;
+        case AOP_FLOOR:
+            r = float_floor_dev(f, a);
+            c = false;
+            break;
+        case AOP_FTOI:
+            r = float_ftoi_dev(f, a, false, bits); // unsigned handled by caller flag
+            c = false;
+            break;
+        case AOP_LRELUD: case AOP_LRELUO: case AOP_ILRELUD:
+            r = float_lrelu_dev(op, f, b);
+            c = ((a >> (bits - 1)) & 1) == 0;
+            break;
+        default:
+            r = 0;
+            break;
+    }
+    return c;
+}
+
+// ---------------------------------------------------------------------------
+// Mask application, shared by every destination writer.
+// ---------------------------------------------------------------------------
+
+__device__ __forceinline__ unsigned mask_flags_dev(
+    const unsigned* entries, unsigned kind, unsigned entry, unsigned pattern, int c) {
+    if (kind == 1) {
+        if (entry == 0) return 0xf;
+        if (entry <= 15) return (entries[entry] >> (4 * c)) & 0xf;
+        return ((entry >> (3 - c)) & 1) ? 0xf : 0;
+    }
+    if (kind == 2) return ((pattern >> c) & 1) ? 0xf : 0;
+    return 0xf;
+}
+
+__device__ __forceinline__ bool word_enabled(bool masked, unsigned f, bool ll, int i) {
+    if (!masked) return true;
+    if (ll) return ((f >> (3 - i)) & 1) == 1;
+    if (i < 2) return ((f >> (2 - 2 * i)) & 3) != 0;
+    return true;
+}
+
+__device__ __forceinline__ unsigned merge_word(
+    bool masked, unsigned f, bool ll, int i, unsigned old, unsigned v) {
+    if (!masked || ll || i >= 2) return v;
+    unsigned hi = (f >> (3 - 2 * i)) & 1;
+    unsigned lo = (f >> (2 - 2 * i)) & 1;
+    unsigned m = (hi ? 0xffff0000u : 0) | (lo ? 0x0000ffffu : 0);
+    return (old & ~m) | (v & m);
+}
+
+__device__ __forceinline__ void alu_apply_flush(unsigned bus[4], unsigned f, bool ll) {
+    for (int i = 0; i < 4; ++i) {
+        if (ll) {
+            if (((f >> (3 - i)) & 1) == 0) bus[i] = 0;
+        } else if (i < 2) {
+            unsigned hi = (f >> (3 - 2 * i)) & 1;
+            unsigned lo = (f >> (2 - 2 * i)) & 1;
+            unsigned m = (hi ? 0xffff0000u : 0) | (lo ? 0x0000ffffu : 0);
+            bus[i] &= m;
+        }
+    }
+}
+
+__device__ __forceinline__ void alu_write_dst(
+    const AluDstDesc& d, int pe, int c, const unsigned bus[4], unsigned flags,
+    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
+    unsigned* mask, unsigned* t) {
+    if (d.kind == 3) return;
+    bool masked = d.mask_kind != 0;
+    unsigned mf = masked ? mask_flags_dev(mask + pe * 16, d.mask_kind, d.mask_entry, d.mask_pattern, c) : 0xf;
+    bool ll = d.mask_ll != 0;
+    if (d.kind == 0) {
+        unsigned* p = pick_mem((int)d.mem, lm0, lm1, grf0, grf1);
+        int len = mem_len((int)d.mem);
+        int words = (int)d.wl;
+        bool any = false;
+        for (int i = 0; i < words; ++i) any |= word_enabled(masked, mf, ll, i);
+        if (!any) return;
+        unsigned base = d.base[c];
+        for (int i = 0; i < words; ++i) {
+            if (!word_enabled(masked, mf, ll, i)) continue;
+            int a = pe * len + (int)((base + i) & (unsigned)(len - 1));
+            p[a] = merge_word(masked, mf, ll, i, p[a], bus[i]);
+        }
+    } else if (d.kind == 1) {
+        bool any = false;
+        for (int i = 0; i < 4; ++i) any |= word_enabled(masked, mf, ll, i);
+        if (!any) return;
+        for (int i = 0; i < 4; ++i) {
+            if (!word_enabled(masked, mf, ll, i)) continue;
+            int a = pe * 16 + c * 4 + i;
+            t[a] = merge_word(masked, mf, ll, i, t[a], bus[i]);
+        }
+    } else if (d.kind == 2) {
+        if (d.entry == 0 || d.entry > 15) return;
+        unsigned f = masked ? (flags & mf) : flags;
+        int a = pe * 16 + (int)d.entry;
+        mask[a] = (mask[a] & ~(0xfu << (4 * c))) | (f << (4 * c));
+    }
+}
+
+// ---------------------------------------------------------------------------
+// ALU line.
+// ---------------------------------------------------------------------------
+
 extern "C" __global__ void alu_line(
     unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
     unsigned* mauf, unsigned* aluf, unsigned* mask, unsigned* t,
-    int kind,
-    int amem, unsigned a0, unsigned a1, unsigned a2, unsigned a3, int awl,
-    int bmem, unsigned b0, unsigned b1, unsigned b2, unsigned b3, int bwl,
-    int dmem, unsigned d0, unsigned d1, unsigned d2, unsigned d3, int dwl,
-    int omr, int tdst, unsigned imm, int imm_u,
-    int mask_kind, int mask_entry, int mask_pattern, int mask_ll) {
-    int pe = blockIdx.x * blockDim.x + threadIdx.x;
-    if (pe >= 4096) return;
-    unsigned ab[4] = {a0, a1, a2, a3};
-    unsigned bb[4] = {b0, b1, b2, b3};
-    unsigned db[4] = {d0, d1, d2, d3};
-    unsigned* pa = pick_mem(amem, lm0, lm1, grf0, grf1);
-    unsigned* pb = pick_mem(bmem, lm0, lm1, grf0, grf1);
-    unsigned* pd = pick_mem(dmem, lm0, lm1, grf0, grf1);
-    int la = mem_len(amem);
-    int lb = mem_len(bmem);
-    int ld = mem_len(dmem);
-    for (int c = 0; c < 4; ++c) {
-        unsigned av[4];
-        unsigned bv[4];
-        for (int i = 0; i < 4; ++i) {
-            if (amem == 4) {
-                av[i] = mauf[pe * 16 + c * 4 + i];
-            } else if (amem == 5) {
-                av[i] = aluf[pe * 16 + c * 4 + i];
-            } else if (amem == 6) {
-                av[i] = t[pe * 16 + c * 4 + i];
-            } else if (amem == 9) {
-                av[i] = (unsigned)(pe & 3);
-            } else if (amem == 10) {
-                av[i] = (i & 1) ? (unsigned)(pe & 3) : 0;
-            } else {
-                av[i] = (i < awl) ? pa[pe * la + ab[c] + i] : 0;
-            }
-            if (bmem == 4) {
-                bv[i] = mauf[pe * 16 + c * 4 + i];
-            } else if (bmem == 5) {
-                bv[i] = aluf[pe * 16 + c * 4 + i];
-            } else if (bmem == 6) {
-                bv[i] = t[pe * 16 + c * 4 + i];
-            } else if (bmem == 9) {
-                bv[i] = (unsigned)(pe & 3);
-            } else {
-                bv[i] = (i < bwl) ? pb[pe * lb + bb[c] + i] : 0;
+    unsigned* mreadf, AluDesc d) {
+    int mab = blockIdx.x * blockDim.x + threadIdx.x;
+    if (mab >= 1024) return;
+    int bits = alu_prec_bits(d.prec);
+    int nlanes = 64 / bits;
+    Fmt f = alu_fmt(d.prec);
+    bool is_float = alu_is_float(d.prec);
+    bool two = is_alu_two_input(d.op);
+    bool cross = (d.op == AOP_MSL || d.op == AOP_MSR);
+
+    unsigned abus[4][4][4];
+    unsigned bbus[4][4][4];
+    for (int p = 0; p < 4; ++p) {
+        int pe = mab * 4 + p;
+        int ape = pe;
+        if (d.op == AOP_MSL) ape = mab * 4 + ((p + 3) & 3);
+        if (d.op == AOP_MSR) ape = mab * 4 + ((p + 1) & 3);
+        for (int c = 0; c < 4; ++c) {
+            alu_read_src(d.a, ape, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, bits, abus[p][c]);
+            if (two) {
+                alu_read_src(d.b, pe, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, bits, bbus[p][c]);
             }
         }
-        unsigned out[4];
-        unsigned flags;
-        if (kind == 0) {
-            for (int i = 0; i < 4; ++i) out[i] = av[i];
-            flags = ((av[0] == 0) ? 0xc : 0) | ((av[1] == 0) ? 0x3 : 0);
-        } else if (kind == 1) {
-            out[0] = av[0] ^ bv[0];
-            out[1] = av[1] ^ bv[1];
-            out[2] = av[2];
-            out[3] = av[3];
-            flags = ((out[0] == 0) ? 0xc : 0) | ((out[1] == 0) ? 0x3 : 0);
-        } else if (kind == 2) {
-            int pick0 = 0;
-            int pick1 = 0;
-            for (int l = 0; l < 2; ++l) {
-                unsigned a = av[l];
-                unsigned b = bv[l];
-                bool pick;
-                if (a == b) {
-                    pick = true;
-                } else if (((a >> 23) & 0xff) == 0 && ((b >> 23) & 0xff) == 0) {
-                    pick = true;
+    }
+
+    unsigned out[4][4][4];
+    unsigned fl[4][4];
+    for (int p = 0; p < 4; ++p) {
+        for (int c = 0; c < 4; ++c) {
+            bool cond[4] = {false, false, false, false};
+            if (d.op == AOP_ZERO) {
+                for (int i = 0; i < 4; ++i) out[p][c][i] = 0;
+                fl[p][c] = 0;
+            } else if (d.op == AOP_IMM) {
+                unsigned v = d.imm;
+                if (d.imm_u) {
+                    out[p][c][0] = v; out[p][c][1] = 0; out[p][c][2] = v; out[p][c][3] = 0;
                 } else {
-                    unsigned am = (a & 0x7fffffffu);
-                    unsigned bm = (b & 0x7fffffffu);
-                    if (((a >> 23) & 0xff) == 0) am = 0;
-                    if (((b >> 23) & 0xff) == 0) bm = 0;
-                    long long ka = (a >> 31) ? -(long long)am : (long long)am;
-                    long long kb = (b >> 31) ? -(long long)bm : (long long)bm;
-                    pick = ka >= kb;
+                    for (int i = 0; i < 4; ++i) out[p][c][i] = v;
                 }
-                out[l] = pick ? a : b;
-                if (pick) {
-                    if (l == 0) pick0 = 1;
-                    else pick1 = 1;
-                }
-            }
-            out[2] = av[2];
-            out[3] = av[3];
-            flags = (pick0 ? 0xc : 0) | (pick1 ? 0x3 : 0);
-        } else if (kind == 3) {
-            const unsigned MANT5[2][16] = {
-                {13, 11, 10, 9, 8, 7, 6, 5, 4, 4, 3, 2, 2, 1, 1, 0},
-                {31, 30, 28, 26, 25, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13},
-            };
-            unsigned sign0 = (av[0] >> 31) & 1;
-            unsigned sign1 = (av[1] >> 31) & 1;
-            for (int l = 0; l < 2; ++l) {
-                unsigned v = av[l];
-                unsigned e = (v >> 23) & 0xff;
-                unsigned top4 = (v >> 19) & 15;
-                unsigned out_e = 127 + 64 - 1 - ((e + 1) / 2);
-                out[l] = (out_e << 23) | (MANT5[e & 1][top4] << 18);
-            }
-            out[2] = av[2];
-            out[3] = av[3];
-            flags = ((sign0 == 0) ? 0xc : 0) | ((sign1 == 0) ? 0x3 : 0);
-        } else if (kind == 4 || kind == 20) {
-            int step = (kind == 4) ? 1 : 3;
-            int src_pe = (pe & ~3) | ((pe + step) & 3);
-            unsigned sv[4];
-            for (int i = 0; i < 4; ++i) {
-                if (amem == 4) {
-                    sv[i] = mauf[src_pe * 16 + c * 4 + i];
-                } else if (amem == 5) {
-                    sv[i] = aluf[src_pe * 16 + c * 4 + i];
-                } else {
-                    sv[i] = (i < awl) ? pa[src_pe * la + ab[c] + i] : 0;
-                }
-            }
-            out[0] = sv[0];
-            out[1] = sv[1];
-            out[2] = 0;
-            out[3] = 0;
-            flags = 0;
-        } else if (kind == 5) {
-            for (int i = 0; i < 4; ++i) out[i] = 0;
-            flags = 0;
-        } else if (kind == 7) {
-            unsigned r0 = av[0] + bv[0];
-            unsigned r1 = av[1] + bv[1];
-            out[0] = r0; out[1] = r1; out[2] = av[2]; out[3] = av[3];
-            flags = (((int)r0 >= 0) ? 0xc : 0) | (((int)r1 >= 0) ? 0x3 : 0);
-        } else if (kind == 8) {
-            for (int l = 0; l < 2; ++l) {
-                unsigned shift = bv[l] % 64;
-                out[l] = (shift >= 32) ? 0 : (av[l] << shift);
-            }
-            out[2] = av[2]; out[3] = av[3];
-            flags = ((out[0] == 0) ? 0xc : 0) | ((out[1] == 0) ? 0x3 : 0);
-        } else if (kind == 9) {
-            for (int l = 0; l < 2; ++l) {
-                out[l] = ((av[l] >> 31) == 0) ? bv[l] : 0x80000000u;
-            }
-            out[2] = av[2]; out[3] = av[3];
-            flags = (((av[0] >> 31) == 0) ? 0xc : 0) | (((av[1] >> 31) == 0) ? 0x3 : 0);
-        } else if (kind == 10) {
-            Fmt f = {8, 23, 18};
-            for (int l = 0; l < 2; ++l) {
-                unsigned v = av[l];
-                Val x = decode(f, v);
-                if (x.kind != 2 || x.exp >= 0) {
-                    out[l] = v;
-                    continue;
-                }
-                unsigned sh = (unsigned)(-x.exp);
-                unsigned __int128 sig = x.sig;
-                unsigned __int128 iv = (sh >= 128) ? 0 : (sig >> sh);
-                bool frac = sh >= 128 || (sig & ((((unsigned __int128)1) << sh) - 1)) != 0;
-                if (x.neg && frac) iv += 1;
-                if (iv == 0) {
-                    out[l] = x.neg ? (1u << 31) : 0;
-                } else {
-                    out[l] = (unsigned)round_pack(f, x.neg, iv, 0);
-                }
-            }
-            out[2] = av[2]; out[3] = av[3];
-            flags = 0;
-        } else if (kind == 11) {
-            Fmt f = {8, 23, 18};
-            for (int l = 0; l < 2; ++l) {
-                Val x = decode(f, av[l]);
-                long long r;
-                if (x.kind == 0) {
-                    r = 0;
-                } else if (x.kind == 1) {
-                    r = x.neg ? (-2147483647LL - 1) : 2147483647LL;
-                } else {
-                    unsigned __int128 mag;
-                    if (x.exp >= 0) {
-                        mag = (x.exp > 70) ? (((unsigned __int128)1) << 127) : (x.sig << x.exp);
-                    } else if (-x.exp >= 127) {
-                        mag = 0;
+                fl[p][c] = 0;
+            } else if (d.op == AOP_PASSA) {
+                for (int i = 0; i < 4; ++i) out[p][c][i] = abus[p][c][i];
+                unsigned long long lanes[4];
+                alu_unpack(abus[p][c], bits, lanes);
+                for (int i = 0; i < nlanes; ++i) cond[i] = lanes[i] == 0;
+                fl[p][c] = alu_flags(cond, bits);
+            } else if (cross) {
+                out[p][c][0] = abus[p][c][0];
+                out[p][c][1] = abus[p][c][1];
+                out[p][c][2] = 0;
+                out[p][c][3] = 0;
+                fl[p][c] = 0;
+            } else {
+                unsigned long long x[4] = {0, 0, 0, 0};
+                unsigned long long y[4] = {0, 0, 0, 0};
+                unsigned long long r[4] = {0, 0, 0, 0};
+                alu_unpack(abus[p][c], bits, x);
+                if (two) alu_unpack(bbus[p][c], bits, y);
+                for (int i = 0; i < nlanes; ++i) {
+                    bool cc;
+                    if (d.op == AOP_FTOI) {
+                        r[i] = float_ftoi_dev(f, x[i], d.uns != 0, bits);
+                        cc = false;
                     } else {
-                        mag = x.sig >> (unsigned)(-x.exp);
+                        cc = alu_lane(d.op, bits, f, is_float, d.uns != 0, x[i], y[i], r[i]);
                     }
-                    if (x.neg) {
-                        long long s = (mag > (unsigned __int128)2147483648ULL)
-                            ? (-2147483647LL - 1)
-                            : -(long long)(unsigned long long)mag;
-                        r = s;
-                    } else {
-                        r = (mag > (unsigned __int128)2147483647ULL)
-                            ? 2147483647LL
-                            : (long long)(unsigned long long)mag;
-                    }
+                    cond[i] = cc;
                 }
-                out[l] = (unsigned)r;
+                alu_pack_lanes(r, bits, out[p][c]);
+                unsigned o2 = abus[p][c][2];
+                unsigned o3 = abus[p][c][3];
+                out[p][c][2] = o2;
+                out[p][c][3] = o3;
+                fl[p][c] = alu_flags(cond, bits);
             }
-            out[2] = av[2]; out[3] = av[3];
-            flags = 0;
-        } else if (kind == 12) {
-            for (int l = 0; l < 2; ++l) {
-                unsigned a = av[l], b = bv[l];
-                bool pick = true;
-                if (a != b) {
-                    if (((a >> 23) & 0xff) == 0 && ((b >> 23) & 0xff) == 0) pick = true;
-                    else {
-                        unsigned am = a & 0x7fffffffu, bm = b & 0x7fffffffu;
-                        if (((a >> 23) & 0xff) == 0) am = 0;
-                        if (((b >> 23) & 0xff) == 0) bm = 0;
-                        long long ka = (a >> 31) ? -(long long)am : (long long)am;
-                        long long kb = (b >> 31) ? -(long long)bm : (long long)bm;
-                        pick = ka <= kb;
-                    }
+            // The unsigned inc/dec/add/sub/lsr/max/min flags differ from the signed ones.
+            if (d.uns && (d.op == AOP_INC || d.op == AOP_DEC || d.op == AOP_ADD || d.op == AOP_SUB)) {
+                bool uc[4] = {false, false, false, false};
+                unsigned long long x[4] = {0, 0, 0, 0};
+                unsigned long long y[4] = {0, 0, 0, 0};
+                alu_unpack(abus[p][c], bits, x);
+                if (two) alu_unpack(bbus[p][c], bits, y);
+                unsigned long long m = alu_mask(bits);
+                bool sub = (d.op == AOP_DEC || d.op == AOP_SUB);
+                for (int i = 0; i < nlanes; ++i) {
+                    unsigned long long rhs = (d.op == AOP_INC || d.op == AOP_DEC) ? 1ULL : y[i];
+                    unsigned __int128 sum = (unsigned __int128)x[i] + (unsigned __int128)rhs;
+                    uc[i] = sub ? (x[i] >= rhs) : (sum <= (unsigned __int128)m);
                 }
-                out[l] = pick ? a : b;
-            }
-            out[2] = av[2]; out[3] = av[3]; flags = 0;
-        } else if (kind == 13) {
-            unsigned r0 = av[0] - bv[0], r1 = av[1] - bv[1];
-            out[0] = r0; out[1] = r1; out[2] = av[2]; out[3] = av[3]; flags = 0;
-        } else if (kind == 14 || kind == 15) {
-            unsigned d = (kind == 14) ? 1u : (unsigned)-1;
-            out[0] = av[0] + d; out[1] = av[1] + d; out[2] = av[2]; out[3] = av[3]; flags = 0;
-        } else if (kind == 16) {
-            out[0] = ~av[0]; out[1] = ~av[1]; out[2] = av[2]; out[3] = av[3]; flags = 0;
-        } else if (kind == 17) {
-            out[0] = (av[0] == 0) ? 1u : 0u; out[1] = (av[1] == 0) ? 1u : 0u;
-            out[2] = av[2]; out[3] = av[3]; flags = 0;
-        } else if (kind == 18) {
-            out[0] = av[0] & bv[0]; out[1] = av[1] & bv[1]; out[2] = av[2]; out[3] = av[3]; flags = 0;
-        } else if (kind == 19) {
-            out[0] = av[0] | bv[0]; out[1] = av[1] | bv[1]; out[2] = av[2]; out[3] = av[3]; flags = 0;
-        } else if (kind == 21) {
-            unsigned r0 = (av[0] << 1) | ((bv[0] >> 31) & 1);
-            unsigned r1 = (av[1] << 1) | ((bv[1] >> 31) & 1);
-            out[0] = r0; out[1] = r1; out[2] = av[2]; out[3] = av[3];
-            flags = (((bv[0] >> 31) & 1) == 0 ? 0xc : 0) | (((bv[1] >> 31) & 1) == 0 ? 0x3 : 0);
-        } else if (kind == 22) {
-            for (int l = 0; l < 2; ++l) {
-                unsigned sh = bv[l] % 64;
-                if (sh >= 32) sh = 32;
-                out[l] = (sh >= 32) ? 0 : (av[l] >> sh);
-            }
-            out[2] = av[2]; out[3] = av[3];
-            flags = ((out[0] == 0) ? 0xc : 0) | ((out[1] == 0) ? 0x3 : 0);
-        } else if (kind == 23 || kind == 24) {
-            for (int l = 0; l < 2; ++l) {
-                unsigned sh = bv[l] % 64;
-                if (sh >= 32) sh -= 32;
-                if (sh == 0) out[l] = av[l];
-                else if (kind == 23) out[l] = (av[l] << sh) | (av[l] >> (32 - sh));
-                else out[l] = (av[l] >> sh) | (av[l] << (32 - sh));
-            }
-            out[2] = av[2]; out[3] = av[3];
-            flags = ((out[0] == 0) ? 0xc : 0) | ((out[1] == 0) ? 0x3 : 0);
-        } else if (kind >= 25 && kind <= 28) {
-            int k = kind - 25;
-            for (int l = 0; l < 2; ++l) {
-                unsigned mask_bit = (av[l] >> (31 - k)) & 1;
-                out[l] = mask_bit == 0 ? bv[l] : 0x80000000u;
-            }
-            out[2] = av[2]; out[3] = av[3];
-            flags = ((((av[0] >> (31 - k)) & 1) == 0) ? 0xc : 0)
-                | ((((av[1] >> (31 - k)) & 1) == 0) ? 0x3 : 0);
-        } else {
-            unsigned value = imm;
-            if (imm_u) {
-                out[0] = value;
-                out[1] = 0;
-                out[2] = value;
-                out[3] = 0;
-            } else {
-                for (int i = 0; i < 4; ++i) out[i] = value;
-            }
-            flags = 0;
-        }
-        if (tdst) {
-            for (int i = 0; i < 4; ++i) {
-                t[pe * 16 + c * 4 + i] = out[i];
-            }
-        } else if (omr > 0) {
-            unsigned old = mask[pe * 16 + omr];
-            unsigned field = 0xfu << (4 * c);
-            mask[pe * 16 + omr] = (old & ~field) | ((unsigned)flags << (4 * c));
-        } else {
-            unsigned flags = 0xf;
-            if (mask_kind == 1) {
-                flags = (mask_entry >= 1 && mask_entry <= 15)
-                    ? ((mask[pe * 16 + mask_entry] >> (4 * c)) & 0xf)
-                    : (((mask_entry >> (3 - c)) & 1) ? 0xf : 0);
-            } else if (mask_kind == 2) {
-                flags = ((mask_pattern >> c) & 1) ? 0xf : 0;
-            }
-            for (int i = 0; i < dwl; ++i) {
-                int enabled;
-                if (mask_kind == 0) {
-                    enabled = 1;
-                } else if (mask_ll) {
-                    enabled = (flags >> (3 - i)) & 1;
-                } else if (i < 2) {
-                    enabled = ((flags >> (2 - 2 * i)) & 3) != 0;
-                } else {
-                    enabled = 1;
+                fl[p][c] = alu_flags(uc, bits);
+            } else if (d.uns && d.op == AOP_LSR) {
+                bool uc[4] = {false, false, false, false};
+                unsigned long long x[4] = {0, 0, 0, 0};
+                unsigned long long y[4] = {0, 0, 0, 0};
+                alu_unpack(abus[p][c], bits, x);
+                alu_unpack(bbus[p][c], bits, y);
+                for (int i = 0; i < nlanes; ++i) {
+                    unsigned s = (unsigned)(y[i] % (unsigned long long)(2 * bits));
+                    unsigned long long r = (s >= (unsigned)bits) ? 0 : (x[i] >> s);
+                    uc[i] = r == 0;
                 }
-                if (!enabled) continue;
-                unsigned value = out[i];
-                if (mask_kind != 0 && !mask_ll && i < 2) {
-                    unsigned hi = (flags >> (3 - 2 * i)) & 1;
-                    unsigned lo = (flags >> (2 - 2 * i)) & 1;
-                    unsigned m = (hi ? 0xffff0000u : 0) | (lo ? 0x0000ffffu : 0);
-                    unsigned old = pd[pe * ld + db[c] + i];
-                    value = (old & ~m) | (value & m);
+                fl[p][c] = alu_flags(uc, bits);
+            } else if (d.uns && (d.op == AOP_MAX || d.op == AOP_MIN) && !is_float) {
+                bool uc[4] = {false, false, false, false};
+                unsigned long long x[4] = {0, 0, 0, 0};
+                unsigned long long y[4] = {0, 0, 0, 0};
+                alu_unpack(abus[p][c], bits, x);
+                alu_unpack(bbus[p][c], bits, y);
+                for (int i = 0; i < nlanes; ++i) {
+                    uc[i] = (d.op == AOP_MAX) ? (x[i] >= y[i]) : (x[i] <= y[i]);
                 }
-                pd[pe * ld + db[c] + i] = value;
+                fl[p][c] = alu_flags(uc, bits);
             }
         }
-        for (int i = 0; i < 4; ++i) {
-            aluf[pe * 16 + c * 4 + i] = out[i];
+    }
+
+    for (int p = 0; p < 4; ++p) {
+        int pe = mab * 4 + p;
+        for (int c = 0; c < 4; ++c) {
+            unsigned bus[4];
+            for (int i = 0; i < 4; ++i) bus[i] = out[p][c][i];
+            if (d.flush_kind != 0) {
+                unsigned mf = mask_flags_dev(mask + pe * 16, d.flush_kind, d.flush_entry, d.flush_pattern, c);
+                alu_apply_flush(bus, mf, d.flush_ll != 0);
+            }
+            for (unsigned k = 0; k < d.ndst && k < 8; ++k) {
+                alu_write_dst(d.dst[k], pe, c, bus, fl[p][c], lm0, lm1, grf0, grf1, mask, t);
+            }
+            // The CPU model stores the zero-flushed output in the forwarding register too.
+            for (int i = 0; i < 4; ++i) aluf[pe * 16 + c * 4 + i] = bus[i];
         }
     }
 }
@@ -655,106 +954,175 @@ __device__ __forceinline__ unsigned __int128 round_shift128(
     return k + ((rem > half || (rem == half && (k & 1))) ? 1 : 0);
 }
 
-__device__ __forceinline__ void block_float_single(
-    const unsigned* vals, unsigned* out) {
-    int m = 23;
-    unsigned emax = 255;
-    unsigned sign_bit = 1u << 31;
-    int dropped = 5;
-    unsigned max_e = 0;
-    for (int i = 0; i < 8; ++i) {
-        unsigned e = (vals[i] >> m) & emax;
+// Generic block-float conversion (SDM 3.6.12.12 and float.rs). `keep` is the
+// number of mantissa bits kept, `extended` selects the hbfe representation.
+__device__ __forceinline__ void block_float_any(
+    Fmt f, const unsigned long long* block, int n, int keep, bool extended,
+    unsigned long long* conv) {
+    int m = (int)f.man_bits;
+    unsigned long long emax = exp_max(f);
+    unsigned long long sign_bit = 1ULL << (width(f) - 1);
+    unsigned long long man_mask_ = man_mask(f);
+    int dropped = m - keep;
+    unsigned long long max_e = 0;
+    for (int i = 0; i < n; ++i) {
+        unsigned long long e = (block[i] >> m) & emax;
         if (e > max_e) max_e = e;
     }
-    unsigned common = max_e;
+    unsigned long long common = max_e;
     bool top = false;
-    for (int i = 0; i < 8; ++i) {
-        unsigned v = vals[i];
-        unsigned e = (v >> m) & emax;
-        unsigned man = v & ((1u << m) - 1);
-        if (e == max_e && (man >> dropped) == ((1u << 18) - 1)) top = true;
+    for (int i = 0; i < n; ++i) {
+        unsigned long long v = block[i];
+        unsigned long long e = (v >> m) & emax;
+        unsigned long long man = v & man_mask_;
+        if (e == max_e && (man >> dropped) == ((1ULL << keep) - 1)) top = true;
     }
     if (top) common += 1;
-    for (int i = 0; i < 8; ++i) {
-        unsigned v = vals[i];
-        unsigned s = v & sign_bit;
-        unsigned e = (v >> m) & emax;
-        unsigned man = v & ((1u << m) - 1);
+    bool half = (m == 9);
+    if (half) common += (unsigned long long)dropped;
+    for (int i = 0; i < n; ++i) {
+        unsigned long long v = block[i];
+        unsigned long long s = v & sign_bit;
+        unsigned long long e = (v >> m) & emax;
+        unsigned long long man = v & man_mask_;
         if (common >= emax) {
-            out[i] = s | (emax << m);
+            conv[i] = s | (emax << m);
             continue;
         }
         if (max_e == 0) {
-            out[i] = s;
+            conv[i] = s;
             continue;
         }
         if (e == 0) {
-            out[i] = s | (common << m);
+            conv[i] = extended ? s : (s | (common << m));
             continue;
         }
-        unsigned d = common - e;
-        unsigned __int128 sig = ((unsigned __int128)1 << m) | man;
-        unsigned shift = d + 1 + dropped;
+        unsigned long long d = common - e;
+        unsigned __int128 sig = (((unsigned __int128)1) << m) | man;
+        bool top_ones = (man >> dropped) == ((1ULL << keep) - 1);
+        bool flag = extended && ((long long)d > 6 + dropped ||
+                                 ((long long)d == 6 + dropped && !top_ones));
+        unsigned shift = (unsigned)(flag ? d - 6 : d) + 1 + (half ? 0u : (unsigned)dropped);
         unsigned __int128 r = round_shift128(sig, shift);
-        r <<= dropped;
+        if (!half) r <<= (unsigned)dropped;
         if (r == 0) {
-            out[i] = s | (common << m);
+            conv[i] = extended ? s : (s | (common << m));
             continue;
         }
-        out[i] = s | (common << m) | ((unsigned)r & ((1u << m) - 1));
+        unsigned long long ee = flag ? 0 : common;
+        conv[i] = s | (ee << m) | ((unsigned long long)r & man_mask_);
     }
 }
 
-// One gbfn line. Each thread handles one MAB and one cycle: it reads the
-// four PEs' source buses, converts the eight values as one block and writes
-// aluf (and the destination, if any).
+__device__ __forceinline__ unsigned bfn_get_half(const unsigned bus[4], int k) {
+    unsigned w = bus[k / 2];
+    return (k & 1) ? (w & 0xffffu) : (w >> 16);
+}
+
+__device__ __forceinline__ void bfn_put_half(unsigned bus[4], int k, unsigned h) {
+    unsigned& w = bus[k / 2];
+    if (k & 1) {
+        w = (w & 0xffff0000u) | (h & 0xffffu);
+    } else {
+        w = (w & 0x0000ffffu) | (h << 16);
+    }
+}
+
+// One bfn/bfe line. One thread handles one MAB and reads all four cycles
+// before writing, matching the CPU's read-all-then-write order.
 extern "C" __global__ void bfn_line(
     unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
-    unsigned* mauf, unsigned* aluf, unsigned* mreadf,
-    int smem, unsigned s0, unsigned s1, unsigned s2, unsigned s3, int swl,
-    int dmem, unsigned d0, unsigned d1, unsigned d2, unsigned d3, int dwl) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx >= 4096) return;
-    int mab = idx >> 2;
-    int c = idx & 3;
-    unsigned sb[4] = {s0, s1, s2, s3};
-    unsigned db[4] = {d0, d1, d2, d3};
-    unsigned* ps = pick_mem(smem, lm0, lm1, grf0, grf1);
-    unsigned* pd = pick_mem(dmem, lm0, lm1, grf0, grf1);
-    int ls = mem_len(smem);
-    int ld = mem_len(dmem);
-    unsigned bus[4][4];
+    unsigned* mauf, unsigned* aluf, unsigned* mask, unsigned* t,
+    unsigned* mreadf, AluDesc d) {
+    int mab = blockIdx.x * blockDim.x + threadIdx.x;
+    if (mab >= 1024) return;
+    unsigned prec = d.prec;
+    int bits = (prec == 0) ? 64 : (prec == 3) ? 16 : 32;
+    Fmt f = (prec == 0) ? Fmt{11, 52, 36} : (prec == 3) ? Fmt{6, 9, -1} : Fmt{8, 23, 18};
+    bool extended = (d.op == AOP_BFE);
+    int keep;
+    if (prec == 0) keep = 52;
+    else if (prec == 1) keep = 23;
+    else if (prec == 2) keep = 18;
+    else keep = d.arg ? (int)d.arg : 9;
+
+    unsigned bus[4][4][4];
     for (int p = 0; p < 4; ++p) {
         int pe = mab * 4 + p;
-        for (int i = 0; i < 4; ++i) {
-            if (smem == 4) {
-                bus[p][i] = mauf[pe * 16 + c * 4 + i];
-            } else if (smem == 5) {
-                bus[p][i] = aluf[pe * 16 + c * 4 + i];
-            } else if (smem == 8) {
-                bus[p][i] = mreadf[pe * 16 + c * 4 + i];
+        for (int c = 0; c < 4; ++c) {
+            alu_read_src(d.a, pe, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, bits, bus[p][c]);
+        }
+    }
+
+    unsigned out[4][4][4];
+    for (int c = 0; c < 4; ++c) {
+        unsigned long long block[32];
+        unsigned long long conv[32];
+        for (int p = 0; p < 4; ++p) {
+            if (prec == 0) {
+                block[p] = ((unsigned long long)bus[p][c][0] << 32) | bus[p][c][1];
+            } else if (prec == 1 || prec == 2) {
+                block[p] = bus[p][c][0];
+                block[4 + p] = bus[p][c][1];
             } else {
-                bus[p][i] = (i < swl) ? ps[pe * ls + sb[c] + i] : 0;
+                for (int k = 0; k < 4; ++k) block[p * 4 + k] = bfn_get_half(bus[p][c], k);
+                for (int k = 4; k < 8; ++k) block[16 + p * 4 + (k - 4)] = bfn_get_half(bus[p][c], k);
+            }
+        }
+        if (prec == 0) {
+            block_float_any(f, block, 4, keep, extended, conv);
+            for (int p = 0; p < 4; ++p) {
+                out[p][c][0] = (unsigned)(conv[p] >> 32);
+                out[p][c][1] = (unsigned)conv[p];
+                out[p][c][2] = 0;
+                out[p][c][3] = 0;
+            }
+        } else if (prec == 1) {
+            // Two blocks, one per 32-bit word of each PE.
+            block_float_any(f, block, 4, 23, extended, conv);
+            block_float_any(f, block + 4, 4, 23, extended, conv + 4);
+            for (int p = 0; p < 4; ++p) {
+                out[p][c][0] = (unsigned)conv[p];
+                out[p][c][1] = (unsigned)conv[4 + p];
+                out[p][c][2] = 0;
+                out[p][c][3] = 0;
+            }
+        } else if (prec == 2) {
+            // One block of eight pseudo-single values.
+            block_float_any(f, block, 8, 18, extended, conv);
+            for (int p = 0; p < 4; ++p) {
+                out[p][c][0] = (unsigned)conv[p];
+                out[p][c][1] = (unsigned)conv[4 + p];
+                out[p][c][2] = 0;
+                out[p][c][3] = 0;
+            }
+        } else {
+            // Two blocks of sixteen half values: words 0-1 and words 2-3.
+            block_float_any(f, block, 16, keep, extended, conv);
+            block_float_any(f, block + 16, 16, keep, extended, conv + 16);
+            for (int p = 0; p < 4; ++p) {
+                for (int k = 0; k < 4; ++k) bfn_put_half(out[p][c], k, (unsigned)conv[p * 4 + k]);
+                for (int k = 4; k < 8; ++k) {
+                    bfn_put_half(out[p][c], k, (unsigned)conv[16 + p * 4 + (k - 4)]);
+                }
             }
         }
     }
-    unsigned vals[8];
-    unsigned conv[8];
-    for (int p = 0; p < 4; ++p) {
-        vals[2 * p] = bus[p][0];
-        vals[2 * p + 1] = bus[p][1];
-    }
-    block_float_single(vals, conv);
+
     for (int p = 0; p < 4; ++p) {
         int pe = mab * 4 + p;
-        unsigned out[4] = {conv[2 * p], conv[2 * p + 1], 0, 0};
-        if (dmem < 4) {
-            for (int i = 0; i < dwl; ++i) {
-                pd[pe * ld + db[c] + i] = out[i];
+        for (int c = 0; c < 4; ++c) {
+            unsigned busw[4];
+            for (int i = 0; i < 4; ++i) busw[i] = out[p][c][i];
+            if (d.flush_kind != 0) {
+                unsigned mf = mask_flags_dev(mask + pe * 16, d.flush_kind, d.flush_entry, d.flush_pattern, c);
+                alu_apply_flush(busw, mf, d.flush_ll != 0);
             }
-        }
-        for (int i = 0; i < 4; ++i) {
-            aluf[pe * 16 + c * 4 + i] = out[i];
+            for (unsigned k = 0; k < d.ndst && k < 8; ++k) {
+                alu_write_dst(d.dst[k], pe, c, busw, 0, lm0, lm1, grf0, grf1, mask, t);
+            }
+            // The CPU model stores the zero-flushed output in the forwarding register too.
+            for (int i = 0; i < 4; ++i) aluf[pe * 16 + c * 4 + i] = busw[i];
         }
     }
 }
