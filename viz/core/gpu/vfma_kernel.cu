@@ -208,163 +208,6 @@ __device__ __forceinline__ int pe_word_addr(
     return (int)(a & ~(unsigned)(wl - 1));
 }
 
-// One f32 MAU line. Each thread handles one PE, reads all four cycles
-// before writing, and computes the two f32 lanes. Every operand has its own
-// access length; lanes beyond a source's length read as zero. Masks, T,
-// base registers, ext/rnd and the other forwarding registers are not part
-// of this kernel yet.
-extern "C" __global__ void mau_line(
-    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
-    unsigned* mauf, unsigned* aluf, unsigned* mask, unsigned* t,
-    unsigned* mreadf, unsigned* bar0, unsigned* bar1, int update_forward,
-    int kind,
-    int amem, unsigned a0, unsigned a1, unsigned a2, unsigned a3, int awl,
-    int aneg, int at, int ama,
-    int bmem, unsigned b0, unsigned b1, unsigned b2, unsigned b3, int bwl,
-    int bneg, int bt, int bma,
-    int cmem, unsigned c0, unsigned c1, unsigned c2, unsigned c3, int cwl,
-    int cneg, int ct, int cma,
-    int dmem, unsigned d0, unsigned d1, unsigned d2, unsigned d3, int dwl,
-    int dt, int dma,
-    int mask_kind, int mask_entry, int mask_pattern, int mask_ll) {
-    int pe = blockIdx.x * blockDim.x + threadIdx.x;
-    if (pe >= 4096) return;
-    unsigned ab[4] = {a0, a1, a2, a3};
-    unsigned bb[4] = {b0, b1, b2, b3};
-    unsigned cb[4] = {c0, c1, c2, c3};
-    unsigned db[4] = {d0, d1, d2, d3};
-    unsigned* pa = pick_mem(amem, lm0, lm1, grf0, grf1);
-    unsigned* pb = pick_mem(bmem, lm0, lm1, grf0, grf1);
-    unsigned* pc = pick_mem(cmem, lm0, lm1, grf0, grf1);
-    unsigned* pd = pick_mem(dmem, lm0, lm1, grf0, grf1);
-    int la = mem_len(amem);
-    int lb = mem_len(bmem);
-    int lc = mem_len(cmem);
-    int ld = mem_len(dmem);
-    int aa[4], bb2[4], cc2[4], dd2[4];
-    for (int c = 0; c < 4; ++c) {
-        aa[c] = (amem < 4) ? pe_word_addr(amem, ab[c], awl, at, ama, pe, c, bar0, bar1, t) : 0;
-        bb2[c] = (bmem < 4) ? pe_word_addr(bmem, bb[c], bwl, bt, bma, pe, c, bar0, bar1, t) : 0;
-        cc2[c] = (cmem < 4) ? pe_word_addr(cmem, cb[c], cwl, ct, cma, pe, c, bar0, bar1, t) : 0;
-        dd2[c] = (dmem < 4) ? pe_word_addr(dmem, db[c], dwl, dt, dma, pe, c, bar0, bar1, t) : 0;
-    }
-    Fmt f = {8, 23, 18};
-    unsigned one = 0x3f800000u;
-    unsigned values[4][2];
-    for (int c = 0; c < 4; ++c) {
-        for (int l = 0; l < 2; ++l) {
-            unsigned av = (amem == 4)
-                ? mauf[pe * 16 + c * 4 + l]
-                : (amem == 5)
-                    ? aluf[pe * 16 + c * 4 + l]
-                    : (amem == 6)
-                        ? t[pe * 16 + c * 4 + l]
-                        : (amem == 8)
-                            ? mreadf[pe * 16 + c * 4 + l]
-                            : (l < awl ? pa[pe * la + ((aa[c] + l) & (la - 1))] : 0);
-            if (aneg) av ^= 0x80000000u;
-            unsigned bv;
-            unsigned cv;
-            if (kind == 0) {
-                bv = (bmem == 4)
-                    ? mauf[pe * 16 + c * 4 + l]
-                    : (bmem == 5)
-                        ? aluf[pe * 16 + c * 4 + l]
-                        : (bmem == 6)
-                            ? t[pe * 16 + c * 4 + l]
-                            : (bmem == 8)
-                                ? mreadf[pe * 16 + c * 4 + l]
-                                : (l < bwl ? pb[pe * lb + ((bb2[c] + l) & (lb - 1))] : 0);
-                cv = (cmem == 4)
-                    ? mauf[pe * 16 + c * 4 + l]
-                    : (cmem == 5)
-                        ? aluf[pe * 16 + c * 4 + l]
-                        : (cmem == 6)
-                            ? t[pe * 16 + c * 4 + l]
-                            : (cmem == 8)
-                                ? mreadf[pe * 16 + c * 4 + l]
-                                : (l < cwl ? pc[pe * lc + ((cc2[c] + l) & (lc - 1))] : 0);
-                if (bneg) bv ^= 0x80000000u;
-                if (cneg) cv ^= 0x80000000u;
-            } else if (kind == 1) {
-                bv = (bmem == 4)
-                    ? mauf[pe * 16 + c * 4 + l]
-                    : (bmem == 5)
-                        ? aluf[pe * 16 + c * 4 + l]
-                        : (bmem == 6)
-                            ? t[pe * 16 + c * 4 + l]
-                            : (bmem == 8)
-                                ? mreadf[pe * 16 + c * 4 + l]
-                                : (l < bwl ? pb[pe * lb + ((bb2[c] + l) & (lb - 1))] : 0);
-                if (bneg) bv ^= 0x80000000u;
-                cv = 0;
-            } else if (kind == 2) {
-                bv = one;
-                cv = (cmem == 4)
-                    ? mauf[pe * 16 + c * 4 + l]
-                    : (cmem == 5)
-                        ? aluf[pe * 16 + c * 4 + l]
-                        : (cmem == 6)
-                            ? t[pe * 16 + c * 4 + l]
-                            : (cmem == 8)
-                                ? mreadf[pe * 16 + c * 4 + l]
-                                : (l < cwl ? pc[pe * lc + ((cc2[c] + l) & (lc - 1))] : 0);
-                if (cneg) cv ^= 0x80000000u;
-            } else {
-                bv = one;
-                cv = 0;
-            }
-            values[c][l] = (unsigned)vfma_bits(f, f, av, bv, cv);
-        }
-    }
-    for (int c = 0; c < 4; ++c) {
-        unsigned flags = 0xf;
-        if (mask_kind == 1) {
-            flags = (mask_entry >= 1 && mask_entry <= 15)
-                ? ((mask[pe * 16 + mask_entry] >> (4 * c)) & 0xf)
-                : (((mask_entry >> (3 - c)) & 1) ? 0xf : 0);
-        } else if (mask_kind == 2) {
-            flags = ((mask_pattern >> c) & 1) ? 0xf : 0;
-        }
-        if (dmem >= 10) {
-            // $mb / $nb: low 12 bits of the MSB word, with the directive mask.
-            if (mask_kind == 0 || flags != 0) {
-                unsigned* bar = (dmem == 10) ? bar0 : bar1;
-                bar[pe] = values[c][0] & 0xfff;
-            }
-        } else {
-            for (int l = 0; l < dwl; ++l) {
-                int enabled;
-                if (mask_kind == 0) {
-                    enabled = 1;
-                } else if (mask_ll) {
-                    enabled = (flags >> (3 - l)) & 1;
-                } else if (l < 2) {
-                    enabled = ((flags >> (2 - 2 * l)) & 3) != 0;
-                } else {
-                    enabled = 1;
-                }
-                if (!enabled) continue;
-                unsigned value = (l < 2) ? values[c][l] : 0;
-                if (mask_kind != 0 && !mask_ll && l < 2) {
-                    unsigned hi = (flags >> (3 - 2 * l)) & 1;
-                    unsigned lo = (flags >> (2 - 2 * l)) & 1;
-                    unsigned m = (hi ? 0xffff0000u : 0) | (lo ? 0x0000ffffu : 0);
-                    unsigned old = pd[pe * ld + ((dd2[c] + l) & (ld - 1))];
-                    value = (old & ~m) | (value & m);
-                }
-                pd[pe * ld + ((dd2[c] + l) & (ld - 1))] = value;
-            }
-        }
-        if (update_forward) {
-            mauf[pe * 16 + c * 4] = values[c][0];
-            mauf[pe * 16 + c * 4 + 1] = values[c][1];
-            mauf[pe * 16 + c * 4 + 2] = 0;
-            mauf[pe * 16 + c * 4 + 3] = 0;
-        }
-    }
-}
-
 // ---------------------------------------------------------------------------
 // Full ALU instruction set (SDM 3.6.12) and block-float conversion (3.6.12.12).
 //
@@ -860,6 +703,222 @@ __device__ __forceinline__ void alu_write_dst(
         unsigned f = masked ? (flags & mf) : flags;
         int a = pe * 16 + (int)d.entry;
         mask[a] = (mask[a] & ~(0xfu << (4 * c))) | (f << (4 * c));
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Generic MAU arithmetic and operand reads.
+// ---------------------------------------------------------------------------
+
+struct MauLineDesc {
+    unsigned prec;   // 0 D, 1 F, 2 G, 3 H
+    unsigned kind;   // 0 fma, 1 mul, 2 add, 3 passa
+    unsigned half;   // 0 none, 1 upper PEs, 2 lower PEs
+    unsigned round;
+    AluSrc a;
+    AluSrc b;
+    AluSrc c;
+    unsigned ndst;
+    AluDstDesc dst[8];
+    unsigned flush_kind;
+    unsigned flush_entry;
+    unsigned flush_pattern;
+    unsigned flush_ll;
+};
+
+__device__ __forceinline__ Fmt mau_fmt(unsigned prec) {
+    if (prec == 0) return {11, 52, 36};
+    if (prec == 3) return {6, 9, -1};
+    return {8, 23, 18};
+}
+
+__device__ __forceinline__ bool mau_is_half(Fmt f) {
+    return f.exp_bits == 6 && f.man_bits == 9;
+}
+
+__device__ __forceinline__ bool mau_is_double(Fmt f) {
+    return f.exp_bits == 11 && f.man_bits == 52;
+}
+
+__device__ __forceinline__ unsigned long long mau_encode(Fmt f, Val v) {
+    if (v.kind == 0) return 0;
+    if (v.kind == 1) return inf_bits(f, v.neg);
+    return round_pack(f, v.neg, v.sig, v.exp);
+}
+
+__device__ __forceinline__ void mau_unpack(
+    const unsigned bus[4], int width, int n, unsigned long long* out) {
+    unsigned __int128 full = ((unsigned __int128)bus[0] << 96) |
+                             ((unsigned __int128)bus[1] << 64) |
+                             ((unsigned __int128)bus[2] << 32) | bus[3];
+    unsigned __int128 m = width == 64
+        ? (unsigned __int128)~0ULL
+        : ((((unsigned __int128)1) << width) - 1);
+    for (int i = 0; i < n; ++i) {
+        out[i] = (unsigned long long)((full >> (128 - width * (i + 1))) & m);
+    }
+}
+
+// Reads one MAU source bus (PE memory, T, or a forwarding register) without
+// applying any input option: the MAU decoding below handles `e`, `r` and `-`.
+__device__ __forceinline__ void mau_read_bus(
+    const AluSrc& s, int pe, int c,
+    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
+    unsigned* mauf, unsigned* aluf, unsigned* t, unsigned* mreadf,
+    const unsigned* bar0, const unsigned* bar1, unsigned out[4]) {
+    for (int i = 0; i < 4; ++i) out[i] = 0;
+    if (s.mem < 4) {
+        unsigned* p = pick_mem((int)s.mem, lm0, lm1, grf0, grf1);
+        int len = mem_len((int)s.mem);
+        int ma = (s.madpe == 0) ? -1 : (int)s.madpe - 1;
+        int base = pe_word_addr((int)s.mem, s.base[c], (int)s.wl,
+                                (int)s.t_indirect, ma, pe, c, bar0, bar1, t);
+        for (unsigned i = 0; i < s.wl && i < 4; ++i) {
+            out[i] = p[pe * len + ((base + (int)i) & (len - 1))];
+        }
+    } else if (s.mem == 4) {
+        for (int i = 0; i < 4; ++i) out[i] = mauf[pe * 16 + c * 4 + i];
+    } else if (s.mem == 5) {
+        for (int i = 0; i < 4; ++i) out[i] = aluf[pe * 16 + c * 4 + i];
+    } else if (s.mem == 6) {
+        for (int i = 0; i < 4; ++i) out[i] = t[pe * 16 + c * 4 + i];
+    } else if (s.mem == 8) {
+        for (int i = 0; i < 4; ++i) out[i] = mreadf[pe * 16 + c * 4 + i];
+    }
+}
+
+// Reads `lanes` elements of `f` and applies sign inversion, precision
+// extension and rounding, exactly like `Machine::read_vals`.
+__device__ __forceinline__ void mau_read_vals(
+    const AluSrc& s, Fmt f, int lanes, int pe, int c,
+    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
+    unsigned* mauf, unsigned* aluf, unsigned* t, unsigned* mreadf,
+    const unsigned* bar0, const unsigned* bar1, Val out[4]) {
+    unsigned bus[4];
+    mau_read_bus(s, pe, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf,
+                 bar0, bar1, bus);
+    Fmt raw = f;
+    if (s.ext) {
+        if (mau_is_double(f)) raw = {8, 23, 18};
+        else raw = {6, 9, -1};
+    } else if (s.rnd) {
+        if (mau_is_half(f)) raw = {8, 23, 18};
+        else raw = {11, 52, 36};
+    }
+    unsigned long long v[4];
+    mau_unpack(bus, (int)width(raw), lanes, v);
+    for (int l = 0; l < lanes; ++l) {
+        Val x = decode(raw, v[l]);
+        if (s.rnd) x = decode(f, mau_encode(f, x));
+        if (s.neg) x = x.kind == 0 ? Val{0, !x.neg, 0, 0}
+                    : x.kind == 1 ? Val{1, !x.neg, 0, 0}
+                                  : Val{2, !x.neg, x.sig, x.exp};
+        out[l] = x;
+    }
+}
+
+__device__ __forceinline__ Val mau_vfma(Fmt in_fmt, Fmt out_fmt, Val a, Val b, Val c) {
+    if (a.kind == 2 && b.kind == 2) {
+        int m = in_fmt.man_bits;
+        int full = in_fmt.mul_full_bits >= 0 ? in_fmt.mul_full_bits : in_fmt.man_bits;
+        c = align_c(c, (a.exp + m) + (b.exp + m) - full - m);
+    }
+    return add_exact(mul_exact(in_fmt, a, b), c);
+}
+
+__device__ __forceinline__ unsigned mau_flags_dev(
+    const unsigned long long* out, int n, Fmt f) {
+    unsigned pos[4] = {0, 0, 0, 0};
+    for (int i = 0; i < n && i < 4; ++i) {
+        pos[i] = ((out[i] >> (width(f) - 1)) & 1) == 0;
+    }
+    if (n == 1 && width(f) == 64) return pos[0] ? 0xf : 0;
+    if (n == 1) return pos[0] ? 0xc : 0;
+    if (n == 2) return (pos[0] ? 0xc : 0) | (pos[1] ? 0x3 : 0);
+    unsigned fl = 0;
+    for (int i = 0; i < 4; ++i) fl |= (pos[i] ? 1u : 0u) << (3 - i);
+    return fl;
+}
+
+// One vector MAU line. Each thread handles one PE, reads every source of all
+// four cycles first, then writes. Destinations use the shared ALU writer, so
+// masks, multi-destination forms, T, OMR and the zero-flush mask behave like
+// the CPU's generic write path.
+extern "C" __global__ void mau_line(
+    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
+    unsigned* mauf, unsigned* aluf, unsigned* mask, unsigned* t,
+    unsigned* mreadf, unsigned* bar0, unsigned* bar1, int update_forward,
+    MauLineDesc d) {
+    int pe = blockIdx.x * blockDim.x + threadIdx.x;
+    if (pe >= 4096) return;
+    Fmt fa = mau_fmt(d.prec);
+    Fmt fc = (d.prec == 3) ? Fmt{8, 23, 18} : fa;
+    // Half precision accumulates in single and only rounds to half on request.
+    Fmt fout = (d.prec == 3) ? Fmt{8, 23, 18} : fa;
+    if (d.round) {
+        if (d.prec == 0) fout = {8, 23, 18};
+        else if (d.prec == 3) fout = {6, 9, -1};
+    }
+    int lanes = (d.prec == 0) ? 1 : (d.prec == 3) ? 4 : 2;
+    Val av[4][4];
+    Val bv[4][4];
+    Val cv[4][4];
+    bool need_b = d.kind == 0 || d.kind == 1;
+    bool need_c = d.kind == 0 || d.kind == 2;
+    for (int c = 0; c < 4; ++c) {
+        mau_read_vals(d.a, fa, lanes, pe, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, bar0, bar1, av[c]);
+        if (need_b) {
+            mau_read_vals(d.b, fa, lanes, pe, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, bar0, bar1, bv[c]);
+        }
+        if (need_c) {
+            mau_read_vals(d.c, fc, lanes, pe, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, bar0, bar1, cv[c]);
+        }
+    }
+    Val one = decode(fa, (unsigned long long)((1LL << (fa.exp_bits - 1)) - 1) << fa.man_bits);
+    Val zero = {0, false, 0, 0};
+    bool mul_here = d.half == 0 || (d.half == 1 ? (pe % 4) < 2 : (pe % 4) >= 2);
+    unsigned values[4][4];
+    unsigned flags[4];
+    for (int c = 0; c < 4; ++c) {
+        unsigned long long out[4] = {0, 0, 0, 0};
+        for (int l = 0; l < lanes; ++l) {
+            Val x = mul_here ? av[c][l] : zero;
+            Val y = mul_here ? (need_b ? bv[c][l] : one) : zero;
+            Val z = need_c ? cv[c][l] : zero;
+            out[l] = mau_encode(fout, mau_vfma(fa, fout, x, y, z));
+        }
+        for (int i = 0; i < 4; ++i) values[c][i] = (i < 4) ? (unsigned)out[i] : 0;
+        // A 64-bit output occupies words 0-1; a half output packs four halves
+        // into words 0-1; a single output uses one word per element.
+        if (width(fout) == 64) {
+            values[c][0] = (unsigned)(out[0] >> 32);
+            values[c][1] = (unsigned)out[0];
+            values[c][2] = 0;
+            values[c][3] = 0;
+        } else if (width(fout) == 16) {
+            values[c][0] = ((unsigned)out[0] << 16) | ((unsigned)out[1] & 0xffff);
+            values[c][1] = ((unsigned)out[2] << 16) | ((unsigned)out[3] & 0xffff);
+            values[c][2] = 0;
+            values[c][3] = 0;
+        } else {
+            for (int i = 0; i < 4; ++i) values[c][i] = (i < lanes) ? (unsigned)out[i] : 0;
+        }
+        flags[c] = mau_flags_dev(out, lanes, fout);
+    }
+    for (int c = 0; c < 4; ++c) {
+        unsigned bus[4];
+        for (int i = 0; i < 4; ++i) bus[i] = values[c][i];
+        if (d.flush_kind != 0) {
+            unsigned mf = mask_flags_dev(mask + pe * 16, d.flush_kind, d.flush_entry, d.flush_pattern, c);
+            alu_apply_flush(bus, mf, d.flush_ll != 0);
+        }
+        for (unsigned k = 0; k < d.ndst && k < 8; ++k) {
+            alu_write_dst(d.dst[k], pe, c, bus, flags[c], lm0, lm1, grf0, grf1,
+                          mask, t, bar0, bar1);
+        }
+        if (update_forward) {
+            for (int i = 0; i < 4; ++i) mauf[pe * 16 + c * 4 + i] = bus[i];
+        }
     }
 }
 
@@ -1910,34 +1969,113 @@ extern "C" __global__ void l2_reduce_line(
 
 // ---- matrix unit ------------------------------------------------------------------------
 
-__device__ __forceinline__ unsigned long long encode_bits(Fmt f, Val v) {
-    if (v.kind == 0) return 0;
-    if (v.kind == 1) return inf_bits(f, v.neg);
-    return round_pack(f, v.neg, v.sig, v.exp);
+struct MatWriteLineDesc {
+    unsigned prec;
+    unsigned side;
+    unsigned wl;
+    unsigned addr;
+    AluSrc src;
+};
+
+struct MatReadLineDesc {
+    unsigned prec;
+    unsigned side;
+    unsigned addr;
+    unsigned ndst;
+    AluDstDesc dst[8];
+    unsigned flush_kind;
+    unsigned flush_entry;
+    unsigned flush_pattern;
+    unsigned flush_ll;
+};
+
+struct MatMauLineDesc {
+    unsigned prec;
+    unsigned side;
+    unsigned kind;
+    unsigned half;
+    unsigned round;
+    AluSrc x;
+    AluSrc y;
+    unsigned ndst;
+    AluDstDesc dst[8];
+    unsigned flush_kind;
+    unsigned flush_entry;
+    unsigned flush_pattern;
+    unsigned flush_ll;
+};
+
+__device__ __forceinline__ bool same_fmt(Fmt a, Fmt b) {
+    return a.exp_bits == b.exp_bits && a.man_bits == b.man_bits;
 }
 
-// Exact dot product of one block-float row and one block-float vector, ported
-// from float::bf_dot for single precision with 18 (pseudo-single) or 23 (full)
-// mantissa bits. `has_grid` is clear only for the zero and infinity results.
-__device__ Val bf_dot_single(
-    const unsigned long long* a, const unsigned long long* b, int n, int bf_m,
+// Reads `n` raw elements of `f` from one operand, applying the `-`, `e` and
+// `r` options exactly like `Machine::read_raw_elems` (no normalization).
+__device__ __forceinline__ void mat_read_elems(
+    const AluSrc& s, Fmt f, int n, int pe, int c,
+    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
+    unsigned* mauf, unsigned* aluf, unsigned* t, unsigned* mreadf,
+    const unsigned* bar0, const unsigned* bar1, unsigned long long out[16]) {
+    unsigned bus[4];
+    mau_read_bus(s, pe, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf,
+                 bar0, bar1, bus);
+    Fmt raw = f;
+    if (s.ext) {
+        if (mau_is_double(f)) raw = {8, 23, 18};
+        else raw = {6, 9, -1};
+    } else if (s.rnd) {
+        if (mau_is_half(f)) raw = {8, 23, 18};
+        else raw = {11, 52, 36};
+    }
+    unsigned long long v[16];
+    mau_unpack(bus, (int)width(raw), n, v);
+    for (int i = 0; i < n; ++i) {
+        unsigned long long x = same_fmt(raw, f) ? v[i] : mau_encode(f, decode(raw, v[i]));
+        if (s.neg) x ^= 1ULL << (width(f) - 1);
+        out[i] = x;
+    }
+}
+
+// Packs `n` elements of `width` bits into the eight words of a physical row.
+__device__ __forceinline__ void mat_pack_row(
+    const unsigned long long* elems, int n, int width, unsigned out[8]) {
+    for (int i = 0; i < 8; ++i) out[i] = 0;
+    if (width == 64) {
+        for (int j = 0; j < n && j < 4; ++j) {
+            out[2 * j] = (unsigned)(elems[j] >> 32);
+            out[2 * j + 1] = (unsigned)elems[j];
+        }
+        return;
+    }
+    int per_word = 32 / width;
+    for (int j = 0; j < n && j < 8 * per_word; ++j) {
+        int shift = 32 - width * (j % per_word + 1);
+        out[j / per_word] |= ((unsigned)elems[j] & ((1u << width) - 1)) << shift;
+    }
+}
+
+// Exact block-float dot product (SDM 4.5), ported from `float::bf_dot`.
+__device__ Val bf_dot_dev(
+    Fmt f, int bf_m, const unsigned long long* a, const unsigned long long* b, int n,
     int* has_grid, int* grid) {
-    const int man_bits = 23;
-    const int emax = 255;
-    const int bias = 127;
     *has_grid = 0;
     *grid = 0;
+    unsigned long long emax = exp_max(f);
+    int bias = (int)((1LL << (f.exp_bits - 1)) - 1);
+    unsigned long long mm = man_mask(f);
     unsigned ca = 0;
     unsigned cb = 0;
     for (int i = 0; i < n; ++i) {
-        unsigned ea = ((unsigned)(a[i] >> man_bits)) & emax;
-        unsigned eb = ((unsigned)(b[i] >> man_bits)) & emax;
+        unsigned ea = (unsigned)((a[i] >> f.man_bits) & emax);
+        unsigned eb = (unsigned)((b[i] >> f.man_bits) & emax);
         if (ea > ca) ca = ea;
         if (eb > cb) cb = eb;
     }
     if (ca == 0 || cb == 0) return {0, false, 0, 0};
     if (ca == emax || cb == emax) return {1, false, 0, 0};
-    int low = (bf_m == man_bits) ? 41 : 36;
+    int low = (f.mul_full_bits >= 0 && bf_m == (int)f.man_bits)
+        ? (int)f.mul_full_bits + bf_m
+        : 2 * bf_m;
     *has_grid = 1;
     *grid = (int)ca + (int)cb - 2 * bias + 2 - low;
     bool negs[16];
@@ -1945,22 +2083,25 @@ __device__ Val bf_dot_single(
     int exps[16];
     int count = 0;
     for (int i = 0; i < n; ++i) {
-        unsigned ma = (unsigned)(a[i] & 0x7fffffu) >> (man_bits - bf_m);
-        unsigned mb = (unsigned)(b[i] & 0x7fffffu) >> (man_bits - bf_m);
+        // Double-precision mantissas need more than 32 bits.
+        unsigned long long ma = (unsigned long long)((a[i] & mm) >> (f.man_bits - bf_m));
+        unsigned long long mb = (unsigned long long)((b[i] & mm) >> (f.man_bits - bf_m));
         if (ma == 0 || mb == 0) continue;
-        unsigned ea = ((unsigned)(a[i] >> man_bits)) & emax;
-        unsigned eb = ((unsigned)(b[i] >> man_bits)) & emax;
+        unsigned ea = (unsigned)((a[i] >> f.man_bits) & emax);
+        unsigned eb = (unsigned)((b[i] >> f.man_bits) & emax);
         if (ea == 0) ea = ca > 6 ? ca - 6 : 0;
         if (eb == 0) eb = cb > 6 ? cb - 6 : 0;
         unsigned __int128 p = (unsigned __int128)ma * (unsigned __int128)mb;
-        if (bf_m == man_bits) {
-            unsigned low_mask = 31;
-            unsigned dropped = (ma & low_mask) * (mb & low_mask);
+        if (f.mul_full_bits >= 0 && bf_m == (int)f.man_bits) {
+            int low_bits = (int)f.man_bits - (int)f.mul_full_bits;
+            unsigned long long lm = (1ULL << low_bits) - 1;
+            unsigned long long dropped = (ma & lm) * (mb & lm);
             if (dropped != 0) {
-                p = p - (unsigned __int128)dropped + (((unsigned __int128)1) << 8);
+                p = p - (unsigned __int128)dropped +
+                    (((unsigned __int128)1) << (2 * low_bits - 2));
             }
         }
-        negs[count] = (((a[i] ^ b[i]) >> 31) & 1) != 0;
+        negs[count] = (((a[i] ^ b[i]) >> (width(f) - 1)) & 1) != 0;
         terms[count] = p;
         exps[count] = (int)ea + (int)eb - 2 * bias - 2 * (bf_m - 1);
         ++count;
@@ -1994,236 +2135,228 @@ __device__ Val bf_dot_single(
     return acc;
 }
 
-// float::mat_fma for a single-precision output: align c to the adder grid, add
-// the exact dot product, and round once.
-__device__ __forceinline__ unsigned long long mat_fma_bits(
-    Val dot, int has_grid, int grid, Val c) {
-    Fmt f = {8, 23, 18};
+// float::mat_fma: align the y element to the matrix adder grid and round once.
+__device__ __forceinline__ unsigned long long mat_fma_dev(
+    Fmt out, Val dot, int has_grid, int grid, Val c) {
     Val cc = has_grid ? align_c(c, grid) : c;
-    return encode_bits(f, add_exact(dot, cc));
+    return mau_encode(out, add_exact(dot, cc));
 }
 
-// ---- matrix unit ------------------------------------------------------------------------
-
-// One matrix-register write (fmwrite/gmwrite). Each thread handles one MAB and
-// one cycle: the four PEs supply two f32 elements each, which become the eight
-// words of one physical row of the selected face.
+// One matrix-register write (dmwrite/fmwrite/gmwrite/hmwrite). Each thread
+// handles one MAB and one cycle. The source may be a PE memory, T or any
+// forwarding register, with `-`, `e` and `r` options.
 extern "C" __global__ void mat_write_line(
     unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
     unsigned* mauf, unsigned* aluf, unsigned* mats, unsigned* t,
-    unsigned* bar0, unsigned* bar1,
-    int prec, int side, unsigned addr, int smem,
-    unsigned s0, unsigned s1, unsigned s2, unsigned s3, int swl, int sneg,
-    int st, int sma) {
+    unsigned* mreadf, unsigned* bar0, unsigned* bar1, MatWriteLineDesc d) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx >= 4096) return;
     int mab = idx >> 2;
     int c = idx & 3;
-    unsigned sb[4] = {s0, s1, s2, s3};
-    if (prec == 1) {
-        unsigned* p = pick_mem(smem, lm0, lm1, grf0, grf1);
-        int l = mem_len(smem);
-        for (int q = 0; q < 4; ++q) {
-            int pe = mab * 4 + q;
-            unsigned w0 = 0, w1 = 0;
-            if (smem == 4) {
-                w0 = mauf[pe * 16 + c * 4];
-                w1 = mauf[pe * 16 + c * 4 + 1];
-            } else if (smem == 5) {
-                w0 = aluf[pe * 16 + c * 4];
-                w1 = aluf[pe * 16 + c * 4 + 1];
-            } else {
-                int a = pe_word_addr(smem, sb[c], swl, st, sma, pe, c,
-                                     bar0, bar1, t);
-                if (swl > 0) w0 = p[pe * l + (a & (l - 1))];
-                if (swl > 1) w1 = p[pe * l + ((a + 1) & (l - 1))];
-            }
-            unsigned long long v = ((unsigned long long)w0 << 32) | w1;
-            if (sneg) v ^= (1ULL << 63);
-            int row = (int)((addr + (unsigned)c) % 4u);
-            int base = ((mab * 2 + side) * 16 + row * 4) * 8;
-            mats[base + 2 * q] = (unsigned)(v >> 32);
-            mats[base + 2 * q + 1] = (unsigned)v;
+    Fmt f = mau_fmt(d.prec);
+    int per_pe;
+    if (d.prec == 0) per_pe = 1;
+    else if (d.prec == 3) per_pe = (d.wl == 4) ? 8 : 4;
+    else per_pe = 2;
+    bool two_rows = d.prec == 3 && d.wl == 4;
+    unsigned long long elems[32] = {0};
+    for (int p = 0; p < 4; ++p) {
+        unsigned long long e[16];
+        mat_read_elems(d.src, f, per_pe, mab * 4 + p, c,
+                       lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf,
+                       bar0, bar1, e);
+        for (int i = 0; i < per_pe; ++i) elems[p * per_pe + i] = e[i];
+    }
+    int base = (mab * 2 + (int)d.side) * 16 * 8;
+    if (d.prec == 0) {
+        int row = (int)((d.addr + (unsigned)c) % 4u);
+        int at = base + row * 4 * 8;
+        for (int p = 0; p < 4; ++p) {
+            mats[at + 2 * p] = (unsigned)(elems[p] >> 32);
+            mats[at + 2 * p + 1] = (unsigned)elems[p];
         }
         return;
     }
-    unsigned* ps = pick_mem(smem, lm0, lm1, grf0, grf1);
-    int ls = mem_len(smem);
-    unsigned vals[8];
-    for (int p = 0; p < 4; ++p) {
-        int pe = mab * 4 + p;
-        for (int i = 0; i < 2; ++i) {
-            unsigned v;
-            if (smem == 4) {
-                v = mauf[pe * 16 + c * 4 + i];
-            } else if (smem == 5) {
-                v = aluf[pe * 16 + c * 4 + i];
-            } else {
-                int a = pe_word_addr(smem, sb[c], swl, st, sma, pe, c,
-                                     bar0, bar1, t);
-                v = (i < swl) ? ps[pe * ls + ((a + i) & (ls - 1))] : 0;
+    int rows = (d.prec == 3) ? 16 : 8;
+    int step = (d.prec == 3) ? 1 : 2;
+    int nrows = two_rows ? 2 : 1;
+    for (int k = 0; k < nrows; ++k) {
+        int row = two_rows
+            ? (int)(((d.addr + 2 * (unsigned)c) % 16u) + (unsigned)k)
+            : (int)((d.addr + (unsigned)c) % (unsigned)rows);
+        unsigned long long row_elems[16];
+        if (two_rows) {
+            for (int j = 0; j < 16; ++j) {
+                row_elems[j] = elems[(j / 4) * 8 + k * 4 + j % 4];
             }
-            if (sneg) v ^= 0x80000000u;
-            vals[p * 2 + i] = v;
+        } else {
+            for (int j = 0; j < 16; ++j) row_elems[j] = elems[j];
         }
-    }
-    int row = (int)((addr + (unsigned)c) % 8u);
-    int base = ((mab * 2 + side) * 16 + row * 2) * 8;
-    for (int j = 0; j < 8; ++j) {
-        mats[base + j] = vals[j];
+        unsigned words[8];
+        mat_pack_row(row_elems, 16, (int)width(f), words);
+        int at = base + row * step * 8;
+        for (int j = 0; j < 8; ++j) mats[at + j] = words[j];
     }
 }
 
-// One matrix-register read (fmread/gmread). Each thread handles one PE: the
-// elements of logical rows 2p and 2p+1 (physical rows 4p and 4p+2) form the two
-// f32 lanes of the bus, which goes to the destination and to mreadf.
+// One matrix-register read (dmread/fmread/gmread/hmread). Each thread handles
+// one PE. Reads all four cycles first, then writes every destination with the
+// shared mask/flush writer and updates mreadf.
 extern "C" __global__ void mat_read_line(
     unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
-    unsigned* mreadf, unsigned* mats, unsigned* t, unsigned* bar0, unsigned* bar1,
-    int update_forward,
-    int prec, int side, unsigned addr, int dmem,
-    unsigned d0, unsigned d1, unsigned d2, unsigned d3, int dwl, int dt, int dma) {
+    unsigned* mreadf, unsigned* mask, unsigned* t, unsigned* mats,
+    unsigned* bar0, unsigned* bar1, int update_forward, MatReadLineDesc d) {
     int pe = blockIdx.x * blockDim.x + threadIdx.x;
     if (pe >= 4096) return;
     int mab = pe >> 2;
     int p = pe & 3;
-    unsigned db[4] = {d0, d1, d2, d3};
-    unsigned* pd = pick_mem(dmem, lm0, lm1, grf0, grf1);
-    int ld = mem_len(dmem);
-    int base = (mab * 2 + side) * 16 * 8;
+    int base = (mab * 2 + (int)d.side) * 16 * 8;
+    unsigned buses[4][4];
     for (int c = 0; c < 4; ++c) {
-        int col = (int)((addr + (unsigned)c) % (prec == 1 ? 4u : 8u));
-        unsigned bus[4];
-        if (prec == 1) {
+        for (int i = 0; i < 4; ++i) buses[c][i] = 0;
+        if (d.prec == 0) {
+            int col = (int)((d.addr + (unsigned)c) % 4u);
             int word = base + p * 4 * 8 + col * 2;
-            bus[0] = mats[word];
-            bus[1] = mats[word + 1];
-            bus[2] = 0;
-            bus[3] = 0;
-        } else {
-            bus[0] = mats[base + (4 * p) * 8 + col];
-            bus[1] = mats[base + (4 * p + 2) * 8 + col];
-            bus[2] = 0;
-            bus[3] = 0;
-        }
-        int a = pe_word_addr(dmem, db[c], dwl, dt, dma, pe, c, bar0, bar1, t);
-        if (dmem >= 10) {
-            unsigned* bar = (dmem == 10) ? bar0 : bar1;
-            bar[pe] = bus[0] & 0xfff;
-        } else {
-            for (int i = 0; i < dwl; ++i) {
-                pd[pe * ld + ((a + i) & (ld - 1))] = bus[i];
+            buses[c][0] = mats[word];
+            buses[c][1] = mats[word + 1];
+        } else if (d.prec == 3) {
+            int c0 = (int)((d.addr + 2 * (unsigned)c) % 16u);
+            unsigned long long halves[8];
+            for (int k = 0; k < 4; ++k) {
+                int row = 4 * p + k;
+                int w0 = mats[base + row * 8 + c0 / 2];
+                int w1 = mats[base + row * 8 + (c0 + 1) / 2];
+                halves[k] = (c0 % 2 == 0) ? (w0 >> 16) : (w0 & 0xffff);
+                halves[4 + k] = ((c0 + 1) % 2 == 0) ? (w1 >> 16) : (w1 & 0xffff);
             }
+            unsigned words[8];
+            mat_pack_row(halves, 8, 16, words);
+            for (int i = 0; i < 4; ++i) buses[c][i] = words[i];
+        } else {
+            int col = (int)((d.addr + (unsigned)c) % 8u);
+            buses[c][0] = mats[base + (4 * p) * 8 + col];
+            buses[c][1] = mats[base + (4 * p + 2) * 8 + col];
+        }
+    }
+    for (int c = 0; c < 4; ++c) {
+        unsigned bus[4];
+        for (int i = 0; i < 4; ++i) bus[i] = buses[c][i];
+        if (d.flush_kind != 0) {
+            unsigned mf = mask_flags_dev(mask + pe * 16, d.flush_kind, d.flush_entry, d.flush_pattern, c);
+            alu_apply_flush(bus, mf, d.flush_ll != 0);
+        }
+        for (unsigned k = 0; k < d.ndst && k < 8; ++k) {
+            alu_write_dst(d.dst[k], pe, c, bus, 0, lm0, lm1, grf0, grf1,
+                          mask, t, bar0, bar1);
         }
         if (update_forward) {
-            for (int i = 0; i < 4; ++i) {
-                mreadf[pe * 16 + c * 4 + i] = bus[i];
-            }
+            for (int i = 0; i < 4; ++i) mreadf[pe * 16 + c * 4 + i] = bus[i];
         }
     }
 }
 
-// One matrix MAU line. Each thread handles one MAB: it reads all four cycles'
-// x and y vectors first, matching the CPU (which computes the whole line before
-// writing), then computes the eight rows of each cycle as a block-float dot
-// product plus the y element, rounded once. Results go to the destination and
-// to mauf.
+// One matrix MAU line. Each thread handles one MAB: reads all cycles' x and y
+// first, computes every row as an exact block-float dot plus y, then writes.
 extern "C" __global__ void mat_mau_line(
     unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
-    unsigned* mauf, unsigned* aluf, unsigned* mats, unsigned* t,
-    unsigned* bar0, unsigned* bar1, int update_forward,
-    int prec, int side, int kind,
-    int xmem, unsigned x0, unsigned x1, unsigned x2, unsigned x3, int xwl, int xneg,
-    int xt, int xma,
-    int ymem, unsigned y0, unsigned y1, unsigned y2, unsigned y3, int ywl, int yneg,
-    int yt, int yma,
-    int dmem, unsigned d0, unsigned d1, unsigned d2, unsigned d3, int dwl,
-    int dt, int dma) {
+    unsigned* mauf, unsigned* aluf, unsigned* mask, unsigned* t,
+    unsigned* mreadf, unsigned* mats, unsigned* bar0, unsigned* bar1,
+    int update_forward, MatMauLineDesc d) {
     int mab = blockIdx.x * blockDim.x + threadIdx.x;
     if (mab >= 1024) return;
-    int nx = (prec == 0) ? 1 : 2;
-    int ny = 2;
-    int bf_m = (prec == 0) ? 23 : 18;
-    unsigned xb[4] = {x0, x1, x2, x3};
-    unsigned yb[4] = {y0, y1, y2, y3};
-    unsigned* px = pick_mem(xmem, lm0, lm1, grf0, grf1);
-    unsigned* py = pick_mem(ymem, lm0, lm1, grf0, grf1);
-    int lx = mem_len(xmem);
-    int ly = mem_len(ymem);
-    unsigned long long xv[4][8];
-    unsigned long long yv[4][8];
+    Fmt fx = (d.prec == 0) ? Fmt{11, 52, 36} : (d.prec == 3) ? Fmt{6, 9, -1} : Fmt{8, 23, 18};
+    Fmt fy = (d.prec == 0) ? Fmt{11, 52, 36} : Fmt{8, 23, 18};
+    Fmt fout = (d.prec == 3) ? Fmt{8, 23, 18} : fx;
+    if (d.round) {
+        if (d.prec == 0) fout = {8, 23, 18};
+        else if (d.prec == 3) fout = {6, 9, -1};
+    }
+    int nx = (d.prec == 0) ? 1 : (d.prec == 3) ? 4 : (d.prec == 2) ? 2 : 1;
+    int ny = (d.prec == 0) ? 1 : (d.prec == 3) ? 4 : 2;
+    int rows = (d.prec == 0) ? 4 : (d.prec == 3) ? 16 : 8;
+    int bf_m = (d.prec == 0) ? 52 : (d.prec == 1) ? 23 : (d.prec == 2) ? 18 : 9;
+    unsigned long long xv[4][16];
+    unsigned long long yv[4][16];
     for (int c = 0; c < 4; ++c) {
         for (int p = 0; p < 4; ++p) {
-            int pe = mab * 4 + p;
-            for (int i = 0; i < nx; ++i) {
-                unsigned v;
-                if (xmem == 4) {
-                    v = mauf[pe * 16 + c * 4 + i];
-                } else if (xmem == 5) {
-                    v = aluf[pe * 16 + c * 4 + i];
-                } else {
-                    int a = pe_word_addr(xmem, xb[c], xwl, xt, xma, pe, c,
-                                         bar0, bar1, t);
-                    v = (i < xwl) ? px[pe * lx + ((a + i) & (lx - 1))] : 0;
-                }
-                if (xneg) v ^= 0x80000000u;
-                xv[c][p * nx + i] = v;
-            }
-            for (int i = 0; i < ny; ++i) {
-                unsigned v = 0;
-                if (kind == 0) {
-                    if (ymem == 4) {
-                        v = mauf[pe * 16 + c * 4 + i];
-                    } else if (ymem == 5) {
-                        v = aluf[pe * 16 + c * 4 + i];
-                    } else {
-                        int a = pe_word_addr(ymem, yb[c], ywl, yt, yma, pe, c,
-                                             bar0, bar1, t);
-                        v = (i < ywl) ? py[pe * ly + ((a + i) & (ly - 1))] : 0;
-                    }
-                    if (yneg) v ^= 0x80000000u;
-                }
-                yv[c][p * ny + i] = v;
+            unsigned long long e[16];
+            mat_read_elems(d.x, fx, nx, mab * 4 + p, c,
+                           lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf,
+                           bar0, bar1, e);
+            for (int i = 0; i < nx; ++i) xv[c][p * nx + i] = e[i];
+            if (d.kind == 0) {
+                mat_read_elems(d.y, fy, ny, mab * 4 + p, c,
+                               lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf,
+                               bar0, bar1, e);
+                for (int i = 0; i < ny; ++i) yv[c][p * ny + i] = e[i];
             }
         }
     }
-    Fmt f = {8, 23, 18};
-    int cols = (prec == 0) ? 4 : 8;
-    int base = (mab * 2 + side) * 16 * 8;
-    unsigned db[4] = {d0, d1, d2, d3};
-    unsigned* pd = pick_mem(dmem, lm0, lm1, grf0, grf1);
-    int ld = mem_len(dmem);
+    int base = (mab * 2 + (int)d.side) * 16 * 8;
+    int per_pe = rows / 4;
     for (int c = 0; c < 4; ++c) {
-        unsigned out[8];
-        for (int i = 0; i < 8; ++i) {
-            unsigned long long arow[8];
-            for (int j = 0; j < cols; ++j) {
-                int col = (prec == 0) ? 2 * j : j;
-                arow[j] = mats[base + (i * 2) * 8 + col];
+        unsigned long long out[16];
+        for (int i = 0; i < rows; ++i) {
+            bool active = d.half == 0 || (d.half == 1 ? i < 2 : i >= 2);
+            Val dot = {0, false, 0, 0};
+            int has_grid = 0;
+            int grid = 0;
+            if (active) {
+                unsigned long long arow[16];
+                if (d.prec == 0) {
+                    for (int j = 0; j < 4; ++j) {
+                        int at = base + i * 4 * 8 + 2 * j;
+                        arow[j] = ((unsigned long long)mats[at] << 32) | mats[at + 1];
+                    }
+                } else if (d.prec == 3) {
+                    for (int j = 0; j < 16; ++j) {
+                        unsigned w = mats[base + i * 8 + j / 2];
+                        arow[j] = (j % 2 == 0) ? (w >> 16) : (w & 0xffff);
+                    }
+                } else if (d.prec == 1) {
+                    for (int j = 0; j < 4; ++j) {
+                        arow[j] = mats[base + i * 2 * 8 + 2 * j];
+                    }
+                } else {
+                    for (int j = 0; j < 8; ++j) {
+                        arow[j] = mats[base + i * 2 * 8 + j];
+                    }
+                }
+                int cols = (d.prec == 0) ? 4 : (d.prec == 1) ? 4 : (d.prec == 2) ? 8 : 16;
+                dot = bf_dot_dev(fx, bf_m, arow, xv[c], cols, &has_grid, &grid);
             }
-            int has_grid;
-            int grid;
-            Val dot = bf_dot_single(arow, xv[c], cols, bf_m, &has_grid, &grid);
-            Val yval = (kind == 0) ? decode(f, yv[c][i]) : Val{0, false, 0, 0};
-            out[i] = (unsigned)mat_fma_bits(dot, has_grid, grid, yval);
+            Val yval = {0, false, 0, 0};
+            if (d.kind == 0) yval = decode(fy, yv[c][i]);
+            out[i] = mat_fma_dev(fout, dot, has_grid, grid, yval);
         }
         for (int p = 0; p < 4; ++p) {
             int pe = mab * 4 + p;
-            unsigned bus[4] = {out[2 * p], out[2 * p + 1], 0, 0};
-            if (dmem >= 10) {
-                unsigned* bar = (dmem == 10) ? bar0 : bar1;
-                bar[pe] = bus[0] & 0xfff;
-            } else if (dmem < 4) {
-                int a = pe_word_addr(dmem, db[c], dwl, dt, dma, pe, c,
-                                     bar0, bar1, t);
-                for (int i = 0; i < dwl; ++i) {
-                    pd[pe * ld + ((a + i) & (ld - 1))] = bus[i];
+            unsigned bus[4];
+            for (int i = 0; i < 4; ++i) bus[i] = 0;
+            if (width(fout) == 64) {
+                bus[0] = (unsigned)(out[p] >> 32);
+                bus[1] = (unsigned)out[p];
+            } else if (width(fout) == 16) {
+                bus[0] = ((unsigned)out[p * per_pe] << 16) |
+                         ((unsigned)out[p * per_pe + 1] & 0xffff);
+                bus[1] = ((unsigned)out[p * per_pe + 2] << 16) |
+                         ((unsigned)out[p * per_pe + 3] & 0xffff);
+            } else {
+                for (int i = 0; i < per_pe && i < 4; ++i) {
+                    bus[i] = (unsigned)out[p * per_pe + i];
                 }
             }
+            if (d.flush_kind != 0) {
+                unsigned mf = mask_flags_dev(mask + pe * 16, d.flush_kind, d.flush_entry, d.flush_pattern, c);
+                alu_apply_flush(bus, mf, d.flush_ll != 0);
+            }
+            unsigned fl = mau_flags_dev(&out[p * per_pe], per_pe, fout);
+            for (unsigned k = 0; k < d.ndst && k < 8; ++k) {
+                alu_write_dst(d.dst[k], pe, c, bus, fl, lm0, lm1, grf0, grf1,
+                              mask, t, bar0, bar1);
+            }
             if (update_forward) {
-                for (int i = 0; i < 4; ++i) {
-                    mauf[pe * 16 + c * 4 + i] = bus[i];
-                }
+                for (int i = 0; i < 4; ++i) mauf[pe * 16 + c * 4 + i] = bus[i];
             }
         }
     }

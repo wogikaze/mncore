@@ -1090,7 +1090,7 @@ impl Machine {
         // Formats of the inputs a, b, c and of the output in the basic operation (SDM 3.6.9).
         let (fa, fc, fout): (Fmt, Fmt, Fmt) = match prec {
             Prec::D => (DOUBLE, DOUBLE, if round { SINGLE } else { DOUBLE }),
-            Prec::F => (SINGLE, SINGLE, SINGLE),
+            Prec::F | Prec::G => (SINGLE, SINGLE, SINGLE),
             Prec::H => (HALF, SINGLE, if round { HALF } else { SINGLE }),
             _ => {
                 return Err(ExecError::Unsupported(format!(
@@ -1098,12 +1098,12 @@ impl Machine {
                 )))
             }
         };
-        if prec == Prec::F && round {
+        if matches!(prec, Prec::F | Prec::G) && round {
             return Err(ExecError::Unsupported("fv*r".into()));
         }
         let lanes_n = match prec {
             Prec::D => 1,
-            Prec::F => 2,
+            Prec::F | Prec::G => 2,
             _ => 4,
         };
         // Which source operands feed a, b and c.
@@ -1212,7 +1212,8 @@ impl Machine {
                 matrix: false,
                 round,
                 ..
-            } => matches!(prec, Prec::D | Prec::F | Prec::H) && !(*prec == Prec::F && *round),
+            } => matches!(prec, Prec::D | Prec::F | Prec::G | Prec::H)
+                && !(matches!(prec, Prec::F | Prec::G) && *round),
             _ => false,
         });
         if !supported {
@@ -2602,7 +2603,7 @@ fn compute_vec_pe<M: MemRead>(
 ) -> Result<([Bus; 4], [u8; 4]), ExecError> {
     let (fa, fc, fout): (Fmt, Fmt, Fmt) = match prec {
         Prec::D => (DOUBLE, DOUBLE, if round { SINGLE } else { DOUBLE }),
-        Prec::F => (SINGLE, SINGLE, SINGLE),
+        Prec::F | Prec::G => (SINGLE, SINGLE, SINGLE),
         Prec::H => (HALF, SINGLE, if round { HALF } else { SINGLE }),
         _ => {
             return Err(ExecError::Unsupported(format!(
@@ -2610,12 +2611,12 @@ fn compute_vec_pe<M: MemRead>(
             )))
         }
     };
-    if prec == Prec::F && round {
+    if matches!(prec, Prec::F | Prec::G) && round {
         return Err(ExecError::Unsupported("fv*r".into()));
     }
     let lanes_n = match prec {
         Prec::D => 1,
-        Prec::F => 2,
+        Prec::F | Prec::G => 2,
         _ => 4,
     };
     let (ia, ib, ic): (Option<usize>, Option<usize>, Option<usize>) = match kind {

@@ -3,7 +3,7 @@
 //! Usage: gpu_mau [lines]
 
 use mncore_sim::float::{self, SINGLE};
-use mncore_sim::gpu::{Gpu, MauLine, MauSrc};
+use mncore_sim::gpu::{AluDstDesc, AluSrc, Gpu, MauLine};
 use mncore_sim::machine::{GRF_WORDS, LM_WORDS, PES};
 
 fn mem_len(mem: u8) -> usize {
@@ -55,7 +55,7 @@ fn cpu_line(
         for c in 0..4 {
             for l in 0..2 {
                 let a = get(
-                    line.a.mem,
+                    line.a.mem as u8,
                     pe,
                     line.a.base[c] as usize + l,
                     lm0,
@@ -65,16 +65,16 @@ fn cpu_line(
                 );
                 let (b, cc) = match line.kind {
                     0 => (
-                        get(line.b.mem, pe, line.b.base[c] as usize + l, lm0, lm1, grf0, grf1),
-                        get(line.c.mem, pe, line.c.base[c] as usize + l, lm0, lm1, grf0, grf1),
+                        get(line.b.mem as u8, pe, line.b.base[c] as usize + l, lm0, lm1, grf0, grf1),
+                        get(line.c.mem as u8, pe, line.c.base[c] as usize + l, lm0, lm1, grf0, grf1),
                     ),
                     1 => (
-                        get(line.b.mem, pe, line.b.base[c] as usize + l, lm0, lm1, grf0, grf1),
+                        get(line.b.mem as u8, pe, line.b.base[c] as usize + l, lm0, lm1, grf0, grf1),
                         0,
                     ),
                     2 => (
                         one,
-                        get(line.c.mem, pe, line.c.base[c] as usize + l, lm0, lm1, grf0, grf1),
+                        get(line.c.mem as u8, pe, line.c.base[c] as usize + l, lm0, lm1, grf0, grf1),
                     ),
                     _ => (one, 0),
                 };
@@ -87,9 +87,9 @@ fn cpu_line(
         for c in 0..4 {
             for l in 0..2 {
                 set(
-                    line.dst.mem,
+                    line.dst[0].mem as u8,
                     pe,
-                    line.dst.base[c] as usize + l,
+                    line.dst[0].base[c] as usize + l,
                     values[l][c],
                     lm0,
                     lm1,
@@ -101,16 +101,15 @@ fn cpu_line(
     }
 }
 
-fn make_src(next: &mut impl FnMut() -> u64, mem: u8) -> MauSrc {
+fn make_src(next: &mut impl FnMut() -> u64, mem: u8) -> AluSrc {
     let len = mem_len(mem);
     let max = (len - 8) / 2;
     let base = ((next() as usize) % (max + 1)) * 2;
-    MauSrc {
-        mem,
+    AluSrc {
+        mem: mem as u32,
         wl: 2,
         base: [base as u32, (base + 2) as u32, (base + 4) as u32, (base + 6) as u32],
-        neg: false,
-        ..MauSrc::default()
+        ..AluSrc::default()
     }
 }
 
@@ -147,20 +146,29 @@ fn main() {
         let c = make_src(&mut next, cm);
         let dm = (next() % 4) as u8;
         let dst = make_src(&mut next, dm);
-        program.push(MauLine {
-            kind: (next() % 4) as u8,
-            wl: 2,
+        let mut line = MauLine {
+            prec: 1,
+            kind: (next() % 4) as u32,
+            half: 0,
+            round: 0,
             a,
             b,
             c,
-            dst,
-            mask: mncore_sim::gpu::MaskInfo {
-                kind: 0,
-                entry: 0,
-                pattern: 0,
-                ll: false,
-            },
-        });
+            ndst: 1,
+            dst: [AluDstDesc::default(); 8],
+            flush_kind: 0,
+            flush_entry: 0,
+            flush_pattern: 0,
+            flush_ll: 0,
+        };
+        line.dst[0] = AluDstDesc {
+            kind: 0,
+            mem: dst.mem,
+            wl: dst.wl,
+            base: dst.base,
+            ..AluDstDesc::default()
+        };
+        program.push(line);
     }
 
     let cpu_start = std::time::Instant::now();

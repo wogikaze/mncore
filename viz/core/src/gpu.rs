@@ -10,6 +10,7 @@ use std::path::Path;
 use libloading::Library;
 
 use crate::blockop::{L1Op, L2Op, Rrn, RrnOp};
+use crate::float::{DOUBLE, HALF, SINGLE};
 use crate::machine::MaskState;
 use crate::mv::{Mv, MvKind, MvOperand};
 use crate::vsm::{Expr, FixedKind, FwdKind, MauKind, MaskSel, MaskSource, MemKind, Op, Operand, Prec};
@@ -121,34 +122,7 @@ fn mem_source(op: &Operand, allow_neg: bool, allow_mask: bool) -> Option<MauSrc>
     })
 }
 
-fn line_source(op: &Operand) -> Option<MauSrc> {
-    if let Operand::Forward {
-        kind,
-        neg,
-        ext: false,
-        rnd: false,
-    } = op
-    {
-        let mem = match kind {
-            FwdKind::Mauf => 4,
-            FwdKind::Aluf => 5,
-            FwdKind::Mreadf => 8,
-            _ => return None,
-        };
-        return Some(MauSrc {
-            mem,
-            wl: 4,
-            base: [0; 4],
-            neg: *neg,
-            ..MauSrc::default()
-        });
-    }
-    mem_source(op, true, false)
-}
-
-/// Builds a `MauLine` for a PE-local f32 MAU expression. Returns `None` for
-/// anything the current kernel does not handle (masks, T, base registers,
-/// neg/ext/rnd, other forwarding registers, other precisions).
+/// Resolves the single-line or directive write mask of one L1BM-to-PE destination.
 fn resolve_mask(op: &Operand, state: MaskState, single_line: bool) -> MaskInfo {
     let none = MaskInfo {
         kind: 0,
@@ -205,94 +179,6 @@ fn resolve_mask(op: &Operand, state: MaskState, single_line: bool) -> MaskInfo {
     }
 }
 
-pub fn mau_line_from_expr(expr: &Expr, mask_state: MaskState) -> Option<MauLine> {
-    let Op::Mau {
-        prec: Prec::F,
-        matrix: false,
-        kind,
-        half: None,
-        round: false,
-    } = &expr.op
-    else {
-        return None;
-    };
-    if expr.flush.is_some() || expr.dsts.len() != 1 {
-        return None;
-    }
-    let zero = MauSrc {
-        mem: 0,
-        wl: 1,
-        base: [0; 4],
-        neg: false,
-        ..MauSrc::default()
-    };
-    let kind = match kind {
-        MauKind::Fma => 0,
-        MauKind::Mul => 1,
-        MauKind::Add => 2,
-        MauKind::Passa => 3,
-    };
-    let a = line_source(expr.srcs.first()?)?;
-    let (b, c) = match kind {
-        0 => (
-            line_source(expr.srcs.get(1)?)?,
-            line_source(expr.srcs.get(2)?)?,
-        ),
-        1 => (line_source(expr.srcs.get(1)?)?, zero),
-        2 => (zero, line_source(expr.srcs.get(1)?)?),
-        _ => (zero, zero),
-    };
-    let dst_op = &expr.dsts[0];
-    let single_line = expr.dsts.iter().any(|d| {
-        matches!(
-            d,
-            Operand::Mem { mask: Some(_), .. } | Operand::Bar { mask: Some(_), .. }
-        )
-    });
-    let none = MaskInfo {
-        kind: 0,
-        entry: 0,
-        pattern: 0,
-        ll: false,
-    };
-    let (dst, mask) = if matches!(dst_op, Operand::Nowrite) {
-        (
-            MauSrc {
-                mem: 7,
-                wl: 0,
-                base: [0; 4],
-                neg: false,
-                ..MauSrc::default()
-            },
-            none,
-        )
-    } else if let Operand::Bar { lm1, .. } = dst_op {
-        (
-            MauSrc {
-                mem: BAR_MEM0 + *lm1 as u8,
-                wl: 1,
-                base: [0; 4],
-                neg: false,
-                ..MauSrc::default()
-            },
-            resolve_mask(dst_op, mask_state, single_line),
-        )
-    } else {
-        let dst = mem_source(dst_op, false, true)?;
-        let mask = resolve_mask(dst_op, mask_state, single_line);
-        (dst, mask)
-    };
-    Some(MauLine {
-        kind,
-        wl: dst.wl,
-        a,
-        b,
-        c,
-        dst,
-        mask,
-    })
-}
-
 /// One source or destination of a MAU line: memory kind (0 LM0, 1 LM1,
 /// 2 GRF0, 3 GRF1) and the already-aligned base word address per cycle.
 #[derive(Clone, Copy, Debug)]
@@ -335,16 +221,168 @@ pub struct MaskInfo {
     pub ll: bool,
 }
 
-/// A PE-local f32 MAU expression, with kind 0 FMA, 1 MUL, 2 ADD, 3 PASSA.
+/// Builds a `MauLine` for one vector MAU expression (SDM 3.6.9.10 to 3.6.9.25).
+///
+/// Every list source, T, the three forwarding registers, the `e`/`r` input
+/// options, `(u|d)` half selection, output rounding, write masks, zero-flush
+/// masks and up to eight destinations are carried to the generic `mau_line`
+/// kernel. Forms the CPU model rejects (for example rounding a single output)
+/// also return `None`.
+pub fn mau_line_from_expr(expr: &Expr, mask_state: MaskState) -> Option<MauLine> {
+    let Op::Mau {
+        prec: prec @ (Prec::D | Prec::F | Prec::G | Prec::H),
+        matrix: false,
+        kind,
+        half,
+        round,
+    } = &expr.op
+    else {
+        return None;
+    };
+    // SDM 3.6.9.25 defines output rounding for double (to single) and half
+    // (to half); the CPU model rejects `fv*r`, and pseudo-single follows single.
+    if *round && matches!(prec, Prec::F | Prec::G) {
+        return None;
+    }
+    let (fa, fc, lanes) = match prec {
+        Prec::D => (DOUBLE, DOUBLE, 1usize),
+        Prec::F | Prec::G => (SINGLE, SINGLE, 2),
+        Prec::H => (HALF, SINGLE, 4),
+        _ => unreachable!(),
+    };
+    let kind_code = match kind {
+        MauKind::Fma => 0u32,
+        MauKind::Mul => 1,
+        MauKind::Add => 2,
+        MauKind::Passa => 3,
+    };
+    let half_code = match half {
+        None => 0,
+        Some('u') => 1,
+        Some('d') => 2,
+        _ => return None,
+    };
+    let zero = AluSrc::default();
+    let (a_op, b_op, c_op, want) = match kind {
+        MauKind::Fma => (expr.srcs.first()?, expr.srcs.get(1)?, expr.srcs.get(2)?, 3),
+        MauKind::Mul => (expr.srcs.first()?, expr.srcs.get(1)?, &Operand::Nowrite, 2),
+        MauKind::Add => (expr.srcs.first()?, &Operand::Nowrite, expr.srcs.get(1)?, 2),
+        MauKind::Passa => (expr.srcs.first()?, &Operand::Nowrite, &Operand::Nowrite, 1),
+    };
+    if expr.srcs.len() != want || expr.dsts.is_empty() || expr.dsts.len() > 8 {
+        return None;
+    }
+    let source = |op: &Operand, f| {
+        let src = alu_source(op)?;
+        if src.fixed != 0 || !source_options_fit(src, f, lanes) {
+            return None;
+        }
+        Some(src)
+    };
+    let a = source(a_op, fa)?;
+    let b = if matches!(kind, MauKind::Fma | MauKind::Mul) {
+        source(b_op, fa)?
+    } else {
+        zero
+    };
+    let c = if matches!(kind, MauKind::Fma | MauKind::Add) {
+        source(c_op, fc)?
+    } else {
+        zero
+    };
+    let single_line = expr.dsts.iter().any(has_explicit_mask);
+    let mut dst = [AluDstDesc::default(); 8];
+    for (i, operand) in expr.dsts.iter().enumerate() {
+        dst[i] = alu_dst_desc(operand, mask_state, single_line)?;
+    }
+    let (flush_kind, flush_entry, flush_pattern, flush_ll) = alu_flush(expr);
+    Some(MauLine {
+        prec: alu_prec_code(Some(*prec)),
+        kind: kind_code,
+        half: half_code,
+        round: *round as u32,
+        a,
+        b,
+        c,
+        ndst: expr.dsts.len() as u32,
+        dst,
+        flush_kind,
+        flush_entry,
+        flush_pattern,
+        flush_ll,
+    })
+}
+
+/// Whether an input operand's `e`/`r` option can produce `lanes` elements of
+/// `f` from at most one 128-bit bus, matching the CPU's `unpack` inputs.
+fn source_options_fit(src: AluSrc, f: crate::float::Fmt, lanes: usize) -> bool {
+    let width = if src.ext != 0 {
+        match lower_fmt(f) {
+            Some(lower) => lower.width(),
+            None => return false,
+        }
+    } else if src.rnd != 0 {
+        match higher_fmt(f) {
+            Some(higher) => higher.width(),
+            None => return false,
+        }
+    } else {
+        f.width()
+    };
+    width as usize * lanes <= 128
+}
+
+fn lower_fmt(f: crate::float::Fmt) -> Option<crate::float::Fmt> {
+    if f == crate::float::DOUBLE {
+        Some(crate::float::SINGLE)
+    } else if f == crate::float::SINGLE {
+        Some(crate::float::HALF)
+    } else {
+        None
+    }
+}
+
+fn higher_fmt(f: crate::float::Fmt) -> Option<crate::float::Fmt> {
+    if f == crate::float::HALF {
+        Some(crate::float::SINGLE)
+    } else if f == crate::float::SINGLE {
+        Some(crate::float::DOUBLE)
+    } else {
+        None
+    }
+}
+
+fn has_explicit_mask(op: &Operand) -> bool {
+    matches!(
+        op,
+        Operand::Mem { mask: Some(_), .. }
+            | Operand::Omr { mask: Some(_), .. }
+            | Operand::Bar { mask: Some(_), .. }
+    )
+}
+
+/// A complete vector-MAU line, passed by value to `mau_line`.
+///
+/// `prec` 0 D, 1 F, 2 G, 3 H; `kind` 0 FMA, 1 MUL, 2 ADD, 3 PASSA; `half`
+/// 0 none, 1 upper PE half, 2 lower PE half. Sources use the ALU source
+/// encoding (PE memory, T, mauf/aluf/mreadf) and destinations the ALU
+/// destination encoding (PE memory, T, OMR, `$nowrite`) with masks.
+#[repr(C)]
 #[derive(Clone, Copy, Debug)]
 pub struct MauLine {
-    pub kind: u8,
-    pub wl: u8,
-    pub a: MauSrc,
-    pub b: MauSrc,
-    pub c: MauSrc,
-    pub dst: MauSrc,
-    pub mask: MaskInfo,
+    pub prec: u32,
+    pub kind: u32,
+    pub half: u32,
+    pub round: u32,
+    pub a: AluSrc,
+    pub b: AluSrc,
+    pub c: AluSrc,
+    pub ndst: u32,
+    pub dst: [AluDstDesc; 8],
+    pub flush_kind: u32,
+    pub flush_entry: u32,
+    pub flush_pattern: u32,
+    pub flush_ll: u32,
 }
 
 /// ALU opcode ids shared with `vfma_kernel.cu`.
@@ -1588,82 +1626,109 @@ pub fn l2_reduce_line_from_expr(expr: &Expr) -> Option<L2RedLine> {
     }
 }
 
-/// A matrix-register write (`fmwrite`/`gmwrite`): each MAB writes one face row
-/// per cycle from its four PEs.
+/// A matrix-register write (`dmwrite`/`fmwrite`/`gmwrite`/`hmwrite`).
+#[repr(C)]
 #[derive(Clone, Copy, Debug)]
 pub struct MatWriteLine {
-    pub prec: Prec,
-    pub side: u8,
-    pub wl: u8,
+    /// Precision code shared with the kernel: 0 D, 1 F, 2 G, 3 H.
+    pub prec: u32,
+    pub side: u32,
+    /// Access length of the matrix-register destination (2 or 4 words).
+    pub wl: u32,
     pub addr: u32,
-    pub src: MauSrc,
+    pub src: AluSrc,
 }
 
-/// A matrix-register read (`fmread`/`gmread`) into a PE memory bus.
+/// A matrix-register read (`dmread`/`fmread`/`gmread`/`hmread`).
+#[repr(C)]
 #[derive(Clone, Copy, Debug)]
 pub struct MatReadLine {
-    pub prec: Prec,
-    pub side: u8,
+    pub prec: u32,
+    pub side: u32,
     pub addr: u32,
-    pub dst: MauSrc,
+    pub ndst: u32,
+    pub dst: [AluDstDesc; 8],
+    pub flush_kind: u32,
+    pub flush_entry: u32,
+    pub flush_pattern: u32,
+    pub flush_ll: u32,
 }
 
-/// Destination of a matrix MAU line: a PE memory, an OMR entry, or nowhere.
-#[derive(Clone, Copy, Debug)]
-pub enum AluDst {
-    Mem(MauSrc),
-    T,
-    Omr(u8),
-    /// `$mb` / `$nb`: the boolean selects LM1.
-    Bar(bool),
-    None,
-}
-
-/// A matrix MAU line (`fmfma`/`gmmul` and friends).
+/// A matrix MAU line (`dmfma`/`fmmul`/`gmfma`/`hmfma` and friends).
+#[repr(C)]
 #[derive(Clone, Copy, Debug)]
 pub struct MatMauLine {
-    pub prec: Prec,
-    pub side: u8,
+    pub prec: u32,
+    pub side: u32,
     /// 0 FMA, 1 MUL, 2 ADD, 3 PASSA. Only FMA reads the y operand.
-    pub kind: u8,
-    pub x: MauSrc,
-    pub y: MauSrc,
-    pub dst: AluDst,
+    pub kind: u32,
+    /// 0 none, 1 upper two rows, 2 lower rows (SDM 3.6.9.2).
+    pub half: u32,
+    pub round: u32,
+    pub x: AluSrc,
+    pub y: AluSrc,
+    pub ndst: u32,
+    pub dst: [AluDstDesc; 8],
+    pub flush_kind: u32,
+    pub flush_entry: u32,
+    pub flush_pattern: u32,
+    pub flush_ll: u32,
 }
 
-/// Whether the multi-line mask directive of `state` affects a PE memory write.
-fn directive_mask_applies(op: &Operand, state: MaskState) -> bool {
-    let on = match op {
-        Operand::Mem { mem, .. } => match mem {
-            MemKind::Grf0 => state.targets.grf0,
-            MemKind::Grf1 => state.targets.grf1,
-            MemKind::T => state.targets.t,
-            MemKind::Lm0 => state.targets.lm0,
-            MemKind::Lm1 => state.targets.lm1,
-            _ => false,
-        },
-        Operand::Bar { lm1, .. } => {
-            if *lm1 {
-                state.targets.lm1
-            } else {
-                state.targets.lm0
-            }
-        }
-        _ => false,
-    };
-    on && state.entry != 0
+/// Precision-dependent formats of one matrix operand set.
+struct MatFormats {
+    x: crate::float::Fmt,
+    nx: usize,
+    y: crate::float::Fmt,
+    ny: usize,
 }
 
-/// Builds a `MatWriteLine` for fmwrite/gmwrite. The current kernel supports the
-/// 32-bit element precisions (F and G).
+fn mat_formats(prec: Prec) -> MatFormats {
+    match prec {
+        Prec::D => MatFormats { x: DOUBLE, nx: 1, y: DOUBLE, ny: 1 },
+        Prec::F => MatFormats { x: SINGLE, nx: 1, y: SINGLE, ny: 2 },
+        Prec::G => MatFormats { x: SINGLE, nx: 2, y: SINGLE, ny: 2 },
+        Prec::H => MatFormats { x: HALF, nx: 4, y: SINGLE, ny: 4 },
+        _ => unreachable!(),
+    }
+}
+
+fn mat_prec(prec: &Prec) -> Option<Prec> {
+    matches!(prec, Prec::D | Prec::F | Prec::G | Prec::H).then_some(*prec)
+}
+
+fn mat_dsts(expr: &Expr, mask_state: MaskState) -> Option<([AluDstDesc; 8], u32)> {
+    if expr.dsts.is_empty() || expr.dsts.len() > 8 {
+        return None;
+    }
+    let single_line = expr.dsts.iter().any(has_explicit_mask);
+    let mut dst = [AluDstDesc::default(); 8];
+    for (i, operand) in expr.dsts.iter().enumerate() {
+        dst[i] = alu_dst_desc(operand, mask_state, single_line)?;
+    }
+    Some((dst, expr.dsts.len() as u32))
+}
+
+fn mat_flush(expr: &Expr) -> (u32, u32, u32, u32) {
+    alu_flush(expr)
+}
+
+/// Whether a matrix source operand's `e`/`r` option fits one bus for `n` elements.
+fn mat_source(op: &Operand, f: crate::float::Fmt, n: usize) -> Option<AluSrc> {
+    let src = alu_source(op)?;
+    if src.fixed != 0 || !source_options_fit(src, f, n) {
+        return None;
+    }
+    Some(src)
+}
+
+/// Builds a `MatWriteLine` for a matrix-register write of any documented precision.
 pub fn mat_write_line_from_expr(expr: &Expr) -> Option<MatWriteLine> {
-    let Op::MatWrite {
-        prec: prec @ (Prec::F | Prec::G | Prec::D),
-    } = &expr.op
-    else {
+    let Op::MatWrite { prec } = &expr.op else {
         return None;
     };
-    if expr.flush.is_some() || expr.srcs.len() != 1 || expr.dsts.len() != 1 {
+    let prec = mat_prec(prec)?;
+    if expr.srcs.len() != 1 || expr.dsts.is_empty() {
         return None;
     }
     let Operand::Mat {
@@ -1674,30 +1739,34 @@ pub fn mat_write_line_from_expr(expr: &Expr) -> Option<MatWriteLine> {
     else {
         return None;
     };
-    let src = line_source(&expr.srcs[0])?;
-    if src.mem >= 6 {
-        return None;
-    }
+    let f = match prec {
+        Prec::D => DOUBLE,
+        Prec::H => HALF,
+        _ => SINGLE,
+    };
+    let per_pe = match prec {
+        Prec::D => 1,
+        Prec::H if *wl == 4 => 8,
+        Prec::H => 4,
+        _ => 2,
+    };
+    let src = mat_source(&expr.srcs[0], f, per_pe)?;
     Some(MatWriteLine {
-        prec: *prec,
-        side: *y as u8,
-        wl: *wl,
+        prec: alu_prec_code(Some(prec)),
+        side: *y as u32,
+        wl: *wl as u32,
         addr: *addr,
         src,
     })
 }
 
-/// Builds a `MatReadLine` for fmread/gmread. Reads whose destination is masked
-/// by the current `mask` directive are rejected, because the kernel does not
-/// merge masked writes yet.
+/// Builds a `MatReadLine` for a matrix-register read of any documented precision.
 pub fn mat_read_line_from_expr(expr: &Expr, mask_state: MaskState) -> Option<MatReadLine> {
-    let Op::MatRead {
-        prec: prec @ (Prec::F | Prec::G | Prec::D),
-    } = &expr.op
-    else {
+    let Op::MatRead { prec } = &expr.op else {
         return None;
     };
-    if expr.flush.is_some() || expr.srcs.len() != 1 || expr.dsts.len() != 1 {
+    let prec = mat_prec(prec)?;
+    if expr.srcs.len() != 1 {
         return None;
     }
     let Operand::Mat {
@@ -1708,64 +1777,50 @@ pub fn mat_read_line_from_expr(expr: &Expr, mask_state: MaskState) -> Option<Mat
     else {
         return None;
     };
-    let dst = match &expr.dsts[0] {
-        // A read to $nowrite still updates mreadf, like the CPU write path.
-        Operand::Nowrite => MauSrc {
-            mem: 0,
-            wl: 0,
-            base: [0; 4],
-            neg: false,
-            ..MauSrc::default()
-        },
-        Operand::Bar { lm1, mask, .. } => {
-            if mask.is_some() || directive_mask_applies(&expr.dsts[0], mask_state) {
-                return None;
-            }
-            MauSrc {
-                mem: BAR_MEM0 + *lm1 as u8,
-                wl: 1,
-                base: [0; 4],
-                neg: false,
-                ..MauSrc::default()
-            }
-        }
-        Operand::Mem { .. } if !directive_mask_applies(&expr.dsts[0], mask_state) => {
-            let dst = mem_source(&expr.dsts[0], false, false)?;
-            if dst.mem >= 6 {
-                return None;
-            }
-            dst
-        }
-        _ => return None,
-    };
+    let (dst, ndst) = mat_dsts(expr, mask_state)?;
+    let (flush_kind, flush_entry, flush_pattern, flush_ll) = mat_flush(expr);
     Some(MatReadLine {
-        prec: *prec,
-        side: *y as u8,
+        prec: alu_prec_code(Some(prec)),
+        side: *y as u32,
         addr: *addr,
+        ndst,
         dst,
+        flush_kind,
+        flush_entry,
+        flush_pattern,
+        flush_ll,
     })
 }
 
-/// Builds a `MatMauLine` for a matrix MAU expression (`fmfma`, `gmmul`, ...).
+/// Builds a `MatMauLine` for a matrix MAU expression of any documented precision,
+/// including the `(u|d)` row selection, output rounding, masks and flush.
 pub fn mat_mau_line_from_expr(expr: &Expr, mask_state: MaskState) -> Option<MatMauLine> {
     let Op::Mau {
-        prec: prec @ (Prec::F | Prec::G | Prec::D),
+        prec,
         matrix: true,
         kind,
-        half: None,
-        ..
+        half,
+        round,
     } = &expr.op
     else {
         return None;
     };
-    let kind = match kind {
-        MauKind::Fma => 0,
+    let prec = mat_prec(prec)?;
+    let formats = mat_formats(prec);
+    let kind_code = match kind {
+        MauKind::Fma => 0u32,
         MauKind::Mul => 1,
         MauKind::Add => 2,
         MauKind::Passa => 3,
     };
-    let want = if kind == 0 { 3 } else { 2 };
-    if expr.flush.is_some() || expr.srcs.len() != want || expr.dsts.len() != 1 {
+    let half_code = match half {
+        None => 0,
+        Some('u') => 1,
+        Some('d') => 2,
+        _ => return None,
+    };
+    let want = if kind_code == 0 { 3 } else { 2 };
+    if expr.srcs.len() != want {
         return None;
     }
     let Operand::Mat {
@@ -1776,52 +1831,28 @@ pub fn mat_mau_line_from_expr(expr: &Expr, mask_state: MaskState) -> Option<MatM
     else {
         return None;
     };
-    let x = line_source(&expr.srcs[1])?;
-    if x.mem >= 6 {
-        return None;
-    }
-    let y = if kind == 0 {
-        let y = line_source(&expr.srcs[2])?;
-        if y.mem >= 6 {
-            return None;
-        }
-        y
+    let x = mat_source(&expr.srcs[1], formats.x, formats.nx)?;
+    let y = if kind_code == 0 {
+        mat_source(&expr.srcs[2], formats.y, formats.ny)?
     } else {
-        MauSrc {
-            mem: 0,
-            wl: 1,
-            base: [0; 4],
-            neg: false,
-            ..MauSrc::default()
-        }
+        AluSrc::default()
     };
-    let dst = match &expr.dsts[0] {
-        Operand::Nowrite => AluDst::None,
-        Operand::Bar { lm1, mask, .. } => {
-            if mask.is_some() || directive_mask_applies(&expr.dsts[0], mask_state) {
-                return None;
-            }
-            AluDst::Bar(*lm1)
-        }
-        Operand::Mem { .. } => {
-            if directive_mask_applies(&expr.dsts[0], mask_state) {
-                return None;
-            }
-            let dst = mem_source(&expr.dsts[0], false, false)?;
-            if dst.mem >= 6 {
-                return None;
-            }
-            AluDst::Mem(dst)
-        }
-        _ => return None,
-    };
+    let (dst, ndst) = mat_dsts(expr, mask_state)?;
+    let (flush_kind, flush_entry, flush_pattern, flush_ll) = mat_flush(expr);
     Some(MatMauLine {
-        prec: *prec,
-        side: *side_y as u8,
-        kind,
+        prec: alu_prec_code(Some(prec)),
+        side: *side_y as u32,
+        kind: kind_code,
+        half: half_code,
+        round: *round as u32,
         x,
         y,
+        ndst,
         dst,
+        flush_kind,
+        flush_entry,
+        flush_pattern,
+        flush_ll,
     })
 }
 
@@ -2552,6 +2583,32 @@ impl Gpu {
         )
     }
 
+    /// Uploads the aluf forwarding register (4 cycles x 4 words per PE).
+    pub fn upload_aluf(&self, state: &GpuState, words: &[u32]) -> Result<(), String> {
+        self.upload_forward(state.aluf, words, "upload aluf")
+    }
+
+    /// Uploads the mauf forwarding register (4 cycles x 4 words per PE).
+    pub fn upload_mauf(&self, state: &GpuState, words: &[u32]) -> Result<(), String> {
+        self.upload_forward(state.mauf, words, "upload mauf")
+    }
+
+    /// Uploads the mreadf forwarding register (4 cycles x 4 words per PE).
+    pub fn upload_mreadf(&self, state: &GpuState, words: &[u32]) -> Result<(), String> {
+        self.upload_forward(state.mreadf, words, "upload mreadf")
+    }
+
+    fn upload_forward(&self, pointer: u64, words: &[u32], what: &str) -> Result<(), String> {
+        let count = crate::machine::PES * 16;
+        if words.len() != count {
+            return Err(format!("{what}: slice has the wrong length"));
+        }
+        self.check(
+            unsafe { (self.cu_htod)(pointer, words.as_ptr() as *const c_void, count * 4) },
+            what,
+        )
+    }
+
     /// Uploads the T registers (16 words per PE).
     pub fn upload_t(&self, state: &GpuState, words: &[u32]) -> Result<(), String> {
         let count = crate::machine::PES * 16;
@@ -2878,25 +2935,20 @@ impl Gpu {
         self.check(unsafe { (self.cu_sync)() }, "cuCtxSynchronize")
     }
 
-    /// Launches one f32 MAU line for all 4,096 PEs and four cycles.
+    /// Launches one vector MAU line for all 4,096 PEs and four cycles.
     pub fn run_mau_line(&self, state: &GpuState, line: &MauLine) -> Result<(), String> {
         self.run_mau_line_with(state, line, true)
     }
 
-    /// Launches one MAU line, optionally suppressing the `mauf` update (`noforward`).
+    /// Launches one vector MAU line, optionally suppressing the `mauf` update (`noforward`).
     pub fn run_mau_line_with(
         &self,
         state: &GpuState,
         line: &MauLine,
         update_forward: bool,
     ) -> Result<(), String> {
-        for src in [line.a, line.b, line.c] {
-            if src.wl != 1 && src.wl != 2 && src.wl != 4 {
-                return Err("mau_line supports wl = 1, 2 or 4".into());
-            }
-        }
-        if line.dst.mem != 7 && line.dst.wl != 1 && line.dst.wl != 2 && line.dst.wl != 4 {
-            return Err("mau_line supports wl = 1, 2 or 4".into());
+        if line.prec > 3 || line.kind > 3 || line.half > 2 || line.ndst > 8 {
+            return Err("mau_line descriptor is out of range".into());
         }
         let mut lm0 = state.lm0;
         let mut lm1 = state.lm1;
@@ -2910,34 +2962,7 @@ impl Gpu {
         let mut bar0 = state.bar0;
         let mut bar1 = state.bar1;
         let mut update_forward = update_forward as i32;
-        let mut kind = line.kind as i32;
-        let mut amem = line.a.mem as i32;
-        let mut a = line.a.base;
-        let mut awl = line.a.wl as i32;
-        let mut aneg = line.a.neg as i32;
-        let mut at = line.a.t_indirect as i32;
-        let mut ama = madpe_arg(line.a.madpe);
-        let mut bmem = line.b.mem as i32;
-        let mut b = line.b.base;
-        let mut bwl = line.b.wl as i32;
-        let mut bneg = line.b.neg as i32;
-        let mut bt = line.b.t_indirect as i32;
-        let mut bma = madpe_arg(line.b.madpe);
-        let mut cmem = line.c.mem as i32;
-        let mut c = line.c.base;
-        let mut cwl = line.c.wl as i32;
-        let mut cneg = line.c.neg as i32;
-        let mut ct = line.c.t_indirect as i32;
-        let mut cma = madpe_arg(line.c.madpe);
-        let mut dmem = line.dst.mem as i32;
-        let mut d = line.dst.base;
-        let mut dwl = line.dst.wl as i32;
-        let mut dt = line.dst.t_indirect as i32;
-        let mut dma = madpe_arg(line.dst.madpe);
-        let mut mask_kind = line.mask.kind as i32;
-        let mut mask_entry = line.mask.entry as i32;
-        let mut mask_pattern = line.mask.pattern as i32;
-        let mut mask_ll = line.mask.ll as i32;
+        let mut desc = *line;
         let mut args = [
             &mut lm0 as *mut u64 as *mut c_void,
             &mut lm1 as *mut u64 as *mut c_void,
@@ -2951,46 +2976,7 @@ impl Gpu {
             &mut bar0 as *mut u64 as *mut c_void,
             &mut bar1 as *mut u64 as *mut c_void,
             &mut update_forward as *mut i32 as *mut c_void,
-            &mut kind as *mut i32 as *mut c_void,
-            &mut amem as *mut i32 as *mut c_void,
-            &mut a[0] as *mut u32 as *mut c_void,
-            &mut a[1] as *mut u32 as *mut c_void,
-            &mut a[2] as *mut u32 as *mut c_void,
-            &mut a[3] as *mut u32 as *mut c_void,
-            &mut awl as *mut i32 as *mut c_void,
-            &mut aneg as *mut i32 as *mut c_void,
-            &mut at as *mut i32 as *mut c_void,
-            &mut ama as *mut i32 as *mut c_void,
-            &mut bmem as *mut i32 as *mut c_void,
-            &mut b[0] as *mut u32 as *mut c_void,
-            &mut b[1] as *mut u32 as *mut c_void,
-            &mut b[2] as *mut u32 as *mut c_void,
-            &mut b[3] as *mut u32 as *mut c_void,
-            &mut bwl as *mut i32 as *mut c_void,
-            &mut bneg as *mut i32 as *mut c_void,
-            &mut bt as *mut i32 as *mut c_void,
-            &mut bma as *mut i32 as *mut c_void,
-            &mut cmem as *mut i32 as *mut c_void,
-            &mut c[0] as *mut u32 as *mut c_void,
-            &mut c[1] as *mut u32 as *mut c_void,
-            &mut c[2] as *mut u32 as *mut c_void,
-            &mut c[3] as *mut u32 as *mut c_void,
-            &mut cwl as *mut i32 as *mut c_void,
-            &mut cneg as *mut i32 as *mut c_void,
-            &mut ct as *mut i32 as *mut c_void,
-            &mut cma as *mut i32 as *mut c_void,
-            &mut dmem as *mut i32 as *mut c_void,
-            &mut d[0] as *mut u32 as *mut c_void,
-            &mut d[1] as *mut u32 as *mut c_void,
-            &mut d[2] as *mut u32 as *mut c_void,
-            &mut d[3] as *mut u32 as *mut c_void,
-            &mut dwl as *mut i32 as *mut c_void,
-            &mut dt as *mut i32 as *mut c_void,
-            &mut dma as *mut i32 as *mut c_void,
-            &mut mask_kind as *mut i32 as *mut c_void,
-            &mut mask_entry as *mut i32 as *mut c_void,
-            &mut mask_pattern as *mut i32 as *mut c_void,
-            &mut mask_ll as *mut i32 as *mut c_void,
+            &mut desc as *mut MauLine as *mut c_void,
         ];
         let grid = ((crate::machine::PES * 4) as u32 + 255) / 256;
         self.check(
@@ -3570,10 +3556,10 @@ impl Gpu {
         )
     }
 
-    /// Launches one matrix-register write (`fmwrite`/`gmwrite`).
+    /// Launches one matrix-register write (`dmwrite`/`fmwrite`/`gmwrite`/`hmwrite`).
     pub fn run_mat_write_line(&self, state: &GpuState, line: &MatWriteLine) -> Result<(), String> {
-        if !matches!(line.prec, Prec::F | Prec::G | Prec::D) {
-            return Err("mat_write_line supports f32, pseudo-single and double".into());
+        if line.prec > 3 || line.side > 1 {
+            return Err("mat_write_line descriptor is out of range".into());
         }
         let mut lm0 = state.lm0;
         let mut lm1 = state.lm1;
@@ -3583,17 +3569,10 @@ impl Gpu {
         let mut aluf = state.aluf;
         let mut mats = state.mats;
         let mut t = state.t;
+        let mut mreadf = state.mreadf;
         let mut bar0 = state.bar0;
         let mut bar1 = state.bar1;
-        let mut prec = if line.prec == Prec::D { 1i32 } else { 0i32 };
-        let mut side = line.side as i32;
-        let mut addr = line.addr;
-        let mut smem = line.src.mem as i32;
-        let mut s = line.src.base;
-        let mut swl = line.src.wl as i32;
-        let mut sneg = line.src.neg as i32;
-        let mut st = line.src.t_indirect as i32;
-        let mut sma = madpe_arg(line.src.madpe);
+        let mut desc = *line;
         let mut args = [
             &mut lm0 as *mut u64 as *mut c_void,
             &mut lm1 as *mut u64 as *mut c_void,
@@ -3603,20 +3582,10 @@ impl Gpu {
             &mut aluf as *mut u64 as *mut c_void,
             &mut mats as *mut u64 as *mut c_void,
             &mut t as *mut u64 as *mut c_void,
+            &mut mreadf as *mut u64 as *mut c_void,
             &mut bar0 as *mut u64 as *mut c_void,
             &mut bar1 as *mut u64 as *mut c_void,
-            &mut prec as *mut i32 as *mut c_void,
-            &mut side as *mut i32 as *mut c_void,
-            &mut addr as *mut u32 as *mut c_void,
-            &mut smem as *mut i32 as *mut c_void,
-            &mut s[0] as *mut u32 as *mut c_void,
-            &mut s[1] as *mut u32 as *mut c_void,
-            &mut s[2] as *mut u32 as *mut c_void,
-            &mut s[3] as *mut u32 as *mut c_void,
-            &mut swl as *mut i32 as *mut c_void,
-            &mut sneg as *mut i32 as *mut c_void,
-            &mut st as *mut i32 as *mut c_void,
-            &mut sma as *mut i32 as *mut c_void,
+            &mut desc as *mut MatWriteLine as *mut c_void,
         ];
         let grid = (crate::machine::PES as u32 + 255) / 256;
         self.check(
@@ -3639,61 +3608,46 @@ impl Gpu {
         )
     }
 
-    /// Launches one matrix-register read (`fmread`/`gmread`).
+    /// Launches one matrix-register read (`dmread`/`fmread`/`gmread`/`hmread`).
     pub fn run_mat_read_line(&self, state: &GpuState, line: &MatReadLine) -> Result<(), String> {
         self.run_mat_read_line_with(state, line, true)
     }
 
-    /// Launches one matrix-register read, optionally under `noforward`.
+    /// Launches one matrix-register read, optionally suppressing the `mreadf` update.
     pub fn run_mat_read_line_with(
         &self,
         state: &GpuState,
         line: &MatReadLine,
         update_forward: bool,
     ) -> Result<(), String> {
-        if !matches!(line.prec, Prec::F | Prec::G | Prec::D) {
-            return Err("mat_read_line supports f32, pseudo-single and double".into());
+        if line.prec > 3 || line.side > 1 || line.ndst > 8 {
+            return Err("mat_read_line descriptor is out of range".into());
         }
         let mut lm0 = state.lm0;
         let mut lm1 = state.lm1;
         let mut grf0 = state.grf0;
         let mut grf1 = state.grf1;
         let mut mreadf = state.mreadf;
-        let mut mats = state.mats;
+        let mut mask = state.mask;
         let mut t = state.t;
+        let mut mats = state.mats;
         let mut bar0 = state.bar0;
         let mut bar1 = state.bar1;
         let mut update_forward = update_forward as i32;
-        let mut prec = if line.prec == Prec::D { 1i32 } else { 0i32 };
-        let mut side = line.side as i32;
-        let mut addr = line.addr;
-        let mut dmem = line.dst.mem as i32;
-        let mut d = line.dst.base;
-        let mut dwl = line.dst.wl as i32;
-        let mut dt = line.dst.t_indirect as i32;
-        let mut dma = madpe_arg(line.dst.madpe);
+        let mut desc = *line;
         let mut args = [
             &mut lm0 as *mut u64 as *mut c_void,
             &mut lm1 as *mut u64 as *mut c_void,
             &mut grf0 as *mut u64 as *mut c_void,
             &mut grf1 as *mut u64 as *mut c_void,
             &mut mreadf as *mut u64 as *mut c_void,
-            &mut mats as *mut u64 as *mut c_void,
+            &mut mask as *mut u64 as *mut c_void,
             &mut t as *mut u64 as *mut c_void,
+            &mut mats as *mut u64 as *mut c_void,
             &mut bar0 as *mut u64 as *mut c_void,
             &mut bar1 as *mut u64 as *mut c_void,
             &mut update_forward as *mut i32 as *mut c_void,
-            &mut prec as *mut i32 as *mut c_void,
-            &mut side as *mut i32 as *mut c_void,
-            &mut addr as *mut u32 as *mut c_void,
-            &mut dmem as *mut i32 as *mut c_void,
-            &mut d[0] as *mut u32 as *mut c_void,
-            &mut d[1] as *mut u32 as *mut c_void,
-            &mut d[2] as *mut u32 as *mut c_void,
-            &mut d[3] as *mut u32 as *mut c_void,
-            &mut dwl as *mut i32 as *mut c_void,
-            &mut dt as *mut i32 as *mut c_void,
-            &mut dma as *mut i32 as *mut c_void,
+            &mut desc as *mut MatReadLine as *mut c_void,
         ];
         let grid = (crate::machine::PES as u32 + 255) / 256;
         self.check(
@@ -3716,66 +3670,35 @@ impl Gpu {
         )
     }
 
-    /// Launches one matrix MAU line (`fmfma`/`gmmul` and friends).
+    /// Launches one matrix MAU line (`dmfma`/`fmmul`/`gmfma`/`hmfma` and friends).
     pub fn run_mat_mau_line(&self, state: &GpuState, line: &MatMauLine) -> Result<(), String> {
         self.run_mat_mau_line_with(state, line, true)
     }
 
-    /// Launches one matrix MAU line, optionally under `noforward`.
+    /// Launches one matrix MAU line, optionally suppressing the `mauf` update.
     pub fn run_mat_mau_line_with(
         &self,
         state: &GpuState,
         line: &MatMauLine,
         update_forward: bool,
     ) -> Result<(), String> {
-        let prec = match line.prec {
-            Prec::F => 0i32,
-            Prec::G => 1i32,
-            _ => return Err("mat_mau_line supports f32 and pseudo-single".into()),
-        };
+        if line.prec > 3 || line.side > 1 || line.kind > 3 || line.half > 2 || line.ndst > 8 {
+            return Err("mat_mau_line descriptor is out of range".into());
+        }
         let mut lm0 = state.lm0;
         let mut lm1 = state.lm1;
         let mut grf0 = state.grf0;
         let mut grf1 = state.grf1;
         let mut mauf = state.mauf;
         let mut aluf = state.aluf;
-        let mut mats = state.mats;
+        let mut mask = state.mask;
         let mut t = state.t;
+        let mut mreadf = state.mreadf;
+        let mut mats = state.mats;
         let mut bar0 = state.bar0;
         let mut bar1 = state.bar1;
         let mut update_forward = update_forward as i32;
-        let mut prec = prec;
-        let mut side = line.side as i32;
-        let mut kind = line.kind as i32;
-        let mut xmem = line.x.mem as i32;
-        let mut x = line.x.base;
-        let mut xwl = line.x.wl as i32;
-        let mut xneg = line.x.neg as i32;
-        let mut xt = line.x.t_indirect as i32;
-        let mut xma = madpe_arg(line.x.madpe);
-        let mut ymem = line.y.mem as i32;
-        let mut y = line.y.base;
-        let mut ywl = line.y.wl as i32;
-        let mut yneg = line.y.neg as i32;
-        let mut yt = line.y.t_indirect as i32;
-        let mut yma = madpe_arg(line.y.madpe);
-        let (mut dmem, mut d, mut dwl, mut dt, mut dma) = match line.dst {
-            AluDst::Mem(dst) => (
-                dst.mem as i32,
-                dst.base,
-                dst.wl as i32,
-                dst.t_indirect as i32,
-                madpe_arg(dst.madpe),
-            ),
-            AluDst::Bar(lm1) => (
-                if lm1 { BAR_MEM1 } else { BAR_MEM0 } as i32,
-                [0u32; 4],
-                0i32,
-                0i32,
-                -1i32,
-            ),
-            _ => (0i32, [0u32; 4], 0i32, 0i32, -1i32),
-        };
+        let mut desc = *line;
         let mut args = [
             &mut lm0 as *mut u64 as *mut c_void,
             &mut lm1 as *mut u64 as *mut c_void,
@@ -3783,40 +3706,14 @@ impl Gpu {
             &mut grf1 as *mut u64 as *mut c_void,
             &mut mauf as *mut u64 as *mut c_void,
             &mut aluf as *mut u64 as *mut c_void,
-            &mut mats as *mut u64 as *mut c_void,
+            &mut mask as *mut u64 as *mut c_void,
             &mut t as *mut u64 as *mut c_void,
+            &mut mreadf as *mut u64 as *mut c_void,
+            &mut mats as *mut u64 as *mut c_void,
             &mut bar0 as *mut u64 as *mut c_void,
             &mut bar1 as *mut u64 as *mut c_void,
             &mut update_forward as *mut i32 as *mut c_void,
-            &mut prec as *mut i32 as *mut c_void,
-            &mut side as *mut i32 as *mut c_void,
-            &mut kind as *mut i32 as *mut c_void,
-            &mut xmem as *mut i32 as *mut c_void,
-            &mut x[0] as *mut u32 as *mut c_void,
-            &mut x[1] as *mut u32 as *mut c_void,
-            &mut x[2] as *mut u32 as *mut c_void,
-            &mut x[3] as *mut u32 as *mut c_void,
-            &mut xwl as *mut i32 as *mut c_void,
-            &mut xneg as *mut i32 as *mut c_void,
-            &mut xt as *mut i32 as *mut c_void,
-            &mut xma as *mut i32 as *mut c_void,
-            &mut ymem as *mut i32 as *mut c_void,
-            &mut y[0] as *mut u32 as *mut c_void,
-            &mut y[1] as *mut u32 as *mut c_void,
-            &mut y[2] as *mut u32 as *mut c_void,
-            &mut y[3] as *mut u32 as *mut c_void,
-            &mut ywl as *mut i32 as *mut c_void,
-            &mut yneg as *mut i32 as *mut c_void,
-            &mut yt as *mut i32 as *mut c_void,
-            &mut yma as *mut i32 as *mut c_void,
-            &mut dmem as *mut i32 as *mut c_void,
-            &mut d[0] as *mut u32 as *mut c_void,
-            &mut d[1] as *mut u32 as *mut c_void,
-            &mut d[2] as *mut u32 as *mut c_void,
-            &mut d[3] as *mut u32 as *mut c_void,
-            &mut dwl as *mut i32 as *mut c_void,
-            &mut dt as *mut i32 as *mut c_void,
-            &mut dma as *mut i32 as *mut c_void,
+            &mut desc as *mut MatMauLine as *mut c_void,
         ];
         let grid = ((crate::machine::PES / 4) as u32 + 255) / 256;
         self.check(
