@@ -9,7 +9,7 @@ use std::path::Path;
 
 use libloading::Library;
 
-use crate::blockop::{L1Op, L2Op};
+use crate::blockop::{L1Op, L2Op, Rrn, RrnOp};
 use crate::machine::MaskState;
 use crate::vsm::{Expr, FwdKind, MauKind, MaskSel, MaskSource, MemKind, Op, Operand, Prec};
 
@@ -476,6 +476,79 @@ pub fn l2_line_from_expr(expr: &Expr) -> Option<L2Line> {
     }
 }
 
+/// An L2BM reduction or internal multicast: op 0 Reduce, 1 Reduce2, 2 Imcast.
+#[derive(Clone, Copy, Debug)]
+pub struct L2RedLine {
+    pub op: u8,
+    pub a0: u32,
+    pub a1: u32,
+    /// L1B set mask and immode (unused by Reduce2).
+    pub mask: u8,
+    pub immode: u8,
+    /// Element width in bits (unused by Imcast).
+    pub bits: u32,
+    /// Reduction kind: 0 fadd, 1 max, 2 min, 3 iadd, 4 band, 5 and, 6 bor, 7 or.
+    pub rrn: u8,
+}
+
+fn rrn_code(rrn: Rrn) -> u8 {
+    match rrn.op {
+        RrnOp::Fadd => 0,
+        RrnOp::Max => 1,
+        RrnOp::Min => 2,
+        RrnOp::Iadd => 3,
+        RrnOp::Band => 4,
+        RrnOp::And => 5,
+        RrnOp::Bor => 6,
+        RrnOp::Or => 7,
+    }
+}
+
+pub fn l2_reduce_line_from_expr(expr: &Expr) -> Option<L2RedLine> {
+    let Op::L2(op) = &expr.op else {
+        return None;
+    };
+    let addr_of = |op: &Operand| -> Option<u32> {
+        match op {
+            Operand::L2bm { addr, l2b: None } => Some(*addr),
+            Operand::L1bm { addr: Some(a), .. } => Some(*a),
+            _ => None,
+        }
+    };
+    let a0 = addr_of(expr.srcs.first()?)?;
+    let a1 = addr_of(expr.dsts.first()?)?;
+    match op {
+        L2Op::Reduce { rrn, set } => Some(L2RedLine {
+            op: 0,
+            a0,
+            a1,
+            mask: set.mask,
+            immode: set.immode,
+            bits: rrn.bits(),
+            rrn: rrn_code(*rrn),
+        }),
+        L2Op::Reduce2 { rrn } => Some(L2RedLine {
+            op: 1,
+            a0,
+            a1,
+            mask: 0xff,
+            immode: 0,
+            bits: rrn.bits(),
+            rrn: rrn_code(*rrn),
+        }),
+        L2Op::Imcast { set } => Some(L2RedLine {
+            op: 2,
+            a0,
+            a1,
+            mask: set.mask,
+            immode: set.immode,
+            bits: 0,
+            rrn: 0,
+        }),
+        _ => None,
+    }
+}
+
 /// A gbfn (block-float) line.
 #[derive(Clone, Copy, Debug)]
 pub struct BfnLine {
@@ -561,6 +634,7 @@ pub struct Gpu {
     l1_function: CuFunction,
     l1_write_function: CuFunction,
     l2_function: CuFunction,
+    l2_reduce_function: CuFunction,
     cu_ctx_destroy: CuCtxDestroy,
     cu_mem_alloc: CuMemAlloc,
     cu_mem_free: CuMemFree,
@@ -726,6 +800,17 @@ impl Gpu {
             unsafe { cu_get_function(&mut l2_function, module, b"l2_line\0".as_ptr() as *const c_char) },
             "cuModuleGetFunction(l2_line)",
         )?;
+        let mut l2_reduce_function: CuFunction = std::ptr::null_mut();
+        check(
+            unsafe {
+                cu_get_function(
+                    &mut l2_reduce_function,
+                    module,
+                    b"l2_reduce_line\0".as_ptr() as *const c_char,
+                )
+            },
+            "cuModuleGetFunction(l2_reduce_line)",
+        )?;
         Ok(Gpu {
             _cuda: cuda,
             _nvrtc: nvrtc,
@@ -737,6 +822,7 @@ impl Gpu {
             l1_function,
             l1_write_function,
             l2_function,
+            l2_reduce_function,
             cu_ctx_destroy,
             cu_mem_alloc,
             cu_mem_free,
@@ -1281,6 +1367,51 @@ impl Gpu {
                 )
             },
             "cuLaunchKernel(l2_line)",
+        )
+    }
+
+    /// Launches one L2BM reduction or internal multicast.
+    pub fn run_l2_reduce_line(&self, state: &GpuState, line: &L2RedLine) -> Result<(), String> {
+        if line.op < 2 && line.bits != 16 && line.bits != 32 && line.bits != 64 {
+            return Err(format!("unsupported RRN width {}", line.bits));
+        }
+        let mut l1bm = state.l1bm;
+        let mut l2bm = state.l2bm;
+        let mut op = line.op as i32;
+        let mut a0 = line.a0;
+        let mut a1 = line.a1;
+        let mut mask = line.mask as i32;
+        let mut immode = line.immode as i32;
+        let mut bits = line.bits as i32;
+        let mut rrn = line.rrn as i32;
+        let mut args = [
+            &mut l1bm as *mut u64 as *mut c_void,
+            &mut l2bm as *mut u64 as *mut c_void,
+            &mut op as *mut i32 as *mut c_void,
+            &mut a0 as *mut u32 as *mut c_void,
+            &mut a1 as *mut u32 as *mut c_void,
+            &mut mask as *mut i32 as *mut c_void,
+            &mut immode as *mut i32 as *mut c_void,
+            &mut bits as *mut i32 as *mut c_void,
+            &mut rrn as *mut i32 as *mut c_void,
+        ];
+        self.check(
+            unsafe {
+                (self.cu_launch)(
+                    self.l2_reduce_function,
+                    16,
+                    1,
+                    1,
+                    256,
+                    1,
+                    1,
+                    0,
+                    std::ptr::null_mut(),
+                    args.as_mut_ptr(),
+                    std::ptr::null_mut(),
+                )
+            },
+            "cuLaunchKernel(l2_reduce_line)",
         )
     }
 

@@ -294,31 +294,72 @@ L2BM を 8 L2B × 32,768 ロングワード（8 MB）で VRAM に持つ。
 
 L2BM の reduction、内部マルチキャスト、行列、MV はまだ未対応。
 
-## 現状（15 ラウンド終了時）
+## L2BM の縮約と内部マルチキャスト
+
+RRN の縮約をカーネル化し、`l2bmr<rrn>`（Reduce）、`l2bmr2<rrn>`（Reduce2）、
+`l2bmi@<l1bset>`（Imcast）を実行できるようにした。
+
+- `l2bmr` は L1B 集合で選んだ 8 L1B（集合の外は単位元）の 16 長語をサイクルごとに縮約し、L2BM へ書く。
+- `l2bmr2` は隣り合う 2 L1B を 1 組として 4 組を縮約する。
+- `l2bmi` は `immode` が同じ L1B グループ内で、集合に含まれる L1B から 16 長語をコピーする
+  （自分自身へのコピーは CPU と同じく書かない）。
+
+対応する RRN は 24 種類すべて:
+`dfadd`/`ffadd`/`hfadd`、`dmax`/`fmax`/`hmax`、`dmin`/`fmin`/`hmin`、
+`liadd`/`iiadd`/`siadd`、`lband`/`iband`/`sband`、`land`/`iand`/`sand`、
+`lbor`/`ibor`/`sbor`、`lor`/`ior`/`sor`。
+
+浮動小数点加算は CPU の `rrn::fadd` と同じく、最大指数に仮数を RNE で丸めながら桁合わせし、
+符号付きで厳密に加算してから一度だけ丸める。
+`gpu_vsm_l2red` は `mnist_train_step.vsm` に出てくる `l2bmrffadd` と同じ形の行に、
+L1B 部分集合、`l2bmr2`、`l2bmi`、全 RRN を混ぜて実行し、L1BM と L2BM の全ワードを比較する。
+
+```sh
+cd viz/core
+cargo run --release --bin gpu_vsm_l2red -- 512
+```
+
+結果:
+
+- 512 行（l2bmr 258、l2bmr2 76、l2bmi 178）で mismatch 0。
+  l2bmr と l2bmr2 はそれぞれ 24/24 の RRN を実行し、l2bmr は全 RRN を全 L1B 集合と部分集合の両方で実行。
+- CPU 70 ms、GPU 4.7 ms。
+- 4,096 行でも mismatch 0（CPU 512 ms、GPU 36 ms）。
+- 指数を狭い範囲にそろえた half/single/double の追加ストレス（各 2,048 行）でも mismatch 0。
+
+`gpu_coverage` の現状:
+
+- L2 式 493 個のうち 387 個が対応（`mnist_train_step.vsm` の L2 縮約 10 個を含む）。
+- すべての式が対応する行は 1,536（PE 行 2,635 中、約 58%）。
+
+`l2bmb2`（Bcast2）と、L1B 集合を指定した `l2bmd` の Distrib はまだ未対応。
+
+## 現状（16 ラウンド終了時）
 
 GPU 側でビット一致する範囲:
 
 - f32 vfma、ALU（Passa、Xor、Max、Rsqrt、Bfn、Msr、Zero、Imm）、MAU（FMA/MUL/ADD/PASSA、マスク、`mauf`/`aluf`）、T レジスタ。
 - L1BM の読み出し（Mbcast、Distrib、Pbcast）と書き込み（Mwrite）。
 - L2BM の Distrib、Bcast、FromL1b。
+- L2BM の縮約（`l2bmr`、`l2bmr2`）と内部マルチキャスト（`l2bmi`）。RRN は 24 種類すべて。
 
 実プログラムの被覆:
 
-- PE 行 2,635 のうち 1,526 行（約 58%）が、すべての式を GPU で扱える。
-- MAU 478/724、ALU 909/985、L1 264/292、L2 377/493。
+- PE 行 2,635 のうち 1,536 行（約 58%）が、すべての式を GPU で扱える。
+- MAU 478/724、ALU 909/985、L1 264/292、L2 387/493。
 
 未達:
 
 - `mnist_train_step` 全体の GPU 実行。
-- L2BM の reduction と内部マルチキャスト。
+- L2BM の Bcast2 と、L1B 集合を指定した Distrib。
 - 行列（`gmwrite`、`gmread`、`gmmul`）と MV。
 - L1BM の turnaround レジスタ `$lbi`。
 
 検証:
 
-- `cargo test --release` 17 件。
+- `cargo test --release` 20 件。
 - `difftest_prog` の relu と matmul で 0 mismatch。
-- GPU の各テスト（vfma、MAU、ALU、マスク、L1、L2）で 0 mismatch。
+- GPU の各テスト（vfma、MAU、ALU、マスク、L1、L2、L2 縮約）で 0 mismatch。
 
 GPU カーネルはすべて NVRTC + CUDA Driver API で実行時にコンパイルする。
 `nvcc` は不要。

@@ -685,3 +685,196 @@ extern "C" __global__ void l2_line(
         l2bm[dst] = l1bm[src];
     }
 }
+
+// RRN reductions (SDM 3.5.5 and 4.2). `kind` is 0 fadd, 1 max, 2 min, 3 iadd,
+// 4 band, 5 and, 6 bor, 7 or; `bits` is the element width.
+__device__ __forceinline__ unsigned long long rrn_mask(int bits) {
+    return bits == 64 ? ~0ULL : ((1ULL << bits) - 1);
+}
+
+__device__ __forceinline__ Fmt rrn_fmt(int bits) {
+    if (bits == 64) return {11, 52, -1};
+    if (bits == 32) return {8, 23, -1};
+    return {6, 9, -1};
+}
+
+// The identity element sent by L1Bs outside the selected set.
+__device__ __forceinline__ unsigned long long rrn_unit(int kind, int bits) {
+    unsigned long long m = rrn_mask(bits);
+    if (kind == 4) return m;
+    if (kind == 5) return 1;
+    if (kind == 1) return m;
+    if (kind == 2) return m >> 1;
+    return 0;
+}
+
+// The identity element replicated over a long word.
+__device__ __forceinline__ unsigned long long rrn_unit_long(int kind, int bits) {
+    unsigned long long u = rrn_unit(kind, bits);
+    int lanes = 64 / bits;
+    unsigned long long out = 0;
+    for (int i = 0; i < lanes; ++i) out |= u << (i * bits);
+    return out;
+}
+
+// One floating-point addition stage: align every mantissa to the largest
+// exponent with round-to-nearest-even, add the signed mantissas exactly, then
+// round once to `out` (same steps as rrn::fadd on the CPU).
+__device__ __forceinline__ unsigned long long rrn_fadd(
+    Fmt f, const unsigned long long* vals, int n, Fmt out) {
+    unsigned long long emask = exp_max(f);
+    unsigned max_e = 0;
+    for (int i = 0; i < n; ++i) {
+        unsigned e = (unsigned)((vals[i] >> f.man_bits) & emask);
+        if (e > max_e) max_e = e;
+    }
+    if (max_e == 0) return 0;
+    if ((unsigned long long)max_e == emask) {
+        bool neg = true;
+        for (int i = 0; i < n; ++i) {
+            if (((vals[i] >> f.man_bits) & emask) == emask &&
+                ((vals[i] >> (width(f) - 1)) & 1) == 0) {
+                neg = false;
+            }
+        }
+        return inf_bits(out, neg);
+    }
+    long long sum = 0;
+    for (int i = 0; i < n; ++i) {
+        unsigned e = (unsigned)((vals[i] >> f.man_bits) & emask);
+        if (e == 0) continue;
+        unsigned __int128 sig =
+            (((unsigned __int128)1 << f.man_bits) |
+             (unsigned __int128)(vals[i] & man_mask(f))) << 3;
+        unsigned __int128 aligned = round_shift128(sig, max_e - e);
+        bool neg = ((vals[i] >> (width(f) - 1)) & 1) != 0;
+        sum += neg ? -(long long)aligned : (long long)aligned;
+    }
+    if (sum == 0) return 0;
+    int e = (int)max_e - (int)bias(f) - (int)f.man_bits - 3;
+    unsigned __int128 mag = sum < 0
+        ? (unsigned __int128)(-(sum + 1)) + 1
+        : (unsigned __int128)sum;
+    return round_pack(out, sum < 0, mag, e);
+}
+
+// Sign-magnitude comparison key of max/min (SDM 4.2.2).
+__device__ __forceinline__ long long rrn_key(unsigned long long v, int bits) {
+    unsigned long long m = rrn_mask(bits);
+    bool neg = ((v >> (bits - 1)) & 1) != 0;
+    unsigned long long mag = v & (m >> 1);
+    return neg ? -(long long)mag - 1 : (long long)mag;
+}
+
+// One reduction stage over `n` raw elements of the RRN precision.
+__device__ __forceinline__ unsigned long long rrn_reduce(
+    int kind, int bits, const unsigned long long* vals, int n) {
+    unsigned long long m = rrn_mask(bits);
+    if (kind == 0) return rrn_fadd(rrn_fmt(bits), vals, n, rrn_fmt(bits));
+    if (kind == 1 || kind == 2) {
+        long long best = rrn_key(vals[0], bits);
+        unsigned long long pick = vals[0];
+        for (int i = 1; i < n; ++i) {
+            long long k = rrn_key(vals[i], bits);
+            if (kind == 1 ? k > best : k < best) {
+                best = k;
+                pick = vals[i];
+            }
+        }
+        return pick;
+    }
+    if (kind == 3) {
+        unsigned long long acc = 0;
+        for (int i = 0; i < n; ++i) acc = (acc + vals[i]) & m;
+        return acc;
+    }
+    if (kind == 4) {
+        unsigned long long acc = m;
+        for (int i = 0; i < n; ++i) acc &= vals[i];
+        return acc;
+    }
+    if (kind == 5) {
+        for (int i = 0; i < n; ++i) {
+            if (vals[i] == 0) return 0;
+        }
+        return 1;
+    }
+    if (kind == 6) {
+        unsigned long long acc = 0;
+        for (int i = 0; i < n; ++i) acc |= vals[i];
+        return acc;
+    }
+    for (int i = 0; i < n; ++i) {
+        if (vals[i] != 0) return 1;
+    }
+    return 0;
+}
+
+// Reduces long words lane by lane in one stage (L2BM reductions).
+__device__ __forceinline__ unsigned long long rrn_reduce_longs(
+    int kind, int bits, const unsigned long long* vals, int n) {
+    int lanes = 64 / bits;
+    unsigned long long m = rrn_mask(bits);
+    unsigned long long out = 0;
+    unsigned long long lane_vals[8];
+    for (int lane = 0; lane < lanes; ++lane) {
+        int sh = 64 - bits * (lane + 1);
+        for (int i = 0; i < n; ++i) lane_vals[i] = (vals[i] >> sh) & m;
+        out |= (rrn_reduce(kind, bits, lane_vals, n) & m) << sh;
+    }
+    return out;
+}
+
+// L2BM reductions and internal multicast. op 0: l2bmr (Reduce), op 1: l2bmr2
+// (Reduce2), op 2: l2bmi (Imcast). `mask`/`immode` are the L1B set.
+extern "C" __global__ void l2_reduce_line(
+    unsigned long long* l1bm, unsigned long long* l2bm,
+    int op, unsigned a0, unsigned a1, int mask, int immode, int bits, int kind) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (op == 0) {
+        if (idx >= 8 * 4 * 16) return;
+        int k = idx % 16;
+        int c = (idx / 16) % 4;
+        int l2 = idx / 64;
+        unsigned long long vals[8];
+        for (int b = 0; b < 8; ++b) {
+            vals[b] = ((mask >> b) & 1)
+                ? l1bm[(l2 * 8 + b) * 8192 + (a0 + c * 16 + k) % 8192]
+                : rrn_unit_long(kind, bits);
+        }
+        l2bm[l2 * 32768 + (a1 + c * 16 + k) % 32768] =
+            rrn_reduce_longs(kind, bits, vals, 8);
+    } else if (op == 1) {
+        if (idx >= 8 * 4 * 4 * 16) return;
+        int k = idx % 16;
+        int g = (idx / 16) % 4;
+        int c = (idx / 64) % 4;
+        int l2 = idx / 256;
+        unsigned long long vals[2];
+        for (int j = 0; j < 2; ++j) {
+            vals[j] = l1bm[(l2 * 8 + 2 * g + j) * 8192 +
+                           (a0 + c * 16 + k) % 8192];
+        }
+        l2bm[l2 * 32768 + (a1 + c * 64 + 16 * g + k) % 32768] =
+            rrn_reduce_longs(kind, bits, vals, 2);
+    } else {
+        // One thread per destination L1B and word. The last source in the set
+        // with the same immode group wins, matching the CPU's write order.
+        if (idx >= 8 * 4 * 8 * 16) return;
+        int k = idx % 16;
+        int d = (idx / 16) % 8;
+        int c = (idx / 128) % 4;
+        int l2 = idx / 512;
+        int src = -1;
+        for (int s = 7; s >= 0; --s) {
+            if (s == d || !((mask >> s) & 1)) continue;
+            if ((s & immode) == (d & immode)) {
+                src = s;
+                break;
+            }
+        }
+        if (src < 0) return;
+        l1bm[(l2 * 8 + d) * 8192 + (a1 + c * 16 + k) % 8192] =
+            l1bm[(l2 * 8 + src) * 8192 + (a0 + c * 16 + k) % 8192];
+    }
+}
