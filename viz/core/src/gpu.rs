@@ -406,6 +406,50 @@ pub fn alu_line_from_expr(expr: &Expr, mask_state: MaskState) -> Option<AluLine>
             prec: Some(Prec::I),
             ..
         } => (19u8, true, true),
+        Op::Alu {
+            name: crate::vsm::AluOp::Msl,
+            ..
+        } => (20u8, false, true),
+        Op::Alu {
+            name: crate::vsm::AluOp::Packbit,
+            prec: Some(Prec::I),
+            ..
+        } => (21u8, true, true),
+        Op::Alu {
+            name: crate::vsm::AluOp::Lsr,
+            prec: Some(Prec::I),
+            ..
+        } => (22u8, true, true),
+        Op::Alu {
+            name: crate::vsm::AluOp::Bsl,
+            prec: Some(Prec::I),
+            ..
+        } => (23u8, true, true),
+        Op::Alu {
+            name: crate::vsm::AluOp::Bsr,
+            prec: Some(Prec::I),
+            ..
+        } => (24u8, true, true),
+        Op::Alu {
+            name: crate::vsm::AluOp::Relu0,
+            prec: Some(Prec::F),
+            ..
+        } => (25u8, true, true),
+        Op::Alu {
+            name: crate::vsm::AluOp::Relu1,
+            prec: Some(Prec::F),
+            ..
+        } => (26u8, true, true),
+        Op::Alu {
+            name: crate::vsm::AluOp::Relu2,
+            prec: Some(Prec::F),
+            ..
+        } => (27u8, true, true),
+        Op::Alu {
+            name: crate::vsm::AluOp::Relu3,
+            prec: Some(Prec::F),
+            ..
+        } => (28u8, true, true),
         _ => return None,
     };
     let want_sources = if need_b { 2 } else { 1 };

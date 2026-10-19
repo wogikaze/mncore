@@ -7,7 +7,7 @@ CPU の `Sim` と GPU の `gpu_run_program` が同じ VSM を実行し、最終�
 
 | 分類 | 対応 | 主な不足 |
 | --- | --- | --- |
-| ALU | Passa, Xor, Max, Min, Rsqrt, Bfn(G), Msr, Zero, Imm, Add, Sub, Inc, Dec, Not, Lnot, And, Or, Lsl, Relu, Floor, Ftoi, 固定 Subpeid | `Packbit`、`Lsr/Bsl/Bsr`、`Relu0..3`、`Lrelud/Lreluo/Ilrelud`、`Bfe`、`Msl`、16/64 bit の大半、unsigned、`ext/rnd`、flush |
+| ALU | Passa, Xor, Max, Min, Rsqrt, Bfn(G), Msr, Msl, Zero, Imm, Add, Sub, Inc, Dec, Not, Lnot, And, Or, Lsl, Lsr, Bsl, Bsr, Packbit, Relu0..3, Relu, Floor, Ftoi, 固定 Subpeid | `Lrelud`/`Lreluo`/`Ilrelud`、`Bfe`、16/64 bit の大半、unsigned、`ext/rnd`、flush |
 | MAU | f32 の FMA/MUL/ADD/PASSA、D の行列 write/read | D/H のベクトル MAU、H の行列、`neg/ext/rnd` の一部、flush |
 | 行列 | F/G/D の write/read、F/G の matrix MAU | H、D の matrix MAU、マスク付き読み書き、T ソース |
 | L1BM | Pbcast, Mbcast, Mwrite, Distrib, Gather, 1 長語 16x1 ffadd | 2 長語、M4 系、全 RRN、`l1bmr4`、turnaround `$lbi`、`l1bmm@` の 2 長語 |

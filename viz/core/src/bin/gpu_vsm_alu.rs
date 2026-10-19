@@ -56,6 +56,15 @@ fn main() {
         "ilnot $r{}v $r{}v",
         "iand $r{}v $s{}v $r{}v",
         "ior $r{}v $s{}v $r{}v",
+        "ipackbit $r{}v $s{}v $r{}v",
+        "ilsr $r{}v $s{}v $r{}v",
+        "ibsl $r{}v $s{}v $r{}v",
+        "ibsr $r{}v $s{}v $r{}v",
+        "frelu0 $m{}v $r{}v $n{}v",
+        "frelu1 $m{}v $r{}v $n{}v",
+        "frelu2 $m{}v $r{}v $n{}v",
+        "frelu3 $m{}v $r{}v $n{}v",
+        "msl $s{}v $s{}v",
     ];
     let mut text = String::new();
     for i in 0..lines {

@@ -428,8 +428,9 @@ extern "C" __global__ void alu_line(
             out[2] = av[2];
             out[3] = av[3];
             flags = ((sign0 == 0) ? 0xc : 0) | ((sign1 == 0) ? 0x3 : 0);
-        } else if (kind == 4) {
-            int src_pe = (pe & ~3) | ((pe + 1) & 3);
+        } else if (kind == 4 || kind == 20) {
+            int step = (kind == 4) ? 1 : 3;
+            int src_pe = (pe & ~3) | ((pe + step) & 3);
             unsigned sv[4];
             for (int i = 0; i < 4; ++i) {
                 if (amem == 4) {
@@ -554,6 +555,38 @@ extern "C" __global__ void alu_line(
             out[0] = av[0] & bv[0]; out[1] = av[1] & bv[1]; out[2] = av[2]; out[3] = av[3]; flags = 0;
         } else if (kind == 19) {
             out[0] = av[0] | bv[0]; out[1] = av[1] | bv[1]; out[2] = av[2]; out[3] = av[3]; flags = 0;
+        } else if (kind == 21) {
+            unsigned r0 = (av[0] << 1) | ((bv[0] >> 31) & 1);
+            unsigned r1 = (av[1] << 1) | ((bv[1] >> 31) & 1);
+            out[0] = r0; out[1] = r1; out[2] = av[2]; out[3] = av[3];
+            flags = (((bv[0] >> 31) & 1) == 0 ? 0xc : 0) | (((bv[1] >> 31) & 1) == 0 ? 0x3 : 0);
+        } else if (kind == 22) {
+            for (int l = 0; l < 2; ++l) {
+                unsigned sh = bv[l] % 64;
+                if (sh >= 32) sh = 32;
+                out[l] = (sh >= 32) ? 0 : (av[l] >> sh);
+            }
+            out[2] = av[2]; out[3] = av[3];
+            flags = ((out[0] == 0) ? 0xc : 0) | ((out[1] == 0) ? 0x3 : 0);
+        } else if (kind == 23 || kind == 24) {
+            for (int l = 0; l < 2; ++l) {
+                unsigned sh = bv[l] % 64;
+                if (sh >= 32) sh -= 32;
+                if (sh == 0) out[l] = av[l];
+                else if (kind == 23) out[l] = (av[l] << sh) | (av[l] >> (32 - sh));
+                else out[l] = (av[l] >> sh) | (av[l] << (32 - sh));
+            }
+            out[2] = av[2]; out[3] = av[3];
+            flags = ((out[0] == 0) ? 0xc : 0) | ((out[1] == 0) ? 0x3 : 0);
+        } else if (kind >= 25 && kind <= 28) {
+            int k = kind - 25;
+            for (int l = 0; l < 2; ++l) {
+                unsigned mask_bit = (av[l] >> (31 - k)) & 1;
+                out[l] = mask_bit == 0 ? bv[l] : 0x80000000u;
+            }
+            out[2] = av[2]; out[3] = av[3];
+            flags = ((((av[0] >> (31 - k)) & 1) == 0) ? 0xc : 0)
+                | ((((av[1] >> (31 - k)) & 1) == 0) ? 0x3 : 0);
         } else {
             unsigned value = imm;
             if (imm_u) {
