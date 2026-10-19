@@ -15,12 +15,13 @@ fn main() {
     let mut text = String::new();
     for i in 0..lines {
         let offset = (i % 32) * 8;
-        match i % 5 {
+        match i % 6 {
             0 => text.push_str(&format!("l2bmd $lc{} $lb{}\n", offset, offset)),
             1 => text.push_str(&format!("l2bmb $lc{} $lb{}\n", offset, offset)),
             2 => text.push_str(&format!("l2bm@0 $lb{} $lc{}\n", offset, offset)),
             3 => text.push_str(&format!("l2bmb2 $lc{} $lb{}\n", offset, offset)),
-            _ => text.push_str(&format!("l2bmd@[0,4] $lc{} $lb{}\n", offset, offset)),
+            4 => text.push_str(&format!("l2bmd@[0,4] $lc{} $lb{}\n", offset, offset)),
+            _ => text.push_str(&format!("l2bmd $lb{} $lc{}\n", offset, offset)),
         }
     }
     let program = vsm::parse(&text).expect("parse");

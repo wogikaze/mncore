@@ -240,8 +240,27 @@ pub fn mau_line_from_expr(expr: &Expr, mask_state: MaskState) -> Option<MauLine>
         .dsts
         .iter()
         .any(|d| matches!(d, Operand::Mem { mask: Some(_), .. }));
-    let dst = mem_source(dst_op, false, true)?;
-    let mask = resolve_mask(dst_op, mask_state, single_line);
+    let none = MaskInfo {
+        kind: 0,
+        entry: 0,
+        pattern: 0,
+        ll: false,
+    };
+    let (dst, mask) = if matches!(dst_op, Operand::Nowrite) {
+        (
+            MauSrc {
+                mem: 7,
+                wl: 0,
+                base: [0; 4],
+                neg: false,
+            },
+            none,
+        )
+    } else {
+        let dst = mem_source(dst_op, false, true)?;
+        let mask = resolve_mask(dst_op, mask_state, single_line);
+        (dst, mask)
+    };
     Some(MauLine {
         kind,
         wl: dst.wl,
@@ -291,7 +310,7 @@ pub fn alu_line_from_expr(expr: &Expr) -> Option<AluLine> {
         Op::Imm { .. } => (6u8, false, false),
         Op::Alu {
             name: crate::vsm::AluOp::Passa,
-            prec: Some(Prec::F),
+            prec: Some(Prec::F | Prec::I),
             ..
         } => (0u8, false, true),
         Op::Alu {
@@ -313,6 +332,26 @@ pub fn alu_line_from_expr(expr: &Expr) -> Option<AluLine> {
             name: crate::vsm::AluOp::Msr,
             ..
         } => (4u8, false, true),
+        Op::Alu {
+            name: crate::vsm::AluOp::Add,
+            prec: Some(Prec::I),
+            ..
+        } => (7u8, true, true),
+        Op::Alu {
+            name: crate::vsm::AluOp::Lsl,
+            prec: Some(Prec::I),
+            ..
+        } => (8u8, true, true),
+        Op::Alu {
+            name: crate::vsm::AluOp::Relu,
+            prec: Some(Prec::F),
+            ..
+        } => (9u8, true, true),
+        Op::Alu {
+            name: crate::vsm::AluOp::Floor,
+            prec: Some(Prec::F),
+            ..
+        } => (10u8, false, true),
         _ => return None,
     };
     let want_sources = if need_b { 2 } else { 1 };
@@ -797,6 +836,13 @@ pub fn l2_line_from_expr(expr: &Expr) -> Option<L2Line> {
             a1,
             l1b: 0,
             mask: set.mask,
+        }),
+        L2Op::Gather => Some(L2Line {
+            op: 4,
+            a0,
+            a1,
+            l1b: 0,
+            mask: 0xff,
         }),
         L2Op::FromL1b { l1b } => Some(L2Line {
             op: 2,
@@ -1875,10 +1921,13 @@ impl Gpu {
 
     /// Launches one f32 MAU line for all 4,096 PEs and four cycles.
     pub fn run_mau_line(&self, state: &GpuState, line: &MauLine) -> Result<(), String> {
-        for src in [line.a, line.b, line.c, line.dst] {
+        for src in [line.a, line.b, line.c] {
             if src.wl != 1 && src.wl != 2 && src.wl != 4 {
                 return Err("mau_line supports wl = 1, 2 or 4".into());
             }
+        }
+        if line.dst.mem != 7 && line.dst.wl != 1 && line.dst.wl != 2 && line.dst.wl != 4 {
+            return Err("mau_line supports wl = 1, 2 or 4".into());
         }
         let mut lm0 = state.lm0;
         let mut lm1 = state.lm1;

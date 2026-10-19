@@ -22,6 +22,9 @@ fn main() {
         "fvadd $r{}v $mauf $n{}v",
         "fvpassa $llm{}v $llr{}v",
         "fvadd $m{}v -$r{}v $n{}v",
+        "fvfma $m{}v $r{}v $t $nowrite",
+        "fvadd $m{}v $mauf $nowrite",
+        "fvpassa $m{}v $nowrite",
     ];
     let mut text = String::new();
     for i in 0..lines {

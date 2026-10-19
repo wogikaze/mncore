@@ -40,6 +40,11 @@ fn main() {
         "imm f\"0.5\" $t",
         "fpassa $t $r{}v",
         "zero $t",
+        "ipassa $lm{}v $nowrite",
+        "iadd $r{}v $s{}v $r{}v",
+        "ilsl $r{}v $s{}v $r{}v",
+        "frelu $m{}v $r{}v $n{}v",
+        "ffloor $r{}v $r{}v",
     ];
     let mut text = String::new();
     for i in 0..lines {

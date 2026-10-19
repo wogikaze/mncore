@@ -450,3 +450,18 @@ GPU カーネルはすべて NVRTC + CUDA Driver API で実行時にコンパイ
 
 `l2bmb2` と、`@[..]` で L1B 集合を指定した `l2bmd`/`l2bmb` にも対応した。
 `gpu_vsm_l2` は 5 種類（Distrib、Bcast、FromL1b、Bcast2、部分集合 Distrib）を混ぜて 0 mismatch。
+
+## 追加の ALU/MAU/L2 対応
+
+- MAU の `$nowrite` デスティネーションと、T レジスタをソースにする MAU。
+- L2BM の Gather（`l2bmd $lb... $lc...`）。
+- ALU の `ipassa`、`iadd`、`ilsl`、`frelu`、`ffloor`。
+
+`gpu_unsupported` は、現在の GPU ディスクリプタが拒否する PE 式をオペコード別に表示する。
+
+現状:
+
+- MAU 676/676、L2 493/493。
+- すべての式が対応する PE 行は 1,864 / 2,635（約 71%）。
+
+残りは行列の D/H、`gbfn $mreadf`、`fftoi`、L1 の Gather/reduction、固定オペランド。

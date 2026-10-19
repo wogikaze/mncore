@@ -231,7 +231,9 @@ extern "C" __global__ void mau_line(
                 ? mauf[pe * 16 + c * 4 + l]
                 : (amem == 5)
                     ? aluf[pe * 16 + c * 4 + l]
-                    : (l < awl ? pa[pe * la + ab[c] + l] : 0);
+                    : (amem == 6)
+                        ? t[pe * 16 + c * 4 + l]
+                        : (l < awl ? pa[pe * la + ab[c] + l] : 0);
             if (aneg) av ^= 0x80000000u;
             unsigned bv;
             unsigned cv;
@@ -240,12 +242,16 @@ extern "C" __global__ void mau_line(
                     ? mauf[pe * 16 + c * 4 + l]
                     : (bmem == 5)
                         ? aluf[pe * 16 + c * 4 + l]
-                        : (l < bwl ? pb[pe * lb + bb[c] + l] : 0);
+                        : (bmem == 6)
+                            ? t[pe * 16 + c * 4 + l]
+                            : (l < bwl ? pb[pe * lb + bb[c] + l] : 0);
                 cv = (cmem == 4)
                     ? mauf[pe * 16 + c * 4 + l]
                     : (cmem == 5)
                         ? aluf[pe * 16 + c * 4 + l]
-                        : (l < cwl ? pc[pe * lc + cb[c] + l] : 0);
+                        : (cmem == 6)
+                            ? t[pe * 16 + c * 4 + l]
+                            : (l < cwl ? pc[pe * lc + cb[c] + l] : 0);
                 if (bneg) bv ^= 0x80000000u;
                 if (cneg) cv ^= 0x80000000u;
             } else if (kind == 1) {
@@ -253,7 +259,9 @@ extern "C" __global__ void mau_line(
                     ? mauf[pe * 16 + c * 4 + l]
                     : (bmem == 5)
                         ? aluf[pe * 16 + c * 4 + l]
-                        : (l < bwl ? pb[pe * lb + bb[c] + l] : 0);
+                        : (bmem == 6)
+                            ? t[pe * 16 + c * 4 + l]
+                            : (l < bwl ? pb[pe * lb + bb[c] + l] : 0);
                 if (bneg) bv ^= 0x80000000u;
                 cv = 0;
             } else if (kind == 2) {
@@ -262,7 +270,9 @@ extern "C" __global__ void mau_line(
                     ? mauf[pe * 16 + c * 4 + l]
                     : (cmem == 5)
                         ? aluf[pe * 16 + c * 4 + l]
-                        : (l < cwl ? pc[pe * lc + cb[c] + l] : 0);
+                        : (cmem == 6)
+                            ? t[pe * 16 + c * 4 + l]
+                            : (l < cwl ? pc[pe * lc + cb[c] + l] : 0);
                 if (cneg) cv ^= 0x80000000u;
             } else {
                 bv = one;
@@ -430,6 +440,46 @@ extern "C" __global__ void alu_line(
             flags = 0;
         } else if (kind == 5) {
             for (int i = 0; i < 4; ++i) out[i] = 0;
+            flags = 0;
+        } else if (kind == 7) {
+            unsigned r0 = av[0] + bv[0];
+            unsigned r1 = av[1] + bv[1];
+            out[0] = r0; out[1] = r1; out[2] = av[2]; out[3] = av[3];
+            flags = (((int)r0 >= 0) ? 0xc : 0) | (((int)r1 >= 0) ? 0x3 : 0);
+        } else if (kind == 8) {
+            for (int l = 0; l < 2; ++l) {
+                unsigned shift = bv[l] % 64;
+                out[l] = (shift >= 32) ? 0 : (av[l] << shift);
+            }
+            out[2] = av[2]; out[3] = av[3];
+            flags = ((out[0] == 0) ? 0xc : 0) | ((out[1] == 0) ? 0x3 : 0);
+        } else if (kind == 9) {
+            for (int l = 0; l < 2; ++l) {
+                out[l] = ((av[l] >> 31) == 0) ? bv[l] : 0x80000000u;
+            }
+            out[2] = av[2]; out[3] = av[3];
+            flags = (((av[0] >> 31) == 0) ? 0xc : 0) | (((av[1] >> 31) == 0) ? 0x3 : 0);
+        } else if (kind == 10) {
+            Fmt f = {8, 23, 18};
+            for (int l = 0; l < 2; ++l) {
+                unsigned v = av[l];
+                Val x = decode(f, v);
+                if (x.kind != 2 || x.exp >= 0) {
+                    out[l] = v;
+                    continue;
+                }
+                unsigned sh = (unsigned)(-x.exp);
+                unsigned __int128 sig = x.sig;
+                unsigned __int128 iv = (sh >= 128) ? 0 : (sig >> sh);
+                bool frac = sh >= 128 || (sig & ((((unsigned __int128)1) << sh) - 1)) != 0;
+                if (x.neg && frac) iv += 1;
+                if (iv == 0) {
+                    out[l] = x.neg ? (1u << 31) : 0;
+                } else {
+                    out[l] = (unsigned)round_pack(f, x.neg, iv, 0);
+                }
+            }
+            out[2] = av[2]; out[3] = av[3];
             flags = 0;
         } else {
             unsigned value = imm;
@@ -687,6 +737,15 @@ extern "C" __global__ void l2_line(
         int dst = (l2 * 8 + b) * 8192 + (a1 + c * 16 + k) % 8192;
         int src = l2 * 32768 + (a0 + c * 64 + 16 * (b / 2) + k) % 32768;
         l1bm[dst] = l2bm[src];
+    } else if (op == 4) {
+        if (idx >= 8 * 4 * 8 * 8) return;
+        int k = idx % 8;
+        int b = (idx / 8) % 8;
+        int c = (idx / 64) % 4;
+        int l2 = idx / (64 * 4);
+        int src = (l2 * 8 + b) * 8192 + (a0 + c * 8 + k) % 8192;
+        int dst = l2 * 32768 + (a1 + c * 64 + 8 * b + k) % 32768;
+        l2bm[dst] = l1bm[src];
     } else {
         if (idx >= 8 * 4 * 16) return;
         int k = idx % 16;
