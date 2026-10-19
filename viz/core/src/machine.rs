@@ -744,7 +744,7 @@ impl Machine {
                     }
                 }
             }
-            Operand::Bar { lm1, mask, .. } => {
+            Operand::Bar { lm1, mask, wl, .. } => {
                 let mem = if *lm1 { MemKind::Lm1 } else { MemKind::Lm0 };
                 let sel = mask.or_else(|| directive(Some(mem), false, &st));
                 if let Some(s) = sel {
@@ -753,6 +753,7 @@ impl Machine {
                     }
                 }
                 fail(true)?;
+                let value = bar_word(&bus, *wl);
                 if let Some(t) = self.tracer.borrow_mut().as_mut() {
                     t.pe(
                         pe,
@@ -760,14 +761,14 @@ impl Machine {
                         if *lm1 { "bar1" } else { "bar0" },
                         true,
                         None,
-                        &[bus[0] & 0xfff],
+                        &[value],
                     );
                 }
                 let p = &mut self.pes[pe];
                 if *lm1 {
-                    p.bar1 = bus[0] & 0xfff;
+                    p.bar1 = value;
                 } else {
-                    p.bar0 = bus[0] & 0xfff;
+                    p.bar0 = value;
                 }
             }
             Operand::Omr { entry, mask } => {
@@ -1433,6 +1434,14 @@ fn word_enabled(mflags: Option<(u8, bool)>, i: usize) -> bool {
             }
         }
     }
+}
+
+/// Value a BAR write (`$mb`, `$nb`, `$lmb`, `$lnb`) takes from the ALU output: the low 12
+/// bits of the accessed word. A word access writes `bus[0]`; a long word access writes the
+/// low word `bus[1]` (measured against the official emulator). A two long word access cannot
+/// target a BAR, because the assembler rejects it.
+fn bar_word(bus: &Bus, wl: u8) -> u32 {
+    bus[if wl == 1 { 0 } else { 1 }] & 0xfff
 }
 
 /// Merges a new word into an old one under the mask flags (long word masks are per half word).
@@ -2818,7 +2827,7 @@ fn write_pe<M: MemWrite>(
                 }
             }
         }
-        Operand::Bar { lm1, mask, .. } => {
+        Operand::Bar { lm1, mask, wl, .. } => {
             let mem = if *lm1 { MemKind::Lm1 } else { MemKind::Lm0 };
             let sel = mask.or_else(|| directive(Some(mem), false));
             if let Some(s) = sel {
@@ -2827,10 +2836,11 @@ fn write_pe<M: MemWrite>(
                 }
             }
             fail(true)?;
+            let value = bar_word(&bus, *wl);
             if *lm1 {
-                p.bar1 = bus[0] & 0xfff;
+                p.bar1 = value;
             } else {
-                p.bar0 = bus[0] & 0xfff;
+                p.bar0 = value;
             }
         }
         Operand::Omr { entry, mask } => {
@@ -2995,5 +3005,34 @@ mod lrelu_tests {
             (0x3fe0_0000_0000_0000, 0xf)
         );
         assert_eq!(relu(AluOp::Lrelud, Prec::D, 0, 0x8000_0000_0000_0000), (0x8000_0000_0000_0000, 0xf));
+    }
+}
+
+#[cfg(test)]
+mod bar_tests {
+    use super::*;
+
+    #[test]
+    fn bar_word_is_the_accessed_word() {
+        let bus = [0x0000_0002, 0x0000_0004, 0, 0];
+        // A word access uses the word itself; a long word access uses its low word.
+        assert_eq!(bar_word(&bus, 1), 2);
+        assert_eq!(bar_word(&bus, 2), 4);
+        // Only the low 12 bits are kept.
+        assert_eq!(bar_word(&[0x1234_5678, 0x9abc_def0, 0, 0], 2), 0xef0);
+    }
+
+    #[test]
+    fn long_word_passa_writes_the_low_word_to_both_bars() {
+        let src = concat!(
+            "d set $lr0n0c0b0 1 0000000200000004\n",
+            "lpassa $lr0 $lmb\n",
+            "lpassa $lr0 $lnb\n",
+        );
+        let mut sim = crate::run::Sim::new();
+        sim.run(&crate::vsm::parse(src).unwrap()).unwrap();
+        // The long word is 0x0000_0002_0000_0004, so its low word (4) reaches the registers.
+        assert_eq!(sim.m.pes[0].bar0, 4);
+        assert_eq!(sim.m.pes[0].bar1, 4);
     }
 }

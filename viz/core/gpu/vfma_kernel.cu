@@ -670,10 +670,11 @@ __device__ __forceinline__ void alu_write_dst(
     unsigned mf = masked ? mask_flags_dev(mask + pe * 16, d.mask_kind, d.mask_entry, d.mask_pattern, c) : 0xf;
     bool ll = d.mask_ll != 0;
     if (d.kind == 4) {
-        // $mb / $nb: the low 12 bits of the MSB word become the base register.
+        // $mb / $nb / $lmb / $lnb: the low 12 bits of the accessed word become the base
+        // register. A long word access uses its low word (bus[1]), not bus[0].
         if (masked && mf == 0) return;
         unsigned* bar = d.mem ? bar1 : bar0;
-        bar[pe] = bus[0] & 0xfff;
+        bar[pe] = bus[d.wl == 1 ? 0 : 1] & 0xfff;
         return;
     }
     if (d.kind == 0) {
