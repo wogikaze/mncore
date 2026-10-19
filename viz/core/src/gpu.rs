@@ -1131,9 +1131,7 @@ pub fn l1_write_line_from_expr(expr: &Expr) -> Option<L1WriteLine> {
     }
     let src_op = expr.srcs.first()?;
     let src = l1_write_source(src_op)?;
-    // A forwarding source has no word length in the CPU model; only a
-    // two-long PE memory operand makes a reduction produce two long words.
-    let two_src = matches!(src_op, Operand::Mem { wl: 4, .. });
+    let two_src = src.wl == 4;
     let mut ext = matches!(src_op, Operand::Mem { ext: true, .. });
     let mut round = false;
     let mut bits = 32u32;
