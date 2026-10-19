@@ -166,3 +166,17 @@ cargo run --release --bin gpu_vsm_alu -- 1000
 - すべての式が対応する行は 256。
 
 次は `ixor` と OMR（マスクレジスタ）への書き込み、およびマスク付き MAU 書き込み。
+
+## ALU Xor と OMR
+
+`ixor` を ALU カーネルに追加し、デスティネーションとして OMR（マスクレジスタ）を扱えるようにした。
+OMR は PE ごとに 16 エントリを VRAM に持ち、`ixor` のフラグ nibble をサイクルごとに書く。
+
+`gpu_vsm_alu` は `fpassa`、`ixor ... $omr1`、`$aluf` を使う MAU 行を混ぜて実行し、4 本のメモリと OMR を比較する。
+
+- 1,000 行で mismatch 0。
+- CPU 0.64 秒、GPU 21.4 ms。
+- ALU 式 924 個のうち 512 個（`fpassa` と `ixor`）が対応。
+- すべての式が対応する行は 512。
+
+次は OMR を使ったマスク付きの MAU 書き込み。

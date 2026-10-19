@@ -198,30 +198,64 @@ pub struct MauLine {
 
 /// Builds an `AluLine` for a PE-local f32 Passa expression.
 pub fn alu_line_from_expr(expr: &Expr) -> Option<AluLine> {
-    let Op::Alu {
-        name: crate::vsm::AluOp::Passa,
-        prec: Some(Prec::F),
-        ..
-    } = &expr.op
-    else {
-        return None;
+    let (kind, need_b) = match &expr.op {
+        Op::Alu {
+            name: crate::vsm::AluOp::Passa,
+            prec: Some(Prec::F),
+            ..
+        } => (0u8, false),
+        Op::Alu {
+            name: crate::vsm::AluOp::Xor,
+            prec: Some(Prec::I),
+            ..
+        } => (1u8, true),
+        _ => return None,
     };
-    if expr.flush.is_some() || expr.srcs.len() != 1 || expr.dsts.len() != 1 {
+    if expr.flush.is_some() || expr.srcs.len() != if need_b { 2 } else { 1 } || expr.dsts.len() != 1 {
         return None;
     }
-    let src = line_source(&expr.srcs[0])?;
-    if src.neg {
+    let a = line_source(&expr.srcs[0])?;
+    if a.neg {
         return None;
     }
-    let dst = mem_source(&expr.dsts[0], false)?;
-    Some(AluLine { src, dst })
+    let b = if need_b {
+        let b = line_source(&expr.srcs[1])?;
+        if b.neg {
+            return None;
+        }
+        b
+    } else {
+        MauSrc {
+            mem: 0,
+            wl: 1,
+            base: [0; 4],
+            neg: false,
+        }
+    };
+    let dst = match &expr.dsts[0] {
+        Operand::Mem { .. } => AluDst::Mem(mem_source(&expr.dsts[0], false)?),
+        Operand::Omr { entry, mask: None } if (1..=15).contains(entry) => AluDst::Omr(*entry),
+        Operand::Nowrite => AluDst::None,
+        _ => return None,
+    };
+    Some(AluLine { kind, a, b, dst })
 }
 
-/// A single f32 ALU Passa expression.
+/// Destination of an ALU line: a PE memory, an OMR entry, or nowhere.
+#[derive(Clone, Copy, Debug)]
+pub enum AluDst {
+    Mem(MauSrc),
+    Omr(u8),
+    None,
+}
+
+/// A single ALU line. Kind 0 is Passa and kind 1 is Xor.
 #[derive(Clone, Copy, Debug)]
 pub struct AluLine {
-    pub src: MauSrc,
-    pub dst: MauSrc,
+    pub kind: u8,
+    pub a: MauSrc,
+    pub b: MauSrc,
+    pub dst: AluDst,
 }
 
 /// LM0, LM1, GRF0 and GRF1 in device memory, in the same PE-major layout as
@@ -233,6 +267,7 @@ pub struct GpuState {
     grf1: u64,
     mauf: u64,
     aluf: u64,
+    mask: u64,
     free: CuMemFree,
 }
 
@@ -245,6 +280,7 @@ impl Drop for GpuState {
             (self.free)(self.grf1);
             (self.free)(self.mauf);
             (self.free)(self.aluf);
+            (self.free)(self.mask);
         }
     }
 }
@@ -444,9 +480,17 @@ impl Gpu {
         let lm_bytes = crate::machine::PES * crate::machine::LM_WORDS * 4;
         let grf_bytes = crate::machine::PES * crate::machine::GRF_WORDS * 4;
         let fwd_bytes = crate::machine::PES * 16 * 4;
-        let mut buffers = [0u64; 6];
-        let sizes = [lm_bytes, lm_bytes, grf_bytes, grf_bytes, fwd_bytes, fwd_bytes];
-        for i in 0..6 {
+        let mut buffers = [0u64; 7];
+        let sizes = [
+            lm_bytes,
+            lm_bytes,
+            grf_bytes,
+            grf_bytes,
+            fwd_bytes,
+            fwd_bytes,
+            fwd_bytes,
+        ];
+        for i in 0..7 {
             let code = unsafe { (self.cu_mem_alloc)(&mut buffers[i], sizes[i]) };
             if let Err(error) = self.check(code, "cuMemAlloc(state)") {
                 for buffer in &buffers[..i] {
@@ -462,6 +506,7 @@ impl Gpu {
             grf1: buffers[3],
             mauf: buffers[4],
             aluf: buffers[5],
+            mask: buffers[6],
             free: self.cu_mem_free,
         })
     }
@@ -497,7 +542,11 @@ impl Gpu {
             "upload grf1",
         )?;
         let forward = vec![0u32; crate::machine::PES * 16];
-        for (pointer, what) in [(state.mauf, "upload mauf"), (state.aluf, "upload aluf")] {
+        for (pointer, what) in [
+            (state.mauf, "upload mauf"),
+            (state.aluf, "upload aluf"),
+            (state.mask, "upload mask"),
+        ] {
             self.check(
                 unsafe {
                     (self.cu_htod)(
@@ -539,6 +588,22 @@ impl Gpu {
             unsafe { (self.cu_dtoh)(grf1.as_mut_ptr() as *mut c_void, state.grf1, grf * 4) },
             "download grf1",
         )
+    }
+
+    /// Downloads the OMR entries (16 per PE).
+    pub fn download_mask(&self, state: &GpuState) -> Result<Vec<u32>, String> {
+        let mut out = vec![0u32; crate::machine::PES * 16];
+        self.check(
+            unsafe {
+                (self.cu_dtoh)(
+                    out.as_mut_ptr() as *mut c_void,
+                    state.mask,
+                    out.len() * 4,
+                )
+            },
+            "download mask",
+        )?;
+        Ok(out)
     }
 
     /// Waits for all previously enqueued kernels.
@@ -632,7 +697,7 @@ impl Gpu {
         )
     }
 
-    /// Launches one f32 ALU Passa line for all 4,096 PEs.
+    /// Launches one ALU line for all 4,096 PEs.
     pub fn run_alu_line(&self, state: &GpuState, line: &AluLine) -> Result<(), String> {
         let mut lm0 = state.lm0;
         let mut lm1 = state.lm1;
@@ -640,12 +705,19 @@ impl Gpu {
         let mut grf1 = state.grf1;
         let mut mauf = state.mauf;
         let mut aluf = state.aluf;
-        let mut smem = line.src.mem as i32;
-        let mut s = line.src.base;
-        let mut swl = line.src.wl as i32;
-        let mut dmem = line.dst.mem as i32;
-        let mut d = line.dst.base;
-        let mut dwl = line.dst.wl as i32;
+        let mut mask = state.mask;
+        let mut kind = line.kind as i32;
+        let mut amem = line.a.mem as i32;
+        let mut a = line.a.base;
+        let mut awl = line.a.wl as i32;
+        let mut bmem = line.b.mem as i32;
+        let mut b = line.b.base;
+        let mut bwl = line.b.wl as i32;
+        let (mut dmem, mut d, mut dwl, mut omr) = match line.dst {
+            AluDst::Mem(dst) => (dst.mem as i32, dst.base, dst.wl as i32, 0i32),
+            AluDst::Omr(entry) => (0i32, [0u32; 4], 0i32, entry as i32),
+            AluDst::None => (0i32, [0u32; 4], 0i32, 0i32),
+        };
         let mut args = [
             &mut lm0 as *mut u64 as *mut c_void,
             &mut lm1 as *mut u64 as *mut c_void,
@@ -653,18 +725,27 @@ impl Gpu {
             &mut grf1 as *mut u64 as *mut c_void,
             &mut mauf as *mut u64 as *mut c_void,
             &mut aluf as *mut u64 as *mut c_void,
-            &mut smem as *mut i32 as *mut c_void,
-            &mut s[0] as *mut u32 as *mut c_void,
-            &mut s[1] as *mut u32 as *mut c_void,
-            &mut s[2] as *mut u32 as *mut c_void,
-            &mut s[3] as *mut u32 as *mut c_void,
-            &mut swl as *mut i32 as *mut c_void,
+            &mut mask as *mut u64 as *mut c_void,
+            &mut kind as *mut i32 as *mut c_void,
+            &mut amem as *mut i32 as *mut c_void,
+            &mut a[0] as *mut u32 as *mut c_void,
+            &mut a[1] as *mut u32 as *mut c_void,
+            &mut a[2] as *mut u32 as *mut c_void,
+            &mut a[3] as *mut u32 as *mut c_void,
+            &mut awl as *mut i32 as *mut c_void,
+            &mut bmem as *mut i32 as *mut c_void,
+            &mut b[0] as *mut u32 as *mut c_void,
+            &mut b[1] as *mut u32 as *mut c_void,
+            &mut b[2] as *mut u32 as *mut c_void,
+            &mut b[3] as *mut u32 as *mut c_void,
+            &mut bwl as *mut i32 as *mut c_void,
             &mut dmem as *mut i32 as *mut c_void,
             &mut d[0] as *mut u32 as *mut c_void,
             &mut d[1] as *mut u32 as *mut c_void,
             &mut d[2] as *mut u32 as *mut c_void,
             &mut d[3] as *mut u32 as *mut c_void,
             &mut dwl as *mut i32 as *mut c_void,
+            &mut omr as *mut i32 as *mut c_void,
         ];
         let grid = (crate::machine::PES as u32 + 255) / 256;
         self.check(

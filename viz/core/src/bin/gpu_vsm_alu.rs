@@ -2,9 +2,7 @@
 //!
 //! Usage: gpu_vsm_alu [lines]
 
-use mncore_sim::gpu::{
-    alu_line_from_expr, mau_line_from_expr, AluLine, Gpu, MauLine,
-};
+use mncore_sim::gpu::{alu_line_from_expr, mau_line_from_expr, Gpu};
 use mncore_sim::machine::{GRF_WORDS, LM_WORDS, PES};
 use mncore_sim::run::Sim;
 use mncore_sim::vsm::{self, Line};
@@ -19,6 +17,7 @@ fn main() {
         "fvadd $r{} $aluf $n{}",
         "fpassa $r{} $n{}",
         "fvmul $r{} $aluf $n{}",
+        "ixor $m{} $r{} $omr1",
     ];
     let mut text = String::new();
     for i in 0..lines {
@@ -89,6 +88,7 @@ fn main() {
     }
     gpu.sync().expect("sync");
     let gpu_elapsed = gpu_start.elapsed();
+    let gpu_mask = gpu.download_mask(&state).expect("download mask");
     let mut out = (
         vec![0u32; lm_len],
         vec![0u32; lm_len],
@@ -98,6 +98,18 @@ fn main() {
     gpu.download_state(&state, &mut out.0, &mut out.1, &mut out.2, &mut out.3)
         .expect("download");
     let mut mismatches = 0usize;
+    for pe in 0..PES {
+        for entry in 0..16 {
+            let cpu = sim.m.pes[pe].mask[entry] as u32;
+            let gpu = gpu_mask[pe * 16 + entry];
+            if cpu != gpu {
+                if mismatches == 0 {
+                    println!("omr first mismatch at pe {pe} entry {entry}: cpu {cpu:x} gpu {gpu:x}");
+                }
+                mismatches += 1;
+            }
+        }
+    }
     for (name, cpu, gpu, width) in [
         ("lm0", sim.m.mem.lm0.as_slice(), out.0.as_slice(), LM_WORDS),
         ("lm1", sim.m.mem.lm1.as_slice(), out.1.as_slice(), LM_WORDS),

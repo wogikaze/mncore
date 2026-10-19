@@ -281,37 +281,70 @@ extern "C" __global__ void mau_line(
     }
 }
 
-// One f32 ALU Passa line: copy a bus and publish it as aluf. Masks, T,
-// base registers and the other ALU opcodes are not part of this kernel yet.
+// One f32 ALU line: Passa (kind 0) or Xor (kind 1). A destination can be a
+// PE memory, OMR entry (omr > 0) or nowhere (dwl = 0). Masks on the write and
+// the other ALU opcodes are not part of this kernel yet.
 extern "C" __global__ void alu_line(
     unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
-    unsigned* mauf, unsigned* aluf,
-    int smem, unsigned s0, unsigned s1, unsigned s2, unsigned s3, int swl,
-    int dmem, unsigned d0, unsigned d1, unsigned d2, unsigned d3, int dwl) {
+    unsigned* mauf, unsigned* aluf, unsigned* mask,
+    int kind,
+    int amem, unsigned a0, unsigned a1, unsigned a2, unsigned a3, int awl,
+    int bmem, unsigned b0, unsigned b1, unsigned b2, unsigned b3, int bwl,
+    int dmem, unsigned d0, unsigned d1, unsigned d2, unsigned d3, int dwl,
+    int omr) {
     int pe = blockIdx.x * blockDim.x + threadIdx.x;
     if (pe >= 4096) return;
-    unsigned sb[4] = {s0, s1, s2, s3};
+    unsigned ab[4] = {a0, a1, a2, a3};
+    unsigned bb[4] = {b0, b1, b2, b3};
     unsigned db[4] = {d0, d1, d2, d3};
-    unsigned* ps = pick_mem(smem, lm0, lm1, grf0, grf1);
+    unsigned* pa = pick_mem(amem, lm0, lm1, grf0, grf1);
+    unsigned* pb = pick_mem(bmem, lm0, lm1, grf0, grf1);
     unsigned* pd = pick_mem(dmem, lm0, lm1, grf0, grf1);
-    int ls = mem_len(smem);
+    int la = mem_len(amem);
+    int lb = mem_len(bmem);
     int ld = mem_len(dmem);
     for (int c = 0; c < 4; ++c) {
-        unsigned bus[4];
+        unsigned av[4];
+        unsigned bv[4];
         for (int i = 0; i < 4; ++i) {
-            if (smem == 4) {
-                bus[i] = mauf[pe * 16 + c * 4 + i];
-            } else if (smem == 5) {
-                bus[i] = aluf[pe * 16 + c * 4 + i];
+            if (amem == 4) {
+                av[i] = mauf[pe * 16 + c * 4 + i];
+            } else if (amem == 5) {
+                av[i] = aluf[pe * 16 + c * 4 + i];
             } else {
-                bus[i] = (i < swl) ? ps[pe * ls + sb[c] + i] : 0;
+                av[i] = (i < awl) ? pa[pe * la + ab[c] + i] : 0;
+            }
+            if (bmem == 4) {
+                bv[i] = mauf[pe * 16 + c * 4 + i];
+            } else if (bmem == 5) {
+                bv[i] = aluf[pe * 16 + c * 4 + i];
+            } else {
+                bv[i] = (i < bwl) ? pb[pe * lb + bb[c] + i] : 0;
             }
         }
-        for (int i = 0; i < dwl; ++i) {
-            pd[pe * ld + db[c] + i] = bus[i];
+        unsigned out[4];
+        unsigned flags;
+        if (kind == 0) {
+            for (int i = 0; i < 4; ++i) out[i] = av[i];
+            flags = ((av[0] == 0) ? 0xc : 0) | ((av[1] == 0) ? 0x3 : 0);
+        } else {
+            out[0] = av[0] ^ bv[0];
+            out[1] = av[1] ^ bv[1];
+            out[2] = av[2];
+            out[3] = av[3];
+            flags = ((out[0] == 0) ? 0xc : 0) | ((out[1] == 0) ? 0x3 : 0);
+        }
+        if (omr > 0) {
+            unsigned old = mask[pe * 16 + omr];
+            unsigned field = 0xfu << (4 * c);
+            mask[pe * 16 + omr] = (old & ~field) | ((unsigned)flags << (4 * c));
+        } else {
+            for (int i = 0; i < dwl; ++i) {
+                pd[pe * ld + db[c] + i] = out[i];
+            }
         }
         for (int i = 0; i < 4; ++i) {
-            aluf[pe * 16 + c * 4 + i] = bus[i];
+            aluf[pe * 16 + c * 4 + i] = out[i];
         }
     }
 }
