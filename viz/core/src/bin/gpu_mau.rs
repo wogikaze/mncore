@@ -155,7 +155,7 @@ fn main() {
             b,
             c,
             ndst: 1,
-            dst: [AluDstDesc::default(); 8],
+            dst: [AluDstDesc::default(); 16],
             flush_kind: 0,
             flush_entry: 0,
             flush_pattern: 0,

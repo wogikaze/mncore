@@ -1558,15 +1558,15 @@ fn main() {
     }
 }
 
-fn writes_t(dst: [AluDstDesc; 8], ndst: u32) -> bool {
+fn writes_t(dst: [AluDstDesc; 16], ndst: u32) -> bool {
     (0..ndst as usize).any(|i| dst[i].kind == 1)
 }
 
-fn writes_omr(dst: [AluDstDesc; 8], ndst: u32) -> bool {
+fn writes_omr(dst: [AluDstDesc; 16], ndst: u32) -> bool {
     (0..ndst as usize).any(|i| dst[i].kind == 2)
 }
 
 #[allow(dead_code)]
-fn writes_mem(dst: [AluDstDesc; 8], ndst: u32) -> bool {
+fn writes_mem(dst: [AluDstDesc; 16], ndst: u32) -> bool {
     (0..ndst as usize).any(|i| dst[i].kind == 0)
 }
