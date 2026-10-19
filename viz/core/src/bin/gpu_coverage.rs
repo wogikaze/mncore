@@ -46,7 +46,7 @@ fn main() {
         let mut all_mau = true;
         let mut all_supported = true;
         for expr in exprs {
-            if matches!(expr.op, Op::Alu { .. }) {
+            if matches!(expr.op, Op::Alu { .. } | Op::Zero | Op::Imm { .. }) {
                 alu_exprs += 1;
                 if alu_line_from_expr(expr).is_some() || bfn_line_from_expr(expr).is_some() {
                     alu_supported += 1;

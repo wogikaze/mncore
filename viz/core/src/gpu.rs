@@ -273,36 +273,57 @@ pub struct MauLine {
 
 /// Builds an `AluLine` for a PE-local f32 Passa expression.
 pub fn alu_line_from_expr(expr: &Expr) -> Option<AluLine> {
-    let (kind, need_b) = match &expr.op {
+    let (kind, need_b, has_source) = match &expr.op {
+        Op::Zero => (5u8, false, false),
+        Op::Imm { .. } => (6u8, false, false),
         Op::Alu {
             name: crate::vsm::AluOp::Passa,
             prec: Some(Prec::F),
             ..
-        } => (0u8, false),
+        } => (0u8, false, true),
         Op::Alu {
             name: crate::vsm::AluOp::Xor,
             prec: Some(Prec::I),
             ..
-        } => (1u8, true),
+        } => (1u8, true, true),
         Op::Alu {
             name: crate::vsm::AluOp::Max,
             prec: Some(Prec::F),
             ..
-        } => (2u8, true),
+        } => (2u8, true, true),
         Op::Alu {
             name: crate::vsm::AluOp::Rsqrt,
             prec: Some(Prec::F),
             ..
-        } => (3u8, false),
+        } => (3u8, false, true),
+        Op::Alu {
+            name: crate::vsm::AluOp::Msr,
+            ..
+        } => (4u8, false, true),
         _ => return None,
     };
-    if expr.flush.is_some() || expr.srcs.len() != if need_b { 2 } else { 1 } || expr.dsts.len() != 1 {
+    let want_sources = if need_b { 2 } else { 1 };
+    if expr.flush.is_some()
+        || expr.srcs.len() != if has_source { want_sources } else { 0 }
+        || expr.dsts.len() != 1
+    {
         return None;
     }
-    let a = line_source(&expr.srcs[0])?;
-    if a.neg {
-        return None;
-    }
+    let dummy = MauSrc {
+        mem: 0,
+        wl: 1,
+        base: [0; 4],
+        neg: false,
+    };
+    let a = if has_source {
+        let a = line_source(&expr.srcs[0])?;
+        if a.neg {
+            return None;
+        }
+        a
+    } else {
+        dummy
+    };
     let b = if need_b {
         let b = line_source(&expr.srcs[1])?;
         if b.neg {
@@ -310,12 +331,11 @@ pub fn alu_line_from_expr(expr: &Expr) -> Option<AluLine> {
         }
         b
     } else {
-        MauSrc {
-            mem: 0,
-            wl: 1,
-            base: [0; 4],
-            neg: false,
-        }
+        dummy
+    };
+    let (imm, imm_u) = match &expr.op {
+        Op::Imm { value, u } => (*value, *u),
+        _ => (0, false),
     };
     let dst = match &expr.dsts[0] {
         Operand::Mem { .. } => AluDst::Mem(mem_source(&expr.dsts[0], false, false)?),
@@ -323,7 +343,14 @@ pub fn alu_line_from_expr(expr: &Expr) -> Option<AluLine> {
         Operand::Nowrite => AluDst::None,
         _ => return None,
     };
-    Some(AluLine { kind, a, b, dst })
+    Some(AluLine {
+        kind,
+        a,
+        b,
+        dst,
+        imm,
+        imm_u,
+    })
 }
 
 /// Destination of an ALU line: a PE memory, an OMR entry, or nowhere.
@@ -371,6 +398,8 @@ pub struct AluLine {
     pub a: MauSrc,
     pub b: MauSrc,
     pub dst: AluDst,
+    pub imm: u32,
+    pub imm_u: bool,
 }
 
 /// LM0, LM1, GRF0 and GRF1 in device memory, in the same PE-major layout as
@@ -845,6 +874,8 @@ impl Gpu {
         let mut bmem = line.b.mem as i32;
         let mut b = line.b.base;
         let mut bwl = line.b.wl as i32;
+        let mut imm = line.imm;
+        let mut imm_u = line.imm_u as i32;
         let (mut dmem, mut d, mut dwl, mut omr) = match line.dst {
             AluDst::Mem(dst) => (dst.mem as i32, dst.base, dst.wl as i32, 0i32),
             AluDst::Omr(entry) => (0i32, [0u32; 4], 0i32, entry as i32),
@@ -878,6 +909,8 @@ impl Gpu {
             &mut d[3] as *mut u32 as *mut c_void,
             &mut dwl as *mut i32 as *mut c_void,
             &mut omr as *mut i32 as *mut c_void,
+            &mut imm as *mut u32 as *mut c_void,
+            &mut imm_u as *mut i32 as *mut c_void,
         ];
         let grid = (crate::machine::PES as u32 + 255) / 256;
         self.check(

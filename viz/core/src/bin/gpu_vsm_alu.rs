@@ -32,6 +32,11 @@ fn main() {
         "frsqrt $m{}v $r{}v",
         "gbfn $lm{}v $nowrite",
         "fvadd $r{} $aluf $n{}",
+        "msr $s{}v $s{}v",
+        "msr $aluf $s{}v",
+        "zero $ln{}v",
+        "imm f\"0.5\" $r{}v",
+        "imm i\"1\" $s{}v",
     ];
     let mut text = String::new();
     for i in 0..lines {

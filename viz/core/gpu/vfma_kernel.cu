@@ -319,7 +319,7 @@ extern "C" __global__ void alu_line(
     int amem, unsigned a0, unsigned a1, unsigned a2, unsigned a3, int awl,
     int bmem, unsigned b0, unsigned b1, unsigned b2, unsigned b3, int bwl,
     int dmem, unsigned d0, unsigned d1, unsigned d2, unsigned d3, int dwl,
-    int omr) {
+    int omr, unsigned imm, int imm_u) {
     int pe = blockIdx.x * blockDim.x + threadIdx.x;
     if (pe >= 4096) return;
     unsigned ab[4] = {a0, a1, a2, a3};
@@ -390,7 +390,7 @@ extern "C" __global__ void alu_line(
             out[2] = av[2];
             out[3] = av[3];
             flags = (pick0 ? 0xc : 0) | (pick1 ? 0x3 : 0);
-        } else {
+        } else if (kind == 3) {
             const unsigned MANT5[2][16] = {
                 {13, 11, 10, 9, 8, 7, 6, 5, 4, 4, 3, 2, 2, 1, 1, 0},
                 {31, 30, 28, 26, 25, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13},
@@ -407,6 +407,37 @@ extern "C" __global__ void alu_line(
             out[2] = av[2];
             out[3] = av[3];
             flags = ((sign0 == 0) ? 0xc : 0) | ((sign1 == 0) ? 0x3 : 0);
+        } else if (kind == 4) {
+            int src_pe = (pe & ~3) | ((pe + 1) & 3);
+            unsigned sv[4];
+            for (int i = 0; i < 4; ++i) {
+                if (amem == 4) {
+                    sv[i] = mauf[src_pe * 16 + c * 4 + i];
+                } else if (amem == 5) {
+                    sv[i] = aluf[src_pe * 16 + c * 4 + i];
+                } else {
+                    sv[i] = (i < awl) ? pa[src_pe * la + ab[c] + i] : 0;
+                }
+            }
+            out[0] = sv[0];
+            out[1] = sv[1];
+            out[2] = 0;
+            out[3] = 0;
+            flags = 0;
+        } else if (kind == 5) {
+            for (int i = 0; i < 4; ++i) out[i] = 0;
+            flags = 0;
+        } else {
+            unsigned value = imm;
+            if (imm_u) {
+                out[0] = value;
+                out[1] = 0;
+                out[2] = value;
+                out[3] = 0;
+            } else {
+                for (int i = 0; i < 4; ++i) out[i] = value;
+            }
+            flags = 0;
         }
         if (omr > 0) {
             unsigned old = mask[pe * 16 + omr];
