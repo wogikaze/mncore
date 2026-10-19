@@ -205,7 +205,7 @@ extern "C" __global__ void mau_line(
     int cmem, unsigned c0, unsigned c1, unsigned c2, unsigned c3,
     int dmem, unsigned d0, unsigned d1, unsigned d2, unsigned d3) {
     int pe = blockIdx.x * blockDim.x + threadIdx.x;
-    if (pe >= 4096 || wl != 2) return;
+    if (pe >= 4096 || (wl != 1 && wl != 2)) return;
     unsigned ab[4] = {a0, a1, a2, a3};
     unsigned bb[4] = {b0, b1, b2, b3};
     unsigned cb[4] = {c0, c1, c2, c3};
@@ -222,7 +222,7 @@ extern "C" __global__ void mau_line(
     unsigned one = 0x3f800000u;
     unsigned values[4][2];
     for (int c = 0; c < 4; ++c) {
-        for (int l = 0; l < 2; ++l) {
+        for (int l = 0; l < wl; ++l) {
             unsigned av = pa[pe * la + ab[c] + l];
             unsigned bv;
             unsigned cv;
@@ -243,7 +243,7 @@ extern "C" __global__ void mau_line(
         }
     }
     for (int c = 0; c < 4; ++c) {
-        for (int l = 0; l < 2; ++l) {
+        for (int l = 0; l < wl; ++l) {
             pd[pe * ld + db[c] + l] = values[c][l];
         }
     }

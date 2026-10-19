@@ -381,8 +381,8 @@ impl Gpu {
 
     /// Launches one f32 MAU line for all 4,096 PEs and four cycles.
     pub fn run_mau_line(&self, state: &GpuState, line: &MauLine) -> Result<(), String> {
-        if line.wl != 2 {
-            return Err("mau_line currently supports wl = 2 only".into());
+        if line.wl != 1 && line.wl != 2 {
+            return Err("mau_line supports wl = 1 or 2".into());
         }
         let mut lm0 = state.lm0;
         let mut lm1 = state.lm1;

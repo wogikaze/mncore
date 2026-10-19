@@ -90,3 +90,25 @@ cargo run --release --bin gpu_mau -- 3558
 - 3,558 行で mismatch 0。
 - CPU 5.58 秒、GPU 111 ms（行あたり約 31 µs）。
 - 状態の転送は最初の 1 回だけで、行ごとの転送はない。
+
+## VSM の MAU 行
+
+[viz/core/src/bin/gpu_vsm_mau.rs](../viz/core/src/bin/gpu_vsm_mau.rs) は VSM をパースし、f32 MAU 行のオペランドから `MauLine` を組み立てる。
+CPU 側は `Sim` で同じプログラムを実行し、4 本のメモリを比較する。
+
+対応しているオペランド:
+
+- `$m`/`$n`/`$r`/`$s` の直接メモリ参照。
+- `wl = 1`（`$m0v` など）と `wl = 2`（`$lm0v` など）。
+- FMA、MUL、ADD、PASSA。
+- T 間接、base レジスタ、`j`、`neg`/`ext`/`rnd`、マスク、forwarding はまだ不可。
+
+```sh
+cd viz/core
+cargo run --release --bin gpu_vsm_mau -- 1000
+```
+
+結果:
+
+- 1,000 行で mismatch 0。
+- CPU 2.79 秒、GPU 17.4 ms。
