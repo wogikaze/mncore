@@ -22,7 +22,7 @@ fn main() {
     let mut text = String::new();
     for i in 0..lines {
         let offset = (i % 16) * 4;
-        match i % 4 {
+        match i % 5 {
             0 => text.push_str(&format!(
                 "l1bmm@{} $lln{}v $llb{}\n",
                 i % 16,
@@ -31,7 +31,8 @@ fn main() {
             )),
             1 => text.push_str(&format!("l1bmm $llb{} $llm{}v\n", offset, offset)),
             2 => text.push_str(&format!("l1bmd $lb{} $lm{}v\n", offset, offset)),
-            _ => text.push_str(&format!("l1bmp $lb{} $lm{}v\n", offset, offset)),
+            3 => text.push_str(&format!("l1bmp $lb{} $lm{}v\n", offset, offset)),
+            _ => text.push_str(&format!("l1bmd $ln{}v $lb{}\n", offset, offset)),
         }
     }
     let program = vsm::parse(&text).expect("parse");

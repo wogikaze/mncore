@@ -45,6 +45,7 @@ fn main() {
         "ilsl $r{}v $s{}v $r{}v",
         "frelu $m{}v $r{}v $n{}v",
         "ffloor $r{}v $r{}v",
+        "fftoi $r{}v $s{}v",
     ];
     let mut text = String::new();
     for i in 0..lines {

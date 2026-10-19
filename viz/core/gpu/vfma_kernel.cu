@@ -481,6 +481,39 @@ extern "C" __global__ void alu_line(
             }
             out[2] = av[2]; out[3] = av[3];
             flags = 0;
+        } else if (kind == 11) {
+            Fmt f = {8, 23, 18};
+            for (int l = 0; l < 2; ++l) {
+                Val x = decode(f, av[l]);
+                long long r;
+                if (x.kind == 0) {
+                    r = 0;
+                } else if (x.kind == 1) {
+                    r = x.neg ? (-2147483647LL - 1) : 2147483647LL;
+                } else {
+                    unsigned __int128 mag;
+                    if (x.exp >= 0) {
+                        mag = (x.exp > 70) ? (((unsigned __int128)1) << 127) : (x.sig << x.exp);
+                    } else if (-x.exp >= 127) {
+                        mag = 0;
+                    } else {
+                        mag = x.sig >> (unsigned)(-x.exp);
+                    }
+                    if (x.neg) {
+                        long long s = (mag > (unsigned __int128)2147483648ULL)
+                            ? (-2147483647LL - 1)
+                            : -(long long)(unsigned long long)mag;
+                        r = s;
+                    } else {
+                        r = (mag > (unsigned __int128)2147483647ULL)
+                            ? 2147483647LL
+                            : (long long)(unsigned long long)mag;
+                    }
+                }
+                out[l] = (unsigned)r;
+            }
+            out[2] = av[2]; out[3] = av[3];
+            flags = 0;
         } else {
             unsigned value = imm;
             if (imm_u) {
@@ -577,7 +610,7 @@ __device__ __forceinline__ void block_float_single(
 // aluf (and the destination, if any).
 extern "C" __global__ void bfn_line(
     unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
-    unsigned* mauf, unsigned* aluf,
+    unsigned* mauf, unsigned* aluf, unsigned* mreadf,
     int smem, unsigned s0, unsigned s1, unsigned s2, unsigned s3, int swl,
     int dmem, unsigned d0, unsigned d1, unsigned d2, unsigned d3, int dwl) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -598,6 +631,8 @@ extern "C" __global__ void bfn_line(
                 bus[p][i] = mauf[pe * 16 + c * 4 + i];
             } else if (smem == 5) {
                 bus[p][i] = aluf[pe * 16 + c * 4 + i];
+            } else if (smem == 8) {
+                bus[p][i] = mreadf[pe * 16 + c * 4 + i];
             } else {
                 bus[p][i] = (i < swl) ? ps[pe * ls + sb[c] + i] : 0;
             }
@@ -674,12 +709,13 @@ extern "C" __global__ void l1_read_line(
 extern "C" __global__ void l1_write_line(
     unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
     unsigned long long* l1bm,
-    int mab_sel, unsigned addr, int dwl,
+    int op, int mab_sel, int mabdiff, unsigned addr, int dwl,
     int smem, unsigned s0, unsigned s1, unsigned s2, unsigned s3, int swl) {
     int pe = blockIdx.x * blockDim.x + threadIdx.x;
     if (pe >= 4096) return;
     int mab = (pe / 4) % 16;
-    if (mab != mab_sel) return;
+    int dst_mab = (mab + mabdiff + 16) % 16;
+    if (op == 0 && mab != mab_sel) return;
     int l1b = pe / 64;
     int sub = pe % 4;
     unsigned sb[4] = {s0, s1, s2, s3};
@@ -694,9 +730,13 @@ extern "C" __global__ void l1_write_line(
         }
         unsigned long long msb = ((unsigned long long)bus[0] << 32) | bus[1];
         unsigned long long lsb = ((unsigned long long)bus[2] << 32) | bus[3];
-        l1bm[base + (addr + c * step + sub) % 8192] = msb;
-        if (dwl == 4) {
-            l1bm[base + (addr + c * step + 4 + sub) % 8192] = lsb;
+        if (op == 1) {
+            l1bm[base + (addr + c * 64 + dst_mab * 4 + sub) % 8192] = msb;
+        } else {
+            l1bm[base + (addr + c * step + sub) % 8192] = msb;
+            if (dwl == 4) {
+                l1bm[base + (addr + c * step + 4 + sub) % 8192] = lsb;
+            }
         }
     }
 }

@@ -465,3 +465,15 @@ GPU カーネルはすべて NVRTC + CUDA Driver API で実行時にコンパイ
 - すべての式が対応する PE 行は 1,864 / 2,635（約 71%）。
 
 残りは行列の D/H、`gbfn $mreadf`、`fftoi`、L1 の Gather/reduction、固定オペランド。
+
+## L1 Gather、gbfn $mreadf、fftoi
+
+- L1BM の Gather（`l1bmd $ln... $lb...`）を追加。
+- `gbfn` の `$mreadf` ソースを追加。`gmread` の後に `gbfn $mreadf $nowrite` を実行する `gpu_vsm_gbfn` で比較。
+- ALU の `fftoi` を追加。
+
+現状:
+
+- MAU 676/676、L2 493/493、ALU 982/985。
+- すべての式が対応する PE 行は 1,908 / 2,635（約 72%）。
+- 残りは行列 D/H 32、L1 reduction 16、固定オペランド 3。

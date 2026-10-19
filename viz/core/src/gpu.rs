@@ -132,6 +132,7 @@ fn line_source(op: &Operand) -> Option<MauSrc> {
         let mem = match kind {
             FwdKind::Mauf => 4,
             FwdKind::Aluf => 5,
+            FwdKind::Mreadf => 8,
             _ => return None,
         };
         return Some(MauSrc {
@@ -352,6 +353,11 @@ pub fn alu_line_from_expr(expr: &Expr) -> Option<AluLine> {
             prec: Some(Prec::F),
             ..
         } => (10u8, false, true),
+        Op::Alu {
+            name: crate::vsm::AluOp::Ftoi,
+            prec: Some(Prec::F),
+            ..
+        } => (11u8, false, true),
         _ => return None,
     };
     let want_sources = if need_b { 2 } else { 1 };
@@ -460,15 +466,19 @@ pub fn l1_read_line_from_expr(expr: &Expr) -> Option<L1ReadLine> {
 /// An L1BM write from one MAB (l1bmm@mab).
 #[derive(Clone, Copy, Debug)]
 pub struct L1WriteLine {
+    pub op: u8,
     pub mab: u8,
+    pub mabdiff: i16,
     pub addr: u32,
     pub wl: u8,
     pub src: MauSrc,
 }
 
 pub fn l1_write_line_from_expr(expr: &Expr) -> Option<L1WriteLine> {
-    let Op::L1(L1Op::Mwrite { mab }) = &expr.op else {
-        return None;
+    let (op, mab, mabdiff) = match &expr.op {
+        Op::L1(L1Op::Mwrite { mab }) => (0u8, *mab, 0i16),
+        Op::L1(L1Op::Gather { mabdiff }) => (1u8, 0u8, *mabdiff),
+        _ => return None,
     };
     let (wl, addr) = match expr.dsts.first()? {
         Operand::L1bm {
@@ -482,7 +492,9 @@ pub fn l1_write_line_from_expr(expr: &Expr) -> Option<L1WriteLine> {
     }
     let src = mem_source(expr.srcs.first()?, false, false)?;
     Some(L1WriteLine {
-        mab: *mab,
+        op,
+        mab,
+        mabdiff,
         addr,
         wl,
         src,
@@ -2107,6 +2119,7 @@ impl Gpu {
         let mut grf1 = state.grf1;
         let mut mauf = state.mauf;
         let mut aluf = state.aluf;
+        let mut mreadf = state.mreadf;
         let mut smem = line.src.mem as i32;
         let mut s = line.src.base;
         let mut swl = line.src.wl as i32;
@@ -2121,6 +2134,7 @@ impl Gpu {
             &mut grf1 as *mut u64 as *mut c_void,
             &mut mauf as *mut u64 as *mut c_void,
             &mut aluf as *mut u64 as *mut c_void,
+            &mut mreadf as *mut u64 as *mut c_void,
             &mut smem as *mut i32 as *mut c_void,
             &mut s[0] as *mut u32 as *mut c_void,
             &mut s[1] as *mut u32 as *mut c_void,
@@ -2352,7 +2366,9 @@ impl Gpu {
         let mut grf0 = state.grf0;
         let mut grf1 = state.grf1;
         let mut l1bm = state.l1bm;
+        let mut op = line.op as i32;
         let mut mab = line.mab as i32;
+        let mut mabdiff = line.mabdiff as i32;
         let mut addr = line.addr;
         let mut dwl = line.wl as i32;
         let mut smem = line.src.mem as i32;
@@ -2364,7 +2380,9 @@ impl Gpu {
             &mut grf0 as *mut u64 as *mut c_void,
             &mut grf1 as *mut u64 as *mut c_void,
             &mut l1bm as *mut u64 as *mut c_void,
+            &mut op as *mut i32 as *mut c_void,
             &mut mab as *mut i32 as *mut c_void,
+            &mut mabdiff as *mut i32 as *mut c_void,
             &mut addr as *mut u32 as *mut c_void,
             &mut dwl as *mut i32 as *mut c_void,
             &mut smem as *mut i32 as *mut c_void,
