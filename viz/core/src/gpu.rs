@@ -66,11 +66,52 @@ macro_rules! load {
     }};
 }
 
+/// One source or destination of a MAU line: memory kind (0 LM0, 1 LM1,
+/// 2 GRF0, 3 GRF1) and the already-aligned base word address per cycle.
+#[derive(Clone, Copy, Debug)]
+pub struct MauSrc {
+    pub mem: u8,
+    pub base: [u32; 4],
+}
+
+/// A PE-local f32 MAU expression, with kind 0 FMA, 1 MUL, 2 ADD, 3 PASSA.
+#[derive(Clone, Copy, Debug)]
+pub struct MauLine {
+    pub kind: u8,
+    pub wl: u8,
+    pub a: MauSrc,
+    pub b: MauSrc,
+    pub c: MauSrc,
+    pub dst: MauSrc,
+}
+
+/// LM0, LM1, GRF0 and GRF1 in device memory, in the same PE-major layout as
+/// `machine::Mem`.
+pub struct GpuState {
+    lm0: u64,
+    lm1: u64,
+    grf0: u64,
+    grf1: u64,
+    free: CuMemFree,
+}
+
+impl Drop for GpuState {
+    fn drop(&mut self) {
+        unsafe {
+            (self.free)(self.lm0);
+            (self.free)(self.lm1);
+            (self.free)(self.grf0);
+            (self.free)(self.grf1);
+        }
+    }
+}
+
 pub struct Gpu {
     _cuda: Library,
     _nvrtc: Library,
     context: CuContext,
     function: CuFunction,
+    mau_function: CuFunction,
     cu_ctx_destroy: CuCtxDestroy,
     cu_mem_alloc: CuMemAlloc,
     cu_mem_free: CuMemFree,
@@ -206,11 +247,17 @@ impl Gpu {
             unsafe { cu_get_function(&mut function, module, b"vfma_f32\0".as_ptr() as *const c_char) },
             "cuModuleGetFunction",
         )?;
+        let mut mau_function: CuFunction = std::ptr::null_mut();
+        check(
+            unsafe { cu_get_function(&mut mau_function, module, b"mau_line\0".as_ptr() as *const c_char) },
+            "cuModuleGetFunction(mau_line)",
+        )?;
         Ok(Gpu {
             _cuda: cuda,
             _nvrtc: nvrtc,
             context,
             function,
+            mau_function,
             cu_ctx_destroy,
             cu_mem_alloc,
             cu_mem_free,
@@ -240,6 +287,164 @@ impl Gpu {
         } else {
             Err(format!("{what}: {}", self.error(code)))
         }
+    }
+
+    /// Allocates the four PE memories on the device.
+    pub fn allocate_state(&self) -> Result<GpuState, String> {
+        let lm_bytes = crate::machine::PES * crate::machine::LM_WORDS * 4;
+        let grf_bytes = crate::machine::PES * crate::machine::GRF_WORDS * 4;
+        let mut buffers = [0u64; 4];
+        let sizes = [lm_bytes, lm_bytes, grf_bytes, grf_bytes];
+        for i in 0..4 {
+            let code = unsafe { (self.cu_mem_alloc)(&mut buffers[i], sizes[i]) };
+            if let Err(error) = self.check(code, "cuMemAlloc(state)") {
+                for buffer in &buffers[..i] {
+                    let _ = unsafe { (self.cu_mem_free)(*buffer) };
+                }
+                return Err(error);
+            }
+        }
+        Ok(GpuState {
+            lm0: buffers[0],
+            lm1: buffers[1],
+            grf0: buffers[2],
+            grf1: buffers[3],
+            free: self.cu_mem_free,
+        })
+    }
+
+    /// Uploads the four host memories. The slices must have the simulator's sizes.
+    pub fn upload_state(
+        &self,
+        state: &GpuState,
+        lm0: &[u32],
+        lm1: &[u32],
+        grf0: &[u32],
+        grf1: &[u32],
+    ) -> Result<(), String> {
+        let lm = crate::machine::PES * crate::machine::LM_WORDS;
+        let grf = crate::machine::PES * crate::machine::GRF_WORDS;
+        if lm0.len() != lm || lm1.len() != lm || grf0.len() != grf || grf1.len() != grf {
+            return Err("state slices have the wrong length".into());
+        }
+        self.check(
+            unsafe { (self.cu_htod)(state.lm0, lm0.as_ptr() as *const c_void, lm * 4) },
+            "upload lm0",
+        )?;
+        self.check(
+            unsafe { (self.cu_htod)(state.lm1, lm1.as_ptr() as *const c_void, lm * 4) },
+            "upload lm1",
+        )?;
+        self.check(
+            unsafe { (self.cu_htod)(state.grf0, grf0.as_ptr() as *const c_void, grf * 4) },
+            "upload grf0",
+        )?;
+        self.check(
+            unsafe { (self.cu_htod)(state.grf1, grf1.as_ptr() as *const c_void, grf * 4) },
+            "upload grf1",
+        )
+    }
+
+    /// Downloads the four device memories.
+    pub fn download_state(
+        &self,
+        state: &GpuState,
+        lm0: &mut [u32],
+        lm1: &mut [u32],
+        grf0: &mut [u32],
+        grf1: &mut [u32],
+    ) -> Result<(), String> {
+        let lm = crate::machine::PES * crate::machine::LM_WORDS;
+        let grf = crate::machine::PES * crate::machine::GRF_WORDS;
+        self.check(
+            unsafe { (self.cu_dtoh)(lm0.as_mut_ptr() as *mut c_void, state.lm0, lm * 4) },
+            "download lm0",
+        )?;
+        self.check(
+            unsafe { (self.cu_dtoh)(lm1.as_mut_ptr() as *mut c_void, state.lm1, lm * 4) },
+            "download lm1",
+        )?;
+        self.check(
+            unsafe { (self.cu_dtoh)(grf0.as_mut_ptr() as *mut c_void, state.grf0, grf * 4) },
+            "download grf0",
+        )?;
+        self.check(
+            unsafe { (self.cu_dtoh)(grf1.as_mut_ptr() as *mut c_void, state.grf1, grf * 4) },
+            "download grf1",
+        )
+    }
+
+    /// Waits for all previously enqueued kernels.
+    pub fn sync(&self) -> Result<(), String> {
+        self.check(unsafe { (self.cu_sync)() }, "cuCtxSynchronize")
+    }
+
+    /// Launches one f32 MAU line for all 4,096 PEs and four cycles.
+    pub fn run_mau_line(&self, state: &GpuState, line: &MauLine) -> Result<(), String> {
+        if line.wl != 2 {
+            return Err("mau_line currently supports wl = 2 only".into());
+        }
+        let mut lm0 = state.lm0;
+        let mut lm1 = state.lm1;
+        let mut grf0 = state.grf0;
+        let mut grf1 = state.grf1;
+        let mut kind = line.kind as i32;
+        let mut wl = line.wl as i32;
+        let mut amem = line.a.mem as i32;
+        let mut a = line.a.base;
+        let mut bmem = line.b.mem as i32;
+        let mut b = line.b.base;
+        let mut cmem = line.c.mem as i32;
+        let mut c = line.c.base;
+        let mut dmem = line.dst.mem as i32;
+        let mut d = line.dst.base;
+        let mut args = [
+            &mut lm0 as *mut u64 as *mut c_void,
+            &mut lm1 as *mut u64 as *mut c_void,
+            &mut grf0 as *mut u64 as *mut c_void,
+            &mut grf1 as *mut u64 as *mut c_void,
+            &mut kind as *mut i32 as *mut c_void,
+            &mut wl as *mut i32 as *mut c_void,
+            &mut amem as *mut i32 as *mut c_void,
+            &mut a[0] as *mut u32 as *mut c_void,
+            &mut a[1] as *mut u32 as *mut c_void,
+            &mut a[2] as *mut u32 as *mut c_void,
+            &mut a[3] as *mut u32 as *mut c_void,
+            &mut bmem as *mut i32 as *mut c_void,
+            &mut b[0] as *mut u32 as *mut c_void,
+            &mut b[1] as *mut u32 as *mut c_void,
+            &mut b[2] as *mut u32 as *mut c_void,
+            &mut b[3] as *mut u32 as *mut c_void,
+            &mut cmem as *mut i32 as *mut c_void,
+            &mut c[0] as *mut u32 as *mut c_void,
+            &mut c[1] as *mut u32 as *mut c_void,
+            &mut c[2] as *mut u32 as *mut c_void,
+            &mut c[3] as *mut u32 as *mut c_void,
+            &mut dmem as *mut i32 as *mut c_void,
+            &mut d[0] as *mut u32 as *mut c_void,
+            &mut d[1] as *mut u32 as *mut c_void,
+            &mut d[2] as *mut u32 as *mut c_void,
+            &mut d[3] as *mut u32 as *mut c_void,
+        ];
+        let grid = ((crate::machine::PES * 4) as u32 + 255) / 256;
+        self.check(
+            unsafe {
+                (self.cu_launch)(
+                    self.mau_function,
+                    grid,
+                    1,
+                    1,
+                    256,
+                    1,
+                    1,
+                    0,
+                    std::ptr::null_mut(),
+                    args.as_mut_ptr(),
+                    std::ptr::null_mut(),
+                )
+            },
+            "cuLaunchKernel(mau_line)",
+        )
     }
 
     /// Runs the f32 vfma kernel over three equal-length input slices.

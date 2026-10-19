@@ -64,3 +64,29 @@ cargo run --release --bin gpu_vfma -- 1000000
 この計測は毎回 4 本のバッファを確保し、入力と出力を PCIe で往復させる。
 実際のバックエンドでは状態を VRAM に置いたままにするので、この転送は毎行には入らない。
 転送を含めた数値は、状態を毎回ホストと往復させてはいけないことの確認でもある。
+
+## MAU 行の実行
+
+`GpuState` は LM0/LM1/GRF0/GRF1 の 144 MB を VRAM に確保し、初期状態だけ転送する。
+`mau_line` カーネルは 1 スレッド 1 PE で、4 サイクル分をすべて読んでから書く。
+1 サイクルずつ読み書きすると、同じ行の別サイクルが書いた領域を別サイクルが読む場合に CPU と順序が変わるため。
+
+対応している範囲:
+
+- f32 の FMA、MUL、ADD、PASSA。
+- `wl = 2`（2 レーン）。
+- LM0/LM1/GRF0/GRF1 の直接アドレス。
+- マスク、forwarding、T 間接、base レジスタ、neg/ext/rnd はまだ未対応。
+
+[viz/core/src/bin/gpu_mau.rs](../viz/core/src/bin/gpu_mau.rs) は同じランダム行を CPU と GPU で実行し、4 本のメモリ全体を比較する。
+
+```sh
+cd viz/core
+cargo run --release --bin gpu_mau -- 3558
+```
+
+結果:
+
+- 3,558 行で mismatch 0。
+- CPU 5.58 秒、GPU 111 ms（行あたり約 31 µs）。
+- 状態の転送は最初の 1 回だけで、行ごとの転送はない。

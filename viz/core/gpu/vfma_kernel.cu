@@ -181,3 +181,70 @@ extern "C" __global__ void vfma_f32(
         out[i] = (unsigned)vfma_bits(f, f, a[i], b[i], c[i]);
     }
 }
+
+__device__ __forceinline__ unsigned* pick_mem(
+    int which, unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1) {
+    if (which == 0) return lm0;
+    if (which == 1) return lm1;
+    if (which == 2) return grf0;
+    return grf1;
+}
+
+__device__ __forceinline__ int mem_len(int which) {
+    return which < 2 ? 4096 : 512;
+}
+
+// One f32 MAU line. Each thread handles one PE, reads all four cycles
+// before writing, and processes two lanes (wl = 2). Masks, forwarding and
+// the neg/ext/rnd options are not part of this kernel yet.
+extern "C" __global__ void mau_line(
+    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
+    int kind, int wl,
+    int amem, unsigned a0, unsigned a1, unsigned a2, unsigned a3,
+    int bmem, unsigned b0, unsigned b1, unsigned b2, unsigned b3,
+    int cmem, unsigned c0, unsigned c1, unsigned c2, unsigned c3,
+    int dmem, unsigned d0, unsigned d1, unsigned d2, unsigned d3) {
+    int pe = blockIdx.x * blockDim.x + threadIdx.x;
+    if (pe >= 4096 || wl != 2) return;
+    unsigned ab[4] = {a0, a1, a2, a3};
+    unsigned bb[4] = {b0, b1, b2, b3};
+    unsigned cb[4] = {c0, c1, c2, c3};
+    unsigned db[4] = {d0, d1, d2, d3};
+    unsigned* pa = pick_mem(amem, lm0, lm1, grf0, grf1);
+    unsigned* pb = pick_mem(bmem, lm0, lm1, grf0, grf1);
+    unsigned* pc = pick_mem(cmem, lm0, lm1, grf0, grf1);
+    unsigned* pd = pick_mem(dmem, lm0, lm1, grf0, grf1);
+    int la = mem_len(amem);
+    int lb = mem_len(bmem);
+    int lc = mem_len(cmem);
+    int ld = mem_len(dmem);
+    Fmt f = {8, 23, 18};
+    unsigned one = 0x3f800000u;
+    unsigned values[4][2];
+    for (int c = 0; c < 4; ++c) {
+        for (int l = 0; l < 2; ++l) {
+            unsigned av = pa[pe * la + ab[c] + l];
+            unsigned bv;
+            unsigned cv;
+            if (kind == 0) {
+                bv = pb[pe * lb + bb[c] + l];
+                cv = pc[pe * lc + cb[c] + l];
+            } else if (kind == 1) {
+                bv = pb[pe * lb + bb[c] + l];
+                cv = 0;
+            } else if (kind == 2) {
+                bv = one;
+                cv = pc[pe * lc + cb[c] + l];
+            } else {
+                bv = one;
+                cv = 0;
+            }
+            values[c][l] = (unsigned)vfma_bits(f, f, av, bv, cv);
+        }
+    }
+    for (int c = 0; c < 4; ++c) {
+        for (int l = 0; l < 2; ++l) {
+            pd[pe * ld + db[c] + l] = values[c][l];
+        }
+    }
+}
