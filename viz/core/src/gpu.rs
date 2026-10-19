@@ -9,7 +9,7 @@ use std::path::Path;
 
 use libloading::Library;
 
-use crate::blockop::L1Op;
+use crate::blockop::{L1Op, L2Op};
 use crate::machine::MaskState;
 use crate::vsm::{Expr, FwdKind, MauKind, MaskSel, MaskSource, MemKind, Op, Operand, Prec};
 
@@ -446,6 +446,36 @@ pub fn l1_write_line_from_expr(expr: &Expr) -> Option<L1WriteLine> {
     })
 }
 
+/// An L2BM transfer: op 0 Distrib (L2 to L1), 1 Bcast (L2 to L1), 2 FromL1b (L1 to L2).
+#[derive(Clone, Copy, Debug)]
+pub struct L2Line {
+    pub op: u8,
+    pub a0: u32,
+    pub a1: u32,
+    pub l1b: u8,
+}
+
+pub fn l2_line_from_expr(expr: &Expr) -> Option<L2Line> {
+    let Op::L2(op) = &expr.op else {
+        return None;
+    };
+    let addr_of = |op: &Operand| -> Option<u32> {
+        match op {
+            Operand::L2bm { addr, .. } => Some(*addr),
+            Operand::L1bm { addr: Some(a), .. } => Some(*a),
+            _ => None,
+        }
+    };
+    let a0 = addr_of(expr.srcs.first()?)?;
+    let a1 = addr_of(expr.dsts.first()?)?;
+    match op {
+        L2Op::Distrib { set } if set.mask == 0xff => Some(L2Line { op: 0, a0, a1, l1b: 0 }),
+        L2Op::Bcast { set } if set.mask == 0xff => Some(L2Line { op: 1, a0, a1, l1b: 0 }),
+        L2Op::FromL1b { l1b } => Some(L2Line { op: 2, a0, a1, l1b: *l1b }),
+        _ => None,
+    }
+}
+
 /// A gbfn (block-float) line.
 #[derive(Clone, Copy, Debug)]
 pub struct BfnLine {
@@ -499,6 +529,7 @@ pub struct GpuState {
     mask: u64,
     t: u64,
     l1bm: u64,
+    l2bm: u64,
     free: CuMemFree,
 }
 
@@ -514,6 +545,7 @@ impl Drop for GpuState {
             (self.free)(self.mask);
             (self.free)(self.t);
             (self.free)(self.l1bm);
+            (self.free)(self.l2bm);
         }
     }
 }
@@ -528,6 +560,7 @@ pub struct Gpu {
     bfn_function: CuFunction,
     l1_function: CuFunction,
     l1_write_function: CuFunction,
+    l2_function: CuFunction,
     cu_ctx_destroy: CuCtxDestroy,
     cu_mem_alloc: CuMemAlloc,
     cu_mem_free: CuMemFree,
@@ -688,6 +721,11 @@ impl Gpu {
             unsafe { cu_get_function(&mut l1_write_function, module, b"l1_write_line\0".as_ptr() as *const c_char) },
             "cuModuleGetFunction(l1_write_line)",
         )?;
+        let mut l2_function: CuFunction = std::ptr::null_mut();
+        check(
+            unsafe { cu_get_function(&mut l2_function, module, b"l2_line\0".as_ptr() as *const c_char) },
+            "cuModuleGetFunction(l2_line)",
+        )?;
         Ok(Gpu {
             _cuda: cuda,
             _nvrtc: nvrtc,
@@ -698,6 +736,7 @@ impl Gpu {
             bfn_function,
             l1_function,
             l1_write_function,
+            l2_function,
             cu_ctx_destroy,
             cu_mem_alloc,
             cu_mem_free,
@@ -735,7 +774,8 @@ impl Gpu {
         let grf_bytes = crate::machine::PES * crate::machine::GRF_WORDS * 4;
         let fwd_bytes = crate::machine::PES * 16 * 4;
         let l1bm_bytes = crate::blocks::L1BS * crate::blocks::L1BM_LONGS * 8;
-        let mut buffers = [0u64; 9];
+        let l2bm_bytes = crate::blocks::L2BS * crate::blocks::L2BM_LONGS * 8;
+        let mut buffers = [0u64; 10];
         let sizes = [
             lm_bytes,
             lm_bytes,
@@ -746,8 +786,9 @@ impl Gpu {
             fwd_bytes,
             fwd_bytes,
             l1bm_bytes,
+            l2bm_bytes,
         ];
-        for i in 0..9 {
+        for i in 0..10 {
             let code = unsafe { (self.cu_mem_alloc)(&mut buffers[i], sizes[i]) };
             if let Err(error) = self.check(code, "cuMemAlloc(state)") {
                 for buffer in &buffers[..i] {
@@ -766,6 +807,7 @@ impl Gpu {
             mask: buffers[6],
             t: buffers[7],
             l1bm: buffers[8],
+            l2bm: buffers[9],
             free: self.cu_mem_free,
         })
     }
@@ -881,6 +923,41 @@ impl Gpu {
                 )
             },
             "download l1bm",
+        )?;
+        Ok(out)
+    }
+
+    /// Uploads the L2BM long words.
+    pub fn upload_l2bm(&self, state: &GpuState, words: &[u64]) -> Result<(), String> {
+        let count = crate::blocks::L2BS * crate::blocks::L2BM_LONGS;
+        if words.len() != count {
+            return Err("L2BM slice has the wrong length".into());
+        }
+        self.check(
+            unsafe {
+                (self.cu_htod)(
+                    state.l2bm,
+                    words.as_ptr() as *const c_void,
+                    count * 8,
+                )
+            },
+            "upload l2bm",
+        )
+    }
+
+    /// Downloads the L2BM long words.
+    pub fn download_l2bm(&self, state: &GpuState) -> Result<Vec<u64>, String> {
+        let count = crate::blocks::L2BS * crate::blocks::L2BM_LONGS;
+        let mut out = vec![0u64; count];
+        self.check(
+            unsafe {
+                (self.cu_dtoh)(
+                    out.as_mut_ptr() as *mut c_void,
+                    state.l2bm,
+                    count * 8,
+                )
+            },
+            "download l2bm",
         )?;
         Ok(out)
     }
@@ -1168,6 +1245,42 @@ impl Gpu {
                 )
             },
             "cuLaunchKernel(bfn_line)",
+        )
+    }
+
+    /// Launches one L2BM transfer.
+    pub fn run_l2_line(&self, state: &GpuState, line: &L2Line) -> Result<(), String> {
+        let mut l1bm = state.l1bm;
+        let mut l2bm = state.l2bm;
+        let mut op = line.op as i32;
+        let mut a0 = line.a0;
+        let mut a1 = line.a1;
+        let mut l1b = line.l1b as i32;
+        let mut args = [
+            &mut l1bm as *mut u64 as *mut c_void,
+            &mut l2bm as *mut u64 as *mut c_void,
+            &mut op as *mut i32 as *mut c_void,
+            &mut a0 as *mut u32 as *mut c_void,
+            &mut a1 as *mut u32 as *mut c_void,
+            &mut l1b as *mut i32 as *mut c_void,
+        ];
+        self.check(
+            unsafe {
+                (self.cu_launch)(
+                    self.l2_function,
+                    64,
+                    1,
+                    1,
+                    256,
+                    1,
+                    1,
+                    0,
+                    std::ptr::null_mut(),
+                    args.as_mut_ptr(),
+                    std::ptr::null_mut(),
+                )
+            },
+            "cuLaunchKernel(l2_line)",
         )
     }
 

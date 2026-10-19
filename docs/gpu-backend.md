@@ -275,3 +275,21 @@ L1BM へ書く。`l1bmp` の Pbcast 読み出しも追加した。
 - すべての式が対応する行は 1,149。
 
 L2BM、行列、MV、および L1BM の turnaround レジスタはまだ未対応。
+
+## L2BM の転送
+
+L2BM を 8 L2B × 32,768 ロングワード（8 MB）で VRAM に持つ。
+次の 3 種類をカーネル化した。
+
+- `l2bmd` の Distrib（L2BM → L1BM）
+- `l2bmb` の Bcast（L2BM → L1BM）
+- `l2bm@l1b` の FromL1b（L1BM → L2BM）
+
+`gpu_vsm_l2` は 3 種類を混ぜ、L1BM と L2BM の両方を比較する。
+
+- 500 行で mismatch 0。
+- CPU 11.7 ms、GPU 3.0 ms（データ移動が中心なので差は小さい）。
+- L2 式 493 個のうち 377 個が対応。
+- すべての式が対応する行は 1,526（PE 行 2,635 中、約 58%）。
+
+L2BM の reduction、内部マルチキャスト、行列、MV はまだ未対応。

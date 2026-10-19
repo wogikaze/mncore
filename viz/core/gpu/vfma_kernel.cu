@@ -650,3 +650,38 @@ extern "C" __global__ void l1_write_line(
         }
     }
 }
+
+// L2BM transfers. op 0: Distrib L2->L1BM; op 1: Bcast L2->L1BM;
+// op 2: FromL1b L1BM->L2BM.
+extern "C" __global__ void l2_line(
+    unsigned long long* l1bm, unsigned long long* l2bm,
+    int op, unsigned a0, unsigned a1, int l1b) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (op == 0) {
+        if (idx >= 8 * 4 * 8 * 8) return;
+        int k = idx % 8;
+        int b = (idx / 8) % 8;
+        int c = (idx / 64) % 4;
+        int l2 = idx / (64 * 4);
+        int dst = (l2 * 8 + b) * 8192 + (a1 + c * 8 + k) % 8192;
+        int src = l2 * 32768 + (a0 + c * 64 + 8 * b + k) % 32768;
+        l1bm[dst] = l2bm[src];
+    } else if (op == 1) {
+        if (idx >= 8 * 4 * 8 * 16) return;
+        int k = idx % 16;
+        int b = (idx / 16) % 8;
+        int c = (idx / 128) % 4;
+        int l2 = idx / (128 * 4);
+        int dst = (l2 * 8 + b) * 8192 + (a1 + c * 16 + k) % 8192;
+        int src = l2 * 32768 + (a0 + c * 16 + k) % 32768;
+        l1bm[dst] = l2bm[src];
+    } else {
+        if (idx >= 8 * 4 * 16) return;
+        int k = idx % 16;
+        int c = (idx / 16) % 4;
+        int l2 = idx / (16 * 4);
+        int src = (l2 * 8 + l1b) * 8192 + (a0 + c * 16 + k) % 8192;
+        int dst = l2 * 32768 + (a1 + c * 16 + k) % 32768;
+        l2bm[dst] = l1bm[src];
+    }
+}

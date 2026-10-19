@@ -4,7 +4,7 @@
 
 use mncore_sim::gpu::{
     alu_line_from_expr, bfn_line_from_expr, l1_read_line_from_expr, l1_write_line_from_expr,
-    mau_line_from_expr,
+    l2_line_from_expr, mau_line_from_expr,
 };
 use mncore_sim::machine::MaskState;
 use mncore_sim::vsm::{self, Line, Op};
@@ -23,6 +23,8 @@ fn main() {
     let mut alu_supported = 0usize;
     let mut l1_exprs = 0usize;
     let mut l1_supported = 0usize;
+    let mut l2_exprs = 0usize;
+    let mut l2_supported = 0usize;
     let mut single_mau_supported = 0usize;
     let mut supported_lines = 0usize;
     let mut t_indirect = 0usize;
@@ -51,7 +53,14 @@ fn main() {
         let mut all_mau = true;
         let mut all_supported = true;
         for expr in exprs {
-            if let Op::L1(_) = expr.op {
+            if let Op::L2(_) = expr.op {
+                l2_exprs += 1;
+                if l2_line_from_expr(expr).is_some() {
+                    l2_supported += 1;
+                } else {
+                    all_supported = false;
+                }
+            } else if let Op::L1(_) = expr.op {
                 l1_exprs += 1;
                 if l1_read_line_from_expr(expr).is_some() || l1_write_line_from_expr(expr).is_some() {
                     l1_supported += 1;
@@ -132,6 +141,7 @@ fn main() {
     println!("MAU expressions: {mau_exprs}, supported: {mau_supported}");
     println!("ALU expressions: {alu_exprs}, supported (Passa/Xor/Max/Rsqrt/Bfn): {alu_supported}");
     println!("L1 expressions: {l1_exprs}, supported reads/writes: {l1_supported}");
+    println!("L2 expressions: {l2_exprs}, supported transfers: {l2_supported}");
     println!("lines with every expression supported: {supported_lines}");
     println!("lines consisting only of supported MAU expressions: {single_mau_supported}");
     println!(
