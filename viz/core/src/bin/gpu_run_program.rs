@@ -292,6 +292,12 @@ fn main() {
             eprintln!("cpu mauf pe{pe}: {:08x?}", &sim.m.pes[pe].mauf);
         }
     }
+    if std::env::var("DUMP_LBI").is_ok() {
+        let lg = gpu.download_l1bi(&state).expect("lbi");
+        for o in 0..32 {
+            eprintln!("lbi[{o}] cpu {:016x} gpu {:016x}", sim.m.blocks.lbi[63][3][o], lg[(63 * 4 + 3) * 64 + o]);
+        }
+    }
     let mut out = (
         vec![0u32; PES * LM_WORDS],
         vec![0u32; PES * LM_WORDS],
@@ -431,7 +437,7 @@ fn main() {
                     break;
                 }
                 if sim.m.pes[pe].lbf[c][w] != lbf[i] {
-                    println!("lbf first mismatch pe {pe} cycle {c} word {w}");
+                    println!("lbf first mismatch pe {pe} cycle {c} word {w}: cpu {:08x} gpu {:08x}", sim.m.pes[pe].lbf[c][w], lbf[i]);
                     bad += 1;
                     break;
                 }
