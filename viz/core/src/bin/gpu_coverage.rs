@@ -141,6 +141,10 @@ fn main() {
                 } else {
                     all_supported = false;
                 }
+            } else if matches!(expr.op, Op::Mau { matrix: false, .. }) {
+                if mau_line_from_expr(expr, mask_state).is_none() {
+                    all_supported = false;
+                }
             } else {
                 all_supported = false;
             }

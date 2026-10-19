@@ -18,12 +18,20 @@ fn main() {
     let program = vsm::parse(&source).expect("parse");
     let mut mask = MaskState::default();
     let mut by_op: BTreeMap<String, (usize, Vec<String>)> = BTreeMap::new();
+    let mut pe_lines = 0usize;
+    let mut unsupported_lines = 0usize;
+    let mut empty_lines = 0usize;
     for (_, line) in &program {
+        let mut any_bad = false;
         match line {
             Line::MaskDirective { wl, targets, entry } => {
                 mask = MaskState { wl: *wl, targets: *targets, entry: *entry };
             }
             Line::Pe(exprs) => {
+                pe_lines += 1;
+                if exprs.is_empty() {
+                    empty_lines += 1;
+                }
                 for expr in exprs {
                     let ok = alu_line_from_expr(expr).is_some()
                         || bfn_line_from_expr(expr).is_some()
@@ -36,6 +44,7 @@ fn main() {
                         || mat_write_line_from_expr(expr).is_some()
                         || mau_line_from_expr(expr, mask).is_some();
                     if !ok {
+                        any_bad = true;
                         let opcode = expr.text.split_whitespace().next().unwrap_or("?").to_string();
                         let entry = by_op.entry(opcode).or_default();
                         entry.0 += 1;
@@ -47,7 +56,11 @@ fn main() {
             }
             _ => {}
         }
+        if any_bad {
+            unsupported_lines += 1;
+        }
     }
+    println!("PE lines: {pe_lines}, unsupported lines: {unsupported_lines}, empty: {empty_lines}");
     for (op, (count, samples)) in by_op {
         println!("{op}: {count}");
         for sample in samples {
