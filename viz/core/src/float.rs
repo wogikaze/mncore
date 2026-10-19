@@ -199,6 +199,10 @@ fn add_exact(a: Val, b: Val) -> Val {
 /// multiplication. Bits of c below the grid are truncated and, if any of them is set, the grid
 /// LSB is set instead (sticky jamming). If the leading bit of c lies two or more places below
 /// the grid LSB, c is ignored.
+///
+/// Only the single and double multipliers drop partial products and therefore have such a grid.
+/// Half multiplies exactly, and the emulator keeps the whole single-precision addend there, so
+/// `vfma` does not call this for `HALF`.
 fn align_c(c: Val, grid: i32) -> Val {
     let Val::Fin { neg, sig, exp } = c else { return c };
     if exp >= grid {
@@ -220,11 +224,16 @@ fn align_c(c: Val, grid: i32) -> Val {
 /// format the result is rounded to (which may be lower when output rounding is requested).
 pub fn vfma(in_fmt: Fmt, out_fmt: Fmt, a: Val, b: Val, c: Val) -> u64 {
     let mut c = c;
-    if let (Val::Fin { exp: ea, .. }, Val::Fin { exp: eb, .. }) = (a, b) {
+    // Half keeps the whole product: it drops no partial products (SDM 4.3 only truncates the
+    // single and double multipliers), so the adder also keeps every bit of the single-precision
+    // addend. Measured with the emulator: hvadd/hvfma return the correctly rounded exact sum.
+    if let (Some(full), Val::Fin { exp: ea, .. }, Val::Fin { exp: eb, .. }) =
+        (in_fmt.mul_full_bits, a, b)
+    {
         // Unbiased exponents are exp + man_bits. The smallest kept partial product has weight
         // 2^(ea + eb - full - man_bits).
         let m = in_fmt.man_bits as i32;
-        let full = in_fmt.mul_full_bits.unwrap_or(in_fmt.man_bits) as i32;
+        let full = full as i32;
         c = align_c(c, (ea + m) + (eb + m) - full - m);
     }
     encode(out_fmt, add_exact(mul_exact(in_fmt, a, b), c))
@@ -455,6 +464,22 @@ mod tests {
     fn half_one_is_3e00() {
         let one = decode(HALF, 0x3e00);
         assert_eq!(vfma(HALF, HALF, one, one, Val::Zero { neg: false }), 0x3e00);
+    }
+
+    #[test]
+    fn half_fma_keeps_the_full_single_precision_addend() {
+        // hvfma(8, 8, c) is the exact sum rounded once to single. Half drops no partial
+        // products, so c is not aligned to the product grid (measured with the emulator).
+        let eight = decode(HALF, 0x4400);
+        // 64 + 2^-18 is a tie, and 64 has an even mantissa.
+        assert_eq!(vfma(HALF, SINGLE, eight, eight, decode(SINGLE, 0x3680_0000)), 0x4280_0000);
+        // 64 + 2^-18 + 2^-40 is above the tie and rounds up.
+        assert_eq!(vfma(HALF, SINGLE, eight, eight, decode(SINGLE, 0x3680_0001)), 0x4280_0001);
+        // 64 + 2^-18 - 2^-41 is below the tie and must still round down, without sticky jamming.
+        assert_eq!(vfma(HALF, SINGLE, eight, eight, decode(SINGLE, 0x367f_ffff)), 0x4280_0000);
+        // hvadd(8, x) = 8 + x, not x quantized to the product's LSB.
+        let one = decode(HALF, 0x3e00);
+        assert_eq!(vfma(HALF, SINGLE, eight, one, decode(SINGLE, 0x3ebf_c3b9)), 0x4105_fe1e);
     }
 
     #[test]
