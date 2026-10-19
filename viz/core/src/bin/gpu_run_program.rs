@@ -278,6 +278,7 @@ fn main() {
     let aluf = gpu.download_aluf(&state).expect("aluf");
     let mauf = gpu.download_mauf(&state).expect("mauf");
     let mreadf = gpu.download_mreadf(&state).expect("mreadf");
+    let lbf = gpu.download_lbf(&state).expect("lbf");
     for pe in 0..PES {
         for c in 0..4 {
             for w in 0..4 {
@@ -294,6 +295,11 @@ fn main() {
                 }
                 if sim.m.pes[pe].mreadf[c][w] != mreadf[i] {
                     println!("mreadf first mismatch pe {pe} cycle {c} word {w}");
+                    bad += 1;
+                    break;
+                }
+                if sim.m.pes[pe].lbf[c][w] != lbf[i] {
+                    println!("lbf first mismatch pe {pe} cycle {c} word {w}");
                     bad += 1;
                     break;
                 }

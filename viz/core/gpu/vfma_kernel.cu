@@ -369,7 +369,7 @@ __device__ __forceinline__ void round_bus_dev(const unsigned in[4], unsigned out
 __device__ __forceinline__ void alu_read_src(
     const AluSrc& s, int pe, int c,
     unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
-    unsigned* mauf, unsigned* aluf, unsigned* t, unsigned* mreadf,
+    unsigned* mauf, unsigned* aluf, unsigned* t, unsigned* mreadf, unsigned* lbf,
     const unsigned* bar0, const unsigned* bar1, int bits, unsigned out[4]) {
     for (int i = 0; i < 4; ++i) out[i] = 0;
     if (s.fixed != 0) {
@@ -392,6 +392,8 @@ __device__ __forceinline__ void alu_read_src(
         for (int i = 0; i < 4; ++i) out[i] = t[pe * 16 + c * 4 + i];
     } else if (s.mem == 8) {
         for (int i = 0; i < 4; ++i) out[i] = mreadf[pe * 16 + c * 4 + i];
+    } else if (s.mem == 12) {
+        for (int i = 0; i < 4; ++i) out[i] = lbf[pe * 16 + c * 4 + i];
     }
     if (s.rnd) {
         unsigned r[4];
@@ -764,7 +766,7 @@ __device__ __forceinline__ void mau_unpack(
 __device__ __forceinline__ void mau_read_bus(
     const AluSrc& s, int pe, int c,
     unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
-    unsigned* mauf, unsigned* aluf, unsigned* t, unsigned* mreadf,
+    unsigned* mauf, unsigned* aluf, unsigned* t, unsigned* mreadf, unsigned* lbf,
     const unsigned* bar0, const unsigned* bar1, unsigned out[4]) {
     for (int i = 0; i < 4; ++i) out[i] = 0;
     if (s.mem < 4) {
@@ -784,6 +786,8 @@ __device__ __forceinline__ void mau_read_bus(
         for (int i = 0; i < 4; ++i) out[i] = t[pe * 16 + c * 4 + i];
     } else if (s.mem == 8) {
         for (int i = 0; i < 4; ++i) out[i] = mreadf[pe * 16 + c * 4 + i];
+    } else if (s.mem == 12) {
+        for (int i = 0; i < 4; ++i) out[i] = lbf[pe * 16 + c * 4 + i];
     }
 }
 
@@ -792,10 +796,10 @@ __device__ __forceinline__ void mau_read_bus(
 __device__ __forceinline__ void mau_read_vals(
     const AluSrc& s, Fmt f, int lanes, int pe, int c,
     unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
-    unsigned* mauf, unsigned* aluf, unsigned* t, unsigned* mreadf,
+    unsigned* mauf, unsigned* aluf, unsigned* t, unsigned* mreadf, unsigned* lbf,
     const unsigned* bar0, const unsigned* bar1, Val out[4]) {
     unsigned bus[4];
-    mau_read_bus(s, pe, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf,
+    mau_read_bus(s, pe, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, lbf,
                  bar0, bar1, bus);
     Fmt raw = f;
     if (s.ext) {
@@ -847,7 +851,7 @@ __device__ __forceinline__ unsigned mau_flags_dev(
 extern "C" __global__ void mau_line(
     unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
     unsigned* mauf, unsigned* aluf, unsigned* mask, unsigned* t,
-    unsigned* mreadf, unsigned* bar0, unsigned* bar1, int update_forward,
+    unsigned* mreadf, unsigned* lbf, unsigned* bar0, unsigned* bar1, int update_forward,
     MauLineDesc d) {
     int pe = blockIdx.x * blockDim.x + threadIdx.x;
     if (pe >= 4096) return;
@@ -866,12 +870,12 @@ extern "C" __global__ void mau_line(
     bool need_b = d.kind == 0 || d.kind == 1;
     bool need_c = d.kind == 0 || d.kind == 2;
     for (int c = 0; c < 4; ++c) {
-        mau_read_vals(d.a, fa, lanes, pe, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, bar0, bar1, av[c]);
+        mau_read_vals(d.a, fa, lanes, pe, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, lbf, bar0, bar1, av[c]);
         if (need_b) {
-            mau_read_vals(d.b, fa, lanes, pe, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, bar0, bar1, bv[c]);
+            mau_read_vals(d.b, fa, lanes, pe, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, lbf, bar0, bar1, bv[c]);
         }
         if (need_c) {
-            mau_read_vals(d.c, fc, lanes, pe, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, bar0, bar1, cv[c]);
+            mau_read_vals(d.c, fc, lanes, pe, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, lbf, bar0, bar1, cv[c]);
         }
     }
     Val one = decode(fa, (unsigned long long)((1LL << (fa.exp_bits - 1)) - 1) << fa.man_bits);
@@ -929,7 +933,7 @@ extern "C" __global__ void mau_line(
 extern "C" __global__ void alu_line(
     unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
     unsigned* mauf, unsigned* aluf, unsigned* mask, unsigned* t,
-    unsigned* mreadf, unsigned* bar0, unsigned* bar1, int update_forward,
+    unsigned* mreadf, unsigned* lbf, unsigned* bar0, unsigned* bar1, int update_forward,
     AluDesc d) {
     int mab = blockIdx.x * blockDim.x + threadIdx.x;
     if (mab >= 1024) return;
@@ -948,9 +952,9 @@ extern "C" __global__ void alu_line(
         if (d.op == AOP_MSL) ape = mab * 4 + ((p + 3) & 3);
         if (d.op == AOP_MSR) ape = mab * 4 + ((p + 1) & 3);
         for (int c = 0; c < 4; ++c) {
-            alu_read_src(d.a, ape, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, bar0, bar1, bits, abus[p][c]);
+            alu_read_src(d.a, ape, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, lbf, bar0, bar1, bits, abus[p][c]);
             if (two) {
-                alu_read_src(d.b, pe, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, bar0, bar1, bits, bbus[p][c]);
+                alu_read_src(d.b, pe, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, lbf, bar0, bar1, bits, bbus[p][c]);
             }
         }
     }
@@ -1156,7 +1160,7 @@ __device__ __forceinline__ void bfn_put_half(unsigned bus[4], int k, unsigned h)
 extern "C" __global__ void bfn_line(
     unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
     unsigned* mauf, unsigned* aluf, unsigned* mask, unsigned* t,
-    unsigned* mreadf, unsigned* bar0, unsigned* bar1, int update_forward,
+    unsigned* mreadf, unsigned* lbf, unsigned* bar0, unsigned* bar1, int update_forward,
     AluDesc d) {
     int mab = blockIdx.x * blockDim.x + threadIdx.x;
     if (mab >= 1024) return;
@@ -1174,7 +1178,7 @@ extern "C" __global__ void bfn_line(
     for (int p = 0; p < 4; ++p) {
         int pe = mab * 4 + p;
         for (int c = 0; c < 4; ++c) {
-            alu_read_src(d.a, pe, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, bar0, bar1, bits, bus[p][c]);
+            alu_read_src(d.a, pe, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, lbf, bar0, bar1, bits, bus[p][c]);
         }
     }
 
@@ -1543,7 +1547,7 @@ __device__ __forceinline__ void flush_bus(unsigned* bus, unsigned f, int ll) {
 // per-cycle, already aligned word address.
 __device__ __forceinline__ void read_pe_bus(
     unsigned* bus, int mem, unsigned* lm0, unsigned* lm1, unsigned* grf0,
-    unsigned* grf1, unsigned* t, int pe, int c, const unsigned* base, int wl,
+    unsigned* grf1, unsigned* t, unsigned* lbf, int pe, int c, const unsigned* base, int wl,
     int t_indirect, int madpe, const unsigned* bar0, const unsigned* bar1) {
     if (mem == 6) {
         for (int i = 0; i < 4; ++i) bus[i] = t[pe * 16 + c * 4 + i];
@@ -1639,7 +1643,7 @@ __device__ __forceinline__ unsigned long long pack_rounded(
 extern "C" __global__ void l1_read_line(
     unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1, unsigned* t,
     unsigned long long* l1bm, unsigned long long* lbi, unsigned* omr,
-    unsigned* bar0, unsigned* bar1,
+    unsigned* lbf, unsigned* bar0, unsigned* bar1,
     int op, int has_addr, unsigned addr, int mabdiff, int wl, int ndst,
     int dm0, unsigned d00, unsigned d01, unsigned d02, unsigned d03, int dw0,
     int mk0, int mke0, int mkp0, int mkl0, int dt0, int dma0,
@@ -1737,6 +1741,7 @@ extern "C" __global__ void l1_read_line(
             unsigned f = mask_flags_cycle(omr, pe, fk, fe, fp, c);
             flush_bus(bus, f, fll);
         }
+        for (int i = 0; i < 4; ++i) lbf[pe * 16 + c * 4 + i] = bus[i];
         for (int d = 0; d < ndst; ++d) {
             unsigned f = 0;
             if (mk[d] != 0) {
@@ -1754,7 +1759,7 @@ extern "C" __global__ void l1_read_line(
 // register $lbi as the destination; the turnaround is updated either way.
 extern "C" __global__ void l1_write_line(
     unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1, unsigned* t,
-    unsigned long long* l1bm, unsigned long long* lbi,
+    unsigned* lbf, unsigned long long* l1bm, unsigned long long* lbi,
     unsigned* bar0, unsigned* bar1, int update_lbi,
     int op, int mab_sel, int mabdiff, int has_addr, unsigned addr, int dwl,
     int smem, unsigned s0, unsigned s1, unsigned s2, unsigned s3, int swl,
@@ -1777,7 +1782,7 @@ extern "C" __global__ void l1_write_line(
         if (op == 0) {
             int pe = l1b * 64 + mab_sel * 4 + sub;
             unsigned bus[4];
-            read_pe_bus(bus, smem, lm0, lm1, grf0, grf1, t, pe, c, sb, swl, st, sma, bar0, bar1);
+            read_pe_bus(bus, smem, lm0, lm1, grf0, grf1, t, lbf, pe, c, sb, swl, st, sma, bar0, bar1);
             unsigned long long v0 = bus_long(bus, 0);
             int step = (dwl == 4) ? 8 : 4;
             unsigned off = (unsigned)sub;
@@ -1796,7 +1801,7 @@ extern "C" __global__ void l1_write_line(
             for (int m = 0; m < 16; ++m) {
                 int pe = l1b * 64 + m * 4 + sub;
                 unsigned bus[4];
-                read_pe_bus(bus, smem, lm0, lm1, grf0, grf1, t, pe, c, sb, swl, st, sma, bar0, bar1);
+                read_pe_bus(bus, smem, lm0, lm1, grf0, grf1, t, lbf, pe, c, sb, swl, st, sma, bar0, bar1);
                 unsigned long long v = bus_long(bus, 0);
                 int dst_mab = (m + mabdiff) % 16;
                 if (dst_mab < 0) dst_mab += 16;
@@ -1812,7 +1817,7 @@ extern "C" __global__ void l1_write_line(
                 int mab = mo * 4 + mab_sel;
                 int pe = l1b * 64 + mab * 4 + sub;
                 unsigned bus[4];
-                read_pe_bus(bus, smem, lm0, lm1, grf0, grf1, t, pe, c, sb, swl, st, sma, bar0, bar1);
+                read_pe_bus(bus, smem, lm0, lm1, grf0, grf1, t, lbf, pe, c, sb, swl, st, sma, bar0, bar1);
                 unsigned long long v0 = bus_long(bus, 0);
                 unsigned off0 = (dwl == 4) ? (unsigned)(mo * 8 + sub)
                                            : (unsigned)(mo * 4 + sub);
@@ -1845,7 +1850,7 @@ extern "C" __global__ void l1_write_line(
                     int mab = four ? g * 4 + m : m;
                     int pe = l1b * 64 + mab * 4 + sub;
                     unsigned bus[4];
-                    read_pe_bus(bus, smem, lm0, lm1, grf0, grf1, t, pe, c, sb, swl, st, sma, bar0, bar1);
+                    read_pe_bus(bus, smem, lm0, lm1, grf0, grf1, t, lbf, pe, c, sb, swl, st, sma, bar0, bar1);
                     v0[m] = bus_long(bus, 0);
                     v1[m] = bus_long(bus, 1);
                     if (ext) {
@@ -2014,10 +2019,10 @@ __device__ __forceinline__ bool same_fmt(Fmt a, Fmt b) {
 __device__ __forceinline__ void mat_read_elems(
     const AluSrc& s, Fmt f, int n, int pe, int c,
     unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
-    unsigned* mauf, unsigned* aluf, unsigned* t, unsigned* mreadf,
+    unsigned* mauf, unsigned* aluf, unsigned* t, unsigned* mreadf, unsigned* lbf,
     const unsigned* bar0, const unsigned* bar1, unsigned long long out[16]) {
     unsigned bus[4];
-    mau_read_bus(s, pe, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf,
+    mau_read_bus(s, pe, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, lbf,
                  bar0, bar1, bus);
     Fmt raw = f;
     if (s.ext) {
@@ -2148,7 +2153,7 @@ __device__ __forceinline__ unsigned long long mat_fma_dev(
 extern "C" __global__ void mat_write_line(
     unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
     unsigned* mauf, unsigned* aluf, unsigned* mats, unsigned* t,
-    unsigned* mreadf, unsigned* bar0, unsigned* bar1, MatWriteLineDesc d) {
+    unsigned* mreadf, unsigned* lbf, unsigned* bar0, unsigned* bar1, MatWriteLineDesc d) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx >= 4096) return;
     int mab = idx >> 2;
@@ -2163,7 +2168,7 @@ extern "C" __global__ void mat_write_line(
     for (int p = 0; p < 4; ++p) {
         unsigned long long e[16];
         mat_read_elems(d.src, f, per_pe, mab * 4 + p, c,
-                       lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf,
+                       lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, lbf,
                        bar0, bar1, e);
         for (int i = 0; i < per_pe; ++i) elems[p * per_pe + i] = e[i];
     }
@@ -2204,7 +2209,7 @@ extern "C" __global__ void mat_write_line(
 // shared mask/flush writer and updates mreadf.
 extern "C" __global__ void mat_read_line(
     unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
-    unsigned* mreadf, unsigned* mask, unsigned* t, unsigned* mats,
+    unsigned* mreadf, unsigned* lbf, unsigned* mask, unsigned* t, unsigned* mats,
     unsigned* bar0, unsigned* bar1, int update_forward, MatReadLineDesc d) {
     int pe = blockIdx.x * blockDim.x + threadIdx.x;
     if (pe >= 4096) return;
@@ -2260,7 +2265,7 @@ extern "C" __global__ void mat_read_line(
 extern "C" __global__ void mat_mau_line(
     unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
     unsigned* mauf, unsigned* aluf, unsigned* mask, unsigned* t,
-    unsigned* mreadf, unsigned* mats, unsigned* bar0, unsigned* bar1,
+    unsigned* mreadf, unsigned* lbf, unsigned* mats, unsigned* bar0, unsigned* bar1,
     int update_forward, MatMauLineDesc d) {
     int mab = blockIdx.x * blockDim.x + threadIdx.x;
     if (mab >= 1024) return;
@@ -2281,12 +2286,12 @@ extern "C" __global__ void mat_mau_line(
         for (int p = 0; p < 4; ++p) {
             unsigned long long e[16];
             mat_read_elems(d.x, fx, nx, mab * 4 + p, c,
-                           lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf,
+                           lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, lbf,
                            bar0, bar1, e);
             for (int i = 0; i < nx; ++i) xv[c][p * nx + i] = e[i];
             if (d.kind == 0) {
                 mat_read_elems(d.y, fy, ny, mab * 4 + p, c,
-                               lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf,
+                               lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, lbf,
                                bar0, bar1, e);
                 for (int i = 0; i < ny; ++i) yv[c][p * ny + i] = e[i];
             }

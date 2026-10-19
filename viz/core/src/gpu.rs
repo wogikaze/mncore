@@ -581,7 +581,7 @@ fn alu_source(op: &Operand) -> Option<AluSrc> {
                 FwdKind::Mauf => 4,
                 FwdKind::Aluf => 5,
                 FwdKind::Mreadf => 8,
-                FwdKind::Lbf => return None,
+                FwdKind::Lbf => 12,
             };
             src.wl = 4;
             src.neg = *neg as u32;
@@ -1043,6 +1043,15 @@ pub struct L1WriteLine {
 /// Builds the source side of an L1BM write. Unlike `mem_source` this accepts
 /// the `e` precision-extension option, which only L1BM reductions use.
 fn l1_write_source(op: &Operand) -> Option<MauSrc> {
+    if let Operand::Forward { kind: FwdKind::Lbf, .. } = op {
+        return Some(MauSrc {
+            mem: 12,
+            wl: 4,
+            base: [0; 4],
+            neg: false,
+            ..MauSrc::default()
+        });
+    }
     let Operand::Mem {
         mem,
         wl,
@@ -1882,6 +1891,8 @@ pub struct GpuState {
     mats: u64,
     /// Matrix read forwarding register, 4 cycles x 4 words per PE.
     mreadf: u64,
+    /// L1BM-to-PE forwarding register, 4 cycles x 4 words per PE.
+    lbf: u64,
     /// Base address registers (`$mb`/`$nb`), one word per PE.
     bar0: u64,
     bar1: u64,
@@ -1914,6 +1925,7 @@ impl Drop for GpuState {
                 self.scratch,
                 self.mats,
                 self.mreadf,
+                self.lbf,
                 self.bar0,
                 self.bar1,
                 self.dar,
@@ -2273,6 +2285,7 @@ impl Gpu {
             darbuf_bytes,
             dar_addr_bytes,
             mv_error_bytes,
+            fwd_bytes,
         ];
         let want_mv = dram_longs > 0;
         if want_mv {
@@ -2319,9 +2332,10 @@ impl Gpu {
             darbuf: buffers[16],
             dar_addr: buffers[17],
             mv_errors: buffers[18],
-            pdm: if want_mv { buffers[19] } else { 0 },
-            dram: if want_mv { buffers[20] } else { 0 },
-            scratch: if want_mv { buffers[21] } else { 0 },
+            lbf: buffers[19],
+            pdm: if want_mv { buffers[20] } else { 0 },
+            dram: if want_mv { buffers[21] } else { 0 },
+            scratch: if want_mv { buffers[22] } else { 0 },
             dram_longs: if want_mv { dram_longs } else { 0 },
             scratch_longs: if want_mv { scratch_longs } else { 0 },
             free: self.cu_mem_free,
@@ -2365,6 +2379,7 @@ impl Gpu {
             (state.mask, "upload mask"),
             (state.t, "upload t"),
             (state.mreadf, "upload mreadf"),
+            (state.lbf, "upload lbf"),
         ] {
             self.check(
                 unsafe {
@@ -2596,6 +2611,27 @@ impl Gpu {
     /// Uploads the mreadf forwarding register (4 cycles x 4 words per PE).
     pub fn upload_mreadf(&self, state: &GpuState, words: &[u32]) -> Result<(), String> {
         self.upload_forward(state.mreadf, words, "upload mreadf")
+    }
+
+    /// Uploads the L1BM-to-PE forwarding register (4 cycles x 4 words per PE).
+    pub fn upload_lbf(&self, state: &GpuState, words: &[u32]) -> Result<(), String> {
+        self.upload_forward(state.lbf, words, "upload lbf")
+    }
+
+    /// Downloads the L1BM-to-PE forwarding register.
+    pub fn download_lbf(&self, state: &GpuState) -> Result<Vec<u32>, String> {
+        let mut out = vec![0u32; crate::machine::PES * 16];
+        self.check(
+            unsafe {
+                (self.cu_dtoh)(
+                    out.as_mut_ptr() as *mut c_void,
+                    state.lbf,
+                    out.len() * 4,
+                )
+            },
+            "download lbf",
+        )?;
+        Ok(out)
     }
 
     fn upload_forward(&self, pointer: u64, words: &[u32], what: &str) -> Result<(), String> {
@@ -2959,6 +2995,7 @@ impl Gpu {
         let mut mask_state = state.mask;
         let mut t = state.t;
         let mut mreadf = state.mreadf;
+        let mut lbf = state.lbf;
         let mut bar0 = state.bar0;
         let mut bar1 = state.bar1;
         let mut update_forward = update_forward as i32;
@@ -2973,6 +3010,7 @@ impl Gpu {
             &mut mask_state as *mut u64 as *mut c_void,
             &mut t as *mut u64 as *mut c_void,
             &mut mreadf as *mut u64 as *mut c_void,
+            &mut lbf as *mut u64 as *mut c_void,
             &mut bar0 as *mut u64 as *mut c_void,
             &mut bar1 as *mut u64 as *mut c_void,
             &mut update_forward as *mut i32 as *mut c_void,
@@ -3022,6 +3060,7 @@ impl Gpu {
         let mut mask = state.mask;
         let mut t = state.t;
         let mut mreadf = state.mreadf;
+        let mut lbf = state.lbf;
         let mut bar0 = state.bar0;
         let mut bar1 = state.bar1;
         let mut update_forward = update_forward as i32;
@@ -3036,6 +3075,7 @@ impl Gpu {
             &mut mask as *mut u64 as *mut c_void,
             &mut t as *mut u64 as *mut c_void,
             &mut mreadf as *mut u64 as *mut c_void,
+            &mut lbf as *mut u64 as *mut c_void,
             &mut bar0 as *mut u64 as *mut c_void,
             &mut bar1 as *mut u64 as *mut c_void,
             &mut update_forward as *mut i32 as *mut c_void,
@@ -3084,6 +3124,7 @@ impl Gpu {
         let mut mask = state.mask;
         let mut t = state.t;
         let mut mreadf = state.mreadf;
+        let mut lbf = state.lbf;
         let mut bar0 = state.bar0;
         let mut bar1 = state.bar1;
         let mut update_forward = update_forward as i32;
@@ -3098,6 +3139,7 @@ impl Gpu {
             &mut mask as *mut u64 as *mut c_void,
             &mut t as *mut u64 as *mut c_void,
             &mut mreadf as *mut u64 as *mut c_void,
+            &mut lbf as *mut u64 as *mut c_void,
             &mut bar0 as *mut u64 as *mut c_void,
             &mut bar1 as *mut u64 as *mut c_void,
             &mut update_forward as *mut i32 as *mut c_void,
@@ -3378,6 +3420,7 @@ impl Gpu {
         let mut grf0 = state.grf0;
         let mut grf1 = state.grf1;
         let mut t = state.t;
+        let mut lbf = state.lbf;
         let mut l1bm = state.l1bm;
         let mut lbi = state.lbi;
         let mut bar0 = state.bar0;
@@ -3405,6 +3448,7 @@ impl Gpu {
             &mut grf0 as *mut u64 as *mut c_void,
             &mut grf1 as *mut u64 as *mut c_void,
             &mut t as *mut u64 as *mut c_void,
+            &mut lbf as *mut u64 as *mut c_void,
             &mut l1bm as *mut u64 as *mut c_void,
             &mut lbi as *mut u64 as *mut c_void,
             &mut bar0 as *mut u64 as *mut c_void,
@@ -3467,6 +3511,7 @@ impl Gpu {
         let mut l1bm = state.l1bm;
         let mut lbi = state.lbi;
         let mut omr = state.mask;
+        let mut lbf = state.lbf;
         let mut bar0 = state.bar0;
         let mut bar1 = state.bar1;
         let mut op = line.op as i32;
@@ -3509,6 +3554,7 @@ impl Gpu {
             &mut l1bm as *mut u64 as *mut c_void,
             &mut lbi as *mut u64 as *mut c_void,
             &mut omr as *mut u64 as *mut c_void,
+            &mut lbf as *mut u64 as *mut c_void,
             &mut bar0 as *mut u64 as *mut c_void,
             &mut bar1 as *mut u64 as *mut c_void,
             &mut op as *mut i32 as *mut c_void,
@@ -3570,6 +3616,7 @@ impl Gpu {
         let mut mats = state.mats;
         let mut t = state.t;
         let mut mreadf = state.mreadf;
+        let mut lbf = state.lbf;
         let mut bar0 = state.bar0;
         let mut bar1 = state.bar1;
         let mut desc = *line;
@@ -3583,6 +3630,7 @@ impl Gpu {
             &mut mats as *mut u64 as *mut c_void,
             &mut t as *mut u64 as *mut c_void,
             &mut mreadf as *mut u64 as *mut c_void,
+            &mut lbf as *mut u64 as *mut c_void,
             &mut bar0 as *mut u64 as *mut c_void,
             &mut bar1 as *mut u64 as *mut c_void,
             &mut desc as *mut MatWriteLine as *mut c_void,
@@ -3628,6 +3676,7 @@ impl Gpu {
         let mut grf0 = state.grf0;
         let mut grf1 = state.grf1;
         let mut mreadf = state.mreadf;
+        let mut lbf = state.lbf;
         let mut mask = state.mask;
         let mut t = state.t;
         let mut mats = state.mats;
@@ -3641,6 +3690,7 @@ impl Gpu {
             &mut grf0 as *mut u64 as *mut c_void,
             &mut grf1 as *mut u64 as *mut c_void,
             &mut mreadf as *mut u64 as *mut c_void,
+            &mut lbf as *mut u64 as *mut c_void,
             &mut mask as *mut u64 as *mut c_void,
             &mut t as *mut u64 as *mut c_void,
             &mut mats as *mut u64 as *mut c_void,
@@ -3694,6 +3744,7 @@ impl Gpu {
         let mut mask = state.mask;
         let mut t = state.t;
         let mut mreadf = state.mreadf;
+        let mut lbf = state.lbf;
         let mut mats = state.mats;
         let mut bar0 = state.bar0;
         let mut bar1 = state.bar1;
@@ -3709,6 +3760,7 @@ impl Gpu {
             &mut mask as *mut u64 as *mut c_void,
             &mut t as *mut u64 as *mut c_void,
             &mut mreadf as *mut u64 as *mut c_void,
+            &mut lbf as *mut u64 as *mut c_void,
             &mut mats as *mut u64 as *mut c_void,
             &mut bar0 as *mut u64 as *mut c_void,
             &mut bar1 as *mut u64 as *mut c_void,
