@@ -501,8 +501,44 @@ impl Machine {
                 }
             }
         }
+        let tracing = self.tracer.borrow().is_some();
+        let mask_state = self.mask_state;
         for (ei, (e, out)) in outputs.iter().enumerate() {
             let flush = e.flush;
+            if !tracing {
+                self.pes
+                    .par_iter_mut()
+                    .enumerate()
+                    .try_for_each(|(pe, p)| -> Result<(), ExecError> {
+                        for c in 0..4 {
+                            let mut bus = out.bus[pe][c];
+                            if let Some(sel) = flush {
+                                let f = mask_flags_pe(p, &mask_state, &sel, c);
+                                bus = apply_flush(bus, f, sel.ll);
+                            }
+                            let poison = out
+                                .poison
+                                .as_ref()
+                                .filter(|q| q.hits(pe, c))
+                                .map(|q| q.msg.as_str());
+                            for d in &e.dsts {
+                                write_pe(
+                                    p,
+                                    &mask_state,
+                                    pe,
+                                    d,
+                                    c,
+                                    bus,
+                                    out.flags[pe][c],
+                                    single_line_mask,
+                                    poison,
+                                )?;
+                            }
+                        }
+                        Ok(())
+                    })?;
+                continue;
+            }
             let expr_index = exprs.iter().position(|x| std::ptr::eq(x, *e)).unwrap_or(ei) as u16;
             if let Some(t) = self.tracer.borrow_mut().as_mut() {
                 t.expr = expr_index;
@@ -559,14 +595,13 @@ impl Machine {
             }
             for (e, out) in &outputs {
                 let Some(kind) = out.fwd else { continue };
-                for pe in 0..PES {
+                self.pes.par_iter_mut().enumerate().for_each(|(pe, p)| {
                     for c in 0..4 {
                         let mut bus = out.bus[pe][c];
                         if let Some(sel) = e.flush {
-                            let f = self.mask_flags(pe, &sel, c);
+                            let f = mask_flags_pe(p, &mask_state, &sel, c);
                             bus = apply_flush(bus, f, sel.ll);
                         }
-                        let p = &mut self.pes[pe];
                         match kind {
                             FwdKind::Aluf => p.aluf[c] = bus,
                             FwdKind::Mauf => p.mauf[c] = bus,
@@ -574,7 +609,7 @@ impl Machine {
                             FwdKind::Lbf => p.lbf[c] = bus,
                         }
                     }
-                }
+                });
             }
         }
         Ok(())
@@ -2566,7 +2601,14 @@ fn write_pe(
     bus: Bus,
     flags: u8,
     single_line: bool,
+    poison: Option<&str>,
 ) -> Result<(), ExecError> {
+    let fail = |enabled: bool| -> Result<(), ExecError> {
+        match poison {
+            Some(msg) if enabled => Err(ExecError::Runtime(msg.to_string())),
+            _ => Ok(()),
+        }
+    };
     let directive = |mem: Option<MemKind>, omr: bool| -> Option<MaskSel> {
         if single_line {
             return None;
@@ -2605,7 +2647,9 @@ fn write_pe(
             } else {
                 *wl as usize
             };
-            if !(0..words).any(|i| word_enabled(mflags, i)) {
+            let any = (0..words).any(|i| word_enabled(mflags, i));
+            fail(any)?;
+            if !any {
                 return Ok(());
             }
             if *mem == MemKind::T {
@@ -2633,6 +2677,7 @@ fn write_pe(
                     return Ok(());
                 }
             }
+            fail(true)?;
             if *lm1 {
                 p.bar1 = bus[0] & 0xfff;
             } else {
@@ -2681,7 +2726,7 @@ fn run_fast_pe(
                 bus = apply_flush(bus, f, sel.ll);
             }
             for d in &e.dsts {
-                write_pe(p, mask_state, pe, d, c, bus, flags[c], single_line_mask)?;
+                write_pe(p, mask_state, pe, d, c, bus, flags[c], single_line_mask, None)?;
             }
             if update_forward {
                 if let Some(kind) = kind {
@@ -2711,7 +2756,7 @@ fn run_fast_pe(
                 bus = apply_flush(bus, f, sel.ll);
             }
             for d in &e.dsts {
-                write_pe(p, mask_state, pe, d, c, bus, flags[ei][c], single_line_mask)?;
+                write_pe(p, mask_state, pe, d, c, bus, flags[ei][c], single_line_mask, None)?;
             }
         }
     }
