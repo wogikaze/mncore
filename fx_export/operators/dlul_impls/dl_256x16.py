@@ -11,7 +11,7 @@ def generate_vsm(operator: BaseOperator) -> List[str]:
     y = operator.addr_out()     # "$lm0v" の "0" の部分
 
     # test unit_tests/train_step/DL_256x16_default_*
-    # 問題名：「DL 256_16」
+    # 問題名：「DL 256_16」(problems/17.dram-dl-256-16、同じレイアウト)
     
     lines = []
     lines.append(f"mvp/n256 $d{x} $lc0@.0")

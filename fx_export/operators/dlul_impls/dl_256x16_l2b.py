@@ -11,17 +11,15 @@ def generate_vsm(operator: BaseOperator) -> List[str]:
     y = operator.addr_out()     # "$lm0v" の "0" の部分
 
     # test unit_tests/train_step/DL_256x16_L2B_*
-    # 問題名：「DL L2B 256_16」
+    # 問題名：「DL L2B 256_16」(problems/21.dram-dl-256-16-l2b、同じレイアウト)
 
     lines = []
     lines.append(f"mvp/n256 $d{x} $lc0@.0")
     lines.append(f"mvp/n256 $d{x+256} $lc0@.1")
     lines.append("l2bmb $lc0 $lb0")
     lines.append("l2bmb $lc64 $lb64")
-    lines.append("l2bmb $lc128 $lb128")
-    lines.append("l2bmb $lc192 $lb192")
-    lines.append(f"l1bmm $llb0 $llm{y}v")
-    lines.append(f"l1bmm $llb32 $llm{y+16}v")
+    lines.append(f"l1bmm $llb0 $llm{y}v; l2bmb $lc128 $lb128")
+    lines.append(f"l1bmm $llb32 $llm{y+16}v; l2bmb $lc192 $lb192")
     lines.append(f"l1bmm $llb64 $llm{y+32}v")
     lines.append(f"l1bmm $llb96 $llm{y+48}v")
     lines.append(f"l1bmm $llb128 $llm{y+64}v")

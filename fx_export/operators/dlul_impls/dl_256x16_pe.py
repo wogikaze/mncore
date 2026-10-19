@@ -11,25 +11,18 @@ def generate_vsm(operator: BaseOperator) -> List[str]:
     y = operator.addr_out()     # "$lm0v" の "0" の部分
 
     # test unit_tests/train_step/DL_256x16_PE_*
-    # 問題名：「DL PE 256_16」
+    # 問題名：「DL PE 256_16」(problems/19.dram-dl-256-16p、同じレイアウト)
     
     lines = []
     lines.append(f"mvb2/n512 $d{x} $lc0")
     lines.append("l2bmb $lc0 $lb0")
     lines.append("l2bmb $lc64 $lb64")
-    lines.append("l2bmb $lc128 $lb128")
-    lines.append("l2bmb $lc192 $lb192")
-    lines.append("l2bmb $lc256 $lb256")
-    lines.append("l2bmb $lc320 $lb320")
-    lines.append("l2bmb $lc384 $lb384")
-    lines.append("l2bmb $lc448 $lb448")
-    lines.append("nop")
-    lines.append(f"l1bmm $llb0 $llm{y}v")
-    lines.append(f"l1bmm $llb32 $llm{y+16}v")
-    lines.append(f"l1bmm $llb64 $llm{y+32}v")
-    lines.append(f"l1bmm $llb96 $llm{y+48}v")
-    lines.append(f"l1bmm $llb128 $llm{y+64}v")
-    lines.append(f"l1bmm $llb160 $llm{y+80}v")
+    lines.append(f"l1bmm $llb0 $llm{y}v; l2bmb $lc128 $lb128")
+    lines.append(f"l1bmm $llb32 $llm{y+16}v; l2bmb $lc192 $lb192")
+    lines.append(f"l1bmm $llb64 $llm{y+32}v; l2bmb $lc256 $lb256")
+    lines.append(f"l1bmm $llb96 $llm{y+48}v; l2bmb $lc320 $lb320")
+    lines.append(f"l1bmm $llb128 $llm{y+64}v; l2bmb $lc384 $lb384")
+    lines.append(f"l1bmm $llb160 $llm{y+80}v; l2bmb $lc448 $lb448")
     lines.append(f"l1bmm $llb192 $llm{y+96}v")
     lines.append(f"l1bmm $llb224 $llm{y+112}v")
     lines.append(f"l1bmm $llb256 $llm{y+128}v")
@@ -42,4 +35,3 @@ def generate_vsm(operator: BaseOperator) -> List[str]:
     lines.append(f"l1bmm $llb480 $llm{y+240}v")
 
     return lines
-    

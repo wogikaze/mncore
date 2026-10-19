@@ -108,14 +108,14 @@ l2bmd $lc15360 $lb1920
 l2bmd $lc15616 $lb1952
 l2bmd $lc15872 $lb1984
 l2bmd $lc16128 $lb2016
-l1bmd $lb0 $lm0v
-l1bmd $lb256 $lm8v
-l1bmd $lb512 $lm16v
-l1bmd $lb768 $lm24v
-l1bmd $lb1024 $lm32v
-l1bmd $lb1280 $lm40v
-l1bmd $lb1536 $lm48v
-l1bmd $lb1792 $lm56v
+l1bmd+0 $lb0 $lm0v
+l1bmd+0 $lb256 $lm8v
+l1bmd+0 $lb512 $lm16v
+l1bmd+0 $lb768 $lm24v
+l1bmd+0 $lb1024 $lm32v
+l1bmd+0 $lb1280 $lm40v
+l1bmd+0 $lb1536 $lm48v
+l1bmd+0 $lb1792 $lm56v
 
 nop/3
 # --- Operation 2: DL ---
@@ -464,19 +464,12 @@ mvb2/n512i9f $d112000 $lc0
 nop; wait i9f  # Auto-tagged
 l2bmb $lc0 $lb0
 l2bmb $lc64 $lb64
-l2bmb $lc128 $lb128
-l2bmb $lc192 $lb192
-l2bmb $lc256 $lb256
-l2bmb $lc320 $lb320
-l2bmb $lc384 $lb384
-l2bmb $lc448 $lb448
-nop
-l1bmm $llb0 $llm0v
-l1bmm $llb32 $llm16v
-l1bmm $llb64 $llm32v
-l1bmm $llb96 $llm48v
-l1bmm $llb128 $llm64v
-l1bmm $llb160 $llm80v
+l1bmm $llb0 $llm0v; l2bmb $lc128 $lb128
+l1bmm $llb32 $llm16v; l2bmb $lc192 $lb192
+l1bmm $llb64 $llm32v; l2bmb $lc256 $lb256
+l1bmm $llb96 $llm48v; l2bmb $lc320 $lb320
+l1bmm $llb128 $llm64v; l2bmb $lc384 $lb384
+l1bmm $llb160 $llm80v; l2bmb $lc448 $lb448
 l1bmm $llb192 $llm96v
 l1bmm $llb224 $llm112v
 l1bmm $llb256 $llm128v
@@ -701,19 +694,12 @@ mvb2/n512i9f $d112000 $lc0
 nop; wait i9f  # Auto-tagged
 l2bmb $lc0 $lb0
 l2bmb $lc64 $lb64
-l2bmb $lc128 $lb128
-l2bmb $lc192 $lb192
-l2bmb $lc256 $lb256
-l2bmb $lc320 $lb320
-l2bmb $lc384 $lb384
-l2bmb $lc448 $lb448
-nop
-l1bmm $llb0 $llm0v
-l1bmm $llb32 $llm16v
-l1bmm $llb64 $llm32v
-l1bmm $llb96 $llm48v
-l1bmm $llb128 $llm64v
-l1bmm $llb160 $llm80v
+l1bmm $llb0 $llm0v; l2bmb $lc128 $lb128
+l1bmm $llb32 $llm16v; l2bmb $lc192 $lb192
+l1bmm $llb64 $llm32v; l2bmb $lc256 $lb256
+l1bmm $llb96 $llm48v; l2bmb $lc320 $lb320
+l1bmm $llb128 $llm64v; l2bmb $lc384 $lb384
+l1bmm $llb160 $llm80v; l2bmb $lc448 $lb448
 l1bmm $llb192 $llm96v
 l1bmm $llb224 $llm112v
 l1bmm $llb256 $llm128v
@@ -1001,19 +987,12 @@ mvb2/n512i9f $d136000 $lc0
 nop; wait i9f  # Auto-tagged
 l2bmb $lc0 $lb0
 l2bmb $lc64 $lb64
-l2bmb $lc128 $lb128
-l2bmb $lc192 $lb192
-l2bmb $lc256 $lb256
-l2bmb $lc320 $lb320
-l2bmb $lc384 $lb384
-l2bmb $lc448 $lb448
-nop
-l1bmm $llb0 $llm0v
-l1bmm $llb32 $llm16v
-l1bmm $llb64 $llm32v
-l1bmm $llb96 $llm48v
-l1bmm $llb128 $llm64v
-l1bmm $llb160 $llm80v
+l1bmm $llb0 $llm0v; l2bmb $lc128 $lb128
+l1bmm $llb32 $llm16v; l2bmb $lc192 $lb192
+l1bmm $llb64 $llm32v; l2bmb $lc256 $lb256
+l1bmm $llb96 $llm48v; l2bmb $lc320 $lb320
+l1bmm $llb128 $llm64v; l2bmb $lc384 $lb384
+l1bmm $llb160 $llm80v; l2bmb $lc448 $lb448
 l1bmm $llb192 $llm96v
 l1bmm $llb224 $llm112v
 l1bmm $llb256 $llm128v
@@ -1253,19 +1232,12 @@ mvb2/n512i9f $d136000 $lc0
 nop; wait i9f  # Auto-tagged
 l2bmb $lc0 $lb0
 l2bmb $lc64 $lb64
-l2bmb $lc128 $lb128
-l2bmb $lc192 $lb192
-l2bmb $lc256 $lb256
-l2bmb $lc320 $lb320
-l2bmb $lc384 $lb384
-l2bmb $lc448 $lb448
-nop
-l1bmm $llb0 $llm0v
-l1bmm $llb32 $llm16v
-l1bmm $llb64 $llm32v
-l1bmm $llb96 $llm48v
-l1bmm $llb128 $llm64v
-l1bmm $llb160 $llm80v
+l1bmm $llb0 $llm0v; l2bmb $lc128 $lb128
+l1bmm $llb32 $llm16v; l2bmb $lc192 $lb192
+l1bmm $llb64 $llm32v; l2bmb $lc256 $lb256
+l1bmm $llb96 $llm48v; l2bmb $lc320 $lb320
+l1bmm $llb128 $llm64v; l2bmb $lc384 $lb384
+l1bmm $llb160 $llm80v; l2bmb $lc448 $lb448
 l1bmm $llb192 $llm96v
 l1bmm $llb224 $llm112v
 l1bmm $llb256 $llm128v
@@ -3523,7 +3495,7 @@ nop/3
 # Input1: lr_sgd_update_17, shape=N/A, type=initializer, tag=default
 # Output0: grad_fc2_weight_scaled, shape=[16, 16], addr=0, layout=((16:2), (2:1, 4_PE:1, 2_W:1)), len=64, location=LM1, tag=default
 
-imm f"0.009999928995966911" $t
+imm f"0.009999945759773254" $t
 fvmul $aluf $lm0v $ln0v
 fvmul $t $lm8v $ln8v
 fvmul $t $lm16v $ln16v
@@ -3684,7 +3656,7 @@ nop/3
 # Input1: lr_sgd_update_18, shape=N/A, type=initializer, tag=default
 # Output0: grad_fc2_bias_scaled, shape=[16], addr=0, layout=((2:1, 4_PE:1, 2_W:1)), len=4, location=LM1, tag=default
 
-imm f"0.009999928995966911" $t
+imm f"0.009999945759773254" $t
 fvmul $aluf $lm0v $ln0v
 
 nop/3
@@ -3770,10 +3742,8 @@ mvp/n256i9f $d216256 $lc0@.1
 nop; wait i9f  # Auto-tagged
 l2bmb $lc0 $lb0
 l2bmb $lc64 $lb64
-l2bmb $lc128 $lb128
-l2bmb $lc192 $lb192
-l1bmm $llb0 $llm0v
-l1bmm $llb32 $llm16v
+l1bmm $llb0 $llm0v; l2bmb $lc128 $lb128
+l1bmm $llb32 $llm16v; l2bmb $lc192 $lb192
 l1bmm $llb64 $llm32v
 l1bmm $llb96 $llm48v
 l1bmm $llb128 $llm64v
@@ -3855,14 +3825,14 @@ l2bmd $lc15360 $lb1920
 l2bmd $lc15616 $lb1952
 l2bmd $lc15872 $lb1984
 l2bmd $lc16128 $lb2016
-l1bmd $lb0 $lm128v
-l1bmd $lb256 $lm136v
-l1bmd $lb512 $lm144v
-l1bmd $lb768 $lm152v
-l1bmd $lb1024 $lm160v
-l1bmd $lb1280 $lm168v
-l1bmd $lb1536 $lm176v
-l1bmd $lb1792 $lm184v
+l1bmd+0 $lb0 $lm128v
+l1bmd+0 $lb256 $lm136v
+l1bmd+0 $lb512 $lm144v
+l1bmd+0 $lb768 $lm152v
+l1bmd+0 $lb1024 $lm160v
+l1bmd+0 $lb1280 $lm168v
+l1bmd+0 $lb1536 $lm176v
+l1bmd+0 $lb1792 $lm184v
 
 nop/3
 # --- Operation 78: Gemm ---
@@ -4116,7 +4086,7 @@ nop/3
 # Input1: lr_sgd_update_15, shape=N/A, type=initializer, tag=default
 # Output0: grad_fc1_weight_scaled, shape=[16, 1024], addr=0, layout=((16:1), (8_MAB:2, 8_L1B:1, 2_MAB:1, 4_PE:1, 2_W:1)), len=32, location=LM1, tag=default
 
-imm f"0.009999928995966911" $t
+imm f"0.009999945759773254" $t
 fvmul $aluf $lm0v $ln0v
 fvmul $t $lm8v $ln8v
 fvmul $t $lm16v $ln16v
@@ -4377,7 +4347,7 @@ nop/3
 # Input1: lr_sgd_update_16, shape=N/A, type=initializer, tag=default
 # Output0: grad_fc1_bias_scaled, shape=[16], addr=0, layout=((2:1, 4_PE:1, 2_W:1)), len=4, location=LM1, tag=default
 
-imm f"0.009999928995966911" $t
+imm f"0.009999945759773254" $t
 fvmul $aluf $lm0v $ln0v
 
 nop/3

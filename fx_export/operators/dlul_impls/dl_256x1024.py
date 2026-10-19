@@ -16,6 +16,7 @@ def generate_vsm(operator: BaseOperator) -> List[str]:
     # test unit_tests/train_step/DL_256x1024_*
     # 問題名：「DL 256_1024」
     
+    # 問題名：「DL 256_1024」(problems/23.dram-dl-256-1024)
     lines = []
     lines.append(f"mvp/n16384 $d{x} $lc0@.0")
     lines.append(f"mvp/n16384 $d{x+16384} $lc0@.1")
@@ -83,14 +84,14 @@ def generate_vsm(operator: BaseOperator) -> List[str]:
     lines.append("l2bmd $lc15616 $lb1952")
     lines.append("l2bmd $lc15872 $lb1984")
     lines.append("l2bmd $lc16128 $lb2016")
-    lines.append(f"l1bmd $lb0 $lm{y}v")
-    lines.append(f"l1bmd $lb256 $lm{y+8}v")
-    lines.append(f"l1bmd $lb512 $lm{y+16}v")
-    lines.append(f"l1bmd $lb768 $lm{y+24}v")
-    lines.append(f"l1bmd $lb1024 $lm{y+32}v")
-    lines.append(f"l1bmd $lb1280 $lm{y+40}v")
-    lines.append(f"l1bmd $lb1536 $lm{y+48}v")
-    lines.append(f"l1bmd $lb1792 $lm{y+56}v")
+    lines.append(f"l1bmd+0 $lb0 $lm{y}v")
+    lines.append(f"l1bmd+0 $lb256 $lm{y+8}v")
+    lines.append(f"l1bmd+0 $lb512 $lm{y+16}v")
+    lines.append(f"l1bmd+0 $lb768 $lm{y+24}v")
+    lines.append(f"l1bmd+0 $lb1024 $lm{y+32}v")
+    lines.append(f"l1bmd+0 $lb1280 $lm{y+40}v")
+    lines.append(f"l1bmd+0 $lb1536 $lm{y+48}v")
+    lines.append(f"l1bmd+0 $lb1792 $lm{y+56}v")
 
 
     return lines
