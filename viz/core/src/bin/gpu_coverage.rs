@@ -2,7 +2,7 @@
 //!
 //! Usage: gpu_coverage [program.vsm]
 
-use mncore_sim::gpu::{alu_line_from_expr, mau_line_from_expr};
+use mncore_sim::gpu::{alu_line_from_expr, bfn_line_from_expr, mau_line_from_expr};
 use mncore_sim::machine::MaskState;
 use mncore_sim::vsm::{self, Line, Op};
 
@@ -48,7 +48,7 @@ fn main() {
         for expr in exprs {
             if matches!(expr.op, Op::Alu { .. }) {
                 alu_exprs += 1;
-                if alu_line_from_expr(expr).is_some() {
+                if alu_line_from_expr(expr).is_some() || bfn_line_from_expr(expr).is_some() {
                     alu_supported += 1;
                 } else {
                     all_supported = false;
@@ -118,7 +118,7 @@ fn main() {
     println!("program: {path}");
     println!("lines: {lines}, PE lines: {pe_lines}");
     println!("MAU expressions: {mau_exprs}, supported: {mau_supported}");
-    println!("ALU expressions: {alu_exprs}, supported (Passa/Xor/Max/Rsqrt): {alu_supported}");
+    println!("ALU expressions: {alu_exprs}, supported (Passa/Xor/Max/Rsqrt/Bfn): {alu_supported}");
     println!("lines with every expression supported: {supported_lines}");
     println!("lines consisting only of supported MAU expressions: {single_mau_supported}");
     println!(

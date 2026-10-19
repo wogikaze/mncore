@@ -422,3 +422,115 @@ extern "C" __global__ void alu_line(
         }
     }
 }
+
+__device__ __forceinline__ unsigned __int128 round_shift128(
+    unsigned __int128 v, unsigned shift) {
+    if (shift == 0) return v;
+    if (shift >= 128) return 0;
+    unsigned __int128 k = v >> shift;
+    unsigned __int128 rem = v & ((((unsigned __int128)1) << shift) - 1);
+    unsigned __int128 half = ((unsigned __int128)1) << (shift - 1);
+    return k + ((rem > half || (rem == half && (k & 1))) ? 1 : 0);
+}
+
+__device__ __forceinline__ void block_float_single(
+    const unsigned* vals, unsigned* out) {
+    int m = 23;
+    unsigned emax = 255;
+    unsigned sign_bit = 1u << 31;
+    int dropped = 5;
+    unsigned max_e = 0;
+    for (int i = 0; i < 8; ++i) {
+        unsigned e = (vals[i] >> m) & emax;
+        if (e > max_e) max_e = e;
+    }
+    unsigned common = max_e;
+    bool top = false;
+    for (int i = 0; i < 8; ++i) {
+        unsigned v = vals[i];
+        unsigned e = (v >> m) & emax;
+        unsigned man = v & ((1u << m) - 1);
+        if (e == max_e && (man >> dropped) == ((1u << 18) - 1)) top = true;
+    }
+    if (top) common += 1;
+    for (int i = 0; i < 8; ++i) {
+        unsigned v = vals[i];
+        unsigned s = v & sign_bit;
+        unsigned e = (v >> m) & emax;
+        unsigned man = v & ((1u << m) - 1);
+        if (common >= emax) {
+            out[i] = s | (emax << m);
+            continue;
+        }
+        if (max_e == 0) {
+            out[i] = s;
+            continue;
+        }
+        if (e == 0) {
+            out[i] = s | (common << m);
+            continue;
+        }
+        unsigned d = common - e;
+        unsigned __int128 sig = ((unsigned __int128)1 << m) | man;
+        unsigned shift = d + 1 + dropped;
+        unsigned __int128 r = round_shift128(sig, shift);
+        r <<= dropped;
+        if (r == 0) {
+            out[i] = s | (common << m);
+            continue;
+        }
+        out[i] = s | (common << m) | ((unsigned)r & ((1u << m) - 1));
+    }
+}
+
+// One gbfn line. Each thread handles one MAB and one cycle: it reads the
+// four PEs' source buses, converts the eight values as one block and writes
+// aluf (and the destination, if any).
+extern "C" __global__ void bfn_line(
+    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
+    unsigned* mauf, unsigned* aluf,
+    int smem, unsigned s0, unsigned s1, unsigned s2, unsigned s3, int swl,
+    int dmem, unsigned d0, unsigned d1, unsigned d2, unsigned d3, int dwl) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= 4096) return;
+    int mab = idx >> 2;
+    int c = idx & 3;
+    unsigned sb[4] = {s0, s1, s2, s3};
+    unsigned db[4] = {d0, d1, d2, d3};
+    unsigned* ps = pick_mem(smem, lm0, lm1, grf0, grf1);
+    unsigned* pd = pick_mem(dmem, lm0, lm1, grf0, grf1);
+    int ls = mem_len(smem);
+    int ld = mem_len(dmem);
+    unsigned bus[4][4];
+    for (int p = 0; p < 4; ++p) {
+        int pe = mab * 4 + p;
+        for (int i = 0; i < 4; ++i) {
+            if (smem == 4) {
+                bus[p][i] = mauf[pe * 16 + c * 4 + i];
+            } else if (smem == 5) {
+                bus[p][i] = aluf[pe * 16 + c * 4 + i];
+            } else {
+                bus[p][i] = (i < swl) ? ps[pe * ls + sb[c] + i] : 0;
+            }
+        }
+    }
+    unsigned vals[8];
+    unsigned conv[8];
+    for (int p = 0; p < 4; ++p) {
+        vals[2 * p] = bus[p][0];
+        vals[2 * p + 1] = bus[p][1];
+    }
+    block_float_single(vals, conv);
+    for (int p = 0; p < 4; ++p) {
+        int pe = mab * 4 + p;
+        unsigned out[4] = {conv[2 * p], conv[2 * p + 1], 0, 0};
+        if (dmem < 4) {
+            for (int i = 0; i < dwl; ++i) {
+                pd[pe * ld + db[c] + i] = out[i];
+            }
+        }
+        for (int i = 0; i < 4; ++i) {
+            aluf[pe * 16 + c * 4 + i] = out[i];
+        }
+    }
+}

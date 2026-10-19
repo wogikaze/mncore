@@ -2,10 +2,18 @@
 //!
 //! Usage: gpu_vsm_alu [lines]
 
-use mncore_sim::gpu::{alu_line_from_expr, mau_line_from_expr, Gpu};
+use mncore_sim::gpu::{
+    alu_line_from_expr, bfn_line_from_expr, mau_line_from_expr, AluLine, BfnLine, Gpu, MauLine,
+};
 use mncore_sim::machine::{GRF_WORDS, LM_WORDS, PES};
 use mncore_sim::run::Sim;
 use mncore_sim::vsm::{self, Line};
+
+enum Action {
+    Alu(AluLine),
+    Bfn(BfnLine),
+    Mau(MauLine),
+}
 
 fn main() {
     let lines: usize = std::env::args()
@@ -22,6 +30,8 @@ fn main() {
         "fmax $m{}v $aluf $r{}v",
         "frsqrt $m{}v $nowrite",
         "frsqrt $m{}v $r{}v",
+        "gbfn $lm{}v $nowrite",
+        "fvadd $r{} $aluf $n{}",
     ];
     let mut text = String::new();
     for i in 0..lines {
@@ -30,19 +40,18 @@ fn main() {
         text.push('\n');
     }
     let program = vsm::parse(&text).expect("parse");
-    let mut alu = Vec::new();
-    let mut mau = Vec::new();
+    let mut actions = Vec::new();
     for (_, line) in &program {
         let Line::Pe(exprs) = line else {
             panic!("expected PE line");
         };
         let expr = &exprs[0];
         if let Some(line) = alu_line_from_expr(expr) {
-            alu.push(Some(line));
-            mau.push(None);
+            actions.push(Action::Alu(line));
+        } else if let Some(line) = bfn_line_from_expr(expr) {
+            actions.push(Action::Bfn(line));
         } else if let Some(line) = mau_line_from_expr(expr, Default::default()) {
-            alu.push(None);
-            mau.push(Some(line));
+            actions.push(Action::Mau(line));
         } else {
             eprintln!("unsupported: {:?}", expr);
             std::process::exit(1);
@@ -83,11 +92,11 @@ fn main() {
     gpu.upload_state(&state, &lm0, &lm1, &grf0, &grf1)
         .expect("upload");
     let gpu_start = std::time::Instant::now();
-    for (a, m) in alu.iter().zip(&mau) {
-        if let Some(line) = a {
-            gpu.run_alu_line(&state, line).expect("alu");
-        } else if let Some(line) = m {
-            gpu.run_mau_line(&state, line).expect("mau");
+    for action in &actions {
+        match action {
+            Action::Alu(line) => gpu.run_alu_line(&state, line).expect("alu"),
+            Action::Bfn(line) => gpu.run_bfn_line(&state, line).expect("bfn"),
+            Action::Mau(line) => gpu.run_mau_line(&state, line).expect("mau"),
         }
     }
     gpu.sync().expect("sync");

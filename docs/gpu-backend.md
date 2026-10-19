@@ -209,3 +209,14 @@ CPU 1.35 秒、GPU 41 ms。
 
 ALU 式 924 個のうち 672 個（`fpassa`、`ixor`、`fmax`、`frsqrt`）が対応。
 すべての式が対応する行は 657。
+
+## gbfn と block-float
+
+`gbfn` は MAB 内の 4 PE × 2 レーンの 8 値を 1 ブロックとして block-float に変換し、`aluf` を更新する。
+カーネルは 1 スレッドで 1 MAB・1 サイクルを担当し、CPU と同じ `block_float` の丸めを使う。
+
+`gpu_vsm_alu` に `gbfn $lmNv $nowrite` を混ぜて 3,000 行を実行し、mismatch 0。
+CPU 3.04 秒、GPU 56.5 ms。
+
+ALU 式 924 個のうち 752 個（`fpassa`、`ixor`、`fmax`、`frsqrt`、`gbfn`）が対応。
+すべての式が対応する行は 729。

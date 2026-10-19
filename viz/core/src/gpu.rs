@@ -334,6 +334,36 @@ pub enum AluDst {
     None,
 }
 
+/// A gbfn (block-float) line.
+#[derive(Clone, Copy, Debug)]
+pub struct BfnLine {
+    pub src: MauSrc,
+    pub dst: AluDst,
+}
+
+/// Builds a BfnLine for a gbfn expression.
+pub fn bfn_line_from_expr(expr: &Expr) -> Option<BfnLine> {
+    let Op::Alu {
+        name: crate::vsm::AluOp::Bfn,
+        prec: Some(Prec::G),
+        arg: None,
+        ..
+    } = &expr.op
+    else {
+        return None;
+    };
+    if expr.flush.is_some() || expr.srcs.len() != 1 || expr.dsts.len() != 1 {
+        return None;
+    }
+    let src = line_source(&expr.srcs[0])?;
+    let dst = match &expr.dsts[0] {
+        Operand::Nowrite => AluDst::None,
+        Operand::Mem { .. } => AluDst::Mem(mem_source(&expr.dsts[0], false, false)?),
+        _ => return None,
+    };
+    Some(BfnLine { src, dst })
+}
+
 /// A single ALU line. Kind 0 is Passa and kind 1 is Xor.
 #[derive(Clone, Copy, Debug)]
 pub struct AluLine {
@@ -377,6 +407,7 @@ pub struct Gpu {
     function: CuFunction,
     mau_function: CuFunction,
     alu_function: CuFunction,
+    bfn_function: CuFunction,
     cu_ctx_destroy: CuCtxDestroy,
     cu_mem_alloc: CuMemAlloc,
     cu_mem_free: CuMemFree,
@@ -522,6 +553,11 @@ impl Gpu {
             unsafe { cu_get_function(&mut alu_function, module, b"alu_line\0".as_ptr() as *const c_char) },
             "cuModuleGetFunction(alu_line)",
         )?;
+        let mut bfn_function: CuFunction = std::ptr::null_mut();
+        check(
+            unsafe { cu_get_function(&mut bfn_function, module, b"bfn_line\0".as_ptr() as *const c_char) },
+            "cuModuleGetFunction(bfn_line)",
+        )?;
         Ok(Gpu {
             _cuda: cuda,
             _nvrtc: nvrtc,
@@ -529,6 +565,7 @@ impl Gpu {
             function,
             mau_function,
             alu_function,
+            bfn_function,
             cu_ctx_destroy,
             cu_mem_alloc,
             cu_mem_free,
@@ -860,6 +897,62 @@ impl Gpu {
                 )
             },
             "cuLaunchKernel(alu_line)",
+        )
+    }
+
+    /// Launches one gbfn line for all 1,024 MABs and four cycles.
+    pub fn run_bfn_line(&self, state: &GpuState, line: &BfnLine) -> Result<(), String> {
+        let mut lm0 = state.lm0;
+        let mut lm1 = state.lm1;
+        let mut grf0 = state.grf0;
+        let mut grf1 = state.grf1;
+        let mut mauf = state.mauf;
+        let mut aluf = state.aluf;
+        let mut smem = line.src.mem as i32;
+        let mut s = line.src.base;
+        let mut swl = line.src.wl as i32;
+        let (mut dmem, mut d, mut dwl) = match line.dst {
+            AluDst::Mem(dst) => (dst.mem as i32, dst.base, dst.wl as i32),
+            _ => (0i32, [0u32; 4], 0i32),
+        };
+        let mut args = [
+            &mut lm0 as *mut u64 as *mut c_void,
+            &mut lm1 as *mut u64 as *mut c_void,
+            &mut grf0 as *mut u64 as *mut c_void,
+            &mut grf1 as *mut u64 as *mut c_void,
+            &mut mauf as *mut u64 as *mut c_void,
+            &mut aluf as *mut u64 as *mut c_void,
+            &mut smem as *mut i32 as *mut c_void,
+            &mut s[0] as *mut u32 as *mut c_void,
+            &mut s[1] as *mut u32 as *mut c_void,
+            &mut s[2] as *mut u32 as *mut c_void,
+            &mut s[3] as *mut u32 as *mut c_void,
+            &mut swl as *mut i32 as *mut c_void,
+            &mut dmem as *mut i32 as *mut c_void,
+            &mut d[0] as *mut u32 as *mut c_void,
+            &mut d[1] as *mut u32 as *mut c_void,
+            &mut d[2] as *mut u32 as *mut c_void,
+            &mut d[3] as *mut u32 as *mut c_void,
+            &mut dwl as *mut i32 as *mut c_void,
+        ];
+        let grid = (crate::machine::PES as u32 + 255) / 256;
+        self.check(
+            unsafe {
+                (self.cu_launch)(
+                    self.bfn_function,
+                    grid,
+                    1,
+                    1,
+                    256,
+                    1,
+                    1,
+                    0,
+                    std::ptr::null_mut(),
+                    args.as_mut_ptr(),
+                    std::ptr::null_mut(),
+                )
+            },
+            "cuLaunchKernel(bfn_line)",
         )
     }
 
