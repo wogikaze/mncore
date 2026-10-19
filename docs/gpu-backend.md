@@ -293,3 +293,32 @@ L2BM を 8 L2B × 32,768 ロングワード（8 MB）で VRAM に持つ。
 - すべての式が対応する行は 1,526（PE 行 2,635 中、約 58%）。
 
 L2BM の reduction、内部マルチキャスト、行列、MV はまだ未対応。
+
+## 現状（15 ラウンド終了時）
+
+GPU 側でビット一致する範囲:
+
+- f32 vfma、ALU（Passa、Xor、Max、Rsqrt、Bfn、Msr、Zero、Imm）、MAU（FMA/MUL/ADD/PASSA、マスク、`mauf`/`aluf`）、T レジスタ。
+- L1BM の読み出し（Mbcast、Distrib、Pbcast）と書き込み（Mwrite）。
+- L2BM の Distrib、Bcast、FromL1b。
+
+実プログラムの被覆:
+
+- PE 行 2,635 のうち 1,526 行（約 58%）が、すべての式を GPU で扱える。
+- MAU 478/724、ALU 909/985、L1 264/292、L2 377/493。
+
+未達:
+
+- `mnist_train_step` 全体の GPU 実行。
+- L2BM の reduction と内部マルチキャスト。
+- 行列（`gmwrite`、`gmread`、`gmmul`）と MV。
+- L1BM の turnaround レジスタ `$lbi`。
+
+検証:
+
+- `cargo test --release` 17 件。
+- `difftest_prog` の relu と matmul で 0 mismatch。
+- GPU の各テスト（vfma、MAU、ALU、マスク、L1、L2）で 0 mismatch。
+
+GPU カーネルはすべて NVRTC + CUDA Driver API で実行時にコンパイルする。
+`nvcc` は不要。
