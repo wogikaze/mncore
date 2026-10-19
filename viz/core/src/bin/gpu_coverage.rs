@@ -2,7 +2,10 @@
 //!
 //! Usage: gpu_coverage [program.vsm]
 
-use mncore_sim::gpu::{alu_line_from_expr, bfn_line_from_expr, l1_read_line_from_expr, mau_line_from_expr};
+use mncore_sim::gpu::{
+    alu_line_from_expr, bfn_line_from_expr, l1_read_line_from_expr, l1_write_line_from_expr,
+    mau_line_from_expr,
+};
 use mncore_sim::machine::MaskState;
 use mncore_sim::vsm::{self, Line, Op};
 
@@ -50,7 +53,7 @@ fn main() {
         for expr in exprs {
             if let Op::L1(_) = expr.op {
                 l1_exprs += 1;
-                if l1_read_line_from_expr(expr).is_some() {
+                if l1_read_line_from_expr(expr).is_some() || l1_write_line_from_expr(expr).is_some() {
                     l1_supported += 1;
                 } else {
                     all_supported = false;
@@ -128,7 +131,7 @@ fn main() {
     println!("lines: {lines}, PE lines: {pe_lines}");
     println!("MAU expressions: {mau_exprs}, supported: {mau_supported}");
     println!("ALU expressions: {alu_exprs}, supported (Passa/Xor/Max/Rsqrt/Bfn): {alu_supported}");
-    println!("L1 expressions: {l1_exprs}, supported reads: {l1_supported}");
+    println!("L1 expressions: {l1_exprs}, supported reads/writes: {l1_supported}");
     println!("lines with every expression supported: {supported_lines}");
     println!("lines consisting only of supported MAU expressions: {single_mau_supported}");
     println!(

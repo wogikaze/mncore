@@ -391,6 +391,7 @@ pub fn l1_read_line_from_expr(expr: &Expr) -> Option<L1ReadLine> {
     let (kind, mabdiff) = match op {
         L1Op::Mbcast => (0u8, 0i16),
         L1Op::Distrib { mabdiff } => (1u8, *mabdiff),
+        L1Op::Pbcast => (2u8, 0i16),
         _ => return None,
     };
     let (wl, addr) = match expr.srcs.first()? {
@@ -410,6 +411,38 @@ pub fn l1_read_line_from_expr(expr: &Expr) -> Option<L1ReadLine> {
         mabdiff,
         wl,
         dst,
+    })
+}
+
+/// An L1BM write from one MAB (l1bmm@mab).
+#[derive(Clone, Copy, Debug)]
+pub struct L1WriteLine {
+    pub mab: u8,
+    pub addr: u32,
+    pub wl: u8,
+    pub src: MauSrc,
+}
+
+pub fn l1_write_line_from_expr(expr: &Expr) -> Option<L1WriteLine> {
+    let Op::L1(L1Op::Mwrite { mab }) = &expr.op else {
+        return None;
+    };
+    let (wl, addr) = match expr.dsts.first()? {
+        Operand::L1bm {
+            wl,
+            addr: Some(addr),
+        } => (*wl, *addr),
+        _ => return None,
+    };
+    if wl != 2 && wl != 4 {
+        return None;
+    }
+    let src = mem_source(expr.srcs.first()?, false, false)?;
+    Some(L1WriteLine {
+        mab: *mab,
+        addr,
+        wl,
+        src,
     })
 }
 
@@ -494,6 +527,7 @@ pub struct Gpu {
     alu_function: CuFunction,
     bfn_function: CuFunction,
     l1_function: CuFunction,
+    l1_write_function: CuFunction,
     cu_ctx_destroy: CuCtxDestroy,
     cu_mem_alloc: CuMemAlloc,
     cu_mem_free: CuMemFree,
@@ -649,6 +683,11 @@ impl Gpu {
             unsafe { cu_get_function(&mut l1_function, module, b"l1_read_line\0".as_ptr() as *const c_char) },
             "cuModuleGetFunction(l1_read_line)",
         )?;
+        let mut l1_write_function: CuFunction = std::ptr::null_mut();
+        check(
+            unsafe { cu_get_function(&mut l1_write_function, module, b"l1_write_line\0".as_ptr() as *const c_char) },
+            "cuModuleGetFunction(l1_write_line)",
+        )?;
         Ok(Gpu {
             _cuda: cuda,
             _nvrtc: nvrtc,
@@ -658,6 +697,7 @@ impl Gpu {
             alu_function,
             bfn_function,
             l1_function,
+            l1_write_function,
             cu_ctx_destroy,
             cu_mem_alloc,
             cu_mem_free,
@@ -826,6 +866,23 @@ impl Gpu {
             },
             "upload l1bm",
         )
+    }
+
+    /// Downloads the L1BM long words.
+    pub fn download_l1bm(&self, state: &GpuState) -> Result<Vec<u64>, String> {
+        let count = crate::blocks::L1BS * crate::blocks::L1BM_LONGS;
+        let mut out = vec![0u64; count];
+        self.check(
+            unsafe {
+                (self.cu_dtoh)(
+                    out.as_mut_ptr() as *mut c_void,
+                    state.l1bm,
+                    count * 8,
+                )
+            },
+            "download l1bm",
+        )?;
+        Ok(out)
     }
 
     /// Downloads the OMR entries (16 per PE).
@@ -1111,6 +1168,56 @@ impl Gpu {
                 )
             },
             "cuLaunchKernel(bfn_line)",
+        )
+    }
+
+    /// Launches one l1bmm@mab write.
+    pub fn run_l1_write_line(&self, state: &GpuState, line: &L1WriteLine) -> Result<(), String> {
+        let mut lm0 = state.lm0;
+        let mut lm1 = state.lm1;
+        let mut grf0 = state.grf0;
+        let mut grf1 = state.grf1;
+        let mut l1bm = state.l1bm;
+        let mut mab = line.mab as i32;
+        let mut addr = line.addr;
+        let mut dwl = line.wl as i32;
+        let mut smem = line.src.mem as i32;
+        let mut s = line.src.base;
+        let mut swl = line.src.wl as i32;
+        let mut args = [
+            &mut lm0 as *mut u64 as *mut c_void,
+            &mut lm1 as *mut u64 as *mut c_void,
+            &mut grf0 as *mut u64 as *mut c_void,
+            &mut grf1 as *mut u64 as *mut c_void,
+            &mut l1bm as *mut u64 as *mut c_void,
+            &mut mab as *mut i32 as *mut c_void,
+            &mut addr as *mut u32 as *mut c_void,
+            &mut dwl as *mut i32 as *mut c_void,
+            &mut smem as *mut i32 as *mut c_void,
+            &mut s[0] as *mut u32 as *mut c_void,
+            &mut s[1] as *mut u32 as *mut c_void,
+            &mut s[2] as *mut u32 as *mut c_void,
+            &mut s[3] as *mut u32 as *mut c_void,
+            &mut swl as *mut i32 as *mut c_void,
+        ];
+        let grid = (crate::machine::PES as u32 + 255) / 256;
+        self.check(
+            unsafe {
+                (self.cu_launch)(
+                    self.l1_write_function,
+                    grid,
+                    1,
+                    1,
+                    256,
+                    1,
+                    1,
+                    0,
+                    std::ptr::null_mut(),
+                    args.as_mut_ptr(),
+                    std::ptr::null_mut(),
+                )
+            },
+            "cuLaunchKernel(l1_write_line)",
         )
     }
 

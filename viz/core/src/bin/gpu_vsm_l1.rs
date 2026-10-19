@@ -3,7 +3,9 @@
 //! Usage: gpu_vsm_l1 [lines]
 
 use mncore_sim::blocks::{L1BM_LONGS, L1BS};
-use mncore_sim::gpu::{l1_read_line_from_expr, Gpu, L1ReadLine};
+use mncore_sim::gpu::{
+    l1_read_line_from_expr, l1_write_line_from_expr, Gpu, L1ReadLine, L1WriteLine,
+};
 use mncore_sim::machine::{GRF_WORDS, LM_WORDS, PES};
 use mncore_sim::run::Sim;
 use mncore_sim::vsm::{self, Line};
@@ -13,22 +15,40 @@ fn main() {
         .nth(1)
         .and_then(|s| s.parse().ok())
         .unwrap_or(100);
+    enum Action {
+        Read(L1ReadLine),
+        Write(L1WriteLine),
+    }
     let mut text = String::new();
     for i in 0..lines {
         let offset = (i % 16) * 4;
-        if i % 2 == 0 {
-            text.push_str(&format!("l1bmd $lb{} $lm{}v\n", offset, offset));
-        } else {
-            text.push_str(&format!("l1bmm $llb{} $llm{}v\n", offset, offset));
+        match i % 4 {
+            0 => text.push_str(&format!(
+                "l1bmm@{} $lln{}v $llb{}\n",
+                i % 16,
+                offset,
+                offset
+            )),
+            1 => text.push_str(&format!("l1bmm $llb{} $llm{}v\n", offset, offset)),
+            2 => text.push_str(&format!("l1bmd $lb{} $lm{}v\n", offset, offset)),
+            _ => text.push_str(&format!("l1bmp $lb{} $lm{}v\n", offset, offset)),
         }
     }
     let program = vsm::parse(&text).expect("parse");
-    let mut descriptors: Vec<L1ReadLine> = Vec::new();
+    let mut actions = Vec::new();
     for (_, line) in &program {
         let Line::Pe(exprs) = line else {
             panic!("expected PE line");
         };
-        descriptors.push(l1_read_line_from_expr(&exprs[0]).expect("L1 read"));
+        let expr = &exprs[0];
+        if let Some(line) = l1_read_line_from_expr(expr) {
+            actions.push(Action::Read(line));
+        } else if let Some(line) = l1_write_line_from_expr(expr) {
+            actions.push(Action::Write(line));
+        } else {
+            eprintln!("unsupported: {expr:?}");
+            std::process::exit(1);
+        }
     }
 
     let mut seed = 0x5eed_1234_5678_9abcu64;
@@ -72,8 +92,11 @@ fn main() {
         .expect("upload");
     gpu.upload_l1bm(&state, &l1bm).expect("upload l1bm");
     let gpu_start = std::time::Instant::now();
-    for line in &descriptors {
-        gpu.run_l1_read_line(&state, line).expect("l1");
+    for action in &actions {
+        match action {
+            Action::Read(line) => gpu.run_l1_read_line(&state, line).expect("l1 read"),
+            Action::Write(line) => gpu.run_l1_write_line(&state, line).expect("l1 write"),
+        }
     }
     gpu.sync().expect("sync");
     let gpu_elapsed = gpu_start.elapsed();
@@ -85,7 +108,20 @@ fn main() {
     );
     gpu.download_state(&state, &mut out.0, &mut out.1, &mut out.2, &mut out.3)
         .expect("download");
+    let gpu_l1bm = gpu.download_l1bm(&state).expect("download l1bm");
     let mut mismatches = 0usize;
+    for l1b in 0..L1BS {
+        for addr in 0..L1BM_LONGS {
+            let cpu = sim.m.blocks.l1bm[l1b][addr];
+            let gpu = gpu_l1bm[l1b * L1BM_LONGS + addr];
+            if cpu != gpu {
+                if mismatches == 0 {
+                    println!("l1bm first mismatch at l1b {l1b} addr {addr}: cpu {cpu:016x} gpu {gpu:016x}");
+                }
+                mismatches += 1;
+            }
+        }
+    }
     for (name, cpu, gpu, width) in [
         ("lm0", sim.m.mem.lm0.as_slice(), out.0.as_slice(), LM_WORDS),
         ("lm1", sim.m.mem.lm1.as_slice(), out.1.as_slice(), LM_WORDS),

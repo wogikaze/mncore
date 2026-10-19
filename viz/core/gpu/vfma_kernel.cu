@@ -599,6 +599,9 @@ extern "C" __global__ void l1_read_line(
             } else {
                 om = c * 4 + sub;
             }
+        } else if (op == 2) {
+            om = c;
+            if (swl == 4) ol = c + 4;
         } else {
             int src_mab = (mab - mabdiff + 16) % 16;
             om = c * 64 + src_mab * 4 + sub;
@@ -613,6 +616,37 @@ extern "C" __global__ void l1_read_line(
         };
         for (int i = 0; i < dwl; ++i) {
             pd[pe * ld + db[c] + i] = bus[i];
+        }
+    }
+}
+
+// One l1bmm@mab write: the selected MAB's PEs store two long words per cycle.
+extern "C" __global__ void l1_write_line(
+    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
+    unsigned long long* l1bm,
+    int mab_sel, unsigned addr, int dwl,
+    int smem, unsigned s0, unsigned s1, unsigned s2, unsigned s3, int swl) {
+    int pe = blockIdx.x * blockDim.x + threadIdx.x;
+    if (pe >= 4096) return;
+    int mab = (pe / 4) % 16;
+    if (mab != mab_sel) return;
+    int l1b = pe / 64;
+    int sub = pe % 4;
+    unsigned sb[4] = {s0, s1, s2, s3};
+    unsigned* ps = pick_mem(smem, lm0, lm1, grf0, grf1);
+    int ls = mem_len(smem);
+    int base = l1b * 8192;
+    int step = (dwl == 4) ? 8 : 4;
+    for (int c = 0; c < 4; ++c) {
+        unsigned bus[4];
+        for (int i = 0; i < 4; ++i) {
+            bus[i] = (smem < 4 && i >= swl) ? 0 : ps[pe * ls + sb[c] + i];
+        }
+        unsigned long long msb = ((unsigned long long)bus[0] << 32) | bus[1];
+        unsigned long long lsb = ((unsigned long long)bus[2] << 32) | bus[3];
+        l1bm[base + (addr + c * step + sub) % 8192] = msb;
+        if (dwl == 4) {
+            l1bm[base + (addr + c * step + 4 + sub) % 8192] = lsb;
         }
     }
 }
