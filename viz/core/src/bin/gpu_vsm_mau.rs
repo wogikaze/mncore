@@ -38,7 +38,7 @@ fn main() {
         if exprs.len() != 1 {
             panic!("expected one expression per line");
         }
-        match mau_line_from_expr(&exprs[0]) {
+        match mau_line_from_expr(&exprs[0], Default::default()) {
             Some(line) => descriptors.push(line),
             None => {
                 eprintln!("unsupported: {:?} {:?}", exprs[0].op, exprs[0]);

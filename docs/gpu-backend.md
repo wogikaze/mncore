@@ -35,7 +35,7 @@ CPU の `fvfma` は 1 行あたり約 3.8 ms（500 行のマイクロベンチ�
 ## まだ必要なもの
 
 - LM/GRF の状態を VRAM に置いたままにする。144 MB。
-- ALU、MAU（half/double を含む）、マスク、forwarding、msl/msr、block-float、L1BM/L2BM、行列、MV のカーネル。
+- ALU、MAU（half/double を含む）、マスク、forwarding、msl/msr、block-float、L1BM/L2BM、行列のカーネル。
 - 行間の依存は同一ストリームの順序で保証する。1 行 1 カーネルで足りる見込み。
 - mncore-sim への組み込みと、`difftest_prog` 相当のビット一致確認。
 
@@ -292,7 +292,7 @@ L2BM を 8 L2B × 32,768 ロングワード（8 MB）で VRAM に持つ。
 - L2 式 493 個のうち 377 個が対応。
 - すべての式が対応する行は 1,526（PE 行 2,635 中、約 58%）。
 
-L2BM の reduction、内部マルチキャスト、行列、MV はまだ未対応。
+L2BM の reduction、内部マルチキャスト、行列はまだ未対応。
 
 ## L2BM の縮約と内部マルチキャスト
 
@@ -334,32 +334,33 @@ cargo run --release --bin gpu_vsm_l2red -- 512
 
 `l2bmb2`（Bcast2）と、L1B 集合を指定した `l2bmd` の Distrib はまだ未対応。
 
-## 現状（16 ラウンド終了時）
+## 現状（L2 縮約と MV 対応後）
 
 GPU 側でビット一致する範囲:
 
 - f32 vfma、ALU（Passa、Xor、Max、Rsqrt、Bfn、Msr、Zero、Imm）、MAU（FMA/MUL/ADD/PASSA、マスク、`mauf`/`aluf`）、T レジスタ。
 - L1BM の読み出し（Mbcast、Distrib、Pbcast）と書き込み（Mwrite）。
-- L2BM の Distrib、Bcast、FromL1b。
-- L2BM の縮約（`l2bmr`、`l2bmr2`）と内部マルチキャスト（`l2bmi`）。RRN は 24 種類すべて。
+- L2BM の Distrib、Bcast、FromL1b、縮約（`l2bmr`、`l2bmr2`）、内部マルチキャスト（`l2bmi`）。RRN は 24 種類すべて。
+- MV（PDM/DRAM/L2BM のコピー、broadcast、distribution、RRN reduction）。
 
 実プログラムの被覆:
 
 - PE 行 2,635 のうち 1,536 行（約 58%）が、すべての式を GPU で扱える。
-- MAU 478/724、ALU 909/985、L1 264/292、L2 387/493。
+- MAU 478/724、ALU 909/985、L1 264/292、L2 387/493、MV 168/168。
 
 未達:
 
 - `mnist_train_step` 全体の GPU 実行。
 - L2BM の Bcast2 と、L1B 集合を指定した Distrib。
-- 行列（`gmwrite`、`gmread`、`gmmul`）と MV。
+- 行列（`gmwrite`、`gmread`、`gmmul`）。
 - L1BM の turnaround レジスタ `$lbi`。
+- DRAM はデバイス容量ぶんだけ（全 128 GiB は載せない）。間接 DRAM アクセスは CPU も未対応。
 
 検証:
 
-- `cargo test --release` 20 件。
+- `cargo test --release` 20 件（lib 17 + integration 3）。
 - `difftest_prog` の relu と matmul で 0 mismatch。
-- GPU の各テスト（vfma、MAU、ALU、マスク、L1、L2、L2 縮約）で 0 mismatch。
+- GPU の各テスト（vfma、MAU、ALU、マスク、L1、L2、L2 縮約、MV）で 0 mismatch。
 
 GPU カーネルはすべて NVRTC + CUDA Driver API で実行時にコンパイルする。
 `nvcc` は不要。

@@ -11,6 +11,7 @@ use libloading::Library;
 
 use crate::blockop::{L1Op, L2Op, Rrn, RrnOp};
 use crate::machine::MaskState;
+use crate::mv::{Mv, MvKind, MvOperand};
 use crate::vsm::{Expr, FwdKind, MauKind, MaskSel, MaskSource, MemKind, Op, Operand, Prec};
 
 type CuResult = c_int;
@@ -446,6 +447,309 @@ pub fn l1_write_line_from_expr(expr: &Expr) -> Option<L1WriteLine> {
     })
 }
 
+/// Device memory of an MV operand: 0 PDM, 1 DRAM, 2 L2BM. A group or l2b of
+/// `MV_GROUP_NONE` means that the operand did not name one (CPU: all groups,
+/// or the first group depending on the opcode; see `mv_line_from_mv`).
+#[derive(Clone, Copy, Debug)]
+pub struct MvRef {
+    pub mem: u8,
+    pub group: u8,
+    pub l2b: u8,
+    pub addr: u64,
+}
+
+const MV_GROUP_NONE: u8 = 255;
+const MV_MODE_P: u8 = 0;
+const MV_MODE_B_PDM: u8 = 1;
+const MV_MODE_B_DRAM: u8 = 2;
+const MV_MODE_B2: u8 = 3;
+const MV_MODE_D_PDM_L2: u8 = 4;
+const MV_MODE_D_L2_PDM: u8 = 5;
+const MV_MODE_D_PDM_DRAM: u8 = 6;
+const MV_MODE_D_DRAM_PDM: u8 = 7;
+const MV_MODE_B4: u8 = 8;
+const MV_MODE_R_PDM: u8 = 9;
+const MV_MODE_R_DRAM: u8 = 10;
+const MV_MODE_R2: u8 = 11;
+const MV_MODE_R4: u8 = 12;
+const MV_MODE_NOP: u8 = 13;
+
+/// A resolved MV statement for the device kernel.
+#[derive(Clone, Copy, Debug)]
+pub struct MvLine {
+    pub mode: u8,
+    pub size: u64,
+    pub src: MvRef,
+    pub dst: MvRef,
+    pub parallel: bool,
+    /// `mvp` with source and destination in the same memory level and group:
+    /// all reads must happen before the writes, so the transfer is staged.
+    pub snapshot: bool,
+    pub rrn_op: u8,
+    pub rrn_bits: u8,
+}
+
+fn mv_ref(op: MvOperand) -> Option<MvRef> {
+    let group = |g: Option<u8>| -> Option<u8> {
+        match g {
+            Some(g) if (g as usize) < crate::mv::GROUPS => Some(g),
+            Some(_) => None,
+            None => Some(MV_GROUP_NONE),
+        }
+    };
+    match op {
+        MvOperand::Pdm { addr, group: g } => Some(MvRef {
+            mem: 0,
+            group: group(g)?,
+            l2b: 0,
+            addr,
+        }),
+        MvOperand::Dram {
+            addr,
+            group: g,
+            indirect,
+        } => {
+            if indirect {
+                return None;
+            }
+            Some(MvRef {
+                mem: 1,
+                group: group(g)?,
+                l2b: 0,
+                addr,
+            })
+        }
+        MvOperand::L2bm {
+            addr,
+            group: g,
+            l2b,
+        } => {
+            let l2b = match l2b {
+                Some(c) if c < 2 => c,
+                Some(_) => return None,
+                None => 0,
+            };
+            Some(MvRef {
+                mem: 2,
+                group: group(g)?,
+                l2b,
+                addr,
+            })
+        }
+    }
+}
+
+fn rrn_code(op: Rrn) -> (u8, u8) {
+    let code = match op.op {
+        RrnOp::Fadd => 0,
+        RrnOp::Max => 1,
+        RrnOp::Min => 2,
+        RrnOp::Iadd => 3,
+        RrnOp::Band => 4,
+        RrnOp::And => 5,
+        RrnOp::Bor => 6,
+        RrnOp::Or => 7,
+    };
+    (code, op.bits() as u8)
+}
+
+/// Builds the kernel descriptor for an MV statement. Returns `None` for
+/// indirect DRAM access and for operand combinations the kernel does not
+/// implement (the CPU rejects some of these too).
+pub fn mv_line_from_mv(mv: &Mv) -> Option<MvLine> {
+    if mv.kind == MvKind::Nop {
+        let none = MvRef {
+            mem: 0,
+            group: MV_GROUP_NONE,
+            l2b: 0,
+            addr: 0,
+        };
+        return Some(MvLine {
+            mode: MV_MODE_NOP,
+            size: 0,
+            src: none,
+            dst: none,
+            parallel: false,
+            snapshot: false,
+            rrn_op: 0,
+            rrn_bits: 0,
+        });
+    }
+    let (src_op, dst_op) = (mv.src?, mv.dst?);
+    let src = mv_ref(src_op)?;
+    let dst = mv_ref(dst_op)?;
+    // The CPU does `size / 64` blocks of 64 long words; a smaller remainder is ignored.
+    let size = (mv.size / 64) * 64;
+    let line = |mode, size, src, dst, parallel, snapshot, (rrn_op, rrn_bits)| MvLine {
+        mode,
+        size,
+        src,
+        dst,
+        parallel,
+        snapshot,
+        rrn_op,
+        rrn_bits,
+    };
+    match mv.kind {
+        MvKind::Nop => None,
+        MvKind::P => {
+            let (parallel, size) = match (src.group, dst.group) {
+                (MV_GROUP_NONE, MV_GROUP_NONE) => (true, size),
+                (MV_GROUP_NONE, _) | (_, MV_GROUP_NONE) => return None,
+                _ => (false, size),
+            };
+            // The CPU defaults a missing L2B number to 0 for both operands.
+            let snapshot = src.mem == dst.mem
+                && src.group == dst.group
+                && (src.mem != 2 || src.l2b == dst.l2b);
+            Some(line(MV_MODE_P, size, src, dst, parallel, snapshot, (0, 0)))
+        }
+        MvKind::B => match src.mem {
+            0 if dst.mem == 2 => Some(line(
+                MV_MODE_B_PDM,
+                size,
+                MvRef {
+                    group: if src.group == MV_GROUP_NONE { 0 } else { src.group },
+                    ..src
+                },
+                // The CPU ignores the destination groups and writes every L2BM.
+                MvRef { mem: 2, group: 0, l2b: 0, ..dst },
+                false,
+                false,
+                (0, 0),
+            )),
+            1 if dst.mem == 2 => Some(line(
+                MV_MODE_B_DRAM,
+                size,
+                MvRef { group: 0, ..src },
+                MvRef { mem: 2, group: 0, l2b: 0, ..dst },
+                false,
+                false,
+                (0, 0),
+            )),
+            _ => None,
+        },
+        MvKind::B2 if src.mem == 1 && dst.mem == 2 => Some(line(
+            MV_MODE_B2,
+            size,
+            MvRef { group: 0, ..src },
+            MvRef { mem: 2, group: 0, l2b: 0, ..dst },
+            false,
+            false,
+            (0, 0),
+        )),
+        MvKind::B4 if src.mem == 1 && dst.mem == 2 => Some(line(
+            MV_MODE_B4,
+            size,
+            MvRef { group: 0, ..src },
+            MvRef { mem: 2, group: 0, l2b: 0, ..dst },
+            false,
+            false,
+            (0, 0),
+        )),
+        MvKind::D => {
+            let (mode, src, dst) = match (src.mem, dst.mem) {
+                (0, 2) => (
+                    MV_MODE_D_PDM_L2,
+                    MvRef { group: if src.group == MV_GROUP_NONE { 0 } else { src.group }, ..src },
+                    MvRef { mem: 2, group: 0, l2b: 0, ..dst },
+                ),
+                (2, 0) => (
+                    MV_MODE_D_L2_PDM,
+                    MvRef { mem: 2, group: 0, l2b: 0, ..src },
+                    MvRef { group: if dst.group == MV_GROUP_NONE { 0 } else { dst.group }, ..dst },
+                ),
+                (0, 1) => (
+                    MV_MODE_D_PDM_DRAM,
+                    MvRef { group: if src.group == MV_GROUP_NONE { 0 } else { src.group }, ..src },
+                    MvRef { group: 0, ..dst },
+                ),
+                (1, 0) => (
+                    MV_MODE_D_DRAM_PDM,
+                    MvRef { group: 0, ..src },
+                    MvRef { group: if dst.group == MV_GROUP_NONE { 0 } else { dst.group }, ..dst },
+                ),
+                _ => return None,
+            };
+            Some(line(mode, size, src, dst, false, false, (0, 0)))
+        }
+        MvKind::R2(op) if src.mem == 2 && matches!(dst.mem, 0 | 1) => Some(line(
+            MV_MODE_R2,
+            size,
+            MvRef { mem: 2, group: 0, l2b: 0, ..src },
+            dst,
+            false,
+            false,
+            rrn_code(op),
+        )),
+        MvKind::R(op) if src.mem == 2 && matches!(dst.mem, 0 | 1) => {
+            let (mode, dst) = if dst.mem == 0 {
+                (
+                    MV_MODE_R_PDM,
+                    MvRef { group: if dst.group == MV_GROUP_NONE { 0 } else { dst.group }, ..dst },
+                )
+            } else {
+                (MV_MODE_R_DRAM, MvRef { group: 0, ..dst })
+            };
+            Some(line(
+                mode,
+                size,
+                MvRef { mem: 2, group: 0, l2b: 0, ..src },
+                dst,
+                false,
+                false,
+                rrn_code(op),
+            ))
+        }
+        MvKind::R4(op) if src.mem == 2 && dst.mem == 1 => Some(line(
+            MV_MODE_R4,
+            size,
+            MvRef { mem: 2, group: 0, l2b: 0, ..src },
+            MvRef { group: 0, ..dst },
+            false,
+            false,
+            rrn_code(op),
+        )),
+        _ => None,
+    }
+}
+
+impl MvLine {
+    /// Upper bound of the device DRAM this statement can touch on either side.
+    /// Every data flow stays below `addr + size` (the widest is a plain `mvp`
+    /// or `mvb2`); the kernel and host range check use this same bound.
+    pub fn dram_longs_needed(&self) -> u64 {
+        let mut need = 1;
+        for r in [self.src, self.dst] {
+            if r.mem == 1 {
+                need = need.max(r.addr.saturating_add(self.size));
+            }
+        }
+        need
+    }
+
+    /// Scratch long words needed by the two-pass snapshot of an overlapping `mvp`.
+    pub fn scratch_longs_needed(&self) -> u64 {
+        if self.snapshot {
+            self.size * if self.parallel { 4 } else { 1 }
+        } else {
+            0
+        }
+    }
+
+    fn threads(&self) -> u64 {
+        match self.mode {
+            MV_MODE_P => self.size * if self.parallel { 4 } else { 1 },
+            MV_MODE_B2 => self.size * 4,
+            MV_MODE_D_PDM_L2 | MV_MODE_D_L2_PDM => self.size * 8,
+            MV_MODE_B4 | MV_MODE_R4 => self.size * 2,
+            MV_MODE_R2 => self.size * if self.dst.group == MV_GROUP_NONE { 4 } else { 1 },
+            MV_MODE_NOP => 0,
+            _ => self.size,
+        }
+    }
+}
+
 /// An L2BM transfer: op 0 Distrib (L2 to L1), 1 Bcast (L2 to L1), 2 FromL1b (L1 to L2).
 #[derive(Clone, Copy, Debug)]
 pub struct L2Line {
@@ -491,7 +795,7 @@ pub struct L2RedLine {
     pub rrn: u8,
 }
 
-fn rrn_code(rrn: Rrn) -> u8 {
+fn mv_rrn_code(rrn: Rrn) -> u8 {
     match rrn.op {
         RrnOp::Fadd => 0,
         RrnOp::Max => 1,
@@ -525,7 +829,7 @@ pub fn l2_reduce_line_from_expr(expr: &Expr) -> Option<L2RedLine> {
             mask: set.mask,
             immode: set.immode,
             bits: rrn.bits(),
-            rrn: rrn_code(*rrn),
+            rrn: mv_rrn_code(*rrn),
         }),
         L2Op::Reduce2 { rrn } => Some(L2RedLine {
             op: 1,
@@ -534,7 +838,7 @@ pub fn l2_reduce_line_from_expr(expr: &Expr) -> Option<L2RedLine> {
             mask: 0xff,
             immode: 0,
             bits: rrn.bits(),
-            rrn: rrn_code(*rrn),
+            rrn: mv_rrn_code(*rrn),
         }),
         L2Op::Imcast { set } => Some(L2RedLine {
             op: 2,
@@ -603,22 +907,38 @@ pub struct GpuState {
     t: u64,
     l1bm: u64,
     l2bm: u64,
+    /// PDM (4 x `mv::PDM_LONGS`) and a truncated DRAM (4 x `dram_longs`).
+    /// Both are zero when the state was allocated without MV support.
+    pdm: u64,
+    dram: u64,
+    scratch: u64,
+    dram_longs: u64,
+    scratch_longs: u64,
     free: CuMemFree,
 }
 
 impl Drop for GpuState {
     fn drop(&mut self) {
         unsafe {
-            (self.free)(self.lm0);
-            (self.free)(self.lm1);
-            (self.free)(self.grf0);
-            (self.free)(self.grf1);
-            (self.free)(self.mauf);
-            (self.free)(self.aluf);
-            (self.free)(self.mask);
-            (self.free)(self.t);
-            (self.free)(self.l1bm);
-            (self.free)(self.l2bm);
+            for pointer in [
+                self.lm0,
+                self.lm1,
+                self.grf0,
+                self.grf1,
+                self.mauf,
+                self.aluf,
+                self.mask,
+                self.t,
+                self.l1bm,
+                self.l2bm,
+                self.pdm,
+                self.dram,
+                self.scratch,
+            ] {
+                if pointer != 0 {
+                    (self.free)(pointer);
+                }
+            }
         }
     }
 }
@@ -635,6 +955,7 @@ pub struct Gpu {
     l1_write_function: CuFunction,
     l2_function: CuFunction,
     l2_reduce_function: CuFunction,
+    mv_function: CuFunction,
     cu_ctx_destroy: CuCtxDestroy,
     cu_mem_alloc: CuMemAlloc,
     cu_mem_free: CuMemFree,
@@ -710,7 +1031,12 @@ impl Gpu {
         let mut context: CuContext = std::ptr::null_mut();
         check(unsafe { cu_ctx_create(&mut context, 0, device) }, "cuCtxCreate")?;
 
-        let source = include_str!("../gpu/vfma_kernel.cu");
+        // The MV kernel reuses the Fmt/round_pack helpers of the vfma kernel,
+        // so both files are compiled as one translation unit.
+        let source = concat!(
+            include_str!("../gpu/vfma_kernel.cu"),
+            include_str!("../gpu/mv_kernel.cu")
+        );
         let source_c = CString::new(source).map_err(|e| e.to_string())?;
         let name = CString::new("vfma.cu").unwrap();
         let mut program: NvrtcProgram = std::ptr::null_mut();
@@ -811,6 +1137,11 @@ impl Gpu {
             },
             "cuModuleGetFunction(l2_reduce_line)",
         )?;
+        let mut mv_function: CuFunction = std::ptr::null_mut();
+        check(
+            unsafe { cu_get_function(&mut mv_function, module, b"mv_line\0".as_ptr() as *const c_char) },
+            "cuModuleGetFunction(mv_line)",
+        )?;
         Ok(Gpu {
             _cuda: cuda,
             _nvrtc: nvrtc,
@@ -823,6 +1154,7 @@ impl Gpu {
             l1_write_function,
             l2_function,
             l2_reduce_function,
+            mv_function,
             cu_ctx_destroy,
             cu_mem_alloc,
             cu_mem_free,
@@ -854,15 +1186,29 @@ impl Gpu {
         }
     }
 
-    /// Allocates the four PE memories on the device.
+    /// Allocates the four PE memories and the L1BM/L2BM buffers on the device.
     pub fn allocate_state(&self) -> Result<GpuState, String> {
+        self.allocate_state_with_mv(0, 0)
+    }
+
+    /// Allocates the base state plus PDM and MV support.
+    ///
+    /// The full CPU DRAM is 4 x 512 Mi long words (128 GiB), so the device keeps
+    /// only `dram_longs` long words per group. MV statements whose DRAM access
+    /// bound (`addr + size`) exceeds this capacity are rejected by
+    /// `run_mv_line`; `MvLine::dram_longs_needed` gives a fitting size.
+    /// `scratch_longs` is used by the two-pass snapshot of overlapping `mvp`.
+    pub fn allocate_state_with_mv(
+        &self,
+        dram_longs: u64,
+        scratch_longs: u64,
+    ) -> Result<GpuState, String> {
         let lm_bytes = crate::machine::PES * crate::machine::LM_WORDS * 4;
         let grf_bytes = crate::machine::PES * crate::machine::GRF_WORDS * 4;
         let fwd_bytes = crate::machine::PES * 16 * 4;
         let l1bm_bytes = crate::blocks::L1BS * crate::blocks::L1BM_LONGS * 8;
         let l2bm_bytes = crate::blocks::L2BS * crate::blocks::L2BM_LONGS * 8;
-        let mut buffers = [0u64; 10];
-        let sizes = [
+        let mut sizes = vec![
             lm_bytes,
             lm_bytes,
             grf_bytes,
@@ -874,7 +1220,23 @@ impl Gpu {
             l1bm_bytes,
             l2bm_bytes,
         ];
-        for i in 0..10 {
+        let want_mv = dram_longs > 0;
+        if want_mv {
+            let pdm_bytes = (crate::mv::GROUPS as u64 * crate::mv::PDM_LONGS * 8) as usize;
+            let dram_bytes = usize::try_from(dram_longs)
+                .ok()
+                .and_then(|n| n.checked_mul(crate::mv::GROUPS).and_then(|n| n.checked_mul(8)))
+                .ok_or("MV DRAM size overflows usize")?;
+            let scratch_bytes = usize::try_from(scratch_longs.max(1))
+                .ok()
+                .and_then(|n| n.checked_mul(8))
+                .ok_or("MV scratch size overflows usize")?;
+            sizes.push(pdm_bytes);
+            sizes.push(dram_bytes);
+            sizes.push(scratch_bytes);
+        }
+        let mut buffers = vec![0u64; sizes.len()];
+        for i in 0..sizes.len() {
             let code = unsafe { (self.cu_mem_alloc)(&mut buffers[i], sizes[i]) };
             if let Err(error) = self.check(code, "cuMemAlloc(state)") {
                 for buffer in &buffers[..i] {
@@ -894,6 +1256,11 @@ impl Gpu {
             t: buffers[7],
             l1bm: buffers[8],
             l2bm: buffers[9],
+            pdm: if want_mv { buffers[10] } else { 0 },
+            dram: if want_mv { buffers[11] } else { 0 },
+            scratch: if want_mv { buffers[12] } else { 0 },
+            dram_longs: if want_mv { dram_longs } else { 0 },
+            scratch_longs: if want_mv { scratch_longs } else { 0 },
             free: self.cu_mem_free,
         })
     }
@@ -1044,6 +1411,88 @@ impl Gpu {
                 )
             },
             "download l2bm",
+        )?;
+        Ok(out)
+    }
+
+    /// Uploads all four PDM groups (4 x `mv::PDM_LONGS` long words, group-major).
+    pub fn upload_pdm(&self, state: &GpuState, words: &[u64]) -> Result<(), String> {
+        let count = crate::mv::GROUPS * crate::mv::PDM_LONGS as usize;
+        if state.pdm == 0 {
+            return Err("GPU state was allocated without MV support".into());
+        }
+        if words.len() != count {
+            return Err("PDM slice has the wrong length".into());
+        }
+        self.check(
+            unsafe {
+                (self.cu_htod)(
+                    state.pdm,
+                    words.as_ptr() as *const c_void,
+                    count * 8,
+                )
+            },
+            "upload pdm",
+        )
+    }
+
+    /// Downloads all four PDM groups.
+    pub fn download_pdm(&self, state: &GpuState) -> Result<Vec<u64>, String> {
+        if state.pdm == 0 {
+            return Err("GPU state was allocated without MV support".into());
+        }
+        let count = crate::mv::GROUPS * crate::mv::PDM_LONGS as usize;
+        let mut out = vec![0u64; count];
+        self.check(
+            unsafe {
+                (self.cu_dtoh)(
+                    out.as_mut_ptr() as *mut c_void,
+                    state.pdm,
+                    count * 8,
+                )
+            },
+            "download pdm",
+        )?;
+        Ok(out)
+    }
+
+    /// Uploads the truncated device DRAM (4 x `dram_longs`, group-major).
+    pub fn upload_dram(&self, state: &GpuState, words: &[u64]) -> Result<(), String> {
+        if state.dram == 0 {
+            return Err("GPU state was allocated without MV support".into());
+        }
+        let count = (crate::mv::GROUPS as u64 * state.dram_longs) as usize;
+        if words.len() != count {
+            return Err("DRAM slice has the wrong length".into());
+        }
+        self.check(
+            unsafe {
+                (self.cu_htod)(
+                    state.dram,
+                    words.as_ptr() as *const c_void,
+                    count * 8,
+                )
+            },
+            "upload dram",
+        )
+    }
+
+    /// Downloads the truncated device DRAM.
+    pub fn download_dram(&self, state: &GpuState) -> Result<Vec<u64>, String> {
+        if state.dram == 0 {
+            return Err("GPU state was allocated without MV support".into());
+        }
+        let count = (crate::mv::GROUPS as u64 * state.dram_longs) as usize;
+        let mut out = vec![0u64; count];
+        self.check(
+            unsafe {
+                (self.cu_dtoh)(
+                    out.as_mut_ptr() as *mut c_void,
+                    state.dram,
+                    count * 8,
+                )
+            },
+            "download dram",
         )?;
         Ok(out)
     }
@@ -1415,6 +1864,113 @@ impl Gpu {
         )
     }
 
+    /// Launches one MV statement. An overlapping `mvp` is run as two passes
+    /// through a scratch buffer so that all reads precede all writes, like the
+    /// CPU's write list.
+    pub fn run_mv_line(&self, state: &GpuState, line: &MvLine) -> Result<(), String> {
+        if line.mode == MV_MODE_NOP {
+            return Ok(());
+        }
+        if state.pdm == 0 || state.dram == 0 {
+            return Err("GPU state was allocated without MV support".into());
+        }
+        let total = line.threads();
+        if total == 0 {
+            return Ok(());
+        }
+        for r in [line.src, line.dst] {
+            if r.mem == 1 {
+                let end = r.addr.saturating_add(line.size);
+                if end > crate::mv::DRAM_LONGS {
+                    return Err(format!(
+                        "MV DRAM range {}..{} wraps the CPU DRAM",
+                        r.addr, end
+                    ));
+                }
+                if end > state.dram_longs {
+                    return Err(format!(
+                        "MV DRAM range {}..{} exceeds the device DRAM of {} long words",
+                        r.addr, end, state.dram_longs
+                    ));
+                }
+            }
+        }
+        if line.snapshot && line.scratch_longs_needed() > state.scratch_longs {
+            return Err(format!(
+                "overlapping MV needs {} scratch long words, state has {}",
+                line.scratch_longs_needed(),
+                state.scratch_longs
+            ));
+        }
+        let grid = total.div_ceil(256);
+        if grid > u32::MAX as u64 {
+            return Err("MV transfer is too large for a kernel grid".into());
+        }
+        let grid = grid as u32;
+        let phases: &[i32] = if line.snapshot { &[0, 1] } else { &[2] };
+        for &phase in phases {
+            let mut pdm = state.pdm;
+            let mut dram = state.dram;
+            let mut l2bm = state.l2bm;
+            let mut scratch = state.scratch;
+            let mut dram_longs = state.dram_longs;
+            let mut mode = line.mode as i32;
+            let mut phase = phase;
+            let mut parallel = line.parallel as i32;
+            let mut src_mem = line.src.mem as i32;
+            let mut src_group = line.src.group as i32;
+            let mut src_l2b = line.src.l2b as i32;
+            let mut src_addr = line.src.addr;
+            let mut dst_mem = line.dst.mem as i32;
+            let mut dst_group = line.dst.group as i32;
+            let mut dst_l2b = line.dst.l2b as i32;
+            let mut dst_addr = line.dst.addr;
+            let mut size = line.size;
+            let mut rrn_op = line.rrn_op as i32;
+            let mut rrn_bits = line.rrn_bits as i32;
+            let mut args = [
+                &mut pdm as *mut u64 as *mut c_void,
+                &mut dram as *mut u64 as *mut c_void,
+                &mut l2bm as *mut u64 as *mut c_void,
+                &mut scratch as *mut u64 as *mut c_void,
+                &mut dram_longs as *mut u64 as *mut c_void,
+                &mut mode as *mut i32 as *mut c_void,
+                &mut phase as *mut i32 as *mut c_void,
+                &mut parallel as *mut i32 as *mut c_void,
+                &mut src_mem as *mut i32 as *mut c_void,
+                &mut src_group as *mut i32 as *mut c_void,
+                &mut src_l2b as *mut i32 as *mut c_void,
+                &mut src_addr as *mut u64 as *mut c_void,
+                &mut dst_mem as *mut i32 as *mut c_void,
+                &mut dst_group as *mut i32 as *mut c_void,
+                &mut dst_l2b as *mut i32 as *mut c_void,
+                &mut dst_addr as *mut u64 as *mut c_void,
+                &mut size as *mut u64 as *mut c_void,
+                &mut rrn_op as *mut i32 as *mut c_void,
+                &mut rrn_bits as *mut i32 as *mut c_void,
+            ];
+            self.check(
+                unsafe {
+                    (self.cu_launch)(
+                        self.mv_function,
+                        grid,
+                        1,
+                        1,
+                        256,
+                        1,
+                        1,
+                        0,
+                        std::ptr::null_mut(),
+                        args.as_mut_ptr(),
+                        std::ptr::null_mut(),
+                    )
+                },
+                "cuLaunchKernel(mv_line)",
+            )?;
+        }
+        Ok(())
+    }
+
     /// Launches one l1bmm@mab write.
     pub fn run_l1_write_line(&self, state: &GpuState, line: &L1WriteLine) -> Result<(), String> {
         let mut lm0 = state.lm0;
@@ -1585,6 +2141,58 @@ impl Gpu {
 impl Drop for Gpu {
     fn drop(&mut self) {
         unsafe { (self.cu_ctx_destroy)(self.context) };
+    }
+}
+
+#[cfg(test)]
+mod mv_tests {
+    use super::*;
+    use crate::mv::parse;
+
+    fn descriptor(text: &str) -> Option<MvLine> {
+        mv_line_from_mv(&parse(text).unwrap())
+    }
+
+    #[test]
+    fn mv_descriptors() {
+        let line = descriptor("mvp/n64i9f $p0@0 $lc0@2.1").unwrap();
+        assert_eq!(line.mode, MV_MODE_P);
+        assert!(!line.parallel);
+        assert!(!line.snapshot);
+        assert_eq!(line.size, 64);
+        assert_eq!((line.src.mem, line.src.group), (0, 0));
+        assert_eq!((line.dst.mem, line.dst.group, line.dst.l2b), (2, 2, 1));
+
+        let line = descriptor("mvp/n256i9f $d0 $lc0@.0").unwrap();
+        assert!(line.parallel);
+        assert_eq!(line.size, 256);
+        assert_eq!(line.src.mem, 1);
+
+        // A remainder below 64 long words is ignored, as in the CPU.
+        assert_eq!(descriptor("mvp/n100i9f $d0 $lc0@.0").unwrap().size, 64);
+
+        let line = descriptor("mvp/n64i9f $p0@0 $p16@0").unwrap();
+        assert!(line.snapshot);
+        assert_eq!(line.scratch_longs_needed(), 64);
+        assert!(!descriptor("mvp/n64i9f $p0@0 $p16@1").unwrap().snapshot);
+        assert!(!descriptor("mvp/n64i9f $d0@0 $lc0@0.0").unwrap().snapshot);
+
+        let line = descriptor("mvb2/n512i9f $d112000 $lc0").unwrap();
+        assert_eq!(line.mode, MV_MODE_B2);
+        assert_eq!(line.threads(), 4 * 512);
+        assert_eq!(line.dram_longs_needed(), 112512);
+
+        let line = descriptor("mvrffadd/n64i9f $lc0 $p0@0").unwrap();
+        assert_eq!(line.mode, MV_MODE_R_PDM);
+        assert_eq!((line.rrn_op, line.rrn_bits), (0, 32));
+        let line = descriptor("mvr4dmax/n64i9f $lc0 $d0").unwrap();
+        assert_eq!(line.mode, MV_MODE_R4);
+        assert_eq!((line.rrn_op, line.rrn_bits), (1, 64));
+
+        assert!(descriptor("mvp/n256nd4 $p1600@1 $di512@2").is_none());
+        assert!(descriptor("mvp/n64i9f $p0@0 $lc0@.0").is_none());
+        assert!(descriptor("mvb/n64i9f $p0@0 $d0@0").is_none());
+        assert_eq!(descriptor("mvnop").unwrap().mode, MV_MODE_NOP);
     }
 }
 

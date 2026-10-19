@@ -153,6 +153,12 @@ fn main() {
             b,
             c,
             dst,
+            mask: mncore_sim::gpu::MaskInfo {
+                kind: 0,
+                entry: 0,
+                pattern: 0,
+                ll: false,
+            },
         });
     }
 

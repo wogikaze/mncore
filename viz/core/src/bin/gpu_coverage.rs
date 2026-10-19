@@ -1,10 +1,10 @@
-//! Counts how much of a VSM program the current GPU MAU path can execute.
+//! Counts how much of a VSM program the current GPU kernels can execute.
 //!
 //! Usage: gpu_coverage [program.vsm]
 
 use mncore_sim::gpu::{
     alu_line_from_expr, bfn_line_from_expr, l1_read_line_from_expr, l1_write_line_from_expr,
-    l2_line_from_expr, l2_reduce_line_from_expr, mau_line_from_expr,
+    l2_line_from_expr, l2_reduce_line_from_expr, mau_line_from_expr, mv_line_from_mv,
 };
 use mncore_sim::machine::MaskState;
 use mncore_sim::vsm::{self, Line, Op};
@@ -38,6 +38,9 @@ fn main() {
     let mut wl4 = 0usize;
     let mut other_forward = 0usize;
     let mut mask_state = MaskState::default();
+    let mut mv_lines = 0usize;
+    let mut mv_supported = 0usize;
+    let mut mv_unsupported_texts: Vec<String> = Vec::new();
     for (_, line) in &program {
         lines += 1;
         if let Line::MaskDirective { wl, targets, entry } = line {
@@ -46,6 +49,15 @@ fn main() {
                 targets: *targets,
                 entry: *entry,
             };
+            continue;
+        }
+        if let Line::Mv(mv) = line {
+            mv_lines += 1;
+            if mv_line_from_mv(mv).is_some() {
+                mv_supported += 1;
+            } else {
+                mv_unsupported_texts.push(mv.text.clone());
+            }
             continue;
         }
         let Line::Pe(exprs) = line else {
@@ -158,6 +170,10 @@ fn main() {
     println!("L1 expressions: {l1_exprs}, supported reads/writes: {l1_supported}");
     println!("L2 expressions: {l2_exprs}, supported transfers/reductions/multicast: {l2_supported}");
     println!("L2 reductions/multicast: {l2_red_exprs}, supported: {l2_red_supported}");
+    println!("MV statements: {mv_lines}, supported: {mv_supported}");
+    for text in mv_unsupported_texts.iter().take(10) {
+        println!("  unsupported MV: {text}");
+    }
     println!("lines with every expression supported: {supported_lines}");
     println!("lines consisting only of supported MAU expressions: {single_mau_supported}");
     println!(
