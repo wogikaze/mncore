@@ -562,3 +562,16 @@ PASS: every memory, BAR, DAR, mask and forwarding register matches
 
 `gpu_run_program` も最終状態として BAR、`$lbi`、DAR、DARBUF、`aluf`/`mauf`/`mreadf`
 まで比較する。`mnist_train_step` は 2,635 PE 行・168 MV 文で 0 mismatch。
+
+## CUDA Graph による一括起動
+
+`gpu_run_program` に `--replay N` を追加した。プログラム全体を CUDA Graph として
+キャプチャし、1 回の `cuGraphLaunch` で全命令を再実行する。
+
+- `mnist_train_step` 1 回: 通常 約 0.30 秒、Graph リプレイ 約 0.09〜0.10 秒。
+- 234 回（MNIST 1 epoch 相当）: 21.5 秒（1 回 91.8 ms）。
+- CPU は 1 step 約 2.2 秒なので、1 epoch 約 8.6 分。
+
+内訳はカーネル本体の実行が支配的で、Graph でホスト側の起動オーバーヘッドを
+ほぼ除去しても 1 割程度の短縮にとどまる。さらなる高速化には、複数命令を
+1 カーネルに融合するか、デバイス側で命令列を解釈する常駐カーネルが必要。

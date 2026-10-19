@@ -26,9 +26,14 @@ fn fwd_written_by(expr: &mncore_sim::vsm::Expr) -> Option<usize> {
 }
 
 fn main() {
-    let path = std::env::args()
-        .nth(1)
+    let mut cli = std::env::args().skip(1);
+    let path = cli
+        .next()
         .unwrap_or_else(|| "benchmarks/mnist_train_step.vsm".to_string());
+    let replay = match cli.next().as_deref() {
+        Some("--replay") => Some(cli.next().and_then(|n| n.parse().ok()).unwrap_or(1)),
+        _ => None,
+    };
     let source = std::fs::read_to_string(&path).expect("read");
     let program = vsm::parse(&source).expect("parse");
 
@@ -77,6 +82,10 @@ fn main() {
         gpu.upload_dram(&state, &dram).expect("dram");
     }
 
+    if replay.is_some() {
+        gpu.sync().expect("sync before capture");
+        gpu.begin_capture().expect("begin capture");
+    }
     let start = std::time::Instant::now();
     let mut pe_lines = 0usize;
     // Forwarding registers readable in the next step: mauf, aluf, mreadf, lbf.
@@ -187,7 +196,16 @@ fn main() {
             }
         }
     }
-    gpu.sync().expect("sync");
+    let (graph, graph_exec) = if replay.is_some() {
+        let graph = gpu.end_capture().expect("end capture");
+        let exec = gpu.instantiate_graph(graph).expect("instantiate graph");
+        gpu.launch_graph(exec).expect("graph launch");
+        gpu.sync().expect("sync graph");
+        (Some(graph), Some(exec))
+    } else {
+        gpu.sync().expect("sync");
+        (None, None)
+    };
     let gpu_elapsed = start.elapsed();
     let mv_errors = gpu.download_mv_errors(&state).expect("mv errors");
     if mv_errors != 0 {
@@ -371,6 +389,24 @@ fn main() {
         "{} PE lines, {} mismatches, cpu {:?}, gpu {:?}",
         pe_lines, bad, cpu_elapsed, gpu_elapsed
     );
+    if let Some(n) = replay {
+        let exec = graph_exec.unwrap();
+        let replay_start = std::time::Instant::now();
+        for _ in 0..n {
+            gpu.launch_graph(exec).expect("graph replay");
+        }
+        gpu.sync().expect("sync replay");
+        let elapsed = replay_start.elapsed();
+        println!(
+            "graph replay: {} runs, {:?} total, {:?} per run",
+            n,
+            elapsed,
+            elapsed / n as u32
+        );
+        if let Some(graph) = graph {
+            gpu.destroy_graph(exec, graph);
+        }
+    }
     if bad != 0 || mv_errors != 0 {
         std::process::exit(1);
     }

@@ -18,6 +18,18 @@ use crate::vsm::{Expr, FixedKind, FwdKind, MauKind, MaskSel, MaskSource, MemKind
 type CuResult = c_int;
 type CuDevice = c_int;
 type CuContext = *mut c_void;
+type CuStream = *mut c_void;
+type CuStreamCreate = unsafe extern "C" fn(*mut CuStream, u32) -> CuResult;
+type CuStreamDestroy = unsafe extern "C" fn(CuStream) -> CuResult;
+type CuStreamSynchronize = unsafe extern "C" fn(CuStream) -> CuResult;
+type CuGraph = *mut c_void;
+type CuGraphExec = *mut c_void;
+type CuStreamBeginCapture = unsafe extern "C" fn(CuStream, u32) -> CuResult;
+type CuStreamEndCapture = unsafe extern "C" fn(CuStream, *mut CuGraph) -> CuResult;
+type CuGraphInstantiateWithFlags = unsafe extern "C" fn(*mut CuGraphExec, CuGraph, u64) -> CuResult;
+type CuGraphLaunch = unsafe extern "C" fn(CuGraphExec, CuStream) -> CuResult;
+type CuGraphExecDestroy = unsafe extern "C" fn(CuGraphExec) -> CuResult;
+type CuGraphDestroy = unsafe extern "C" fn(CuGraph) -> CuResult;
 type CuModule = *mut c_void;
 type CuFunction = *mut c_void;
 type CuDevicePtr = u64;
@@ -1951,6 +1963,7 @@ pub struct Gpu {
     _cuda: Library,
     _nvrtc: Library,
     context: CuContext,
+    stream: CuStream,
     function: CuFunction,
     mau_function: CuFunction,
     alu_function: CuFunction,
@@ -1971,6 +1984,15 @@ pub struct Gpu {
     cu_dtoh: CuMemcpyDtoH,
     cu_launch: CuLaunchKernel,
     cu_sync: CuCtxSync,
+    cu_stream_create: CuStreamCreate,
+    cu_stream_destroy: CuStreamDestroy,
+    cu_stream_sync: CuStreamSynchronize,
+    cu_begin_capture: CuStreamBeginCapture,
+    cu_end_capture: CuStreamEndCapture,
+    cu_instantiate: CuGraphInstantiateWithFlags,
+    cu_graph_launch: CuGraphLaunch,
+    cu_graph_exec_destroy: CuGraphExecDestroy,
+    cu_graph_destroy: CuGraphDestroy,
     cu_error: CuGetErrorString,
 }
 
@@ -1999,6 +2021,24 @@ impl Gpu {
         let cu_dtoh: CuMemcpyDtoH = load!(cuda, b"cuMemcpyDtoH_v2\0", CuMemcpyDtoH);
         let cu_launch: CuLaunchKernel = load!(cuda, b"cuLaunchKernel\0", CuLaunchKernel);
         let cu_sync: CuCtxSync = load!(cuda, b"cuCtxSynchronize\0", CuCtxSync);
+        let cu_stream_create: CuStreamCreate =
+            load!(cuda, b"cuStreamCreate\0", CuStreamCreate);
+        let cu_stream_destroy: CuStreamDestroy =
+            load!(cuda, b"cuStreamDestroy_v2\0", CuStreamDestroy);
+        let cu_stream_sync: CuStreamSynchronize =
+            load!(cuda, b"cuStreamSynchronize\0", CuStreamSynchronize);
+        let cu_begin_capture: CuStreamBeginCapture =
+            load!(cuda, b"cuStreamBeginCapture\0", CuStreamBeginCapture);
+        let cu_end_capture: CuStreamEndCapture =
+            load!(cuda, b"cuStreamEndCapture\0", CuStreamEndCapture);
+        let cu_instantiate: CuGraphInstantiateWithFlags =
+            load!(cuda, b"cuGraphInstantiateWithFlags\0", CuGraphInstantiateWithFlags);
+        let cu_graph_launch: CuGraphLaunch =
+            load!(cuda, b"cuGraphLaunch\0", CuGraphLaunch);
+        let cu_graph_exec_destroy: CuGraphExecDestroy =
+            load!(cuda, b"cuGraphExecDestroy\0", CuGraphExecDestroy);
+        let cu_graph_destroy: CuGraphDestroy =
+            load!(cuda, b"cuGraphDestroy\0", CuGraphDestroy);
         let cu_error: CuGetErrorString = load!(cuda, b"cuGetErrorString\0", CuGetErrorString);
 
         let nvrtc_create: NvrtcCreate = load!(nvrtc, b"nvrtcCreateProgram\0", NvrtcCreate);
@@ -2194,10 +2234,16 @@ impl Gpu {
             },
             "cuModuleGetFunction(zero_mreadf)",
         )?;
+        let mut stream: CuStream = std::ptr::null_mut();
+        check(
+            unsafe { cu_stream_create(&mut stream, 1) },
+            "cuStreamCreate",
+        )?;
         Ok(Gpu {
             _cuda: cuda,
             _nvrtc: nvrtc,
             context,
+            stream,
             function,
             mau_function,
             alu_function,
@@ -2218,6 +2264,15 @@ impl Gpu {
             cu_dtoh,
             cu_launch,
             cu_sync,
+            cu_stream_create,
+            cu_stream_destroy,
+            cu_stream_sync,
+            cu_begin_capture,
+            cu_end_capture,
+            cu_instantiate,
+            cu_graph_launch,
+            cu_graph_exec_destroy,
+            cu_graph_destroy,
             cu_error,
         })
     }
@@ -2972,9 +3027,53 @@ impl Gpu {
         Ok(out[0])
     }
 
+    /// Starts capturing the dedicated stream into a CUDA graph.
+    pub fn begin_capture(&self) -> Result<(), String> {
+        self.check(
+            unsafe { (self.cu_begin_capture)(self.stream, 0) },
+            "cuStreamBeginCapture",
+        )
+    }
+
+    /// Ends capture and returns the graph handle.
+    pub fn end_capture(&self) -> Result<CuGraph, String> {
+        let mut graph: CuGraph = std::ptr::null_mut();
+        self.check(
+            unsafe { (self.cu_end_capture)(self.stream, &mut graph) },
+            "cuStreamEndCapture",
+        )?;
+        Ok(graph)
+    }
+
+    /// Instantiates a captured graph.
+    pub fn instantiate_graph(&self, graph: CuGraph) -> Result<CuGraphExec, String> {
+        let mut exec: CuGraphExec = std::ptr::null_mut();
+        self.check(
+            unsafe { (self.cu_instantiate)(&mut exec, graph, 0) },
+            "cuGraphInstantiateWithFlags",
+        )?;
+        Ok(exec)
+    }
+
+    /// Enqueues one replay of an instantiated graph.
+    pub fn launch_graph(&self, exec: CuGraphExec) -> Result<(), String> {
+        self.check(
+            unsafe { (self.cu_graph_launch)(exec, self.stream) },
+            "cuGraphLaunch",
+        )
+    }
+
+    /// Destroys an instantiated graph and its source graph.
+    pub fn destroy_graph(&self, exec: CuGraphExec, graph: CuGraph) {
+        unsafe {
+            (self.cu_graph_exec_destroy)(exec);
+            (self.cu_graph_destroy)(graph);
+        }
+    }
+
     /// Waits for all previously enqueued kernels.
     pub fn sync(&self) -> Result<(), String> {
-        self.check(unsafe { (self.cu_sync)() }, "cuCtxSynchronize")
+        self.check(unsafe { (self.cu_stream_sync)(self.stream) }, "cuStreamSynchronize")
     }
 
     /// Launches one vector MAU line for all 4,096 PEs and four cycles.
@@ -3034,7 +3133,7 @@ impl Gpu {
                     1,
                     1,
                     0,
-                    std::ptr::null_mut(),
+                    self.stream,
                     args.as_mut_ptr(),
                     std::ptr::null_mut(),
                 )
@@ -3099,7 +3198,7 @@ impl Gpu {
                     1,
                     1,
                     0,
-                    std::ptr::null_mut(),
+                    self.stream,
                     args.as_mut_ptr(),
                     std::ptr::null_mut(),
                 )
@@ -3163,7 +3262,7 @@ impl Gpu {
                     1,
                     1,
                     0,
-                    std::ptr::null_mut(),
+                    self.stream,
                     args.as_mut_ptr(),
                     std::ptr::null_mut(),
                 )
@@ -3209,7 +3308,7 @@ impl Gpu {
                     1,
                     1,
                     0,
-                    std::ptr::null_mut(),
+                    self.stream,
                     args.as_mut_ptr(),
                     std::ptr::null_mut(),
                 )
@@ -3254,7 +3353,7 @@ impl Gpu {
                     1,
                     1,
                     0,
-                    std::ptr::null_mut(),
+                    self.stream,
                     args.as_mut_ptr(),
                     std::ptr::null_mut(),
                 )
@@ -3279,7 +3378,7 @@ impl Gpu {
                     1,
                     1,
                     0,
-                    std::ptr::null_mut(),
+                    self.stream,
                     args.as_mut_ptr(),
                     std::ptr::null_mut(),
                 )
@@ -3394,7 +3493,7 @@ impl Gpu {
                         1,
                         1,
                         0,
-                        std::ptr::null_mut(),
+                        self.stream,
                         args.as_mut_ptr(),
                         std::ptr::null_mut(),
                     )
@@ -3497,7 +3596,7 @@ impl Gpu {
                     1,
                     1,
                     0,
-                    std::ptr::null_mut(),
+                    self.stream,
                     args.as_mut_ptr(),
                     std::ptr::null_mut(),
                 )
@@ -3605,7 +3704,7 @@ impl Gpu {
                     1,
                     1,
                     0,
-                    std::ptr::null_mut(),
+                    self.stream,
                     args.as_mut_ptr(),
                     std::ptr::null_mut(),
                 )
@@ -3659,7 +3758,7 @@ impl Gpu {
                     1,
                     1,
                     0,
-                    std::ptr::null_mut(),
+                    self.stream,
                     args.as_mut_ptr(),
                     std::ptr::null_mut(),
                 )
@@ -3723,7 +3822,7 @@ impl Gpu {
                     1,
                     1,
                     0,
-                    std::ptr::null_mut(),
+                    self.stream,
                     args.as_mut_ptr(),
                     std::ptr::null_mut(),
                 )
@@ -3791,7 +3890,7 @@ impl Gpu {
                     1,
                     1,
                     0,
-                    std::ptr::null_mut(),
+                    self.stream,
                     args.as_mut_ptr(),
                     std::ptr::null_mut(),
                 )
