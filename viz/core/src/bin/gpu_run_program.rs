@@ -49,7 +49,7 @@ fn order_step<'a>(exprs: &'a [mncore_sim::vsm::Expr]) -> Vec<&'a mncore_sim::vsm
         if is_lbi_read(&exprs[i]) {
             for j in 0..n {
                 if i != j && is_lbi_write(&exprs[j]) {
-                    edge[i][j] = true;
+                    edge[j][i] = true;
                 }
             }
         }
