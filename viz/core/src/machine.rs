@@ -1373,7 +1373,11 @@ fn thread_pool() -> &'static rayon::ThreadPool {
             .ok()
             .and_then(|s| s.parse::<usize>().ok())
             .filter(|&n| n > 0)
-            .unwrap_or_else(|| if logical <= 6 { logical } else { (logical + 1) / 2 });
+            .unwrap_or_else(|| {
+                let physical = if logical <= 6 { logical } else { (logical + 1) / 2 };
+                // The simulator saturates memory before all physical cores are busy.
+                physical.min(4)
+            });
         rayon::ThreadPoolBuilder::new()
             .num_threads(threads)
             .build()
