@@ -23,36 +23,130 @@ def generate_vsm(operator: BaseOperator) -> List[str]:
     # test unit_tests/train_step/Gemm_256x1024_16x1024_256x16_transB_a/
     # 問題名：「Mmul TB D 256_1024_16」
     
-    lines = [
-        "gbfn $lm64v $nowrite",
-        "gbfn $lm72v $nowrite; gmwrite $aluf $lx0",
-        "gbfn $lm80v $nowrite; gmwrite $aluf $lx4",
-        "gbfn $lm88v $nowrite; gmwrite $aluf $ly0",
-        "gbfn $lm0v $t; gmwrite $aluf $ly4",
-        "gmmul $lx $aluf $lr0v4",
-        "gbfn $lm8v $t; gmmul $ly $t $lr2v4",
-        "gmmul $lx $aluf $ls0v4",
-        "gbfn $lm16v $t; gmmul $ly $t $ls2v4; l1bmrffadd $llr0v $llb0",
-        "gmmul $lx $aluf $lr0v4",
-        "gbfn $lm24v $t; gmmul $ly $t $lr2v4; l1bmrffadd $lls0v $llb32",
-        "gmmul $lx $aluf $ls0v4",
-        "gbfn $lm32v $t; gmmul $ly $t $ls2v4; l1bmrffadd $llr0v $llb64",
-        "gmmul $lx $aluf $lr0v4",
-        "gbfn $lm40v $t; gmmul $ly $t $lr2v4; l1bmrffadd $lls0v $llb96",
-        "gmmul $lx $aluf $ls0v4",
-        "gbfn $lm48v $t; gmmul $ly $t $ls2v4; l1bmrffadd $llr0v $llb128",
-        "gmmul $lx $aluf $lr0v4",
-        "gbfn $lm56v $t; gmmul $ly $t $lr2v4; l1bmrffadd $lls0v $llb160",
-        "gmmul $lx $aluf $ls0v4",
-        "gmmul $ly $t $ls2v4; l1bmrffadd $llr0v $llb192",
-        "nop",
-        "l1bmrffadd $lls0v $llb224; l2bmrffadd $lb0 $lc0",
-        "l2bmrffadd $lb64 $lc64",
-        "l2bmrffadd $lb128 $lc128",
-        "l2bmrffadd $lb192 $lc192",
-        "nop",
-        f"mvp/n256 $lc0@.0 $d{c}",
-        f"mvp/n256 $lc0@.1 $d{c + 256}",
-    ]
+    lines = []
+    lines.append("gbfn $lm64v $nowrite")
+    lines.append("gmwrite $aluf $ly0")
+    lines.append("gbfn $lm72v $nowrite")
+    lines.append("gmwrite $aluf $ly4")
+    lines.append("gbfn $lm0v $nowrite")
+    lines.append("gmmul $ly $aluf $ln0v4")
+    lines.append("gbfn $lm80v $nowrite")
+    lines.append("gmwrite $aluf $ly0")
+    lines.append("gbfn $lm88v $nowrite")
+    lines.append("gmwrite $aluf $ly4")
+    lines.append("gbfn $lm0v $nowrite")
+    lines.append("gmmul $ly $aluf $ln2v4")
+    lines.append("gbfn $lm64v $nowrite")
+    lines.append("gmwrite $aluf $ly0")
+    lines.append("gbfn $lm72v $nowrite")
+    lines.append("gmwrite $aluf $ly4")
+    lines.append("gbfn $lm8v $nowrite")
+    lines.append("gmmul $ly $aluf $ln16v4")
+    lines.append("gbfn $lm80v $nowrite")
+    lines.append("gmwrite $aluf $ly0")
+    lines.append("gbfn $lm88v $nowrite")
+    lines.append("gmwrite $aluf $ly4")
+    lines.append("gbfn $lm8v $nowrite")
+    lines.append("gmmul $ly $aluf $ln18v4")
+    lines.append("gbfn $lm64v $nowrite")
+    lines.append("gmwrite $aluf $ly0")
+    lines.append("gbfn $lm72v $nowrite")
+    lines.append("gmwrite $aluf $ly4")
+    lines.append("gbfn $lm16v $nowrite")
+    lines.append("gmmul $ly $aluf $ln32v4")
+    lines.append("gbfn $lm80v $nowrite")
+    lines.append("gmwrite $aluf $ly0")
+    lines.append("gbfn $lm88v $nowrite")
+    lines.append("gmwrite $aluf $ly4")
+    lines.append("gbfn $lm16v $nowrite")
+    lines.append("gmmul $ly $aluf $ln34v4")
+    lines.append("gbfn $lm64v $nowrite")
+    lines.append("gmwrite $aluf $ly0")
+    lines.append("gbfn $lm72v $nowrite")
+    lines.append("gmwrite $aluf $ly4")
+    lines.append("gbfn $lm24v $nowrite")
+    lines.append("gmmul $ly $aluf $ln48v4")
+    lines.append("gbfn $lm80v $nowrite")
+    lines.append("gmwrite $aluf $ly0")
+    lines.append("gbfn $lm88v $nowrite")
+    lines.append("gmwrite $aluf $ly4")
+    lines.append("gbfn $lm24v $nowrite")
+    lines.append("gmmul $ly $aluf $ln50v4")
+    lines.append("gbfn $lm64v $nowrite")
+    lines.append("gmwrite $aluf $ly0")
+    lines.append("gbfn $lm72v $nowrite")
+    lines.append("gmwrite $aluf $ly4")
+    lines.append("gbfn $lm32v $nowrite")
+    lines.append("gmmul $ly $aluf $ln64v4")
+    lines.append("gbfn $lm80v $nowrite")
+    lines.append("gmwrite $aluf $ly0")
+    lines.append("gbfn $lm88v $nowrite")
+    lines.append("gmwrite $aluf $ly4")
+    lines.append("gbfn $lm32v $nowrite")
+    lines.append("gmmul $ly $aluf $ln66v4")
+    lines.append("gbfn $lm64v $nowrite")
+    lines.append("gmwrite $aluf $ly0")
+    lines.append("gbfn $lm72v $nowrite")
+    lines.append("gmwrite $aluf $ly4")
+    lines.append("gbfn $lm40v $nowrite")
+    lines.append("gmmul $ly $aluf $ln80v4")
+    lines.append("gbfn $lm80v $nowrite")
+    lines.append("gmwrite $aluf $ly0")
+    lines.append("gbfn $lm88v $nowrite")
+    lines.append("gmwrite $aluf $ly4")
+    lines.append("gbfn $lm40v $nowrite")
+    lines.append("gmmul $ly $aluf $ln82v4")
+    lines.append("gbfn $lm64v $nowrite")
+    lines.append("gmwrite $aluf $ly0")
+    lines.append("gbfn $lm72v $nowrite")
+    lines.append("gmwrite $aluf $ly4")
+    lines.append("gbfn $lm48v $nowrite")
+    lines.append("gmmul $ly $aluf $ln96v4")
+    lines.append("gbfn $lm80v $nowrite")
+    lines.append("gmwrite $aluf $ly0")
+    lines.append("gbfn $lm88v $nowrite")
+    lines.append("gmwrite $aluf $ly4")
+    lines.append("gbfn $lm48v $nowrite")
+    lines.append("gmmul $ly $aluf $ln98v4")
+    lines.append("gbfn $lm64v $nowrite")
+    lines.append("gmwrite $aluf $ly0")
+    lines.append("gbfn $lm72v $nowrite")
+    lines.append("gmwrite $aluf $ly4")
+    lines.append("gbfn $lm56v $nowrite")
+    lines.append("gmmul $ly $aluf $ln112v4")
+    lines.append("gbfn $lm80v $nowrite")
+    lines.append("gmwrite $aluf $ly0")
+    lines.append("gbfn $lm88v $nowrite")
+    lines.append("gmwrite $aluf $ly4")
+    lines.append("gbfn $lm56v $nowrite")
+    lines.append("gmmul $ly $aluf $ln114v4")
+    lines.append("nop")
+    lines.append("nop")
+    lines.append("l1bmrffadd $ln0v $lb0")
+    lines.append("l1bmrffadd $ln8v $lb16")
+    lines.append("l1bmrffadd $ln16v $lb32")
+    lines.append("l1bmrffadd $ln24v $lb48")
+    lines.append("l1bmrffadd $ln32v $lb64")
+    lines.append("l1bmrffadd $ln40v $lb80")
+    lines.append("l1bmrffadd $ln48v $lb96")
+    lines.append("l1bmrffadd $ln56v $lb112")
+    lines.append("l1bmrffadd $ln64v $lb128")
+    lines.append("l1bmrffadd $ln72v $lb144")
+    lines.append("l1bmrffadd $ln80v $lb160")
+    lines.append("l1bmrffadd $ln88v $lb176")
+    lines.append("l1bmrffadd $ln96v $lb192")
+    lines.append("l1bmrffadd $ln104v $lb208")
+    lines.append("l1bmrffadd $ln112v $lb224")
+    lines.append("l1bmrffadd $ln120v $lb240")
+    lines.append("nop")
+    lines.append("nop")
+    lines.append("l2bmrffadd $lb0 $lc0")
+    lines.append("l2bmrffadd $lb64 $lc64")
+    lines.append("l2bmrffadd $lb128 $lc128")
+    lines.append("l2bmrffadd $lb192 $lc192")
+    lines.append("nop")
+    lines.append(f"mvp/n256 $lc0@.0 $d{c}")
+    lines.append(f"mvp/n256 $lc0@.1 $d{c + 256}")
+
 
     return lines
