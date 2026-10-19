@@ -1710,9 +1710,7 @@ extern "C" __global__ void l1_read_line(
         } else if (op == 3) {
             // M4bcast: [[4 (MAB high bits)][2 (long word)][4 (PE)]].
             int i = mab >> 2;
-            int wide = 0;
-            for (int dd = 0; dd < ndst; ++dd) if (dw[dd] == 4) wide = 1;
-            if (wide) {
+            if (wl == 4) {
                 unsigned b = has_addr ? (unsigned)(c * 32) : 0u;
                 om = b + (unsigned)(i * 8) + (unsigned)sub;
                 ol = om + 4;
@@ -1786,7 +1784,7 @@ extern "C" __global__ void l1_write_line(
     if (round_it) {
         red_longs = (dwl == 4 || two_src || ext) ? 2 : 1;
     } else {
-        red_longs = (dwl == 4 || ext || two_src) ? 2 : 1;
+        red_longs = (dwl == 4 || ext) ? 2 : 1;
     }
     for (int c = 0; c < 4; ++c) {
         if (op == 0) {
@@ -1907,7 +1905,7 @@ extern "C" __global__ void l1_write_line(
                 } else {
                     // With `e` the CPU writes both reduced long words even to a
                     // one long word destination (blocks.rs ext branch).
-                    if (dwl == 4 || ext || two_src) {
+                    if (dwl == 4 || ext) {
                         off = (unsigned)((four ? g * 8 : 0) + sub);
                         if (has_addr) {
                             l1bm[base_l1 + (int)(((unsigned long long)addr + (unsigned long long)(c * step) + off) % 8192)] = res[0];

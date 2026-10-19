@@ -13,68 +13,6 @@ use mncore_sim::machine::{MaskState, GRF_WORDS, LM_WORDS, PES};
 use mncore_sim::run::Sim;
 use mncore_sim::vsm::{self, Line, Op};
 
-fn reads_fwd(e: &mncore_sim::vsm::Expr, kind: mncore_sim::vsm::FwdKind) -> bool {
-    e.srcs.iter().any(|o| matches!(o, mncore_sim::vsm::Operand::Forward { kind: k, .. } if *k == kind))
-}
-
-fn is_lbi_write(e: &mncore_sim::vsm::Expr) -> bool {
-    matches!(e.op, Op::L1(_))
-        && e.dsts.iter().any(|d| matches!(d, mncore_sim::vsm::Operand::L1bm { addr: None, .. }))
-}
-
-fn is_lbi_read(e: &mncore_sim::vsm::Expr) -> bool {
-    matches!(e.op, Op::L1(_))
-        && e.srcs.iter().any(|d| matches!(d, mncore_sim::vsm::Operand::L1bm { addr: None, .. }))
-}
-
-fn same_fwd(a: Option<usize>, b: Option<usize>) -> bool { a.is_some() && a == b }
-
-/// Orders one step's expressions so that forwarding reads see the previous
-/// step's value (reader before writer) while $lbi reads see the current
-/// step's PE-to-L1BM writes (writer before reader).
-fn order_step<'a>(exprs: &'a [mncore_sim::vsm::Expr]) -> Vec<&'a mncore_sim::vsm::Expr> {
-    let n = exprs.len();
-    let mut edge = vec![vec![false; n]; n];
-    let writes: Vec<Option<usize>> = exprs.iter().map(fwd_written_by).collect();
-    for i in 0..n {
-        for k in [mncore_sim::vsm::FwdKind::Mauf, mncore_sim::vsm::FwdKind::Aluf, mncore_sim::vsm::FwdKind::Mreadf, mncore_sim::vsm::FwdKind::Lbf] {
-            if reads_fwd(&exprs[i], k) {
-                for j in 0..n {
-                    if i != j && same_fwd(writes[j], fwd_written_by_kind(k)) {
-                        edge[i][j] = true;
-                    }
-                }
-            }
-        }
-        if is_lbi_read(&exprs[i]) {
-            for j in 0..n {
-                if i != j && is_lbi_write(&exprs[j]) {
-                    edge[j][i] = true;
-                }
-            }
-        }
-    }
-    let mut used = vec![false; n];
-    let mut out = Vec::with_capacity(n);
-    for _ in 0..n {
-        let pick = (0..n).find(|&i| !used[i] && (0..n).all(|j| j == i || used[j] || !edge[j][i]));
-        let pick = match pick { Some(p) => p, None => break };
-        used[pick] = true;
-        out.push(&exprs[pick]);
-    }
-    for (i, e) in exprs.iter().enumerate() { if !used[i] { out.push(e); } }
-    out
-}
-
-fn fwd_written_by_kind(kind: mncore_sim::vsm::FwdKind) -> Option<usize> {
-    Some(match kind {
-        mncore_sim::vsm::FwdKind::Mauf => 0,
-        mncore_sim::vsm::FwdKind::Aluf => 1,
-        mncore_sim::vsm::FwdKind::Mreadf => 2,
-        mncore_sim::vsm::FwdKind::Lbf => 3,
-    })
-}
-
 fn is_l1_read(expr: &mncore_sim::vsm::Expr) -> bool {
     matches!(expr.op, Op::L1(_))
         && matches!(expr.srcs.first(), Some(mncore_sim::vsm::Operand::L1bm { .. }))
@@ -211,7 +149,8 @@ fn main() {
                     }
                 }
                 let mut fwd_written = [false; 4];
-                let ordered = order_step(exprs);
+                let mut ordered: Vec<&mncore_sim::vsm::Expr> = exprs.iter().collect();
+                // original order
                 for expr in ordered {
                     if matches!(expr.op, Op::Noforward | Op::Wait(_)) {
                         continue;
@@ -375,7 +314,7 @@ fn main() {
         for c in 0..4 {
             for o in 0..64 {
                 if sim.m.blocks.lbi[l1b][c][o] != lbi[(l1b * 4 + c) * 64 + o] {
-                    println!("lbi first mismatch l1b {l1b} cycle {c} offset {o}: cpu {:016x} gpu {:016x}", sim.m.blocks.lbi[l1b][c][o], lbi[(l1b * 4 + c) * 64 + o]);
+                    println!("lbi first mismatch l1b {l1b} cycle {c} offset {o}");
                     bad += 1;
                     break;
                 }
