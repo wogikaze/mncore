@@ -9,7 +9,8 @@ use std::path::Path;
 
 use libloading::Library;
 
-use crate::vsm::{Expr, FwdKind, MauKind, MemKind, Op, Operand, Prec};
+use crate::machine::MaskState;
+use crate::vsm::{Expr, FwdKind, MauKind, MaskSel, MaskSource, MemKind, Op, Operand, Prec};
 
 type CuResult = c_int;
 type CuDevice = c_int;
@@ -68,7 +69,7 @@ macro_rules! load {
     }};
 }
 
-fn mem_source(op: &Operand, allow_neg: bool) -> Option<MauSrc> {
+fn mem_source(op: &Operand, allow_neg: bool, allow_mask: bool) -> Option<MauSrc> {
     let Operand::Mem {
         mem,
         wl,
@@ -81,7 +82,12 @@ fn mem_source(op: &Operand, allow_neg: bool) -> Option<MauSrc> {
     else {
         return None;
     };
-    if (*wl != 1 && *wl != 2 && *wl != 4) || (!allow_neg && *neg) || *ext || *rnd || mask.is_some() {
+    if (*wl != 1 && *wl != 2 && *wl != 4)
+        || (!allow_neg && *neg)
+        || *ext
+        || *rnd
+        || (!allow_mask && mask.is_some())
+    {
         return None;
     }
     if addr.t_indirect || addr.madpe.is_some() {
@@ -122,13 +128,65 @@ fn line_source(op: &Operand) -> Option<MauSrc> {
             neg: *neg,
         });
     }
-    mem_source(op, true)
+    mem_source(op, true, false)
 }
 
 /// Builds a `MauLine` for a PE-local f32 MAU expression. Returns `None` for
 /// anything the current kernel does not handle (masks, T, base registers,
 /// neg/ext/rnd, other forwarding registers, other precisions).
-pub fn mau_line_from_expr(expr: &Expr) -> Option<MauLine> {
+fn resolve_mask(op: &Operand, state: MaskState, single_line: bool) -> MaskInfo {
+    let none = MaskInfo {
+        kind: 0,
+        entry: 0,
+        pattern: 0,
+        ll: false,
+    };
+    let Operand::Mem { mem, mask, .. } = op else {
+        return none;
+    };
+    let directive = if single_line {
+        None
+    } else {
+        let t = state.targets;
+        let on = match mem {
+            MemKind::Grf0 => t.grf0,
+            MemKind::Grf1 => t.grf1,
+            MemKind::T => t.t,
+            MemKind::Lm0 => t.lm0,
+            MemKind::Lm1 => t.lm1,
+            _ => false,
+        };
+        if on && state.entry != 0 {
+            Some(MaskSel {
+                ll: state.wl == 4,
+                source: MaskSource::Entry(state.entry),
+            })
+        } else {
+            None
+        }
+    };
+    let Some(sel) = mask.or(directive) else {
+        return none;
+    };
+    match sel.source {
+        MaskSource::Entry(entry) => MaskInfo {
+            kind: 1,
+            entry,
+            pattern: 0,
+            ll: sel.ll,
+        },
+        MaskSource::Pattern(p) => MaskInfo {
+            kind: 2,
+            entry: 0,
+            pattern: p.iter().enumerate().fold(0u8, |acc, (i, &on)| {
+                acc | ((on as u8) << i)
+            }),
+            ll: sel.ll,
+        },
+    }
+}
+
+pub fn mau_line_from_expr(expr: &Expr, mask_state: MaskState) -> Option<MauLine> {
     let Op::Mau {
         prec: Prec::F,
         matrix: false,
@@ -164,7 +222,13 @@ pub fn mau_line_from_expr(expr: &Expr) -> Option<MauLine> {
         2 => (zero, line_source(expr.srcs.get(1)?)?),
         _ => (zero, zero),
     };
-    let dst = mem_source(&expr.dsts[0], false)?;
+    let dst_op = &expr.dsts[0];
+    let single_line = expr
+        .dsts
+        .iter()
+        .any(|d| matches!(d, Operand::Mem { mask: Some(_), .. }));
+    let dst = mem_source(dst_op, false, true)?;
+    let mask = resolve_mask(dst_op, mask_state, single_line);
     Some(MauLine {
         kind,
         wl: dst.wl,
@@ -172,6 +236,7 @@ pub fn mau_line_from_expr(expr: &Expr) -> Option<MauLine> {
         b,
         c,
         dst,
+        mask,
     })
 }
 
@@ -185,6 +250,15 @@ pub struct MauSrc {
     pub neg: bool,
 }
 
+/// Resolved write mask: kind 0 none, 1 OMR entry, 2 fixed pattern.
+#[derive(Clone, Copy, Debug)]
+pub struct MaskInfo {
+    pub kind: u8,
+    pub entry: u8,
+    pub pattern: u8,
+    pub ll: bool,
+}
+
 /// A PE-local f32 MAU expression, with kind 0 FMA, 1 MUL, 2 ADD, 3 PASSA.
 #[derive(Clone, Copy, Debug)]
 pub struct MauLine {
@@ -194,6 +268,7 @@ pub struct MauLine {
     pub b: MauSrc,
     pub c: MauSrc,
     pub dst: MauSrc,
+    pub mask: MaskInfo,
 }
 
 /// Builds an `AluLine` for a PE-local f32 Passa expression.
@@ -233,7 +308,7 @@ pub fn alu_line_from_expr(expr: &Expr) -> Option<AluLine> {
         }
     };
     let dst = match &expr.dsts[0] {
-        Operand::Mem { .. } => AluDst::Mem(mem_source(&expr.dsts[0], false)?),
+        Operand::Mem { .. } => AluDst::Mem(mem_source(&expr.dsts[0], false, false)?),
         Operand::Omr { entry, mask: None } if (1..=15).contains(entry) => AluDst::Omr(*entry),
         Operand::Nowrite => AluDst::None,
         _ => return None,
@@ -624,6 +699,7 @@ impl Gpu {
         let mut grf1 = state.grf1;
         let mut mauf = state.mauf;
         let mut aluf = state.aluf;
+        let mut mask_state = state.mask;
         let mut kind = line.kind as i32;
         let mut amem = line.a.mem as i32;
         let mut a = line.a.base;
@@ -640,6 +716,10 @@ impl Gpu {
         let mut dmem = line.dst.mem as i32;
         let mut d = line.dst.base;
         let mut dwl = line.dst.wl as i32;
+        let mut mask_kind = line.mask.kind as i32;
+        let mut mask_entry = line.mask.entry as i32;
+        let mut mask_pattern = line.mask.pattern as i32;
+        let mut mask_ll = line.mask.ll as i32;
         let mut args = [
             &mut lm0 as *mut u64 as *mut c_void,
             &mut lm1 as *mut u64 as *mut c_void,
@@ -647,6 +727,7 @@ impl Gpu {
             &mut grf1 as *mut u64 as *mut c_void,
             &mut mauf as *mut u64 as *mut c_void,
             &mut aluf as *mut u64 as *mut c_void,
+            &mut mask_state as *mut u64 as *mut c_void,
             &mut kind as *mut i32 as *mut c_void,
             &mut amem as *mut i32 as *mut c_void,
             &mut a[0] as *mut u32 as *mut c_void,
@@ -675,6 +756,10 @@ impl Gpu {
             &mut d[2] as *mut u32 as *mut c_void,
             &mut d[3] as *mut u32 as *mut c_void,
             &mut dwl as *mut i32 as *mut c_void,
+            &mut mask_kind as *mut i32 as *mut c_void,
+            &mut mask_entry as *mut i32 as *mut c_void,
+            &mut mask_pattern as *mut i32 as *mut c_void,
+            &mut mask_ll as *mut i32 as *mut c_void,
         ];
         let grid = ((crate::machine::PES * 4) as u32 + 255) / 256;
         self.check(

@@ -201,12 +201,13 @@ __device__ __forceinline__ int mem_len(int which) {
 // of this kernel yet.
 extern "C" __global__ void mau_line(
     unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
-    unsigned* mauf, unsigned* aluf,
+    unsigned* mauf, unsigned* aluf, unsigned* mask,
     int kind,
     int amem, unsigned a0, unsigned a1, unsigned a2, unsigned a3, int awl, int aneg,
     int bmem, unsigned b0, unsigned b1, unsigned b2, unsigned b3, int bwl, int bneg,
     int cmem, unsigned c0, unsigned c1, unsigned c2, unsigned c3, int cwl, int cneg,
-    int dmem, unsigned d0, unsigned d1, unsigned d2, unsigned d3, int dwl) {
+    int dmem, unsigned d0, unsigned d1, unsigned d2, unsigned d3, int dwl,
+    int mask_kind, int mask_entry, int mask_pattern, int mask_ll) {
     int pe = blockIdx.x * blockDim.x + threadIdx.x;
     if (pe >= 4096) return;
     unsigned ab[4] = {a0, a1, a2, a3};
@@ -271,8 +272,35 @@ extern "C" __global__ void mau_line(
         }
     }
     for (int c = 0; c < 4; ++c) {
+        unsigned flags = 0xf;
+        if (mask_kind == 1) {
+            flags = (mask_entry >= 1 && mask_entry <= 15)
+                ? ((mask[pe * 16 + mask_entry] >> (4 * c)) & 0xf)
+                : (((mask_entry >> (3 - c)) & 1) ? 0xf : 0);
+        } else if (mask_kind == 2) {
+            flags = ((mask_pattern >> c) & 1) ? 0xf : 0;
+        }
         for (int l = 0; l < dwl; ++l) {
-            pd[pe * ld + db[c] + l] = (l < 2) ? values[c][l] : 0;
+            int enabled;
+            if (mask_kind == 0) {
+                enabled = 1;
+            } else if (mask_ll) {
+                enabled = (flags >> (3 - l)) & 1;
+            } else if (l < 2) {
+                enabled = ((flags >> (2 - 2 * l)) & 3) != 0;
+            } else {
+                enabled = 1;
+            }
+            if (!enabled) continue;
+            unsigned value = (l < 2) ? values[c][l] : 0;
+            if (mask_kind != 0 && !mask_ll && l < 2) {
+                unsigned hi = (flags >> (3 - 2 * l)) & 1;
+                unsigned lo = (flags >> (2 - 2 * l)) & 1;
+                unsigned m = (hi ? 0xffff0000u : 0) | (lo ? 0x0000ffffu : 0);
+                unsigned old = pd[pe * ld + db[c] + l];
+                value = (old & ~m) | (value & m);
+            }
+            pd[pe * ld + db[c] + l] = value;
         }
         mauf[pe * 16 + c * 4] = values[c][0];
         mauf[pe * 16 + c * 4 + 1] = values[c][1];

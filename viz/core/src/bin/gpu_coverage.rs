@@ -3,6 +3,7 @@
 //! Usage: gpu_coverage [program.vsm]
 
 use mncore_sim::gpu::{alu_line_from_expr, mau_line_from_expr};
+use mncore_sim::machine::MaskState;
 use mncore_sim::vsm::{self, Line, Op};
 
 fn main() {
@@ -27,8 +28,17 @@ fn main() {
     let mut masked = 0usize;
     let mut wl4 = 0usize;
     let mut other_forward = 0usize;
+    let mut mask_state = MaskState::default();
     for (_, line) in &program {
         lines += 1;
+        if let Line::MaskDirective { wl, targets, entry } = line {
+            mask_state = MaskState {
+                wl: *wl,
+                targets: *targets,
+                entry: *entry,
+            };
+            continue;
+        }
         let Line::Pe(exprs) = line else {
             continue;
         };
@@ -89,7 +99,7 @@ fn main() {
                         _ => {}
                     }
                 }
-                if mau_line_from_expr(expr).is_some() {
+                if mau_line_from_expr(expr, mask_state).is_some() {
                     mau_supported += 1;
                 } else {
                     all_mau = false;

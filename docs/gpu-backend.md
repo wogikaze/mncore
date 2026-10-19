@@ -180,3 +180,20 @@ OMR は PE ごとに 16 エントリを VRAM に持ち、`ixor` のフラグ nib
 - すべての式が対応する行は 512。
 
 次は OMR を使ったマスク付きの MAU 書き込み。
+
+## マスク付き MAU
+
+`mask` ディレクティブとオペランドマスクを解決し、MAU の書き込みに適用する。
+マスクの種類は「なし」「OMR エントリ」「固定パターン」で、`ll` のときは 1 ワード 1 ビット、
+そうでないときは下位 16 bit 単位でマージする。
+
+`gpu_vsm_mask` は `ixor $omr1`、`maskn 1`、マスク付き `fvadd`、`mask 0` を並べて実行し、
+4 本のメモリと OMR を比較する。
+
+```sh
+cd viz/core
+cargo run --release --bin gpu_vsm_mask -- 500
+```
+
+- 500 ラウンド（2,500 行）で mismatch 0。
+- CPU 2.04 秒、GPU 38 ms。
