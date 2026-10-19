@@ -1,0 +1,46 @@
+# GPU バックエンド
+
+## 実行環境
+
+ホストは WSL2 で、GPU は `/dev/dxg` 経由で見える。
+`/dev/nvidia*` は存在しないが、`/usr/lib/wsl/lib/libcuda.so.1` があるので CUDA Driver API は使える。
+Linux 用の CUDA ツールキットは入っていない。
+NVRTC は PyTorch の CUDA wheel に同梱されている `nvidia/cuda_nvrtc/lib/libnvrtc.so.12` を使う。
+`nvcc` は不要。
+
+NVRTC は `--device-int128` を付けるとデバイスコードで `unsigned __int128` を扱える。
+これで [float.rs](../viz/core/src/float.rs) の 128 bit の仮数演算をほぼそのまま移植できる。
+
+## f32 vfma のプロトタイプ
+
+- [vfma_kernel.cu](../viz/core/gpu/vfma_kernel.cu) は `Fmt`、`Val`、`decode`、`round_pack`、`mul_exact`、`add_exact`、`align_c`、`vfma` を CUDA に移したもの。
+- [vfma_vectors.rs](../viz/core/src/bin/vfma_vectors.rs) はランダムな 100 万組の (a, b, c) と、CPU の `float::vfma` の結果を出力する。
+- [check_vfma.py](../viz/core/gpu/check_vfma.py) は NVRTC でコンパイルし、Driver API で実行して全ビットを比較する。
+
+```sh
+cd viz/core
+cargo run --release --bin vfma_vectors -- 1000000 target/vfma_vectors.bin
+python3 gpu/check_vfma.py target/vfma_vectors.bin
+```
+
+結果:
+
+- 100 万組で mismatch 0。
+- バッチ実行は約 4.6 Gvfma/s。
+- 1 行分（4,096 PE × 4 サイクル × 2 レーン = 32,768 vfma）の起動は 7.8〜8.2 µs。
+- 3,558 行を同一ストリームに積んで 28 ms。
+
+CPU の `fvfma` は 1 行あたり約 3.8 ms（500 行のマイクロベンチ）なので、GPU の方が 2 桁以上速い。
+
+## まだ必要なもの
+
+- LM/GRF の状態を VRAM に置いたままにする。144 MB。
+- ALU、MAU（half/double を含む）、マスク、forwarding、msl/msr、block-float、L1BM/L2BM、行列、MV のカーネル。
+- 行間の依存は同一ストリームの順序で保証する。1 行 1 カーネルで足りる見込み。
+- mncore-sim への組み込みと、`difftest_prog` 相当のビット一致確認。
+
+## 制約
+
+- 起動オーバーヘッドは 1 行 5〜10 µs。3,558 行で 28〜36 ms なので、全体では支配的にならない。
+- f32 の vfma は確認済みだが、half と double、block-float はまだ移植していない。
+- GPU の状態を毎行ホストに戻すと PCIe 転送が支配的になる。状態は VRAM に置いたままにする。
