@@ -48,6 +48,14 @@ fn main() {
         "fftoi $r{}v $s{}v",
         "iadd $subpeid $r{}v $r{}v",
         "lpassa $subpeid $r{}v",
+        "fmin $m{}v $r{}v $n{}v",
+        "isub $r{}v $s{}v $r{}v",
+        "iinc $r{}v $r{}v",
+        "idec $r{}v $r{}v",
+        "inot $r{}v $r{}v",
+        "ilnot $r{}v $r{}v",
+        "iand $r{}v $s{}v $r{}v",
+        "ior $r{}v $s{}v $r{}v",
     ];
     let mut text = String::new();
     for i in 0..lines {

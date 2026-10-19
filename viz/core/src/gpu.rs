@@ -366,6 +366,46 @@ pub fn alu_line_from_expr(expr: &Expr, mask_state: MaskState) -> Option<AluLine>
             prec: Some(Prec::F),
             ..
         } => (11u8, false, true),
+        Op::Alu {
+            name: crate::vsm::AluOp::Min,
+            prec: Some(Prec::F),
+            ..
+        } => (12u8, true, true),
+        Op::Alu {
+            name: crate::vsm::AluOp::Sub,
+            prec: Some(Prec::I),
+            ..
+        } => (13u8, true, true),
+        Op::Alu {
+            name: crate::vsm::AluOp::Inc,
+            prec: Some(Prec::I),
+            ..
+        } => (14u8, false, true),
+        Op::Alu {
+            name: crate::vsm::AluOp::Dec,
+            prec: Some(Prec::I),
+            ..
+        } => (15u8, false, true),
+        Op::Alu {
+            name: crate::vsm::AluOp::Not,
+            prec: Some(Prec::I),
+            ..
+        } => (16u8, false, true),
+        Op::Alu {
+            name: crate::vsm::AluOp::Lnot,
+            prec: Some(Prec::I),
+            ..
+        } => (17u8, false, true),
+        Op::Alu {
+            name: crate::vsm::AluOp::And,
+            prec: Some(Prec::I),
+            ..
+        } => (18u8, true, true),
+        Op::Alu {
+            name: crate::vsm::AluOp::Or,
+            prec: Some(Prec::I),
+            ..
+        } => (19u8, true, true),
         _ => return None,
     };
     let want_sources = if need_b { 2 } else { 1 };

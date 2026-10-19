@@ -521,6 +521,39 @@ extern "C" __global__ void alu_line(
             }
             out[2] = av[2]; out[3] = av[3];
             flags = 0;
+        } else if (kind == 12) {
+            for (int l = 0; l < 2; ++l) {
+                unsigned a = av[l], b = bv[l];
+                bool pick = true;
+                if (a != b) {
+                    if (((a >> 23) & 0xff) == 0 && ((b >> 23) & 0xff) == 0) pick = true;
+                    else {
+                        unsigned am = a & 0x7fffffffu, bm = b & 0x7fffffffu;
+                        if (((a >> 23) & 0xff) == 0) am = 0;
+                        if (((b >> 23) & 0xff) == 0) bm = 0;
+                        long long ka = (a >> 31) ? -(long long)am : (long long)am;
+                        long long kb = (b >> 31) ? -(long long)bm : (long long)bm;
+                        pick = ka <= kb;
+                    }
+                }
+                out[l] = pick ? a : b;
+            }
+            out[2] = av[2]; out[3] = av[3]; flags = 0;
+        } else if (kind == 13) {
+            unsigned r0 = av[0] - bv[0], r1 = av[1] - bv[1];
+            out[0] = r0; out[1] = r1; out[2] = av[2]; out[3] = av[3]; flags = 0;
+        } else if (kind == 14 || kind == 15) {
+            unsigned d = (kind == 14) ? 1u : (unsigned)-1;
+            out[0] = av[0] + d; out[1] = av[1] + d; out[2] = av[2]; out[3] = av[3]; flags = 0;
+        } else if (kind == 16) {
+            out[0] = ~av[0]; out[1] = ~av[1]; out[2] = av[2]; out[3] = av[3]; flags = 0;
+        } else if (kind == 17) {
+            out[0] = (av[0] == 0) ? 1u : 0u; out[1] = (av[1] == 0) ? 1u : 0u;
+            out[2] = av[2]; out[3] = av[3]; flags = 0;
+        } else if (kind == 18) {
+            out[0] = av[0] & bv[0]; out[1] = av[1] & bv[1]; out[2] = av[2]; out[3] = av[3]; flags = 0;
+        } else if (kind == 19) {
+            out[0] = av[0] | bv[0]; out[1] = av[1] | bv[1]; out[2] = av[2]; out[3] = av[3]; flags = 0;
         } else {
             unsigned value = imm;
             if (imm_u) {

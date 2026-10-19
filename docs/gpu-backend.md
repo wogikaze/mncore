@@ -444,3 +444,9 @@ cargo run --release --bin gpu_run_program -- benchmarks/mnist_train_step.vsm
 - マスク付きの行列読み出し・MAU 書き込み、L1BM turnaround `$lbi`、
   不正 block-float 入力のエラー検出は未対応。
 - カーネルは NVRTC + CUDA Driver API で実行時にコンパイルする。
+
+## 全命令への拡張
+
+SDM 3.6 の全 PE 命令式への拡張を開始した。現状と不足は
+[gpu-instruction-coverage.md](gpu-instruction-coverage.md) にまとめている。
+直近では ALU の Min、Sub、Inc、Dec、Not、Lnot、And、Or を追加した。
