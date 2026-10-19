@@ -8,10 +8,10 @@ use mncore_sim::machine::{GRF_WORDS, LM_WORDS, PES};
 use mncore_sim::run::Sim;
 use mncore_sim::vsm::{self, Expr, Line, MauKind, MemKind, Op, Operand, Prec};
 
-fn source(op: &Operand) -> Option<(u8, MauSrc)> {
+fn mem_source(op: &Operand, wl: u8) -> Option<MauSrc> {
     let Operand::Mem {
         mem,
-        wl,
+        wl: op_wl,
         addr,
         neg,
         ext,
@@ -21,7 +21,7 @@ fn source(op: &Operand) -> Option<(u8, MauSrc)> {
     else {
         return None;
     };
-    if (*wl != 1 && *wl != 2) || *neg || *ext || *rnd || mask.is_some() {
+    if *op_wl != wl || *neg || *ext || *rnd || mask.is_some() {
         return None;
     }
     if addr.t_indirect || addr.madpe.is_some() {
@@ -34,14 +34,26 @@ fn source(op: &Operand) -> Option<(u8, MauSrc)> {
         MemKind::Grf1 => 3,
         _ => return None,
     };
-    let wl = *wl;
-    Some((
-        wl,
-        MauSrc {
-            mem,
-            base: addr.cycles.map(|c| c & !(wl as u32 - 1)),
-        },
-    ))
+    Some(MauSrc {
+        mem,
+        base: addr.cycles.map(|c| c & !(wl as u32 - 1)),
+    })
+}
+
+fn source(op: &Operand, wl: u8) -> Option<MauSrc> {
+    if let Operand::Forward {
+        kind: mncore_sim::vsm::FwdKind::Mauf,
+        neg: false,
+        ext: false,
+        rnd: false,
+    } = op
+    {
+        return Some(MauSrc {
+            mem: 4,
+            base: [0; 4],
+        });
+    }
+    mem_source(op, wl)
 }
 
 fn descriptor(expr: &Expr) -> Option<MauLine> {
@@ -58,6 +70,13 @@ fn descriptor(expr: &Expr) -> Option<MauLine> {
     if expr.flush.is_some() || expr.dsts.len() != 1 {
         return None;
     }
+    let Operand::Mem { wl, .. } = &expr.dsts[0] else {
+        return None;
+    };
+    if *wl != 1 && *wl != 2 {
+        return None;
+    }
+    let wl = *wl;
     let zero = MauSrc {
         mem: 0,
         base: [0; 4],
@@ -68,17 +87,14 @@ fn descriptor(expr: &Expr) -> Option<MauLine> {
         MauKind::Add => 2,
         MauKind::Passa => 3,
     };
-    let (wl, a) = source(expr.srcs.first()?)?;
+    let a = source(expr.srcs.first()?, wl)?;
     let (b, c) = match kind {
-        0 => (source(expr.srcs.get(1)?)?.1, source(expr.srcs.get(2)?)?.1),
-        1 => (source(expr.srcs.get(1)?)?.1, zero),
-        2 => (zero, source(expr.srcs.get(1)?)?.1),
+        0 => (source(expr.srcs.get(1)?, wl)?, source(expr.srcs.get(2)?, wl)?),
+        1 => (source(expr.srcs.get(1)?, wl)?, zero),
+        2 => (zero, source(expr.srcs.get(1)?, wl)?),
         _ => (zero, zero),
     };
-    let (dwl, dst) = source(&expr.dsts[0])?;
-    if dwl != wl {
-        return None;
-    }
+    let dst = mem_source(&expr.dsts[0], wl)?;
     Some(MauLine {
         kind,
         wl,
@@ -99,6 +115,7 @@ fn main() {
         "fvadd $m{}v $r{}v $n{}v",
         "fvmul $m{}v $r{}v $n{}v",
         "fvfma $m{}v $r{}v $n{}v $r{}v",
+        "fvadd $r{}v $mauf $n{}v",
     ];
     let mut text = String::new();
     for i in 0..lines {

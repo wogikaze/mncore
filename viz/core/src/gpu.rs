@@ -92,6 +92,7 @@ pub struct GpuState {
     lm1: u64,
     grf0: u64,
     grf1: u64,
+    mauf: u64,
     free: CuMemFree,
 }
 
@@ -102,6 +103,7 @@ impl Drop for GpuState {
             (self.free)(self.lm1);
             (self.free)(self.grf0);
             (self.free)(self.grf1);
+            (self.free)(self.mauf);
         }
     }
 }
@@ -293,9 +295,10 @@ impl Gpu {
     pub fn allocate_state(&self) -> Result<GpuState, String> {
         let lm_bytes = crate::machine::PES * crate::machine::LM_WORDS * 4;
         let grf_bytes = crate::machine::PES * crate::machine::GRF_WORDS * 4;
-        let mut buffers = [0u64; 4];
-        let sizes = [lm_bytes, lm_bytes, grf_bytes, grf_bytes];
-        for i in 0..4 {
+        let mauf_bytes = crate::machine::PES * 16 * 4;
+        let mut buffers = [0u64; 5];
+        let sizes = [lm_bytes, lm_bytes, grf_bytes, grf_bytes, mauf_bytes];
+        for i in 0..5 {
             let code = unsafe { (self.cu_mem_alloc)(&mut buffers[i], sizes[i]) };
             if let Err(error) = self.check(code, "cuMemAlloc(state)") {
                 for buffer in &buffers[..i] {
@@ -309,6 +312,7 @@ impl Gpu {
             lm1: buffers[1],
             grf0: buffers[2],
             grf1: buffers[3],
+            mauf: buffers[4],
             free: self.cu_mem_free,
         })
     }
@@ -342,6 +346,17 @@ impl Gpu {
         self.check(
             unsafe { (self.cu_htod)(state.grf1, grf1.as_ptr() as *const c_void, grf * 4) },
             "upload grf1",
+        )?;
+        let mauf = vec![0u32; crate::machine::PES * 16];
+        self.check(
+            unsafe {
+                (self.cu_htod)(
+                    state.mauf,
+                    mauf.as_ptr() as *const c_void,
+                    mauf.len() * 4,
+                )
+            },
+            "upload mauf",
         )
     }
 
@@ -388,6 +403,7 @@ impl Gpu {
         let mut lm1 = state.lm1;
         let mut grf0 = state.grf0;
         let mut grf1 = state.grf1;
+        let mut mauf = state.mauf;
         let mut kind = line.kind as i32;
         let mut wl = line.wl as i32;
         let mut amem = line.a.mem as i32;
@@ -403,6 +419,7 @@ impl Gpu {
             &mut lm1 as *mut u64 as *mut c_void,
             &mut grf0 as *mut u64 as *mut c_void,
             &mut grf1 as *mut u64 as *mut c_void,
+            &mut mauf as *mut u64 as *mut c_void,
             &mut kind as *mut i32 as *mut c_void,
             &mut wl as *mut i32 as *mut c_void,
             &mut amem as *mut i32 as *mut c_void,

@@ -112,3 +112,13 @@ cargo run --release --bin gpu_vsm_mau -- 1000
 
 - 1,000 行で mismatch 0。
 - CPU 2.79 秒、GPU 17.4 ms。
+
+### mauf forwarding
+
+MAU 行の後で各 PE の `mauf` を更新し、`$mauf` をソースに取れるようにした。
+`gpu_vsm_mau` の生成プログラムには `fvadd $rNv $mauf $nNv` も含まれる。
+
+- 1,000 行（forward を含む）で mismatch 0。
+- CPU 1.28 秒、GPU 26.6 ms。
+
+`aluf`、`lbf`、`mreadf` はまだ未対応。

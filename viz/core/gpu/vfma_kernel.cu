@@ -199,6 +199,7 @@ __device__ __forceinline__ int mem_len(int which) {
 // the neg/ext/rnd options are not part of this kernel yet.
 extern "C" __global__ void mau_line(
     unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
+    unsigned* mauf,
     int kind, int wl,
     int amem, unsigned a0, unsigned a1, unsigned a2, unsigned a3,
     int bmem, unsigned b0, unsigned b1, unsigned b2, unsigned b3,
@@ -223,18 +224,28 @@ extern "C" __global__ void mau_line(
     unsigned values[4][2];
     for (int c = 0; c < 4; ++c) {
         for (int l = 0; l < wl; ++l) {
-            unsigned av = pa[pe * la + ab[c] + l];
+            unsigned av = (amem == 4)
+                ? mauf[pe * 16 + c * 4 + l]
+                : pa[pe * la + ab[c] + l];
             unsigned bv;
             unsigned cv;
             if (kind == 0) {
-                bv = pb[pe * lb + bb[c] + l];
-                cv = pc[pe * lc + cb[c] + l];
+                bv = (bmem == 4)
+                    ? mauf[pe * 16 + c * 4 + l]
+                    : pb[pe * lb + bb[c] + l];
+                cv = (cmem == 4)
+                    ? mauf[pe * 16 + c * 4 + l]
+                    : pc[pe * lc + cb[c] + l];
             } else if (kind == 1) {
-                bv = pb[pe * lb + bb[c] + l];
+                bv = (bmem == 4)
+                    ? mauf[pe * 16 + c * 4 + l]
+                    : pb[pe * lb + bb[c] + l];
                 cv = 0;
             } else if (kind == 2) {
                 bv = one;
-                cv = pc[pe * lc + cb[c] + l];
+                cv = (cmem == 4)
+                    ? mauf[pe * 16 + c * 4 + l]
+                    : pc[pe * lc + cb[c] + l];
             } else {
                 bv = one;
                 cv = 0;
@@ -246,5 +257,9 @@ extern "C" __global__ void mau_line(
         for (int l = 0; l < wl; ++l) {
             pd[pe * ld + db[c] + l] = values[c][l];
         }
+        mauf[pe * 16 + c * 4] = values[c][0];
+        mauf[pe * 16 + c * 4 + 1] = (wl == 2) ? values[c][1] : 0;
+        mauf[pe * 16 + c * 4 + 2] = 0;
+        mauf[pe * 16 + c * 4 + 3] = 0;
     }
 }
