@@ -1,10 +1,11 @@
-//! Counts how much of a VSM program the current GPU kernels can execute.
+//! Counts how much of a VSM program the current GPU backend can execute.
 //!
 //! Usage: gpu_coverage [program.vsm]
 
 use mncore_sim::gpu::{
     alu_line_from_expr, bfn_line_from_expr, l1_read_line_from_expr, l1_write_line_from_expr,
-    l2_line_from_expr, l2_reduce_line_from_expr, mau_line_from_expr, mv_line_from_mv,
+    l2_line_from_expr, l2_reduce_line_from_expr, mat_mau_line_from_expr, mat_read_line_from_expr,
+    mat_write_line_from_expr, mau_line_from_expr, mv_line_from_mv,
 };
 use mncore_sim::machine::MaskState;
 use mncore_sim::vsm::{self, Line, Op};
@@ -27,6 +28,15 @@ fn main() {
     let mut l2_supported = 0usize;
     let mut l2_red_exprs = 0usize;
     let mut l2_red_supported = 0usize;
+
+    let mut matrix_exprs = 0usize;
+    let mut matrix_supported = 0usize;
+    let mut mat_write_exprs = 0usize;
+    let mut mat_write_supported = 0usize;
+    let mut mat_read_exprs = 0usize;
+    let mut mat_read_supported = 0usize;
+    let mut mat_mau_exprs = 0usize;
+    let mut mat_mau_supported = 0usize;
     let mut single_mau_supported = 0usize;
     let mut supported_lines = 0usize;
     let mut t_indirect = 0usize;
@@ -101,10 +111,40 @@ fn main() {
                 } else {
                     all_supported = false;
                 }
+            } else if matches!(
+                expr.op,
+                Op::MatWrite { .. } | Op::MatRead { .. } | Op::Mau { matrix: true, .. }
+            ) {
+                matrix_exprs += 1;
+                let supported = match &expr.op {
+                    Op::MatWrite { .. } => {
+                        mat_write_exprs += 1;
+                        let ok = mat_write_line_from_expr(expr).is_some();
+                        mat_write_supported += ok as usize;
+                        ok
+                    }
+                    Op::MatRead { .. } => {
+                        mat_read_exprs += 1;
+                        let ok = mat_read_line_from_expr(expr, mask_state).is_some();
+                        mat_read_supported += ok as usize;
+                        ok
+                    }
+                    _ => {
+                        mat_mau_exprs += 1;
+                        let ok = mat_mau_line_from_expr(expr, mask_state).is_some();
+                        mat_mau_supported += ok as usize;
+                        ok
+                    }
+                };
+                if supported {
+                    matrix_supported += 1;
+                } else {
+                    all_supported = false;
+                }
             } else {
                 all_supported = false;
             }
-            if matches!(expr.op, Op::Mau { .. }) {
+            if matches!(expr.op, Op::Mau { matrix: false, .. }) {
                 mau_exprs += 1;
                 for op in expr.srcs.iter().chain(expr.dsts.iter()) {
                     match op {
@@ -174,6 +214,13 @@ fn main() {
     for text in mv_unsupported_texts.iter().take(10) {
         println!("  unsupported MV: {text}");
     }
+
+    println!("L2 expressions: {l2_exprs}, supported transfers: {l2_supported}");
+    println!(
+        "matrix expressions: {matrix_exprs}, supported: {matrix_supported} \
+         (writes {mat_write_supported}/{mat_write_exprs}, reads {mat_read_supported}/{mat_read_exprs}, \
+         MAU {mat_mau_supported}/{mat_mau_exprs})"
+    );
     println!("lines with every expression supported: {supported_lines}");
     println!("lines consisting only of supported MAU expressions: {single_mau_supported}");
     println!(

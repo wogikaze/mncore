@@ -878,3 +878,262 @@ extern "C" __global__ void l2_reduce_line(
             l1bm[(l2 * 8 + src) * 8192 + (a0 + c * 16 + k) % 8192];
     }
 }
+
+// ---- matrix unit ------------------------------------------------------------------------
+
+__device__ __forceinline__ unsigned long long encode_bits(Fmt f, Val v) {
+    if (v.kind == 0) return 0;
+    if (v.kind == 1) return inf_bits(f, v.neg);
+    return round_pack(f, v.neg, v.sig, v.exp);
+}
+
+// Exact dot product of one block-float row and one block-float vector, ported
+// from float::bf_dot for single precision with 18 (pseudo-single) or 23 (full)
+// mantissa bits. `has_grid` is clear only for the zero and infinity results.
+__device__ Val bf_dot_single(
+    const unsigned long long* a, const unsigned long long* b, int n, int bf_m,
+    int* has_grid, int* grid) {
+    const int man_bits = 23;
+    const int emax = 255;
+    const int bias = 127;
+    *has_grid = 0;
+    *grid = 0;
+    unsigned ca = 0;
+    unsigned cb = 0;
+    for (int i = 0; i < n; ++i) {
+        unsigned ea = ((unsigned)(a[i] >> man_bits)) & emax;
+        unsigned eb = ((unsigned)(b[i] >> man_bits)) & emax;
+        if (ea > ca) ca = ea;
+        if (eb > cb) cb = eb;
+    }
+    if (ca == 0 || cb == 0) return {0, false, 0, 0};
+    if (ca == emax || cb == emax) return {1, false, 0, 0};
+    int low = (bf_m == man_bits) ? 41 : 36;
+    *has_grid = 1;
+    *grid = (int)ca + (int)cb - 2 * bias + 2 - low;
+    bool negs[16];
+    unsigned __int128 terms[16];
+    int exps[16];
+    int count = 0;
+    for (int i = 0; i < n; ++i) {
+        unsigned ma = (unsigned)(a[i] & 0x7fffffu) >> (man_bits - bf_m);
+        unsigned mb = (unsigned)(b[i] & 0x7fffffu) >> (man_bits - bf_m);
+        if (ma == 0 || mb == 0) continue;
+        unsigned ea = ((unsigned)(a[i] >> man_bits)) & emax;
+        unsigned eb = ((unsigned)(b[i] >> man_bits)) & emax;
+        if (ea == 0) ea = ca > 6 ? ca - 6 : 0;
+        if (eb == 0) eb = cb > 6 ? cb - 6 : 0;
+        unsigned __int128 p = (unsigned __int128)ma * (unsigned __int128)mb;
+        if (bf_m == man_bits) {
+            unsigned low_mask = 31;
+            unsigned dropped = (ma & low_mask) * (mb & low_mask);
+            if (dropped != 0) {
+                p = p - (unsigned __int128)dropped + (((unsigned __int128)1) << 8);
+            }
+        }
+        negs[count] = (((a[i] ^ b[i]) >> 31) & 1) != 0;
+        terms[count] = p;
+        exps[count] = (int)ea + (int)eb - 2 * bias - 2 * (bf_m - 1);
+        ++count;
+    }
+    if (count == 0) return {0, false, 0, 0};
+    int min_e = exps[0];
+    for (int i = 1; i < count; ++i) {
+        if (exps[i] < min_e) min_e = exps[i];
+    }
+    bool exact = true;
+    __int128 total = 0;
+    for (int i = 0; i < count; ++i) {
+        int sh = exps[i] - min_e;
+        if (sh > 16 || lz128(terms[i]) < (unsigned)(sh + 4)) {
+            exact = false;
+            break;
+        }
+        __int128 v = (__int128)(terms[i] << sh);
+        total += negs[i] ? -v : v;
+    }
+    if (exact) {
+        if (total == 0) return {0, false, 0, 0};
+        bool neg = total < 0;
+        unsigned __int128 sig = (unsigned __int128)(neg ? -total : total);
+        return {2, neg, sig, min_e};
+    }
+    Val acc = {0, false, 0, 0};
+    for (int i = 0; i < count; ++i) {
+        acc = add_exact(acc, {2, negs[i], terms[i], exps[i]});
+    }
+    return acc;
+}
+
+// float::mat_fma for a single-precision output: align c to the adder grid, add
+// the exact dot product, and round once.
+__device__ __forceinline__ unsigned long long mat_fma_bits(
+    Val dot, int has_grid, int grid, Val c) {
+    Fmt f = {8, 23, 18};
+    Val cc = has_grid ? align_c(c, grid) : c;
+    return encode_bits(f, add_exact(dot, cc));
+}
+
+// ---- matrix unit ------------------------------------------------------------------------
+
+// One matrix-register write (fmwrite/gmwrite). Each thread handles one MAB and
+// one cycle: the four PEs supply two f32 elements each, which become the eight
+// words of one physical row of the selected face.
+extern "C" __global__ void mat_write_line(
+    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
+    unsigned* mauf, unsigned* aluf, unsigned* mats,
+    int side, unsigned addr, int smem,
+    unsigned s0, unsigned s1, unsigned s2, unsigned s3, int swl, int sneg) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= 4096) return;
+    int mab = idx >> 2;
+    int c = idx & 3;
+    unsigned sb[4] = {s0, s1, s2, s3};
+    unsigned* ps = pick_mem(smem, lm0, lm1, grf0, grf1);
+    int ls = mem_len(smem);
+    unsigned vals[8];
+    for (int p = 0; p < 4; ++p) {
+        int pe = mab * 4 + p;
+        for (int i = 0; i < 2; ++i) {
+            unsigned v;
+            if (smem == 4) {
+                v = mauf[pe * 16 + c * 4 + i];
+            } else if (smem == 5) {
+                v = aluf[pe * 16 + c * 4 + i];
+            } else {
+                v = (i < swl) ? ps[pe * ls + sb[c] + i] : 0;
+            }
+            if (sneg) v ^= 0x80000000u;
+            vals[p * 2 + i] = v;
+        }
+    }
+    int row = (int)((addr + (unsigned)c) % 8u);
+    int base = ((mab * 2 + side) * 16 + row * 2) * 8;
+    for (int j = 0; j < 8; ++j) {
+        mats[base + j] = vals[j];
+    }
+}
+
+// One matrix-register read (fmread/gmread). Each thread handles one PE: the
+// elements of logical rows 2p and 2p+1 (physical rows 4p and 4p+2) form the two
+// f32 lanes of the bus, which goes to the destination and to mreadf.
+extern "C" __global__ void mat_read_line(
+    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
+    unsigned* mreadf, unsigned* mats,
+    int side, unsigned addr, int dmem,
+    unsigned d0, unsigned d1, unsigned d2, unsigned d3, int dwl) {
+    int pe = blockIdx.x * blockDim.x + threadIdx.x;
+    if (pe >= 4096) return;
+    int mab = pe >> 2;
+    int p = pe & 3;
+    unsigned db[4] = {d0, d1, d2, d3};
+    unsigned* pd = pick_mem(dmem, lm0, lm1, grf0, grf1);
+    int ld = mem_len(dmem);
+    int base = (mab * 2 + side) * 16 * 8;
+    for (int c = 0; c < 4; ++c) {
+        int col = (int)((addr + (unsigned)c) % 8u);
+        unsigned bus[4] = {
+            mats[base + (4 * p) * 8 + col],
+            mats[base + (4 * p + 2) * 8 + col],
+            0,
+            0,
+        };
+        for (int i = 0; i < dwl; ++i) {
+            pd[pe * ld + db[c] + i] = bus[i];
+        }
+        for (int i = 0; i < 4; ++i) {
+            mreadf[pe * 16 + c * 4 + i] = bus[i];
+        }
+    }
+}
+
+// One matrix MAU line. Each thread handles one MAB: it reads all four cycles'
+// x and y vectors first, matching the CPU (which computes the whole line before
+// writing), then computes the eight rows of each cycle as a block-float dot
+// product plus the y element, rounded once. Results go to the destination and
+// to mauf.
+extern "C" __global__ void mat_mau_line(
+    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
+    unsigned* mauf, unsigned* aluf, unsigned* mats,
+    int prec, int side, int kind,
+    int xmem, unsigned x0, unsigned x1, unsigned x2, unsigned x3, int xwl, int xneg,
+    int ymem, unsigned y0, unsigned y1, unsigned y2, unsigned y3, int ywl, int yneg,
+    int dmem, unsigned d0, unsigned d1, unsigned d2, unsigned d3, int dwl) {
+    int mab = blockIdx.x * blockDim.x + threadIdx.x;
+    if (mab >= 1024) return;
+    int nx = (prec == 0) ? 1 : 2;
+    int ny = 2;
+    int bf_m = (prec == 0) ? 23 : 18;
+    unsigned xb[4] = {x0, x1, x2, x3};
+    unsigned yb[4] = {y0, y1, y2, y3};
+    unsigned* px = pick_mem(xmem, lm0, lm1, grf0, grf1);
+    unsigned* py = pick_mem(ymem, lm0, lm1, grf0, grf1);
+    int lx = mem_len(xmem);
+    int ly = mem_len(ymem);
+    unsigned long long xv[4][8];
+    unsigned long long yv[4][8];
+    for (int c = 0; c < 4; ++c) {
+        for (int p = 0; p < 4; ++p) {
+            int pe = mab * 4 + p;
+            for (int i = 0; i < nx; ++i) {
+                unsigned v;
+                if (xmem == 4) {
+                    v = mauf[pe * 16 + c * 4 + i];
+                } else if (xmem == 5) {
+                    v = aluf[pe * 16 + c * 4 + i];
+                } else {
+                    v = (i < xwl) ? px[pe * lx + xb[c] + i] : 0;
+                }
+                if (xneg) v ^= 0x80000000u;
+                xv[c][p * nx + i] = v;
+            }
+            for (int i = 0; i < ny; ++i) {
+                unsigned v = 0;
+                if (kind == 0) {
+                    if (ymem == 4) {
+                        v = mauf[pe * 16 + c * 4 + i];
+                    } else if (ymem == 5) {
+                        v = aluf[pe * 16 + c * 4 + i];
+                    } else {
+                        v = (i < ywl) ? py[pe * ly + yb[c] + i] : 0;
+                    }
+                    if (yneg) v ^= 0x80000000u;
+                }
+                yv[c][p * ny + i] = v;
+            }
+        }
+    }
+    Fmt f = {8, 23, 18};
+    int cols = (prec == 0) ? 4 : 8;
+    int base = (mab * 2 + side) * 16 * 8;
+    unsigned db[4] = {d0, d1, d2, d3};
+    unsigned* pd = pick_mem(dmem, lm0, lm1, grf0, grf1);
+    int ld = mem_len(dmem);
+    for (int c = 0; c < 4; ++c) {
+        unsigned out[8];
+        for (int i = 0; i < 8; ++i) {
+            unsigned long long arow[8];
+            for (int j = 0; j < cols; ++j) {
+                int col = (prec == 0) ? 2 * j : j;
+                arow[j] = mats[base + (i * 2) * 8 + col];
+            }
+            int has_grid;
+            int grid;
+            Val dot = bf_dot_single(arow, xv[c], cols, bf_m, &has_grid, &grid);
+            Val yval = (kind == 0) ? decode(f, yv[c][i]) : Val{0, false, 0, 0};
+            out[i] = (unsigned)mat_fma_bits(dot, has_grid, grid, yval);
+        }
+        for (int p = 0; p < 4; ++p) {
+            int pe = mab * 4 + p;
+            unsigned bus[4] = {out[2 * p], out[2 * p + 1], 0, 0};
+            if (dmem < 4) {
+                for (int i = 0; i < dwl; ++i) {
+                    pd[pe * ld + db[c] + i] = bus[i];
+                }
+            }
+            for (int i = 0; i < 4; ++i) {
+                mauf[pe * 16 + c * 4 + i] = bus[i];
+            }
+        }
+    }
+}

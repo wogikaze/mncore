@@ -21,6 +21,9 @@ type CuModule = *mut c_void;
 type CuFunction = *mut c_void;
 type CuDevicePtr = u64;
 
+/// Matrix-register words: 1,024 MABs x 2 faces x 16 physical rows x 8 words.
+pub const MAT_WORDS: usize = (crate::machine::PES / 4) * 2 * 16 * 8;
+
 type CuInit = unsafe extern "C" fn(u32) -> CuResult;
 type CuDeviceGet = unsafe extern "C" fn(*mut CuDevice, c_int) -> CuResult;
 type CuDeviceGetAttribute = unsafe extern "C" fn(*mut c_int, c_int, CuDevice) -> CuResult;
@@ -883,6 +886,205 @@ pub fn bfn_line_from_expr(expr: &Expr) -> Option<BfnLine> {
     Some(BfnLine { src, dst })
 }
 
+/// A matrix-register write (`fmwrite`/`gmwrite`): each MAB writes one face row
+/// per cycle from its four PEs.
+#[derive(Clone, Copy, Debug)]
+pub struct MatWriteLine {
+    pub prec: Prec,
+    pub side: u8,
+    pub wl: u8,
+    pub addr: u32,
+    pub src: MauSrc,
+}
+
+/// A matrix-register read (`fmread`/`gmread`) into a PE memory bus.
+#[derive(Clone, Copy, Debug)]
+pub struct MatReadLine {
+    pub prec: Prec,
+    pub side: u8,
+    pub addr: u32,
+    pub dst: MauSrc,
+}
+
+/// A matrix MAU line (`fmfma`/`gmmul` and friends).
+#[derive(Clone, Copy, Debug)]
+pub struct MatMauLine {
+    pub prec: Prec,
+    pub side: u8,
+    /// 0 FMA, 1 MUL, 2 ADD, 3 PASSA. Only FMA reads the y operand.
+    pub kind: u8,
+    pub x: MauSrc,
+    pub y: MauSrc,
+    pub dst: AluDst,
+}
+
+/// Whether the multi-line mask directive of `state` affects a PE memory write.
+fn directive_mask_applies(op: &Operand, state: MaskState) -> bool {
+    let Operand::Mem { mem, .. } = op else {
+        return false;
+    };
+    let on = match mem {
+        MemKind::Grf0 => state.targets.grf0,
+        MemKind::Grf1 => state.targets.grf1,
+        MemKind::T => state.targets.t,
+        MemKind::Lm0 => state.targets.lm0,
+        MemKind::Lm1 => state.targets.lm1,
+        _ => false,
+    };
+    on && state.entry != 0
+}
+
+/// Builds a `MatWriteLine` for fmwrite/gmwrite. The current kernel supports the
+/// 32-bit element precisions (F and G).
+pub fn mat_write_line_from_expr(expr: &Expr) -> Option<MatWriteLine> {
+    let Op::MatWrite {
+        prec: prec @ (Prec::F | Prec::G),
+    } = &expr.op
+    else {
+        return None;
+    };
+    if expr.flush.is_some() || expr.srcs.len() != 1 || expr.dsts.len() != 1 {
+        return None;
+    }
+    let Operand::Mat {
+        y,
+        wl,
+        row: Some(addr),
+    } = &expr.dsts[0]
+    else {
+        return None;
+    };
+    let src = line_source(&expr.srcs[0])?;
+    if src.mem >= 6 {
+        return None;
+    }
+    Some(MatWriteLine {
+        prec: *prec,
+        side: *y as u8,
+        wl: *wl,
+        addr: *addr,
+        src,
+    })
+}
+
+/// Builds a `MatReadLine` for fmread/gmread. Reads whose destination is masked
+/// by the current `mask` directive are rejected, because the kernel does not
+/// merge masked writes yet.
+pub fn mat_read_line_from_expr(expr: &Expr, mask_state: MaskState) -> Option<MatReadLine> {
+    let Op::MatRead {
+        prec: prec @ (Prec::F | Prec::G),
+    } = &expr.op
+    else {
+        return None;
+    };
+    if expr.flush.is_some() || expr.srcs.len() != 1 || expr.dsts.len() != 1 {
+        return None;
+    }
+    let Operand::Mat {
+        y,
+        row: Some(addr),
+        ..
+    } = &expr.srcs[0]
+    else {
+        return None;
+    };
+    let dst = match &expr.dsts[0] {
+        // A read to $nowrite still updates mreadf, like the CPU write path.
+        Operand::Nowrite => MauSrc {
+            mem: 0,
+            wl: 0,
+            base: [0; 4],
+            neg: false,
+        },
+        Operand::Mem { .. } if !directive_mask_applies(&expr.dsts[0], mask_state) => {
+            let dst = mem_source(&expr.dsts[0], false, false)?;
+            if dst.mem >= 6 {
+                return None;
+            }
+            dst
+        }
+        _ => return None,
+    };
+    Some(MatReadLine {
+        prec: *prec,
+        side: *y as u8,
+        addr: *addr,
+        dst,
+    })
+}
+
+/// Builds a `MatMauLine` for a matrix MAU expression (`fmfma`, `gmmul`, ...).
+pub fn mat_mau_line_from_expr(expr: &Expr, mask_state: MaskState) -> Option<MatMauLine> {
+    let Op::Mau {
+        prec: prec @ (Prec::F | Prec::G),
+        matrix: true,
+        kind,
+        half: None,
+        ..
+    } = &expr.op
+    else {
+        return None;
+    };
+    let kind = match kind {
+        MauKind::Fma => 0,
+        MauKind::Mul => 1,
+        MauKind::Add => 2,
+        MauKind::Passa => 3,
+    };
+    let want = if kind == 0 { 3 } else { 2 };
+    if expr.flush.is_some() || expr.srcs.len() != want || expr.dsts.len() != 1 {
+        return None;
+    }
+    let Operand::Mat {
+        y: side_y,
+        row: None,
+        ..
+    } = &expr.srcs[0]
+    else {
+        return None;
+    };
+    let x = line_source(&expr.srcs[1])?;
+    if x.mem >= 6 {
+        return None;
+    }
+    let y = if kind == 0 {
+        let y = line_source(&expr.srcs[2])?;
+        if y.mem >= 6 {
+            return None;
+        }
+        y
+    } else {
+        MauSrc {
+            mem: 0,
+            wl: 1,
+            base: [0; 4],
+            neg: false,
+        }
+    };
+    let dst = match &expr.dsts[0] {
+        Operand::Nowrite => AluDst::None,
+        Operand::Mem { .. } => {
+            if directive_mask_applies(&expr.dsts[0], mask_state) {
+                return None;
+            }
+            let dst = mem_source(&expr.dsts[0], false, false)?;
+            if dst.mem >= 6 {
+                return None;
+            }
+            AluDst::Mem(dst)
+        }
+        _ => return None,
+    };
+    Some(MatMauLine {
+        prec: *prec,
+        side: *side_y as u8,
+        kind,
+        x,
+        y,
+        dst,
+    })
+}
+
 /// A single ALU line. Kind 0 is Passa and kind 1 is Xor.
 #[derive(Clone, Copy, Debug)]
 pub struct AluLine {
@@ -914,6 +1116,10 @@ pub struct GpuState {
     scratch: u64,
     dram_longs: u64,
     scratch_longs: u64,
+    /// 1,024 MABs x 2 faces x 16 physical rows x 8 words.
+    mats: u64,
+    /// Matrix read forwarding register, 4 cycles x 4 words per PE.
+    mreadf: u64,
     free: CuMemFree,
 }
 
@@ -934,6 +1140,8 @@ impl Drop for GpuState {
                 self.pdm,
                 self.dram,
                 self.scratch,
+                self.mats,
+                self.mreadf,
             ] {
                 if pointer != 0 {
                     (self.free)(pointer);
@@ -956,6 +1164,9 @@ pub struct Gpu {
     l2_function: CuFunction,
     l2_reduce_function: CuFunction,
     mv_function: CuFunction,
+    mat_write_function: CuFunction,
+    mat_read_function: CuFunction,
+    mat_mau_function: CuFunction,
     cu_ctx_destroy: CuCtxDestroy,
     cu_mem_alloc: CuMemAlloc,
     cu_mem_free: CuMemFree,
@@ -1142,6 +1353,39 @@ impl Gpu {
             unsafe { cu_get_function(&mut mv_function, module, b"mv_line\0".as_ptr() as *const c_char) },
             "cuModuleGetFunction(mv_line)",
         )?;
+        let mut mat_write_function: CuFunction = std::ptr::null_mut();
+        check(
+            unsafe {
+                cu_get_function(
+                    &mut mat_write_function,
+                    module,
+                    b"mat_write_line\0".as_ptr() as *const c_char,
+                )
+            },
+            "cuModuleGetFunction(mat_write_line)",
+        )?;
+        let mut mat_read_function: CuFunction = std::ptr::null_mut();
+        check(
+            unsafe {
+                cu_get_function(
+                    &mut mat_read_function,
+                    module,
+                    b"mat_read_line\0".as_ptr() as *const c_char,
+                )
+            },
+            "cuModuleGetFunction(mat_read_line)",
+        )?;
+        let mut mat_mau_function: CuFunction = std::ptr::null_mut();
+        check(
+            unsafe {
+                cu_get_function(
+                    &mut mat_mau_function,
+                    module,
+                    b"mat_mau_line\0".as_ptr() as *const c_char,
+                )
+            },
+            "cuModuleGetFunction(mat_mau_line)",
+        )?;
         Ok(Gpu {
             _cuda: cuda,
             _nvrtc: nvrtc,
@@ -1155,6 +1399,9 @@ impl Gpu {
             l2_function,
             l2_reduce_function,
             mv_function,
+            mat_write_function,
+            mat_read_function,
+            mat_mau_function,
             cu_ctx_destroy,
             cu_mem_alloc,
             cu_mem_free,
@@ -1208,6 +1455,7 @@ impl Gpu {
         let fwd_bytes = crate::machine::PES * 16 * 4;
         let l1bm_bytes = crate::blocks::L1BS * crate::blocks::L1BM_LONGS * 8;
         let l2bm_bytes = crate::blocks::L2BS * crate::blocks::L2BM_LONGS * 8;
+        let mats_bytes = MAT_WORDS * 4;
         let mut sizes = vec![
             lm_bytes,
             lm_bytes,
@@ -1219,6 +1467,8 @@ impl Gpu {
             fwd_bytes,
             l1bm_bytes,
             l2bm_bytes,
+            mats_bytes,
+            fwd_bytes,
         ];
         let want_mv = dram_longs > 0;
         if want_mv {
@@ -1256,9 +1506,11 @@ impl Gpu {
             t: buffers[7],
             l1bm: buffers[8],
             l2bm: buffers[9],
-            pdm: if want_mv { buffers[10] } else { 0 },
-            dram: if want_mv { buffers[11] } else { 0 },
-            scratch: if want_mv { buffers[12] } else { 0 },
+            mats: buffers[10],
+            mreadf: buffers[11],
+            pdm: if want_mv { buffers[12] } else { 0 },
+            dram: if want_mv { buffers[13] } else { 0 },
+            scratch: if want_mv { buffers[14] } else { 0 },
             dram_longs: if want_mv { dram_longs } else { 0 },
             scratch_longs: if want_mv { scratch_longs } else { 0 },
             free: self.cu_mem_free,
@@ -1301,6 +1553,7 @@ impl Gpu {
             (state.aluf, "upload aluf"),
             (state.mask, "upload mask"),
             (state.t, "upload t"),
+            (state.mreadf, "upload mreadf"),
         ] {
             self.check(
                 unsafe {
@@ -1313,6 +1566,17 @@ impl Gpu {
                 what,
             )?;
         }
+        let mats = vec![0u32; MAT_WORDS];
+        self.check(
+            unsafe {
+                (self.cu_htod)(
+                    state.mats,
+                    mats.as_ptr() as *const c_void,
+                    mats.len() * 4,
+                )
+            },
+            "upload mats",
+        )?;
         Ok(())
     }
 
@@ -1493,6 +1757,39 @@ impl Gpu {
                 )
             },
             "download dram",
+        )?;
+        Ok(out)
+    }
+
+    /// Uploads the matrix registers (`[mab][face][physical row][word]`, u32).
+    pub fn upload_mats(&self, state: &GpuState, words: &[u32]) -> Result<(), String> {
+        if words.len() != MAT_WORDS {
+            return Err("matrix slice has the wrong length".into());
+        }
+        self.check(
+            unsafe {
+                (self.cu_htod)(
+                    state.mats,
+                    words.as_ptr() as *const c_void,
+                    MAT_WORDS * 4,
+                )
+            },
+            "upload mats",
+        )
+    }
+
+    /// Downloads the matrix registers.
+    pub fn download_mats(&self, state: &GpuState) -> Result<Vec<u32>, String> {
+        let mut out = vec![0u32; MAT_WORDS];
+        self.check(
+            unsafe {
+                (self.cu_dtoh)(
+                    out.as_mut_ptr() as *mut c_void,
+                    state.mats,
+                    MAT_WORDS * 4,
+                )
+            },
+            "download mats",
         )?;
         Ok(out)
     }
@@ -2070,6 +2367,198 @@ impl Gpu {
                 )
             },
             "cuLaunchKernel(l1_read_line)",
+        )
+    }
+
+    /// Launches one matrix-register write (`fmwrite`/`gmwrite`).
+    pub fn run_mat_write_line(&self, state: &GpuState, line: &MatWriteLine) -> Result<(), String> {
+        if !matches!(line.prec, Prec::F | Prec::G) {
+            return Err("mat_write_line supports f32 and pseudo-single".into());
+        }
+        let mut lm0 = state.lm0;
+        let mut lm1 = state.lm1;
+        let mut grf0 = state.grf0;
+        let mut grf1 = state.grf1;
+        let mut mauf = state.mauf;
+        let mut aluf = state.aluf;
+        let mut mats = state.mats;
+        let mut side = line.side as i32;
+        let mut addr = line.addr;
+        let mut smem = line.src.mem as i32;
+        let mut s = line.src.base;
+        let mut swl = line.src.wl as i32;
+        let mut sneg = line.src.neg as i32;
+        let mut args = [
+            &mut lm0 as *mut u64 as *mut c_void,
+            &mut lm1 as *mut u64 as *mut c_void,
+            &mut grf0 as *mut u64 as *mut c_void,
+            &mut grf1 as *mut u64 as *mut c_void,
+            &mut mauf as *mut u64 as *mut c_void,
+            &mut aluf as *mut u64 as *mut c_void,
+            &mut mats as *mut u64 as *mut c_void,
+            &mut side as *mut i32 as *mut c_void,
+            &mut addr as *mut u32 as *mut c_void,
+            &mut smem as *mut i32 as *mut c_void,
+            &mut s[0] as *mut u32 as *mut c_void,
+            &mut s[1] as *mut u32 as *mut c_void,
+            &mut s[2] as *mut u32 as *mut c_void,
+            &mut s[3] as *mut u32 as *mut c_void,
+            &mut swl as *mut i32 as *mut c_void,
+            &mut sneg as *mut i32 as *mut c_void,
+        ];
+        let grid = (crate::machine::PES as u32 + 255) / 256;
+        self.check(
+            unsafe {
+                (self.cu_launch)(
+                    self.mat_write_function,
+                    grid,
+                    1,
+                    1,
+                    256,
+                    1,
+                    1,
+                    0,
+                    std::ptr::null_mut(),
+                    args.as_mut_ptr(),
+                    std::ptr::null_mut(),
+                )
+            },
+            "cuLaunchKernel(mat_write_line)",
+        )
+    }
+
+    /// Launches one matrix-register read (`fmread`/`gmread`).
+    pub fn run_mat_read_line(&self, state: &GpuState, line: &MatReadLine) -> Result<(), String> {
+        if !matches!(line.prec, Prec::F | Prec::G) {
+            return Err("mat_read_line supports f32 and pseudo-single".into());
+        }
+        let mut lm0 = state.lm0;
+        let mut lm1 = state.lm1;
+        let mut grf0 = state.grf0;
+        let mut grf1 = state.grf1;
+        let mut mreadf = state.mreadf;
+        let mut mats = state.mats;
+        let mut side = line.side as i32;
+        let mut addr = line.addr;
+        let mut dmem = line.dst.mem as i32;
+        let mut d = line.dst.base;
+        let mut dwl = line.dst.wl as i32;
+        let mut args = [
+            &mut lm0 as *mut u64 as *mut c_void,
+            &mut lm1 as *mut u64 as *mut c_void,
+            &mut grf0 as *mut u64 as *mut c_void,
+            &mut grf1 as *mut u64 as *mut c_void,
+            &mut mreadf as *mut u64 as *mut c_void,
+            &mut mats as *mut u64 as *mut c_void,
+            &mut side as *mut i32 as *mut c_void,
+            &mut addr as *mut u32 as *mut c_void,
+            &mut dmem as *mut i32 as *mut c_void,
+            &mut d[0] as *mut u32 as *mut c_void,
+            &mut d[1] as *mut u32 as *mut c_void,
+            &mut d[2] as *mut u32 as *mut c_void,
+            &mut d[3] as *mut u32 as *mut c_void,
+            &mut dwl as *mut i32 as *mut c_void,
+        ];
+        let grid = (crate::machine::PES as u32 + 255) / 256;
+        self.check(
+            unsafe {
+                (self.cu_launch)(
+                    self.mat_read_function,
+                    grid,
+                    1,
+                    1,
+                    256,
+                    1,
+                    1,
+                    0,
+                    std::ptr::null_mut(),
+                    args.as_mut_ptr(),
+                    std::ptr::null_mut(),
+                )
+            },
+            "cuLaunchKernel(mat_read_line)",
+        )
+    }
+
+    /// Launches one matrix MAU line (`fmfma`/`gmmul` and friends).
+    pub fn run_mat_mau_line(&self, state: &GpuState, line: &MatMauLine) -> Result<(), String> {
+        let prec = match line.prec {
+            Prec::F => 0i32,
+            Prec::G => 1i32,
+            _ => return Err("mat_mau_line supports f32 and pseudo-single".into()),
+        };
+        let mut lm0 = state.lm0;
+        let mut lm1 = state.lm1;
+        let mut grf0 = state.grf0;
+        let mut grf1 = state.grf1;
+        let mut mauf = state.mauf;
+        let mut aluf = state.aluf;
+        let mut mats = state.mats;
+        let mut prec = prec;
+        let mut side = line.side as i32;
+        let mut kind = line.kind as i32;
+        let mut xmem = line.x.mem as i32;
+        let mut x = line.x.base;
+        let mut xwl = line.x.wl as i32;
+        let mut xneg = line.x.neg as i32;
+        let mut ymem = line.y.mem as i32;
+        let mut y = line.y.base;
+        let mut ywl = line.y.wl as i32;
+        let mut yneg = line.y.neg as i32;
+        let (mut dmem, mut d, mut dwl) = match line.dst {
+            AluDst::Mem(dst) => (dst.mem as i32, dst.base, dst.wl as i32),
+            _ => (0i32, [0u32; 4], 0i32),
+        };
+        let mut args = [
+            &mut lm0 as *mut u64 as *mut c_void,
+            &mut lm1 as *mut u64 as *mut c_void,
+            &mut grf0 as *mut u64 as *mut c_void,
+            &mut grf1 as *mut u64 as *mut c_void,
+            &mut mauf as *mut u64 as *mut c_void,
+            &mut aluf as *mut u64 as *mut c_void,
+            &mut mats as *mut u64 as *mut c_void,
+            &mut prec as *mut i32 as *mut c_void,
+            &mut side as *mut i32 as *mut c_void,
+            &mut kind as *mut i32 as *mut c_void,
+            &mut xmem as *mut i32 as *mut c_void,
+            &mut x[0] as *mut u32 as *mut c_void,
+            &mut x[1] as *mut u32 as *mut c_void,
+            &mut x[2] as *mut u32 as *mut c_void,
+            &mut x[3] as *mut u32 as *mut c_void,
+            &mut xwl as *mut i32 as *mut c_void,
+            &mut xneg as *mut i32 as *mut c_void,
+            &mut ymem as *mut i32 as *mut c_void,
+            &mut y[0] as *mut u32 as *mut c_void,
+            &mut y[1] as *mut u32 as *mut c_void,
+            &mut y[2] as *mut u32 as *mut c_void,
+            &mut y[3] as *mut u32 as *mut c_void,
+            &mut ywl as *mut i32 as *mut c_void,
+            &mut yneg as *mut i32 as *mut c_void,
+            &mut dmem as *mut i32 as *mut c_void,
+            &mut d[0] as *mut u32 as *mut c_void,
+            &mut d[1] as *mut u32 as *mut c_void,
+            &mut d[2] as *mut u32 as *mut c_void,
+            &mut d[3] as *mut u32 as *mut c_void,
+            &mut dwl as *mut i32 as *mut c_void,
+        ];
+        let grid = ((crate::machine::PES / 4) as u32 + 255) / 256;
+        self.check(
+            unsafe {
+                (self.cu_launch)(
+                    self.mat_mau_function,
+                    grid,
+                    1,
+                    1,
+                    256,
+                    1,
+                    1,
+                    0,
+                    std::ptr::null_mut(),
+                    args.as_mut_ptr(),
+                    std::ptr::null_mut(),
+                )
+            },
+            "cuLaunchKernel(mat_mau_line)",
         )
     }
 

@@ -4,7 +4,7 @@
 //! Usage: gpu_vsm_mau [lines]
 
 use mncore_sim::gpu::{mau_line_from_expr, Gpu};
-use mncore_sim::machine::{GRF_WORDS, LM_WORDS, PES};
+use mncore_sim::machine::{MaskState, GRF_WORDS, LM_WORDS, PES};
 use mncore_sim::run::Sim;
 use mncore_sim::vsm::{self, Line};
 
@@ -38,7 +38,7 @@ fn main() {
         if exprs.len() != 1 {
             panic!("expected one expression per line");
         }
-        match mau_line_from_expr(&exprs[0], Default::default()) {
+        match mau_line_from_expr(&exprs[0], MaskState::default()) {
             Some(line) => descriptors.push(line),
             None => {
                 eprintln!("unsupported: {:?} {:?}", exprs[0].op, exprs[0]);

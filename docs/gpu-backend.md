@@ -334,7 +334,87 @@ cargo run --release --bin gpu_vsm_l2red -- 512
 
 `l2bmb2`（Bcast2）と、L1B 集合を指定した `l2bmd` の Distrib はまだ未対応。
 
-## 現状（L2 縮約と MV 対応後）
+## MV（PDM/DRAM）
+
+PDM と DRAM をデバイスに置き、MV を 1 文 1 カーネル（`mv_line`）で実行する。
+
+- PDM は 4 グループ × 524,288 ロングワード（16 MB）をそのまま持つ。
+- DRAM の CPU 側の全容量は 4 × 512 Mi ロングワード = 128 GiB なので、デバイスには
+  グループあたり `dram_longs` ロングワードだけを持つ。`allocate_state_with_mv` で確保し、
+  範囲外を触る文は `run_mv_line` が拒否する。必要な容量は `MvLine::dram_longs_needed`
+  で見積もれる（実際のアクセスは `addr + size` 未満に収まる）。
+- L2BM は既存の 8 × 32,768 ロングワードのバッファをそのまま使う。
+
+対応しているデータフロー:
+
+- `mvp`: 単一グループ間、およびグループを省略した 4 グループ並列。
+- `mvb`: PDM → 全 L2BM、DRAM → 全 L2BM。
+- `mvb2`: DRAM → 各グループの両 L2BM。
+- `mvb4`: DRAM → 全 L2BM（グループ分配）。
+- `mvd`: PDM ↔ L2BM、PDM ↔ DRAM。
+- `mvr<op>`、`mvr2<op>`、`mvr4<op>`: 8/2/4 値の reduction。
+  RRN は fadd（half/single/double）と iadd、band、and、bor、or、max、min。
+  fadd は CPU と同じ 2 段階の丸めを行う。
+- `mvnop`。
+- 間接 DRAM アクセス（`$di...`）は CPU も未対応なので対象外。
+
+`mvp` のコピー元とコピー先が同じメモリレベル・同じグループにある場合、CPU は
+全読み出しの後に全書き込みを行う。GPU ではソースをスクラッチに落としてから書く
+2 パス実行にし、重なった範囲でもコピーとして一致させる。スクラッチの大きさは
+`allocate_state_with_mv` の第 2 引数で指定する。
+
+`gpu_vsm_mv` は PDM/DRAM/L1BM/L2BM をランダム値で埋め、CPU の `Sim` と GPU で
+同じ MV 文を実行して 4 つのメモリを比較する。合成文（`--seed` で再現可能）と、
+実プログラムから MV 文だけを抽出するモードがある。
+
+```sh
+cd viz/core
+cargo run --release --bin gpu_vsm_mv -- 400
+cargo run --release --bin gpu_vsm_mv -- --program benchmarks/mnist_train_step.vsm
+```
+
+`mnist_train_step.vsm` の MV 168 文をすべて実行した結果:
+
+- 168 文すべて対応、mismatch 0（PDM/DRAM/L1BM/L2BM）。
+- CPU 約 19 ms、GPU 1〜2 ms（ランダム初期状態の転送は含まない）。
+- 合成 400 文も複数の seed で mismatch 0。`mvp` の重なり、PDM/L2BM の
+  アドレス折り返し、half/double の fadd、整数 RRN を含む。
+
+## 行列レジスタ（gmwrite / gmread / gmmul）
+
+行列レジスタを 1,024 MAB × 2 面（x/y）× 16 物理行 × 8 ワードの u32（1 MiB）で VRAM に保持する。
+`GpuState` はこのバッファと、行列読み出しの forwarding である `mreadf` も持つ。
+
+追加したカーネル:
+
+- `mat_write_line`: `fmwrite`/`gmwrite`。1 スレッドが 1 MAB・1 サイクルを担当し、4 PE の 2 語ずつから物理行 8 語を作る。F/G は同じ配置で、論理行 i は物理行 2i に対応する。
+- `mat_read_line`: `fmread`/`gmread`。1 スレッド 1 PE。論理行 2p と 2p+1 の要素を 2 レーンとして PE メモリへ書き、`mreadf` も更新する。`$nowrite` は `mreadf` だけを更新する。
+- `mat_mau_line`: `fmfma`/`fmmul`/`fmadd`/`fmpassa` と G 版（`gmfma`、`gmmul` など）。1 スレッド 1 MAB が 4 サイクル分の x/y を先に読み、8 行の block-float 内積 + y を 1 回だけ丸める。CPU の `float::bf_dot` と `float::mat_fma` を CUDA に移植した。`mauf` も更新する。
+
+対応範囲:
+
+- F/G は 32 bit 要素なので同じ物理行レイアウトを使う。F は列 0,2,4,6 の 4 項、G は 8 項（pseudo-single、下位 5 bit を捨てる）の内積になる。
+- ソースは LM0/LM1/GRF0/GRF1、`$aluf`/`$mauf`、neg、`wl = 1/2/4`。デスティネーションは PE メモリと `$nowrite`。
+- D/H 精度、マスク付きの行列読み出し・MAU 書き込み、`ext`/`rnd`、T をソースにする行列演算はまだ未対応。
+- CPU は不正な block-float 入力を書き込み時にエラーにするが、GPU 側はエラーにせずビットを書く。テストは正しい block-float 入力だけを使う。
+
+`gpu_vsm_matrix` は gmwrite/gmread/gmmul と f32 版、`fpassa` による `aluf` 生成、`$nowrite` 読み出しを混ぜ、
+行列レジスタと 4 本の PE メモリを比較する。
+
+```sh
+cd viz/core
+cargo run --release --bin gpu_vsm_matrix -- 100
+```
+
+結果:
+
+- 1,300 行で mismatch 0。
+- CPU 約 5 秒、GPU 約 55〜75 ms。
+- 6,500 行でも mismatch 0（CPU 約 30 秒、GPU 約 290 ms）。
+- `gpu_coverage` の matrix 式は 216 個のうち 184 個が対応（書き込み 96/112、読み出し 40/56、MAU 48/48）。
+  残り 32 個は double 精度の `dmwrite`/`dmread`。
+
+## 現状（L2 縮約・MV・行列対応後）
 
 GPU 側でビット一致する範囲:
 
@@ -342,25 +422,26 @@ GPU 側でビット一致する範囲:
 - L1BM の読み出し（Mbcast、Distrib、Pbcast）と書き込み（Mwrite）。
 - L2BM の Distrib、Bcast、FromL1b、縮約（`l2bmr`、`l2bmr2`）、内部マルチキャスト（`l2bmi`）。RRN は 24 種類すべて。
 - MV（PDM/DRAM/L2BM のコピー、broadcast、distribution、RRN reduction）。
+- 行列レジスタ（F/G の write/read/matrix MAU）。`mats`、`mauf`、`mreadf` を VRAM に保持する。
 
 実プログラムの被覆:
 
-- PE 行 2,635 のうち 1,536 行（約 58%）が、すべての式を GPU で扱える。
-- MAU 478/724、ALU 909/985、L1 264/292、L2 387/493、MV 168/168。
+- PE 行 2,635 のうち 1,717 行（約 65%）が、すべての式を GPU で扱える。
+- MAU 478/724、ALU 909/985、L1 264/292、L2 387/493、MV 168/168、行列 184/216。
 
 未達:
 
 - `mnist_train_step` 全体の GPU 実行。
 - L2BM の Bcast2 と、L1B 集合を指定した Distrib。
-- 行列（`gmwrite`、`gmread`、`gmmul`）。
+- double/half 精度の行列演算と、マスク付きの行列読み出し・MAU 書き込み。
 - L1BM の turnaround レジスタ `$lbi`。
 - DRAM はデバイス容量ぶんだけ（全 128 GiB は載せない）。間接 DRAM アクセスは CPU も未対応。
 
 検証:
 
-- `cargo test --release` 20 件（lib 17 + integration 3）。
+- `cargo test --release` 20 件。
 - `difftest_prog` の relu と matmul で 0 mismatch。
-- GPU の各テスト（vfma、MAU、ALU、マスク、L1、L2、L2 縮約、MV）で 0 mismatch。
+- GPU の各テスト（vfma、MAU、ALU、マスク、L1、L2、L2 縮約、MV、行列）で 0 mismatch。
 
 GPU カーネルはすべて NVRTC + CUDA Driver API で実行時にコンパイルする。
 `nvcc` は不要。

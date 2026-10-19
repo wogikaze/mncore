@@ -3,7 +3,7 @@
 //! Usage: gpu_mau [lines]
 
 use mncore_sim::float::{self, SINGLE};
-use mncore_sim::gpu::{Gpu, MauLine, MauSrc};
+use mncore_sim::gpu::{Gpu, MaskInfo, MauLine, MauSrc};
 use mncore_sim::machine::{GRF_WORDS, LM_WORDS, PES};
 
 fn mem_len(mem: u8) -> usize {
