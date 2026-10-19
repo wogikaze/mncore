@@ -373,9 +373,9 @@ fn main() {
     let lbi = gpu.download_l1bi(&state).expect("lbi");
     for l1b in 0..L1BS {
         for c in 0..4 {
-            for o in 0..64 {
-                if sim.m.blocks.lbi[l1b][c][o] != lbi[(l1b * 4 + c) * 64 + o] {
-                    println!("lbi first mismatch l1b {l1b} cycle {c} offset {o}: cpu {:016x} gpu {:016x}", sim.m.blocks.lbi[l1b][c][o], lbi[(l1b * 4 + c) * 64 + o]);
+            for o in 0..128 {
+                if sim.m.blocks.lbi[l1b][c][o] != lbi[(l1b * 4 + c) * 128 + o] {
+                    println!("lbi first mismatch l1b {l1b} cycle {c} offset {o}: cpu {:016x} gpu {:016x}", sim.m.blocks.lbi[l1b][c][o], lbi[(l1b * 4 + c) * 128 + o]);
                     bad += 1;
                     break;
                 }

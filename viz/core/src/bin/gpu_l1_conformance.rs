@@ -1493,7 +1493,7 @@ fn make_seed(start: u64) -> Seed {
         mask: (0..PES * 16).map(|_| (next() as u32 & 0xffff) | 1).collect(),
         l1bm: (0..L1BS * L1BM_LONGS).map(|_| next()).collect(),
         l2bm: (0..L2BS * L2BM_LONGS).map(|_| next()).collect(),
-        lbi: (0..L1BS * 4 * 64).map(|_| next()).collect(),
+        lbi: (0..L1BS * 4 * 128).map(|_| next()).collect(),
     }
 }
 
@@ -1514,8 +1514,8 @@ fn install_cpu(sim: &mut Sim, seed: &Seed) {
     }
     for l1b in 0..L1BS {
         for c in 0..4 {
-            for a in 0..64 {
-                sim.m.blocks.lbi[l1b][c][a] = seed.lbi[(l1b * 4 + c) * 64 + a];
+            for a in 0..128 {
+                sim.m.blocks.lbi[l1b][c][a] = seed.lbi[(l1b * 4 + c) * 128 + a];
             }
         }
     }
@@ -1563,6 +1563,7 @@ fn mem_width(kind: u8) -> usize {
         K_T => 16,
         K_L1BM => L1BM_LONGS,
         K_L2BM => L2BM_LONGS,
+        K_LBI => 128, // two long-word planes per cycle
         8 => 16, // mask register entries per PE
         _ => 256,
     }
@@ -1790,7 +1791,7 @@ fn run_case(
     for (k, v) in l {
         *labels.entry(k).or_insert(0) += v;
     }
-    let mut cpu_lbi: Vec<u64> = Vec::with_capacity(L1BS * 4 * 64);
+    let mut cpu_lbi: Vec<u64> = Vec::with_capacity(L1BS * 4 * 128);
     for l1b in 0..L1BS {
         for c in 0..4 {
             cpu_lbi.extend(sim.m.blocks.lbi[l1b][c].iter().copied());

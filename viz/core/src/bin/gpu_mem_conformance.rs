@@ -138,7 +138,7 @@ impl Host {
         let bar1 = (0..PES).map(|_| rng.u32() & 0xfff).collect();
         let l1 = (0..L1BS * L1BM_LONGS).map(|_| rng.next()).collect();
         let l2 = (0..L2BS * L2BM_LONGS).map(|_| rng.next()).collect();
-        let lbi = (0..L1BS * 4 * 64).map(|_| rng.next()).collect();
+        let lbi = (0..L1BS * 4 * 128).map(|_| rng.next()).collect();
         let pdm = (0..GROUPS * PDM_LONGS as usize).map(|_| rng.next()).collect();
         let dram = (0..GROUPS * DRAM_LONGS as usize).map(|_| rng.next()).collect();
         let dar: Vec<u32> = (0..GROUPS * DAR_ENTRIES)
@@ -186,7 +186,7 @@ impl Host {
             sim.m.blocks.l1bm[b]
                 .copy_from_slice(&self.l1[b * L1BM_LONGS..(b + 1) * L1BM_LONGS]);
             for c in 0..4 {
-                sim.m.blocks.lbi[b][c].copy_from_slice(&self.lbi[(b * 4 + c) * 64..(b * 4 + c + 1) * 64]);
+                sim.m.blocks.lbi[b][c].copy_from_slice(&self.lbi[(b * 4 + c) * 128..(b * 4 + c + 1) * 128]);
             }
         }
         for b in 0..L2BS {

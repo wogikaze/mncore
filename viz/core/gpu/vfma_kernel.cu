@@ -161,9 +161,11 @@ __device__ __forceinline__ unsigned long long vfma_bits(
     Val a = decode(in_fmt, a_bits);
     Val b = decode(in_fmt, b_bits);
     Val c = decode(in_fmt, c_bits);
-    if (a.kind == 2 && b.kind == 2) {
+    // Only the single and double multipliers drop partial products and therefore have a
+    // product grid. Half multiplies exactly and keeps the whole addend (SDM 4.3).
+    if (in_fmt.mul_full_bits >= 0 && a.kind == 2 && b.kind == 2) {
         int m = in_fmt.man_bits;
-        int full = in_fmt.mul_full_bits >= 0 ? in_fmt.mul_full_bits : in_fmt.man_bits;
+        int full = in_fmt.mul_full_bits;
         c = align_c(c, (a.exp + m) + (b.exp + m) - full - m);
     }
     Val r = add_exact(mul_exact(in_fmt, a, b), c);
@@ -606,10 +608,14 @@ __device__ __forceinline__ bool alu_lane(
             r = float_ftoi_dev(f, a, false, bits); // unsigned handled by caller flag
             c = false;
             break;
-        case AOP_LRELUD: case AOP_LRELUO: case AOP_ILRELUD:
-            r = float_lrelu_dev(op, f, b);
-            c = ((a >> (bits - 1)) & 1) == 0;
+        case AOP_LRELUD: case AOP_LRELUO: case AOP_ILRELUD: {
+            // SDM 3.6.12.18: x is the condition and y the value, so a non-negative x
+            // passes y through unchanged; only a negative x applies the leaky transform.
+            bool pass = ((a >> (bits - 1)) & 1) == 0;
+            r = pass ? b : float_lrelu_dev(op, f, b);
+            c = pass;
             break;
+        }
         default:
             r = 0;
             break;
@@ -823,9 +829,11 @@ __device__ __forceinline__ void mau_read_vals(
 }
 
 __device__ __forceinline__ Val mau_vfma(Fmt in_fmt, Fmt out_fmt, Val a, Val b, Val c) {
-    if (a.kind == 2 && b.kind == 2) {
+    // Only the single and double multipliers drop partial products and therefore have a
+    // product grid. Half multiplies exactly and keeps the whole addend (SDM 4.3).
+    if (in_fmt.mul_full_bits >= 0 && a.kind == 2 && b.kind == 2) {
         int m = in_fmt.man_bits;
-        int full = in_fmt.mul_full_bits >= 0 ? in_fmt.mul_full_bits : in_fmt.man_bits;
+        int full = in_fmt.mul_full_bits;
         c = align_c(c, (a.exp + m) + (b.exp + m) - full - m);
     }
     return add_exact(mul_exact(in_fmt, a, b), c);
@@ -1729,6 +1737,12 @@ extern "C" __global__ void l1_read_line(
             unsigned b = has_addr ? (unsigned)(c * 64) : 0u;
             om = b + (unsigned)(sm * 4) + (unsigned)sub;
         }
+        if (!has_addr) {
+            // The turnaround register holds a MSB plane and an LSB plane per cycle, so a read
+            // that feeds T (always two long words) gets one long word from each plane.
+            ol = om + 64u;
+            has_ol = true;
+        }
         unsigned long long m;
         unsigned long long l = 0;
         if (has_addr) {
@@ -1737,9 +1751,9 @@ extern "C" __global__ void l1_read_line(
                 l = l1bm[base_l1 + (int)(((unsigned long long)addr + ol) % 8192)];
             }
         } else {
-            int b = (l1b * 4 + c) * 64;
-            m = lbi[b + (int)(om % 64)];
-            if (has_ol) l = lbi[b + (int)(ol % 64)];
+            int b = (l1b * 4 + c) * 128;
+            m = lbi[b + (int)(om % 128)];
+            l = lbi[b + (int)(ol % 128)];
         }
         unsigned bus[4] = {
             (unsigned)(m >> 32),
@@ -1781,7 +1795,7 @@ extern "C" __global__ void l1_write_line(
     int l1b = idx >> 2;
     int sub = idx & 3;
     int base_l1 = l1b * 8192;
-    int lbi_base = l1b * 4 * 64;
+    int lbi_base = l1b * 4 * 128;
     unsigned sb[4] = {s0, s1, s2, s3};
     bool upd = update_lbi != 0;
     int red_longs;
@@ -1802,13 +1816,13 @@ extern "C" __global__ void l1_write_line(
             if (has_addr) {
                 l1bm[base_l1 + (int)(((unsigned long long)addr + (unsigned long long)(c * step) + off) % 8192)] = v0;
             }
-            if (upd) lbi[lbi_base + c * 64 + (int)off] = v0;
+            if (upd) lbi[lbi_base + c * 128 + (int)off] = v0;
             if (dwl == 4) {
                 unsigned long long v1 = bus_long(bus, 1);
                 if (has_addr) {
                     l1bm[base_l1 + (int)(((unsigned long long)addr + (unsigned long long)(c * step) + off + 4) % 8192)] = v1;
                 }
-                if (upd) lbi[lbi_base + c * 64 + (int)off + 4] = v1;
+                if (upd) lbi[lbi_base + c * 128 + (int)off + 64] = v1;
             }
         } else if (op == 1) {
             for (int m = 0; m < 16; ++m) {
@@ -1824,7 +1838,7 @@ extern "C" __global__ void l1_write_line(
                 if (has_addr) {
                     l1bm[base_l1 + (int)(((unsigned long long)addr + (unsigned long long)(c * 64) + off) % 8192)] = v;
                 }
-                if (upd) lbi[lbi_base + c * 64 + m * 4 + sub] = v;
+                if (upd) lbi[lbi_base + c * 128 + m * 4 + sub] = v;
             }
         } else if (op == 2) {
             int step = (dwl == 4) ? 32 : 16;
@@ -1841,14 +1855,16 @@ extern "C" __global__ void l1_write_line(
                 if (has_addr) {
                     l1bm[base_l1 + (int)(((unsigned long long)addr + (unsigned long long)(c * step) + off0) % 8192)] = v0;
                 }
-                if (upd) lbi[lbi_base + c * 64 + (int)off0] = v0;
+                if (upd) lbi[lbi_base + c * 128 + (int)off0] = v0;
                 if (dwl == 4) {
                     unsigned long long v1 = bus_long(bus, 1);
+                    // The L1BM layout keeps the LSB long word next to the MSB one; the
+                    // turnaround register keeps it in the second 64-long-word plane.
                     unsigned off1 = off0 + 4;
                     if (has_addr) {
                         l1bm[base_l1 + (int)(((unsigned long long)addr + (unsigned long long)(c * step) + off1) % 8192)] = v1;
                     }
-                    if (upd) lbi[lbi_base + c * 64 + (int)off1] = v1;
+                    if (upd) lbi[lbi_base + c * 128 + (int)(off0 + 64)] = v1;
                 }
             }
         } else {
@@ -1912,7 +1928,7 @@ extern "C" __global__ void l1_write_line(
                     if (has_addr) {
                         l1bm[base_l1 + (int)(((unsigned long long)addr + (unsigned long long)(c * step) + off) % 8192)] = v;
                     }
-                    if (upd) lbi[lbi_base + c * 64 + (int)off] = v;
+                    if (upd) lbi[lbi_base + c * 128 + (int)off] = v;
                 } else {
                     // With `e` the CPU writes both reduced long words even to a
                     // one long word destination (blocks.rs ext branch).
@@ -1922,14 +1938,14 @@ extern "C" __global__ void l1_write_line(
                             l1bm[base_l1 + (int)(((unsigned long long)addr + (unsigned long long)(c * step) + off) % 8192)] = res[0];
                             l1bm[base_l1 + (int)(((unsigned long long)addr + (unsigned long long)(c * step) + off + 4) % 8192)] = res[1];
                         }
-                        if (upd) lbi[lbi_base + c * 64 + (int)off] = res[0];
-                        if (upd) lbi[lbi_base + c * 64 + (int)off + 4] = res[1];
+                        if (upd) lbi[lbi_base + c * 128 + (int)off] = res[0];
+                        if (upd) lbi[lbi_base + c * 128 + (int)off + 64] = res[1];
                     } else {
                         off = (unsigned)((four ? g * 4 : 0) + sub);
                         if (has_addr) {
                             l1bm[base_l1 + (int)(((unsigned long long)addr + (unsigned long long)(c * step) + off) % 8192)] = res[0];
                         }
-                        if (upd) lbi[lbi_base + c * 64 + (int)off] = res[0];
+                        if (upd) lbi[lbi_base + c * 128 + (int)off] = res[0];
                     }
                 }
             }

@@ -2333,7 +2333,7 @@ impl Gpu {
         let fwd_bytes = crate::machine::PES * 16 * 4;
         let l1bm_bytes = crate::blocks::L1BS * crate::blocks::L1BM_LONGS * 8;
         let l2bm_bytes = crate::blocks::L2BS * crate::blocks::L2BM_LONGS * 8;
-        let lbi_bytes = crate::blocks::L1BS * 4 * 64 * 8;
+        let lbi_bytes = crate::blocks::L1BS * 4 * 128 * 8;
         let mats_bytes = MAT_WORDS * 4;
         let bar_bytes = crate::machine::PES * 4;
         let dar_bytes = crate::mv::GROUPS * crate::blocks::DAR_ENTRIES * 4;
@@ -2633,7 +2633,7 @@ impl Gpu {
 
     /// Uploads the L1BM turnaround registers (`[l1b][cycle][offset]`, 64 per cycle).
     pub fn upload_l1bi(&self, state: &GpuState, words: &[u64]) -> Result<(), String> {
-        let count = crate::blocks::L1BS * 4 * 64;
+        let count = crate::blocks::L1BS * 4 * 128;
         if words.len() != count {
             return Err("L1BM turnaround slice has the wrong length".into());
         }
@@ -2652,7 +2652,7 @@ impl Gpu {
 
     /// Downloads the L1BM turnaround registers.
     pub fn download_l1bi(&self, state: &GpuState) -> Result<Vec<u64>, String> {
-        let count = crate::blocks::L1BS * 4 * 64;
+        let count = crate::blocks::L1BS * 4 * 128;
         let mut out = vec![0u64; count];
         self.check(
             unsafe {
@@ -3067,7 +3067,7 @@ impl Gpu {
 
     /// Copies the current $lbi into the read snapshot for the next step.
     pub fn snapshot_lbi(&self, state: &GpuState) -> Result<(), String> {
-        let bytes = crate::blocks::L1BS * 4 * 64 * 8;
+        let bytes = crate::blocks::L1BS * 4 * 128 * 8;
         self.check(
             unsafe { (self.cu_dtod_async)(state.lbi_snap as *mut c_void, state.lbi as *const c_void, bytes, self.stream) },
             "cuMemcpyDtoD(lbi_snap)",
