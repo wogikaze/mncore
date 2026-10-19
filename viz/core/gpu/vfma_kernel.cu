@@ -1547,10 +1547,16 @@ __device__ __forceinline__ void flush_bus(unsigned* bus, unsigned f, int ll) {
 // per-cycle, already aligned word address.
 __device__ __forceinline__ void read_pe_bus(
     unsigned* bus, int mem, unsigned* lm0, unsigned* lm1, unsigned* grf0,
-    unsigned* grf1, unsigned* t, unsigned* lbf, int pe, int c, const unsigned* base, int wl,
+    unsigned* grf1, unsigned* t, unsigned* mauf, unsigned* aluf, unsigned* mreadf,
+    unsigned* lbf, int pe, int c, const unsigned* base, int wl,
     int t_indirect, int madpe, const unsigned* bar0, const unsigned* bar1) {
     if (mem == 6) {
         for (int i = 0; i < 4; ++i) bus[i] = t[pe * 16 + c * 4 + i];
+        return;
+    }
+    if (mem == 4 || mem == 5 || mem == 8 || mem == 12) {
+        unsigned* src = (mem == 4) ? mauf : (mem == 5) ? aluf : (mem == 8) ? mreadf : lbf;
+        for (int i = 0; i < 4; ++i) bus[i] = src[pe * 16 + c * 4 + i];
         return;
     }
     unsigned* p = pick_mem(mem, lm0, lm1, grf0, grf1);
@@ -1759,7 +1765,8 @@ extern "C" __global__ void l1_read_line(
 // register $lbi as the destination; the turnaround is updated either way.
 extern "C" __global__ void l1_write_line(
     unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1, unsigned* t,
-    unsigned* lbf, unsigned long long* l1bm, unsigned long long* lbi,
+    unsigned* mauf, unsigned* aluf, unsigned* mreadf, unsigned* lbf,
+    unsigned long long* l1bm, unsigned long long* lbi,
     unsigned* bar0, unsigned* bar1, int update_lbi,
     int op, int mab_sel, int mabdiff, int has_addr, unsigned addr, int dwl,
     int smem, unsigned s0, unsigned s1, unsigned s2, unsigned s3, int swl,
@@ -1782,7 +1789,7 @@ extern "C" __global__ void l1_write_line(
         if (op == 0) {
             int pe = l1b * 64 + mab_sel * 4 + sub;
             unsigned bus[4];
-            read_pe_bus(bus, smem, lm0, lm1, grf0, grf1, t, lbf, pe, c, sb, swl, st, sma, bar0, bar1);
+            read_pe_bus(bus, smem, lm0, lm1, grf0, grf1, t, mauf, aluf, mreadf, lbf, pe, c, sb, swl, st, sma, bar0, bar1);
             unsigned long long v0 = bus_long(bus, 0);
             int step = (dwl == 4) ? 8 : 4;
             unsigned off = (unsigned)sub;
@@ -1801,7 +1808,7 @@ extern "C" __global__ void l1_write_line(
             for (int m = 0; m < 16; ++m) {
                 int pe = l1b * 64 + m * 4 + sub;
                 unsigned bus[4];
-                read_pe_bus(bus, smem, lm0, lm1, grf0, grf1, t, lbf, pe, c, sb, swl, st, sma, bar0, bar1);
+                read_pe_bus(bus, smem, lm0, lm1, grf0, grf1, t, mauf, aluf, mreadf, lbf, pe, c, sb, swl, st, sma, bar0, bar1);
                 unsigned long long v = bus_long(bus, 0);
                 int dst_mab = (m + mabdiff) % 16;
                 if (dst_mab < 0) dst_mab += 16;
@@ -1817,7 +1824,7 @@ extern "C" __global__ void l1_write_line(
                 int mab = mo * 4 + mab_sel;
                 int pe = l1b * 64 + mab * 4 + sub;
                 unsigned bus[4];
-                read_pe_bus(bus, smem, lm0, lm1, grf0, grf1, t, lbf, pe, c, sb, swl, st, sma, bar0, bar1);
+                read_pe_bus(bus, smem, lm0, lm1, grf0, grf1, t, mauf, aluf, mreadf, lbf, pe, c, sb, swl, st, sma, bar0, bar1);
                 unsigned long long v0 = bus_long(bus, 0);
                 unsigned off0 = (dwl == 4) ? (unsigned)(mo * 8 + sub)
                                            : (unsigned)(mo * 4 + sub);
@@ -1850,7 +1857,7 @@ extern "C" __global__ void l1_write_line(
                     int mab = four ? g * 4 + m : m;
                     int pe = l1b * 64 + mab * 4 + sub;
                     unsigned bus[4];
-                    read_pe_bus(bus, smem, lm0, lm1, grf0, grf1, t, lbf, pe, c, sb, swl, st, sma, bar0, bar1);
+                    read_pe_bus(bus, smem, lm0, lm1, grf0, grf1, t, mauf, aluf, mreadf, lbf, pe, c, sb, swl, st, sma, bar0, bar1);
                     v0[m] = bus_long(bus, 0);
                     v1[m] = bus_long(bus, 1);
                     if (ext) {

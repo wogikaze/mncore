@@ -7,10 +7,10 @@ CPU の `Sim` と GPU の `gpu_run_program` が同じ VSM を実行し、最終�
 
 | 分類 | 対応 | 主な不足 |
 | --- | --- | --- |
-| ALU | 全 32 opcode（zero/imm を含む）。`d/f/g/h/l/i/s`、unsigned、入力 `r`/`e`、zero-flush、複数出力（8 個まで）、OMR/T/BAR 出力、`msl`/`msr`、`bfe`/`bfn` 全精度・`hbfn/<n>`/`hbfe/<n>`、`lrelud`/`lreluo`/`ilrelud`。入力の `$mb`/`$nb` 加算・T 間接・`j` も全カーネルで対応 | `$lbf` 入力（ALU/MAU/行列は対応、L1BM 書き込みは未対応）、9 個以上の出力、`hbfn/<n>` の n が 6..9 外。ALU の `e` は CPU と同じく no-op（SDM 3.6.12 は `r` のみ定義） |
+| ALU | 全 32 opcode（zero/imm を含む）。`d/f/g/h/l/i/s`、unsigned、入力 `r`/`e`、zero-flush、複数出力（8 個まで）、OMR/T/BAR 出力、`msl`/`msr`、`bfe`/`bfn` 全精度・`hbfn/<n>`/`hbfe/<n>`、`lrelud`/`lreluo`/`ilrelud`。入力の `$mb`/`$nb` 加算・T 間接・`j` も全カーネルで対応 | `$lbf`・forwarding の全ソース（ALU/MAU/行列/L1BM 書き込み）、9 個以上の出力、`hbfn/<n>` の n が 6..9 外。ALU の `e` は CPU と同じく no-op（SDM 3.6.12 は `r` のみ定義） |
 | MAU | ベクトル MAU D/F/G/H の fma/mul/add/passa（u/d/round、neg/e/r、wl 1/2/4、LM/GRF/T/forwarding、nowrite、マスク/flush、T/OMR/複数出力）。matrix MAU D/F/G/H（mwrite/mread 含む）。`gpu_mau_conformance` 133 設定・7,640 行 | 不正 block-float 入力のエラー再現、matrix write のマスク（SDM に無い） |
 | 行列 | D/F/G/H の write/read、matrix MAU、row wrap、neg/e/r、nowrite、複数 PE 出力、マスク/flush、T/OMR/BAR | 不正 block-float 入力のエラー、matrix MAU BAR 出力の conformance（乱数が BF 不正になりやすい） |
-| L1BM | 全形式（1/2 長語、M4 系、全 RRN と `r`/`e`、`l1bmd` の分配・結合、`$lbi`、`$lbi` 以外の BAR/T/j 付き PE オペランド、BAR 出力） | `$lbf` フォワーディング値の保持（GPU は lbf レジスタを持たない） |
+| L1BM | 全形式（1/2 長語、M4 系、全 RRN と `r`/`e`、`l1bmd` の分配・結合、`$lbi`、BAR/T/j、BAR 出力、`$lbf`/`$aluf`/`$mauf`/`$mreadf` ソース） | forwarding 無効時のエラー再現 |
 | L2BM | 全形式（Bcast/Bcast2/Distrib/Gather/FromL1b/Reduce/Reduce2/Imcast、全 RRN、全 L1B 集合）と `l2bmdars`/`l2bmdarw`（DAR/DARBUF） | なし |
 | MV | 全 25 基本モード（mvnop、mvp の全組み合わせと並列形、mvb/mvb2/mvb4、mvd の 4 方向、mvr/mvr2/mvr4 の全 RRN）、DRAM 間接参照（`$di`、`nd`、送受信両方の間接） | DRAM 間接参照の `nd` 省略時の公式エミュレータとの差（下記） |
 | オペランド | ALU/MAU/L1BM/行列の直接 Mem、Forward（`aluf`/`mauf`/`mreadf`）、固定値 6 種、T、WL 1/2/4、複数出力、`r`/`e`、zero-flush、単一行マスク・`mask` ディレクティブ、`$mb`/`$nb` の読み書き、T 間接、`j`/madpe | `$lbf`、`hbfn` の範囲外 `<n>`、行列マスク、forwarding 無効時のエラー再現 |

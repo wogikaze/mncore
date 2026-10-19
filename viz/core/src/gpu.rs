@@ -1043,9 +1043,15 @@ pub struct L1WriteLine {
 /// Builds the source side of an L1BM write. Unlike `mem_source` this accepts
 /// the `e` precision-extension option, which only L1BM reductions use.
 fn l1_write_source(op: &Operand) -> Option<MauSrc> {
-    if let Operand::Forward { kind: FwdKind::Lbf, .. } = op {
+    if let Operand::Forward { kind, .. } = op {
+        let mem = match kind {
+            FwdKind::Mauf => 4,
+            FwdKind::Aluf => 5,
+            FwdKind::Mreadf => 8,
+            FwdKind::Lbf => 12,
+        };
         return Some(MauSrc {
-            mem: 12,
+            mem,
             wl: 4,
             base: [0; 4],
             neg: false,
@@ -3420,6 +3426,9 @@ impl Gpu {
         let mut grf0 = state.grf0;
         let mut grf1 = state.grf1;
         let mut t = state.t;
+        let mut mauf = state.mauf;
+        let mut aluf = state.aluf;
+        let mut mreadf = state.mreadf;
         let mut lbf = state.lbf;
         let mut l1bm = state.l1bm;
         let mut lbi = state.lbi;
@@ -3448,6 +3457,9 @@ impl Gpu {
             &mut grf0 as *mut u64 as *mut c_void,
             &mut grf1 as *mut u64 as *mut c_void,
             &mut t as *mut u64 as *mut c_void,
+            &mut mauf as *mut u64 as *mut c_void,
+            &mut aluf as *mut u64 as *mut c_void,
+            &mut mreadf as *mut u64 as *mut c_void,
             &mut lbf as *mut u64 as *mut c_void,
             &mut l1bm as *mut u64 as *mut c_void,
             &mut lbi as *mut u64 as *mut c_void,
