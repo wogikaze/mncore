@@ -737,7 +737,7 @@ msr $s0v $s0v
 fmax $aluf $r0v $r0v
 msr $s0v $s0v
 fmax $aluf $r0v $n60v
-
+                
 
 nop/3
 # --- Operation 21: UL ---
@@ -911,7 +911,7 @@ fvadd $llm224v -$lr[0,2,4,6] $lln[224,228,232,236]
 fvadd $lm[226,230,234,238] -$lr[0,2,4,6] $ln[226,230,234,238]
 fvadd $llm240v -$ls[0,2,4,6] $lln[240,244,248,252]
 fvadd $lm[242,246,250,254] -$ls[0,2,4,6] $ln[242,246,250,254]
-
+            
 
 nop/3
 # --- Operation 25: UL ---
@@ -1068,7 +1068,7 @@ frelu $s0v $r0v $n0v
 frelu $s4v $r4v $n4v
 frelu $s8v $r8v $n8v
 frelu $s12v $r12v $n12v
-
+        
 
 nop/3
 # --- Operation 28: UL ---
@@ -1289,7 +1289,7 @@ nop/3
                     fvadd $aluf $r0v $r0v
                     msr $s0v $s0v
                     fvadd $aluf $r0v $n60v
-
+                
 
 nop/3
 # --- Operation 31: UL ---
@@ -1976,7 +1976,7 @@ fvfma -$m319 $mauf $t $nowrite
 nop
 fvmul $r0 $mauf $r0
 fvmul $m252v $mauf $n252v
-
+            
 
 nop/3
 # --- Operation 35: UL ---
@@ -3118,7 +3118,7 @@ ixor $m63 $r10 $omr1
 maskn 1
 fpassa $r8 $n255
 mask 0
-
+            
 
 nop/3
 # --- Operation 38: UL ---
@@ -3617,7 +3617,7 @@ nop/3
 # Input1: lr_sgd_update_17, shape=N/A, type=initializer, tag=default
 # Output0: grad_fc2_weight_scaled, shape=[16, 16], addr=0, layout=((16:2), (2:1, 4_PE:1, 2_W:1)), len=64, location=LM1, tag=default
 
-imm f"0.009999845176935196" $t
+imm f"0.010000047273933887" $t
 fvmul $aluf $lm0v $ln0v
 fvmul $t $lm8v $ln8v
 fvmul $t $lm16v $ln16v
@@ -3778,7 +3778,7 @@ nop/3
 # Input1: lr_sgd_update_18, shape=N/A, type=initializer, tag=default
 # Output0: grad_fc2_bias_scaled, shape=[16], addr=0, layout=((2:1, 4_PE:1, 2_W:1)), len=4, location=LM1, tag=default
 
-imm f"0.009999845176935196" $t
+imm f"0.010000047273933887" $t
 fvmul $aluf $lm0v $ln0v
 
 nop/3
@@ -4210,7 +4210,7 @@ nop/3
 # Input1: lr_sgd_update_15, shape=N/A, type=initializer, tag=default
 # Output0: grad_fc1_weight_scaled, shape=[16, 1024], addr=0, layout=((16:1), (8_MAB:2, 8_L1B:1, 2_MAB:1, 4_PE:1, 2_W:1)), len=32, location=LM1, tag=default
 
-imm f"0.009999845176935196" $t
+imm f"0.010000047273933887" $t
 fvmul $aluf $lm0v $ln0v
 fvmul $t $lm8v $ln8v
 fvmul $t $lm16v $ln16v
@@ -4471,7 +4471,7 @@ nop/3
 # Input1: lr_sgd_update_16, shape=N/A, type=initializer, tag=default
 # Output0: grad_fc1_bias_scaled, shape=[16], addr=0, layout=((2:1, 4_PE:1, 2_W:1)), len=4, location=LM1, tag=default
 
-imm f"0.009999845176935196" $t
+imm f"0.010000047273933887" $t
 fvmul $aluf $lm0v $ln0v
 
 nop/3
