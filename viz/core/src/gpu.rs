@@ -48,6 +48,8 @@ type CuModuleGetFunction = unsafe extern "C" fn(*mut CuFunction, CuModule, *cons
 type CuMemAlloc = unsafe extern "C" fn(*mut CuDevicePtr, usize) -> CuResult;
 type CuMemFree = unsafe extern "C" fn(CuDevicePtr) -> CuResult;
 type CuMemcpyHtoD = unsafe extern "C" fn(CuDevicePtr, *const c_void, usize) -> CuResult;
+type CuMemcpyDtoD = unsafe extern "C" fn(*mut c_void, *const c_void, usize) -> CuResult;
+type CuMemcpyDtoDAsync = unsafe extern "C" fn(*mut c_void, *const c_void, usize, CuStream) -> CuResult;
 type CuMemcpyDtoH = unsafe extern "C" fn(*mut c_void, CuDevicePtr, usize) -> CuResult;
 type CuLaunchKernel = unsafe extern "C" fn(
     CuFunction,
@@ -1001,7 +1003,15 @@ pub fn l1_read_line_from_expr(expr: &Expr, mask_state: MaskState) -> Option<L1Re
     });
     let mut dsts = [empty_l1_dst(); 4];
     for (i, d) in expr.dsts.iter().enumerate() {
-        let dst = if let Operand::Bar { lm1, .. } = d {
+        let dst = if matches!(d, Operand::Nowrite) {
+            MauSrc {
+                mem: 13,
+                wl: 0,
+                base: [0; 4],
+                neg: false,
+                ..MauSrc::default()
+            }
+        } else if let Operand::Bar { lm1, .. } = d {
             MauSrc {
                 mem: BAR_MEM0 + *lm1 as u8,
                 wl: 1,
@@ -1898,6 +1908,8 @@ pub struct GpuState {
     l2bm: u64,
     /// L1BM turnaround registers ($lbi): L1BS x 4 cycles x 64 long words.
     lbi: u64,
+    /// Snapshot of $lbi taken at the start of a step.
+    lbi_snap: u64,
     /// PDM (4 x `mv::PDM_LONGS`) and a truncated DRAM (4 x `dram_longs`).
     /// Both are zero when the state was allocated without MV support.
     pdm: u64,
@@ -1938,6 +1950,7 @@ impl Drop for GpuState {
                 self.l1bm,
                 self.l2bm,
                 self.lbi,
+                self.lbi_snap,
                 self.pdm,
                 self.dram,
                 self.scratch,
@@ -1982,6 +1995,8 @@ pub struct Gpu {
     cu_mem_free: CuMemFree,
     cu_htod: CuMemcpyHtoD,
     cu_dtoh: CuMemcpyDtoH,
+    cu_dtod: CuMemcpyDtoD,
+    cu_dtod_async: CuMemcpyDtoDAsync,
     cu_launch: CuLaunchKernel,
     cu_sync: CuCtxSync,
     cu_stream_create: CuStreamCreate,
@@ -2019,6 +2034,9 @@ impl Gpu {
         let cu_mem_free: CuMemFree = load!(cuda, b"cuMemFree_v2\0", CuMemFree);
         let cu_htod: CuMemcpyHtoD = load!(cuda, b"cuMemcpyHtoD_v2\0", CuMemcpyHtoD);
         let cu_dtoh: CuMemcpyDtoH = load!(cuda, b"cuMemcpyDtoH_v2\0", CuMemcpyDtoH);
+        let cu_dtod: CuMemcpyDtoD = load!(cuda, b"cuMemcpyDtoD_v2\0", CuMemcpyDtoD);
+        let cu_dtod_async: CuMemcpyDtoDAsync =
+            load!(cuda, b"cuMemcpyDtoDAsync_v2\0", CuMemcpyDtoDAsync);
         let cu_launch: CuLaunchKernel = load!(cuda, b"cuLaunchKernel\0", CuLaunchKernel);
         let cu_sync: CuCtxSync = load!(cuda, b"cuCtxSynchronize\0", CuCtxSync);
         let cu_stream_create: CuStreamCreate =
@@ -2262,6 +2280,8 @@ impl Gpu {
             cu_mem_free,
             cu_htod,
             cu_dtoh,
+            cu_dtod,
+            cu_dtod_async,
             cu_launch,
             cu_sync,
             cu_stream_create,
@@ -2373,6 +2393,14 @@ impl Gpu {
                 return Err(error);
             }
         }
+        let mut lbi_snap: u64 = 0;
+        let code = unsafe { (self.cu_mem_alloc)(&mut lbi_snap, lbi_bytes) };
+        if let Err(error) = self.check(code, "cuMemAlloc(lbi_snap)") {
+            for buffer in &buffers {
+                let _ = unsafe { (self.cu_mem_free)(*buffer) };
+            }
+            return Err(error);
+        }
         Ok(GpuState {
             lm0: buffers[0],
             lm1: buffers[1],
@@ -2385,6 +2413,7 @@ impl Gpu {
             l1bm: buffers[8],
             l2bm: buffers[9],
             lbi: buffers[10],
+            lbi_snap,
             mats: buffers[11],
             mreadf: buffers[12],
             bar0: buffers[13],
@@ -3025,6 +3054,15 @@ impl Gpu {
             "download mv_errors",
         )?;
         Ok(out[0])
+    }
+
+    /// Copies the current $lbi into the read snapshot for the next step.
+    pub fn snapshot_lbi(&self, state: &GpuState) -> Result<(), String> {
+        let bytes = crate::blocks::L1BS * 4 * 64 * 8;
+        self.check(
+            unsafe { (self.cu_dtod_async)(state.lbi_snap as *mut c_void, state.lbi as *const c_void, bytes, self.stream) },
+            "cuMemcpyDtoD(lbi_snap)",
+        )
     }
 
     /// Starts capturing the dedicated stream into a CUDA graph.

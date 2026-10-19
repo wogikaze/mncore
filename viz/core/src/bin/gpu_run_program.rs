@@ -13,6 +13,11 @@ use mncore_sim::machine::{MaskState, GRF_WORDS, LM_WORDS, PES};
 use mncore_sim::run::Sim;
 use mncore_sim::vsm::{self, Line, Op};
 
+fn is_l1_read(expr: &mncore_sim::vsm::Expr) -> bool {
+    matches!(expr.op, Op::L1(_))
+        && matches!(expr.srcs.first(), Some(mncore_sim::vsm::Operand::L1bm { .. }))
+}
+
 fn fwd_written_by(expr: &mncore_sim::vsm::Expr) -> Option<usize> {
     match &expr.op {
         Op::Mau { .. } => Some(0),
@@ -144,7 +149,9 @@ fn main() {
                     }
                 }
                 let mut fwd_written = [false; 4];
-                for expr in exprs {
+                let mut ordered: Vec<&mncore_sim::vsm::Expr> = exprs.iter().collect();
+                // original order
+                for expr in ordered {
                     if matches!(expr.op, Op::Noforward | Op::Wait(_)) {
                         continue;
                     }
@@ -217,6 +224,13 @@ fn main() {
     sim.run(&program).expect("cpu run");
     let cpu_elapsed = cpu_start.elapsed();
 
+    if let Ok(pv) = std::env::var("DUMP_PE") {
+        if let Ok(pe) = pv.parse::<usize>() {
+            eprintln!("cpu grf0 pe{pe}: {:08x?}", &sim.m.mem.grf0[pe * GRF_WORDS..pe * GRF_WORDS + 16]);
+            eprintln!("cpu grf1 pe{pe}: {:08x?}", &sim.m.mem.grf1[pe * GRF_WORDS..pe * GRF_WORDS + 16]);
+            eprintln!("cpu mauf pe{pe}: {:08x?}", &sim.m.pes[pe].mauf);
+        }
+    }
     let mut out = (
         vec![0u32; PES * LM_WORDS],
         vec![0u32; PES * LM_WORDS],
@@ -346,7 +360,7 @@ fn main() {
                     break;
                 }
                 if sim.m.pes[pe].mauf[c][w] != mauf[i] {
-                    println!("mauf first mismatch pe {pe} cycle {c} word {w}");
+                    println!("mauf first mismatch pe {pe} cycle {c} word {w}: cpu {:08x} gpu {:08x}", sim.m.pes[pe].mauf[c][w], mauf[i]);
                     bad += 1;
                     break;
                 }

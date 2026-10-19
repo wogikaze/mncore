@@ -1574,6 +1574,7 @@ __device__ __forceinline__ void write_pe_bus(
     int mem, int pe, int c, unsigned base, int wl, const unsigned* bus,
     unsigned flags, int ll, int kind, int t_indirect, int madpe,
     const unsigned* bar0, const unsigned* bar1) {
+    if (mem == 13) return;
     if (mem >= 10) {
         if (kind != 0 && flags == 0) return;
         unsigned* bar = (unsigned*)((mem == 10) ? bar0 : bar1);

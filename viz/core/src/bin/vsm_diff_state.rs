@@ -158,9 +158,15 @@ fn count(a: &Sim, b: &Sim) -> usize {
         }
     }
     }
+    let print = std::env::var("PRINT").is_ok();
+    let mut shown = 0;
     for g in 0..4usize {
         for i in 0..DRAM_LONGS {
             if a.off.dram[g].get(i) != b.off.dram[g].get(i) {
+                if print && shown < 12 {
+                    eprintln!("dram g{g} a{i}: {:016x} vs {:016x}", a.off.dram[g].get(i), b.off.dram[g].get(i));
+                    shown += 1;
+                }
                 d += 1;
             }
         }

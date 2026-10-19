@@ -15,7 +15,13 @@ pub fn group(e: &Expr) -> Option<&'static str> {
         Op::Mau { .. } => "mau-calc",
         Op::MatWrite { .. } => "mau-mwrite",
         Op::MatRead { .. } => "mau-mread",
-        Op::L1(_) if turnaround => "l1bm-turnaround",
+        Op::L1(_) if turnaround => {
+            if e.dsts.iter().any(|o| matches!(o, Operand::L1bm { addr: None, .. })) {
+                "l1bm-turnaround-write"
+            } else {
+                "l1bm-turnaround-read"
+            }
+        }
         Op::L1(_) => "l1bm",
         Op::L2(L2Op::Darw) => "l2bmdarw",
         Op::L2(_) => "l2bm",
