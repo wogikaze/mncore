@@ -316,9 +316,14 @@ def main():
 
     ax.text(0.0, y_of(0) + 1.02, "MNIST train step — compute graph (from the generated VSM)",
             ha="left", va="bottom", fontsize=11, fontweight="bold")
+    raw_lines = len(open(SRC).read().splitlines())
+    instr_lines = sum(1 for l in open(SRC) if l.split("#")[0].strip())
+    compute = sum(o["size"] for o in by_n.values() if o["type"] not in ("DL", "UL", "Identity"))
+    n_dl = sum(1 for o in by_n.values() if o["type"] == "DL")
+    n_ul = sum(1 for o in by_n.values() if o["type"] == "UL")
     ax.text(0.0, y_of(0) + 0.72,
-            "2,090 source lines / 1,446 instruction lines. The 22 compute operators above are 459 lines; "
-            "the remaining 987 are 37 DL / 17 UL transfers and nops. Output aliases omitted.",
+            f"{raw_lines:,} source lines / {instr_lines:,} instruction lines. The compute operators above are "
+            f"{compute} lines; the other {instr_lines - compute:,} are {n_dl} DL / {n_ul} UL transfers and nops.",
             ha="left", va="bottom", fontsize=6.8, color="#666666")
 
     fig.savefig(OUT, format="svg", bbox_inches="tight", pad_inches=0.08)
