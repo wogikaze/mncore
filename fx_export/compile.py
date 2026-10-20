@@ -733,6 +733,10 @@ def generate_vsm_from_onnx(onnx_model_path: str) -> str:
     
     # 各ノードを処理
     for i, node in enumerate(graph.node):
+        # Identity is only a graph-output alias; it emits no instruction, so
+        # skipping it also drops the otherwise useless separator before it.
+        if node.op_type == "Identity":
+            continue
         if i > 0:
             lines.append("\nnop/3")
         op_type = node.op_type
