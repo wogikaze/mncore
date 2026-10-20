@@ -18,24 +18,31 @@ class ExpOperator(BaseOperator):
         
         assert self.memory_len_in(0) == 16  # 実装の簡略化のため、PE あたり 16 単語を仮定
         
+        # NOTE: the low-precision answer (problems/13, 10 lines) is shorter but
+        # only valid for a limited input range.  In the training step x - max
+        # goes far negative and the half polynomial diverges: one epoch on the
+        # GPU drops to 9.7% (the G kernel reaches 72.7%).  Keep the G kernel.
         # test unit_tests/train_step/Exp_*
         lines = []
 
-        # problems/13 (Exp low prec, 1位解 10 行)。half の多項式近似で、
-        # 精度は落ちるが行数は 17 -> 10 になる。
         lines.append(f'''
-imm f"0.042" $llr16/ll1000
-imm f"0.0044" $nowrite; l1bmr4ffadd $aluf $llbi
-hlrelud $msb1 $llm0vr $lt; hvfma $alufr $llm0vr $llr16 $nowrite; l1bmm4 $llbi $nowrite
-imm f"0.50000000000000000" $nowrite; hvfma $maufr $aluf $lbf $nowrite
-imm f"1.00000000000000000" $lr0/1000; hvfma $maufr $lt $aluf $nowrite
-flrelud $msb1 $lm0v4 $nowrite; hvfma $maufr $lt $aluf $lls0v
-fvfma $mauf $aluf $lr0 $nowrite
-flrelud $msb1 $lm2v4 $nowrite; fvmul $mauf $mauf $ln0v4
-fvfma $ls2v4 $aluf $lr0 $nowrite
-fvmul $mauf $mauf $ln2v4
+ipassa $mabid $omr1; hvadd $t $llm0v $lls0v
+imm ui"0x3E000000" $lr12; fvpassa $mauf $ls2v4/$imr1
+imm ui"0xBB2AAAAB" $lr16; l1bmr4ffadd $aluf $lbi
+imm ui"0x3FB8AA3B" $lr20; fvadd $aluf $aluf $nowrite; l1bmm4 $lbi $ln0
+imm ui"0x3F317217" $lr24/1000; fvfma $aluf $ls2v4 $lbf $nowrite; l1bmr4ffadd $mauf $lbi
+ffloor $mauf $lr0v; l1bmm4 $lbi $ls16
+imm ui"0x39888889" $nowrite; fvfma $aluf -$lr24 $ls2v4 $t; l1bmrffadd $lbf $lbi
+imm ui"0x3F7FFFFF" $ls20; fvfma $aluf $mauf -$lr16 $nowrite; l1bmm $lbi $nowrite
+fvfma $mauf $t -$ls16 $nowrite; l1bmr4hfadd $lbf $lbi
+fvfma $mauf $t $lr12 $nowrite; l1bmm4 $lbi $lm16
+fmax $ls2v4 $lbf $omr2; fvfma $mauf $t $ln0 $nowrite
+fftoi $lr0v $nowrite; fvfma $mauf $t $ls20 $nowrite
+ilsl $aluf $lr24 $nowrite; fvmul $mauf $mauf $nowrite
+iadd/$imr2 $aluf $mauf $ln0v4
+l1bmm@4 $aluf $lbi
+l1bmm $lbi $ln2v4
         ''')
-        return lines
         return lines
 
     def testcase_hint(self) -> Optional[str]:

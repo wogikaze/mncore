@@ -117,6 +117,7 @@ l1bmd+0 $lb1280 $lm40v
 l1bmd+0 $lb1536 $lm48v
 l1bmd+0 $lb1792 $lm56v
 
+nop/3
 # --- Operation 2: DL ---
 # Node name: fc1_pre_gemm_DL_1
 # Input0: fc1_weight, shape=[16, 1024], type=tensor, addr=48000, layout=((4_L2B:2, 4:512), (512:1, 2_W:1)), len=2048, location=DRAM, tag=DRAM
@@ -211,6 +212,7 @@ nop; wait i9f  # Auto-tagged
 mvp/n256i9f $lc0@.1 $d80256
 nop; wait i9f  # Auto-tagged
 
+nop/3
 # --- Operation 4: DL ---
 # Node name: fc1_pre_add_bias_DL_0
 # Input0: fc1_pre_matmul_UL_out, shape=[256, 16], type=tensor, addr=80000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
@@ -224,6 +226,7 @@ l2bmd $lc0 $lb0
 nop
 l1bmm $llb0 $llm0v
 
+nop/3
 # --- Operation 5: DL ---
 # Node name: fc1_pre_add_bias_DL_1
 # Input0: fc1_bias, shape=[16], type=tensor, addr=56000, layout=((8:1, 2_W:1)), len=8, location=DRAM, tag=DRAM
@@ -266,6 +269,7 @@ nop; wait i9f  # Auto-tagged
 mvp/n256i9f $lc0@.1 $d88256
 nop; wait i9f  # Auto-tagged
 
+nop/3
 # --- Operation 9: Relu ---
 # Node name: fc1_relu
 # Attr: var_name=fc1
@@ -292,6 +296,7 @@ nop; wait i9f  # Auto-tagged
 mvp/n256i9f $lc0@.1 $d96256
 nop; wait i9f  # Auto-tagged
 
+nop/3
 # --- Operation 12: DL ---
 # Node name: fc2_pre_gemm_DL_1
 # Input0: fc2_weight, shape=[16, 16], type=tensor, addr=64000, layout=((4_L2B:2, 4:8), (8:1, 2_W:1)), len=32, location=DRAM, tag=DRAM
@@ -343,6 +348,7 @@ nop
 nop
 l1bmm $llb0 $llm0v
 
+nop/3
 
 # --- Operation 16: DL ---
 # Node name: fc2_pre_add_bias_DL_1
@@ -393,6 +399,7 @@ nop/3
 # Output0: _sub_DL_0_out, shape=[256, 16], addr=0, layout=((4_L2B:2, 64:2), (2:1, 4_PE:1, 2_W:1)), len=256, location=LM0, tag=PE
 
 mvb2/n512i9f $d112000 $lc0
+nop; wait i9f  # Auto-tagged
 l2bmb $lc0 $lb0
 l2bmb $lc64 $lb64
 l1bmm $llb0 $llm0v; l2bmb $lc128 $lb128
@@ -412,6 +419,7 @@ l1bmm $llb416 $llm208v
 l1bmm $llb448 $llm224v
 l1bmm $llb480 $llm240v
 
+nop/3
 # --- Operation 20: MaxSub ---
 # Node name: _sub
 # Attr: var_name=_sub
@@ -504,10 +512,15 @@ nop/3
 # Input0: _sub_UL_out, shape=[256, 16], type=tensor, addr=120000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
 # Output0: _exp_DL_0_out, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
 
+mvp/n256i9f $d120000 $lc0@.0
+nop; wait i9f  # Auto-tagged
+mvp/n256i9f $d120256 $lc0@.1
+nop; wait i9f  # Auto-tagged
 l2bmd $lc0 $lb0
 nop
 l1bmm $llb0 $llm0v
 
+nop/3
 # --- Operation 23: Exp ---
 # Node name: _exp
 # Attr: var_name=_exp
@@ -515,16 +528,22 @@ l1bmm $llb0 $llm0v
 # Output0: _exp, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM1, tag=default
 
 
-imm f"0.042" $llr16/ll1000
-imm f"0.0044" $nowrite; l1bmr4ffadd $aluf $llbi
-hlrelud $msb1 $llm0vr $lt; hvfma $alufr $llm0vr $llr16 $nowrite; l1bmm4 $llbi $nowrite
-imm f"0.50000000000000000" $nowrite; hvfma $maufr $aluf $lbf $nowrite
-imm f"1.00000000000000000" $lr0/1000; hvfma $maufr $lt $aluf $nowrite
-flrelud $msb1 $lm0v4 $nowrite; hvfma $maufr $lt $aluf $lls0v
-fvfma $mauf $aluf $lr0 $nowrite
-flrelud $msb1 $lm2v4 $nowrite; fvmul $mauf $mauf $ln0v4
-fvfma $ls2v4 $aluf $lr0 $nowrite
-fvmul $mauf $mauf $ln2v4
+ipassa $mabid $omr1; hvadd $t $llm0v $lls0v
+imm ui"0x3E000000" $lr12; fvpassa $mauf $ls2v4/$imr1
+imm ui"0xBB2AAAAB" $lr16; l1bmr4ffadd $aluf $lbi
+imm ui"0x3FB8AA3B" $lr20; fvadd $aluf $aluf $nowrite; l1bmm4 $lbi $ln0
+imm ui"0x3F317217" $lr24/1000; fvfma $aluf $ls2v4 $lbf $nowrite; l1bmr4ffadd $mauf $lbi
+ffloor $mauf $lr0v; l1bmm4 $lbi $ls16
+imm ui"0x39888889" $nowrite; fvfma $aluf -$lr24 $ls2v4 $t; l1bmrffadd $lbf $lbi
+imm ui"0x3F7FFFFF" $ls20; fvfma $aluf $mauf -$lr16 $nowrite; l1bmm $lbi $nowrite
+fvfma $mauf $t -$ls16 $nowrite; l1bmr4hfadd $lbf $lbi
+fvfma $mauf $t $lr12 $nowrite; l1bmm4 $lbi $lm16
+fmax $ls2v4 $lbf $omr2; fvfma $mauf $t $ln0 $nowrite
+fftoi $lr0v $nowrite; fvfma $mauf $t $ls20 $nowrite
+ilsl $aluf $lr24 $nowrite; fvmul $mauf $mauf $nowrite
+iadd/$imr2 $aluf $mauf $ln0v4
+l1bmm@4 $aluf $lbi
+l1bmm $lbi $ln2v4
         
 
 nop/3
@@ -549,6 +568,7 @@ nop/3
 # Output0: _reducesum_DL_0_out, shape=[256, 16], addr=0, layout=((4_L2B:2, 64:2), (2:1, 4_PE:1, 2_W:1)), len=256, location=LM0, tag=PE
 
 mvb2/n512i9f $d128000 $lc0
+nop; wait i9f  # Auto-tagged
 l2bmb $lc0 $lb0
 l2bmb $lc64 $lb64
 l1bmm $llb0 $llm0v; l2bmb $lc128 $lb128
@@ -568,6 +588,7 @@ l1bmm $llb416 $llm208v
 l1bmm $llb448 $llm224v
 l1bmm $llb480 $llm240v
 
+nop/3
 # --- Operation 26: ReduceSum ---
 # Node name: _reducesum
 # Attr: axes=[-1]
@@ -666,6 +687,7 @@ l1bmm $llb416 $llm208v
 l1bmm $llb448 $llm224v
 l1bmm $llb480 $llm240v
 
+nop/3
 # --- Operation 29: DL ---
 # Node name: _div_DL_1
 # Input0: _sum_UL_out, shape=[256], type=tensor, addr=136000, layout=((4_L2B:2, 32:1, 2_W:1)), len=32, location=DRAM, tag=DRAM
@@ -684,6 +706,7 @@ l1bmp $lb20 $lm296v
 l1bmp $lb24 $lm304v
 l1bmp $lb28 $lm312v
 
+nop/3
 # --- Operation 30: Div ---
 # Node name: _div
 # Attr: var_name=probs
@@ -757,6 +780,7 @@ nop
 mvp/n512i9f $lc0@.0 $d144000
 nop; wait i9f  # Auto-tagged
 
+nop/3
 # --- Operation 32: DL ---
 # Node name: OneHot_10_DL_0
 # Input0: target, shape=[256], type=tensor, addr=40000, layout=((4_L2B:2, 32:1, 2_W:1)), len=32, location=DRAM, tag=DRAM
@@ -775,6 +799,7 @@ l1bmp $lb20 $lm40v
 l1bmp $lb24 $lm48v
 l1bmp $lb28 $lm56v
 
+nop/3
 # --- Operation 33: OneHot ---
 # Node name: OneHot_10
 # Attr: axis=1
@@ -846,6 +871,7 @@ nop
 mvp/n512i9f $lc0@.0 $d152000
 nop; wait i9f  # Auto-tagged
 
+nop/3
 # --- Operation 35: DL ---
 # Node name: LossGrad_11_DL_0
 # Input0: probs_UL_out, shape=[256, 16], type=tensor, addr=144000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
@@ -859,6 +885,7 @@ l2bmd $lc0 $lb0
 nop
 l1bmm $llb0 $llm0v
 
+nop/3
 # --- Operation 36: DL ---
 # Node name: LossGrad_11_DL_1
 # Input0: target_onehot_UL_out, shape=[256, 16], type=tensor, addr=152000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
@@ -904,6 +931,7 @@ nop; wait i9f  # Auto-tagged
 mvp/n256i9f $lc0@.1 $d160256
 nop; wait i9f  # Auto-tagged
 
+nop/3
 # --- Operation 39: DL ---
 # Node name: grad_fc2_weight_gemm_DL_0
 # Input0: grad_output_UL_out, shape=[256, 16], type=tensor, addr=160000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
@@ -911,6 +939,7 @@ nop; wait i9f  # Auto-tagged
 
 l1bmm $llb0 $llm0v
 
+nop/3
 # --- Operation 40: DL ---
 # Node name: grad_fc2_weight_gemm_DL_1
 # Input0: fc1_UL_out, shape=[256, 16], type=tensor, addr=96000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
@@ -934,6 +963,16 @@ nop/3
 # Input1: grad_fc2_weight_gemm_DL_1_out, shape=[256, 16], type=tensor, addr=16, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
 # Output0: grad_fc2_weight_UL_out, shape=[16, 16], addr=168000, layout=((4_L2B:2, 4:8), (8:1, 2_W:1)), len=32, location=DRAM, tag=DRAM
 
+imm f"0.0" $t
+nop
+gmwrite $t $lx0
+gmwrite $t $lx4
+gmwrite $t $lx8
+gmwrite $t $lx12
+gmwrite $t $ly0
+gmwrite $t $ly4
+gmwrite $t $ly8
+gmwrite $t $ly12
 gmwrite $lm16v4 $lx0; zero $ls128v
 gmwrite $aluf $lx4; ipackbit $mabid $aluf $t
 gmwrite $ls128v $ly4; gmread $lx0 $nowrite;
@@ -965,6 +1004,7 @@ nop; wait i9f  # Auto-tagged
 mvp/n64i9f $p192@0 $d168000@3
 nop; wait i9f  # Auto-tagged
 
+nop/3
 # --- Operation 42: DL ---
 # Node name: ReduceSum_13_DL_0
 # Input0: grad_output_UL_out, shape=[256, 16], type=tensor, addr=160000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
@@ -999,6 +1039,7 @@ l2bmrffadd $lb0 $lc0
 mvrffadd/n64i9f $lc0 $d176000
 nop; wait i9f  # Auto-tagged
 
+nop/3
 # --- Operation 44: DL ---
 # Node name: Gemm_14_DL_0
 # Input0: grad_output_UL_out, shape=[256, 16], type=tensor, addr=160000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
@@ -1012,6 +1053,7 @@ l2bmd $lc0 $lb0
 nop
 l1bmm $llb0 $llm0v
 
+nop/3
 # --- Operation 45: DL ---
 # Node name: Gemm_14_DL_1
 # Input0: fc2_weight, shape=[16, 16], type=tensor, addr=64000, layout=((4_L2B:2, 4:8), (8:1, 2_W:1)), len=32, location=DRAM, tag=DRAM
@@ -1073,6 +1115,7 @@ nop
 nop
 l1bmm $llb0 $llm0v
 
+nop/3
 
 # --- Operation 49: DL ---
 # Node name: ReluGrad_15_DL_1
@@ -1116,6 +1159,7 @@ nop; wait i9f  # Auto-tagged
 mvp/n256i9f $lc0@.1 $d192256
 nop; wait i9f  # Auto-tagged
 
+nop/3
 # --- Operation 52: DL ---
 # Node name: SGDUpdate_16_DL_0
 # Input0: fc2_weight, shape=[16, 16], type=tensor, addr=64000, layout=((4_L2B:2, 4:8), (8:1, 2_W:1)), len=32, location=DRAM, tag=DRAM
@@ -1140,6 +1184,7 @@ l1bmm $llb32 $llm16v
 l1bmm $llb64 $llm32v
 l1bmm $llb96 $llm48v
 
+nop/3
 # --- Operation 53: DL ---
 # Node name: SGDUpdate_16_DL_1
 # Input0: grad_fc2_weight_UL_out, shape=[16, 16], type=tensor, addr=168000, layout=((4_L2B:2, 4:8), (8:1, 2_W:1)), len=32, location=DRAM, tag=DRAM
@@ -1216,6 +1261,7 @@ nop; wait i9f  # Auto-tagged
 mvp/n64i9f $lc192@0.0 $d64000@3
 nop; wait i9f  # Auto-tagged
 
+nop/3
 # --- Operation 56: DL ---
 # Node name: SGDUpdate_17_DL_0
 # Input0: fc2_bias, shape=[16], type=tensor, addr=72000, layout=((8:1, 2_W:1)), len=8, location=DRAM, tag=DRAM
@@ -1229,6 +1275,7 @@ l2bmb $lc0 $lb0
 nop
 l1bmm $llb0 $llm0v
 
+nop/3
 # --- Operation 57: DL ---
 # Node name: SGDUpdate_17_DL_1
 # Input0: grad_fc2_bias_UL_out, shape=[16], type=tensor, addr=176000, layout=((8:1, 2_W:1)), len=8, location=DRAM, tag=DRAM
@@ -1271,6 +1318,7 @@ l2bm@0 $lb0 $lc0
 mvp/n64i9f $lc0@0.0 $d72000@0
 nop; wait i9f  # Auto-tagged
 
+nop/3
 # --- Operation 60: DL ---
 # Node name: grad_fc1_weight_gemm_DL_0
 # Input0: grad_fc1_UL_out, shape=[256, 16], type=tensor, addr=192000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
@@ -1291,6 +1339,7 @@ l1bmm $llb160 $llm80v
 l1bmm $llb192 $llm96v
 l1bmm $llb224 $llm112v
 
+nop/3
 # --- Operation 61: DL ---
 # Node name: grad_fc1_weight_gemm_DL_1
 # Input0: input, shape=[256, 1024], type=tensor, addr=0, layout=((4_L2B:2, 64:512), (512:1, 2_W:1)), len=32768, location=DRAM, tag=DRAM
@@ -1373,6 +1422,7 @@ l1bmd+0 $lb1280 $lm168v
 l1bmd+0 $lb1536 $lm176v
 l1bmd+0 $lb1792 $lm184v
 
+nop/3
 # --- Operation 62: Gemm ---
 # Node name: grad_fc1_weight_gemm
 # Attr: transA=1
@@ -1459,6 +1509,7 @@ nop; wait i9f  # Auto-tagged
 mvp/n2048i9f $p6144@0 $d200000@3
 nop; wait i9f  # Auto-tagged
 
+nop/3
 # --- Operation 63: DL ---
 # Node name: ReduceSum_19_DL_0
 # Input0: grad_fc1_UL_out, shape=[256, 16], type=tensor, addr=192000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
@@ -1493,6 +1544,7 @@ l2bmrffadd $lb0 $lc0
 mvrffadd/n64i9f $lc0 $d208000
 nop; wait i9f  # Auto-tagged
 
+nop/3
 # --- Operation 65: DL ---
 # Node name: SGDUpdate_20_DL_0
 # Input0: fc1_weight, shape=[16, 1024], type=tensor, addr=48000, layout=((4_L2B:2, 4:512), (512:1, 2_W:1)), len=2048, location=DRAM, tag=DRAM
@@ -1545,6 +1597,7 @@ l1bmd $lb256 $lm8v
 l1bmd $lb512 $lm16v
 l1bmd $lb768 $lm24v
 
+nop/3
 # --- Operation 66: DL ---
 # Node name: SGDUpdate_20_DL_1
 # Input0: grad_fc1_weight_UL_out, shape=[16, 1024], type=tensor, addr=200000, layout=((4_L2B:2, 4:512), (512:1, 2_W:1)), len=2048, location=DRAM, tag=DRAM
@@ -1669,6 +1722,7 @@ nop; wait i9f  # Auto-tagged
 mvp/n2048i9f $lc6144@0.0 $d48000@3
 nop; wait i9f  # Auto-tagged
 
+nop/3
 # --- Operation 69: DL ---
 # Node name: SGDUpdate_21_DL_0
 # Input0: fc1_bias, shape=[16], type=tensor, addr=56000, layout=((8:1, 2_W:1)), len=8, location=DRAM, tag=DRAM
@@ -1682,6 +1736,7 @@ l2bmb $lc0 $lb0
 nop
 l1bmm $llb0 $llm0v
 
+nop/3
 # --- Operation 70: DL ---
 # Node name: SGDUpdate_21_DL_1
 # Input0: grad_fc1_bias_UL_out, shape=[16], type=tensor, addr=208000, layout=((8:1, 2_W:1)), len=8, location=DRAM, tag=DRAM

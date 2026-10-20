@@ -22,8 +22,13 @@ def generate_vsm(operator: BaseOperator) -> List[str]:
 
     # test unit_tests/train_step/Gemm_256x16_256x16_16x16_transA_a/
     # 問題名：「Mmul TA D 16_256_16」 (problems/46, 1位解 25 行)
-    # The reference kernel writes X/Y before reading them, so the matrix-face
-    # clear that the old kernel needed is not required here.
+    # Keep the matrix-face clear: across graph replays X/Y still hold the
+    # previous step's data and the kernel reads part of them before writing.
+    clear = ['imm f"0.0" $t', "nop"]
+    for face in ("lx", "ly"):
+        for addr in (0, 4, 8, 12):
+            clear.append(f"gmwrite $t ${face}{addr}")
+
     lines = """gmwrite $lm16v4 $lx0; zero $ls128v
 gmwrite $aluf $lx4; ipackbit $mabid $aluf $t
 gmwrite $ls128v $ly4; gmread $lx0 $nowrite;
@@ -49,6 +54,6 @@ mvp/n64 $p0@0 $dOUT@0
 mvp/n64 $p64@0 $dOUT@1
 mvp/n64 $p128@0 $dOUT@2
 mvp/n64 $p192@0 $dOUT@3"""
-    return [l.replace("$dOUT", f"$d{c}") for l in lines.splitlines()]
+    return clear + [l.replace("$dOUT", f"$d{c}") for l in lines.splitlines()]
 
     return lines
