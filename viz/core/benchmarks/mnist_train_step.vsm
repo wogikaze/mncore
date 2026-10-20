@@ -270,22 +270,16 @@ mvp/n256i9f $lc0@.1 $d88256
 nop; wait i9f  # Auto-tagged
 
 nop/3
-# --- Operation 8: DL ---
-# Node name: fc1_relu_DL_0
-# Input0: fc1_pre_UL_out, shape=[256, 16], type=tensor, addr=88000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
-# Output0: fc1_relu_DL_0_out, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
-
-l1bmm $llb0 $llm0v
-
-nop/3
 # --- Operation 9: Relu ---
 # Node name: fc1_relu
 # Attr: var_name=fc1
 # Input0: fc1_relu_DL_0_out, shape=[256, 16], type=tensor, addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
 # Output0: fc1, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM1, tag=default
 
-frelu $m0v $m0v $n0v
-frelu $m8v $m8v $n8v
+frelu $n0v $n0v $m0v
+fpassa $n4v $m4v
+frelu $n8v $n8v $m8v
+fpassa $n12v $m12v
 
 nop/3
 # --- Operation 10: UL ---
@@ -293,7 +287,7 @@ nop/3
 # Input0: fc1, shape=[256, 16], type=tensor, addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM1, tag=default
 # Output0: fc1_UL_out, shape=[256, 16], addr=96000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
 
-l1bmm@0 $lln0v $llb0
+l1bmm@0 $llm0v $llb0
 nop
 nop
 l2bmd $lb0 $lc0
@@ -301,14 +295,6 @@ mvp/n256i9f $lc0@.0 $d96000
 nop; wait i9f  # Auto-tagged
 mvp/n256i9f $lc0@.1 $d96256
 nop; wait i9f  # Auto-tagged
-
-nop/3
-# --- Operation 11: DL ---
-# Node name: fc2_pre_gemm_DL_0
-# Input0: fc1_UL_out, shape=[256, 16], type=tensor, addr=96000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
-# Output0: fc2_pre_gemm_DL_0_out, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
-
-l1bmm $llb0 $llm0v
 
 nop/3
 # --- Operation 12: DL ---
