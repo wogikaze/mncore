@@ -21,38 +21,34 @@ def generate_vsm(operator: BaseOperator) -> List[str]:
     c = operator.addr_out()      # "$d0" の "0" の部分
     
     # test unit_tests/train_step/Gemm_256x1024_16x1024_256x16_transB_a/
-    # 問題名：「Mmul TB D 256_1024_16」
-    
-    lines = [
-        "gbfn $lm64v $nowrite",
-        "gbfn $lm72v $nowrite; gmwrite $aluf $lx0",
-        "gbfn $lm80v $nowrite; gmwrite $aluf $lx4",
-        "gbfn $lm88v $nowrite; gmwrite $aluf $ly0",
-        "gbfn $lm0v $t; gmwrite $aluf $ly4",
-        "gmmul $lx $aluf $lr0v4",
-        "gbfn $lm8v $t; gmmul $ly $t $lr2v4",
-        "gmmul $lx $aluf $ls0v4",
-        "gbfn $lm16v $t; gmmul $ly $t $ls2v4; l1bmrffadd $llr0v $llb0",
-        "gmmul $lx $aluf $lr0v4",
-        "gbfn $lm24v $t; gmmul $ly $t $lr2v4; l1bmrffadd $lls0v $llb32",
-        "gmmul $lx $aluf $ls0v4",
-        "gbfn $lm32v $t; gmmul $ly $t $ls2v4; l1bmrffadd $llr0v $llb64",
-        "gmmul $lx $aluf $lr0v4",
-        "gbfn $lm40v $t; gmmul $ly $t $lr2v4; l1bmrffadd $lls0v $llb96",
-        "gmmul $lx $aluf $ls0v4",
-        "gbfn $lm48v $t; gmmul $ly $t $ls2v4; l1bmrffadd $llr0v $llb128",
-        "gmmul $lx $aluf $lr0v4",
-        "gbfn $lm56v $t; gmmul $ly $t $lr2v4; l1bmrffadd $lls0v $llb160",
-        "gmmul $lx $aluf $ls0v4",
-        "gmmul $ly $t $ls2v4; l1bmrffadd $llr0v $llb192",
-        "nop",
-        "l1bmrffadd $lls0v $llb224; l2bmrffadd $lb0 $lc0",
-        "l2bmrffadd $lb64 $lc64",
-        "l2bmrffadd $lb128 $lc128",
-        "l2bmrffadd $lb192 $lc192",
-        "nop",
-        f"mvp/n256 $lc0@.0 $d{c}",
-        f"mvp/n256 $lc0@.1 $d{c + 256}",
-    ]
-
-    return lines
+    # 問題名：「Mmul TB D 256_1024_16」 (problems/39, 1位解 29 行)
+    lines = """gbfn $lm64v $nowrite
+gbfn $lm72v $nowrite; gmwrite $aluf $lx0
+gbfn $lm80v $nowrite; gmwrite $aluf $lx4
+gbfn $lm88v $nowrite; gmwrite $aluf $ly0
+gbfn $lm0v $t; gmwrite $aluf $ly4
+gmmul $lx $aluf $lr0v4
+gbfn $lm8v $t; gmmul $ly $t $lr2v4
+gmmul $lx $aluf $ls0v4
+gbfn $lm16v $t; gmmul $ly $t $ls2v4; l1bmrffadd $llr0v $llb0
+gmmul $lx $aluf $lr0v4
+gbfn $lm24v $t; gmmul $ly $t $lr2v4; l1bmrffadd $lls0v $llb32
+gmmul $lx $aluf $ls0v4
+gbfn $lm32v $t; gmmul $ly $t $ls2v4; l1bmrffadd $llr0v $llb64
+gmmul $lx $aluf $lr0v4
+gbfn $lm40v $t; gmmul $ly $t $lr2v4; l1bmrffadd $lls0v $llb96
+gmmul $lx $aluf $ls0v4
+gbfn $lm48v $t; gmmul $ly $t $ls2v4; l1bmrffadd $llr0v $llb128
+gmmul $lx $aluf $lr0v4
+gbfn $lm56v $t; gmmul $ly $t $lr2v4; l1bmrffadd $lls0v $llb160
+gmmul $lx $aluf $ls0v4
+gmmul $ly $t $ls2v4; l1bmrffadd $llr0v $llb192
+nop
+l1bmrffadd $lls0v $llb224; l2bmrffadd $lb0 $lc0
+l2bmrffadd $lb64 $lc64
+l2bmrffadd $lb128 $lc128
+l2bmrffadd $lb192 $lc192
+nop
+mvp/n256 $lc0@.0 $dOUT
+mvp/n256 $lc0@.1 $dOUT2"""
+    return [l.replace("$dOUT2", f"$d{c + 256}").replace("$dOUT", f"$d{c}") for l in lines.splitlines()]

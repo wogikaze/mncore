@@ -1079,58 +1079,27 @@ nop/3
 # Input1: grad_fc2_weight_gemm_DL_1_out, shape=[256, 16], type=tensor, addr=16, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
 # Output0: grad_fc2_weight_UL_out, shape=[16, 16], addr=176000, layout=((4_L2B:2, 4:8), (8:1, 2_W:1)), len=32, location=DRAM, tag=DRAM
 
-imm f"0.0" $t
-nop
-gmwrite $t $lx0
-gmwrite $t $lx4
-gmwrite $t $lx8
-gmwrite $t $lx12
-gmwrite $t $ly0
-gmwrite $t $ly4
-gmwrite $t $ly8
-gmwrite $t $ly12
-zero $nowrite;gmwrite $lm0v4 $lx0
-gmread $lx0 $lr0v4
-gmread $lx4 $lr16v4
-gmwrite $lm2v4 $lx0
-gmread $lx0 $lr2v4
-gmread $lx4 $lr18v4
-gmwrite $lm16v4 $lx0
-gmread $lx0 $nowrite
-gbfn $mreadf $nowrite
-gmwrite $aluf $ly0;gmread $lx4 $nowrite
-gbfn $mreadf $nowrite
-gmwrite $aluf $ly4;gbfn $lr0v4 $nowrite
-gmmul $ly $aluf $ln0v4;gbfn $lr16v4 $nowrite
-gmmul $ly $aluf $ln16v4;gbfn $lr2v4 $nowrite
-gmmul $ly $aluf $ln32v4;gbfn $lr18v4 $nowrite
-gmmul $ly $aluf $ln48v4;gmwrite $lm18v4 $lx0
-gmread $lx0 $nowrite
-gbfn $mreadf $nowrite
-gmwrite $aluf $ly0;gmread $lx4 $nowrite
-gbfn $mreadf $nowrite
-gmwrite $aluf $ly4;gbfn $lr0v4 $nowrite
-gmmul $ly $aluf $ln2v4;gbfn $lr16v4 $nowrite
-gmmul $ly $aluf $ln18v4;gbfn $lr2v4 $nowrite
-gmmul $ly $aluf $ln34v4;gbfn $lr18v4 $nowrite
-gmmul $ly $aluf $ln50v4
-nop
-nop
-l1bmm@0 $lln0v $llb0
-l1bmm@0 $lln16v $llb32
-l1bmm@0 $lln32v $llb64
-l1bmm@0 $lln48v $llb96
-l2bmrffadd $lb0 $lc0
-l2bmrffadd $lb32 $lc64
-l2bmrffadd $lb64 $lc128
-l2bmrffadd $lb96 $lc192
-mvrffadd/n64i9f $lc0 $p0@0
-nop; wait i9f  # Auto-tagged
-mvrffadd/n64i9f $lc64 $p64@0
-nop; wait i9f  # Auto-tagged
-mvrffadd/n64i9f $lc128 $p128@0
-nop; wait i9f  # Auto-tagged
-mvrffadd/n64i9f $lc192 $p192@0
+gmwrite $lm16v4 $lx0; zero $ls128v
+gmwrite $aluf $lx4; ipackbit $mabid $aluf $t
+gmwrite $ls128v $ly4; gmread $lx0 $nowrite;
+gmwrite $lmt0v4 $ly0; gmread $lx4 $nowrite; gbfn $mreadf $lr0v4
+gmwrite $lm18v4 $lx0; gmread $ly0 $nowrite; gbfn $mreadf $lr16v4
+gmwrite $ls128v $lx4; gmread $ly4 $nowrite; gbfn $mreadf $ls0v4;
+gmwrite $lr0v4 $ly0; gmread $lx0 $nowrite; gbfn $mreadf $ls16v4
+gmwrite $lr16v4 $ly4; gmread $lx4 $nowrite; gbfn $mreadf $nowrite;
+gmwrite $aluf $lx0; gmmul $ly $ls0v4 $ln0v4 $lr0v4; gbfn $mreadf $nowrite;
+gmwrite $aluf $lx4; gmmul $ly $ls16v4 $ln16v4 $lr16v4
+gmmul $lx $ls0v4 $ln2v4 $lr2v4
+gmmul $lx $ls16v4 $ln18v4 $lr18v4
+l1bmm@0 $llr0v $llb64
+l1bmm@0 $llr16v $llb128
+l1bmm@1 $llr0v $llb192
+l1bmm@1 $llr16v $llb256; l2bmrffadd $lb32 $lc32
+l2bmrffadd $lb96 $lc96
+l2bmrffadd $lb160 $lc160
+l2bmrffadd $lb224 $lc224
+nop/1
+mvrffadd/n256i9f $lc64 $p0@0
 nop; wait i9f  # Auto-tagged
 mvp/n64i9f $p0@0 $d176000@0
 nop; wait i9f  # Auto-tagged
@@ -1227,46 +1196,19 @@ nop/3
 # Input1: Gemm_15_DL_1_out, shape=[16, 16], type=tensor, addr=16, layout=((16:2), (2:1, 4_PE:1, 2_W:1)), len=64, location=LM0, tag=default
 # Output0: grad_fc2_input, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM1, tag=default
 
-gmwrite $lm16v4 $ly0
-gmwrite $lm32v4 $ly4
-gmread $ly0 $lr16v4
-gmread $ly4 $lr32v4
-gmwrite $lm18v4 $ly0
-gmwrite $lm34v4 $ly4
-gmread $ly0 $lr48v4
-gmread $ly4 $lr64v4
-gmwrite $lm48v4 $ly0
-gmwrite $lm64v4 $ly4
-gmread $ly0 $lr18v4
-gmread $ly4 $lr34v4
-gmwrite $lm50v4 $ly0
-gmwrite $lm66v4 $ly4
-gmread $ly0 $lr50v4
-gmread $ly4 $lr66v4
-gbfn $lr16v4 $nowrite
-gmwrite $aluf $ly0
-gbfn $lr32v4 $nowrite
-gmwrite $aluf $ly4
-gbfn $lm0v4 $nowrite
-gmmul $ly $aluf $ls0v4
-gbfn $lr18v4 $nowrite
-gmwrite $aluf $ly0
-gbfn $lr34v4 $nowrite
-gmwrite $aluf $ly4
-gbfn $lm2v4 $nowrite
-gmfma $ly $aluf $ls0v4 $ln0v4
-gbfn $lr48v4 $nowrite
-gmwrite $aluf $ly0
-gbfn $lr64v4 $nowrite
-gmwrite $aluf $ly4
-gbfn $lm0v4 $nowrite
-gmmul $ly $aluf $ls0v4
-gbfn $lr50v4 $nowrite
-gmwrite $aluf $ly0
-gbfn $lr66v4 $nowrite
-gmwrite $aluf $ly4
-gbfn $lm2v4 $nowrite
-gmfma $ly $aluf $ls0v4 $ln2v4
+lpassa $mabid $t
+gbfn $lm0v4 $lr0v
+gmwrite $lmt16v4 $lx0
+gmwrite $lmt32v4 $lx4
+gmwrite $lmt48v4 $ly0; gmread $lx0 $nowrite
+gbfn $mreadf $nowrite; gmwrite $lmt64v4 $ly4; gmread $lx4 $nowrite
+gbfn $mreadf $nowrite; gmwrite $aluf $lx0; gmread $ly0 $nowrite
+gbfn $mreadf $nowrite; gmwrite $aluf $lx4; gmread $ly4 $nowrite
+gbfn $mreadf $nowrite; gmwrite $aluf $ly0
+gbfn $lm2v4 $nowrite; gmmul $lx $lr0v $nowrite; gmwrite $aluf $ly4
+gmfma $ly $aluf $mauf $ln0v4
+l1bmm@2 $mauf $lbi
+l1bmm $lbi $ln2v4
 
 nop/3
 # --- Operation 51: UL ---
