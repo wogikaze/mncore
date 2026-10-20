@@ -600,6 +600,7 @@ from .identity import IdentityOperator
 from .sgd_update import SGDUpdateOperator
 from .loss_grad import LossGradOperator
 from .relu_grad import ReluGradOperator
+from .max_sub import MaxSubOperator
 from .cast import CastOperator
 from .reduce_max import ReduceMaxOperator
 from .exp import ExpOperator

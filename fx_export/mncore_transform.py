@@ -870,6 +870,55 @@ def fuse_relu_grad(model: onnx.ModelProto) -> onnx.ModelProto:
     return model
 
 
+def fuse_max_sub(model: onnx.ModelProto) -> onnx.ModelProto:
+    """Sub(x, ReduceMax(x)) を MaxSub 1 ノードに融合する。
+
+    ReduceMax の出力を LM0:256 に直接書き、SubRow がそのまま読むので、
+    最大値の UL と DL が消える。
+    """
+    graph = model.graph
+    producer: Dict[str, onnx.NodeProto] = {}
+    consumers: Dict[str, List[onnx.NodeProto]] = {}
+    for node in graph.node:
+        for out in node.output:
+            if out:
+                producer[out] = node
+        for inp in node.input:
+            if inp:
+                consumers.setdefault(inp, []).append(node)
+
+    fused_for: Dict[int, onnx.NodeProto] = {}
+    drop: Set[int] = set()
+    for node in graph.node:
+        if node.op_type != "Sub" or len(node.input) < 2:
+            continue
+        x, m = node.input[0], node.input[1]
+        red = producer.get(m)
+        if red is None or red.op_type != "ReduceMax" or len(red.input) < 1:
+            continue
+        if red.input[0] != x or len(consumers.get(m, [])) != 1:
+            continue
+        fused = helper.make_node("MaxSub", [x], list(node.output))
+        fused.name = node.name
+        for attr in node.attribute:
+            if attr.name == "var_name":
+                fused.attribute.append(attr)
+        fused_for[id(node)] = fused
+        drop.add(id(red))
+
+    if not fused_for:
+        return model
+
+    new_nodes: List[onnx.NodeProto] = []
+    for node in graph.node:
+        if id(node) in drop:
+            continue
+        new_nodes.append(fused_for.get(id(node), node))
+    del graph.node[:]
+    graph.node.extend(new_nodes)
+    return model
+
+
 def transform_to_mncore(input_onnx_path: str, output_onnx_path: str) -> None:
     """
     通常のONNXモデルをMN-Core用に変換
@@ -885,6 +934,7 @@ def transform_to_mncore(input_onnx_path: str, output_onnx_path: str) -> None:
     model = fuse_sgd_update(model)  # Mul+Sub の SGD 更新を 1 ノードに融合
     model = fuse_loss_grad(model)  # (probs-target)*scale を 1 ノードに融合
     model = fuse_relu_grad(model)  # ReLU 逆伝播のマスクを 1 ノードに融合
+    model = fuse_max_sub(model)  # Sub(x, ReduceMax(x)) を 1 ノードに融合
     graph = model.graph
     
     # 新しいノードリスト
