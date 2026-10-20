@@ -598,6 +598,8 @@ from .greater import GreaterOperator
 from .nll_loss import NLLLossOperator
 from .identity import IdentityOperator
 from .sgd_update import SGDUpdateOperator
+from .loss_grad import LossGradOperator
+from .relu_grad import ReluGradOperator
 from .cast import CastOperator
 from .reduce_max import ReduceMaxOperator
 from .exp import ExpOperator

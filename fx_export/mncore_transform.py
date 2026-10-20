@@ -751,6 +751,125 @@ def fuse_sgd_update(model: onnx.ModelProto) -> onnx.ModelProto:
     return model
 
 
+def fuse_loss_grad(model: onnx.ModelProto) -> onnx.ModelProto:
+    """Mul(Sub(probs, onehot), scale) を LossGrad 1 ノードに融合する。
+
+    softmax の逆伝播は (probs - target) * 1/batch で、Sub と Mul の間に
+    DRAM 往復が入る。1 ノードにすると中間テンソルが消える。
+    """
+    from onnx import numpy_helper
+
+    graph = model.graph
+    scalars: Dict[str, float] = {}
+    for init in graph.initializer:
+        arr = numpy_helper.to_array(init)
+        if arr.size == 1:
+            scalars[init.name] = float(arr.reshape(()))
+
+    producer: Dict[str, onnx.NodeProto] = {}
+    consumers: Dict[str, List[onnx.NodeProto]] = {}
+    for node in graph.node:
+        for out in node.output:
+            if out:
+                producer[out] = node
+        for inp in node.input:
+            if inp:
+                consumers.setdefault(inp, []).append(node)
+
+    fused_for: Dict[int, onnx.NodeProto] = {}
+    drop: Set[int] = set()
+    for node in graph.node:
+        if node.op_type != "Mul" or len(node.input) < 2:
+            continue
+        a, b = node.input[0], node.input[1]
+        if b in scalars:
+            sub_name, scale_name = a, b
+        elif a in scalars:
+            sub_name, scale_name = b, a
+        else:
+            continue
+        sub = producer.get(sub_name)
+        if sub is None or sub.op_type != "Sub" or len(sub.input) < 2:
+            continue
+        if len(consumers.get(sub_name, [])) != 1:
+            continue
+
+        fused = helper.make_node("LossGrad", list(sub.input), list(node.output))
+        fused.name = node.name
+        for attr in node.attribute:
+            if attr.name == "var_name":
+                fused.attribute.append(attr)
+        fused.attribute.append(helper.make_attribute("scale", scalars[scale_name]))
+        fused_for[id(node)] = fused
+        drop.add(id(sub))
+
+    if not fused_for:
+        return model
+
+    new_nodes: List[onnx.NodeProto] = []
+    for node in graph.node:
+        if id(node) in drop:
+            continue
+        new_nodes.append(fused_for.get(id(node), node))
+    del graph.node[:]
+    graph.node.extend(new_nodes)
+    return model
+
+
+def fuse_relu_grad(model: onnx.ModelProto) -> onnx.ModelProto:
+    """Mul(grad, Cast(Greater(x, 0))) を ReluGrad(grad, x) 1 ノードに融合する。
+
+    マスクは frelu 1 命令で作れるので、マスクの DRAM 往復（UL + DL）が消える。
+    """
+    graph = model.graph
+    producer: Dict[str, onnx.NodeProto] = {}
+    consumers: Dict[str, List[onnx.NodeProto]] = {}
+    for node in graph.node:
+        for out in node.output:
+            if out:
+                producer[out] = node
+        for inp in node.input:
+            if inp:
+                consumers.setdefault(inp, []).append(node)
+
+    fused_for: Dict[int, onnx.NodeProto] = {}
+    drop: Set[int] = set()
+    for node in graph.node:
+        if node.op_type != "Mul" or len(node.input) < 2:
+            continue
+        for grad, cast_out in ((node.input[0], node.input[1]), (node.input[1], node.input[0])):
+            cast = producer.get(cast_out)
+            if cast is None or cast.op_type != "Cast" or len(cast.input) < 1:
+                continue
+            if len(consumers.get(cast_out, [])) != 1:
+                continue
+            mask = producer.get(cast.input[0])
+            if mask is None or mask.op_type != "Greater" or len(mask.input) < 1:
+                continue
+            if len(consumers.get(cast.input[0], [])) != 1:
+                continue
+            fused = helper.make_node("ReluGrad", [grad, mask.input[0]], list(node.output))
+            fused.name = node.name
+            for attr in node.attribute:
+                if attr.name == "var_name":
+                    fused.attribute.append(attr)
+            fused_for[id(node)] = fused
+            drop.update({id(cast), id(mask)})
+            break
+
+    if not fused_for:
+        return model
+
+    new_nodes: List[onnx.NodeProto] = []
+    for node in graph.node:
+        if id(node) in drop:
+            continue
+        new_nodes.append(fused_for.get(id(node), node))
+    del graph.node[:]
+    graph.node.extend(new_nodes)
+    return model
+
+
 def transform_to_mncore(input_onnx_path: str, output_onnx_path: str) -> None:
     """
     通常のONNXモデルをMN-Core用に変換
@@ -764,6 +883,8 @@ def transform_to_mncore(input_onnx_path: str, output_onnx_path: str) -> None:
     model = onnx.load(input_onnx_path)
     model = fuse_gemm_add_relu(model)  # FC-ReLU 融合パス
     model = fuse_sgd_update(model)  # Mul+Sub の SGD 更新を 1 ノードに融合
+    model = fuse_loss_grad(model)  # (probs-target)*scale を 1 ノードに融合
+    model = fuse_relu_grad(model)  # ReLU 逆伝播のマスクを 1 ノードに融合
     graph = model.graph
     
     # 新しいノードリスト
