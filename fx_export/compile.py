@@ -552,7 +552,13 @@ def fold_adjacent_ul_dl(text: str) -> str:
             continue
         ul_layout = next((l.split("layout=", 1)[1].split(", len=")[0] for l in a if l.startswith("# Input0:")), None)
         dl_layout = next((l.split("layout=", 1)[1].split(", len=")[0] for l in b if l.startswith("# Output0:")), None)
-        if not ul_layout or ul_layout != dl_layout:
+        same_layout = bool(ul_layout) and ul_layout == dl_layout
+        if not same_layout:
+            # different LM layout: the L2 block is the only place that holds the
+            # rearranged data, so keep the l2bm/l1bm reads and drop mvp/mvb.
+            kept = [l for l in b
+                    if not (re.match(r"\s*mv[pb]\b", l) or "wait i9f" in l)]
+            blocks[i + 1] = kept
             continue
         tail = [l for l in b if re.match(r"\s*l1bm[md]\b", l)]
         if not tail:

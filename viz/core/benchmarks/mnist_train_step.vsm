@@ -417,7 +417,6 @@ nop/3
 # Output0: _reducemax_DL_0_out, shape=[256, 16], addr=0, layout=((4_L2B:2, 64:2), (2:1, 4_PE:1, 2_W:1)), len=256, location=LM0, tag=PE
 
 mvb2/n512i9f $d112000 $lc0
-nop; wait i9f  # Auto-tagged
 l2bmb $lc0 $lb0
 l2bmb $lc64 $lb64
 l1bmm $llb0 $llm0v; l2bmb $lc128 $lb128
@@ -634,10 +633,6 @@ nop/3
 # Input0: _sub_UL_out, shape=[256, 16], type=tensor, addr=128000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
 # Output0: _exp_DL_0_out, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
 
-mvp/n256i9f $d128000 $lc0@.0
-nop; wait i9f  # Auto-tagged
-mvp/n256i9f $d128256 $lc0@.1
-nop; wait i9f  # Auto-tagged
 l2bmd $lc0 $lb0
 nop
 l1bmm $llb0 $llm0v
@@ -690,7 +685,6 @@ nop/3
 # Output0: _reducesum_DL_0_out, shape=[256, 16], addr=0, layout=((4_L2B:2, 64:2), (2:1, 4_PE:1, 2_W:1)), len=256, location=LM0, tag=PE
 
 mvb2/n512i9f $d136000 $lc0
-nop; wait i9f  # Auto-tagged
 l2bmb $lc0 $lb0
 l2bmb $lc64 $lb64
 l1bmm $llb0 $llm0v; l2bmb $lc128 $lb128
