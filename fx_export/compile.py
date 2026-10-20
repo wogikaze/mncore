@@ -538,6 +538,8 @@ def fold_adjacent_ul_dl(text: str) -> str:
 
     for i in range(len(blocks) - 1):
         a, b = blocks[i], blocks[i + 1]
+        if not a or not b:
+            continue
         ma, mb = op_re.match(a[0]), op_re.match(b[0])
         if ma.group(2) != "UL" or mb.group(2) != "DL":
             continue
@@ -555,7 +557,15 @@ def fold_adjacent_ul_dl(text: str) -> str:
         tail = [l for l in b if re.match(r"\s*l1bm[md]\b", l)]
         if not tail:
             continue
-        # keep the header, the blank lines and the L1BM -> LM reads only
+        single_use = sum(1 for l in lines if l.startswith("# Input") and l.split(": ", 1)[1].startswith(ul_out + ",")) == 1
+        if single_use:
+            # the DRAM copy has no other reader: keep only LM1 -> L1BM -> LM0
+            first = [l for l in a if re.match(r"\s*l1bm[md]\b", l)]
+            header = [l for l in a if l.startswith("#")]
+            blocks[i] = header + [""] + first + ["nop", "nop"] + tail + ["", "nop/3", ""]
+            blocks[i + 1] = []
+            continue
+        # otherwise drop only the DRAM re-load stages of the DL
         blocks[i + 1] = [l for l in b
                          if l.startswith("#") or not l.strip() or l.strip() == "nop/3"
                          or re.match(r"\s*l1bm[md]\b", l)]

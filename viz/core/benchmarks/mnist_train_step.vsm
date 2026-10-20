@@ -364,21 +364,10 @@ nop/3
 l1bmm@0 $lln0v $llb0
 nop
 nop
-l2bmd $lb0 $lc0
-mvp/n256i9f $lc0@.0 $d104000
-nop; wait i9f  # Auto-tagged
-mvp/n256i9f $lc0@.1 $d104256
-nop; wait i9f  # Auto-tagged
-
-nop/3
-# --- Operation 15: DL ---
-# Node name: fc2_pre_add_bias_DL_0
-# Input0: fc2_pre_matmul_UL_out, shape=[256, 16], type=tensor, addr=104000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
-# Output0: fc2_pre_add_bias_DL_0_out, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
-
 l1bmm $llb0 $llm0v
 
 nop/3
+
 # --- Operation 16: DL ---
 # Node name: fc2_pre_add_bias_DL_1
 # Input0: fc2_bias, shape=[16], type=tensor, addr=72000, layout=((8:1, 2_W:1)), len=8, location=DRAM, tag=DRAM
@@ -1294,21 +1283,10 @@ nop/3
 l1bmm@0 $lln0v $llb0
 nop
 nop
-l2bmd $lb0 $lc0
-mvp/n256i9f $lc0@.0 $d192000
-nop; wait i9f  # Auto-tagged
-mvp/n256i9f $lc0@.1 $d192256
-nop; wait i9f  # Auto-tagged
-
-nop/3
-# --- Operation 52: DL ---
-# Node name: ReluGrad_16_DL_0
-# Input0: grad_fc2_input_UL_out, shape=[256, 16], type=tensor, addr=192000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
-# Output0: ReluGrad_16_DL_0_out, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
-
 l1bmm $llb0 $llm0v
 
 nop/3
+
 # --- Operation 53: DL ---
 # Node name: ReluGrad_16_DL_1
 # Input0: fc1_pre_UL_out, shape=[256, 16], type=tensor, addr=88000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
