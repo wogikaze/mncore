@@ -4,6 +4,7 @@
 //! toolchain. On WSL the driver comes from `/usr/lib/wsl/lib/libcuda.so.1`;
 //! NVRTC comes from the PyTorch CUDA wheels unless `NVRTC_LIB` is set.
 
+use std::cell::Cell;
 use std::ffi::{c_char, c_int, c_void, CStr, CString};
 use std::path::Path;
 
@@ -2006,6 +2007,9 @@ pub struct Gpu {
     cu_graph_exec_destroy: CuGraphExecDestroy,
     cu_graph_destroy: CuGraphDestroy,
     cu_error: CuGetErrorString,
+    /// Set between `begin_capture` and `end_capture`. A context sync is illegal
+    /// while a stream is capturing, so `sync` becomes a no-op for that window.
+    capturing: Cell<bool>,
 }
 
 unsafe impl Send for Gpu {}
@@ -2288,6 +2292,7 @@ impl Gpu {
             cu_graph_exec_destroy,
             cu_graph_destroy,
             cu_error,
+            capturing: Cell::new(false),
         })
     }
 
@@ -2840,6 +2845,63 @@ impl Gpu {
         Ok(out)
     }
 
+    /// Uploads one group's DRAM range starting at `offset_longs`.
+    pub fn upload_dram_at(
+        &self,
+        state: &GpuState,
+        group: usize,
+        offset_longs: u64,
+        words: &[u64],
+    ) -> Result<(), String> {
+        if state.dram == 0 {
+            return Err("GPU state was allocated without MV support".into());
+        }
+        if group >= crate::mv::GROUPS || offset_longs + words.len() as u64 > state.dram_longs {
+            return Err("DRAM range is outside the device allocation".into());
+        }
+        let offset = (group as u64 * state.dram_longs + offset_longs) * 8;
+        self.check(
+            unsafe {
+                (self.cu_htod)(
+                    state.dram + offset,
+                    words.as_ptr() as *const c_void,
+                    words.len() * 8,
+                )
+            },
+            "upload dram range",
+        )?;
+        self.sync()
+    }
+
+    /// Downloads one group's DRAM range starting at `offset_longs`.
+    pub fn download_dram_at(
+        &self,
+        state: &GpuState,
+        group: usize,
+        offset_longs: u64,
+        longs: usize,
+    ) -> Result<Vec<u64>, String> {
+        if state.dram == 0 {
+            return Err("GPU state was allocated without MV support".into());
+        }
+        if group >= crate::mv::GROUPS || offset_longs + longs as u64 > state.dram_longs {
+            return Err("DRAM range is outside the device allocation".into());
+        }
+        let mut out = vec![0u64; longs];
+        let offset = (group as u64 * state.dram_longs + offset_longs) * 8;
+        self.check(
+            unsafe {
+                (self.cu_dtoh)(
+                    out.as_mut_ptr() as *mut c_void,
+                    state.dram + offset,
+                    longs * 8,
+                )
+            },
+            "download dram range",
+        )?;
+        Ok(out)
+    }
+
     /// Uploads the matrix registers (`[mab][face][physical row][word]`, u32).
     pub fn upload_mats(&self, state: &GpuState, words: &[u32]) -> Result<(), String> {
         if words.len() != MAT_WORDS {
@@ -3079,11 +3141,14 @@ impl Gpu {
         self.check(
             unsafe { (self.cu_begin_capture)(self.stream, 0) },
             "cuStreamBeginCapture",
-        )
+        )?;
+        self.capturing.set(true);
+        Ok(())
     }
 
     /// Ends capture and returns the graph handle.
     pub fn end_capture(&self) -> Result<CuGraph, String> {
+        self.capturing.set(false);
         let mut graph: CuGraph = std::ptr::null_mut();
         self.check(
             unsafe { (self.cu_end_capture)(self.stream, &mut graph) },
@@ -3129,6 +3194,11 @@ impl Gpu {
     /// in both cases, and it covers the default stream that the synchronous
     /// `cuMemcpyHtoD_v2`/`cuMemcpyDtoH_v2` uploads and downloads use.
     pub fn sync(&self) -> Result<(), String> {
+        // cuCtxSynchronize is not allowed while the stream is capturing; the
+        // kernels are only recorded then, so there is nothing to wait for.
+        if self.capturing.get() {
+            return Ok(());
+        }
         self.check(unsafe { (self.cu_sync)() }, "cuCtxSynchronize")
     }
 

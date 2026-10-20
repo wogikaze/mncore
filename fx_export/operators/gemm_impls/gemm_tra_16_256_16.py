@@ -25,6 +25,15 @@ def generate_vsm(operator: BaseOperator) -> List[str]:
     
     lines = []
 
+    # The matrix X/Y registers keep the values left by the forward matmuls. This
+    # kernel reads X4 before writing it, so a previous step's data would leak in
+    # and saturate the gradient. Clear both faces before using them.
+    lines.append('imm f"0.0" $t')
+    lines.append("nop")
+    for face in ("lx", "ly"):
+        for addr in (0, 4, 8, 12):
+            lines.append(f"gmwrite $t ${face}{addr}")
+
     lines.append("zero $nowrite;gmwrite $lm0v4 $lx0")
     lines.append("gmread $lx0 $lr0v4")
     lines.append("gmread $lx4 $lr16v4")

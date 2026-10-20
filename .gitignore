@@ -9,3 +9,4 @@ mncompile/native/target/
 .ig/
 scratch/
 .cargo-home
+research/experiments/mnist-gpu/*.bin

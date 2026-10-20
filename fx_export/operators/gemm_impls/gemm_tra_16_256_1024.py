@@ -86,4 +86,9 @@ mvp/n2048 $p2048@0 $d{c}@1
 mvp/n2048 $p4096@0 $d{c}@2
 mvp/n2048 $p6144@0 $d{c}@3""".format(c=c).splitlines()
 
-    return lines
+    # X4/Y4 may still hold the forward pass's matrix-register data.
+    clear = ['imm f"0.0" $t', "nop"]
+    for face in ("lx", "ly"):
+        for addr in (0, 4, 8, 12):
+            clear.append(f"gmwrite $t ${face}{addr}")
+    return clear + lines
