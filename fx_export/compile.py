@@ -517,7 +517,49 @@ def generate_python_from_onnx_simple(onnx_model_path: str) -> str:
     
     lines.append("    }")
     
-    return "\n".join(lines)
+    return fold_adjacent_ul_dl("\n".join(lines))
+
+
+def fold_adjacent_ul_dl(text: str) -> str:
+    """Drop the DRAM re-load of a DL that immediately follows the UL writing it.
+
+    When the UL's LM input layout equals the DL's LM output layout, both use the
+    same L1BM packing, and the block the UL leaves behind is exactly what the
+    DL's final ``l1bmm``/``l1bmd`` reads.  The mvp/mvb/l2bmd stages can then go.
+    """
+    op_re = re.compile(r"^# --- Operation (\d+): (\S+) ---$")
+    lines = text.splitlines()
+    starts = [i for i, l in enumerate(lines) if op_re.match(l)]
+    if not starts:
+        return text
+    head = lines[: starts[0]]
+    blocks = [lines[s : (starts[k + 1] if k + 1 < len(starts) else len(lines))]
+              for k, s in enumerate(starts)]
+
+    for i in range(len(blocks) - 1):
+        a, b = blocks[i], blocks[i + 1]
+        ma, mb = op_re.match(a[0]), op_re.match(b[0])
+        if ma.group(2) != "UL" or mb.group(2) != "DL":
+            continue
+        ul_out = next((l.split(": ", 1)[1].split(",")[0] for l in a if l.startswith("# Output0:")), None)
+        dl_in = next((l.split(": ", 1)[1].split(",")[0] for l in b if l.startswith("# Input0:")), None)
+        if not ul_out or ul_out != dl_in:
+            continue
+        ul_body = [l for l in a if not l.startswith("#") and l.strip()]
+        if any("dmwrite" in l or "dmread" in l for l in ul_body):
+            continue
+        ul_layout = next((l.split("layout=", 1)[1].split(", len=")[0] for l in a if l.startswith("# Input0:")), None)
+        dl_layout = next((l.split("layout=", 1)[1].split(", len=")[0] for l in b if l.startswith("# Output0:")), None)
+        if not ul_layout or ul_layout != dl_layout:
+            continue
+        tail = [l for l in b if re.match(r"\s*l1bm[md]\b", l)]
+        if not tail:
+            continue
+        # keep the header, the blank lines and the L1BM -> LM reads only
+        blocks[i + 1] = [l for l in b
+                         if l.startswith("#") or not l.strip() or l.strip() == "nop/3"
+                         or re.match(r"\s*l1bm[md]\b", l)]
+    return "\n".join(head + [l for blk in blocks for l in blk])
 
 
 def add_mv_wait(vsm_lines: List[str]) -> List[str]:
@@ -812,4 +854,4 @@ def generate_vsm_from_onnx(onnx_model_path: str) -> str:
     lines.append("# ====== End of VSM Code ======")
     lines.append("")
     
-    return "\n".join(lines)
+    return fold_adjacent_ul_dl("\n".join(lines))

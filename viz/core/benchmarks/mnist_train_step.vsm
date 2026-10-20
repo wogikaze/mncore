@@ -275,12 +275,6 @@ nop/3
 # Input0: fc1_pre_UL_out, shape=[256, 16], type=tensor, addr=88000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
 # Output0: fc1_relu_DL_0_out, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
 
-mvp/n256i9f $d88000 $lc0@.0
-nop; wait i9f  # Auto-tagged
-mvp/n256i9f $d88256 $lc0@.1
-nop; wait i9f  # Auto-tagged
-l2bmd $lc0 $lb0
-nop
 l1bmm $llb0 $llm0v
 
 nop/3
@@ -314,12 +308,6 @@ nop/3
 # Input0: fc1_UL_out, shape=[256, 16], type=tensor, addr=96000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
 # Output0: fc2_pre_gemm_DL_0_out, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
 
-mvp/n256i9f $d96000 $lc0@.0
-nop; wait i9f  # Auto-tagged
-mvp/n256i9f $d96256 $lc0@.1
-nop; wait i9f  # Auto-tagged
-l2bmd $lc0 $lb0
-nop
 l1bmm $llb0 $llm0v
 
 nop/3
@@ -402,12 +390,6 @@ nop/3
 # Input0: fc2_pre_matmul_UL_out, shape=[256, 16], type=tensor, addr=104000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
 # Output0: fc2_pre_add_bias_DL_0_out, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
 
-mvp/n256i9f $d104000 $lc0@.0
-nop; wait i9f  # Auto-tagged
-mvp/n256i9f $d104256 $lc0@.1
-nop; wait i9f  # Auto-tagged
-l2bmd $lc0 $lb0
-nop
 l1bmm $llb0 $llm0v
 
 nop/3
@@ -1102,12 +1084,6 @@ nop/3
 # Input0: grad_output_UL_out, shape=[256, 16], type=tensor, addr=168000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
 # Output0: grad_fc2_weight_gemm_DL_0_out, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
 
-mvp/n256i9f $d168000 $lc0@.0
-nop; wait i9f  # Auto-tagged
-mvp/n256i9f $d168256 $lc0@.1
-nop; wait i9f  # Auto-tagged
-l2bmd $lc0 $lb0
-nop
 l1bmm $llb0 $llm0v
 
 nop/3
@@ -1344,12 +1320,6 @@ nop/3
 # Input0: grad_fc2_input_UL_out, shape=[256, 16], type=tensor, addr=192000, layout=((4_L2B:2, 64:8), (8:1, 2_W:1)), len=512, location=DRAM, tag=DRAM
 # Output0: ReluGrad_16_DL_0_out, shape=[256, 16], addr=0, layout=((8_L2B:1, 4:2, 8_L1B:1), (2:1, 4_PE:1, 2_W:1)), len=16, location=LM0, tag=default
 
-mvp/n256i9f $d192000 $lc0@.0
-nop; wait i9f  # Auto-tagged
-mvp/n256i9f $d192256 $lc0@.1
-nop; wait i9f  # Auto-tagged
-l2bmd $lc0 $lb0
-nop
 l1bmm $llb0 $llm0v
 
 nop/3
