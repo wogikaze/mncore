@@ -682,6 +682,75 @@ def fuse_gemm_add_relu(model: onnx.ModelProto) -> onnx.ModelProto:
     return model
 
 
+def fuse_sgd_update(model: onnx.ModelProto) -> onnx.ModelProto:
+    """Mul(grad, lr) -> Sub(param, scaled) を SGDUpdate 1 ノードに融合する。
+
+    Sub は inplace_input を持つ SGD の更新なので、Mul の scaled は Sub 以外に
+    消費されない。融合すると scaled の DRAM 往復（UL + DL）が消える。
+    """
+    from onnx import numpy_helper
+
+    graph = model.graph
+
+    scalars: Dict[str, float] = {}
+    for init in graph.initializer:
+        arr = numpy_helper.to_array(init)
+        if arr.size == 1:
+            scalars[init.name] = float(arr.reshape(()))
+
+    producer: Dict[str, onnx.NodeProto] = {}
+    for node in graph.node:
+        for out in node.output:
+            if out:
+                producer[out] = node
+
+    consumers: Dict[str, List[onnx.NodeProto]] = {}
+    for node in graph.node:
+        for inp in node.input:
+            if inp:
+                consumers.setdefault(inp, []).append(node)
+
+    fused_for: Dict[int, onnx.NodeProto] = {}
+    drop: Set[int] = set()
+    for node in graph.node:
+        if node.op_type != "Sub" or len(node.input) < 2:
+            continue
+        inplace = next((a for a in node.attribute if a.name == "inplace_input"), None)
+        if inplace is None:
+            continue
+        param, scaled = node.input[0], node.input[1]
+        mul = producer.get(scaled)
+        if mul is None or mul.op_type != "Mul" or len(mul.input) < 2:
+            continue
+        grad, lr_name = mul.input[0], mul.input[1]
+        if lr_name not in scalars:
+            continue
+        if len(consumers.get(scaled, [])) != 1:
+            continue
+
+        fused = helper.make_node("SGDUpdate", [param, grad], list(node.output))
+        fused.name = node.name
+        for attr in node.attribute:
+            if attr.name == "var_name":
+                fused.attribute.append(attr)
+        fused.attribute.append(helper.make_attribute("inplace_input", param))
+        fused.attribute.append(helper.make_attribute("learning_rate", scalars[lr_name]))
+        fused_for[id(node)] = fused
+        drop.add(id(mul))
+
+    if not fused_for:
+        return model
+
+    new_nodes: List[onnx.NodeProto] = []
+    for node in graph.node:
+        if id(node) in drop:
+            continue
+        new_nodes.append(fused_for.get(id(node), node))
+    del graph.node[:]
+    graph.node.extend(new_nodes)
+    return model
+
+
 def transform_to_mncore(input_onnx_path: str, output_onnx_path: str) -> None:
     """
     通常のONNXモデルをMN-Core用に変換
@@ -694,6 +763,7 @@ def transform_to_mncore(input_onnx_path: str, output_onnx_path: str) -> None:
     # ONNXモデルを読み込み
     model = onnx.load(input_onnx_path)
     model = fuse_gemm_add_relu(model)  # FC-ReLU 融合パス
+    model = fuse_sgd_update(model)  # Mul+Sub の SGD 更新を 1 ノードに融合
     graph = model.graph
     
     # 新しいノードリスト

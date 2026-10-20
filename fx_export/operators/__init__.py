@@ -597,6 +597,7 @@ from .onehot import OneHotOperator
 from .greater import GreaterOperator
 from .nll_loss import NLLLossOperator
 from .identity import IdentityOperator
+from .sgd_update import SGDUpdateOperator
 from .cast import CastOperator
 from .reduce_max import ReduceMaxOperator
 from .exp import ExpOperator
