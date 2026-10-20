@@ -1,0 +1,38 @@
+[
+  {
+    "workers": 0,
+    "n": 40,
+    "seconds": 17.47,
+    "all_per_s": 2.29,
+    "simulated": 40,
+    "sim_per_s": 2.29,
+    "asm_error": 0,
+    "sim_ok": 40,
+    "sim_fail": 0,
+    "sim_error": 0
+  },
+  {
+    "workers": 8,
+    "n": 40,
+    "seconds": 4.57,
+    "all_per_s": 8.74,
+    "simulated": 40,
+    "sim_per_s": 8.74,
+    "asm_error": 0,
+    "sim_ok": 40,
+    "sim_fail": 0,
+    "sim_error": 0
+  },
+  {
+    "workers": 10,
+    "n": 40,
+    "seconds": 4.03,
+    "all_per_s": 9.93,
+    "simulated": 40,
+    "sim_per_s": 9.93,
+    "asm_error": 0,
+    "sim_ok": 40,
+    "sim_fail": 0,
+    "sim_error": 0
+  }
+]

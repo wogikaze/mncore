@@ -1,0 +1,11 @@
+imm i"16909060" 
+nop
+nop
+l1bmd $lls0v $lb0
+nop
+nop
+l2bmd $lb0 $lc0
+l2bmd $lb32 $lc256
+nop
+mvd/n512 $lc0 $p0@0
+mvp/n4096 $p0@0 $d0@0

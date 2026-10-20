@@ -1,0 +1,126 @@
+{
+  "date": "2026-10-20",
+  "baseline": {
+    "file": "solutions/00_baseline_93.vsm",
+    "words": 93,
+    "j": 91,
+    "m": 2,
+    "official": "ACCEPTED score=93 j=91 m=2"
+  },
+  "near_miss": {
+    "file": "solutions/01_nearmiss_92.vsm",
+    "words": 92,
+    "official": "32744 correct / 22 mismatch (DRAM words 0..2)"
+  },
+  "lower_bound": {
+    "status": "preliminary_only_not_lean_verified",
+    "location": "research/preliminary/fizzbuzz-delivery/",
+    "claim": "abstract-model bound (8 words tight) argued with Python + enumeration + CP-SAT",
+    "not_a_theorem": true,
+    "note": "moved out of proofs/; see proofs/README.md"
+  },
+  "binding_resource": "one ALU-group expression per instruction word",
+  "baseline_alu_group_words": 66,
+  "target": 52,
+  "required_alu_reduction": 16,
+  "current_mix_floor_words": 68,
+  "search_exhausted": {
+    "superopt_distinct_programs": 48446,
+    "superopt_simulated": 17402,
+    "superopt_below_93": 0,
+    "transformation_families": 14
+  },
+  "refuted_routes": [
+    "nop removal (all 8 rejected by the official hazard checker)",
+    "ALU relocation (770 candidates, 0 wins)",
+    "imm folding into MAU rows (170 candidates, 0 wins)",
+    "transfer shortening (mvp direct / l2bmd merge / mvd removal)",
+    "2 blocks per PE (net +11 words)",
+    "closed-form byte-offset inversion (exact but line-neutral)",
+    "closed-form T-chain (residue table wrong for 3010/4096 blocks)",
+    "2 candidates per block (premise true, ALU width forces doubling)",
+    "matrix-register constant generation (dmread ramp is arithmetic only)"
+  ],
+  "untried": [
+    "free one ALU word before line 24 by a two-destination ALU fusion",
+    "unified field-width formula removing the 32/408/4672 thresholds",
+    "per-byte renderer with one class computation per word"
+  ],
+  "transfer_row_hosting": "ALU expressions can ride transfer rows (ASM-OK) but only after all consumers; no word saved",
+  "new_lead": {
+    "id": "H7",
+    "finding": "Coordinate chain L5-L13 exists only to clear mask-register words 4..7; deleting it assembles at 84 words but leaves OMR 4..7 = 15/3/3/3 instead of 0",
+    "artifact": "research/experiments/parent/dead_chain_84.vsm",
+    "next": "find a 1-2 word way to produce the same mask state; potential 93 -> 84-86",
+    "round3": {
+      "chain_output_aluf_after_L13": {
+        "n0c0b0m0p0": "0x0000000000000000",
+        "n1c1b7m15p3": "0x00007df800000003",
+        "note": "PE-dependent"
+      },
+      "mask_state_after_L15": "identical across 6 diverse PEs (256 entries)",
+      "delete_chain": {
+        "words": 84,
+        "asm": "OK",
+        "mismatches": 4095,
+        "omr_words_4_7": {
+          "baseline": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "deleted": [
+            15,
+            3,
+            3,
+            3
+          ]
+        }
+      },
+      "one_line_replacements_tried": [
+        "zero $nowrite",
+        "imm i\"0\" $nowrite",
+        "ipassa $r0 $s8",
+        "lpassa $ls0 $lr8",
+        "ipassa $r0 $s0/1000",
+        "ior $r0 $s0v $s8"
+      ],
+      "all_replacements": "85 words, 4095 mismatches",
+      "next": "identify which line writes OMR words 4..7 and what $imr1 consumers require"
+    },
+    "round4": {
+      "nop_replacement": "2..9 nops all give 4095 mismatches -> the chain computes a value, it is not a latency filler",
+      "open": "reconcile PE-dependent aluf with PE-independent OMR dump: build a probe that runs hvpassa -$aluf $omr15 with known aluf values and compares the written mask"
+    },
+    "round5": {
+      "omr_addressing": {
+        "$omr0": "addresses 0..3 = entry 0 (initial 15)",
+        "$omr15": "addresses 60..63 = entry 15"
+      },
+      "entry1_written_by": "L24 `isub $s0 $r24v $omr1`",
+      "chain_real_output": "GRF1 word 0: packed PE coordinates",
+      "measured": {
+        "n1c1b7m15p3": {
+          "after_L12": "0x0000030e00001c10",
+          "after_L13": "0x00007df800001c10"
+        },
+        "n0c0b0m0p0": "0 (mask /1000 suppresses the write)"
+      },
+      "next": "compute the same packed coordinate in 2-3 ALU lines (packbit chain, direct $mabid/$subpeid, two-destination ilsl)"
+    },
+    "round6": {
+      "drop_L11": {
+        "words": 92,
+        "mismatches": 3966
+      },
+      "drop_L12": {
+        "words": 92,
+        "mismatches": 3829
+      },
+      "packbit_merge": "rejected: in_grf1/in_grf1 port conflict",
+      "target_identity": "identify the coordinate-to-value map, e.g. (l2b=1,l1b=7,mab=15,pe=3) -> 0x7df800001c10"
+    }
+  },
+  "lower_bound_legacy_claim": "DELETED: the earlier 'deliverable B achieved' framing was wrong; CP-SAT UNSAT is not a Lean proof"
+}

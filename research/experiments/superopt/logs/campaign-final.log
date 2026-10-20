@@ -1,0 +1,33 @@
+[05:01:04] start tag=final workers=10 waves=seed,finish,plateau
+[05:01:04] wave seed
+[05:01:04] *** NEW BEST words=93 (seed)  -> /home/wogikaze/wgkz/mncore/research/experiments/superopt/best/93w_9b36e271ad.vsm
+[05:01:04] wave seed: {"wave": "seed", "items": 1, "new": 0, "cached": 1, "asm_error": 0, "sim_ok": 0, "sim_fail": 0, "sim_error": 0, "simulated": 0, "wall_s": 0.0, "new_per_s": 0.0, "best_words": 93}
+{"wave": {"wave": "seed", "items": 1, "new": 0, "cached": 1, "asm_error": 0, "sim_ok": 0, "sim_fail": 0, "sim_error": 0, "simulated": 0, "wall_s": 0.0, "new_per_s": 0.0, "best_words": 93}, "family_stats": {"seed": {"sim_ok": 1}}}
+[05:01:05] finish: 168 partial-dissolution seeds
+[05:01:05]   finish: 2000 best=93
+[05:01:05]   finish: 4000 best=93
+[05:01:06]   finish: 6000 best=93
+[05:01:46]   finish: 8000 best=93
+[05:03:14]   finish: 10000 best=93
+[05:03:14]   finish: 12000 best=93
+[05:03:54]   finish: 14000 best=93
+[05:05:02]   finish: 16000 best=93
+[05:06:22]   finish: 18000 best=93
+[05:07:37]   finish: 20000 best=93
+[05:08:52]   finish: 22000 best=93
+[05:09:59]   finish: 24000 best=93
+[05:11:05]   finish: 26000 best=93
+[05:12:20]   finish: 28000 best=93
+[05:13:25]   finish: 30000 best=93
+[05:14:35]   finish: 32000 best=93
+[05:15:28] wave finish: {"wave": "finish", "items": 33599, "new": 22382, "cached": 11217, "asm_error": 14827, "sim_ok": 84, "sim_fail": 4617, "sim_error": 2854, "simulated": 7555, "wall_s": 860.6, "new_per_s": 26.01, "best_words": 93}
+{"wave": {"wave": "finish", "items": 33599, "new": 22382, "cached": 11217, "asm_error": 14827, "sim_ok": 84, "sim_fail": 4617, "sim_error": 2854, "simulated": 7555, "wall_s": 860.6, "new_per_s": 26.01, "best_words": 93}, "family_stats": {"seed": {"sim_ok": 1}, "delete": {"sim_fail": 165, "asm_error": 104, "sim_error": 23}, "move": {"asm_error": 16215, "sim_fail": 5500, "sim_error": 3548, "sim_ok": 159}, "move_row": {"asm_error": 6019, "sim_fail": 1389, "sim_error": 477}}}
+[05:15:28] plateau: 4000 evaluations, pool=48
+[05:15:28] plateau: 308 seed states
+[05:16:06]   plateau: 1000/4000 pool=48 best=93 improved=0
+[05:16:40]   plateau: 2000/4000 pool=48 best=93 improved=0
+[05:17:18]   plateau: 3000/4000 pool=48 best=93 improved=0
+[05:17:56]   plateau: 4000/4000 pool=48 best=93 improved=0
+[05:17:56] wave plateau: {"wave": "plateau", "evals": 4000, "pool": 48, "improved": 0, "wall_s": 146.0, "best_words": 93}
+[05:17:56] done submitted=37600 best=93
+[05:17:56] summary -> /home/wogikaze/wgkz/mncore/research/experiments/superopt/logs/summary-final.json

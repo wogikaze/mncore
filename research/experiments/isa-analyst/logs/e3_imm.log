@@ -1,0 +1,17 @@
+OK   imm alone (ALU slot)                                 j=1 m=0 words=1
+OK   imm alone, long literal                              j=1 m=0 words=1
+OK   imm + MAU calc on GRF1 (no LM0)                      j=1 m=0 words=1
+OK   imm + L1BM gather from GRF0                          j=1 m=0 words=1
+OK   imm + L2BM (no LM0)                                  j=1 m=0 words=1
+FAIL imm + ALU (same group -> illegal)                    Instruction field conflict detected between `alu` and `alu`.
+FAIL imm + ALU reading LM0 -> illegal (bit sharing)       Instruction field conflict detected between `alu` and `alu`.
+FAIL two imm on one line -> illegal                       Instruction field conflict detected between `alu` and `immediate`.
+OK   imm on a line whose ALU slot is free: 2 words -> 1 word j=2 m=0 words=2
+FAIL same two lines merged                                Instruction field conflict detected between `alu` and `immediate`.
+OK   3 constants: 3 lines                                 j=3 m=0 words=3
+OK   3 constants piggybacked on 3 MAU lines               j=3 m=0 words=3
+FAIL mread + imm (d precision)                            terminate called after throwing an instance of 'std::bad_optional_access'
+FAIL dvpassa + dmread (both d)                            terminate called after throwing an instance of 'std::bad_optional_access'
+FAIL dmwrite + dmread (both d)                            terminate called after throwing an instance of 'std::bad_optional_access'
+FAIL dvpassa + dmwrite (both d)                           Instruction field conflict detected between `in_grf1` and `in_grf1`.
+FAIL dmread + lpassa (ALU) + L1BM                         terminate called after throwing an instance of 'std::bad_optional_access'

@@ -1,0 +1,18 @@
+# fbcheck / fbverify summary  (2026-10-20T04:27:22+09:00)
+
+baseline-93                        FileNotFoundError: [Errno 2] No such file or directory: 'baseline-93'
+cand/c_direct_l2bm_dram.vsm          91 FAIL words=91 lines=91 mismatches=4096 cand/c_direct_l2bm_dram.vsm
+cand/c_direct_l2bm_dram_par.vsm      91 FAIL words=91 lines=91 mismatches=4096 cand/c_direct_l2bm_dram_par.vsm
+cand/c_drop_nop85.vsm                92 OK words=92 lines=92 mismatches=0 cand/c_drop_nop85.vsm
+cand/c_drop_nop87.vsm                92 OK words=92 lines=92 mismatches=0 cand/c_drop_nop87.vsm
+cand/c_drop_nop8791.vsm              91 OK words=91 lines=91 mismatches=0 cand/c_drop_nop8791.vsm
+cand/c_drop_nop88.vsm                92 OK words=92 lines=92 mismatches=0 cand/c_drop_nop88.vsm
+cand/c_drop_nop8889.vsm              92 OK words=92 lines=92 mismatches=0 cand/c_drop_nop8889.vsm
+cand/c_drop_nop91.vsm                92 OK words=92 lines=92 mismatches=0 cand/c_drop_nop91.vsm
+cand/c_l1bm_to_dram.vsm               0 ERROR words=0 program:None: line 7: bad MV statement `mvp/n64 $lb0 $d0@0` cand/c_l1bm_to_dram.vsm
+cand/c_l2bm512_to_d0.vsm             91 FAIL words=91 lines=91 mismatches=4096 cand/c_l2bm512_to_d0.vsm
+cand/c_mvd_only_then_dist.vsm        92 FAIL words=92 lines=92 mismatches=4096 cand/c_mvd_only_then_dist.vsm
+cand/c_skip_gather1.vsm              92 FAIL words=92 lines=92 mismatches=2048 cand/c_skip_gather1.vsm
+cand/c_skip_gather2.vsm              92 FAIL words=92 lines=92 mismatches=2048 cand/c_skip_gather2.vsm
+cand/c_skip_l1bmd.vsm                92 FAIL words=92 lines=92 mismatches=4096 cand/c_skip_l1bmd.vsm
+probes/p07_tag_2block.vsm            21 FAIL words=21 lines=22 mismatches=4096 probes/p07_tag_2block.vsm

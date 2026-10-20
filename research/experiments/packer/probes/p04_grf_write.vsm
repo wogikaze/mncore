@@ -1,0 +1,5 @@
+imm i"0x11223344" $r0
+ipassa $r0 $s0v/1100
+ipassa $r0 $s1v/1010
+lpassa $r0 $ls2v/1100
+d getf $s0n0c0b0m0p0 12

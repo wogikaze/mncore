@@ -1,0 +1,10 @@
+[04:27:29] start tag=pilot workers=8 waves=seed,singles
+[04:27:29] wave seed
+[04:27:30] *** NEW BEST words=93 (seed)  -> /home/wogikaze/wgkz/mncore/research/experiments/superopt/best/93w_9b36e271ad.vsm
+[04:27:30] wave seed: {"wave": "seed", "items": 1, "new": 1, "cached": 0, "asm_error": 0, "sim_ok": 1, "sim_fail": 0, "sim_error": 0, "simulated": 1, "wall_s": 1.1, "new_per_s": 0.89, "best_words": 93}
+{"wave": {"wave": "seed", "items": 1, "new": 1, "cached": 0, "asm_error": 0, "sim_ok": 1, "sim_fail": 0, "sim_error": 0, "simulated": 1, "wall_s": 1.1, "new_per_s": 0.89, "best_words": 93}, "family_stats": {"seed": {"sim_ok": 1}}}
+[04:27:30] generating singles
+[04:27:51] wave singles: {"wave": "singles", "items": 300, "new": 298, "cached": 2, "asm_error": 126, "sim_ok": 42, "sim_fail": 97, "sim_error": 33, "simulated": 172, "wall_s": 21.8, "new_per_s": 13.7, "best_words": 93}
+{"wave": {"wave": "singles", "items": 300, "new": 298, "cached": 2, "asm_error": 126, "sim_ok": 42, "sim_fail": 97, "sim_error": 33, "simulated": 172, "wall_s": 21.8, "new_per_s": 13.7, "best_words": 93}, "family_stats": {"seed": {"sim_ok": 1}, "delete": {"sim_error": 6, "sim_fail": 52, "asm_error": 35}, "repair": {"asm_error": 2, "sim_fail": 9}, "merge": {"sim_fail": 2, "asm_error": 38}, "split": {"sim_ok": 12, "sim_fail": 3, "sim_error": 15}, "reorder": {"sim_ok": 21, "sim_fail": 9}, "swap": {"sim_error": 8, "sim_fail": 22, "asm_error": 51, "sim_ok": 11}, "relocate": {"sim_error": 4}}}
+[04:27:51] done submitted=301 best=93
+[04:27:51] summary -> /home/wogikaze/wgkz/mncore/research/experiments/superopt/logs/summary-pilot.json

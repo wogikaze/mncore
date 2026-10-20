@@ -1,0 +1,23 @@
+# 2-block-per-PE layout probe: long word0 = tag, long word1 = tag|0x10000
+imm i"9" $r8
+imm i"6" $r9
+imm i"0x10000" $r11
+ilsl $l2bid $r8 $r10
+ilsl $l1bid $r9 $nowrite
+ior $peid $aluf $nowrite
+ior $r10 $aluf $s0
+nop
+nop
+nop
+ior $r11 $s0 $s2
+nop
+nop
+l1bmd $ls0v $lb0
+nop
+nop
+l2bmd $lb0 $lc0
+l2bmd $lb64 $lc256
+nop
+mvd/n512 $lc0 $p0@0
+mvp/n4096 $p0@0 $d0@0
+d getd $d0n0 4096

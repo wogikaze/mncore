@@ -1,0 +1,17 @@
+# DAR scatter probe: 4 x 16-word chunks, destinations from DAR[0..3]
+imm i"2" $r0
+iadd $peid $r0 $s0
+nop
+nop
+l1bmd $ls0 $lb0
+nop
+nop
+l2bmd $lb0 $lc0
+nop
+l2bmdars $lc0@.0 $dar0; l2bmdarw
+nop
+mvd/n64 $lc0 $p0@0
+nop
+mvp/n64nd1 $p0@0 $di0@0
+d getd $d0n0 64
+d get $p0n0 8

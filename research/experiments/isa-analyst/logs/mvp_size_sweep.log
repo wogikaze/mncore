@@ -1,0 +1,16 @@
+n=1        FAIL nw must be aligned to the multiple of 64.
+n=63       FAIL nw must be aligned to the multiple of 64.
+n=64       OK len=84 m 1000000000000000000000000000
+n=65       FAIL nw must be aligned to the multiple of 64.
+n=128      OK len=84 m 1000000000000000000000000000
+n=1024     OK len=84 m 1000000000000000000000000000
+n=4096     OK len=84 m 1000000000000000000000000000
+n=8192     OK len=84 m 1000000000000000000000000000
+n=16384    OK len=84 m 1000000000000000000000000000
+n=32768    FAIL Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 1 vs 0 2048 >= 2^11
+n=65536    FAIL Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 2 vs 0 4096 >= 2^11
+n=65535    FAIL nw must be aligned to the multiple of 64.
+n=131072   FAIL Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 4 vs 0 8192 >= 2^11
+n=262144   FAIL Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 8 vs 0 16384 >= 2^11
+n=524288   FAIL Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 16 vs 0 32768 >= 2^11
+n=1048576  FAIL Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with codegen_dir=: 32 vs 0 65536 >= 2^11

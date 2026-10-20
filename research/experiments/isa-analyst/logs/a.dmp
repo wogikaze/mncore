@@ -1,0 +1,4 @@
+DEBUG-DRAM(n0,0):(1.85326e-72) (0x310a320a46697a7a) #d getd $d0n0 1
+DEBUG-DRAM(n0,1):(1.62923e-259) (0x0a340a42757a7a0a) #d getd $d1n0 1
+DEBUG-DRAM(n0,2):(1.61489e+31) (0x46697a7a0a370a38) #d getd $d2n0 1
+DEBUG-DRAM(n0,3):(3.64414e-259) (0x0a46697a7a0a4275) #d getd $d3n0 1

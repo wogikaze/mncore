@@ -1,0 +1,55 @@
+# End-to-end 2-blocks-per-PE pack+transfer demo (synthetic bytes).
+# block A (GRF1 long word 0) = (tag<<32) | 0x11111111
+# block B (GRF1 long word 1) = ((tag|0x10000)<<32) | 0x22222222
+imm i"0xff" $s9
+imm i"9" $r5
+imm i"6" $r6
+imm i"0x10000" $r8
+ilsl $l2bid $r5 $r10
+ilsl $l1bid $r6 $nowrite
+ior $peid $aluf $nowrite
+ior $r10 $aluf $s8
+nop
+nop
+ior $r8 $s8 $s11
+imm i"24" $r0
+imm i"16" $r1
+imm i"8" $r2
+imm i"0" $r3
+nop
+nop
+ilsr $s8 $r[0,1,2,3] $nowrite
+iand $s9 $aluf $nowrite
+ipassa $aluf $mt[0,1,2,3]
+imm i"0x11" $r13
+nop
+nop
+ipassa $r13 $mt[4,5,6,7]
+nop
+ilsr $s11 $r[0,1,2,3] $nowrite
+iand $s9 $aluf $nowrite
+ipassa $aluf $mt[64,65,66,67]
+imm i"0x22" $r14
+nop
+nop
+ipassa $r14 $mt[68,69,70,71]
+nop
+nop
+imm i"8" $r7
+ilsl $mt[0,4,64,68] $aluf $nowrite
+ior $mt[1,5,65,69] $aluf $nowrite
+ilsl $aluf $r7 $nowrite
+ior $mt[2,6,66,70] $aluf $nowrite
+ilsl $aluf $r7 $nowrite
+ior $mt[3,7,67,71] $aluf $s0v
+nop
+nop
+l1bmd $ls0v $lb0
+nop
+nop
+l2bmd $lb0 $lc0
+l2bmd $lb64 $lc256
+nop
+mvd/n512 $lc0 $p0@0
+mvp/n4096 $p0@0 $d0@0
+d getd $d0n0 4096

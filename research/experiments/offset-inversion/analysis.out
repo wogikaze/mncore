@@ -1,0 +1,44 @@
+== 0. structural facts ==
+   output bytes: 32766 blocks: 4096 L(6334): 32762
+   L(10)=30 L(100)=408 L(1000)=4668
+   periods P_d (bytes per 15 numbers): {1: 55, 2: 63, 3: 71, 4: 79}
+   per-period closed form L(N+15q+j) = B0 + q*P_d + cum[j]: True
+
+== 1. exact divmod inversion ==
+   bytes needing a correction step: 0 / 32766
+
+== 2. global affine n ~ a*B+b (least squares, all 32766 bytes) ==
+   a=0.191064734911 b=86.465787
+   global affine residual: min=-85.6569 max=21.8674 mean=0.0000 span=107.5243
+
+== 3. global quadratic n ~ c0+c1*B+c2*B^2 ==
+   c0=59.978517558 c1=0.195915290852 c2=-1.480408e-07
+   global quadratic residual: min=-59.1744 max=28.8515 mean=-0.0000 span=88.0259
+
+== 4. per-region exact-rational affine, floored ==
+   d=1: error(n_true-n_est)={0: 7, 1: 22, 2: 1}
+         candidate-scan steps={0: 7, 1: 22, 2: 1}
+   d=2: error(n_true-n_est)={-1: 30, 0: 318, 1: 30}
+         candidate-scan steps={0: 318, 1: 30, 99: 30}
+   d=3: error(n_true-n_est)={-1: 360, 0: 3540, 1: 360}
+         candidate-scan steps={0: 3540, 1: 360, 99: 360}
+   d=4: error(n_true-n_est)={-1: 2846, 0: 22760, 1: 2492}
+         candidate-scan steps={0: 22760, 1: 2492, 99: 2846}
+   ALL: error={-1: 3236, 0: 26625, 1: 2904, 2: 1}
+        scan steps={0: 26625, 1: 2904, 2: 1, 99: 3236}
+
+== 5. per-region affine, rounded to nearest ==
+   d=2: {-1: 180, 0: 198}
+   d=3: {-1: 2100, 0: 2160}
+   d=4: {-1: 14226, 0: 13872}
+   ALL: {-1: 16506, 0: 16230}
+
+== 6. float32 divmod: q = floor(R*float32(1/P) + bias) ==
+   d=2, P=63, Rmax=378, min_frac=2.384185791015625e-07, max_frac=0.9841275215148926, ok_biases=[0.0005, 0.001, 0.002, 0.005, 0.01]
+   d=3, P=71, Rmax=4260, min_frac=0.0140838623046875, max_frac=0.9859161376953125, ok_biases=[0.0005, 0.001, 0.002, 0.005, 0.01]
+   d=4, P=79, Rmax=28098, min_frac=0.01265716552734375, max_frac=0.98736572265625, ok_biases=[0.0005, 0.001, 0.002, 0.005, 0.01]
+
+== 7. integer reconstruction r = R - P*q ==
+   d=2: 0<=r<P for all R: True, max|r-(R mod P)|=0
+   d=3: 0<=r<P for all R: True, max|r-(R mod P)|=0
+   d=4: 0<=r<P for all R: True, max|r-(R mod P)|=0

@@ -1,0 +1,88 @@
+== 1. abstract delivery model: BFS + brute force + CP-SAT ==
+BFS shortest delivery length: 8
+  t= 0  l1bmd(PE->L1BM)
+  t= 1  nop
+  t= 2  nop
+  t= 3  l2bmd(L1BM->L2BM)
+  t= 4  l2bmd(L1BM->L2BM)
+  t= 5  nop
+  t= 6  mvd/n512(L2BM->PDM)
+  t= 7  mvp/n4096(PDM->DRAM)
+BFS reachable states per layer: [1, 2, 3, 4, 6, 10, 17, 29, 46]
+
+brute force, K=7 (all 6^7 action sequences): NO PLAN
+CP-SAT K=7: INFEASIBLE  wall=0.002s branches=0 conflicts=0
+CP-SAT K=8: OPTIMAL  wall=0.005s branches=0 conflicts=0
+  t= 0  l1bmd(PE->L1BM)
+  t= 1  nop
+  t= 2  nop
+  t= 3  l2bmd(L1BM->L2BM)
+  t= 4  l2bmd(L1BM->L2BM)
+  t= 5  nop
+  t= 6  mvd/n512(L2BM->PDM)
+  t= 7  mvp/n4096(PDM->DRAM)
+ALL CHECKS PASSED: delivery minimum 8 (K=7 UNSAT, K=8 SAT)
+
+== 2. assembler probes: n limit and hazard gaps ==
+== transfer-size field limit (n is in long words; 8 bytes each) ==
+OK   mvp L2BM->DRAM single group n4096                              
+OK   mvp L2BM->DRAM single group n16384                             
+FAIL mvp L2BM->DRAM single group n32768                             Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with
+OK   mvp PDM->DRAM n4096                                            
+OK   mvp PDM->DRAM n16384                                           
+FAIL mvp PDM->DRAM n32768                                           Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with
+OK   mvr2dfadd L2BM->DRAM per group n4096                           
+OK   mvr2dfadd L2BM->DRAM per group n16384                          
+FAIL mvr2dfadd L2BM->DRAM per group n32768                          Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with
+OK   mvr4dfadd L2BM->DRAM per group n4096                           
+OK   mvr4dfadd L2BM->DRAM per group n16384                          
+FAIL mvr4dfadd L2BM->DRAM per group n32768                          Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with
+OK   mvrdfadd L2BM->DRAM per group n4096                            
+OK   mvrdfadd L2BM->DRAM per group n16384                           
+FAIL mvrdfadd L2BM->DRAM per group n32768                           Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with
+
+== PDM->DRAM forms: single-individual copy vs distribution ==
+OK   mvp (copy) PDM->DRAM n16384                                    
+OK   mvd (distribution) PDM->DRAM n16384                            
+FAIL mvd (distribution) with dst group suffix [must FAIL]           Group ids or l2bm ids of operands are invalid.
+
+== capacity of one L1BM->L2BM word (l2bmd) ==
+   SDM 3.6.7.8: 64 words/cycle * 4 cycles * 8 L2BM = 2048 long words/word
+   measured: deleting one of the two l2bmd from the Accepted 93-word
+   solution gives exactly 2048 mismatched DRAM words (see verify.sh)
+
+== hazard gaps (same address) ==
+FAIL l2bmd, mvd/n512 (0 nop)  [must FAIL]                           terminate called after throwing an instance of 'grape_pfn::hazard_checker::gpfn3::DataRaceError'
+OK   l2bmd, nop, mvd/n512 (1 nop)  [must OK]                        
+FAIL l1bmd, l2bmd (0 nop)  [must FAIL]                              terminate called after throwing an instance of 'grape_pfn::hazard_checker::gpfn3::DataRaceError'
+FAIL l1bmd, nop, l2bmd (1 nop)  [must FAIL]                         terminate called after throwing an instance of 'grape_pfn::hazard_checker::gpfn3::DataRaceError'
+OK   l1bmd, nop, nop, l2bmd (2 nop)  [must OK]                      
+FAIL ipassa->s0, l1bmd s0 (0 nop)  [must FAIL]                      terminate called after throwing an instance of 'grape_pfn::hazard_checker::gpfn3::DataRaceError'
+OK   ipassa->s0, nop, l1bmd s0 (1 nop)  [must OK]                   
+OK   mvd, mvp (0 nop)  [must OK]                                    
+
+== 3. max DRAM write per instruction word: mvp/n16384 writes 16384 words ==
+asm_words j=0 m=1 rc_emu=0
+D0 = 0x0000000000080000
+D8191 = 0x000000000007e001
+D16383 = 0x000000000007c001
+
+== 4. 9-word construction (one producer + the 8-word delivery) ==
+asm_words j=7 m=2 rc_emu=0
+D0 = 0x1234567812345678
+D2047 = 0x1234567812345678
+D4095 = 0x1234567812345678
+
+== 5. capacity of one l2bmd: deleting one of the two gives 2048 mismatches ==
+/home/wogikaze/wgkz/mncore/proofs/lowerbound/vsm/one_l2bmd.vsm: FAIL words=92 lines=92 mismatches=2048
+
+== 6. $-aluf shortcut: 92 words but 4096 mismatches (negative result) ==
+/home/wogikaze/wgkz/mncore/proofs/lowerbound/vsm/aluf_92.vsm: FAIL words=92 lines=92 mismatches=4096
+
+== 7. delivery tail of the accepted solution: 8 words ==
+delivery tail: j=6 m=2 => 8 assembled words
+
+== 8. official gate on the accepted 93-word solution ==
+problems/challenge/20.fizzbuzz/answer.vsm: ACCEPTED!! score=93 j=91 m=2 bytes=3054
+
+ALL VERIFICATION STEPS PASSED

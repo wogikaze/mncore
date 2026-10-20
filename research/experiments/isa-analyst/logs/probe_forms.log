@@ -1,0 +1,20 @@
+OK   mvp/n64 $p0@0 $d0@0                                        words=  1 asm=m 10000000000000000000000000000000000000
+FAIL mvp/n64 $p0 $d0                                            Group ids or l2bm ids of operands are invalid.
+OK   mvp/n64 $d0@0 $p0@0                                        words=  1 asm=m 11000000000000000000000000000000000000
+OK   mvp/n64 $p0@0 $lc0@0.0                                     words=  1 asm=m 10010000000000000000000000000000000000
+OK   mvp/n64 $lc0@0.0 $p0@0                                     words=  1 asm=m 11010000000000000000000000000000000000
+OK   mvp/n64 $lc0@0.0 $d0@0                                     words=  1 asm=m 11100000000000000000000000000000000000
+OK   mvp/n64 $d0@0 $lc0@0.0                                     words=  1 asm=m 10100000000000000000000000000000000000
+FAIL mvd/n64 $lc0@0.0 $p0@0                                     Group ids or l2bm ids of operands are invalid.
+FAIL mvd/n64 $p0@0 $d0@0                                        Group ids or l2bm ids of operands are invalid.
+FAIL mvd/n64 $d0@0 $p0@0                                        Group ids or l2bm ids of operands are invalid.
+FAIL mvd/n64 $p0@0 $lc0@0.0                                     Group ids or l2bm ids of operands are invalid.
+OK   mvb/n64 $p0@0 $lc0                                         words=  1 asm=m 10011000000000000000000000000000000000
+FAIL mvb/n64 $d0@0 $lc0                                         Group ids or l2bm ids of operands are invalid.
+FAIL mvb2/n64 $d0@0 $lc0                                        Group ids or l2bm ids of operands are invalid.
+FAIL mvb4/n64 $d0@0 $lc0                                        Group ids or l2bm ids of operands are invalid.
+OK   mvrffadd/n64 $lc0 $p0@0                                    words=  1 asm=m 11011000000000100000000000000000000000
+FAIL mvrffadd/n64 $lc0 $d0@0                                    Group ids or l2bm ids of operands are invalid.
+FAIL mvr2ffadd/n64 $lc0@0.0 $d0@0                               Group ids or l2bm ids of operands are invalid.
+FAIL mvr4ffadd/n64 $lc0 $d0@0                                   Group ids or l2bm ids of operands are invalid.
+OK   mvnop                                                      words=  1 asm=m 00000000000000000000000000000000000000

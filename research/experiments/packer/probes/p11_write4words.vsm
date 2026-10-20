@@ -1,0 +1,3 @@
+imm i"0x11223344" $r0
+ipassa $r0 $s0v
+d getf $s0n0c0b0m0p0 4

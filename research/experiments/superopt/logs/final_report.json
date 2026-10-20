@@ -1,0 +1,330 @@
+{
+  "distinct_candidates": 48446,
+  "stages": {
+    "asm_error": 31044,
+    "sim_error": 7047,
+    "sim_fail": 9503,
+    "sim_ok": 852
+  },
+  "simulated": 17402,
+  "accepted": 852,
+  "accepted_words": {
+    "93": 769,
+    "94": 83
+  },
+  "mismatch_buckets": {
+    "0": 852,
+    "1-9": 128,
+    "10-99": 293,
+    "100-999": 1161,
+    "1000+": 7921
+  },
+  "failure_modes": {
+    "field conflict (mau/mau)": 10438,
+    "assembler abort (other)": 5039,
+    "field conflict (lm0/immediate)": 3305,
+    "uninitialized forwarding register": 2560,
+    "field conflict (in_grf0/in_grf0)": 2300,
+    "data race (T)": 1801,
+    "data race (GRF1)": 1447,
+    "field conflict (in_grf1/in_grf1)": 1433,
+    "field conflict (mau_dmode/mau_dmode)": 1024,
+    "field conflict (out_grf0/out_grf0)": 942,
+    "program:35: runtime error: accessing MAU forwarding register failed; t": 737,
+    "field conflict (immediate/lm0)": 686,
+    "data race (GRF0)": 596,
+    "field conflict (out_grf1/out_grf1)": 556,
+    "data race (LM1)": 534,
+    "program:55: runtime error: accessing MAU forwarding register failed; t": 455,
+    "program:40: runtime error: accessing MAU forwarding register failed; t": 399,
+    "program:53: runtime error: accessing MAU forwarding register failed; t": 367,
+    "field conflict (in_lm0/out_lm0)": 278,
+    "mask entry conflict": 236,
+    "program:27: runtime error: accessing MAU forwarding register failed; t": 189,
+    "program:28: runtime error: accessing MAU forwarding register failed; t": 182,
+    "field conflict (out_lm0/out_lm0)": 168,
+    "program:23: runtime error: accessing MAU forwarding register failed; t": 159,
+    "program:21: runtime error: accessing MAU forwarding register failed; t": 139
+  },
+  "rows_per_program": {
+    "92": {
+      "sim_error": 2240,
+      "sim_fail": 3325,
+      "asm_error": 14682
+    },
+    "93": {
+      "sim_ok": 769,
+      "sim_fail": 6166,
+      "asm_error": 16362,
+      "sim_error": 4760
+    },
+    "94": {
+      "sim_ok": 83,
+      "sim_fail": 12,
+      "sim_error": 47
+    }
+  },
+  "family_stats": {
+    "seed": {
+      "sim_ok": 3
+    },
+    "delete": {
+      "sim_fail": 421,
+      "asm_error": 274,
+      "sim_error": 61
+    },
+    "move": {
+      "asm_error": 20203,
+      "sim_fail": 6785,
+      "sim_error": 4887,
+      "sim_ok": 171
+    },
+    "move_row": {
+      "asm_error": 10771,
+      "sim_fail": 2709,
+      "sim_error": 1367
+    },
+    "merge": {
+      "sim_fail": 24,
+      "asm_error": 337
+    },
+    "const": {
+      "sim_ok": 163
+    },
+    "commute": {
+      "sim_ok": 160
+    },
+    "swap": {
+      "sim_fail": 171,
+      "sim_ok": 74,
+      "asm_error": 298,
+      "sim_error": 44
+    },
+    "relocate": {
+      "sim_error": 574,
+      "asm_error": 543,
+      "sim_ok": 6,
+      "sim_fail": 361
+    },
+    "dissolve": {
+      "asm_error": 4998,
+      "sim_fail": 773,
+      "sim_error": 424
+    },
+    "reorder": {
+      "sim_ok": 161,
+      "sim_fail": 40
+    },
+    "noforward": {
+      "sim_fail": 140,
+      "sim_error": 10,
+      "asm_error": 2
+    },
+    "split": {
+      "sim_error": 58,
+      "sim_fail": 15,
+      "sim_ok": 37
+    },
+    "repair": {
+      "sim_fail": 131,
+      "asm_error": 23
+    },
+    "insert_nop": {
+      "sim_ok": 44
+    },
+    "addr": {
+      "sim_ok": 147
+    }
+  },
+  "waves": {
+    "seed": {
+      "items": 3,
+      "new": 1,
+      "cached": 2,
+      "asm_error": 0,
+      "sim_ok": 1,
+      "sim_fail": 0,
+      "sim_error": 0,
+      "simulated": 1,
+      "wall_s": 1.1
+    },
+    "finish": {
+      "items": 33599,
+      "new": 22382,
+      "cached": 11217,
+      "asm_error": 14827,
+      "sim_ok": 84,
+      "sim_fail": 4617,
+      "sim_error": 2854,
+      "simulated": 7555,
+      "wall_s": 860.6
+    },
+    "plateau": {
+      "items": 0,
+      "new": 0,
+      "cached": 0,
+      "asm_error": 0,
+      "sim_ok": 0,
+      "sim_fail": 0,
+      "sim_error": 0,
+      "simulated": 0,
+      "wall_s": 146.0
+    },
+    "moves": {
+      "items": 9090,
+      "new": 6659,
+      "cached": 2431,
+      "asm_error": 4595,
+      "sim_ok": 12,
+      "sim_fail": 1363,
+      "sim_error": 689,
+      "simulated": 2064,
+      "wall_s": 328.3
+    },
+    "dissolve": {
+      "items": 5602,
+      "new": 5473,
+      "cached": 129,
+      "asm_error": 4573,
+      "sim_ok": 0,
+      "sim_fail": 520,
+      "sim_error": 380,
+      "simulated": 900,
+      "wall_s": 202.6
+    },
+    "singles": {
+      "items": 5116,
+      "new": 1017,
+      "cached": 4099,
+      "asm_error": 463,
+      "sim_ok": 119,
+      "sim_fail": 306,
+      "sim_error": 129,
+      "simulated": 554,
+      "wall_s": 64.1
+    }
+  },
+  "campaigns": [
+    {
+      "tag": "final",
+      "best_words": 93,
+      "throughput": {
+        "submitted": 37600,
+        "cached": 11367,
+        "new": 26233,
+        "asm_error": 15736,
+        "asm_ok": 0,
+        "sim_ok": 603,
+        "sim_fail": 5362,
+        "sim_error": 4532,
+        "sim_seconds": 7234.3121370601075,
+        "asm_seconds": 2499.5013641219994,
+        "batch_seconds": 999.7106748289989,
+        "evaluated_new": 26233,
+        "simulated": 10497,
+        "wall_seconds": 999.71,
+        "new_per_second": 26.24,
+        "sim_per_second": 10.5
+      },
+      "elapsed_s": 1012.1
+    },
+    {
+      "tag": "main2",
+      "best_words": 93,
+      "throughput": {
+        "submitted": 19509,
+        "cached": 6658,
+        "new": 12851,
+        "asm_error": 9505,
+        "asm_ok": 0,
+        "sim_ok": 89,
+        "sim_fail": 2092,
+        "sim_error": 1165,
+        "sim_seconds": 3247.603486970198,
+        "asm_seconds": 2347.86466181387,
+        "batch_seconds": 573.161168948991,
+        "evaluated_new": 12851,
+        "simulated": 3346,
+        "wall_seconds": 573.16,
+        "new_per_second": 22.42,
+        "sim_per_second": 5.84
+      },
+      "elapsed_s": 575.0
+    },
+    {
+      "tag": "pilot",
+      "best_words": 93,
+      "throughput": {
+        "submitted": 301,
+        "cached": 2,
+        "new": 299,
+        "asm_error": 126,
+        "asm_ok": 0,
+        "sim_ok": 43,
+        "sim_fail": 97,
+        "sim_error": 33,
+        "sim_seconds": 150.3745537910254,
+        "asm_seconds": 21.241005375988607,
+        "batch_seconds": 22.882927855996968,
+        "evaluated_new": 299,
+        "simulated": 173,
+        "wall_seconds": 22.88,
+        "new_per_second": 13.07,
+        "sim_per_second": 7.56
+      },
+      "elapsed_s": 22.9
+    }
+  ],
+  "best": [
+    {
+      "hash": "006d7b31a2912254c07157de56c02d4aec09d01e1d22de9895191cf972495ca3",
+      "words": 93,
+      "stage": "sim_ok"
+    },
+    {
+      "hash": "00d2a438d5361280814550a2be6ad8a8bec75d410d11f7bc03b18a113e6642c6",
+      "words": 93,
+      "stage": "sim_ok"
+    },
+    {
+      "hash": "00eda17a7b3b78ed6cc3f73073e6a162c7c7e7902bddbc79f60f8957c9a88691",
+      "words": 93,
+      "stage": "sim_ok"
+    },
+    {
+      "hash": "00f10d30328cc20fb4f4e512cc55439463212adcc93760c7b42d78324f6e9abe",
+      "words": 93,
+      "stage": "sim_ok"
+    },
+    {
+      "hash": "00fcc6cdb2148d185cdc78ced0ed5da35cc1193b254956649c2be2eff9150e83",
+      "words": 93,
+      "stage": "sim_ok"
+    },
+    {
+      "hash": "0190f8106c1907efb08b7b29c798d561a2fe1097fc33a920a0783dc1093dd784",
+      "words": 93,
+      "stage": "sim_ok"
+    },
+    {
+      "hash": "02c6dda8abb7624a71e54c1d707d39c25036116dfa9531edc86e7ab6cfa1c937",
+      "words": 93,
+      "stage": "sim_ok"
+    },
+    {
+      "hash": "02f2a8823881c5160b8fd694d9a984ecde00c02eeee9617e84ac187919ae541d",
+      "words": 93,
+      "stage": "sim_ok"
+    },
+    {
+      "hash": "030f7eb76a8e3b445275a077c23d709c5ee32e1dfdfbc48852b1decb80bf20bb",
+      "words": 93,
+      "stage": "sim_ok"
+    },
+    {
+      "hash": "0312d4bfe9689a57e703e60568280f8e8ff16ff7b92b244f0792dcb34455cfd6",
+      "words": 93,
+      "stage": "sim_ok"
+    }
+  ]
+}

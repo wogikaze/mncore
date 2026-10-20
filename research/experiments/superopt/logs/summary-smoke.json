@@ -1,0 +1,49 @@
+{
+  "tag": "smoke",
+  "base_words": 93,
+  "best_words": 93,
+  "waves": {
+    "seed": {
+      "wave": "seed",
+      "items": 1,
+      "new": 0,
+      "cached": 1,
+      "asm_error": 0,
+      "sim_ok": 0,
+      "sim_fail": 0,
+      "sim_error": 0,
+      "simulated": 0,
+      "wall_s": 0.0,
+      "new_per_s": 0.0,
+      "best_words": 93
+    }
+  },
+  "family_stats": {
+    "seed": {
+      "sim_ok": 1
+    }
+  },
+  "mismatch_hist": {
+    "0": 1
+  },
+  "error_hist": {},
+  "throughput": {
+    "submitted": 1,
+    "cached": 1,
+    "new": 0,
+    "asm_error": 0,
+    "asm_ok": 0,
+    "sim_ok": 0,
+    "sim_fail": 0,
+    "sim_error": 0,
+    "sim_seconds": 0.0,
+    "asm_seconds": 0.0,
+    "batch_seconds": 0.00015862999862292781,
+    "evaluated_new": 0,
+    "simulated": 0,
+    "wall_seconds": 0.0,
+    "new_per_second": 0.0,
+    "sim_per_second": 0.0
+  },
+  "elapsed_s": 0.0
+}

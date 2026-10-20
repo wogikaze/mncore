@@ -1,0 +1,21 @@
+[04:44:37] start tag=chain workers=10 waves=seed,finish,repair,plateau
+[04:44:37] wave seed
+[04:44:37] *** NEW BEST words=93 (seed)  -> /home/wogikaze/wgkz/mncore/research/experiments/superopt/best/93w_9b36e271ad.vsm
+[04:44:37] wave seed: {"wave": "seed", "items": 1, "new": 0, "cached": 1, "asm_error": 0, "sim_ok": 0, "sim_fail": 0, "sim_error": 0, "simulated": 0, "wall_s": 0.0, "new_per_s": 0.0, "best_words": 93}
+{"wave": {"wave": "seed", "items": 1, "new": 0, "cached": 1, "asm_error": 0, "sim_ok": 0, "sim_fail": 0, "sim_error": 0, "simulated": 0, "wall_s": 0.0, "new_per_s": 0.0, "best_words": 93}, "family_stats": {"seed": {"sim_ok": 1}}}
+[04:44:37] finish: 68 partial-dissolution seeds
+[04:44:50]   finish: 2000 best=93
+[04:45:31]   finish: 4000 best=93
+[04:47:00]   finish: 6000 best=93
+[04:47:55]   finish: 8000 best=93
+[04:48:24] wave finish: {"wave": "finish", "items": 9376, "new": 5471, "cached": 3905, "asm_error": 3815, "sim_ok": 9, "sim_fail": 970, "sim_error": 677, "simulated": 1656, "wall_s": 225.8, "new_per_s": 24.23, "best_words": 93}
+{"wave": {"wave": "finish", "items": 9376, "new": 5471, "cached": 3905, "asm_error": 3815, "sim_ok": 9, "sim_fail": 970, "sim_error": 677, "simulated": 1656, "wall_s": 225.8, "new_per_s": 24.23, "best_words": 93}, "family_stats": {"seed": {"sim_ok": 1}, "delete": {"sim_fail": 42, "asm_error": 29, "sim_error": 9}, "move": {"asm_error": 4588, "sim_fail": 1550, "sim_error": 977, "sim_ok": 51}, "move_row": {"asm_error": 1637, "sim_fail": 342, "sim_error": 151}}}
+[04:48:24] repair: scanning assembler-rejected candidates
+[04:51:36] repair: 347 data-race candidates to repair
+[04:52:25] wave repair_race: {"wave": "repair_race", "items": 1388, "new": 1369, "cached": 19, "asm_error": 1186, "sim_ok": 0, "sim_fail": 161, "sim_error": 22, "simulated": 183, "wall_s": 46.3, "new_per_s": 29.55, "best_words": 93}
+{"wave": {"wave": "repair_race", "items": 1388, "new": 1369, "cached": 19, "asm_error": 1186, "sim_ok": 0, "sim_fail": 161, "sim_error": 22, "simulated": 183, "wall_s": 46.3, "new_per_s": 29.55, "best_words": 93}, "family_stats": {"seed": {"sim_ok": 1}, "delete": {"sim_fail": 42, "asm_error": 29, "sim_error": 9}, "move": {"asm_error": 4588, "sim_fail": 1550, "sim_error": 977, "sim_ok": 51}, "move_row": {"asm_error": 1637, "sim_fail": 342, "sim_error": 151}, "repair_race": {"sim_fail": 163, "asm_error": 1196, "sim_error": 22, "sim_ok": 7}}}
+[04:52:25] repair: 56 nop-deletion follow-ups
+[04:52:25] wave repair_race_delete: {"wave": "repair_race_delete", "items": 56, "new": 0, "cached": 56, "asm_error": 0, "sim_ok": 0, "sim_fail": 0, "sim_error": 0, "simulated": 0, "wall_s": 0.0, "new_per_s": 0.0, "best_words": 93}
+{"wave": {"wave": "repair_race_delete", "items": 56, "new": 0, "cached": 56, "asm_error": 0, "sim_ok": 0, "sim_fail": 0, "sim_error": 0, "simulated": 0, "wall_s": 0.0, "new_per_s": 0.0, "best_words": 93}, "family_stats": {"seed": {"sim_ok": 1}, "delete": {"sim_fail": 42, "asm_error": 29, "sim_error": 9}, "move": {"asm_error": 4588, "sim_fail": 1550, "sim_error": 977, "sim_ok": 51}, "move_row": {"asm_error": 1637, "sim_fail": 342, "sim_error": 151}, "repair_race": {"sim_fail": 163, "asm_error": 1196, "sim_error": 22, "sim_ok": 7}, "repair_race_delete": {"asm_error": 56}}}
+[04:52:26] plateau: 5000 evaluations, pool=48
+[04:52:26] plateau: 130 seed states

@@ -1,0 +1,146 @@
+DEBUG-LM0(n0c0b0m0p0,0):(0, 0) (0x00000069, 0x0000007a) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,2):(0, 0) (0x0000007a, 0x00000042) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,4):(0, 0) (0x00000075, 0x0000007a) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,6):(0, 0) (0x0000007a, 0x0000000a) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,8):(0, 0) (0x00000031, 0x0000000a) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,10):(0, 0) (0x00000032, 0x0000000a) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,12):(0, 0) (0x00000046, 0x00000069) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,14):(0, 0) (0x0000007a, 0x0000007a) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,16):(0, 5) (0x0000000a, 0x40a00000) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,18):(0, 0) (0x00000000, 0x00000042) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,20):(0, 0) (0x00000075, 0x0000007a) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,22):(0, 0) (0x0000007a, 0x0000000a) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,24):(0, 0) (0x00000046, 0x00000069) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,26):(0, 0) (0x0000007a, 0x0000007a) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,28):(0, 47) (0x0000000a, 0x423c0000) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,30):(0, 49) (0x00000000, 0x42440000) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,32):(0, 0) (0x00000000, 0x00000046) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,34):(0, 0) (0x00000069, 0x0000007a) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,36):(0, 0) (0x0000007a, 0x0000000a) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,38):(0, 0) (0x00000042, 0x00000075) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,40):(0, 0) (0x0000007a, 0x0000007a) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,42):(0, 2) (0x0000000a, 0x40000000) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,44):(4, 0) (0x40800000, 0x00000046) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,46):(0, 0) (0x00000069, 0x0000007a) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,48):(0, 0) (0x0000007a, 0x0000000a) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,50):(11, 11) (0x41300000, 0x41300000) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,52):(13, 13) (0x41500000, 0x41500000) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,54):(0, 0) (0x00000046, 0x00000069) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,56):(0, 0) (0x0000007a, 0x0000007a) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,58):(0, 0) (0x00000042, 0x00000075) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,60):(0, 0) (0x0000007a, 0x0000007a) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,62):(0, 0) (0x00000000, 0x00000000) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,64):(0, 0) (0x00000000, 0x00000000) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,66):(0, 0) (0x00000000, 0x00000000) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,68):(0, 0) (0x00000000, 0x00000000) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,70):(0, 0) (0x00000000, 0x00000000) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,72):(0, 0) (0x00000000, 0x00000000) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,74):(0, 0) (0x00000000, 0x00000000) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,76):(0, 0) (0x00000000, 0x00000000) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,78):(0, 0) (0x00000000, 0x00000000) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,80):(0, 0) (0x00000000, 0x00000000) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,82):(0, 0) (0x00000000, 0x00000000) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,84):(0, 0) (0x00000000, 0x00000000) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,86):(0, 0) (0x00000000, 0x00000000) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,88):(0, 0) (0x00000000, 0x00000000) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,90):(0, 0) (0x00000000, 0x00000000) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,92):(0, 0) (0x00000000, 0x00000000) #d getf $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,94):(0, 0) (0x00000000, 0x00000000) #d getf $lm0n0c0b0m0p0 48
+DEBUG-TREG(n0c0b0m0p0,0):(f:0, i:{{0x0,0x0},{0x0,0x8}}, v:0x8) #d get $ltn0c0b0m0p0 2
+DEBUG-TREG(n0c0b0m0p0,1):(f:0, i:{{0x0,0x0},{0x0,0x8}}, v:0x8) #d get $ltn0c0b0m0p0 2
+DEBUG-LM0(n0c0b0m0p0,0):(f:0, i:{{0x0,0x69},{0x0,0x7A}}, v:0x690000007A) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,2):(f:0, i:{{0x0,0x7A},{0x0,0x42}}, v:0x7A00000042) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,4):(f:0, i:{{0x0,0x75},{0x0,0x7A}}, v:0x750000007A) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,6):(f:0, i:{{0x0,0x7A},{0x0,0xA}}, v:0x7A0000000A) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,8):(f:0, i:{{0x0,0x31},{0x0,0xA}}, v:0x310000000A) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,10):(f:0, i:{{0x0,0x32},{0x0,0xA}}, v:0x320000000A) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,12):(f:0, i:{{0x0,0x46},{0x0,0x69}}, v:0x4600000069) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,14):(f:0, i:{{0x0,0x7A},{0x0,0x7A}}, v:0x7A0000007A) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,16):(f:0, i:{{0x0,0xA},{0x40A0,0x0}}, v:0xA40A00000) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,18):(f:0, i:{{0x0,0x0},{0x0,0x42}}, v:0x42) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,20):(f:0, i:{{0x0,0x75},{0x0,0x7A}}, v:0x750000007A) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,22):(f:0, i:{{0x0,0x7A},{0x0,0xA}}, v:0x7A0000000A) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,24):(f:0, i:{{0x0,0x46},{0x0,0x69}}, v:0x4600000069) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,26):(f:0, i:{{0x0,0x7A},{0x0,0x7A}}, v:0x7A0000007A) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,28):(f:0, i:{{0x0,0xA},{0x423C,0x0}}, v:0xA423C0000) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,30):(f:0, i:{{0x0,0x0},{0x4244,0x0}}, v:0x42440000) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,32):(f:0, i:{{0x0,0x0},{0x0,0x46}}, v:0x46) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,34):(f:0, i:{{0x0,0x69},{0x0,0x7A}}, v:0x690000007A) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,36):(f:0, i:{{0x0,0x7A},{0x0,0xA}}, v:0x7A0000000A) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,38):(f:0, i:{{0x0,0x42},{0x0,0x75}}, v:0x4200000075) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,40):(f:0, i:{{0x0,0x7A},{0x0,0x7A}}, v:0x7A0000007A) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,42):(f:0, i:{{0x0,0xA},{0x4000,0x0}}, v:0xA40000000) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,44):(f:512, i:{{0x4080,0x0},{0x0,0x46}}, v:0x4080000000000046) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,46):(f:0, i:{{0x0,0x69},{0x0,0x7A}}, v:0x690000007A) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,48):(f:0, i:{{0x0,0x7A},{0x0,0xA}}, v:0x7A0000000A) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,50):(f:1.04858e+06, i:{{0x4130,0x0},{0x4130,0x0}}, v:0x4130000041300000) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,52):(f:4.19431e+06, i:{{0x4150,0x0},{0x4150,0x0}}, v:0x4150000041500000) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,54):(f:0, i:{{0x0,0x46},{0x0,0x69}}, v:0x4600000069) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,56):(f:0, i:{{0x0,0x7A},{0x0,0x7A}}, v:0x7A0000007A) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,58):(f:0, i:{{0x0,0x42},{0x0,0x75}}, v:0x4200000075) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,60):(f:0, i:{{0x0,0x7A},{0x0,0x7A}}, v:0x7A0000007A) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,62):(f:0, i:{{0x0,0x0},{0x0,0x0}}, v:0x0) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,64):(f:0, i:{{0x0,0x0},{0x0,0x0}}, v:0x0) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,66):(f:0, i:{{0x0,0x0},{0x0,0x0}}, v:0x0) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,68):(f:0, i:{{0x0,0x0},{0x0,0x0}}, v:0x0) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,70):(f:0, i:{{0x0,0x0},{0x0,0x0}}, v:0x0) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,72):(f:0, i:{{0x0,0x0},{0x0,0x0}}, v:0x0) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,74):(f:0, i:{{0x0,0x0},{0x0,0x0}}, v:0x0) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,76):(f:0, i:{{0x0,0x0},{0x0,0x0}}, v:0x0) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,78):(f:0, i:{{0x0,0x0},{0x0,0x0}}, v:0x0) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,80):(f:0, i:{{0x0,0x0},{0x0,0x0}}, v:0x0) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,82):(f:0, i:{{0x0,0x0},{0x0,0x0}}, v:0x0) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,84):(f:0, i:{{0x0,0x0},{0x0,0x0}}, v:0x0) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,86):(f:0, i:{{0x0,0x0},{0x0,0x0}}, v:0x0) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,88):(f:0, i:{{0x0,0x0},{0x0,0x0}}, v:0x0) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,90):(f:0, i:{{0x0,0x0},{0x0,0x0}}, v:0x0) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,92):(f:0, i:{{0x0,0x0},{0x0,0x0}}, v:0x0) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b0m0p0,94):(f:0, i:{{0x0,0x0},{0x0,0x0}}, v:0x0) #d get $lm0n0c0b0m0p0 48
+DEBUG-LM0(n0c0b1m3p1,0):(0, 0) (0x00000069, 0x0000007a) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,2):(0, 0) (0x0000007a, 0x00000042) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,4):(0, 0) (0x00000075, 0x0000007a) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,6):(0, 0) (0x0000007a, 0x0000000a) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,8):(0, 0) (0x00000039, 0x00000030) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,10):(0, 0) (0x00000031, 0x0000000a) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,12):(0, 0) (0x00000039, 0x00000030) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,14):(0, 0) (0x00000032, 0x0000000a) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,16):(0, 0) (0x00000046, 0x00000069) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,18):(0, 0) (0x0000007a, 0x0000007a) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,20):(0, 20) (0x0000000a, 0x41a00000) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,22):(0, 34) (0x00000000, 0x42080000) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,24):(0, 0) (0x00000000, 0x00000042) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,26):(0, 0) (0x00000075, 0x0000007a) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,28):(0, 0) (0x0000007a, 0x0000000a) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,30):(0, 0) (0x00000046, 0x00000069) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,32):(0, 0) (0x0000007a, 0x0000007a) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,34):(0, 0) (0x0000000a, 0x00000000) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,36):(0, 0) (0x00000000, 0x00000000) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,38):(0, 0) (0x00000000, 0x00000000) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,40):(1, 1) (0x3f800000, 0x3f800000) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,42):(2, 0) (0x40000000, 0x00000046) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,44):(0, 0) (0x00000069, 0x0000007a) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,46):(0, 0) (0x0000007a, 0x0000000a) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,48):(0, 0) (0x00000042, 0x00000075) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,50):(0, 0) (0x0000007a, 0x0000007a) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,52):(0, 13) (0x0000000a, 0x41500000) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,54):(14, 14) (0x41600000, 0x41600000) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,56):(0, 0) (0x00000000, 0x00000046) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,58):(0, 0) (0x00000069, 0x0000007a) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,60):(0, 0) (0x0000007a, 0x0000000a) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,62):(0, 0) (0x00000000, 0x00000000) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,64):(0, 0) (0x00000000, 0x00000000) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,66):(0, 0) (0x00000000, 0x00000000) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,68):(0, 0) (0x00000000, 0x00000000) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,70):(0, 0) (0x00000046, 0x00000069) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,72):(0, 0) (0x0000007a, 0x0000007a) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,74):(0, 0) (0x00000042, 0x00000075) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,76):(0, 0) (0x0000007a, 0x0000007a) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,78):(0, 0) (0x00000000, 0x00000000) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,80):(0, 0) (0x00000000, 0x00000000) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,82):(0, 0) (0x00000000, 0x00000000) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,84):(0, 0) (0x00000000, 0x00000000) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,86):(0, 0) (0x00000000, 0x00000000) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,88):(0, 0) (0x00000000, 0x00000000) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,90):(0, 0) (0x00000000, 0x00000000) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,92):(0, 0) (0x00000000, 0x00000000) #d getf $lm0n0c0b1m3p1 48
+DEBUG-LM0(n0c0b1m3p1,94):(0, 0) (0x00000000, 0x00000000) #d getf $lm0n0c0b1m3p1 48

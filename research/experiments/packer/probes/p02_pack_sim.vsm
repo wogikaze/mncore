@@ -1,0 +1,15 @@
+imm i"8" $r8
+imm i"0x41" $r0
+imm i"0x42" $r1
+imm i"0x43" $r2
+imm i"0x44" $r3
+ilsl $r0 $aluf $nowrite
+ior $r1 $aluf $nowrite
+ilsl $aluf $r8 $nowrite
+ior $r2 $aluf $nowrite
+ilsl $aluf $r8 $nowrite
+ior $r3 $aluf $ls0v/1100
+nop
+d getf $s0n0c0b0m0p0 4
+d get $ls0n0c0b0m0p0 1
+d get $lls0n0c0b0m0p0 1

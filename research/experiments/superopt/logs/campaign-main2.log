@@ -1,0 +1,24 @@
+[04:34:58] start tag=main2 workers=10 waves=seed,moves,dissolve,singles
+[04:34:58] wave seed
+[04:34:58] *** NEW BEST words=93 (seed)  -> /home/wogikaze/wgkz/mncore/research/experiments/superopt/best/93w_9b36e271ad.vsm
+[04:34:58] wave seed: {"wave": "seed", "items": 1, "new": 0, "cached": 1, "asm_error": 0, "sim_ok": 0, "sim_fail": 0, "sim_error": 0, "simulated": 0, "wall_s": 0.0, "new_per_s": 0.0, "best_words": 93}
+{"wave": {"wave": "seed", "items": 1, "new": 0, "cached": 1, "asm_error": 0, "sim_ok": 0, "sim_fail": 0, "sim_error": 0, "simulated": 0, "wall_s": 0.0, "new_per_s": 0.0, "best_words": 93}, "family_stats": {"seed": {"sim_ok": 1}}}
+[04:34:58] generating moves
+[04:36:40]   moves: 2000 best=93
+[04:38:18]   moves: 4000 best=93
+[04:39:56]   moves: 6000 best=93
+[04:40:23]   moves: 8000 best=93
+[04:40:27] wave moves: {"wave": "moves", "items": 9090, "new": 6659, "cached": 2431, "asm_error": 4595, "sim_ok": 12, "sim_fail": 1363, "sim_error": 689, "simulated": 2064, "wall_s": 328.3, "new_per_s": 20.29, "best_words": 93}
+{"wave": {"wave": "moves", "items": 9090, "new": 6659, "cached": 2431, "asm_error": 4595, "sim_ok": 12, "sim_fail": 1363, "sim_error": 689, "simulated": 2064, "wall_s": 328.3, "new_per_s": 20.29, "best_words": 93}, "family_stats": {"seed": {"sim_ok": 1}, "move": {"sim_error": 611, "sim_fail": 1284, "asm_error": 3987, "sim_ok": 12}, "move_row": {"sim_error": 161, "asm_error": 2375, "sim_fail": 660}}}
+[04:40:27] generating dissolve
+[04:41:35]   dissolve: 2000 best=93
+[04:42:49]   dissolve: 4000 best=93
+[04:43:50] wave dissolve: {"wave": "dissolve", "items": 5602, "new": 5473, "cached": 129, "asm_error": 4573, "sim_ok": 0, "sim_fail": 520, "sim_error": 380, "simulated": 900, "wall_s": 202.6, "new_per_s": 27.02, "best_words": 93}
+{"wave": {"wave": "dissolve", "items": 5602, "new": 5473, "cached": 129, "asm_error": 4573, "sim_ok": 0, "sim_fail": 520, "sim_error": 380, "simulated": 900, "wall_s": 202.6, "new_per_s": 27.02, "best_words": 93}, "family_stats": {"seed": {"sim_ok": 1}, "move": {"sim_error": 611, "sim_fail": 1284, "asm_error": 3987, "sim_ok": 12}, "move_row": {"sim_error": 161, "asm_error": 2375, "sim_fail": 660}, "dissolve": {"sim_fail": 520, "asm_error": 4662, "sim_error": 420}}}
+[04:43:50] generating singles (relocate stride 8)
+[04:43:50]   singles: 2000 best=93
+[04:43:59]   singles: 4000 best=93
+[04:44:33] wave singles: {"wave": "singles", "items": 4816, "new": 719, "cached": 4097, "asm_error": 337, "sim_ok": 77, "sim_fail": 209, "sim_error": 96, "simulated": 382, "wall_s": 42.3, "new_per_s": 16.98, "best_words": 93}
+{"wave": {"wave": "singles", "items": 4816, "new": 719, "cached": 4097, "asm_error": 337, "sim_ok": 77, "sim_fail": 209, "sim_error": 96, "simulated": 382, "wall_s": 42.3, "new_per_s": 16.98, "best_words": 93}, "family_stats": {"seed": {"sim_ok": 1}, "move": {"sim_error": 611, "sim_fail": 1284, "asm_error": 3987, "sim_ok": 12}, "move_row": {"sim_error": 322, "asm_error": 4750, "sim_fail": 1320}, "dissolve": {"sim_fail": 520, "asm_error": 4662, "sim_error": 420}, "delete": {"sim_error": 6, "sim_fail": 52, "asm_error": 35}, "repair": {"asm_error": 2, "sim_fail": 9}, "merge": {"sim_fail": 2, "asm_error": 38}, "commute": {"sim_ok": 13}, "const": {"sim_ok": 23}, "addr": {"sim_ok": 135}, "noforward": {"sim_error": 7, "sim_fail": 75, "asm_error": 2}, "split": {"sim_ok": 12, "sim_fail": 3, "sim_error": 15}, "reorder": {"sim_ok": 21, "sim_fail": 9}, "swap": {"sim_error": 8, "sim_fail": 22, "asm_error": 51, "sim_ok": 11}, "relocate": {"sim_error": 179, "sim_fail": 361, "asm_error": 524, "sim_ok": 5}}}
+[04:44:33] done submitted=19509 best=93
+[04:44:33] summary -> /home/wogikaze/wgkz/mncore/research/experiments/superopt/logs/summary-main2.json

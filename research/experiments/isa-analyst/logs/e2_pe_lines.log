@@ -1,0 +1,22 @@
+OK   1 expr, plain                                j=1 m=0 words=1
+OK   1 expr, flat 4-cycle                         j=1 m=0 words=1
+OK   1 expr, adri v                               j=1 m=0 words=1
+FAIL 2 expr ALU+MAU                               Instruction field conflict detected between `out_lm1` and `out_lm1`.
+OK   2 expr ALU+L1BM gather                       j=1 m=0 words=1
+OK   3 expr ALU+L1BM+L2BM                         j=1 m=0 words=1
+FAIL 4 expr + L1BM dist                           Non-turnaround L1BM->Reg operation cannot issued together with Reg->L1BM operation.
+FAIL 3 expr ALU+MAUcalc+MAUmwrite                 Instruction field conflict detected between `lm0` and `in_lm0`.
+FAIL 4 expr ALU+MAUcalc+MAUmwrite+MAUmread        Instruction field conflict detected between `lm0` and `in_lm0`.
+FAIL same group twice (ALU+ALU)                   Instruction field conflict detected between `alu` and `alu`.
+FAIL same group twice (MAU calc)                  Instruction field conflict detected between `mau` and `mau`.
+OK   imm alone                                    j=1 m=0 words=1
+FAIL imm + ALU on LM1                             Instruction field conflict detected between `alu` and `alu`.
+FAIL imm + ALU reading LM0 (forbidden)            Instruction field conflict detected between `alu` and `alu`.
+FAIL imm + MAU only                               Instruction field conflict detected between `immediate` and `lm0`.
+FAIL two imms one line                            Instruction field conflict detected between `alu` and `immediate`.
+FAIL nop + expr (forbidden)                       Instruction field conflict detected between `nop` and `alu`.
+FAIL nop + wait                                   Tag must consists of 3 letters and starts with 'i'.
+FAIL MV sharing a PE line                         Too many operand given to mv instruction.
+OK   two MV lines                                 j=0 m=2 words=2
+OK   MV small vs large size                       j=0 m=2 words=2
+OK   multi-output ALU expr                        j=1 m=0 words=1

@@ -1,0 +1,108 @@
+ ln grp                                    imm  stage   source
+  1 alu                                                 ipackbit $subpeid $t $nowrite
+  2 mau-mwrite,alu                         IMM          dmwrite $aluf $lx0; imm i"56" $r16/1000
+  3 mau-mread,alu                          IMM          dmread $lx0 $lr0v4; imm i"599" $s31
+  4 alu                                                 iinc $mreadf $lr2v4
+  5 alu                                                 iand $l1bid $r[0,0,12,2] $nowrite
+  6 alu                                                 ilsl $aluf $r[0,0,14,8] $s0v
+  7 alu                                                 iand $peid $r[14,16,0,0] $nowrite
+  8 alu                                                 ilsl $aluf $r[2,14,0,0] $nowrite
+  9 alu                                                 ior $aluf $s2v $s0v
+ 10 alu                                                 ilsl $l2bid $r10 $nowrite
+ 11 alu                                                 ior $aluf $s0 $nowrite
+ 12 alu                                                 ior $aluf $s1 $nowrite
+ 13 alu                                                 ilsl $aluf $r4 $s0/1000 $r0/1000
+ 14 alu                                    IMM          imm ui"0x4b000000" $t
+ 15 alu,mau-calc                           IMM          imm i"8" $r[16,17,28,0]/1110 $s28; hvpassa -$aluf $omr15
+ 16 alu                                                 ior $lr2v $t $nowrite
+ 17 mau-calc                                            fvadd $aluf -$t $lr102v $ls102v $ln102v
+ 18 alu                                    IMM          imm i"32" $r25
+ 19 alu                                    IMM          imm i"408" $r26
+ 20 alu                                    IMM          imm i"4672" $r27
+ 21 mau-calc                                            fvadd $lr102v $ls108 $lr110v $ls110v $ln110v
+ 22 mau-calc,alu                           IMM          fvadd $mauf $ls108 $lr118v; imm i"13" $s29
+ 23 mau-calc,alu                           IMM          fvadd $mauf $ls108 $lr126v; imm i"66" $s30
+ 24 alu,mau-calc                                        isub $s0 $r24v $omr1; fvpassa $ln102 $lr78
+ 25 alu                                                 iadd $r0 $s28v $n1/$imr1
+ 26 alu                                    IMM          imm f"63" $s3
+ 27 mau-calc,alu                           IMM          fvadd $aluf $r116 $s[8,8,3,8]/$imr1; imm ui"0x4b000030" $lr12
+ 28 mau-calc,alu                           IMM          fvadd $mauf $r116 $s[8,8,8,3]/$imr1; imm ui"0x4b00000a" $r71
+ 29 mau-calc,alu                           IMM          fvfma $ln110 $ls104v $lr116 $lr136v10; imm f"0.0158731" $s[8,7,8,8]/$imr1
+ 30 alu                                    IMM          imm f"0.0140846" $s[8,8,7,8]/$imr1
+ 31 alu                                    IMM          imm f"0.0126583" $s[8,8,8,7]/$imr1
+ 32 alu,mau-calc                                        ior $t $n1 $nowrite; fvpassa $lr[102,104,108,114] $lm40v
+ 33 mau-calc,alu                                        fvadd $aluf -$t $n1; ipassa $r4v2 $s5/$imr1
+ 34 mau-calc,alu                           IMM          fvmul $mauf $s7 $nowrite; imm f"0.1" $lr76
+ 35 alu                                                 ffloor $mauf $s20
+ 36 mau-calc,alu                           IMM          fvfma $s3 -$aluf $n1 $nowrite; imm ui"0x4b00007a" $r[65,66,69,70]
+ 37 alu                                                 fftoi $mauf $r19
+ 38 alu,mau-calc                                        ior $s5 $t $nowrite; fvpassa $lr[116,122,126,128] $lm48v
+ 39 mau-calc,alu                                        fvadd $aluf -$t $nowrite; iadd/$imr15 $s5 $r[6,10,16,71] $s129v2
+ 40 mau-calc,noforward                                  fvfma $mauf $ls102v $lr[106,106,116,136] $m17v2; noforward
+ 41 mau-calc                                            fvfma $mauf $ls110v $lr[136,156,166,166] $m25v2
+ 42 alu                                                 lsub $lr18 $ls132 $omr1
+ 43 mau-calc,alu                                        fvadd $t $lr104 $t/$imr1; lsub $aluf $ls4 $omr1
+ 44 mau-calc,alu                                        fvadd $mauf $lr104 $t/$imr1; lsub $aluf $ls130 $omr1
+ 45 mau-calc,alu                                        fvadd $mauf $lr104 $t/$imr1; lsub $aluf $ls134 $omr1
+ 46 mau-calc,alu                                        fvadd $mauf $lr104 $t/$imr1; lsub $aluf $ls134 $omr1
+ 47 mau-calc,alu                                        fvadd $mauf $lr104 $t/$imr1; lsub $aluf $ls4 $omr1
+ 48 mau-calc,alu                           IMM          fvadd $mauf $lr104 $t/$imr1; imm f"0.01" $lr74
+ 49 alu                                    IMM          imm f"0.001" $lr72
+ 50 mau-calc                                            fvfma $s20 $r130 $mt[43,41,0,0] $s48v/1100
+ 51 alu                                                 fftoi $lmt[18,18,16,16] $t
+ 52 mau-calc,alu                           IMM          fvmul $lr72v $ls48 $nowrite; imm ui"0x4b000046" $r63
+ 53 alu                                                 ffloor $mauf $ls18v
+ 54 mau-calc,alu                           IMM          fvadd $aluf $lr12 $nowrite; imm ui"0x4b000069" $r64
+ 55 mau-calc,alu                           IMM          fvfma/$imr15 $ls16v -$lr120 $mauf $ls20v; imm ui"0x4b000042" $r67
+ 56 alu                                    IMM          imm ui"0x4b000075" $r68
+ 57 alu                                                 ipassa $s[20,22,21,23] $mt[0,1,0,1]
+ 58 alu                                                 ipassa $s[24,26,25,27] $mt[2,3,2,3]
+ 59 mau-calc,alu                                        fvpassa/$imr15 $r71 $mt4; ladd $ls4 $ls4 $t $ls6
+ 60 mau-calc                                            fvpassa/$imr15 $lr64v $lm0v
+ 61 mau-calc                                            fvpassa/$imr15 $r63v $mt8v
+ 62 mau-calc,alu                                        fvpassa/$imr15 $r71 $mt12; ladd $t $ls4 $t
+ 63 nop                                                 nop
+ 64 mau-calc                                            fvpassa/$imr15 $r67v $mt13v
+ 65 mau-calc                                            fvpassa/$imr15 $r63v $mt18v
+ 66 mau-calc,alu                                        fvpassa/$imr15 $r71 $mt[17,22,22,22]; ladd $t $ls6 $t
+ 67 nop                                                 nop
+ 68 mau-calc                                            fvpassa/$imr15 $r63v $mt23v
+ 69 mau-calc                                            fvpassa/$imr15 $r67v $mt28v
+ 70 mau-calc,alu                                        fvpassa/$imr15 $r71 $mt[27,32,32,32]; ladd $t $ls4 $t
+ 71 nop                                                 nop
+ 72 mau-calc                                            fvpassa/$imr15 $r63v $mt33v
+ 73 mau-calc,alu                                        fvpassa/$imr15 $r71 $mt37; ladd $t $ls6 $t
+ 74 nop                                                 nop
+ 75 mau-calc                                            fvpassa/$imr15 $r63v $mt38v
+ 76 mau-calc                                            fvpassa/$imr15 $r67v $mt42v
+ 77 alu                                                 lpassa $lr18 $t
+ 78 alu                                    IMM          imm i"8" $r8
+ 79 alu                                                 ilsl $mt[0,4,0,4] $aluf $nowrite
+ 80 alu                                                 ior $mt[1,5,1,5] $aluf $nowrite
+ 81 alu                                                 ilsl $aluf $r8 $nowrite
+ 82 alu                                                 ior $mt[2,6,2,6] $aluf $nowrite
+ 83 alu                                                 ilsl $aluf $r8 $nowrite
+ 84 alu                                                 ior $mt[3,7,3,7] $aluf $s0v/1100
+ 85 nop                                                 nop
+ 86 l1bm                                                l1bmd $ls0 $lb0
+ 87 nop                                                 nop
+ 88 nop                                                 nop
+ 89 l2bm                                                l2bmd $lb0 $lc0
+ 90 l2bm                                                l2bmd $lb32 $lc256
+ 91 nop                                                 nop
+ 92 MV                                          -       mvd/n512 $lc0 $p0@0
+ 93 MV                                          -       mvp/n4096 $p0@0 $d0@0
+
+words=93 lines_expressions=121 imm_total=24
+expression counts by group:
+  alu          66
+  mau-calc     41
+  nop          8
+  l2bm         2
+  mv           2
+  mau-mwrite   1
+  mau-mread    1
+  noforward    1
+  l1bm         1
+imm-only lines (10): [14, 18, 19, 20, 26, 30, 31, 49, 56, 78]
+max single-group expression count = 66 (alu)

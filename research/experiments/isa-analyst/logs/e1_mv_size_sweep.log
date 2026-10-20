@@ -1,0 +1,21 @@
+form                              16      32      48      64     128    1024   16384   32640   32704   32752   32768
+mvp PDM->DRAM single           align   align   align   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   align   field
+mvp DRAM->PDM single           align   align   align   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   align   field
+mvp PDM->L2BM parallel         align   align   align   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   align   field
+mvp L2BM->PDM parallel         align   align   align   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   align   field
+mvp L2BM->DRAM single          align   align   align   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   align   field
+mvp L2BM->DRAM parallel        align   align   align   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   align   field
+mvp DRAM->L2BM parallel        align   align   align   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   align   field
+mvd L2BM->PDM gather           align   align   align   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   align   field
+mvd PDM->DRAM distribute       align   align   align   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   align   field
+mvd DRAM->PDM gather           align   align   align   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   align   field
+mvd PDM->L2BM distribute       align   align   align   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   align   field
+mvb PDM->L2BM broadcast        align   align   align   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   align   field
+mvb2 DRAM->L2BM in-group       align   align   align   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   align   field
+mvb4 DRAM->L2BM inter-grp      align   align   align   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   align   field
+mvb DRAM->L2BM inter-grp       align   align   align   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   align   field
+mvr2dfadd L2BM->DRAM           align   align   align   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   align   field
+mvr4dfadd L2BM->DRAM           align   align   align   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   align   field
+mvrdfadd  L2BM->DRAM           align   align   align   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   align   field
+mvrdfadd  L2BM->PDM            align   align   align   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   align   field
+mvr2dfadd L2BM->PDM            align   align   align   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   OK(1)   align   field

@@ -1,0 +1,147 @@
+{
+  "tag": "final",
+  "base_words": 93,
+  "best_words": 93,
+  "waves": {
+    "seed": {
+      "wave": "seed",
+      "items": 1,
+      "new": 0,
+      "cached": 1,
+      "asm_error": 0,
+      "sim_ok": 0,
+      "sim_fail": 0,
+      "sim_error": 0,
+      "simulated": 0,
+      "wall_s": 0.0,
+      "new_per_s": 0.0,
+      "best_words": 93
+    },
+    "finish": {
+      "wave": "finish",
+      "items": 33599,
+      "new": 22382,
+      "cached": 11217,
+      "asm_error": 14827,
+      "sim_ok": 84,
+      "sim_fail": 4617,
+      "sim_error": 2854,
+      "simulated": 7555,
+      "wall_s": 860.6,
+      "new_per_s": 26.01,
+      "best_words": 93
+    },
+    "plateau": {
+      "wave": "plateau",
+      "evals": 4000,
+      "pool": 48,
+      "improved": 0,
+      "wall_s": 146.0,
+      "best_words": 93
+    }
+  },
+  "family_stats": {
+    "seed": {
+      "sim_ok": 1
+    },
+    "delete": {
+      "sim_fail": 317,
+      "asm_error": 204,
+      "sim_error": 49
+    },
+    "move": {
+      "asm_error": 16216,
+      "sim_fail": 5501,
+      "sim_error": 4276,
+      "sim_ok": 159
+    },
+    "move_row": {
+      "asm_error": 6021,
+      "sim_fail": 1389,
+      "sim_error": 1045
+    },
+    "merge": {
+      "sim_fail": 20,
+      "asm_error": 261
+    },
+    "const": {
+      "sim_ok": 140
+    },
+    "commute": {
+      "sim_ok": 147
+    },
+    "swap": {
+      "sim_fail": 127,
+      "sim_ok": 52,
+      "asm_error": 196,
+      "sim_error": 28
+    },
+    "relocate": {
+      "sim_error": 391,
+      "asm_error": 19,
+      "sim_ok": 1
+    },
+    "dissolve": {
+      "asm_error": 336,
+      "sim_fail": 253,
+      "sim_error": 4
+    },
+    "reorder": {
+      "sim_ok": 119,
+      "sim_fail": 22
+    },
+    "noforward": {
+      "sim_fail": 65,
+      "sim_error": 3
+    },
+    "split": {
+      "sim_error": 28,
+      "sim_fail": 9,
+      "sim_ok": 13
+    },
+    "repair": {
+      "sim_fail": 113,
+      "asm_error": 19
+    },
+    "insert_nop": {
+      "sim_ok": 44
+    },
+    "addr": {
+      "sim_ok": 12
+    }
+  },
+  "mismatch_hist": {
+    "0": 688,
+    "1000+": 6544,
+    "10-99": 318,
+    "100-999": 828,
+    "1-9": 126
+  },
+  "error_hist": {
+    "field conflict": 18563,
+    "program": 5824,
+    "what()": 4144,
+    "terminate called after throwing an instance of 'grape_pfn": 303,
+    "conflict one-time mask imr": 159,
+    "DataRaceError": 103
+  },
+  "throughput": {
+    "submitted": 37600,
+    "cached": 11367,
+    "new": 26233,
+    "asm_error": 15736,
+    "asm_ok": 0,
+    "sim_ok": 603,
+    "sim_fail": 5362,
+    "sim_error": 4532,
+    "sim_seconds": 7234.3121370601075,
+    "asm_seconds": 2499.5013641219994,
+    "batch_seconds": 999.7106748289989,
+    "evaluated_new": 26233,
+    "simulated": 10497,
+    "wall_seconds": 999.71,
+    "new_per_second": 26.24,
+    "sim_per_second": 10.5
+  },
+  "elapsed_s": 1012.1
+}

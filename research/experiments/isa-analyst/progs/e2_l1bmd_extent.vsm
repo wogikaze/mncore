@@ -1,0 +1,4 @@
+ipassa $peid $ls0
+nop/3
+l1bmd $ls0 $lb0
+d get $lb0n0c0b0m0p0 272

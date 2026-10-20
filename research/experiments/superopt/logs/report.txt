@@ -1,0 +1,93 @@
+cache: /home/wogikaze/wgkz/mncore/research/experiments/superopt/cache/candidates.sqlite
+distinct candidates: 48446
+stages: {'asm_error': 31044, 'sim_error': 7047, 'sim_fail': 9503, 'sim_ok': 852}
+simulated: 17402   assembler-rejected: 31044
+assembled fraction: 35.92%
+
+frequency by result:
+  asm_error      31044   64.1%
+  sim_error       7047   14.5%
+  sim_fail        9503   19.6%
+  sim_ok           852    1.8%
+
+simulator mismatch distribution:
+  0             852
+  1-9           128
+  10-99         293
+  100-999      1161
+  1000+        7921
+
+accepted candidates by word count:
+  93 words: 769
+  94 words: 83
+
+best accepted:
+  93 words  006d7b31a2  sim_ok
+  93 words  00d2a438d5  sim_ok
+  93 words  00eda17a7b  sim_ok
+  93 words  00f10d3032  sim_ok
+  93 words  00fcc6cdb2  sim_ok
+  93 words  0190f8106c  sim_ok
+  93 words  02c6dda8ab  sim_ok
+  93 words  02f2a88238  sim_ok
+  93 words  030f7eb76a  sim_ok
+  93 words  0312d4bfe9  sim_ok
+  93 words  03223ecb5b  sim_ok
+  93 words  033633c7b7  sim_ok
+  93 words  0374bfff98  sim_ok
+  93 words  0375b9220a  sim_ok
+  93 words  039cf532b3  sim_ok
+
+failure modes:
+   21380  field conflict                   e.g. Instruction field conflict detected between `immediate` and `lm0`.
+    5039  other assembler abort            e.g. terminate called after throwing an instance of 'grape_pfn::hazard_checker::gpfn3::DataRaceError'
+    1801  DataRace-T                       e.g. what():  A racy memory read at T is detected at line 14. Consider inserting a nop here.
+    1764  uninitialized forwarding register e.g. program:1: runtime error: accessing IALU forwarding register failed; the error on the previous step is: uninit
+    1447  DataRace-GRF1                    e.g. what():  A racy memory read at GRF1 address 0 is detected at line 10. Consider inserting a nop here.
+     737  program:35: runtime error: accessing MAU forwarding register e.g. program:35: runtime error: accessing MAU forwarding register failed; the error on the previous step is: MAU is
+     599  program:40: runtime error: accessing MAU forwarding register e.g. program:40: runtime error: accessing MAU forwarding register failed; the error on the previous step is: MAU is
+     596  DataRace-GRF0                    e.g. what():  A racy memory read at GRF0 address 0 is detected at line 4. Consider inserting a nop here.
+     534  DataRace-LM1                     e.g. what():  A racy memory read at LM1 address 1 is detected at line 35. Consider inserting a nop here.
+     456  program:55: runtime error: accessing MAU forwarding register e.g. program:55: runtime error: accessing MAU forwarding register failed; the error on the previous step is: MAU is
+     367  program:53: runtime error: accessing MAU forwarding register e.g. program:53: runtime error: accessing MAU forwarding register failed; the error on the previous step is: MAU is
+     308  program:37: runtime error: accessing MAU forwarding register e.g. program:37: runtime error: accessing MAU forwarding register failed; the error on the previous step is: MAU is
+     236  conflict one-time mask imr       e.g. conflict one-time mask imr
+     189  program:27: runtime error: accessing MAU forwarding register e.g. program:27: runtime error: accessing MAU forwarding register failed; the error on the previous step is: MAU is
+     182  program:28: runtime error: accessing MAU forwarding register e.g. program:28: runtime error: accessing MAU forwarding register failed; the error on the previous step is: MAU is
+     159  program:23: runtime error: accessing MAU forwarding register e.g. program:23: runtime error: accessing MAU forwarding register failed; the error on the previous step is: MAU is
+     139  program:21: runtime error: accessing MAU forwarding register e.g. program:21: runtime error: accessing MAU forwarding register failed; the error on the previous step is: MAU is
+     139  program:90: runtime error: accessing MAU forwarding register e.g. program:90: runtime error: accessing MAU forwarding register failed; the error on the previous step is: MAU is
+     137  program:87: runtime error: accessing MAU forwarding register e.g. program:87: runtime error: accessing MAU forwarding register failed; the error on the previous step is: MAU is
+     129  program:52: runtime error: accessing MAU forwarding register e.g. program:52: runtime error: accessing MAU forwarding register failed; the error on the previous step is: MAU is
+
+all candidates by assembled word count:
+  0: 31044
+  92: 5565
+  93: 11695
+  94: 142
+
+per-family results (all summary files):
+  addr       sim_ok=147 sim_fail=0 sim_error=0 asm_error=0
+  commute    sim_ok=160 sim_fail=0 sim_error=0 asm_error=0
+  const      sim_ok=163 sim_fail=0 sim_error=0 asm_error=0
+  delete     sim_ok=0 sim_fail=421 sim_error=61 asm_error=274
+  dissolve   sim_ok=0 sim_fail=773 sim_error=424 asm_error=4998
+  insert_nop sim_ok=44 sim_fail=0 sim_error=0 asm_error=0
+  merge      sim_ok=0 sim_fail=24 sim_error=0 asm_error=337
+  move       sim_ok=171 sim_fail=6785 sim_error=4887 asm_error=20203
+  move_row   sim_ok=0 sim_fail=2709 sim_error=1367 asm_error=10771
+  noforward  sim_ok=0 sim_fail=140 sim_error=10 asm_error=2
+  relocate   sim_ok=6 sim_fail=361 sim_error=574 asm_error=543
+  reorder    sim_ok=161 sim_fail=40 sim_error=0 asm_error=0
+  repair     sim_ok=0 sim_fail=131 sim_error=0 asm_error=23
+  seed       sim_ok=4 sim_fail=0 sim_error=0 asm_error=0
+  split      sim_ok=37 sim_fail=15 sim_error=58 asm_error=0
+  swap       sim_ok=74 sim_fail=171 sim_error=44 asm_error=298
+
+waves:
+  seed: {"wave": "seed", "items": 4, "new": 0, "cached": 1, "asm_error": 0, "sim_ok": 1, "sim_fail": 0, "sim_error": 0, "simulated": 1, "wall_s": 0.0, "new_per_s": 0.0, "best_words": 93}
+  finish: {"wave": "finish", "items": 33599, "new": 22382, "cached": 11217, "asm_error": 14827, "sim_ok": 84, "sim_fail": 4617, "sim_error": 2854, "simulated": 7555, "wall_s": 860.6, "new_per_s": 26.01, "best_words": 93}
+  plateau: {"wave": "plateau", "evals": 4000, "pool": 48, "improved": 0, "wall_s": 146.0, "best_words": 93}
+  moves: {"wave": "moves", "items": 9090, "new": 6659, "cached": 2431, "asm_error": 4595, "sim_ok": 12, "sim_fail": 1363, "sim_error": 689, "simulated": 2064, "wall_s": 328.3, "new_per_s": 20.29, "best_words": 93}
+  dissolve: {"wave": "dissolve", "items": 5602, "new": 5473, "cached": 129, "asm_error": 4573, "sim_ok": 0, "sim_fail": 520, "sim_error": 380, "simulated": 900, "wall_s": 202.6, "new_per_s": 27.02, "best_words": 93}
+  singles: {"wave": "singles", "items": 5116, "new": 719, "cached": 4097, "asm_error": 463, "sim_ok": 119, "sim_fail": 209, "sim_error": 96, "simulated": 554, "wall_s": 42.3, "new_per_s": 16.98, "best_words": 93}

@@ -1,0 +1,20 @@
+# write 8*o into s0 of every PE, transfer to DRAM, check mapping
+iand $l1bid $r[0,0,12,2] $nowrite
+ilsl $aluf $r[0,0,14,8] $s0v
+iand $peid $r[14,16,0,0] $nowrite
+ilsl $aluf $r[2,14,0,0] $nowrite
+ior $aluf $s2v $s0v
+ilsl $l2bid $r10 $nowrite
+ior $aluf $s0 $nowrite
+ior $aluf $s1 $nowrite
+ilsl $aluf $r4 $s0/1000
+nop
+nop
+l1bmd $ls0 $lb0
+nop
+nop
+l2bmd $lb0 $lc0
+l2bmd $lb32 $lc256
+nop
+mvd/n512 $lc0 $p0@0
+mvp/n4096 $p0@0 $d0@0

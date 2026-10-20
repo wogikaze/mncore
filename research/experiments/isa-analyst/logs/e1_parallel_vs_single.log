@@ -1,0 +1,12 @@
+### mvp/n64 $lc0@.0 $d0
+rc=0
+DEBUG-DRAM(n0,0):(0) (0x0000000000000000) #d getd $d0n0 1
+DEBUG-DRAM(n1,0):(0) (0x0000000000000000) #d getd $d0n1 1
+DEBUG-DRAM(n2,0):(0) (0x0000000000000000) #d getd $d0n2 1
+DEBUG-DRAM(n3,0):(0) (0x0000000000000000) #d getd $d0n3 1
+### mvp/n64 $lc0@0.0 $d0@0
+rc=0
+DEBUG-DRAM(n0,0):(0) (0x0000000000000000) #d getd $d0n0 1
+DEBUG-DRAM(n1,0):(0) (0x0000000000800000) #d getd $d0n1 1
+DEBUG-DRAM(n2,0):(0) (0x0000000000800000) #d getd $d0n2 1
+DEBUG-DRAM(n3,0):(0) (0x0000000000800000) #d getd $d0n3 1

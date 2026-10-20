@@ -1,0 +1,13 @@
+OK   2: ALU + MAUcalc                             j=1 m=0 words=1
+OK   2: MAUcalc + mwrite (same precision+src)     j=1 m=0 words=1
+OK   3: ALU + MAUcalc + mwrite                    j=1 m=0 words=1
+OK   4: + L1BM                                    j=1 m=0 words=1
+OK   5: + L2BM                                    j=1 m=0 words=1
+OK   6: + noforward                               j=1 m=0 words=1
+OK   7: + wait i01 (tagged MV first)              j=1 m=1 words=2
+OK   8: + l2bmdarw                                j=1 m=1 words=2
+OK   MAU: calc+mwrite same prec                   j=1 m=0 words=1
+FAIL MAU: calc+mread same prec                    terminate called after throwing an instance of 'std::bad_optional_access'
+FAIL MAU: mwrite+mread same prec                  terminate called after throwing an instance of 'std::bad_optional_access'
+FAIL 3 MAU groups rejected                        Instruction field conflict detected between `mau+mwrite` and `mread`.
+FAIL ALU + mwrite + mread                         terminate called after throwing an instance of 'std::bad_optional_access'

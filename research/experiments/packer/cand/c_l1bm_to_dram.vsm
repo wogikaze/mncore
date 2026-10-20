@@ -1,0 +1,7 @@
+imm i"0" $s0
+nop
+nop
+l1bmd $ls0 $lb0
+nop
+nop
+mvp/n64 $lb0 $d0@0

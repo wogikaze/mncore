@@ -1,0 +1,37 @@
+# Failed / aborted experiments (commands + observed errors)
+
+## 1. dmwrite/dmread without matrix address -> assembler crash (not an ISA limit)
+$ printf 'dmread $lx $lr16v\n' | assemble3 --instruction-mode flat
+  terminate called after throwing an instance of 'std::bad_optional_access'
+  # cause: dmread grammar is `dmread $l(x|y)<addr> <dst>`; `$lx` is missing <addr>.
+  # with `$lx0` it assembles (j=1) and co-issues: see logs/e3_mread.log
+
+## 2. MV sharing a PE line
+$ printf 'lpassa $lm0v $ln0v;mvp/n64 $p0@0 $d0@0\n' | assemble3
+  Non PE operation after separator.  (ParseError, rc=-6)
+  # MV is always its own word.
+
+## 3. Three MAU groups on one line
+$ printf 'fvpassa $ls16v $ls24v;fmwrite $ls16v $ly0;fmread $lx0 $lr16v\n' | assemble3
+  Instruction field conflict detected between `mau+mwrite` and `mread`.
+  # at most 2 of {mau-calc, mau-mwrite, mau-mread} per step
+
+## 4. Different MAU precisions on one line
+$ ... 'dvpassa $ls16v $ls24v;gmwrite ...'
+  Instruction field conflict detected between `mau_dmode` and `mau_dmode`.
+  # the two co-issued MAU groups must use the same precision
+
+## 5. imm with LM0 access
+$ printf 'imm i"7" $r16;lpassa $lm0v $ln0v\n' | assemble3
+  Instruction field conflict detected between `alu` and `alu`.   # imm is ALU group
+$ printf 'imm i"7" $r16;dvpassa $lm0v $ln8v\n' | assemble3
+  Instruction field conflict detected between `immediate` and `lm0`.  # bit sharing
+
+## 6. mvn128 is not a mnemonic
+$ printf 'mvn128/n64 $p0@0 $d0@0\n' | assemble3
+  No valid operation in this line.
+
+## 7. PDM debug get with no preceding MV
+$ gpfn3_package_main -i (mvnop; d get $p0n0 4) -d out --offchip-memory-init unique
+  Segmentation fault (core dumped)
+  # not pursued; PDM contents were probed indirectly through mvp PDM->DRAM instead.

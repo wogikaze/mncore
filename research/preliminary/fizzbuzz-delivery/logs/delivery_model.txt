@@ -1,0 +1,23 @@
+BFS shortest delivery length: 8
+  t= 0  l1bmd(PE->L1BM)
+  t= 1  nop
+  t= 2  nop
+  t= 3  l2bmd(L1BM->L2BM)
+  t= 4  l2bmd(L1BM->L2BM)
+  t= 5  nop
+  t= 6  mvd/n512(L2BM->PDM)
+  t= 7  mvp/n4096(PDM->DRAM)
+BFS reachable states per layer: [1, 2, 3, 4, 6, 10, 17, 29, 46]
+
+brute force, K=7 (all 6^7 action sequences): NO PLAN
+CP-SAT K=7: INFEASIBLE  wall=0.002s branches=0 conflicts=0
+CP-SAT K=8: OPTIMAL  wall=0.029s branches=0 conflicts=0
+  t= 0  l1bmd(PE->L1BM)
+  t= 1  nop
+  t= 2  nop
+  t= 3  l2bmd(L1BM->L2BM)
+  t= 4  l2bmd(L1BM->L2BM)
+  t= 5  nop
+  t= 6  mvd/n512(L2BM->PDM)
+  t= 7  mvp/n4096(PDM->DRAM)
+ALL CHECKS PASSED: delivery minimum 8 (K=7 UNSAT, K=8 SAT)

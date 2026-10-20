@@ -1,0 +1,36 @@
+== transfer-size field limit (n is in long words; 8 bytes each) ==
+OK   mvp L2BM->DRAM single group n4096                              
+OK   mvp L2BM->DRAM single group n16384                             
+FAIL mvp L2BM->DRAM single group n32768                             Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with
+OK   mvp PDM->DRAM n4096                                            
+OK   mvp PDM->DRAM n16384                                           
+FAIL mvp PDM->DRAM n32768                                           Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with
+OK   mvr2dfadd L2BM->DRAM per group n4096                           
+OK   mvr2dfadd L2BM->DRAM per group n16384                          
+FAIL mvr2dfadd L2BM->DRAM per group n32768                          Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with
+OK   mvr4dfadd L2BM->DRAM per group n4096                           
+OK   mvr4dfadd L2BM->DRAM per group n16384                          
+FAIL mvr4dfadd L2BM->DRAM per group n32768                          Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with
+OK   mvrdfadd L2BM->DRAM per group n4096                            
+OK   mvrdfadd L2BM->DRAM per group n16384                           
+FAIL mvrdfadd L2BM->DRAM per group n32768                           Check `static_cast<uint64_t>(x) >> sum_len' == `0u' failed! ( in operator= at bitfield.h:88 with
+
+== PDM->DRAM forms: single-individual copy vs distribution ==
+OK   mvp (copy) PDM->DRAM n16384                                    
+OK   mvd (distribution) PDM->DRAM n16384                            
+FAIL mvd (distribution) with dst group suffix [must FAIL]           Group ids or l2bm ids of operands are invalid.
+
+== capacity of one L1BM->L2BM word (l2bmd) ==
+   SDM 3.6.7.8: 64 words/cycle * 4 cycles * 8 L2BM = 2048 long words/word
+   measured: deleting one of the two l2bmd from the Accepted 93-word
+   solution gives exactly 2048 mismatched DRAM words (see verify.sh)
+
+== hazard gaps (same address) ==
+FAIL l2bmd, mvd/n512 (0 nop)  [must FAIL]                           terminate called after throwing an instance of 'grape_pfn::hazard_checker::gpfn3::DataRaceError'
+OK   l2bmd, nop, mvd/n512 (1 nop)  [must OK]                        
+FAIL l1bmd, l2bmd (0 nop)  [must FAIL]                              terminate called after throwing an instance of 'grape_pfn::hazard_checker::gpfn3::DataRaceError'
+FAIL l1bmd, nop, l2bmd (1 nop)  [must FAIL]                         terminate called after throwing an instance of 'grape_pfn::hazard_checker::gpfn3::DataRaceError'
+OK   l1bmd, nop, nop, l2bmd (2 nop)  [must OK]                      
+FAIL ipassa->s0, l1bmd s0 (0 nop)  [must FAIL]                      terminate called after throwing an instance of 'grape_pfn::hazard_checker::gpfn3::DataRaceError'
+OK   ipassa->s0, nop, l1bmd s0 (1 nop)  [must OK]                   
+OK   mvd, mvp (0 nop)  [must OK]                                    

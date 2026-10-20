@@ -1,0 +1,8 @@
+OK   dmread alone (correct syntax)            j=1 m=0 words=1
+OK   dmread + imm                             j=1 m=0 words=1
+OK   dmread + lpassa(ALU)                     j=1 m=0 words=1
+OK   dmread + lpassa + L1BM + L2BM            j=1 m=0 words=1
+OK   dvpassa + dmread (both d)                j=1 m=0 words=1
+OK   dmwrite + dmread (both d)                j=1 m=0 words=1
+FAIL calc+mwrite+mread rejected               Instruction field conflict detected between `in_grf1` and `in_grf1`.
+OK   dmread two dests                         j=1 m=0 words=1

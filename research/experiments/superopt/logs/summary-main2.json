@@ -1,0 +1,166 @@
+{
+  "tag": "main2",
+  "base_words": 93,
+  "best_words": 93,
+  "waves": {
+    "seed": {
+      "wave": "seed",
+      "items": 1,
+      "new": 0,
+      "cached": 1,
+      "asm_error": 0,
+      "sim_ok": 0,
+      "sim_fail": 0,
+      "sim_error": 0,
+      "simulated": 0,
+      "wall_s": 0.0,
+      "new_per_s": 0.0,
+      "best_words": 93
+    },
+    "moves": {
+      "wave": "moves",
+      "items": 9090,
+      "new": 6659,
+      "cached": 2431,
+      "asm_error": 4595,
+      "sim_ok": 12,
+      "sim_fail": 1363,
+      "sim_error": 689,
+      "simulated": 2064,
+      "wall_s": 328.3,
+      "new_per_s": 20.29,
+      "best_words": 93
+    },
+    "dissolve": {
+      "wave": "dissolve",
+      "items": 5602,
+      "new": 5473,
+      "cached": 129,
+      "asm_error": 4573,
+      "sim_ok": 0,
+      "sim_fail": 520,
+      "sim_error": 380,
+      "simulated": 900,
+      "wall_s": 202.6,
+      "new_per_s": 27.02,
+      "best_words": 93
+    },
+    "singles": {
+      "wave": "singles",
+      "items": 4816,
+      "new": 719,
+      "cached": 4097,
+      "asm_error": 337,
+      "sim_ok": 77,
+      "sim_fail": 209,
+      "sim_error": 96,
+      "simulated": 382,
+      "wall_s": 42.3,
+      "new_per_s": 16.98,
+      "best_words": 93
+    }
+  },
+  "family_stats": {
+    "seed": {
+      "sim_ok": 1
+    },
+    "move": {
+      "sim_error": 611,
+      "sim_fail": 1284,
+      "asm_error": 3987,
+      "sim_ok": 12
+    },
+    "move_row": {
+      "sim_error": 322,
+      "asm_error": 4750,
+      "sim_fail": 1320
+    },
+    "dissolve": {
+      "sim_fail": 520,
+      "asm_error": 4662,
+      "sim_error": 420
+    },
+    "delete": {
+      "sim_error": 6,
+      "sim_fail": 52,
+      "asm_error": 35
+    },
+    "repair": {
+      "asm_error": 2,
+      "sim_fail": 9
+    },
+    "merge": {
+      "sim_fail": 2,
+      "asm_error": 38
+    },
+    "commute": {
+      "sim_ok": 13
+    },
+    "const": {
+      "sim_ok": 23
+    },
+    "addr": {
+      "sim_ok": 135
+    },
+    "noforward": {
+      "sim_error": 7,
+      "sim_fail": 75,
+      "asm_error": 2
+    },
+    "split": {
+      "sim_ok": 12,
+      "sim_fail": 3,
+      "sim_error": 15
+    },
+    "reorder": {
+      "sim_ok": 21,
+      "sim_fail": 9
+    },
+    "swap": {
+      "sim_error": 8,
+      "sim_fail": 22,
+      "asm_error": 51,
+      "sim_ok": 11
+    },
+    "relocate": {
+      "sim_error": 179,
+      "sim_fail": 361,
+      "asm_error": 524,
+      "sim_ok": 5
+    }
+  },
+  "mismatch_hist": {
+    "0": 233,
+    "1000+": 2903,
+    "1-9": 41,
+    "10-99": 71,
+    "100-999": 642
+  },
+  "error_hist": {
+    "field conflict": 9017,
+    "DataRaceError": 4500,
+    "program": 1568,
+    "terminate called after throwing an instance of 'grape_pfn": 364,
+    "conflict one-time mask imr": 168,
+    "Too many operand given to mv instruction.": 2
+  },
+  "throughput": {
+    "submitted": 19509,
+    "cached": 6658,
+    "new": 12851,
+    "asm_error": 9505,
+    "asm_ok": 0,
+    "sim_ok": 89,
+    "sim_fail": 2092,
+    "sim_error": 1165,
+    "sim_seconds": 3247.603486970198,
+    "asm_seconds": 2347.86466181387,
+    "batch_seconds": 573.161168948991,
+    "evaluated_new": 12851,
+    "simulated": 3346,
+    "wall_seconds": 573.16,
+    "new_per_second": 22.42,
+    "sim_per_second": 5.84
+  },
+  "elapsed_s": 575.0
+}

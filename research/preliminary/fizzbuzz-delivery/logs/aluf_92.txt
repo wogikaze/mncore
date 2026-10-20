@@ -1,0 +1,1 @@
+proofs/lowerbound/vsm/aluf_92.vsm: FAIL words=92 lines=92 mismatches=4096

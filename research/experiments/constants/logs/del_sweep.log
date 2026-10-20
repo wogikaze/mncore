@@ -1,0 +1,93 @@
+L  1 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_1.vsm: ERROR words=92 program:1: runtime error: accessing IALU forwarding register failed; the error on the previous step is: uninitialized IALU forwarding register   | ipackbit $subpeid $t $nowrite
+L  2 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_2.vsm: FAIL words=92 lines=92 mismatches=4065   | dmwrite $aluf $lx0; imm i"56" $r16/1000
+L  3 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_3.vsm: FAIL words=92 lines=92 mismatches=4087   | dmread $lx0 $lr0v4; imm i"599" $s31
+L  4 DELETE: FAIL      what():  A racy memory read at GRF0 address 0 is detected at line 4. Consider inserting a nop here.   | iinc $mreadf $lr2v4
+L  5 DELETE: FAIL      what():  A racy memory read at GRF0 address 14 is detected at line 5. Consider inserting a nop here.   | iand $l1bid $r[0,0,12,2] $nowrite
+L  6 DELETE: FAIL      what():  A racy memory read at GRF0 address 14 is detected at line 6. Consider inserting a nop here.   | ilsl $aluf $r[0,0,14,8] $s0v
+L  7 DELETE: FAIL      what():  A racy memory read at GRF1 address 2 is detected at line 8. Consider inserting a nop here.   | iand $peid $r[14,16,0,0] $nowrite
+L  8 DELETE: FAIL      what():  A racy memory read at GRF1 address 2 is detected at line 8. Consider inserting a nop here.   | ilsl $aluf $r[2,14,0,0] $nowrite
+L  9 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_9.vsm: FAIL words=92 lines=92 mismatches=4087   | ior $aluf $s2v $s0v
+L 10 DELETE: FAIL      what():  A racy memory read at GRF1 address 0 is detected at line 10. Consider inserting a nop here.   | ilsl $l2bid $r10 $nowrite
+L 11 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_11.vsm: FAIL words=92 lines=92 mismatches=3966   | ior $aluf $s0 $nowrite
+L 12 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_12.vsm: FAIL words=92 lines=92 mismatches=3829   | ior $aluf $s1 $nowrite
+L 13 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_13.vsm: FAIL words=92 lines=92 mismatches=4095   | ilsl $aluf $r4 $s0/1000 $r0/1000
+L 14 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_14.vsm: FAIL words=92 lines=92 mismatches=4096   | imm ui"0x4b000000" $t
+L 15 DELETE: FAIL      what():  A racy memory read at T is detected at line 15. Consider inserting a nop here.   | imm i"8" $r[16,17,28,0]/1110 $s28; hvpassa -$aluf $omr15
+L 16 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_16.vsm: FAIL words=92 lines=92 mismatches=4088   | ior $lr2v $t $nowrite
+L 17 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_17.vsm: FAIL words=92 lines=92 mismatches=4088   | fvadd $aluf -$t $lr102v $ls102v $ln102v
+L 18 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_18.vsm: FAIL words=92 lines=92 mismatches=3   | imm i"32" $r25
+L 19 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_19.vsm: FAIL words=92 lines=92 mismatches=50   | imm i"408" $r26
+L 20 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_20.vsm: FAIL words=92 lines=92 mismatches=581   | imm i"4672" $r27
+L 21 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_21.vsm: ERROR words=92 program:21: runtime error: accessing MAU forwarding register failed; the error on the previous step is: MAU is disabled   | fvadd $lr102v $ls108 $lr110v $ls110v $ln110v
+L 22 DELETE: FAIL      what():  A LM1 memory port is unavailable at line 23. Consider inserting a nop here.   | fvadd $mauf $ls108 $lr118v; imm i"13" $s29
+L 23 DELETE: FAIL      what():  A LM1 memory port is unavailable at line 23. Consider inserting a nop here.   | fvadd $mauf $ls108 $lr126v; imm i"66" $s30
+L 24 DELETE: FAIL      what():  A racy memory read at GRF1 address 29 is detected at line 24. Consider inserting a nop here.   | isub $s0 $r24v $omr1; fvpassa $ln102 $lr78
+L 25 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_25.vsm: FAIL words=92 lines=92 mismatches=4044   | iadd $r0 $s28v $n1/$imr1
+L 26 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_26.vsm: FAIL words=92 lines=92 mismatches=4089   | imm f"63" $s3
+L 27 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_27.vsm: ERROR words=92 program:27: runtime error: accessing MAU forwarding register failed; the error on the previous step is: MAU is disabled   | fvadd $aluf $r116 $s[8,8,3,8]/$imr1; imm ui"0x4b000030" $lr12
+L 28 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_28.vsm: FAIL words=92 lines=92 mismatches=4088   | fvadd $mauf $r116 $s[8,8,8,3]/$imr1; imm ui"0x4b00000a" $r71
+L 29 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_29.vsm: FAIL words=92 lines=92 mismatches=2609   | fvfma $ln110 $ls104v $lr116 $lr136v10; imm f"0.0158731" $s[8,7,8,8]/$i
+L 30 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_30.vsm: FAIL words=92 lines=92 mismatches=532   | imm f"0.0140846" $s[8,8,7,8]/$imr1
+L 31 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_31.vsm: FAIL words=92 lines=92 mismatches=3512   | imm f"0.0126583" $s[8,8,8,7]/$imr1
+L 32 DELETE: FAIL      what():  A racy memory read at GRF1 address 7 is detected at line 33. Consider inserting a nop here.   | ior $t $n1 $nowrite; fvpassa $lr[102,104,108,114] $lm40v
+L 33 DELETE: FAIL      what():  A racy memory read at GRF1 address 7 is detected at line 33. Consider inserting a nop here.   | fvadd $aluf -$t $n1; ipassa $r4v2 $s5/$imr1
+L 34 DELETE: FAIL      what():  A racy memory read at LM1 address 1 is detected at line 35. Consider inserting a nop here.   | fvmul $mauf $s7 $nowrite; imm f"0.1" $lr76
+L 35 DELETE: FAIL      what():  A racy memory read at LM1 address 1 is detected at line 35. Consider inserting a nop here.   | ffloor $mauf $s20
+L 36 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_36.vsm: ERROR words=92 program:36: runtime error: accessing MAU forwarding register failed; the error on the previous step is: MAU is disabled   | fvfma $s3 -$aluf $n1 $nowrite; imm ui"0x4b00007a" $r[65,66,69,70]
+L 37 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_37.vsm: FAIL words=92 lines=92 mismatches=4044   | fftoi $mauf $r19
+L 38 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_38.vsm: FAIL words=92 lines=92 mismatches=3672   | ior $s5 $t $nowrite; fvpassa $lr[116,122,126,128] $lm48v
+L 39 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_39.vsm: FAIL words=92 lines=92 mismatches=3673   | fvadd $aluf -$t $nowrite; iadd/$imr15 $s5 $r[6,10,16,71] $s129v2
+L 40 DELETE: FAIL      what():  A racy memory read at GRF1 address 132 is detected at line 41. Consider inserting a nop here.   | fvfma $mauf $ls102v $lr[106,106,116,136] $m17v2; noforward
+L 41 DELETE: FAIL      what():  A racy memory read at GRF1 address 132 is detected at line 41. Consider inserting a nop here.   | fvfma $mauf $ls110v $lr[136,156,166,166] $m25v2
+L 42 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_42.vsm: FAIL words=92 lines=92 mismatches=2902   | lsub $lr18 $ls132 $omr1
+L 43 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_43.vsm: ERROR words=92 program:43: runtime error: accessing MAU forwarding register failed; the error on the previous step is: MAU is disabled   | fvadd $t $lr104 $t/$imr1; lsub $aluf $ls4 $omr1
+L 44 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_44.vsm: FAIL words=92 lines=92 mismatches=624   | fvadd $mauf $lr104 $t/$imr1; lsub $aluf $ls130 $omr1
+L 45 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_45.vsm: FAIL words=92 lines=92 mismatches=624   | fvadd $mauf $lr104 $t/$imr1; lsub $aluf $ls134 $omr1
+L 46 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_46.vsm: FAIL words=92 lines=92 mismatches=624   | fvadd $mauf $lr104 $t/$imr1; lsub $aluf $ls134 $omr1
+L 47 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_47.vsm: FAIL words=92 lines=92 mismatches=624   | fvadd $mauf $lr104 $t/$imr1; lsub $aluf $ls4 $omr1
+L 48 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_48.vsm: FAIL words=92 lines=92 mismatches=3208   | fvadd $mauf $lr104 $t/$imr1; imm f"0.01" $lr74
+L 49 DELETE: FAIL      what():  A racy memory read at T is detected at line 49. Consider inserting a nop here.   | imm f"0.001" $lr72
+L 50 DELETE: FAIL      what():  A racy memory read at GRF0 address 72 is detected at line 51. Consider inserting a nop here.   | fvfma $s20 $r130 $mt[43,41,0,0] $s48v/1100
+L 51 DELETE: FAIL      what():  A racy memory read at GRF0 address 72 is detected at line 51. Consider inserting a nop here.   | fftoi $lmt[18,18,16,16] $t
+L 52 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_52.vsm: ERROR words=92 program:52: runtime error: accessing MAU forwarding register failed; the error on the previous step is: MAU is disabled   | fvmul $lr72v $ls48 $nowrite; imm ui"0x4b000046" $r63
+L 53 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_53.vsm: FAIL words=92 lines=92 mismatches=3516   | ffloor $mauf $ls18v
+L 54 DELETE: FAIL      what():  A racy memory read at GRF1 address 18 is detected at line 54. Consider inserting a nop here.   | fvadd $aluf $lr12 $nowrite; imm ui"0x4b000069" $r64
+L 55 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_55.vsm: FAIL words=92 lines=92 mismatches=3990   | fvfma/$imr15 $ls16v -$lr120 $mauf $ls20v; imm ui"0x4b000042" $r67
+L 56 DELETE: FAIL      what():  A racy memory read at GRF1 address 20 is detected at line 56. Consider inserting a nop here.   | imm ui"0x4b000075" $r68
+L 57 DELETE: FAIL      what():  A racy memory read at GRF1 address 24 is detected at line 57. Consider inserting a nop here.   | ipassa $s[20,22,21,23] $mt[0,1,0,1]
+L 58 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_58.vsm: FAIL words=92 lines=92 mismatches=3138   | ipassa $s[24,26,25,27] $mt[2,3,2,3]
+L 59 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_59.vsm: FAIL words=92 lines=92 mismatches=3839   | fvpassa/$imr15 $r71 $mt4; ladd $ls4 $ls4 $t $ls6
+L 60 DELETE: FAIL      what():  A racy memory read at T is detected at line 60. Consider inserting a nop here.   | fvpassa/$imr15 $lr64v $lm0v
+L 61 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_61.vsm: FAIL words=92 lines=92 mismatches=585   | fvpassa/$imr15 $r63v $mt8v
+L 62 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_62.vsm: FAIL words=92 lines=92 mismatches=3319   | fvpassa/$imr15 $r71 $mt12; ladd $t $ls4 $t
+L 63 DELETE: FAIL      what():  A racy memory read at T is detected at line 63. Consider inserting a nop here.   | nop
+L 64 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_64.vsm: FAIL words=92 lines=92 mismatches=581   | fvpassa/$imr15 $r67v $mt13v
+L 65 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_65.vsm: FAIL words=92 lines=92 mismatches=580   | fvpassa/$imr15 $r63v $mt18v
+L 66 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_66.vsm: FAIL words=92 lines=92 mismatches=2758   | fvpassa/$imr15 $r71 $mt[17,22,22,22]; ladd $t $ls6 $t
+L 67 DELETE: FAIL      what():  A racy memory read at T is detected at line 67. Consider inserting a nop here.   | nop
+L 68 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_68.vsm: FAIL words=92 lines=92 mismatches=581   | fvpassa/$imr15 $r63v $mt23v
+L 69 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_69.vsm: FAIL words=92 lines=92 mismatches=580   | fvpassa/$imr15 $r67v $mt28v
+L 70 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_70.vsm: FAIL words=92 lines=92 mismatches=1765   | fvpassa/$imr15 $r71 $mt[27,32,32,32]; ladd $t $ls4 $t
+L 71 DELETE: FAIL      what():  A racy memory read at T is detected at line 71. Consider inserting a nop here.   | nop
+L 72 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_72.vsm: FAIL words=92 lines=92 mismatches=581   | fvpassa/$imr15 $r63v $mt33v
+L 73 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_73.vsm: FAIL words=92 lines=92 mismatches=983   | fvpassa/$imr15 $r71 $mt37; ladd $t $ls6 $t
+L 74 DELETE: FAIL      what():  A racy memory read at T is detected at line 74. Consider inserting a nop here.   | nop
+L 75 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_75.vsm: FAIL words=92 lines=92 mismatches=422   | fvpassa/$imr15 $r63v $mt38v
+L 76 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_76.vsm: FAIL words=92 lines=92 mismatches=209   | fvpassa/$imr15 $r67v $mt42v
+L 77 DELETE: FAIL      what():  A LM0 memory port is unavailable at line 78. Consider inserting a nop here.   | lpassa $lr18 $t
+L 78 DELETE: FAIL      what():  A racy memory read at T is detected at line 78. Consider inserting a nop here.   | imm i"8" $r8
+L 79 DELETE: FAIL      what():  A racy memory read at GRF0 address 8 is detected at line 80. Consider inserting a nop here.   | ilsl $mt[0,4,0,4] $aluf $nowrite
+L 80 DELETE: FAIL      what():  A racy memory read at GRF0 address 8 is detected at line 80. Consider inserting a nop here.   | ior $mt[1,5,1,5] $aluf $nowrite
+L 81 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_81.vsm: FAIL words=92 lines=92 mismatches=4096   | ilsl $aluf $r8 $nowrite
+L 82 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_82.vsm: FAIL words=92 lines=92 mismatches=4096   | ior $mt[2,6,2,6] $aluf $nowrite
+L 83 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_83.vsm: FAIL words=92 lines=92 mismatches=4096   | ilsl $aluf $r8 $nowrite
+L 84 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_84.vsm: FAIL words=92 lines=92 mismatches=4096   | ior $mt[3,7,3,7] $aluf $s0v/1100
+L 85 DELETE: FAIL      what():  A racy memory read at GRF1 address 0 is detected at line 85. Consider inserting a nop here.   | nop
+L 86 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_86.vsm: FAIL words=92 lines=92 mismatches=4096   | l1bmd $ls0 $lb0
+L 87 DELETE: FAIL      what():  A racy memory read at L1BM address 0 is detected at line 88. Consider inserting a nop here.   | nop
+L 88 DELETE: FAIL      what():  A racy memory read at L1BM address 0 is detected at line 88. Consider inserting a nop here.   | nop
+L 89 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_89.vsm: FAIL words=92 lines=92 mismatches=2048   | l2bmd $lb0 $lc0
+L 90 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_90.vsm: FAIL words=92 lines=92 mismatches=2048   | l2bmd $lb32 $lc256
+L 91 DELETE: FAIL      what():  A racy memory read is detected line 91. Consider inserting a nop here.   | nop
+L 92 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_92.vsm: FAIL words=92 lines=92 mismatches=4096   | mvd/n512 $lc0 $p0@0
+L 93 DELETE: ASM-OK  /home/wogikaze/wgkz/mncore/research/experiments/constants/del_93.vsm: FAIL words=92 lines=92 mismatches=4096   | mvp/n4096 $p0@0 $d0@0

@@ -1,0 +1,8 @@
+ipassa $peid $ls0
+nop/3
+l1bmd $ls0v $lb0
+nop/3
+lpassa $ls0v $ln8v;l1bmd $ls0v $lb256;l2bmd $lb0 $lc0
+d get $ln8n0c0b0m0p0 2
+d get $lb256n0c0b0m0p0 2
+d get $lc0n0c0 4

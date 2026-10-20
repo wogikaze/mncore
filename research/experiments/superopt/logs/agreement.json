@@ -1,0 +1,360 @@
+{
+  "baseline": {
+    "fbcheck": {
+      "ok": true,
+      "words": 93,
+      "lines": 93,
+      "mismatches": 0
+    },
+    "fbverify": {
+      "ok": true,
+      "score": 93,
+      "j": 91,
+      "m": 2,
+      "seconds": 4.16,
+      "tail": "/tmp/tmpvh0x67dy.vsm: ACCEPTED!! score=93 j=91 m=2 bytes=3054"
+    }
+  },
+  "word_count_agreement": [
+    {
+      "hash": "9ebd101966",
+      "stage": "sim_fail",
+      "asm_words": 93,
+      "sim_words": 93,
+      "mismatches": 1266,
+      "match": true
+    },
+    {
+      "hash": "7fbc41ffea",
+      "stage": "sim_error",
+      "asm_words": 93,
+      "sim_words": 93,
+      "mismatches": null,
+      "match": true
+    },
+    {
+      "hash": "67a75294f5",
+      "stage": "sim_error",
+      "asm_words": 93,
+      "sim_words": 93,
+      "mismatches": null,
+      "match": true
+    },
+    {
+      "hash": "48a20d61f2",
+      "stage": "sim_fail",
+      "asm_words": 93,
+      "sim_words": 93,
+      "mismatches": 4044,
+      "match": true
+    },
+    {
+      "hash": "085344859b",
+      "stage": "sim_fail",
+      "asm_words": 92,
+      "sim_words": 92,
+      "mismatches": 3672,
+      "match": true
+    },
+    {
+      "hash": "813290403a",
+      "stage": "sim_fail",
+      "asm_words": 93,
+      "sim_words": 93,
+      "mismatches": 4044,
+      "match": true
+    },
+    {
+      "hash": "2bfb4b4e59",
+      "stage": "sim_error",
+      "asm_words": 93,
+      "sim_words": 93,
+      "mismatches": null,
+      "match": true
+    },
+    {
+      "hash": "aeb6017522",
+      "stage": "sim_error",
+      "asm_words": 92,
+      "sim_words": 92,
+      "mismatches": null,
+      "match": true
+    },
+    {
+      "hash": "4e9d5a9f8b",
+      "stage": "sim_error",
+      "asm_words": 93,
+      "sim_words": 93,
+      "mismatches": null,
+      "match": true
+    },
+    {
+      "hash": "76d35f2586",
+      "stage": "sim_fail",
+      "asm_words": 92,
+      "sim_words": 92,
+      "mismatches": 4065,
+      "match": true
+    },
+    {
+      "hash": "0d73e27891",
+      "stage": "sim_fail",
+      "asm_words": 93,
+      "sim_words": 93,
+      "mismatches": 4096,
+      "match": true
+    },
+    {
+      "hash": "fbb771d0ce",
+      "stage": "sim_fail",
+      "asm_words": 93,
+      "sim_words": 93,
+      "mismatches": 4096,
+      "match": true
+    },
+    {
+      "hash": "470624b948",
+      "stage": "sim_fail",
+      "asm_words": 93,
+      "sim_words": 93,
+      "mismatches": 1930,
+      "match": true
+    },
+    {
+      "hash": "fcaef2a23a",
+      "stage": "sim_error",
+      "asm_words": 92,
+      "sim_words": 92,
+      "mismatches": null,
+      "match": true
+    },
+    {
+      "hash": "03346bb804",
+      "stage": "sim_fail",
+      "asm_words": 93,
+      "sim_words": 93,
+      "mismatches": 1689,
+      "match": true
+    },
+    {
+      "hash": "94ef40766d",
+      "stage": "sim_fail",
+      "asm_words": 93,
+      "sim_words": 93,
+      "mismatches": 4096,
+      "match": true
+    },
+    {
+      "hash": "e1dc422758",
+      "stage": "sim_error",
+      "asm_words": 93,
+      "sim_words": 93,
+      "mismatches": null,
+      "match": true
+    },
+    {
+      "hash": "4752a487a1",
+      "stage": "sim_fail",
+      "asm_words": 93,
+      "sim_words": 93,
+      "mismatches": 878,
+      "match": true
+    },
+    {
+      "hash": "94b96a5268",
+      "stage": "sim_error",
+      "asm_words": 93,
+      "sim_words": 93,
+      "mismatches": null,
+      "match": true
+    },
+    {
+      "hash": "a39595ce4d",
+      "stage": "sim_fail",
+      "asm_words": 93,
+      "sim_words": 93,
+      "mismatches": 50,
+      "match": true
+    },
+    {
+      "hash": "978ef579f0",
+      "stage": "sim_fail",
+      "asm_words": 93,
+      "sim_words": 93,
+      "mismatches": 4094,
+      "match": true
+    },
+    {
+      "hash": "4612494155",
+      "stage": "sim_fail",
+      "asm_words": 93,
+      "sim_words": 93,
+      "mismatches": 4096,
+      "match": true
+    },
+    {
+      "hash": "5051b5da6a",
+      "stage": "sim_fail",
+      "asm_words": 93,
+      "sim_words": 93,
+      "mismatches": 532,
+      "match": true
+    },
+    {
+      "hash": "bc4662419e",
+      "stage": "sim_ok",
+      "asm_words": 93,
+      "sim_words": 93,
+      "mismatches": 0,
+      "match": true
+    },
+    {
+      "hash": "6ba72cad64",
+      "stage": "sim_error",
+      "asm_words": 93,
+      "sim_words": 93,
+      "mismatches": null,
+      "match": true
+    },
+    {
+      "hash": "69bf5ff4bc",
+      "stage": "sim_fail",
+      "asm_words": 92,
+      "sim_words": 92,
+      "mismatches": 4065,
+      "match": true
+    },
+    {
+      "hash": "6c5ac348d0",
+      "stage": "sim_error",
+      "asm_words": 93,
+      "sim_words": 93,
+      "mismatches": null,
+      "match": true
+    },
+    {
+      "hash": "614f28aad6",
+      "stage": "sim_fail",
+      "asm_words": 93,
+      "sim_words": 93,
+      "mismatches": 4044,
+      "match": true
+    },
+    {
+      "hash": "428ba82ee7",
+      "stage": "sim_fail",
+      "asm_words": 93,
+      "sim_words": 93,
+      "mismatches": 3512,
+      "match": true
+    },
+    {
+      "hash": "bfaea2a40c",
+      "stage": "sim_error",
+      "asm_words": 93,
+      "sim_words": 93,
+      "mismatches": null,
+      "match": true
+    },
+    {
+      "hash": "76a63fc26c",
+      "stage": "sim_error",
+      "asm_words": 92,
+      "sim_words": 92,
+      "mismatches": null,
+      "match": true
+    },
+    {
+      "hash": "6645735491",
+      "stage": "sim_fail",
+      "asm_words": 92,
+      "sim_words": 92,
+      "mismatches": 4088,
+      "match": true
+    },
+    {
+      "hash": "7c19a9aa5f",
+      "stage": "sim_fail",
+      "asm_words": 92,
+      "sim_words": 92,
+      "mismatches": 2758,
+      "match": true
+    },
+    {
+      "hash": "4659e8c2d4",
+      "stage": "sim_fail",
+      "asm_words": 92,
+      "sim_words": 92,
+      "mismatches": 4065,
+      "match": true
+    },
+    {
+      "hash": "434a1a3579",
+      "stage": "sim_error",
+      "asm_words": 93,
+      "sim_words": 93,
+      "mismatches": null,
+      "match": true
+    },
+    {
+      "hash": "716d9e6ee2",
+      "stage": "sim_fail",
+      "asm_words": 93,
+      "sim_words": 93,
+      "mismatches": 1266,
+      "match": true
+    },
+    {
+      "hash": "7ffc8ab9ae",
+      "stage": "sim_error",
+      "asm_words": 92,
+      "sim_words": 92,
+      "mismatches": null,
+      "match": true
+    },
+    {
+      "hash": "0d2fcef8f6",
+      "stage": "sim_fail",
+      "asm_words": 93,
+      "sim_words": 93,
+      "mismatches": 4089,
+      "match": true
+    },
+    {
+      "hash": "3afd404275",
+      "stage": "sim_ok",
+      "asm_words": 93,
+      "sim_words": 93,
+      "mismatches": 0,
+      "match": true
+    },
+    {
+      "hash": "7578e82ae0",
+      "stage": "sim_error",
+      "asm_words": 93,
+      "sim_words": 93,
+      "mismatches": null,
+      "match": true
+    }
+  ],
+  "gate_sample": [
+    {
+      "hash": "006d7b31a2",
+      "words": 93,
+      "fbverify_ok": true,
+      "score": 93
+    },
+    {
+      "hash": "00d2a438d5",
+      "words": 93,
+      "fbverify_ok": true,
+      "score": 93
+    },
+    {
+      "hash": "16f107b71c",
+      "words": 93,
+      "fbverify_ok": true,
+      "score": 93
+    }
+  ]
+}

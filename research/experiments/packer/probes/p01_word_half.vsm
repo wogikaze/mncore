@@ -1,0 +1,4 @@
+imm i"0x11223344" $r0
+lpassa $lr0 $lr8
+d get $lr8n0c0b0m0p0 1
+d get $lr0n0c0b0m0p0 1

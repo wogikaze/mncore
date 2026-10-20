@@ -1,0 +1,12 @@
+### nop/n costs n words
+words j=6 m=0 total=6
+
+### MV cannot share a PE line
+ASSEMBLE FAILED rc=-6
+Non PE operation after separator.
+Line 1
+lpassa $lm0v $ln0v;mvp/n64 $p0@0 $d0@0
+                   ^^^^^^^
+left_pos=19, error_pos=19, right_pos=26;
+terminate called after throwing an instance of 'grape_pfn::assembly::gpfn3::ParseError'
+  what():  Non PE operation after separator.

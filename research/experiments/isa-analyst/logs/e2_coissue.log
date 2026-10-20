@@ -1,0 +1,17 @@
+OK   2: ALU + L1BM                                  j=1 m=0 words=1
+OK   2: ALU + L2BM                                  j=1 m=0 words=1
+FAIL 3: ALU + MAUcalc + L1BM                        Instruction field conflict detected between `in_grf1` and `in_grf1`.
+FAIL 3: ALU + MAUcalc + mwrite                      Instruction field conflict detected between `mau_dmode` and `mau_dmode`.
+FAIL 4: ALU + MAUcalc + L1BM + L2BM                 Instruction field conflict detected between `in_grf1` and `in_grf1`.
+FAIL 5: + mwrite                                    Instruction field conflict detected between `mau_dmode` and `mau_dmode`.
+FAIL 5: ALU + MAUcalc + mread + L1BM + L2BM         terminate called after throwing an instance of 'std::bad_optional_access'
+FAIL 6: + noforward                                 Instruction field conflict detected between `mau_dmode` and `mau_dmode`.
+FAIL 7: + wait i01 (tagged MV before)               Instruction field conflict detected between `mau_dmode` and `mau_dmode`.
+FAIL MAU: calc + mwrite + mread (3 MAU groups)      Instruction field conflict detected between `mau_dmode` and `mau_dmode`.
+FAIL MAU: calc + mwrite                             Instruction field conflict detected between `mau_dmode` and `mau_dmode`.
+FAIL MAU: calc + mread                              terminate called after throwing an instance of 'std::bad_optional_access'
+FAIL MAU: mwrite + mread                            Instruction field conflict detected between `mau_dmode` and `mau_dmode`.
+FAIL ALU + mwrite + mread (2 MAU)                   Instruction field conflict detected between `mau_dmode` and `mau_dmode`.
+OK   doc example 11 expressions line 2              j=2 m=0 words=2
+FAIL mvn128 mnemonic does not exist                 No valid operation in this line.
+OK   mvn128 with n128 form                          j=0 m=1 words=1

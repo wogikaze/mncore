@@ -1,0 +1,31 @@
+reference == official testcase expectation: 32766/32766 bytes, 0 mismatches
+
+naive 'first two intersecting numbers' renderer corrupts 759 words (397 block A, 362 block B), 2558 digit bytes
+
+digit owners per word: {0: 580, 1: 2466, 2: 1050}
+digit chars per word : {0: 580, 1: 316, 2: 643, 3: 632, 4: 1038, 5: 312, 6: 310, 7: 265}
+words needing >2 digit owners: 0  => 2-candidate digit stage is SUFFICIENT
+
+offset of each digit owner relative to the first intersecting number:
+  (1,)              1249
+  (0,)               902
+  (0, 1)             606
+  ()                 580
+  (1, 2)             341
+  (2,)               315
+  (0, 2)             103
+
+distinct (offsets, digit positions) signatures: 44
+words with two non-adjacent digit owners (n, n+2): 103
+
+first 8 rows:
+  word    0 [A] 1\n2\nFizz         owners=1 2          offsets=0 1    pos=0|2                ndig=2
+  word    1 [A] \n4\nBuzz\n        owners=4            offsets=1      pos=1                  ndig=1
+  word    2 [A] Fizz\n7\n8         owners=7 8          offsets=1 2    pos=5|7                ndig=2
+  word    3 [A] \nFizz\nBu         owners=             offsets=       pos=                   ndig=0
+  word    4 [A] zz\n11\nFi         owners=11           offsets=1      pos=3,4                ndig=2
+  word    5 [A] zz\n13\n14         owners=13 14        offsets=1 2    pos=3,4|6,7            ndig=4
+  word    6 [A] \nFizzBuz          owners=             offsets=       pos=                   ndig=0
+  word    7 [A] z\n16\n17\n        owners=16 17        offsets=1 2    pos=2,3|5,6            ndig=4
+
+wrote risk_digitowners.csv

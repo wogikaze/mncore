@@ -1,0 +1,63 @@
+variant first (standalone legality):
+  GRF0->GRF0           OK
+  GRF1->GRF0           OK
+  GRF0->GRF1           OK
+  GRF0->T              OK
+  passa GRF0->GRF0     OK
+
+host insertion matrix (rows=line, cols=variant):
+line  GRF0->GRF0         GRF1->GRF0         GRF0->GRF1         GRF0->T            passa GRF0->GRF0  
+   1  OK                 OK                 OK                 OK                 OK                
+   4  FAIL               FAIL               FAIL               FAIL               FAIL              
+   5  FAIL               FAIL               FAIL               FAIL               FAIL              
+   6  FAIL               FAIL               FAIL               FAIL               FAIL              
+   7  FAIL               FAIL               FAIL               FAIL               FAIL              
+   8  FAIL               OK                 FAIL               FAIL               FAIL              
+   9  OK                 FAIL               FAIL               OK                 OK                
+  10  FAIL               FAIL               FAIL               FAIL               FAIL              
+  11  OK                 OK                 OK                 OK                 OK                
+  12  OK                 FAIL               OK                 OK                 OK                
+  13  FAIL               FAIL               FAIL               FAIL               FAIL              
+  14  FAIL               FAIL               FAIL               FAIL               FAIL              
+  16  FAIL               OK                 FAIL               FAIL               FAIL              
+  18  FAIL               FAIL               OK                 OK                 FAIL              
+  19  FAIL               FAIL               OK                 OK                 FAIL              
+  20  FAIL               FAIL               OK                 OK                 FAIL              
+  25  OK                 FAIL               OK                 OK                 OK                
+  26  OK                 OK                 FAIL               OK                 OK                
+  30  OK                 OK                 FAIL               OK                 OK                
+  31  OK                 OK                 FAIL               FAIL               OK                
+  42  FAIL               FAIL               FAIL               FAIL               FAIL              
+  49  FAIL               FAIL               OK                 FAIL               FAIL              
+  56  FAIL               FAIL               OK                 FAIL               FAIL              
+  57  OK                 FAIL               OK                 FAIL               OK                
+  58  OK                 FAIL               OK                 FAIL               OK                
+  77  FAIL               OK                 FAIL               FAIL               FAIL              
+  78  FAIL               FAIL               OK                 FAIL               FAIL              
+  79  OK                 OK                 OK                 FAIL               OK                
+  80  OK                 OK                 OK                 OK                 OK                
+  81  FAIL               OK                 FAIL               FAIL               FAIL              
+  82  OK                 OK                 OK                 OK                 OK                
+  83  FAIL               OK                 FAIL               FAIL               FAIL              
+  84  OK                 OK                 FAIL               OK                 OK                
+
+reasons (last assembler message per failing cell, only for GRF0->GRF0):
+  L  4: Instruction field conflict detected between `out_grf0` and `out_grf0`.
+  L  5: Instruction field conflict detected between `in_grf0` and `in_grf0`.
+  L  6: Instruction field conflict detected between `in_grf0` and `in_grf0`.
+  L  7: Instruction field conflict detected between `in_grf0` and `in_grf0`.
+  L  8: Instruction field conflict detected between `in_grf0` and `in_grf0`.
+  L 10: Instruction field conflict detected between `in_grf0` and `in_grf0`.
+  L 13: Instruction field conflict detected between `in_grf0` and `in_grf0`.
+  L 14: terminate called after throwing an instance of 'grape_pfn::hazard_checker::gpfn3::DataRaceError'
+  L 16: Instruction field conflict detected between `in_grf0` and `in_grf0`.
+  L 18: Instruction field conflict detected between `out_grf0` and `out_grf0`.
+  L 19: Instruction field conflict detected between `out_grf0` and `out_grf0`.
+  L 20: Instruction field conflict detected between `out_grf0` and `out_grf0`.
+  L 42: Instruction field conflict detected between `in_grf0` and `in_grf0`.
+  L 49: Instruction field conflict detected between `out_grf0` and `out_grf0`.
+  L 56: Instruction field conflict detected between `out_grf0` and `out_grf0`.
+  L 77: Instruction field conflict detected between `in_grf0` and `in_grf0`.
+  L 78: Instruction field conflict detected between `out_grf0` and `out_grf0`.
+  L 81: Instruction field conflict detected between `in_grf0` and `in_grf0`.
+  L 83: Instruction field conflict detected between `in_grf0` and `in_grf0`.

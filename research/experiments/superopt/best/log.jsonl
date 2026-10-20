@@ -1,0 +1,2 @@
+{"words": 93, "lines": 93, "mismatches": 0, "hash": "9b36e271ad768210d5a6ca87231dc4424aef1b5d2e27fc09e1e231a1daed536f", "family": "baseline", "chain": "baseline (canonical re-emit of problems/challenge/20.fizzbuzz/answer.vsm); no candidate < 93 words was found", "path": "best/93w_9b36e271ad.vsm"}
+{"words": 93, "lines": 93, "mismatches": 0, "hash": "9b36e271ad768210d5a6ca87231dc4424aef1b5d2e27fc09e1e231a1daed536f", "family": "seed", "chain": "", "path": "/home/wogikaze/wgkz/mncore/research/experiments/superopt/best/93w_9b36e271ad.vsm", "ts": 1792441172.016046}

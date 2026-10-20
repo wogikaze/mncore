@@ -1,0 +1,10 @@
+# Can ONE line write 4 arbitrary (char, position) pairs into the canvas?
+# source: 4 different GRF words (flat addresses); dest: 4 arbitrary LM0 T-offsets (flat).
+imm i"0x41" $r0
+imm i"0x42" $r1
+imm i"0x43" $r2
+imm i"0x44" $r3
+nop
+nop
+ipassa $r[0,1,2,3] $mt[4,12,20,37]
+d getf $lm0n0c0b0m0p0 40
