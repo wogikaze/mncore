@@ -348,7 +348,7 @@
       "class": "alu",
       "destination_count": 1,
       "destinations_nodup": true,
-      "occurrences": 108,
+      "occurrences": 90,
       "source_count": 1,
       "spelling": "gbfn"
     },
@@ -356,7 +356,7 @@
       "class": "mau",
       "destination_count": 1,
       "destinations_nodup": true,
-      "occurrences": 17,
+      "occurrences": 14,
       "source_count": 3,
       "spelling": "gmfma"
     },
@@ -364,7 +364,7 @@
       "class": "mau",
       "destination_count": 1,
       "destinations_nodup": true,
-      "occurrences": 54,
+      "occurrences": 51,
       "source_count": 2,
       "spelling": "gmmul"
     },
@@ -388,7 +388,7 @@
       "class": "mat_write",
       "destination_count": 1,
       "destinations_nodup": true,
-      "occurrences": 117,
+      "occurrences": 105,
       "source_count": 1,
       "spelling": "gmwrite"
     },
@@ -404,7 +404,7 @@
       "class": "alu",
       "destination_count": 1,
       "destinations_nodup": true,
-      "occurrences": 1,
+      "occurrences": 16,
       "source_count": 1,
       "spelling": "hbfn/9"
     },
@@ -444,7 +444,7 @@
       "class": "mau",
       "destination_count": 1,
       "destinations_nodup": true,
-      "occurrences": 8,
+      "occurrences": 11,
       "source_count": 2,
       "spelling": "hmmul"
     },
@@ -460,7 +460,7 @@
       "class": "mat_write",
       "destination_count": 1,
       "destinations_nodup": true,
-      "occurrences": 8,
+      "occurrences": 20,
       "source_count": 1,
       "spelling": "hmwrite"
     },
@@ -644,7 +644,15 @@
       "class": "alu",
       "destination_count": 1,
       "destinations_nodup": true,
-      "occurrences": 11,
+      "occurrences": 10,
+      "source_count": 2,
+      "spelling": "ilsl"
+    },
+    {
+      "class": "alu",
+      "destination_count": 2,
+      "destinations_nodup": true,
+      "occurrences": 1,
       "source_count": 2,
       "spelling": "ilsl"
     },
@@ -660,7 +668,7 @@
       "class": "imm",
       "destination_count": 1,
       "destinations_nodup": true,
-      "occurrences": 72,
+      "occurrences": 69,
       "source_count": 0,
       "spelling": "imm"
     },
@@ -668,7 +676,7 @@
       "class": "imm",
       "destination_count": 2,
       "destinations_nodup": true,
-      "occurrences": 5,
+      "occurrences": 6,
       "source_count": 0,
       "spelling": "imm"
     },
@@ -884,7 +892,7 @@
       "class": "l1",
       "destination_count": 1,
       "destinations_nodup": true,
-      "occurrences": 142,
+      "occurrences": 140,
       "source_count": 1,
       "spelling": "l1bmm"
     },
@@ -948,7 +956,7 @@
       "class": "l1",
       "destination_count": 1,
       "destinations_nodup": true,
-      "occurrences": 16,
+      "occurrences": 14,
       "source_count": 1,
       "spelling": "l1bmm@1"
     },
@@ -1284,7 +1292,7 @@
       "class": "alu",
       "destination_count": 1,
       "destinations_nodup": true,
-      "occurrences": 13,
+      "occurrences": 11,
       "source_count": 2,
       "spelling": "llsl"
     },
@@ -26426,15 +26434,15 @@
     },
     {
       "path": "problems/34.matmul-trb-mab-lm-4-16-8/answer.vsm",
-      "sha256": "5d7ea594bcc7b36c9167381e246482b68aae2966c400a5c17f4b9f3c8b5e6768"
+      "sha256": "3d3368fa83545302edc83b4e0523aa7d2e883a1178bfef6993279b2ba8a9efc7"
     },
     {
       "path": "problems/35.matmul-trb-mab-lm-4-16-16/answer.vsm",
-      "sha256": "a620615758ea8ae06f006270d2cf8cfd7cdfb0a693a763ec829c810963e1340b"
+      "sha256": "529df896f5b85e89c01f69c28e99a74ec6e391ca98b5d67b873cbee55113c4ed"
     },
     {
       "path": "problems/36.matmul-trb-pkg-lm-256-16-16/answer.vsm",
-      "sha256": "a620615758ea8ae06f006270d2cf8cfd7cdfb0a693a763ec829c810963e1340b"
+      "sha256": "529df896f5b85e89c01f69c28e99a74ec6e391ca98b5d67b873cbee55113c4ed"
     },
     {
       "path": "problems/37.matmul-trb-mab-lm-32-8-16/answer.vsm",
@@ -26558,7 +26566,7 @@
     },
     {
       "path": "problems/challenge/20.fizzbuzz/answer.vsm",
-      "sha256": "2192e6db0dd8d5ce117957c61e1f478b563c44a408b08c182e1ddb7cb054dae1"
+      "sha256": "9b36e271ad768210d5a6ca87231dc4424aef1b5d2e27fc09e1e231a1daed536f"
     },
     {
       "path": "problems/challenge/21.hello-world/answer.vsm",

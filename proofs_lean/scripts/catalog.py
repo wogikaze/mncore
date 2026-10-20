@@ -620,7 +620,12 @@ def answer_encoding_experiment() -> dict:
                     word["bit_width"] != {"j": 426, "m": 82}.get(word["kind"])):
                 raise ValueError(f"unexpected answer encoding shape: {row['source']}")
             counts[word["kind"]] += 1
-    if counts != {"j": 984, "m": 57} or sum(counts.values()) != 1041:
+    # Corpus totals. Answers 34/35/36 were shortened and the FizzBuzz answer
+    # went from 98 to 93 words after the previous totals were recorded, so the
+    # expected counts were refreshed together with the evidence
+    # (`git show HEAD:proofs_lean/evidence/answer-encoding/reference.json`
+    # differs from the regenerated file in exactly those four answers).
+    if counts != {"j": 966, "m": 57} or sum(counts.values()) != 1023:
         raise ValueError(f"unexpected answer encoding totals: {counts}")
     for item in record["tool_hashes"]:
         path = REPO / item["path"]

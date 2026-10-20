@@ -9,11 +9,11 @@
     },
     {
       "path": "viz/core/src/vsm.rs",
-      "sha256": "3a8e2a7a33a33bc618eb98c7b146ef3e01d4cf71f595bc5c2a5cb41bc55b3c12"
+      "sha256": "e7a9a9b199195b37c7b18d3beca48d626d59bcdb2368cd906440dc91e24eda72"
     },
     {
       "path": "viz/core/src/mv.rs",
-      "sha256": "77f8cb7ad4ae4c45ac21cc244b64481869950a4090c791a073b19b7b40360827"
+      "sha256": "098facd0947fc60f1145aeae11157c2a22eb0f4f7a314f146089d40cd1466473"
     },
     {
       "path": "viz/core/src/blockop.rs",
