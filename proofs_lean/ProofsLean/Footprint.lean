@@ -67,13 +67,18 @@ def parsedOpUnitReads : ParsedOp → List UnitResource
   | .l1bm .. => [.l1bm]
   | .l2bm .. => [.l2bm]
 
+-- A `noforward` expression is not a passive issue directive: every visited PE
+-- rewrites its forwarding slots with `stateForwardingSlots` (invalid slots
+-- become poison), and `executeIntegerProducerLineAtPECore` assigns
+-- `forwarding pe := stateForwardingSlots state pe` for it. Naming `.forwarding`
+-- here matches that write; the issue-control effect remains named as well.
 def parsedOpUnitWrites : ParsedOp → List UnitResource
   | .alu .. | .immediate .. | .zero => [.alu, .forwarding]
   | .mau .. => [.mau, .forwarding]
   | .matrixWrite .. => [.matrix]
   | .matrixRead .. => [.matrix, .forwarding]
   | .wait .. => []
-  | .noforward => [.issueControl]
+  | .noforward => [.issueControl, .forwarding]
   | .l1bm .. => [.l1bm, .forwarding]
   | .l2bm .. => [.l2bm, .forwarding]
 
@@ -202,11 +207,77 @@ theorem commitOperandWrites_frame {α : Type}
   rw [same] at inFootprint
   exact outside inFootprint
 
+/-- Footprint-local spelling of "this expression is a `noforward` directive".
+Kept here so that `Footprint.lean` does not depend on the executor module. -/
+def parsedExprIsNoforward (expression : ParsedExpr) : Bool :=
+  match expression.op with
+  | .noforward => true
+  | _ => false
+
+/-- Footprint of a `pe` issue line.
+
+The line-level `unitWrites` seed carries the writes that the executor performs
+once per line rather than once per expression:
+
+* **forwarding.** Every successful `pe` line runs
+  `updateSupportedPELineForwarding` at every PE. Even a line with no producer
+  rewrites the ALU/MAU/matrix-read slots (`Forwarding.advanceReference` turns
+  absent ALU/MAU producers into poison and an absent matrix-read producer into
+  zero) and recomputes `forwardingValid`. A `noforward` line additionally
+  rewrites the payload with `stateForwardingSlots`, but an empty or wait-only
+  line is not exempt either, so `.forwarding` is seeded for every `pe` line.
+  This is why the per-expression `.noforward` write alone is not sufficient.
+* **turnaround.** Every `pe` line without a `noforward` expression assigns
+  `l1bmTurnaroundValid`: `executeIntegerProducerInstructionLine` ends with
+  `l1bmTurnaroundValid := if noForward then old else hasPEToL1Producer`, and
+  `hasPEToL1Producer` is `false` when no expression may write the L1BM
+  turnaround. So an ordinary ALU line (and even an empty `pe` line) writes the
+  latch to `false`. `machine.rs` models the same latch as `$lbi` plus
+  `lbi_error`: a step without a PE-to-L1BM transfer records the "no transfer"
+  error, and `if !noforward { ... lbi_error ... }` skips that write for a
+  no-forward step. A `noforward` line therefore preserves the latch.
+
+These are line-level writes, not expression-level ones, so the seed is applied
+once here; the per-expression composition in `parsedExprFootprint` is
+unchanged apart from the `noforward` forwarding write. -/
+def peLineFootprint (expressions : List NormalizedExpr) : Footprint :=
+  expressions.foldl (fun result expression =>
+    Footprint.combine result (parsedExprFootprint expression.toParsed))
+    { emptyFootprint with unitWrites :=
+        if (expressions.map NormalizedExpr.toParsed).any parsedExprIsNoforward then
+          [.hazardClock, .forwarding]
+        else [.hazardClock, .forwarding, .l1bmTurnaround] }
+
+theorem peLineFootprint_starts_with_hazardClock (expressions : List NormalizedExpr) :
+    UnitResource.hazardClock ∈
+      (if (expressions.map NormalizedExpr.toParsed).any parsedExprIsNoforward then
+        ([.hazardClock, .forwarding] : List UnitResource)
+      else [.hazardClock, .forwarding, .l1bmTurnaround]) := by
+  split <;> simp
+
+theorem peLineFootprint_starts_with_forwarding (expressions : List NormalizedExpr) :
+    UnitResource.forwarding ∈
+      (if (expressions.map NormalizedExpr.toParsed).any parsedExprIsNoforward then
+        ([.hazardClock, .forwarding] : List UnitResource)
+      else [.hazardClock, .forwarding, .l1bmTurnaround]) := by
+  split <;> simp
+
+theorem peLineFootprint_forwarding_in_writes (expressions : List NormalizedExpr) :
+    UnitResource.forwarding ∈ (peLineFootprint expressions).unitWrites := by
+  simp only [peLineFootprint]
+  apply Footprint.foldl_unitWrites_keep
+  exact peLineFootprint_starts_with_forwarding expressions
+
+theorem peLineFootprint_l1bmTurnaround_in_writes (expressions : List NormalizedExpr)
+    (noNoforward :
+      (expressions.map NormalizedExpr.toParsed).any parsedExprIsNoforward = false) :
+    UnitResource.l1bmTurnaround ∈ (peLineFootprint expressions).unitWrites := by
+  simp only [peLineFootprint, noNoforward, Bool.false_eq_true, if_false]
+  apply Footprint.foldl_unitWrites_keep
+  simp
+
 def instructionLineFootprint : InstructionLine → Footprint
-  | .pe expressions =>
-      expressions.foldl (fun result expression =>
-        Footprint.combine result (parsedExprFootprint expression.toParsed))
-        { emptyFootprint with unitWrites := [.hazardClock] }
+  | .pe expressions => peLineFootprint expressions
   | .nop .. => { emptyFootprint with unitWrites := [.hazardClock] }
   | .mv transfer => Footprint.combine (normalizedMvFootprint transfer)
       { emptyFootprint with unitWrites := [.hazardClock] }
@@ -215,10 +286,7 @@ def instructionLineFootprint : InstructionLine → Footprint
 directives. A directive changes the mask-control context but consumes no issue
 word and therefore does not write the hazard clock. -/
 def normalizedLineFootprint : NormalizedLine → Footprint
-  | .pe expressions =>
-      expressions.foldl (fun result expression =>
-        Footprint.combine result (parsedExprFootprint expression.toParsed))
-        { emptyFootprint with unitWrites := [.hazardClock] }
+  | .pe expressions => peLineFootprint expressions
   | .nop 0 _ => emptyFootprint
   | .nop (_ + 1) _ => { emptyFootprint with unitWrites := [.hazardClock] }
   | .mv transfer => Footprint.combine (normalizedMvFootprint transfer)
@@ -324,24 +392,25 @@ theorem NormalizedLine.pe_preserves_l1bm_turnaround_write
     (writes : parsedExprMayWriteL1BMTurnaround expression.toParsed = true) :
     UnitResource.l1bmTurnaround ∈
       (normalizedLineFootprint (.pe expressions)).unitWrites := by
-  simp only [normalizedLineFootprint]
-  apply Footprint.foldl_unitWrites_contains_effect expressions
+  simp only [normalizedLineFootprint, peLineFootprint]
+  exact Footprint.foldl_unitWrites_contains_effect expressions
     (fun current => parsedExprFootprint current.toParsed)
-    { emptyFootprint with unitWrites := [.hazardClock] } expression member
-  exact ParsedExpr.l1bm_turnaround_write_in_footprint expression.toParsed writes
+    _ expression member UnitResource.l1bmTurnaround
+    (ParsedExpr.l1bm_turnaround_write_in_footprint expression.toParsed writes)
 
 theorem InstructionLine.has_hazard_clock_write (line : InstructionLine) :
     UnitResource.hazardClock ∈ (instructionLineFootprint line).unitWrites := by
   cases line with
   | pe expressions =>
-      let initial : Footprint :=
-        { emptyFootprint with unitWrites := [.hazardClock] }
-      have starts : UnitResource.hazardClock ∈ initial.unitWrites := by
-        simp [initial]
-      simpa [instructionLineFootprint, initial] using
+      have starts := peLineFootprint_starts_with_hazardClock expressions
+      simpa [instructionLineFootprint, peLineFootprint] using
         Footprint.foldl_unitWrites_keep expressions
           (fun expression => parsedExprFootprint expression.toParsed)
-          initial UnitResource.hazardClock starts
+          { emptyFootprint with unitWrites :=
+            if (expressions.map NormalizedExpr.toParsed).any parsedExprIsNoforward then
+              [.hazardClock, .forwarding]
+            else [.hazardClock, .forwarding, .l1bmTurnaround] }
+          UnitResource.hazardClock starts
   | nop count wait => simp [instructionLineFootprint]
   | mv transfer => simp [instructionLineFootprint, Footprint.combine]
 
