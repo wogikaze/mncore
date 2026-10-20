@@ -22,33 +22,13 @@ def generate_vsm(operator: BaseOperator) -> List[str]:
                                             # ↑、つまり、出力が "$ln0v" だと仮定している
     
     # test unit_tests/train_step/Gemm_256x16_16x16_256x16_transB_a/
-    # 問題名：「Mmul TB 256_16_16」
-    
+    # 問題名：「Mmul TB 256_16_16」 (problems/36, 1位解 6 行、半精度)
+    # この問題の 1 位解は hbfn/hmmul（half）を使う。学習全体の精度より行数を優先。
     lines = []
-
-    lines.append("gbfn    $lm16v4 $nowrite")
-    lines.append("gmwrite $aluf $ly0")
-    lines.append("gbfn $lm32v4 $nowrite")
-    lines.append("gmwrite $aluf $ly4")
-    lines.append("gbfn $lm0v4 $nowrite")
-    lines.append("gmmul $ly $aluf $ls0v4")
-    lines.append("gbfn $lm18v4 $nowrite")
-    lines.append("gmwrite $aluf $ly0")
-    lines.append("gbfn $lm34v4 $nowrite")
-    lines.append("gmwrite $aluf $ly4")
-    lines.append("gbfn $lm2v4 $nowrite")
-    lines.append("gmfma $ly $aluf $ls0v4 $ln0v4")
-    lines.append("gbfn $lm48v4 $nowrite")
-    lines.append("gmwrite $aluf $ly0")
-    lines.append("gbfn $lm64v4 $nowrite")
-    lines.append("gmwrite $aluf $ly4")
-    lines.append("gbfn $lm0v4 $nowrite")
-    lines.append("gmmul $ly $aluf $ls0v4")
-    lines.append("gbfn $lm50v4 $nowrite")
-    lines.append("gmwrite $aluf $ly0")
-    lines.append("gbfn $lm66v4 $nowrite")
-    lines.append("gmwrite $aluf $ly4")
-    lines.append("gbfn $lm2v4 $nowrite")
-    lines.append("gmfma $ly $aluf $ls0v4 $ln2v4")
-
+    lines.append("hbfn/9 $llm[16,20,48,52]r $nowrite")
+    lines.append("hmwrite $aluf $ly0; hbfn/9 $llm[24,28,56,60]r $nowrite")
+    lines.append("hmwrite $aluf $ly4; hbfn/9 $llm[32,36,64,68]r $nowrite")
+    lines.append("hmwrite $aluf $ly8; hbfn/9 $llm[40,44,72,76]r $nowrite")
+    lines.append("hmwrite $aluf $ly12; hbfn/9 $llm0vr $nowrite")
+    lines.append("hmmul $ly $aluf $lln0v")
     return lines
