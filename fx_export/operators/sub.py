@@ -51,71 +51,32 @@ class SubOperator(BaseOperator):
             assert self.addr_out(0)       ==  0  # Addr 0 に出力を仮定し、実装を軽減
                                                        # ↑、つまり、出力 0 が "$ln0v" だと仮定している
         
+            # The 24-line winner of the SubRow problem (problems/6.subrow-vec/answer.vsm).
             lines.append(f'''
-fvpassa $m[256,257,258,259] $r[0,2,4,6]
-fvpassa $m[256,257,258,259] $r[1,3,5,7]
-fvpassa $m[260,261,262,263] $s[0,2,4,6]
-fvpassa $m[260,261,262,263] $s[1,3,5,7]
-fvadd $llm0v -$lr[0,2,4,6] $lln[0,4,8,12]
-fvadd $lm[2,6,10,14] -$lr[0,2,4,6] $ln[2,6,10,14]
-fvpassa $m[264,265,266,267] $r[0,2,4,6]
-fvpassa $m[264,265,266,267] $r[1,3,5,7]
-fvadd $llm16v -$ls[0,2,4,6] $lln[16,20,24,28]
-fvadd $lm[18,22,26,30] -$ls[0,2,4,6] $ln[18,22,26,30]
-fvpassa $m[268,269,270,271] $s[0,2,4,6]
-fvpassa $m[268,269,270,271] $s[1,3,5,7]
-fvadd $llm32v -$lr[0,2,4,6] $lln[32,36,40,44]
-fvadd $lm[34,38,42,46] -$lr[0,2,4,6] $ln[34,38,42,46]
-fvpassa $m[272,273,274,275] $r[0,2,4,6]
-fvpassa $m[272,273,274,275] $r[1,3,5,7]
-fvadd $llm48v -$ls[0,2,4,6] $lln[48,52,56,60]
-fvadd $lm[50,54,58,62] -$ls[0,2,4,6] $ln[50,54,58,62]
-fvpassa $m[276,277,278,279] $s[0,2,4,6]
-fvpassa $m[276,277,278,279] $s[1,3,5,7]
-fvadd $llm64v -$lr[0,2,4,6] $lln[64,68,72,76]
-fvadd $lm[66,70,74,78] -$lr[0,2,4,6] $ln[66,70,74,78]
-fvpassa $m[280,281,282,283] $r[0,2,4,6]
-fvpassa $m[280,281,282,283] $r[1,3,5,7]
-fvadd $llm80v -$ls[0,2,4,6] $lln[80,84,88,92]
-fvadd $lm[82,86,90,94] -$ls[0,2,4,6] $ln[82,86,90,94]
-fvpassa $m[284,285,286,287] $s[0,2,4,6]
-fvpassa $m[284,285,286,287] $s[1,3,5,7]
-fvadd $llm96v -$lr[0,2,4,6] $lln[96,100,104,108]
-fvadd $lm[98,102,106,110] -$lr[0,2,4,6] $ln[98,102,106,110]
-fvpassa $m[288,289,290,291] $r[0,2,4,6]
-fvpassa $m[288,289,290,291] $r[1,3,5,7]
-fvadd $llm112v -$ls[0,2,4,6] $lln[112,116,120,124]
-fvadd $lm[114,118,122,126] -$ls[0,2,4,6] $ln[114,118,122,126]
-fvpassa $m[292,293,294,295] $s[0,2,4,6]
-fvpassa $m[292,293,294,295] $s[1,3,5,7]
-fvadd $llm128v -$lr[0,2,4,6] $lln[128,132,136,140]
-fvadd $lm[130,134,138,142] -$lr[0,2,4,6] $ln[130,134,138,142]
-fvpassa $m[296,297,298,299] $r[0,2,4,6]
-fvpassa $m[296,297,298,299] $r[1,3,5,7]
-fvadd $llm144v -$ls[0,2,4,6] $lln[144,148,152,156]
-fvadd $lm[146,150,154,158] -$ls[0,2,4,6] $ln[146,150,154,158]
-fvpassa $m[300,301,302,303] $s[0,2,4,6]
-fvpassa $m[300,301,302,303] $s[1,3,5,7]
-fvadd $llm160v -$lr[0,2,4,6] $lln[160,164,168,172]
-fvadd $lm[162,166,170,174] -$lr[0,2,4,6] $ln[162,166,170,174]
-fvpassa $m[304,305,306,307] $r[0,2,4,6]
-fvpassa $m[304,305,306,307] $r[1,3,5,7]
-fvadd $llm176v -$ls[0,2,4,6] $lln[176,180,184,188]
-fvadd $lm[178,182,186,190] -$ls[0,2,4,6] $ln[178,182,186,190]
-fvpassa $m[308,309,310,311] $s[0,2,4,6]
-fvpassa $m[308,309,310,311] $s[1,3,5,7]
-fvadd $llm192v -$lr[0,2,4,6] $lln[192,196,200,204]
-fvadd $lm[194,198,202,206] -$lr[0,2,4,6] $ln[194,198,202,206]
-fvpassa $m[312,313,314,315] $r[0,2,4,6]
-fvpassa $m[312,313,314,315] $r[1,3,5,7]
-fvadd $llm208v -$ls[0,2,4,6] $lln[208,212,216,220]
-fvadd $lm[210,214,218,222] -$ls[0,2,4,6] $ln[210,214,218,222]
-fvpassa $m[316,317,318,319] $s[0,2,4,6]
-fvpassa $m[316,317,318,319] $s[1,3,5,7]
-fvadd $llm224v -$lr[0,2,4,6] $lln[224,228,232,236]
-fvadd $lm[226,230,234,238] -$lr[0,2,4,6] $ln[226,230,234,238]
-fvadd $llm240v -$ls[0,2,4,6] $lln[240,244,248,252]
-fvadd $lm[242,246,250,254] -$ls[0,2,4,6] $ln[242,246,250,254]
+imm ui"0x00000002" $nowrite
+llsl $mabid $aluf $t; fvpassa $m260v $r8v2
+imm ui"0x00000004" $nowrite; fvpassa $mauf $r9v2
+llsl $mabid $aluf $t; fvpassa $mt256v $r0v2
+fpassa $mauf $r1v2; fvadd $lm16v -$lr[8,8,10,10] $ln16v
+fvadd $mt0v -$r0 $s0v $n0v
+fvadd $mt4v -$r2 $s4v $n4v
+fvadd $lmt8v -$lr[4,4,6,6] $ls8v $ln8v
+fvadd $lm24v -$lr[12,12,14,14] $ln24v
+l1bmm@2 $lls0v $llbi
+l1bmm@3 $lls0v $llbi; l1bmm $llbi $lln32v
+l1bmm@4 $lls0v $llbi; l1bmm $llbi $lln48v
+l1bmm@5 $lls0v $llbi; l1bmm $llbi $lln64v
+l1bmm@6 $lls0v $llbi; l1bmm $llbi $lln80v
+l1bmm@7 $lls0v $llbi; l1bmm $llbi $lln96v
+l1bmm@8 $lls0v $llbi; l1bmm $llbi $lln112v
+l1bmm@9 $lls0v $llbi; l1bmm $llbi $lln128v
+l1bmm@10 $lls0v $llbi; l1bmm $llbi $lln144v
+l1bmm@11 $lls0v $llbi; l1bmm $llbi $lln160v
+l1bmm@12 $lls0v $llbi; l1bmm $llbi $lln176v
+l1bmm@13 $lls0v $llbi; l1bmm $llbi $lln192v
+l1bmm@14 $lls0v $llbi; l1bmm $llbi $lln208v
+l1bmm@15 $lls0v $llbi; l1bmm $llbi $lln224v
+l1bmm $llbi $lln240v
             ''')
             return lines
         
