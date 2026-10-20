@@ -342,7 +342,6 @@ l2bmb $lc0 $lb0
 l2bmb $lc64 $lb32
 l2bmb $lc128 $lb64
 l2bmb $lc192 $lb96
-nop
 l1bmm $llb0 $llm16v
 l1bmm $llb32 $llm32v
 l1bmm $llb64 $llm48v
@@ -553,9 +552,7 @@ nop
 l1bmm@0 $lr0v $lb28
 nop
 nop
-nop
 l2bm@0 $lb0 $lc0
-nop
 mvp/n64i9f $lc0@.0 $d120000
 nop; wait i9f  # Auto-tagged
 
@@ -662,7 +659,6 @@ l1bmm@0 $lln192v $llb384
 l1bmm@0 $lln208v $llb416
 l1bmm@0 $lln224v $llb448
 l1bmm@0 $lln240v $llb480
-nop
 l2bm@0 $lb0 $lc0
 l2bm@0 $lb64 $lc64
 l2bm@0 $lb128 $lc128
@@ -825,9 +821,7 @@ nop
 l1bmm@0 $lr0v $lb28
 nop
 nop
-nop
 l2bm@0 $lb0 $lc0
-nop
 mvp/n64i9f $lc0@.0 $d144000
 nop; wait i9f  # Auto-tagged
 
@@ -939,7 +933,6 @@ l1bmm@0 $lln192v $llb384
 l1bmm@0 $lln208v $llb416
 l1bmm@0 $lln224v $llb448
 l1bmm@0 $lln240v $llb480
-nop
 l2bm@0 $lb0 $lc0
 l2bm@0 $lb64 $lc64
 l2bm@0 $lb128 $lc128
@@ -1031,7 +1024,6 @@ l1bmm@0 $lln192v $llb384
 l1bmm@0 $lln208v $llb416
 l1bmm@0 $lln224v $llb448
 l1bmm@0 $lln240v $llb480
-nop
 l2bm@0 $lb0 $lc0
 l2bm@0 $lb64 $lc64
 l2bm@0 $lb128 $lc128
@@ -1224,7 +1216,6 @@ l2bmrffadd $lb0 $lc0
 l2bmrffadd $lb32 $lc64
 l2bmrffadd $lb64 $lc128
 l2bmrffadd $lb96 $lc192
-nop
 mvrffadd/n64i9f $lc0 $p0@0
 nop; wait i9f  # Auto-tagged
 mvrffadd/n64i9f $lc64 $p64@0
@@ -1311,7 +1302,6 @@ l2bmb $lc0 $lb0
 l2bmb $lc64 $lb32
 l2bmb $lc128 $lb64
 l2bmb $lc192 $lb96
-nop
 l1bmm $llb0 $llm16v
 l1bmm $llb32 $llm32v
 l1bmm $llb64 $llm48v
@@ -1502,7 +1492,6 @@ l2bmb $lc0 $lb0
 l2bmb $lc64 $lb32
 l2bmb $lc128 $lb64
 l2bmb $lc192 $lb96
-nop
 l1bmm $llb0 $llm0v
 l1bmm $llb32 $llm16v
 l1bmm $llb64 $llm32v
@@ -1528,7 +1517,6 @@ l2bmb $lc0 $lb0
 l2bmb $lc64 $lb32
 l2bmb $lc128 $lb64
 l2bmb $lc192 $lb96
-nop
 l1bmm $llb0 $llm64v
 l1bmm $llb32 $llm80v
 l1bmm $llb64 $llm96v
@@ -1573,12 +1561,10 @@ l1bmm@0 $lln0v $llb0
 l1bmm@0 $lln16v $llb32
 l1bmm@0 $lln32v $llb64
 l1bmm@0 $lln48v $llb96
-nop
 l2bm@0 $lb0 $lc0
 l2bm@0 $lb32 $lc64
 l2bm@0 $lb64 $lc128
 l2bm@0 $lb96 $lc192
-nop
 mvp/n64i9f $lc0@0.0 $d64000@0
 nop; wait i9f  # Auto-tagged
 mvp/n64i9f $lc64@0.0 $d64000@1
@@ -1642,7 +1628,6 @@ nop
 nop
 nop
 l2bm@0 $lb0 $lc0
-nop
 mvp/n64i9f $lc0@0.0 $d72000@0
 nop; wait i9f  # Auto-tagged
 
@@ -2009,8 +1994,6 @@ l1bmd $ln0v  $lb0
 l1bmd $ln8v $lb256
 l1bmd $ln16v $lb512
 l1bmd $ln24v $lb768
-nop
-nop
 l2bmd $lb0 $lc0
 l2bmd $lb32 $lc256
 l2bmd $lb64 $lc512
@@ -2043,7 +2026,6 @@ l2bmd $lb896 $lc7168
 l2bmd $lb928 $lc7424
 l2bmd $lb960 $lc7680
 l2bmd $lb992 $lc7936
-nop
 mvp/n2048i9f $lc0@0.0 $d48000@0
 nop; wait i9f  # Auto-tagged
 mvp/n2048i9f $lc2048@0.0 $d48000@1
@@ -2107,7 +2089,6 @@ nop
 nop
 nop
 l2bm@0 $lb0 $lc0
-nop
 mvp/n64i9f $lc0@0.0 $d56000@0
 nop; wait i9f  # Auto-tagged
 
