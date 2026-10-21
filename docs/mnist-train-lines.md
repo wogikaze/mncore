@@ -270,6 +270,28 @@ DL が作る配置は、計算カーネルが同じ番地に書いただけで�
 3. 配置レイヤを作り直す（DL/UL を LM バンクの ping-pong に置き換える）。
    これが本来の解決策だが、全オペレータのカーネルをバンク非依存にする大工事。
 
+## グラフの before/after（2026-10-21）
+
+挑戦サイトの `4_decomposed.svg`（13 ノード）を、同じ範囲の現在のプログラムと比べた。
+描画は Ondine（Mermaid を Rust で SVG にする）で、`docs/mnist-graph-before.svg` /
+`docs/mnist-graph-after.svg` に置いた。数字は各ノードの「計算 + 付随する DL/UL」の行数。
+
+| ノード | before | after |
+| --- | ---: | ---: |
+| `fc1_pre_gemm` | 156 | 156 |
+| `fc1_pre_add_bias` | 22 | 22 |
+| `fc1_relu` | 11 | 5（DL 削除） |
+| `fc2_pre_gemm` | 53 | 26（H、DL_0 削除） |
+| `fc2_pre_add_bias` | 22 | 14（DL_0 削除） |
+| `output_alias` | 0 | 削除 |
+| `_reducemax` + `_sub` | 42 + 128 | MaxSub 95 に融合 |
+| `_exp` | 34 | 34 |
+| `_reducesum` | 38 | 38 |
+| `_div` | 612 | 64 |
+| `grad_fc2_weight_gemm` | 69 | 51 |
+| `grad_fc1_weight_gemm` | 159 | 169（行列面クリア +10） |
+| **合計** | **1,346** | **674** |
+
 ## GPU で回した（2026-10-20）
 
 GPU はこの環境にあった（`nvidia-smi` は PATH に無いが、`torch.cuda.is_available()` は True）。
