@@ -273,8 +273,9 @@ DL が作る配置は、計算カーネルが同じ番地に書いただけで�
 ## グラフの before/after（2026-10-21）
 
 挑戦サイトの `2_train.svg`（訓練グラフ全体）を基準にすると、**3,016 行（命令 2,257）
-→ 1,782 行（命令 1,255）**。ノードごとの before → after は
-`docs/mnist-graph-train.svg`、位相ごとの内訳は `docs/mnist-graph-full.svg`。
+→ 1,782 行（命令 1,255）**。2 枚の図: `docs/mnist-train-before.svg`（3,016 行）と
+`docs/mnist-train-after.svg`（1,782 行）。位相ごとの内訳は
+`docs/mnist-graph-full.svg`。
 
 挑戦サイトの `4_decomposed.svg` と同じ 13 ノードの範囲だけを切り出すと
 1,346 → 674 行（`docs/mnist-graph-before.svg` / `docs/mnist-graph-after.svg`）。
