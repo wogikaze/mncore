@@ -272,9 +272,12 @@ DL が作る配置は、計算カーネルが同じ番地に書いただけで�
 
 ## グラフの before/after（2026-10-21）
 
-挑戦サイトの `4_decomposed.svg`（13 ノード）を、同じ範囲の現在のプログラムと比べた。
-描画は Ondine（Mermaid を Rust で SVG にする）で、`docs/mnist-graph-before.svg` /
-`docs/mnist-graph-after.svg` に置いた。数字は各ノードの「計算 + 付随する DL/UL」の行数。
+番組全体では **3,016 行（命令 2,257）→ 1,782 行（命令 1,255）**。位相ごとの内訳は
+`docs/mnist-graph-full.svg`。
+
+挑戦サイトの `4_decomposed.svg` と同じ 13 ノードの範囲だけを切り出すと
+1,346 → 674 行（`docs/mnist-graph-before.svg` / `docs/mnist-graph-after.svg`）。
+数字は各ノードの「計算 + 付随する DL/UL」の行数。
 
 | ノード | before | after |
 | --- | ---: | ---: |
