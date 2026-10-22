@@ -97,3 +97,56 @@ python3 tools/fbasm.py    <candidate.vsm>   # アセンブラ + ハザード
 python3 tools/scan.py --all                 # research/experiments 配下を一括採点
 bash research/preliminary/fizzbuzz-delivery/verify.sh            # 下界の再検証
 ```
+
+
+---
+
+# 追記: MN-Core 問題群の最適性プロジェクト（現在地）
+
+## 測定で確定したこと
+
+| 項目 | 結果 |
+|---|---|
+| challenge 25問の解答の普遍性 | **24/25**（`2.plus-two` のみ過適合） |
+| MNIST 48問の解答の普遍性 | **47/48**（`36.matmul-trb-pkg-lm-256-16-16` のみ、512 で 1248 vs 1240） |
+| `2.plus-two` の普遍最短 | **6語**（記録解5語は過適合、公式例9語、コンパイラ7語） |
+| `1.a-b` の最短 | 3語 |
+| `3.a-plus-b` の解答 | 6語（2語ではない） |
+| `4.mul7` の解答 | 正しい（6語）。`SingleFMA` の FTZ はエミュレータと一致 |
+| ネイティブシミュレータ | インストール版は古い。`viz/core` bf08b74 から再ビルドで48問の公式テストケースを再現 |
+| モデルの相違 | 同一行内 OMR 書き込みの可視性のみ（値に影響せず） |
+
+## Lean の到達点
+
+| 問題 | 定理 | 状態 |
+|---|---|---|
+| Welcome | `Optimal welcomeWholeMachine welcomeWholeSpec welcomeAnswer` | **無条件**（ただし `admissible := toNat ≤ 50`、post は PE0 のみ。公開問題への移行は下限のみ） |
+| `1.a-b` | `abPE_not_correct_of_widthOrDoubleWindow` | 幅で場合分けし、非`.double` は既存、`.double` は新規。行ごとの証人データが残る |
+| `2.plus-two` | `plusTwoRecorded_not_correct_of_bar1Frame` | 真である2つの Prop 付き |
+| | `plusTwoLowerBound_five_of_coverage` | 数え上げ命題は**偽**と判明したため撤回 |
+| `12.convert-endian` | `cendLowerBound_three_of_residuals` | 2つの残差付き |
+| `4.mul7` | `mul7LowerBound_two_of_peFootprint` | footprint 条件付き。spec の欠陥（偶数/奇数ワード）要修正 |
+| `3.a-plus-b` | `aplusbLowerBound_two_iff_residual` | spec と6行の実行器代数まで。`Correct` は未 |
+
+## 共通基盤（再利用可能）
+
+- `GenericLowerBound.lean` — sealed machine、1行反駁の型、`.lm1` 代数、hazard 持ち上げ、証明書
+- `PlainALUDestination.lean` — 状態一般の宛先一致
+- `StageCommitSpecific.lean` / `StageCommitWalk.lean` — 実行器自身の write list を名指しで取得
+- `ValueProvenance.lean` — 1段の値来歴（問題非依存）
+- `ALURequestProvenance.lean` — 依存マッチを通した ALU request の解消
+- `DoubleWindowValue.lean` — `.double` 窓の意味論
+- `ABWidthBound.lean` — 幅の鋭い上界（word 4 / long 8 / double 16）
+
+## 未完の共通ブロッカー
+
+1. **行ごとの証人データの無条件インスタンス化**（族別）— 現状は条件付き
+2. `.forward` 源の連鎖不変量
+3. `.immediate payload = 0xBF800000` の値比較
+4. `2.plus-two` の「定数2不在」論法の形式化
+
+## リソース
+
+公式 judge の `gpfn3_package_main`/`assemble3` が大量呼び出しでクラッシュし、
+WSL が `%LOCALAPPDATA%\Temp\wsl-crashes` に1件約444MBのダンプを作る。
+3回にわたり削除（最大3.7GB → 2MB）。大量評価はネイティブシミュレータで行う方針に統一。
