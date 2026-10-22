@@ -49,12 +49,27 @@ python3 -m mncompile.bench.run --output /tmp/bench        # all 73 problems with
 
 ### Lean optimality audit
 
-[proofs_lean](proofs_lean/README.md) records the formal-proof audit separately from benchmark scores.
-The previous `optimalProven` labels were unsupported and have been withdrawn. Full-ISA optimality
-is currently unproven for all 73 problems. The replacement framework checks semantic certificates,
-enumeration completeness, and the distinction between general and testcase-only correctness.
+[proofs_lean](proofs_lean/README.md) records the formal-proof work separately from benchmark scores.
+The old `optimalProven` labels were unsupported and have been withdrawn. The development now proves:
+
+- `1.plus-one` — **unconditional optimality** on the hazard-aware whole machine for the public
+  specification (2 words; the all-PE and unbounded variants are also proved). This is the only
+  problem whose accepted word count and Lean lower bound match.
+- `12.convert-endian` — unconditional correctness of the three-line answer on the sealed
+  whole-machine value model, with `LowerBound 3` reduced to four named residuals.
+- `3.relu`, `2.fmul7`, `4.relu-grad`, `1.a-b`, `3.a-plus-b`, `2.plus-two` — specifications,
+  executor interfaces and conditional lower bounds; their matching `Optimal` theorems are open.
+
+What is missing — the residuals per problem, the full-ISA and parser gaps, the sealed-to-hazard-aware
+lift, and the untracked work-in-progress — is listed in
+[docs/optimality-gaps.md](docs/optimality-gaps.md).
+
+The development is 67 modules / ~54k lines. `lake build ProofsLean` succeeds (967 jobs) and the
+sources contain no `sorry`, `admit`, `axiom` or `native_decide`; the main theorems depend only on
+`propext`, `Classical.choice` and `Quot.sound`.
 
 ```bash
+cd proofs_lean && lake build ProofsLean
 python3 proofs_lean/scripts/check.py
 python3 -m unittest discover -s proofs_lean/tests -v
 ```
