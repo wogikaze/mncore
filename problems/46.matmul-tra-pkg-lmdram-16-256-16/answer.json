@@ -2,10 +2,10 @@
   "problem_url": "https://mncore-challenge.preferred.jp/mnist/problem/matmul_tra_pkg_lmdram_16_256_16/",
   "standings_url": "https://mncore-challenge.preferred.jp/mnist/standings/",
   "shortest_url": "https://mncore-challenge.preferred.jp/mnist/shortest/matmul_tra_pkg_lmdram_16_256_16/Wogikaze/",
-  "submission_url": "https://mncore-challenge.preferred.jp/mnist/submission/9f0eb3aa-8337-4e72-beae-813784ee4235",
+  "submission_url": "https://mncore-challenge.preferred.jp/mnist/submission/93c07657-602e-4b2d-8f37-d32bb599ea4e",
   "author": "Wogikaze",
   "status": "Accepted",
-  "lines": 22,
-  "fetched_at": "2026-11-12T20:27:44+00:00",
+  "lines": 21,
+  "fetched_at": "2026-11-12T23:00:13+00:00",
   "local_validation": "accepted (official judge, 2026-11-13)"
 }

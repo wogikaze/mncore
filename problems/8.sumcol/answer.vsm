@@ -1,8 +1,6 @@
-imm ui"0x00000002" $nowrite
-llsl $mabid $aluf $t
+ipassa $peid $t
 nop
-l1bmr4ffadd $llmt0v $llb0
+l1bmr4ffadd $llmt0v $llb64
 nop
-nop
-l2bmrffadd $lb0 $lc0
-mvrffadd/n64 $lc0 $d0
+l2bmrffadd $lb16 $lc16
+mvrffadd/n64 $lc64 $d0

@@ -1,4 +1,3 @@
 mvb/n64 $d0 $lc0
-l2bmb $lc0 $lb0
-nop
-l1bmm $llb0 $llm0v/ll1000
+l2bmb $lc0 $lb32
+l1bmm $llb8 $llm0

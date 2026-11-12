@@ -1,17 +1,14 @@
-imm ui"0x34000003" $lr0v
-land $mabid $aluf $nowrite; fvfma $aluf $aluf $aluf $nowrite
-llsl $aluf $mauf $t; fvfma -$lr0v $lr0v $lr0v $lr0v
-lpackbit $aluf $aluf $lr8v;
-llsr $mabid $lr0v $nowrite; gmwrite $lmt128v $lx0
-lor $aluf $lr8v $t; gmwrite $lmt136v $lx4
+ipackbit $mabid $ls0 $t $mb
 nop
-gmwrite $lmt0v4 $ly0; gmread $lx0 $nowrite
-gbfn $mreadf $nowrite; gmwrite $lmt16v4 $ly4; gmread $lx4 $nowrite
-gbfn $mreadf $nowrite; gmwrite $aluf $lx0; gmread $ly0 $nowrite
-gbfn $mreadf $nowrite; gmwrite $aluf $lx4; gmread $ly4 $nowrite
-gbfn $mreadf $nowrite; gmmul $lx $aluf $nowrite
-gmmul $lx $aluf $nowrite; l1bmr4ffadd $mauf $lbi
-l1bmr4ffadd $mauf $lbi; l1bmm4 $lbi $ln0v
-l1bmm@8 $lbf $lbi; l1bmm4 $lbi $ln8v
-l1bmm@8 $lbf $lbi; l1bmm $lbi $ln16v
-l1bmm $lbi $ln24v
+nop
+hmwrite $lm[128,128,128,160]r $lx14
+hmread $llx0 $nowrite; hmwrite $llmt[0,64,0,64]r $ly0
+hmread $llx8 $nowrite; hbfn/9 $mreadf $nowrite
+hmwrite $aluf $llx0; hmread $lly0 $nowrite; hbfn/9 $mreadf $nowrite
+hmwrite $aluf $llx8; hmread $lly8 $nowrite; hbfn/9 $mreadf $lls0v
+hbfn/9 $mreadf $lls16v; hmmul $lx $aluf $nowrite
+l1bmrffadd $mauf $lbi; hmmul $lx $ls[2,6,10,14] $nowrite
+l1bmm $lbi $ln[0,16,4,20]; l1bmrffadd $mauf $lbi; hmmul $lx $ls[16,20,24,28] $nowrite
+l1bmm $lbi $ln[2,18,6,22]; l1bmrffadd $mauf $lbi; hmmul $lx $ls[18,22,26,30] $nowrite
+l1bmm $lbi $ln[8,24,12,28]; l1bmrffadd $mauf $lbi
+l1bmm $lbi $ln[10,26,14,30]

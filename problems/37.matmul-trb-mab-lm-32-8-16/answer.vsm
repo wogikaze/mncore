@@ -1,17 +1,13 @@
-imm ui"0x00000003" $nowrite
-llsl $mabid $aluf $t
-gbfn $lm64v $nowrite
-gbfn $lm72v $nowrite; gmwrite $aluf $lx0
-gbfn $lmt0v $t; gmwrite $aluf $lx4
-gbfn $lm80v $nowrite; gmmul $lx $aluf $lr0v4 $ln0v4
-gbfn $lm88v $nowrite; gmwrite $aluf $lx0; l1bmm@1 $mauf $lbi
-gmwrite $aluf $lx4; l1bmm $lbi $ln16v4
-gmmul $lx $t $lr2v4 $ln2v4
-l1bmm@1 $mauf $lbi
-l1bmm@2 $llr0v $llbi; l1bmm $lbi $ln18v4
-l1bmm@3 $llr0v $llbi; l1bmm $llbi $lln32v
-l1bmm@4 $llr0v $llbi; l1bmm $llbi $lln48v
-l1bmm@5 $llr0v $llbi; l1bmm $llbi $lln64v
-l1bmm@6 $llr0v $llbi; l1bmm $llbi $lln80v
-l1bmm@7 $llr0v $llbi; l1bmm $llbi $lln96v
-l1bmm $llbi $lln112v
+hbfn/9 $lm[64,66,80,82]r $nowrite
+hbfn/9 $lm[68,70,84,86]r $nowrite; hmwrite $aluf $lx0
+hbfn/9 $lm[72,74,88,90]r $nowrite; hmwrite $aluf $lx4
+hbfn/9 $lm[76,78,92,94]r $nowrite; hmwrite $aluf $lx8
+hbfn/9 $lm0vr $nowrite; hmwrite $aluf $lx12
+hbfn/9 $lm8vr $nowrite; hmmul $lx $aluf $lln0v4
+hbfn/9 $lm16vr $nowrite; hmmul $lx $aluf $lln16v4
+hbfn/9 $lm24vr $nowrite; hmmul $lx $aluf $lln32v4
+hbfn/9 $lm32vr $nowrite; hmmul $lx $aluf $lln48v4
+hbfn/9 $lm40vr $nowrite; hmmul $lx $aluf $lln64v4
+hbfn/9 $lm48vr $nowrite; hmmul $lx $aluf $lln80v4
+hbfn/9 $lm56vr $nowrite; hmmul $lx $aluf $lln96v4
+hmmul $lx $aluf $lln112v4

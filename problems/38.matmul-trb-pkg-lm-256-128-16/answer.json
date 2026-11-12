@@ -1,11 +1,11 @@
 {
   "problem_url": "https://mncore-challenge.preferred.jp/mnist/problem/matmul_trb_pkg_lm_256_128_16/",
   "standings_url": "https://mncore-challenge.preferred.jp/mnist/standings/",
-  "shortest_url": "https://mncore-challenge.preferred.jp/mnist/shortest/matmul_trb_pkg_lm_256_128_16/syttrea/",
-  "submission_url": "https://mncore-challenge.preferred.jp/mnist/submission/1f7454eb-5911-4ce0-931d-c90837124336",
-  "author": "syttrea",
+  "shortest_url": "https://mncore-challenge.preferred.jp/mnist/shortest/matmul_trb_pkg_lm_256_128_16/Wogikaze/",
+  "submission_url": "https://mncore-challenge.preferred.jp/mnist/submission/ee870649-2a3c-44e5-abce-167a6346d1b3",
+  "author": "Wogikaze",
   "status": "Accepted",
-  "lines": 23,
-  "fetched_at": "2026-10-15T08:20:32+00:00",
-  "local_validation": "accepted (official judge, 2026-10-15)"
+  "lines": 15,
+  "fetched_at": "2026-11-12T23:00:10+00:00",
+  "local_validation": "accepted (official judge, 2026-11-13)"
 }

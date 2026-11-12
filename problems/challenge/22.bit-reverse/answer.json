@@ -1,13 +1,13 @@
 {
   "problem_url": "https://mncore-challenge.preferred.jp/problem/bit_reverse",
   "standings_url": "https://mncore-challenge.preferred.jp/standings/",
-  "shortest_url": "https://mncore-challenge.preferred.jp/shortest/bit_reverse/syttrea/",
-  "submission_url": "https://mncore-challenge.preferred.jp/submission/f95e752a-8de9-4154-8055-b57c2faed8ca",
-  "author": "syttrea",
+  "shortest_url": "https://mncore-challenge.preferred.jp/shortest/bit_reverse/Wogikaze/",
+  "submission_url": "https://mncore-challenge.preferred.jp/submission/e353ffb9-5327-467b-bd42-29e6be8c7b56",
+  "author": "Wogikaze",
   "status": "Accepted",
-  "lines": 10,
-  "stdout": "ACCEPTED!! score=10 j=10 m=0 bytes=403",
-  "fetched_at": "2026-10-14T00:39:07+00:00",
-  "local_validation": "accepted",
+  "lines": 9,
+  "stdout": "ACCEPTED!! score=9 j=9 m=0 bytes=342",
+  "fetched_at": "2026-11-12T23:00:22+00:00",
+  "local_validation": "accepted (official judge, 2026-11-13)",
   "local_judge_url": "https://mncore-challenge.preferred.jp/judge.zip"
 }

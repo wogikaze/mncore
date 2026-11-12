@@ -3,9 +3,9 @@
 MNIST 順位表から辿れる公開 Accepted 提出を `answer.vsm` に保存しています（`main.vsm` は変更しません）。
 
 - Author: Wogikaze
-- Lines: 8
+- Lines: 6
 - Status: Accepted（サイト上）
-- Submission: https://mncore-challenge.preferred.jp/mnist/submission/71dd4260-daa3-4be8-8c7b-25b044c2adb0
+- Submission: https://mncore-challenge.preferred.jp/mnist/submission/c08fec5e-bcdd-4869-afce-3e8525848b51
 - Standings: https://mncore-challenge.preferred.jp/mnist/standings/
 
 取得時の順位表で最小行数の提出を選んでいます。同率の場合は先に掲載された提出を採用します。
