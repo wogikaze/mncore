@@ -1,0 +1,9 @@
+fvfma $ls256 $ls256 -$llm0v $omr1
+fvfma $ls256 $ls256 $llm0v $omr2
+lpassa $llm0v $lln0v/$llimr1
+lpassa $llm0v $lln16v/$llimr2
+ipassa $llm0v $ln32v/$imr1
+ipassa $llm0v $ln48v/$imr2
+fvfma $ls256 $ls256 -$llm0v $llr0v
+nop
+nop

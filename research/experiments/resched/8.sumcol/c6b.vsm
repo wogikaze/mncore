@@ -1,0 +1,6 @@
+ipassa $peid $t
+l1bmr4ffadd $llmt[64,64,64,0] $llb0
+nop
+nop
+l2bmrffadd $lb96 $lc0
+mvrffadd/n64 $lc0 $d0

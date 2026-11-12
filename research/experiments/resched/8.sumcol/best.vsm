@@ -1,0 +1,6 @@
+ipassa $peid $t
+nop
+l1bmr4ffadd $llmt0v $llb64
+nop
+l2bmrffadd $lb16 $lc16
+mvrffadd/n64 $lc64 $d0

@@ -1,0 +1,7 @@
+ipassa $peid $t
+nop
+l1bmr4ffadd $llmt0v $llb0
+nop
+nop
+l2bmrffadd $lb0 $lc0
+mvrffadd/n64 $lc0 $d0
