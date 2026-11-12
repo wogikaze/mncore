@@ -31,7 +31,7 @@
 | `46.matmul-tra-pkg-lmdram-16-256-16` | 22 | **21** | `matmul-sweep/46/best.vsm` |
 | `47.matmul-tra-mab-lm-16-32-8` | 17 | **14** | `matmul-sweep/47/best.vsm` |
 | `challenge/22.bit-reverse` | 10 | **9** | `small-alu/22.bit-reverse/c9a.vsm` |
-| `48.matmul-tra-pkg-lmdram-16-256-1024` | 61 | **58** | `48.matmul/best.vsm`（未提出） |
+| `48.matmul-tra-pkg-lmdram-16-256-1024` | 61 | **58** | `48.matmul/best.vsm` |
 
 - `10.sumrow` の 15 語版（`10.sumrow/best.vsm`）は dirty で落ちるので提出できない。dirty でも通る形では 16 語が下限と判断した。
 - 縮まなかった問題（各ディレクトリの REPORT.md に理由）: 16.onehot 24, 25.hsv2rgb 12, 5.abs 13, 16.count-up 21, 11.square-sum 11, 6.fadd-mul 14,
