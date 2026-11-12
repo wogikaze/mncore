@@ -1,0 +1,7 @@
+mvb/n128 $d0 $lc0
+l2bmb $lc0 $lb0
+l2bmb $lc64 $lb64
+l1bmm $llb0 $llm[0,4,16,20]
+l1bmm $llb32 $llm[32,36,48,52]
+l1bmm $llb64 $llm[8,12,24,28]
+l1bmm $llb96 $llm[40,44,56,60]

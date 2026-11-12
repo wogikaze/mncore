@@ -1,0 +1,7 @@
+l1bmm@0 $llm[0,4,16,20] $llb0
+l1bmm@0 $llm[32,36,48,52] $llb32
+l1bmm@0 $llm[8,12,24,28] $llb64
+l1bmm@0 $llm[40,44,56,60] $llb96
+l2bm@0 $lb0 $lc0
+l2bm@0 $lb64 $lc64
+mvrfmax/n128 $lc0 $d0
