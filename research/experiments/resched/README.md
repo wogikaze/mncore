@@ -30,7 +30,10 @@
 | `45.matmul-tra-mab-lm-16-4-16` | 14 | **9** | `matmul-sweep/45/best.vsm` |
 | `46.matmul-tra-pkg-lmdram-16-256-16` | 22 | **21** | `matmul-sweep/46/best.vsm` |
 | `47.matmul-tra-mab-lm-16-32-8` | 17 | **14** | `matmul-sweep/47/best.vsm` |
+| `challenge/22.bit-reverse` | 10 | **9** | `small-alu/22.bit-reverse/c9a.vsm` |
 
 - `10.sumrow` の 15 語版（`10.sumrow/best.vsm`）は dirty で落ちるので提出できない。dirty でも通る形では 16 語が下限と判断した。
 - 縮まなかった問題（各ディレクトリの REPORT.md に理由）: 16.onehot 24, 25.hsv2rgb 12, 5.abs 13, 16.count-up 21, 11.square-sum 11, 6.fadd-mul 14,
   17.transpose-mab 15, DRAM 転送 14 問（`dram-sweep/REPORT.md`）, 行列積 9 問（`matmul-sweep/REPORT.md`）, 7.sumcol-mini 4, 15.onehot-mini 7, 2.fmul7 5, 1.a-b 3。
+- 注: challenge の 24.log2 と 7.mul2 の記録解（サイトで Accepted の他者の提出）はローカルの `judge.py --dirty` で落ちる。
+  少なくとも Challenge のサイトはローカルの --dirty と同じ判定ではない。MNIST の判定は clean/dirty 両方（`docs/mnist-golf/README.md`）。
