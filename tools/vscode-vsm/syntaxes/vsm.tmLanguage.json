@@ -1,0 +1,355 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "MN-Core VSM",
+  "scopeName": "source.vsm",
+  "patterns": [
+    {
+      "include": "#comment"
+    },
+    {
+      "include": "#statement"
+    }
+  ],
+  "repository": {
+    "comment": {
+      "patterns": [
+        {
+          "match": "^\\s*#\\s*(?:={3,}|#{3,}|-{3,}).*$",
+          "name": "comment.line.rule.vsm"
+        },
+        {
+          "match": "^\\s*#\\s*((?:段\\s*[A-Z][:：]|\\d+\\.\\s|----\\s).*)$",
+          "captures": {
+            "0": {
+              "name": "comment.line.number-sign.vsm"
+            },
+            "1": {
+              "name": "markup.heading.vsm"
+            }
+          }
+        },
+        {
+          "begin": "#",
+          "end": "$",
+          "name": "comment.line.number-sign.vsm",
+          "patterns": [
+            {
+              "match": "(?<=#\\s)(\\[\\d+\\])+",
+              "name": "markup.bold.linetag.vsm"
+            },
+            {
+              "include": "#operands"
+            },
+            {
+              "match": "\\b0x[0-9A-Fa-f]+\\b",
+              "name": "constant.numeric.hex.comment.vsm"
+            }
+          ]
+        }
+      ]
+    },
+    "statement": {
+      "patterns": [
+        {
+          "match": "^\\s*d\\s+\\w+\\b.*$",
+          "name": "meta.debug.vsm"
+        },
+        {
+          "match": "(^|;)\\s*(imm)(?=[\\s/;+]|$)((?:[/+][A-Za-z0-9]+)*)",
+          "captures": {
+            "1": {
+              "name": "punctuation.separator.expr.vsm"
+            },
+            "2": {
+              "name": "keyword.other.imm.vsm"
+            },
+            "3": {
+              "name": "keyword.operator.modifier.vsm"
+            }
+          }
+        },
+        {
+          "match": "(^|;)\\s*(nop|wait|noforward)(?=[\\s/;+]|$)((?:[/+][A-Za-z0-9]+)*)",
+          "captures": {
+            "1": {
+              "name": "punctuation.separator.expr.vsm"
+            },
+            "2": {
+              "name": "keyword.control.nop.vsm"
+            },
+            "3": {
+              "name": "keyword.operator.modifier.vsm"
+            }
+          }
+        },
+        {
+          "match": "(^|;)\\s*([dfhg](?:v|m)(?:fma|mul|add|sub|passa)|[dfhg]m(?:write|read))(?=[\\s/;+]|$)((?:[/+][A-Za-z0-9]+)*)",
+          "captures": {
+            "1": {
+              "name": "punctuation.separator.expr.vsm"
+            },
+            "2": {
+              "name": "entity.name.function.mau.vsm"
+            },
+            "3": {
+              "name": "keyword.operator.modifier.vsm"
+            }
+          }
+        },
+        {
+          "match": "(^|;)\\s*(l1bm\\w*|l2bm\\w*|mv\\w*)(?=[\\s/;+]|$)((?:[/+][A-Za-z0-9]+)*)",
+          "captures": {
+            "1": {
+              "name": "punctuation.separator.expr.vsm"
+            },
+            "2": {
+              "name": "support.function.transfer.vsm"
+            },
+            "3": {
+              "name": "keyword.operator.modifier.vsm"
+            }
+          }
+        },
+        {
+          "match": "(^|;)\\s*([a-z][a-z0-9]*)(?=[\\s/;+]|$)((?:[/+][A-Za-z0-9]+)*)",
+          "captures": {
+            "1": {
+              "name": "punctuation.separator.expr.vsm"
+            },
+            "2": {
+              "name": "keyword.control.alu.vsm"
+            },
+            "3": {
+              "name": "keyword.operator.modifier.vsm"
+            }
+          }
+        },
+        {
+          "match": ";",
+          "name": "punctuation.separator.expr.vsm"
+        },
+        {
+          "include": "#immediate"
+        },
+        {
+          "include": "#operands"
+        },
+        {
+          "include": "#numbers"
+        }
+      ]
+    },
+    "immediate": {
+      "match": "\\b(ui|i|u|f|h|d|s)?(\\\")([^\\\"]*)(\\\")",
+      "captures": {
+        "1": {
+          "name": "storage.modifier.imm.vsm"
+        },
+        "2": {
+          "name": "string.quoted.double.vsm"
+        },
+        "3": {
+          "name": "constant.numeric.imm.vsm"
+        },
+        "4": {
+          "name": "string.quoted.double.vsm"
+        }
+      }
+    },
+    "operands": {
+      "patterns": [
+        {
+          "match": "(-?)(\\$(?:aluf|mauf|mreadf|lbf))(e?)\\b",
+          "captures": {
+            "1": {
+              "name": "keyword.operator.negate.vsm"
+            },
+            "2": {
+              "name": "variable.language.forward.vsm"
+            },
+            "3": {
+              "name": "keyword.operator.stride.vsm"
+            }
+          }
+        },
+        {
+          "match": "\\$nowrite\\b",
+          "name": "constant.language.nowrite.vsm"
+        },
+        {
+          "match": "\\$(?:subpeid|peid|l1bid|l2bid|mabid|msb1)\\b",
+          "name": "support.constant.id.vsm"
+        },
+        {
+          "match": "(/)?(\\$[oi]mr)(\\d+)",
+          "captures": {
+            "1": {
+              "name": "keyword.operator.vsm"
+            },
+            "2": {
+              "name": "keyword.operator.mask.vsm"
+            },
+            "3": {
+              "name": "keyword.operator.mask.vsm"
+            }
+          }
+        },
+        {
+          "match": "(-?)((?:\\$(?:ll|l)?mt)(?:\\[[^\\]]*\\]|\\d+))((?:v\\d*)?e?)(@\\d*(?:\\.\\d+)?)?",
+          "captures": {
+            "1": {
+              "name": "keyword.operator.negate.vsm"
+            },
+            "2": {
+              "name": "entity.name.tag.lmt.vsm"
+            },
+            "3": {
+              "name": "keyword.operator.stride.vsm"
+            },
+            "4": {
+              "name": "constant.numeric.group.vsm"
+            }
+          }
+        },
+        {
+          "match": "(-?)(\\$(?:ll|l)?t)\\b",
+          "captures": {
+            "1": {
+              "name": "keyword.operator.negate.vsm"
+            },
+            "2": {
+              "name": "storage.type.t.vsm"
+            }
+          }
+        },
+        {
+          "match": "(-?)((?:\\$(?:ll|l)?r)(?:\\[[^\\]]*\\]|\\d+))((?:v\\d*)?e?)(@\\d*(?:\\.\\d+)?)?",
+          "captures": {
+            "1": {
+              "name": "keyword.operator.negate.vsm"
+            },
+            "2": {
+              "name": "variable.parameter.grf0.vsm"
+            },
+            "3": {
+              "name": "keyword.operator.stride.vsm"
+            },
+            "4": {
+              "name": "constant.numeric.group.vsm"
+            }
+          }
+        },
+        {
+          "match": "(-?)((?:\\$(?:ll|l)?s)(?:\\[[^\\]]*\\]|\\d+))((?:v\\d*)?e?)(@\\d*(?:\\.\\d+)?)?",
+          "captures": {
+            "1": {
+              "name": "keyword.operator.negate.vsm"
+            },
+            "2": {
+              "name": "entity.name.type.grf1.vsm"
+            },
+            "3": {
+              "name": "keyword.operator.stride.vsm"
+            },
+            "4": {
+              "name": "constant.numeric.group.vsm"
+            }
+          }
+        },
+        {
+          "match": "(-?)((?:\\$(?:ll|l)?n)(?:\\[[^\\]]*\\]|\\d+))((?:v\\d*)?e?)(@\\d*(?:\\.\\d+)?)?",
+          "captures": {
+            "1": {
+              "name": "keyword.operator.negate.vsm"
+            },
+            "2": {
+              "name": "entity.other.attribute-name.lm1.vsm"
+            },
+            "3": {
+              "name": "keyword.operator.stride.vsm"
+            },
+            "4": {
+              "name": "constant.numeric.group.vsm"
+            }
+          }
+        },
+        {
+          "match": "(-?)((?:\\$(?:ll|l)?m)(?:\\[[^\\]]*\\]|\\d+))((?:v\\d*)?e?)(@\\d*(?:\\.\\d+)?)?",
+          "captures": {
+            "1": {
+              "name": "keyword.operator.negate.vsm"
+            },
+            "2": {
+              "name": "entity.name.tag.lm0.vsm"
+            },
+            "3": {
+              "name": "keyword.operator.stride.vsm"
+            },
+            "4": {
+              "name": "constant.numeric.group.vsm"
+            }
+          }
+        },
+        {
+          "match": "(-?)((?:\\$(?:ll|l)?[xy])(?:\\[[^\\]]*\\]|\\d+))((?:v\\d*)?e?)(@\\d*(?:\\.\\d+)?)?",
+          "captures": {
+            "1": {
+              "name": "keyword.operator.negate.vsm"
+            },
+            "2": {
+              "name": "support.class.matrix.vsm"
+            },
+            "3": {
+              "name": "keyword.operator.stride.vsm"
+            },
+            "4": {
+              "name": "constant.numeric.group.vsm"
+            }
+          }
+        },
+        {
+          "match": "(-?)((?:\\$(?:ll|l)?(?:bi|b|c))(?:\\[[^\\]]*\\]|\\d+))((?:v\\d*)?e?)(@\\d*(?:\\.\\d+)?)?",
+          "captures": {
+            "1": {
+              "name": "keyword.operator.negate.vsm"
+            },
+            "2": {
+              "name": "support.class.mem.vsm"
+            },
+            "3": {
+              "name": "keyword.operator.stride.vsm"
+            },
+            "4": {
+              "name": "constant.numeric.group.vsm"
+            }
+          }
+        },
+        {
+          "match": "(-?)((?:\\$(?:dar|di|p|d))(?:\\[[^\\]]*\\]|\\d+))((?:v\\d*)?e?)(@\\d*(?:\\.\\d+)?)?",
+          "captures": {
+            "1": {
+              "name": "keyword.operator.negate.vsm"
+            },
+            "2": {
+              "name": "support.class.mem.vsm"
+            },
+            "3": {
+              "name": "keyword.operator.stride.vsm"
+            },
+            "4": {
+              "name": "constant.numeric.group.vsm"
+            }
+          }
+        },
+        {
+          "match": "\\$(?:ll|l)?bi\\b",
+          "name": "support.class.mem.vsm"
+        }
+      ]
+    },
+    "numbers": {
+      "match": "-?\\b\\d+(\\.\\d+)?\\b",
+      "name": "constant.numeric.vsm"
+    }
+  }
+}

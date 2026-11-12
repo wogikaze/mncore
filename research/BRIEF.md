@@ -11,8 +11,8 @@
 
 ## 現状
 
-- 現行最良: `problems/challenge/20.fizzbuzz/answer.vsm` = **93 語（j=91, m=2）**, Accepted。
-- 目標は 52 語。差分 41 語。
+- 現行最良: `solutions/02_fable_47.vsm` = **47 語（j=45, m=2）**, Accepted（2026-11-12、`research/experiments/fable52/`）。
+- 目標の 52 語は達成。以前の最良は `problems/challenge/20.fizzbuzz/answer.vsm` の 93 語。
 - 既存解は変更禁止（基準として使う）。
 
 ## 検証コマンド

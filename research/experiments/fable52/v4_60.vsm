@@ -1,0 +1,60 @@
+imm ui"0x5d004901" $ln8
+imm ui"0x454e3eb8" $lr4
+imm ui"0x6c404e00" $n3
+imm ui"0x44004400" $n2
+imm ui"0x36003600" $s5
+imm ui"0x4b400000" $ls0 $lr0 $ln0
+imm ui"0xc420d056" $ln12
+imm ui"0x3dcccd07" $lr6 $ls6
+imm ui"0xc540ca0c" $lr10
+iand $l1bid $ln[12,8,8,8] $nowrite
+ior $aluf $ls0 $lr16v
+iand $peid $lr[4,6,10,10] $nowrite
+ior $aluf $lr[16,0,0,0] $lr24v
+imm ui"0x3fcf650f" $ln4; l1bmd $aluf $lb0
+imm ui"0xf36cf36c" $r2
+iadd $l2bid $lr18 $nowrite; fvpassa -$ls0 $r73v2 $s40v2
+iadd $l2bid $aluf $lr32v; fvmul -$s5e $n2e $lm[2,1538,2562,3074]; l1bmm4 $lb0 $ls16v
+imm ui"0x3f9b4004" $s3; fvfma $lbf $n2e $r2e $nowrite; l1bmm4 $lb64 $lr40v
+imm ui"0x4bbb4bbb" $s4; fvadd $mauf $lr32v $nowrite
+imm ui"0x4480c280" $s8; fvfma $mauf $n2e $lr40v $lr48v
+imm ui"0x3a005e00" $s2; fvfma $mauf $s3e $r4e $lr56v
+imm ui"0xcef4f420" $lr14 $ls10; fvfma $lr48v $ln4 $s4e $nowrite
+fmin $lr56v $mauf $ls32v $lr64v; fvmul $s5e $n2e $lm[514,1026,2050,3586]
+fvfma $lr28 $s2e $n3e $s25v2
+fmin $s33v2 $lr64v $r72v2 $s41v2
+imm ui"0xc1000000" $r12; fvfma $lr28 $s2e $n3e $s24v2
+imm ui"0xc000be00" $n11; fvadd $lr72v $ls40v $nowrite
+imm ui"0x00005300" $n10; fvadd $mauf $ls24v $ls48v $lr80v
+imm ui"0xc68cd200" $r14 $s12
+imm ui"0x3c23d767" $s6; fvmul $lr80v $s5e $lr88v
+ffloor $mauf $ls56v; fvfma $ls48v $n3e $lr0 $t
+imm ui"0x51d8d480" $n6; fvadd -$aluf $lr80v $lr96v $s65v2
+imm ui"0x42004dd8" $n7; fvmul $mauf $ls6 $lr104v
+ffloor $mauf $ls80v; fvadd $mauf -$s8e $lr120v $omr2
+imm ui"0xcef4f40c" $s13; fvmul $aluf $lr6 $nowrite
+ffloor $mauf $lr112v; fvfma $lr88v $n2e $lmt2 $ls72v
+lpassa $lr14 $lm[768,1536,2304,3072]; fvadd $ls64v $n8e $ls96v
+imm ui"0xc684ea00" $s10; fvfma $ls72v $n11e $r10e $lr136v
+fvfma $ls72v $r12e $n12e $nowrite
+fmax $lr136v $mauf $lr144v $ls112v
+lpassa $ls[10,10,10,12] $lm[0,1280,2560,3840]; fvfma $lr104v $n2e -$n2e $ls88v $omr1
+imm ui"0x4d005900" $r8; fvfma $lr48v -$n2e -$ls56v $nowrite
+fvfma $lr80v -$s8e $mauf $lr152v
+fmax $r145v2 $ls112v $s121v2; fvadd $lmt0 $n10e $lr128v $omr5
+fvfma/$imr1 $ls80v $n7e $r8e $ls104v
+fvadd $ls120v $lr152v $lr160v $omr3
+fvfma/$imr2 $lr112v $n6e $ls96v $nowrite
+fmin $lr160v $ln14 $lr168v $omr4; fvadd/$imr5 $mauf $ls104v $nowrite
+fvfma $mauf $s2e -$lr128v $nowrite
+fftoi $mauf $nowrite; fvfma/$imr3 $lr160v $n2e $ls0 $nowrite
+ullsr $aluf $mauf $nowrite; fvfma/$imr4 $lr160v -$n2e $ls0 $nowrite
+llsl $aluf $mauf $nowrite
+l1bmr4lbor $aluf $lb0
+nop
+nop
+l2bmd $lb0 $lc0
+l2bmd $lb32 $lc256
+nop
+mvd/n512 $lc0 $p0@0
+mvp/n4096 $p0@0 $d0@0

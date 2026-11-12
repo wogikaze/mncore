@@ -1,0 +1,42 @@
+{
+  "name": "vsm-syntax",
+  "displayName": "MN-Core VSM Syntax",
+  "description": "Syntax highlighting for MN-Core 2 VSM assembly (.vsm)",
+  "version": "0.1.2",
+  "publisher": "wogikaze",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "vsm",
+        "aliases": [
+          "MN-Core VSM",
+          "vsm"
+        ],
+        "extensions": [
+          ".vsm"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "vsm",
+        "scopeName": "source.vsm",
+        "path": "./syntaxes/vsm.tmLanguage.json"
+      }
+    ],
+    "configurationDefaults": {
+      "[vsm]": {
+        "editor.tabSize": 4,
+        "editor.detectIndentation": false
+      }
+    }
+  }
+}

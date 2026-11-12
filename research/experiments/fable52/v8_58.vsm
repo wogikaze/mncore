@@ -1,0 +1,58 @@
+imm ui"0xcef68000" $ln16 $lr94
+imm ui"0x45403e00" $s41
+imm ui"0x9200b800" $n12
+imm ui"0x3dcccd07" $lr88 $ln6
+imm ui"0x4d104901" $ln10
+imm ui"0x3a005e00" $n2
+imm ui"0x4b400000" $lr80 $ln0 $s1v2
+imm ui"0xca0cc41e" $ln14
+imm ui"0x4bb85a38" $lr86; fvmul $lr88 $lr88 $n6
+iadd $l2bid $lr80 $nowrite
+iadd $l2bid $aluf $lr98
+imm ui"0x3f9b400c" $lr84; fvfma $lr80 -$n2e $lr80 $ls48
+iand $l1bid $ln[14,10,10,10] $nowrite
+ior $aluf $lr[80,98,98,98] $lr0v
+iand $peid $lr[86,88,84,84] $nowrite
+ior $aluf $lr[0,80,80,80] $lr8v
+imm ui"0x44004400" $s40; l1bmd $aluf $lb0
+imm ui"0xf36cf36c" $r82; fvadd $r86e -$ln0 $ls52
+fvfma $lr12 $n2e $ls48 $s9v2 $r48v2
+imm ui"0x3fcf67fd" $n4; fvadd $s41e -$lr80 $ls50; l1bmm4 $lb0 $lr16v
+imm ui"0x42004e00" $n3; fvfma $lbf $s40e $r82e $nowrite; l1bmm4 $lb64 $lr24v
+imm ui"0xc68cd200" $n16 $r96; fvadd $mauf $lr2 $nowrite
+imm ui"0x3dc03dc0" $s42; fvfma $mauf $s40e $lr24v $lr32v
+imm ui"0x3e00be00" $s43; fvfma $mauf $r84e $ls50 $lr40v
+imm ui"0xcef67fec" $r97; fvfma $lr32v $ln4 $ls52 $nowrite
+fmin $lr40v $mauf $nowrite; fvpassa $n10e $r72v2
+fmin $r41v2 $aluf $s8v2 $r49v2; fvpassa -$s40e $lm[2,1538,2562,3074]
+imm ui"0x42004dd8" $n8; fvmul $s43e $lr88 $ls44
+imm ui"0x5d005900" $n9; fvadd $ls8v $lr48v $lr56v $ls16v
+imm ui"0xc684ea00" $r94; fvmul -$lr32v $s40e $s0v2
+imm ui"0xd056c53f" $r92; fvfma $lr56v $s42e $s42e $nowrite
+ffloor $mauf $ls24v $r73v2; fvpassa $s40e $lm[514,1026,2050,3586]
+lpassa $lr[94,94,94,96] $lm[0,1280,2560,3840]; fvfma $aluf $ln6 -$s43e $lr104v $omr1
+ffloor $mauf $ls56v; fvfma $lr56v $n3e $ls0v $t $lr64v
+imm ui"0xb600b900" $r93; fvfma $aluf $lr88 $ls44 $nowrite
+ffloor $mauf $lr112v; fvfma $lr56v $s40e $lmt2 $ls32v
+lpassa $ln16 $lm[768,1536,2304,3072]; fvadd -$ls24v -$lr64v $r137v2 $s96v2
+imm ui"0x4b45f600" $r91; fvfma $ls32v $n12e $r92e $ls80v
+imm ui"0x51d8d480" $s46; fvfma $ls32v $r93e $n14e $nowrite
+fmax $ls80v $mauf $lr128v $ls88v $omr2
+fvadd $lmt0 $lr90 $ls72v $omr5
+fmax $r129v2 $ls88v $r136v2 $s97v2
+fvfma/$imr1 $ls56v $n8e $lr72v $ls64v
+fvadd -$lr136v $ls96v $lr144v $omr3
+fvfma/$imr2 $lr112v $s46e $n9e $nowrite
+fvadd/$imr5 $mauf $ls64v $nowrite
+fvfma $mauf $n2e -$ls72v $nowrite
+fftoi $mauf $nowrite; fvfma/$imr3 $lr144v $s40e $ln0 $s105v2
+ullsr $aluf $mauf $nowrite
+llsl $aluf $ls104v $nowrite
+l1bmr4lbor $aluf $lb0
+nop
+nop
+l2bmd $lb0 $lc0
+l2bmd $lb32 $lc256
+nop
+mvd/n512 $lc0 $p0@0
+mvp/n4096 $p0@0 $d0@0

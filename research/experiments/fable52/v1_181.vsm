@@ -1,0 +1,181 @@
+imm ui"0x4b000000" $t $lr200/1000 $ls200/1000
+imm ui"0x00000008" $lr202/1000
+imm ui"0x00000004" $lr204/1000
+imm ui"0x00000006" $lr206/1000
+imm ui"0x00000001" $lr208/1000
+imm ui"0x00000003" $lr210/1000
+imm ui"0x00000009" $lr212/1000
+nop
+iand $mabid $lr202 $nowrite
+ilsl $aluf $lr206 $ls202
+iand $mabid $lr204 $ls204
+iand $l1bid $lr206 $nowrite
+ilsl $aluf $lr206 $ls206
+iand $l1bid $lr208 $nowrite
+ilsl $aluf $lr210 $ls208
+ilsl $l2bid $lr204 $ls210
+ior $subpeid $ls202 $nowrite
+ior $aluf $ls204 $nowrite
+ior $aluf $ls206 $nowrite
+ior $aluf $ls208 $nowrite
+ior $aluf $ls210 $nowrite
+ior $aluf $t $ls212
+ior $subpeid $t $nowrite
+dmwrite $aluf $lx0
+dmread $lx0 $lr16v
+imm ui"0x44800000" $ln200/1000
+imm ui"0xd0002000" $ls220/1000
+nop
+nop
+fvfma $lr16v $ln200 $ls220 $lr24v
+nop
+fvadd $lr24v $ls212 $lr32v
+imm ui"0x41000000" $ln204/1000
+nop
+nop
+fvmul $lr32v $ln204 $lr0v
+imm ui"0x00000003" $lr214/1000
+nop
+iand $mabid $lr214 $nowrite
+ior $aluf $t $lr8v
+imm ui"0xec00ec00" $n254/1000
+nop
+nop
+fvadd $lr8v $n254e $ls8v
+imm ui"0x3a40399b" $n208/1000
+imm ui"0x3cd0454e" $s222/1000
+imm ui"0x3e810000" $n210/1000
+imm ui"0x3e4f649b" $n211/1000
+imm ui"0x3fae0000" $s224/1000
+imm ui"0x42eecb00" $s225/1000
+nop
+nop
+fvfma $lr0v $n208e $s222e $lr40v
+fvfma $lr0v $ln210 $ls224 $ls40v
+nop
+fmin $lr40v $ls40v $lr48v $ls48v
+nop
+fmin $r49v2 $ls48v $ls56v $r65v2
+imm ui"0x3e003e00" $n212/1000
+nop
+nop
+fvfma $s56v2 $n212e $lr64v $ls64v
+nop
+imm ui"0x6c006c00" $n252/1000
+nop
+nop
+fvadd $ls64v $n252e $lr72v
+nop
+fvadd $lr72v $ls8v $lr72v
+imm ui"0x36003600" $n214/1000
+imm ui"0xe400e400" $s226/1000
+imm ui"0xbe00c600" $n216/1000
+imm ui"0xec00ec00" $s228/1000
+nop
+nop
+fvfma $lr72v $n214e $s226e $lr80v
+nop
+ffloor $lr80v $ls88v
+nop
+fvfma $ls88v $n216e $lr72v $lr96v
+fvadd $lr72v $s228e $ln104v
+nop
+nop
+fvadd $ln104v -$ls88v $lr104v
+imm ui"0x3c23d70b" $s230/1000
+imm ui"0x3dcccccd" $s231/1000
+imm ui"0x3a83126f" $s232/1000
+imm ui"0x4dd8f480" $n218/1000
+imm ui"0x5dd80000" $n220/1000
+imm ui"0x3e000000" $n222/1000
+imm ui"0x00006e00" $n224/1000
+imm ui"0xc800c800" $s234/1000
+imm ui"0xcf30cf30" $s236/1000
+imm ui"0xd648d648" $s238/1000
+imm ui"0xedb6edb6" $n240/1000
+imm ui"0x6997ffff" $n241/1000
+imm ui"0x7bdf7bdf" $n242/1000
+imm ui"0xfffeffff" $n243/1000
+imm ui"0x7dd70000" $n244/1000
+imm ui"0x7dd70000" $n245/1000
+imm ui"0x0046697a" $r222/1000
+imm ui"0x7a0a0000" $r223/1000
+imm ui"0x0042757a" $r224/1000
+imm ui"0x7a000000" $r225/1000
+imm ui"0x3c003c00" $n226/1000
+imm ui"0xca7ffffc" $s240/1000
+imm ui"0xca7ffffc" $s241/1000
+imm ui"0x3e003e00" $n228/1000
+imm f"1.0" $ln250/1000
+imm ui"0xbe00c000" $n230/1000
+imm ui"0xca00c4c0" $s242/1000
+imm ui"0xc1000000" $n232/1000
+imm ui"0xc300d055" $s244/1000
+imm ui"0x42804280" $s250/1000
+imm ui"0x44004400" $n236/1000
+imm ui"0xc400c400" $n238/1000
+imm ui"0x4b000400" $s246/1000
+imm ui"0x4e402800" $s113v2
+nop
+nop
+fvadd $lr0v $s234e $lr112v $omr1
+fvadd $lr0v $s236e $lr112v $omr2
+fvadd $lr0v $s238e $lr112v $omr3
+imm ui"0x42400000" $s112v2/$imr1
+imm ui"0x4640c000" $s112v2/$imr2
+imm ui"0x4a40c0c0" $s112v2/$imr3
+fvmul $lr104v $ls230 $lr120v
+fvmul $lr104v $ls232 $lr128v
+ffloor $lr120v $ls120v
+ffloor $lr128v $ls128v
+fvfma $lr104v $n224e $ls112v $lr136v
+nop
+fvfma $ls120v $n218e $lr136v $lr144v
+nop
+fvfma $ls128v $n220e $lr144v $lr136v
+nop
+fvfma $s121v2 $n222e $lr136v $lr144v
+nop
+fftoi $lr144v $lr152v
+llsl $ln240 $lr96v $ls136v
+llsl $ln242 $lr96v $ls144v
+hrelu $ls136v $ls136v $ln136v $omr4
+hrelu $ls144v $ls144v $ln144v $omr5
+lpassa $lr222 $lr152v/$imr4
+lpassa $lr224 $lr152v/$imr5
+fvfma $lr72v $n226e $ls240 $lr160v
+nop
+ffloor $lr160v $ls160v
+llsl $ln244 $lr96v $lr168v
+nop
+frelu $lr168v $ln250 $lr248v
+nop
+fvfma $lr248v -$n228e $ls160v $lr176v
+nop
+fvfma $lr176v $n230e $s242e $ls176v
+fvfma $lr176v $n232e $s244e $lr216v
+nop
+fmax $ls176v $lr216v $lr184v $ls192v
+nop
+fmax $r185v2 $ls192v $lr192v
+fvadd -$lr0v -$ls88v $lr200v
+nop
+fvfma $ln104v $s250e $lr200v $ls200v
+nop
+fvadd $ls200v $lr192v $lr208v
+nop
+fvfma $lr208v $n236e $s246 $s209v2
+fvfma $lr208v $n238e $s246 $s217v2
+nop
+ullsr $lr152v $ls208v $ls224v
+llsl $lr152v $ls216v $nowrite
+lor $aluf $ls224v $lr160v
+nop
+l1bmr4lbor $lr160v $lb0
+nop
+nop
+l2bmd $lb0 $lc0
+l2bmd $lb32 $lc256
+nop
+mvd/n512 $lc0 $p0@0
+mvp/n4096 $p0@0 $d0@0

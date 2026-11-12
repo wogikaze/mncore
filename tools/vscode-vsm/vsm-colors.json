@@ -1,0 +1,214 @@
+{
+  "textMateRules": [
+    {
+      "scope": "comment.line.number-sign.vsm",
+      "settings": {
+        "foreground": "#6A9955"
+      }
+    },
+    {
+      "scope": "comment.line.rule.vsm",
+      "settings": {
+        "foreground": "#3E5F33"
+      }
+    },
+    {
+      "scope": "markup.heading.vsm",
+      "settings": {
+        "foreground": "#B5E890",
+        "fontStyle": "bold"
+      }
+    },
+    {
+      "scope": "markup.bold.linetag.vsm",
+      "settings": {
+        "foreground": "#E0E0E0",
+        "fontStyle": "bold"
+      }
+    },
+    {
+      "scope": "constant.numeric.hex.comment.vsm",
+      "settings": {
+        "foreground": "#8FBF7F"
+      }
+    },
+    {
+      "scope": "keyword.other.imm.vsm",
+      "settings": {
+        "foreground": "#C586C0",
+        "fontStyle": "bold"
+      }
+    },
+    {
+      "scope": "keyword.control.alu.vsm",
+      "settings": {
+        "foreground": "#569CD6",
+        "fontStyle": "bold"
+      }
+    },
+    {
+      "scope": "entity.name.function.mau.vsm",
+      "settings": {
+        "foreground": "#DCDCAA",
+        "fontStyle": "bold"
+      }
+    },
+    {
+      "scope": "support.function.transfer.vsm",
+      "settings": {
+        "foreground": "#4EC9B0",
+        "fontStyle": "bold"
+      }
+    },
+    {
+      "scope": "keyword.control.nop.vsm",
+      "settings": {
+        "foreground": "#808080",
+        "fontStyle": "italic"
+      }
+    },
+    {
+      "scope": "punctuation.separator.expr.vsm",
+      "settings": {
+        "foreground": "#FF8C00",
+        "fontStyle": "bold"
+      }
+    },
+    {
+      "scope": "constant.numeric.imm.vsm",
+      "settings": {
+        "foreground": "#B5CEA8"
+      }
+    },
+    {
+      "scope": "storage.modifier.imm.vsm",
+      "settings": {
+        "foreground": "#C586C0"
+      }
+    },
+    {
+      "scope": "string.quoted.double.vsm",
+      "settings": {
+        "foreground": "#808080"
+      }
+    },
+    {
+      "scope": "variable.parameter.grf0.vsm",
+      "settings": {
+        "foreground": "#FF9E64"
+      }
+    },
+    {
+      "scope": "entity.name.type.grf1.vsm",
+      "settings": {
+        "foreground": "#7DCFFF"
+      }
+    },
+    {
+      "scope": "entity.other.attribute-name.lm1.vsm",
+      "settings": {
+        "foreground": "#BB9AF7"
+      }
+    },
+    {
+      "scope": "entity.name.tag.lm0.vsm",
+      "settings": {
+        "foreground": "#F7768E"
+      }
+    },
+    {
+      "scope": "entity.name.tag.lmt.vsm",
+      "settings": {
+        "foreground": "#F7768E",
+        "fontStyle": "underline"
+      }
+    },
+    {
+      "scope": "storage.type.t.vsm",
+      "settings": {
+        "foreground": "#F7768E",
+        "fontStyle": "bold underline"
+      }
+    },
+    {
+      "scope": "variable.language.forward.vsm",
+      "settings": {
+        "foreground": "#E0AF68",
+        "fontStyle": "italic bold"
+      }
+    },
+    {
+      "scope": "constant.language.nowrite.vsm",
+      "settings": {
+        "foreground": "#6B6B6B",
+        "fontStyle": "italic"
+      }
+    },
+    {
+      "scope": "keyword.operator.mask.vsm",
+      "settings": {
+        "foreground": "#FF5370",
+        "fontStyle": "bold"
+      }
+    },
+    {
+      "scope": "keyword.operator.stride.vsm",
+      "settings": {
+        "foreground": "#9AA5CE",
+        "fontStyle": "italic"
+      }
+    },
+    {
+      "scope": "keyword.operator.negate.vsm",
+      "settings": {
+        "foreground": "#FF5370",
+        "fontStyle": "bold"
+      }
+    },
+    {
+      "scope": "keyword.operator.modifier.vsm",
+      "settings": {
+        "foreground": "#9AA5CE"
+      }
+    },
+    {
+      "scope": "support.constant.id.vsm",
+      "settings": {
+        "foreground": "#73DACA",
+        "fontStyle": "italic"
+      }
+    },
+    {
+      "scope": "support.class.matrix.vsm",
+      "settings": {
+        "foreground": "#C0CAF5",
+        "fontStyle": "underline"
+      }
+    },
+    {
+      "scope": "support.class.mem.vsm",
+      "settings": {
+        "foreground": "#4EC9B0"
+      }
+    },
+    {
+      "scope": "constant.numeric.group.vsm",
+      "settings": {
+        "foreground": "#9AA5CE"
+      }
+    },
+    {
+      "scope": "constant.numeric.vsm",
+      "settings": {
+        "foreground": "#B5CEA8"
+      }
+    },
+    {
+      "scope": "meta.debug.vsm",
+      "settings": {
+        "foreground": "#808080",
+        "fontStyle": "italic"
+      }
+    }
+  ]
+}

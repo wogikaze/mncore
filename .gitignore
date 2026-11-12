@@ -10,3 +10,4 @@ mncompile/native/target/
 scratch/
 .cargo-home
 research/experiments/mnist-gpu/*.bin
+tools/vscode-vsm/*.vsix

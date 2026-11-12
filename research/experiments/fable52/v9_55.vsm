@@ -1,0 +1,55 @@
+imm ui"0x4bb85a38" $lr42
+imm ui"0x45403e00" $s74
+imm ui"0xccdb01b6" $lr36
+imm ui"0x3dcccd07" $lr44 $ln4
+imm ui"0x44004400" $r34
+imm ui"0x4b400180" $ls72 $lr32
+imm ui"0x3f9b4009" $ln0
+imm ui"0x3fcf67cc" $r40
+imm ui"0x3a004dd8" $n6
+imm ui"0xca0cc41e" $ln12
+iadd $l2bid $ls72 $nowrite; fvmul $lr44 $lr44 $n4
+iadd $l2bid $aluf $lr56; fvadd $r42e -$ls72 $ln14
+iand $peid $lr[42,44,40,40] $nowrite
+ior $aluf $ls72 $lm8v
+imm ui"0x3e00be00" $s75; fvadd $s74e -$lr32 $lr54; l1bmd $aluf $lb0
+iand $l1bid $ln[12,0,0,0] $nowrite; fvpassa $r34e $lm[898,1410,2434,3970]
+ixor $aluf $lr[36,56,56,56] $ls0v; fvfma $ls72 -$n6e $ls72 $lr52
+imm ui"0xd056c53f" $n10; fvpassa $ls72 $s25v2; l1bmm4 $lb0 $lr0v
+imm ui"0x4b45f600" $n9; fvfma $lbf $r34e $ls0 $nowrite; l1bmm4 $lb64 $ls8v
+imm ui"0xcef68000" $ls80 $lr48; fvadd $mauf $ls2 $nowrite
+imm ui"0x42004e00" $r39; fvfma $mauf $r34e $ls8v $ls16v
+imm ui"0x9200b800" $r46; fvfma $mauf $n0e $lr54 $ls32v
+imm ui"0xc68cd200" $s80 $r50; fvfma $ls16v $lr40 $ln14 $nowrite
+fmin $ls32v $mauf $nowrite; fvfma $lm12 $n6e $lr52 $s41v2 $r8v2
+fmin $s33v2 $aluf $s40v2 $r9v2; fvpassa -$r34e $lm[386,1922,2946,3458]
+imm ui"0xb600b900" $r47; fvmul -$ls16v $r34e $s24v2
+imm ui"0x3dc03dc0" $n2; fvadd $ls40v $lr8v $lr16v $ls48v
+imm ui"0x55005900" $n7; fvfma $mauf $r39e $ls24v $t $lr24v
+imm ui"0xc684ea00" $r48; fvmul $s75e $lr44 $ls76
+fvfma $ls48v $r34e $lmt2 $ls64v
+lpassa $ls80 $lm[1152,1920,2688,3456]; fvfma $mauf $r46e $n10e $ls112v
+imm ui"0xcef67fec" $r51; fvfma $ls64v $r47e $n12e $nowrite
+fmax $ls112v $mauf $lr88v $lm24v $omr2; fvfma $lr16v $n2e $n2e $nowrite
+ffloor $mauf $lm16v $s57v2
+lpassa $lr[48,48,48,50] $lm[384,1664,2944,128]; fvfma $aluf $ln4 -$s75e $ls88v $omr1
+ffloor $mauf $lr64v; fvfma $s74e $n2e -$r47e $s56v2
+imm ui"0x49d8d480" $s78; fvfma $aluf $lr44 $ls76 $nowrite
+ffloor $mauf $lr72v; fvadd $lmt0 $ln8 $ls104v $omr5
+fvadd -$lm16v -$lr24v $s121v2 $r96v2
+imm ui"0x42005e00" $r38; fvfma/$imr1 $lr64v $n6e $ls56v $ls96v
+fvfma/$imr2 $lr72v $s78e $n7e $nowrite
+fmax $r89v2 $lm24v $s120v2 $r97v2; fvadd/$imr5 $mauf $ls96v $nowrite
+fvfma $mauf $r38e -$ls104v $nowrite
+fftoi $mauf $lr80v; fvadd -$ls120v $lr96v $ls128v $omr3
+fvfma/$imr3 $mauf $r34e $ls72 $r105v2
+ullsr $lr80v $mauf $nowrite
+llsl $aluf $lr104v $nowrite
+l1bmr4lbor $aluf $lb0
+nop
+nop
+l2bmd $lb0 $lc0
+l2bmd $lb32 $lc256
+nop
+mvd/n512 $lc0 $p0@0
+mvp/n4096 $p0@0 $d0@0
