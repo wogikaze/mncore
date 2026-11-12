@@ -1,0 +1,23 @@
+hbfn/9 $lm[64,66,80,82]r $nowrite
+hbfn/9 $lm[68,70,84,86]r $nowrite; hmwrite $aluf $lx0
+hbfn/9 $lm[72,74,88,90]r $nowrite; hmwrite $aluf $lx4
+hbfn/9 $lm[76,78,92,94]r $nowrite; hmwrite $aluf $lx8
+hbfn/9 $lm0vr $nowrite; hmwrite $aluf $lx12
+hbfn/9 $lm8vr $nowrite; hmmul $lx $aluf $nowrite
+hbfn/9 $lm16vr $nowrite; hmmul $lx $aluf $nowrite; l1bmrffadd $mauf $llb0
+hbfn/9 $lm24vr $nowrite; hmmul $lx $aluf $nowrite; l1bmrffadd $mauf $llb32
+hbfn/9 $lm32vr $nowrite; hmmul $lx $aluf $nowrite; l1bmrffadd $mauf $llb64
+hbfn/9 $lm40vr $nowrite; hmmul $lx $aluf $nowrite; l1bmrffadd $mauf $llb96
+hbfn/9 $lm48vr $nowrite; hmmul $lx $aluf $nowrite; l1bmrffadd $mauf $llb128
+hbfn/9 $lm56vr $nowrite; hmmul $lx $aluf $nowrite; l1bmrffadd $mauf $llb160
+hmmul $lx $aluf $nowrite; l1bmrffadd $mauf $llb192
+l1bmrffadd $mauf $llb224
+nop
+nop
+l2bmrffadd $lb0 $lc0
+l2bmrffadd $lb64 $lc64
+l2bmrffadd $lb128 $lc128
+l2bmrffadd $lb192 $lc192
+nop
+mvp/n256i9f $lc0@.0 $d0
+mvp/n256i9f $lc0@.1 $d256

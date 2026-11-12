@@ -1,0 +1,29 @@
+gbfn $lm64v $nowrite
+gbfn $lm72v $nowrite; gmwrite $aluf $lx0
+gbfn $lm80v $nowrite; gmwrite $aluf $lx4
+gbfn $lm88v $nowrite; gmwrite $aluf $ly0
+gmwrite $aluf $ly4
+gmmul $lx $lm0v $lr0v4
+gmmul $ly $lm0v $lr2v4
+gmmul $lx $lm8v $ls0v4
+gmmul $ly $lm8v $ls2v4; l1bmrffadd $llr0v $llb0
+gmmul $lx $lm16v $lr0v4
+gmmul $ly $lm16v $lr2v4; l1bmrffadd $lls0v $llb32
+gmmul $lx $lm24v $ls0v4
+gmmul $ly $lm24v $ls2v4; l1bmrffadd $llr0v $llb64
+gmmul $lx $lm32v $lr0v4
+gmmul $ly $lm32v $lr2v4; l1bmrffadd $lls0v $llb96
+gmmul $lx $lm40v $ls0v4
+gmmul $ly $lm40v $ls2v4; l1bmrffadd $llr0v $llb128
+gmmul $lx $lm48v $lr0v4
+gmmul $ly $lm48v $lr2v4; l1bmrffadd $lls0v $llb160
+gmmul $lx $lm56v $ls0v4
+gmmul $ly $lm56v $ls2v4; l1bmrffadd $llr0v $llb192
+nop
+l1bmrffadd $lls0v $llb224; l2bmrffadd $lb0 $lc0
+l2bmrffadd $lb64 $lc64
+l2bmrffadd $lb128 $lc128
+l2bmrffadd $lb192 $lc192
+nop
+mvp/n256i9f $lc0@.0 $d0
+mvp/n256i9f $lc0@.1 $d256

@@ -1,0 +1,14 @@
+ipassa $mabid $omr1; hvadd $t $llm0v $lls0v
+imm ui"0x4B400080" $llr32v; fvpassa $mauf $ls2v4/$imr1
+imm ui"0x3FB8AA3B" $nowrite
+imm ui"0x3F317218" $lr40v; fvfma $ls2v4 $aluf $lr32v $ls48v
+imm ui"0x3B885E66" $lr48/1000; fvadd $mauf -$lr32v $nowrite
+imm ui"0x3CABAB97" $ln20; fvfma $mauf -$lr40v $ls2v4 $t
+imm ui"0x3DAAAB48" $nowrite; fvfma $mauf $lr48 $aluf $nowrite
+imm ui"0x3E7FFE8B" $nowrite; fvfma $mauf $t $aluf $nowrite
+imm ui"0x3F000001" $lr52/1000; fvfma $mauf $t $aluf $nowrite
+ilsl $ls48v $ln20 $lr60v; fvfma $mauf $t $aluf $nowrite
+fvfma $mauf $t $lr52 $nowrite
+fvmul $mauf $lr60v $ln0v4
+l1bmm@2 $mauf $lbi
+l1bmm $lbi $ln2v4
