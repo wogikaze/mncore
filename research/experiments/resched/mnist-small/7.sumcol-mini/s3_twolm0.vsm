@@ -1,0 +1,3 @@
+fpassa $lm0v $nowrite
+fvadd $lm4v $lm8v $nowrite
+fvfma $lm12v $aluf $mauf $ln0v

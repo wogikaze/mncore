@@ -1,0 +1,5 @@
+imm ui"0x3FC00000" $nowrite
+ipassa $llm0v $nowrite; gmwrite $aluf $lx0
+fvadd $lm2v4 $aluf $nowrite
+gbfn $mauf $nowrite
+gmmul $lx $aluf $n0v

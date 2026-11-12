@@ -1,0 +1,6 @@
+fvpassa $lm0v4 $nowrite
+zero $nowrite; fvadd $lm2v4 $mauf $nowrite
+gbfn $mauf $nowrite; gmwrite $aluf $lx4
+imm ui"0x3FC00000" $nowrite; gmwrite $aluf $lx0
+gmmul $lx $aluf $ln0
+msr $mauf $ln2
