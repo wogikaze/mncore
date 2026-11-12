@@ -1,0 +1,99 @@
+ipackbit $subpeid $t $nowrite
+dmwrite $aluf $lx0; imm i"56" $r16/1000
+dmread $lx0 $lr0v4; imm i"599" $s31
+iinc $mreadf $lr2v4
+iand $l1bid $r[0,0,12,2] $nowrite
+ilsl $aluf $r[0,0,14,8] $s0v
+iand $peid $r[14,16,0,0] $nowrite
+ilsl $aluf $r[2,14,0,0] $nowrite
+ior $aluf $s2v $s0v
+ilsl $l2bid $r10 $nowrite
+ior $aluf $s0 $nowrite
+ior $aluf $s1 $nowrite
+ilsl $aluf $r4 $s0/1000 $r0/1000
+imm ui"0x4b000000" $t
+imm i"8" $r[16,17,28,0]/1110 $s28; hvpassa -$aluf $omr15
+ior $lr2v $t $nowrite
+nop/3
+ipassa $r[2,4,6,8] $s[33,34,35,36]
+ipassa $r[10,12,14,16] $s[37,38,39,40]/1110
+imm i"0" $s[32,32,32,32]/1000
+ipassa $r0 $r[40,41,40,41]/1100
+nop/3
+iadd $ls[32,34,36,38] $lr40 $ls[48,50,52,54]
+imm f"4668" $r[200,201,200,201]/1100
+imm ui"0x3c4f64c2" $r[204,205,204,205]/1100
+imm f"79" $r[208,209,208,209]/1100
+imm f"30" $r[212,213,212,213]/1100
+imm f"4" $r[216,217,216,217]/1100
+imm f"0.2" $r[220,221,220,221]/1100
+imm f"5" $r[224,225,224,225]/1100
+imm f"15" $r[228,229,228,229]/1100
+imm f"1000" $r[232,233,232,233]/1100
+imm f"1" $r[236,237,236,237]/1100
+nop/3
+ior $ls[48,50,52,54] $llt $ls[56,58,60,62]
+nop
+fvadd $ls[56,58,60,62] -$llt $ls[64,66,68,70]
+nop
+fvadd $ls[64,66,68,70] -$lr200 $ls[72,74,76,78] $ln[0,2,4,6]
+nop
+fvmul $ls[72,74,76,78] $lr204 $nowrite
+ffloor $mauf $ls[80,82,84,86] $ln[32,34,36,38]
+nop
+nop
+fvfma -$lr208 $ls[80,82,84,86] $ln[0,2,4,6] $ls[88,90,92,94]
+nop
+fvadd $ls[88,90,92,94] -$lr212 $nowrite
+frelu $mauf $lr236 $ln[8,10,12,14]
+nop
+nop
+fvfma $ln[8,10,12,14] -$lr216 $ls[88,90,92,94] $ls[104,106,108,110]
+nop
+fvmul $ls[104,106,108,110] $lr220 $nowrite
+ffloor $mauf $ls[112,114,116,118] $ln[40,42,44,46]
+nop
+nop
+fvfma -$lr224 $ln[40,42,44,46] $ls[104,106,108,110] $ls[120,122,124,126]
+fvmul $ls[80,82,84,86] $lr228 $nowrite
+fvadd $mauf $lr232 $ls[128,130,132,134]
+nop
+fvadd $ls[128,130,132,134] $ln[40,42,44,46] $ls[136,138,140,142]
+imm f"0.001" $r[240,241,240,241]/1100
+imm f"0.01"  $r[244,245,244,245]/1100
+imm f"0.1"   $r[248,249,248,249]/1100
+imm f"10"    $r[252,253,252,253]/1100
+imm i"8"     $s[300,301,300,301]/1100
+imm i"3"     $s[304,305,304,305]/1100
+imm i"255"   $r[268,269,268,269]/1100
+imm i"48"    $r[272,273,272,273]/1100
+nop/3
+fvmul $ls[136,138,140,142] $lr240 $nowrite
+ffloor $mauf $ls[144,146,148,150] $ln[48,50,52,54]
+fvmul $ls[136,138,140,142] $lr244 $nowrite
+ffloor $mauf $ls[152,154,156,158] $ln[56,58,60,62]
+nop
+nop
+fvfma -$lr252 $ln[48,50,52,54] $ls[152,154,156,158] $ls[160,162,164,166]
+fvmul $ls[136,138,140,142] $lr248 $nowrite
+ffloor $mauf $ls[168,170,172,174] $ln[64,66,68,70]
+nop
+nop
+fvfma -$lr252 $ln[56,58,60,62] $ls[168,170,172,174] $ls[176,178,180,182]
+fvfma -$lr252 $ln[64,66,68,70] $ls[136,138,140,142] $ls[184,186,188,190]
+fftoi $ls[144,146,148,150] $lr[320,322,324,326]
+fftoi $ls[160,162,164,166] $lr[328,330,332,334]
+fftoi $ls[176,178,180,182] $lr[336,338,340,342]
+fftoi $ls[184,186,188,190] $lr[344,346,348,350]
+fftoi $ls[120,122,124,126] $lr[352,354,356,358]
+ilsl $lr[320,322,324,326] $ls[300,300,300,300] $nowrite
+ior $aluf $lr[328,330,332,334] $nowrite
+ilsl $aluf $ls[300,300,300,300] $nowrite
+ior $aluf $lr[336,338,340,342] $nowrite
+ilsl $aluf $ls[300,300,300,300] $nowrite
+ior $aluf $lr[344,346,348,350] $ls[232,234,236,238]
+isub $ls[304,304,304,304] $lr[352,354,356,358] $nowrite
+ilsl $aluf $ls[304,304,304,304] $nowrite
+ilsr $ls[232,234,236,238] $aluf $nowrite
+iand $aluf $lr268 $nowrite
+iadd $aluf $lr272 $ls[248,250,252,254]

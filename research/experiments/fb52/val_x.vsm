@@ -1,0 +1,23 @@
+ipackbit $subpeid $t $nowrite
+dmwrite $aluf $lx0; imm i"56" $r16/1000
+dmread $lx0 $lr0v4; imm i"599" $s31
+iinc $mreadf $lr2v4
+iand $l1bid $r[0,0,12,2] $nowrite
+ilsl $aluf $r[0,0,14,8] $s0v
+iand $peid $r[14,16,0,0] $nowrite
+ilsl $aluf $r[2,14,0,0] $nowrite
+ior $aluf $s2v $s0v
+ilsl $l2bid $r10 $nowrite
+ior $aluf $s0 $nowrite
+ior $aluf $s1 $nowrite
+ilsl $aluf $r4 $s0/1000 $r0/1000
+imm ui"0x4b000000" $t
+imm i"8" $r[16,17,28,0]/1110 $s28; hvpassa -$aluf $omr15
+ior $lr2v $t $nowrite
+nop/3
+ipassa $r[2,4,6,8] $s[33,34,35,36]
+ipassa $r[10,12,14,16] $s[37,38,39,40]/1110
+imm i"0" $s[32,32,32,32]/1000
+ipassa $r0 $r[40,41,40,41]/1100
+nop/3
+iadd $ls[32,34,36,38] $lr40 $ls[48,50,52,54]
