@@ -1,0 +1,9 @@
+hmwrite $llm16vr $lx0
+hmread $llx0 $nowrite; hmwrite $llm0vr $ly0
+hmread $llx8 $nowrite; hbfn/9 $mreadf $nowrite
+hmwrite $aluf $llx0; hmread $lly0 $nowrite; hbfn/9 $mreadf $nowrite
+hmwrite $aluf $llx8; hmread $lly8 $nowrite; hbfn/9 $mreadf $lls0v
+hbfn/9 $mreadf $lls16v; hmmul $lx $aluf $lln[0,32,8,40]
+hmmul $lx $ls[2,6,10,14] $lln[4,36,12,44]
+hmmul $lx $ls[16,20,24,28] $lln[16,48,24,56]
+hmmul $lx $ls[18,22,26,30] $lln[20,52,28,60]

@@ -1,0 +1,13 @@
+hbfn/9 $lm[64,66,80,82]r $nowrite
+hbfn/9 $lm[68,70,84,86]r $nowrite; hmwrite $aluf $lx0
+hbfn/9 $lm[72,74,88,90]r $nowrite; hmwrite $aluf $lx4
+hbfn/9 $lm[76,78,92,94]r $nowrite; hmwrite $aluf $lx8
+hbfn/9 $lm0vr $nowrite; hmwrite $aluf $lx12
+hbfn/9 $lm8vr $nowrite; hmmul $lx $aluf $lln0v4
+hbfn/9 $lm16vr $nowrite; hmmul $lx $aluf $lln16v4
+hbfn/9 $lm24vr $nowrite; hmmul $lx $aluf $lln32v4
+hbfn/9 $lm32vr $nowrite; hmmul $lx $aluf $lln48v4
+hbfn/9 $lm40vr $nowrite; hmmul $lx $aluf $lln64v4
+hbfn/9 $lm48vr $nowrite; hmmul $lx $aluf $lln80v4
+hbfn/9 $lm56vr $nowrite; hmmul $lx $aluf $lln96v4
+hmmul $lx $aluf $lln112v4

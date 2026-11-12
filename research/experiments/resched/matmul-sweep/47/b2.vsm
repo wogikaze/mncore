@@ -1,0 +1,12 @@
+ipackbit $mabid $ls0 $t $mb
+hmwrite $lm[128,160,256,256]r $lx0
+hmread $llx0 $nowrite; hmwrite $llmt[0,64,256,256]r $ly0
+hmread $llx8 $nowrite; hbfn/9 $mreadf $nowrite
+hmwrite $aluf $llx0; hmread $lly0 $nowrite; hbfn/9 $mreadf $nowrite
+hmwrite $aluf $llx8; hmread $lly8 $nowrite; hbfn/9 $mreadf $lls0v
+hbfn/9 $mreadf $lls16v; hmmul $lx $aluf $nowrite
+l1bmrffadd $mauf $lbi; hmmul $lx $ls[2,6,10,14] $nowrite
+l1bmm $lbi $ln[0,16,4,20]; l1bmrffadd $mauf $lbi; hmmul $lx $ls[16,20,24,28] $nowrite
+l1bmm $lbi $ln[2,18,6,22]; l1bmrffadd $mauf $lbi; hmmul $lx $ls[18,22,26,30] $nowrite
+l1bmm $lbi $ln[8,24,12,28]; l1bmrffadd $mauf $lbi
+l1bmm $lbi $ln[10,26,14,30]

@@ -5,6 +5,8 @@
 括弧は記録済み answer.vsm の score (j+m)。どれも記録上の公開 Top と同じか短い（人が詰めた解）。
 
 ## 検証
+- **公式サイトの judge は clean（メモリ 0 初期化）と dirty（非 0 初期化）の両方で判定する。** 未初期化メモリが 0 であることに頼る解は落ちる。
+  最終確認は必ず両方で行う: `cd judge/judge-py && python3 judge.py ../../problems/<problem>/testcase.vsm <cand.vsm> --dirty`。
 - 高速: `python3 tools/golfcheck.py <problem> cand.vsm` — 公式 assembler（ハザード検査込み）+ ネイティブシミュレータ、
   answer.vsm の出力とビット一致を要求（~0.1 秒）。許容誤差のある問題（14.exp など）で近似を変えた候補は
   ここで落ちるので、その場合は公式 judge で判定する。

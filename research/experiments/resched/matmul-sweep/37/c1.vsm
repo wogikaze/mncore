@@ -1,0 +1,14 @@
+ipassa $peid $t; gmwrite $lm64v $lx0
+gmwrite $lm72v $lx4
+gbfn $llmt0v $lls0v
+gmwrite $lm80v $ly0
+gmwrite $lm88v $ly4; gmmul $lx $ls[0,2,4,6] $lr0v4 $ln0v4
+gmmul $ly $ls[0,2,4,6] $lr2v4 $ln2v4; l1bmm@2 $mauf $lbi
+l1bmm $lbi $ln16v4; l1bmm@2 $mauf $lbi
+l1bmm $lbi $ln18v4; l1bmm@4 $llr0v $llbi
+l1bmm@6 $llr0v $llbi; l1bmm $llbi $lln32v
+l1bmm@8 $llr0v $llbi; l1bmm $llbi $lln48v
+l1bmm@10 $llr0v $llbi; l1bmm $llbi $lln64v
+l1bmm@12 $llr0v $llbi; l1bmm $llbi $lln80v
+l1bmm@14 $llr0v $llbi; l1bmm $llbi $lln96v
+l1bmm $llbi $lln112v
