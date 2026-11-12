@@ -4,13 +4,14 @@
 `main.vsm` は初回取得時にこの解答で初期化します。
 
 - Author: Wogikaze
-- Lines: 93
+- Lines: 47
 - Status: Accepted（サイト上）
-- Submission: https://mncore-challenge.preferred.jp/submission/9a5ad0d2-ef55-44bc-8455-755003c8ca55
+- Submission: https://mncore-challenge.preferred.jp/submission/8795ecaf-d9a3-4d97-8e2a-c5eb0a3e0bd2
 - Standings: https://mncore-challenge.preferred.jp/standings/
 
 取得時の順位表で最小行数の提出を選んでいます。同率の場合は先に掲載された提出を採用します。
-ローカルの公式 judge で再検証済みです（2026-10-18、`ACCEPTED!! score=93 j=91 m=2 bytes=3054`）。
+ローカルの公式 judge で再検証済みです（2026-11-13、`ACCEPTED!! score=47 j=45 m=2 bytes=2722`）。
+内容は `research/experiments/fable52/v15_47.vsm` と同じです（2026-11-12 提出）。以前の 93 語解は `solutions/00_baseline_93.vsm`。
 
 問題の出典: https://mncore-challenge.preferred.jp/problem/fizzbuzz
 

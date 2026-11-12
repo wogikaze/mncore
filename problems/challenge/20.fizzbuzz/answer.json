@@ -2,12 +2,12 @@
   "problem_url": "https://mncore-challenge.preferred.jp/problem/fizzbuzz",
   "standings_url": "https://mncore-challenge.preferred.jp/standings/",
   "shortest_url": "https://mncore-challenge.preferred.jp/shortest/fizzbuzz/Wogikaze/",
-  "submission_url": "https://mncore-challenge.preferred.jp/submission/9a5ad0d2-ef55-44bc-8455-755003c8ca55",
+  "submission_url": "https://mncore-challenge.preferred.jp/submission/8795ecaf-d9a3-4d97-8e2a-c5eb0a3e0bd2",
   "author": "Wogikaze",
   "status": "Accepted",
-  "lines": 93,
-  "stdout": "ACCEPTED!! score=93 j=91 m=2 bytes=3054",
-  "fetched_at": "2026-10-18T08:12:19+00:00",
-  "local_validation": "accepted (official judge, 2026-10-18)",
+  "lines": 47,
+  "stdout": "ACCEPTED!! score=47 j=45 m=2 bytes=2722",
+  "fetched_at": "2026-11-12T19:44:58+00:00",
+  "local_validation": "accepted (official judge, 2026-11-13)",
   "local_judge_url": "https://mncore-challenge.preferred.jp/judge.zip"
 }
