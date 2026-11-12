@@ -1,0 +1,10 @@
+lpassa $llm0v $llr0v
+lpassa $llm16v $lls0v
+nop
+isub $llr0v $lls0v $lln0v
+imax $llr0v $lls0v $lln16v
+ipassa $llr0v $lln32v
+fvfma $ls256 $ls256 $llm0v $lln48v
+ixor $llr0v $lls0v $lln64v
+nop
+nop

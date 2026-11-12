@@ -1,0 +1,34 @@
+imm ui"4" $lr0
+imm ui"12" $lr2
+imm ui"9" $lr4
+imm ui"7" $lr6
+ilsr $peid $lr0 $nowrite
+ilsl $aluf $lr2 $lr8
+nop
+ilsl $l1bid $lr4 $nowrite
+iadd $aluf $lr8 $lr8
+nop
+ilsl $l2bid $lr6 $nowrite
+iadd $aluf $lr8 $nowrite
+l1bmd $aluf $lb0
+imm ui"6" $lr10
+immu ui"1" $lr12
+imm ui"510" $lr14
+ilsl $l1bid $lr10 $nowrite
+iadd $peid $aluf $nowrite
+iadd $aluf $aluf $nowrite
+isub $aluf $lr14 $nowrite
+isub $aluf $lr12 $nowrite
+l1bmd $aluf $lb256
+nop
+nop
+l2bm@0 $lb256 $lc256
+l2bm@1 $lb256 $lc320
+l2bmr2iiadd $lb0 $lc0
+mvp/n128 $lc256@0.0 $d0@0
+mvp/n16384nd8 $di0@0 $lc16384@0.0
+mvd/n256 $lc0 $p0@0
+mvb/n2048 $p0@0 $lc2048
+mvd/n2048 $lc2048 $p0@0
+mvp/n16384 $p0@0 $lc16384@0.1
+mvr2iiadd/n16384 $lc16384 $d0

@@ -1,0 +1,9 @@
+imm ui"0x3FC00000" $nowrite
+fbfn $m0v4 $nowrite; fmwrite $aluf $lx0
+fmmul $lx $aluf $n512v
+nop
+nop
+l1bmrffadd $lln512 $llbi
+l1bmrffadd $lln528 $llbi; l1bmm $llbi $lln0v
+l1bmrffadd $lln544 $llbi; l1bmm $llbi $lln16v
+l1bmm $llbi $lln48v

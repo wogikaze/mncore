@@ -1,0 +1,6 @@
+ipassa $peid $t
+nop
+lpassa $lmt0 $lr0
+lpassa $llmt0 $llr8
+fpassa $m1 $lr16
+fmax $m1 $m1 $lr20

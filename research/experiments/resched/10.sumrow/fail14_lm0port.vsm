@@ -1,0 +1,14 @@
+imm ui"0x00000004" $nowrite
+ilsl $mabid $aluf $lt
+imm ui"0x3FC00000" $nowrite
+fbfn $mt0v4 $nowrite; fmwrite $aluf $lx0
+fbfn $mt1v4 $nowrite; fmmul $lx $aluf $nowrite
+fbfn $mt2v4 $nowrite; fmfma $lx $aluf $mauf $nowrite
+fbfn $mt3v4 $nowrite; fmfma $lx $aluf $mauf $nowrite
+fmfma $lx $aluf $mauf $m512v
+nop
+l1bmrffadd $llmt[512,496,480,464] $llbi
+l1bmrffadd $llmt[448,432,416,400] $llbi; l1bmm $llbi $lln0v
+l1bmrffadd $llmt[384,368,352,336] $llbi; l1bmm $llbi $lln16v
+l1bmrffadd $llmt[320,304,288,272] $llbi; l1bmm $llbi $lln32v
+l1bmm $llbi $lln48v

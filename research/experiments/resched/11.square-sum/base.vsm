@@ -1,0 +1,11 @@
+ipackbit $mabid $ls0v $t
+nop
+dvmulu $lmt0v32 $lmt0v32 $nowrite
+dvfmad $lmt0v32 $lmt0v32 $mauf $nowrite
+dvfmau $lmt128v32 $lmt128v32 $mauf $nowrite
+dvfmad $lmt128v32 $lmt128v32 $mauf $nowrite
+l1bmrdfadd $mauf $lb0
+l1bmm $lbi $lr0v $ls0v
+dvadd $lbf $ls[4,4,4,0] $nowrite
+dvadd $mauf $ls2 $nowrite
+dvadd $mauf $ls4 $ln0/0001

@@ -1,0 +1,6 @@
+imm ui"0x3FC00000" $nowrite
+fbfn $m0v4 $nowrite; fmwrite $aluf $lx0
+fmmul $lx $aluf $ln0v
+nop
+nop
+nop

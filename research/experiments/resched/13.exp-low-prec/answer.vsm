@@ -1,0 +1,10 @@
+imm f"0.042" $llr16/ll1000
+imm f"0.0044" $nowrite; l1bmr4ffadd $aluf $llbi
+hlrelud $msb1 $llm0vr $lt; hvfma $alufr $llm0vr $llr16 $nowrite; l1bmm4 $llbi $nowrite
+imm f"0.50000000000000000" $nowrite; hvfma $maufr $aluf $lbf $nowrite
+imm f"1.00000000000000000" $lr0/1000; hvfma $maufr $lt $aluf $nowrite
+flrelud $msb1 $lm0v4 $nowrite; hvfma $maufr $lt $aluf $lls0v
+fvfma $mauf $aluf $lr0 $nowrite
+flrelud $msb1 $lm2v4 $nowrite; fvmul $mauf $mauf $ln0v4
+fvfma $ls2v4 $aluf $lr0 $nowrite
+fvmul $mauf $mauf $ln2v4

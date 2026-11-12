@@ -1,0 +1,8 @@
+imm ui"0x3C25397C" $llr16/ll1000
+imm ui"0x3D5954A4" $nowrite; l1bmrffadd $aluf $llbi
+hpassa $llm0vr $lt; hvfma $llr16r $llm0vr $aluf $nowrite; l1bmm $llbi $nowrite
+imm ui"0x3EF4233E" $nowrite; hvfma $maufr $aluf $lbf $nowrite
+imm ui"0x3F80AC80" $nowrite; hvfma $maufr $lt $aluf $nowrite
+imm ui"0x3F80F7A9" $llr24/ll1000; hvfma $maufr $lt $aluf $lls0v
+fvfma $mauf $lm0v4 $aluf $ln0v4
+fvfma $ls2v4 $lm2v4 $llr24 $ln2v4

@@ -1,0 +1,23 @@
+lpassa $mabid $t
+imm ui"0x3F800008" $lr0v
+ipackbit $subpeid $aluf $nowrite; hvpassar -$aluf $omr1 $lr8v; l1bmd+0 $mt[0,16,32,48] $lbi
+linc $aluf $nowrite; fvpassa/$imr1 $lr0v $t; l1bmd+0 $lbi $nowrite
+ixor $aluf $lbf $omr2
+ixor $t $aluf $omr3; fvpassa/$imr2 -$lr8v $ln[0,64,128,192] $lr[16,20,24,28]
+fvpassa/$imr3 -$lr8v $ln[2,66,130,194] $lr[18,22,26,30]; l1bmm@1 $mauf $lbi
+l1bmm $lbi $ln[4,68,132,196]; l1bmm@1 $mauf $lbi
+l1bmm $lbi $ln[6,70,134,198]; l1bmm@2 $llr16v $llbi
+l1bmm $llbi $lln[8,72,136,200]; l1bmm@3 $llr16v $llbi
+l1bmm $llbi $lln[12,76,140,204]; l1bmm@4 $llr16v $llbi
+l1bmm $llbi $lln[16,80,144,208]; l1bmm@5 $llr16v $llbi
+l1bmm $llbi $lln[20,84,148,212]; l1bmm@6 $llr16v $llbi
+l1bmm $llbi $lln[24,88,152,216]; l1bmm@7 $llr16v $llbi
+l1bmm $llbi $lln[28,92,156,220]; l1bmm@8 $llr16v $llbi
+l1bmm $llbi $lln[32,96,160,224]; l1bmm@9 $llr16v $llbi
+l1bmm $llbi $lln[36,100,164,228]; l1bmm@10 $llr16v $llbi
+l1bmm $llbi $lln[40,104,168,232]; l1bmm@11 $llr16v $llbi
+l1bmm $llbi $lln[44,108,172,236]; l1bmm@12 $llr16v $llbi
+l1bmm $llbi $lln[48,112,176,240]; l1bmm@13 $llr16v $llbi
+l1bmm $llbi $lln[52,116,180,244]; l1bmm@14 $llr16v $llbi
+l1bmm $llbi $lln[56,120,184,248]; l1bmm@15 $llr16v $llbi
+l1bmm $llbi $lln[60,124,188,252]
