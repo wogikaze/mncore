@@ -1,0 +1,7 @@
+imm ui"0x41300150" $lr[256,258,260,262]
+ilsl $aluf $aluf $t; hvadd $alufr $llm[0,4,8,12] $llr[0,4,8,12]
+iadd $aluf $mauf $ln[0,4,8,12]
+nop
+iadd $t $lr[2,6,10,14] $ln[2,6,10,14]
+nop
+nop
