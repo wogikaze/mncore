@@ -1,11 +1,11 @@
 {
   "problem_url": "https://mncore-challenge.preferred.jp/mnist/problem/sum_col/",
   "standings_url": "https://mncore-challenge.preferred.jp/mnist/standings/",
-  "shortest_url": "https://mncore-challenge.preferred.jp/mnist/shortest/sum_col/syttrea/",
-  "submission_url": "https://mncore-challenge.preferred.jp/mnist/submission/6753cbce-7bd3-4f84-a2b7-7ea8de851cac",
-  "author": "syttrea",
+  "shortest_url": "https://mncore-challenge.preferred.jp/mnist/shortest/sum_col/Wogikaze/",
+  "submission_url": "https://mncore-challenge.preferred.jp/mnist/submission/71dd4260-daa3-4be8-8c7b-25b044c2adb0",
+  "author": "Wogikaze",
   "status": "Accepted",
-  "lines": 9,
-  "fetched_at": "2026-10-15T08:20:49+00:00",
-  "local_validation": "accepted (official judge, 2026-10-15)"
+  "lines": 8,
+  "fetched_at": "2026-11-12T20:27:46+00:00",
+  "local_validation": "accepted (official judge, 2026-11-13)"
 }

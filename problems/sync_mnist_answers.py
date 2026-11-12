@@ -4,7 +4,8 @@
 For every MNIST problem directory (matched by the `slug:` in its problem.md) this saves the
 shortest Accepted submission linked from /mnist/standings/ as `answer.vsm`, with provenance
 in `answer.json` and `answer.md`. Existing files (including the editable `main.vsm`) are
-never overwritten.
+never overwritten, except that `--refresh` replaces a recorded answer when the standings now
+show a shorter one (`main.vsm` is still left alone).
 
     uv run --with beautifulsoup4 python problems/sync_mnist_answers.py
 """
@@ -26,8 +27,8 @@ from sync_mnist_problems import BeautifulSoup, REPO_ROOT, _download_text
 BASE_URL = "https://mncore-challenge.preferred.jp"
 
 
-def save_if_missing(path: Path, body: str) -> None:
-    if not path.exists():
+def save_if_missing(path: Path, body: str, replace: bool = False) -> None:
+    if replace or not path.exists():
         path.write_text(body, encoding="utf-8")
 
 
@@ -48,6 +49,7 @@ def main() -> int:
     parser.add_argument("--cookie", default="")
     parser.add_argument("--timeout-sec", type=int, default=30)
     parser.add_argument("--delay-sec", type=float, default=0.5)
+    parser.add_argument("--refresh", action="store_true", help="replace answers the standings have beaten")
     args = parser.parse_args()
     if BeautifulSoup is None:
         parser.error("beautifulsoup4 is required (uv run --with beautifulsoup4 python ...)")
@@ -73,12 +75,16 @@ def main() -> int:
     failures = []
     for slug, target in dirs.items():
         try:
-            if (target / "answer.vsm").exists() and (target / "answer.json").exists():
-                print(f"[skip] {target.name}: existing answer preserved")
-                continue
             if slug not in candidates:
                 raise ValueError("No public submission found in standings")
             num_lines, shortest_url = candidates[slug]
+            replace = False
+            if (target / "answer.vsm").exists() and (target / "answer.json").exists():
+                recorded = json.loads((target / "answer.json").read_text(encoding="utf-8")).get("lines")
+                if not (args.refresh and isinstance(recorded, int) and num_lines < recorded):
+                    print(f"[skip] {target.name}: existing answer preserved")
+                    continue
+                replace = True
             req = Request(shortest_url, headers={"User-Agent": "mncore-problem-sync/1.0"})
             if args.cookie:
                 req.add_header("Cookie", args.cookie)
@@ -110,15 +116,15 @@ def main() -> int:
                 "local_validation": "not_run",
             }
             title = re.search(r"^# (.+)$", (target / "problem.md").read_text(encoding="utf-8"), re.M)[1]
-            save_if_missing(target / "answer.vsm", code)
-            save_if_missing(target / "answer.json", json.dumps(provenance, ensure_ascii=False, indent=2) + "\n")
+            save_if_missing(target / "answer.vsm", code, replace)
+            save_if_missing(target / "answer.json", json.dumps(provenance, ensure_ascii=False, indent=2) + "\n", replace)
             save_if_missing(target / "answer.md", (
                 f"# {title} — Answer\n\n"
                 "MNIST 順位表から辿れる公開 Accepted 提出を `answer.vsm` に保存しています（`main.vsm` は変更しません）。\n\n"
                 f"- Author: {author}\n- Lines: {num_lines}\n- Status: Accepted（サイト上）\n"
                 f"- Submission: {submission_url}\n- Standings: {standings_url}\n\n"
                 "取得時の順位表で最小行数の提出を選んでいます。同率の場合は先に掲載された提出を採用します。\n"
-                "提出者のコードをそのまま保存しています。\n"))
+                "提出者のコードをそのまま保存しています。\n"), replace)
             print(f"[ok] {target.name}: {num_lines} lines / {author}")
             time.sleep(args.delay_sec)
         except Exception as exc:  # noqa: BLE001 - report every problem

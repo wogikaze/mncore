@@ -10,16 +10,13 @@ gmwrite $aluf $lx0; gmmul $ly $ls0v4 $ln0v4 $lr0v4; gbfn $mreadf $nowrite;
 gmwrite $aluf $lx4; gmmul $ly $ls16v4 $ln16v4 $lr16v4
 gmmul $lx $ls0v4 $ln2v4 $lr2v4
 gmmul $lx $ls16v4 $ln18v4 $lr18v4
-l1bmm@0 $llr0v $llb64
-l1bmm@0 $llr16v $llb128
-l1bmm@1 $llr0v $llb192
-l1bmm@1 $llr16v $llb256; l2bmrffadd $lb32 $lc32
-l2bmrffadd $lb96 $lc96
-l2bmrffadd $lb160 $lc160
-l2bmrffadd $lb224 $lc224
+l1bmm@0 $llr[0,4,8,12] $llb64
+l1bmm@0 $llr[16,20,24,28] $llb80
+l1bmm@1 $llr[0,4,16,20] $llb96
+l1bmm@0 $llr[8,12,24,28] $llb128
+l1bmm@1 $llr[8,12,24,28] $llb160
+l2bmrffadd $lb64 $lc0
 nop/1
-mvrffadd/n256 $lc64 $p0@0
-mvp/n64 $p0@0 $d0@0
-mvp/n64 $p64@0 $d0@1
-mvp/n64 $p128@0 $d0@2
-mvp/n64 $p192@0 $d0@3
+l2bmrffadd $lb128 $lc64
+nop/1
+mvrffadd/n128 $lc0 $d0

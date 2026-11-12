@@ -1,3 +1,2 @@
-imm ui"0x3F800000" $t
-frelu $lm0v $aluf $ln0v
-frelu $lm8v $t $ln8v
+hvpassa $llm0vr $omr1; zero $lln0v
+imm f"1.0" $lln0v/$llimr1
