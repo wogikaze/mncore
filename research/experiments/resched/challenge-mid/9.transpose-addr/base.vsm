@@ -1,0 +1,10 @@
+lpassa $llm[0,4,32,36] $ln[0,32,4,36] $llr0v
+lpassa $llm[8,12,40,44] $ln[64,96,68,100] $llr16v
+drelu $llm[16,20,48,52] $lr2v4 $lln[16,48,20,52]; dvpassa $llm[16,20,48,52] $ls0v
+drelu $llm[24,28,56,60] $lr18v4 $lln[80,112,84,116]; dvpassa $llm[24,28,56,60] $ls8v
+lpassa $llm[64,68,96,100] $llr80v $lls80v; dvpassa $ls[0,4,2,6] $ln[2,6,34,38];
+lpassa $llm[72,76,104,108] $llr96v $lls96v; dvpassa $ls[8,12,10,14] $ln[66,70,98,102];
+drelu $llm[80,84,112,116] $lr82v4 $lln[24,56,28,60]; dvpassa $llm[80,84,112,116] $ls18v4
+drelu $llm[88,92,120,124] $lr98v4 $lln[88,120,92,124]; dvpassa $llm[88,92,120,124] $ls34v4
+drelu $lls16v $lr80v4 $lln[8,40,12,44];
+drelu $lls32v $lr96v4 $lln[72,104,76,108];
