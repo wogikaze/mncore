@@ -51,8 +51,8 @@ jobs:
         ./haribote_graph_compiler.py test -f unit_tests/train_step/* > test_results.txt 2>&1 || true
         
         # Count PASS and FAIL
-        PASS_COUNT=$(grep -c "PASS" test_results.txt || echo "0")
-        FAIL_COUNT=$(grep -c "FAIL" test_results.txt || echo "0")
+        PASS_COUNT=$(grep -c "PASS" test_results.txt || true)
+        FAIL_COUNT=$(grep -c "FAIL" test_results.txt || true)
         
         # Save summary
         echo "{" > test_summary.json

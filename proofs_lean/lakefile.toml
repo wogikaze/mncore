@@ -1,6 +1,9 @@
 name = "proofs_lean"
 version = "0.1.0"
 defaultTargets = ["proofs_lean"]
+# Lake may compile several modules in parallel; keep each Lean worker modest so
+# parallel module builds do not multiply the default hardware-sized thread pool.
+weakLeanArgs = ["-j", "2"]
 
 [[lean_lib]]
 name = "ProofsLean"

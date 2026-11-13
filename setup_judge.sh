@@ -1,40 +1,39 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-# PID付きのユニークな一時ファイル名を作成
-TEMP_FILE="/tmp/judge_$(date +%Y%m%d_%H%M%S)_$$.zip"
+TEMP_DIR=$(mktemp -d)
+trap 'rm -rf "$TEMP_DIR"' EXIT
+ARCHIVE="$TEMP_DIR/judge.zip"
+DOWNLOAD_URL="https://mncore-challenge.preferred.jp/judge-mncore-challenge.zip"
 
-# ファイルをダウンロード
-echo "$TEMP_FILE にダウンロード中..."
-curl -L -o "$TEMP_FILE" "https://seccamp-2025.mncore-challenge.preferred.tech/judge.zip"
+echo "公式judgeをダウンロード中: $DOWNLOAD_URL"
+curl --fail --location --silent --show-error --output "$ARCHIVE" "$DOWNLOAD_URL"
+unzip -tq "$ARCHIVE"
+unzip -q "$ARCHIVE" -d "$TEMP_DIR"
 
-# ダウンロードの成功確認
-if [ ! -f "$TEMP_FILE" ]; then
-    echo "エラー: judge.zip のダウンロードに失敗しました"
+NEW_JUDGE="$TEMP_DIR/judge"
+if [[ ! -f "$NEW_JUDGE/judge-py/judge.py" || \
+      ! -x "$NEW_JUDGE/judge-py/mncore2_emuenv/assemble3" || \
+      ! -x "$NEW_JUDGE/judge-py/mncore2_emuenv/gpfn3_package_main" ]]; then
+    echo "エラー: judge.py、assembler、emulatorを含む公式judgeではありません" >&2
     exit 1
 fi
 
-# 既存のjudgeディレクトリを削除
-rm -rf ./judge
-
-# zipファイルを現在のディレクトリに展開（zipには judge/ ディレクトリが含まれている）
-echo "現在のディレクトリに展開中..."
-if unzip -o "$TEMP_FILE"; then
-    echo "展開成功"
-    
-    # 一時ファイルを削除
-    echo "一時ファイル $TEMP_FILE を削除中..."
-    rm "$TEMP_FILE"
-    echo "セットアップ完了！"
+echo "公式judgeの動作確認中..."
+if [[ "$OSTYPE" == darwin* ]]; then
+    (cd "$NEW_JUDGE" && ./judge example/hello_world/testcase.vsm example/hello_world/example.vsm)
 else
-    echo "エラー: judge.zip の展開に失敗しました"
-    rm "$TEMP_FILE"
+    (cd "$NEW_JUDGE" && python3 judge-py/judge.py example/hello_world/testcase.vsm example/hello_world/example.vsm)
+fi
+
+if [[ -e ./judge ]]; then
+    mv ./judge "$TEMP_DIR/previous-judge"
+fi
+if ! mv "$NEW_JUDGE" ./judge; then
+    if [[ -e "$TEMP_DIR/previous-judge" ]]; then
+        mv "$TEMP_DIR/previous-judge" ./judge
+    fi
     exit 1
 fi
 
-# 動作確認
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    # 初回は docker の準備が行われる
-    judge/judge judge/example/hello_world/testcase.vsm judge/example/hello_world/example.vsm 
-else
-    python3 judge/judge-py/judge.py judge/example/hello_world/testcase.vsm judge/example/hello_world/example.vsm 
-fi
+echo "公式judgeをセットアップしました。"

@@ -531,7 +531,9 @@ def run_mncore_test(test_dir, onnx_filename="model.onnx", single_test=False, for
                 # 通常テストが成功した場合のみ--dirtyテストを実行
                 result2 = run_judge(testcase_vsm_path, generated_vsm_path, dirty=True)
                 
-                if result2:
+                if result2 is None:
+                    print("⚠ 使用中のjudge.pyは--dirtyに対応していないため、dirtyテストをスキップ")
+                elif result2:
                     print(f"✓ {vsm_file}: テスト成功")
                 else:
                     print(f"✗ {vsm_file}: --dirtyテストが失敗")
@@ -592,6 +594,9 @@ def run_judge(testcase_vsm, generated_vsm, dirty=False):
             text=True,
             timeout=120
         )
+
+        if dirty and result.returncode == 2 and "unrecognized arguments: --dirty" in result.stderr:
+            return None
         
         # 出力から"ACCEPTED!!"を含む行を探す
         for line in result.stdout.split('\n'):
