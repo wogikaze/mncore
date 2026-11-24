@@ -31,6 +31,26 @@ __device__ __forceinline__ DevState jit_local_state() {
     st.mreadf = jsh_mreadf; st.lbf = jsh_lbf; st.bar0 = jsh_bar0; st.bar1 = jsh_bar1;
     return st;
 }
+// L2 prefetch of one row (two 128-byte lines: the block's PEs 0-31 and
+// 32-63) of a PE memory, or one line of the block's own L1BM (mem 8).
+__device__ __forceinline__ void jpf(int B, int tid, unsigned mem, unsigned row) {
+    const void* p;
+    if (mem < 4) {
+        const unsigned* base = mem == 0 ? jit_st.lm0 : mem == 1 ? jit_st.lm1 : mem == 2 ? jit_st.grf0 : jit_st.grf1;
+        unsigned len = mem < 2 ? 4096u : 512u;
+        unsigned r = row;
+        if (mem == 0) r += jsh_bar0[0];
+        else if (mem == 1) r += jsh_bar1[0];
+        p = base + PEM(B * 64 + (tid & 1) * 32, r & (len - 1));
+    } else {
+        if (tid & 1) return;
+        p = jit_st.l1bm + (size_t)B * 8192 + row;
+    }
+    // A load whose result is never used: the warp does not wait for it, and
+    // the line lands in L2 for the later operation.
+    unsigned dummy;
+    asm volatile("ld.global.cg.u32 %0, [%1];" : "=r"(dummy) : "l"(p));
+}
 __device__ __forceinline__ void jit_load_regs(int B, int tid) {
     for (int i = tid; i < 1024; i += 256) {
         unsigned g = (unsigned)(i >> 6) * 4096u + (unsigned)(B * 64 + (i & 63));
@@ -266,7 +286,28 @@ fn generate(enc: &[EncOp]) -> (String, usize) {
     let mut op_shape = Vec::with_capacity(enc.len());
     for (i, e) in enc.iter().enumerate() {
         let upd = if e.flags & PF_UPDATE != 0 { 1 } else { 0 };
-        let words = desc_words(&e.desc);
+        let mut words = desc_words(&e.desc);
+        // Zero the padding words (not in the schema): their bytes are not
+        // initialized and must not split shapes.
+        {
+            let mut flat = Vec::new();
+            let mut word = 0usize;
+            flatten(&schema(e.kind), "", &mut word, &mut flat);
+            let mut used = vec![false; words.len()];
+            for (_, at, wide) in &flat {
+                if *at < used.len() {
+                    used[*at] = true;
+                }
+                if *wide && at + 1 < used.len() {
+                    used[at + 1] = true;
+                }
+            }
+            for (w, u) in words.iter_mut().zip(&used) {
+                if !u {
+                    *w = 0;
+                }
+            }
+        }
         let fields = variable_fields(e.kind);
         let var: Vec<usize> = fields.iter().map(|f| f.0).collect();
         let mut shape = words.clone();
@@ -334,6 +375,7 @@ fn generate(enc: &[EncOp]) -> (String, usize) {
         op_shape.push((id, !var.is_empty()));
     }
 
+    let distance: usize = std::env::var("MNCORE_JIT_PREFETCH").ok().and_then(|v| v.parse().ok()).unwrap_or(4);
     // The operations go into chunk functions so that NVRTC optimizes bounded
     // pieces instead of one huge function.
     let chunks: Vec<(usize, &[EncOp])> =
@@ -346,6 +388,22 @@ fn generate(enc: &[EncOp]) -> (String, usize) {
         for (j, e) in chunk.iter().enumerate() {
             let i = start + j;
             let _ = writeln!(src, "JPROF({i});");
+            // Prefetch what operation i + D reads (the first chunk also covers
+            // operations 0..D at its start).
+            let targets: Vec<usize> = if i == 0 { (0..=distance.min(enc.len().saturating_sub(1))).collect() } else { vec![i + distance] };
+            if distance > 0 {
+                for t in targets {
+                    if let Some(op) = enc.get(t) {
+                        if !op.prefetch.is_empty() && op.prefetch.len() <= 128 {
+                            src.push_str("switch (tid >> 1) {");
+                            for (k, e) in op.prefetch.iter().enumerate() {
+                                let _ = write!(src, "case {k}: jpf(B, tid, {}u, {}u); break;", e >> 16, e & 0xffff);
+                            }
+                            src.push_str("default: break; }\n");
+                        }
+                    }
+                }
+            }
             if e.flags & PF_BARRIER != 0 && std::env::var("MNCORE_JIT_NOGRID").is_err() {
                 src.push_str("++barriers; prog_grid_barrier(&sync[0], base + barriers * nb);\n");
             }

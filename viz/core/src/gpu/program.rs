@@ -725,6 +725,70 @@ pub(super) struct EncOp {
     pub desc: Vec<u8>,
     /// ALU/MAU only: every (PE, cycle) thread may write its own result.
     pub direct: bool,
+    /// What the operation reads, for the JIT's L2 prefetch: `mem << 16 | row`
+    /// with mem 0-3 a PE memory word row (before BAR) and mem 8 an L1BM
+    /// long-word address of the block's own L1BM.
+    pub prefetch: Vec<u32>,
+}
+
+fn src_rows(s: &AluSrc, out: &mut Vec<u32>) {
+    if s.fixed != 0 || s.mem >= 4 {
+        return;
+    }
+    let len = mem_words(s.mem) as u32;
+    for c in 0..4 {
+        for i in 0..s.wl.max(1) {
+            out.push(s.mem << 16 | ((s.base[c].wrapping_add(i)) & (len - 1)));
+        }
+    }
+}
+
+/// The PE-memory rows and L1BM addresses an operation reads (see
+/// `EncOp::prefetch`). Only a hint: BAR and T offsets are not known here.
+fn prefetch_rows(op: &GpuOp) -> Vec<u32> {
+    let mut v = Vec::new();
+    match op {
+        GpuOp::Alu(l, _) | GpuOp::Bfn(l, _) => {
+            if l.op > 1 {
+                src_rows(&l.a, &mut v);
+            }
+            if (12..=31).contains(&l.op) {
+                src_rows(&l.b, &mut v);
+            }
+        }
+        GpuOp::Mau(l, _) => {
+            src_rows(&l.a, &mut v);
+            if l.kind <= 1 {
+                src_rows(&l.b, &mut v);
+            }
+            if l.kind == 0 || l.kind == 2 {
+                src_rows(&l.c, &mut v);
+            }
+        }
+        GpuOp::MatWrite(l) => src_rows(&l.src, &mut v),
+        GpuOp::MatMau(l, _) => {
+            src_rows(&l.x, &mut v);
+            if l.kind == 0 {
+                src_rows(&l.y, &mut v);
+            }
+        }
+        GpuOp::L1Write(l, _) => {
+            let s = AluSrc { mem: l.src.mem as u32, wl: l.src.wl as u32, base: l.src.base, ..Default::default() };
+            src_rows(&s, &mut v);
+        }
+        GpuOp::L1Read(l) => {
+            if let Some(a) = l.addr {
+                // Up to 4 cycles x 64 long words from the address.
+                for k in 0..16u32 {
+                    v.push(8 << 16 | ((a + k * 16) & 8191));
+                }
+            }
+        }
+        _ => {}
+    }
+    v.sort_unstable();
+    v.dedup();
+    v
 }
 
 /// Raw word interval `[lo, hi)` an operand may touch for one cycle before the
@@ -978,17 +1042,35 @@ impl Gpu {
             if hazards.access(&acc) || all_barriers {
                 flags |= PF_BARRIER;
             }
-            out.push(EncOp { kind, flags, desc, direct: direct && !no_direct });
+            out.push(EncOp { kind, flags, desc, direct: direct && !no_direct, prefetch: Vec::new() });
         };
         for op in ops {
             let acc = accesses(op, 2);
+            let before = out.len();
+            self.encode_one(state, op, acc, &mut push, &mut out)?;
+            if out.len() == before + 1 {
+                out[before].prefetch = prefetch_rows(op);
+            }
+        }
+        Ok(out)
+    }
+
+    fn encode_one(
+        &self,
+        state: &GpuState,
+        op: &GpuOp,
+        acc: Vec<(usize, Exec, bool)>,
+        push: &mut impl FnMut(u32, bool, Vec<u8>, Vec<(usize, Exec, bool)>, bool, &mut Vec<EncOp>),
+        out: &mut Vec<EncOp>,
+    ) -> Result<(), String> {
+        {
             match op {
-                GpuOp::Alu(l, u) => push(PK_ALU, *u, bytes_of(l).to_vec(), acc, alu_direct_ok(l), &mut out),
-                GpuOp::Bfn(l, u) => push(PK_BFN, *u, bytes_of(l).to_vec(), acc, false, &mut out),
-                GpuOp::Mau(l, u) => push(PK_MAU, *u, bytes_of(l).to_vec(), acc, mau_direct_ok(l), &mut out),
-                GpuOp::L1Read(l) => push(PK_L1R, false, bytes_of(&l1_read_args(l)).to_vec(), acc, false, &mut out),
+                GpuOp::Alu(l, u) => push(PK_ALU, *u, bytes_of(l).to_vec(), acc, alu_direct_ok(l), out),
+                GpuOp::Bfn(l, u) => push(PK_BFN, *u, bytes_of(l).to_vec(), acc, false, out),
+                GpuOp::Mau(l, u) => push(PK_MAU, *u, bytes_of(l).to_vec(), acc, mau_direct_ok(l), out),
+                GpuOp::L1Read(l) => push(PK_L1R, false, bytes_of(&l1_read_args(l)).to_vec(), acc, false, out),
                 GpuOp::L1Write(l, u) => {
-                    push(PK_L1W, *u, bytes_of(&l1_write_args(l)).to_vec(), acc, false, &mut out)
+                    push(PK_L1W, *u, bytes_of(&l1_write_args(l)).to_vec(), acc, false, out)
                 }
                 GpuOp::L2(l) => {
                     let a = L2Args {
@@ -999,7 +1081,7 @@ impl Gpu {
                         mask: l.mask as i32,
                         l2b: l.l2b as i32,
                     };
-                    push(PK_L2, false, bytes_of(&a).to_vec(), acc, false, &mut out)
+                    push(PK_L2, false, bytes_of(&a).to_vec(), acc, false, out)
                 }
                 GpuOp::L2Red(l) => {
                     let a = L2RedArgs {
@@ -1011,25 +1093,25 @@ impl Gpu {
                         bits: l.bits as i32,
                         kind: l.rrn as i32,
                     };
-                    push(PK_L2RED, false, bytes_of(&a).to_vec(), acc, false, &mut out)
+                    push(PK_L2RED, false, bytes_of(&a).to_vec(), acc, false, out)
                 }
-                GpuOp::MatWrite(l) => push(PK_MATW, false, bytes_of(l).to_vec(), acc, false, &mut out),
-                GpuOp::MatRead(l, u) => push(PK_MATR, *u, bytes_of(l).to_vec(), acc, false, &mut out),
-                GpuOp::MatMau(l, u) => push(PK_MATMAU, *u, bytes_of(l).to_vec(), acc, false, &mut out),
-                GpuOp::ClearMreadf => push(PK_CLEAR_MREADF, false, Vec::new(), acc, false, &mut out),
+                GpuOp::MatWrite(l) => push(PK_MATW, false, bytes_of(l).to_vec(), acc, false, out),
+                GpuOp::MatRead(l, u) => push(PK_MATR, *u, bytes_of(l).to_vec(), acc, false, out),
+                GpuOp::MatMau(l, u) => push(PK_MATMAU, *u, bytes_of(l).to_vec(), acc, false, out),
+                GpuOp::ClearMreadf => push(PK_CLEAR_MREADF, false, Vec::new(), acc, false, out),
                 GpuOp::Mv(l) => {
                     if l.mode == MV_MODE_NOP || l.threads() == 0 {
-                        continue;
+                        return Ok(());
                     }
                     self.check_mv_line(state, l)?;
                     let phases: &[i32] = if l.snapshot { &[0, 1] } else { &[2] };
                     for &phase in phases {
-                        push(PK_MV, false, bytes_of(&mv_args(l, phase)).to_vec(), accesses(op, phase), false, &mut out);
+                        push(PK_MV, false, bytes_of(&mv_args(l, phase)).to_vec(), accesses(op, phase), false, out);
                     }
                 }
             }
         }
-        Ok(out)
+        Ok(())
     }
 
     /// Encodes the operations for the interpreter kernel and copies them to

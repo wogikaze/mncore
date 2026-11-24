@@ -992,6 +992,12 @@ __device__ __forceinline__ void unit_store(
     }
 }
 
+// The exact 128-bit vfma, shared by every MAU shape of a JIT program (kept
+// out of line so that each shape's code stays small for the instruction cache).
+__device__ __noinline__ unsigned long long mau_vfma_slow(Fmt fa, Fmt fout, Val x, Val y, Val z) {
+    return mau_encode(fout, mau_vfma(fa, fout, x, y, z));
+}
+
 // One PE and cycle of a vector MAU line: reads the sources and computes the
 // output bus and flags without writing.
 __device__ __forceinline__ void mau_compute(
@@ -1037,7 +1043,7 @@ __device__ __forceinline__ void mau_compute(
         if (fast_single && vfma_single_fast(x, y, z, r)) {
             out[l] = r;
         } else {
-            out[l] = mau_encode(fout, mau_vfma(fa, fout, x, y, z));
+            out[l] = mau_vfma_slow(fa, fout, x, y, z);
         }
     }
     // A 64-bit output occupies words 0-1; a half output packs four halves
