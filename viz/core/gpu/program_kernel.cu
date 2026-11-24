@@ -133,9 +133,7 @@ union ProgSmem {
         unsigned fl[256];
     } bus;
     struct {
-        unsigned long long x[16][16];
-        unsigned long long y[16][16];
-        unsigned long long out[16][16];
+        unsigned long long out[4][16][16];
     } mat;
 };
 
@@ -228,47 +226,33 @@ __device__ __forceinline__ void px_matmau(const DevState& st, int B, int tid, in
     const int rows = (a.prec == 0) ? 4 : (a.prec == 3) ? 16 : 8;
     const int nx = (a.prec == 0) ? 1 : (a.prec == 3) ? 4 : (a.prec == 2) ? 2 : 1;
     const int ny = (a.prec == 0) ? 1 : (a.prec == 3) ? 4 : 2;
-    // The CPU reads every cycle's x/y before any write, so all four cycles'
-    // results are computed first (kept in registers by the 64 writer threads
-    // through the shared staging of one cycle at a time), then written.
-    unsigned long long res[4][4];
-    for (int c = 0; c < 4; ++c) {
-        // x/y elements of every PE, grouped [mab][p * n + k].
-        for (int j = tid; j < 64; j += nt) {
+    // Every (cycle, MAB, row) item reads the x vector of its MAB's four PEs
+    // and the y element of its row (all reads happen before any write, like
+    // the CPU), and computes the row into shared memory.
+    for (int j = tid; j < 64 * rows; j += nt) {
+        int i = j % rows, mc = j / rows, mabl = mc & 15, c = mc >> 4;
+        int mab = B * 16 + mabl;
+        unsigned long long xc[16], yc[16];
+#pragma unroll
+        for (int k = 0; k < 16; ++k) { xc[k] = 0; yc[k] = 0; }
+#pragma unroll
+        for (int p = 0; p < 4; ++p) {
             unsigned long long xo[4], yo[4];
-            mat_mau_read(a, B * 64 + j, c, st.lm0, st.lm1, st.grf0, st.grf1, st.mauf, st.aluf,
+            mat_mau_read(a, mab * 4 + p, c, st.lm0, st.lm1, st.grf0, st.grf1, st.mauf, st.aluf,
                          st.t, st.mreadf, st.lbf, st.bar0, st.bar1, xo, yo);
-            int mabl = j >> 2, p = j & 3;
-            for (int k = 0; k < nx; ++k) sm.mat.x[mabl][p * nx + k] = xo[k];
-            if (a.kind == 0) {
-                for (int k = 0; k < ny; ++k) sm.mat.y[mabl][p * ny + k] = yo[k];
+#pragma unroll
+            for (int k = 0; k < 4; ++k) {
+                if (k < nx) xc[p * nx + k] = xo[k];
+                if (a.kind == 0 && k < ny) yc[p * ny + k] = yo[k];
             }
         }
-        __syncthreads();
-        for (int j = tid; j < 16 * rows; j += nt) {
-            int i = j % rows, mabl = j / rows;
-            sm.mat.out[mabl][i] =
-                mat_mau_row(a, B * 16 + mabl, i, sm.mat.x[mabl], sm.mat.y[mabl], st.mats);
-        }
-        __syncthreads();
-        // Writer thread j (one PE) keeps its MAB's rows of this cycle.
-        if (tid < 64) {
-            int per_pe = rows / 4;
-            for (int i = 0; i < 4; ++i) {
-                res[c][i] = (i < per_pe) ? sm.mat.out[tid >> 2][(tid & 3) * per_pe + i] : 0;
-            }
-        }
-        __syncthreads();
+        sm.mat.out[c][mabl][i] = mat_mau_row(a, mab, i, xc, yc, st.mats);
     }
-    if (tid < 64) {
-        int per_pe = rows / 4;
+    __syncthreads();
+    for (int j = tid; j < 64; j += nt) {
         for (int c = 0; c < 4; ++c) {
-            // mat_mau_store reads rows p * per_pe + i of the MAB: rebuild them.
-            unsigned long long outc[16];
-            for (int i = 0; i < 16; ++i) outc[i] = 0;
-            for (int i = 0; i < per_pe; ++i) outc[(tid & 3) * per_pe + i] = res[c][i];
-            mat_mau_store(a, B * 64 + tid, c, outc, st.lm0, st.lm1, st.grf0, st.grf1, st.mauf,
-                          st.mask, st.t, st.bar0, st.bar1, upd);
+            mat_mau_store(a, B * 64 + j, c, sm.mat.out[c][j >> 2], st.lm0, st.lm1, st.grf0,
+                          st.grf1, st.mauf, st.mask, st.t, st.bar0, st.bar1, upd);
         }
     }
 }

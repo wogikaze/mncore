@@ -24,11 +24,15 @@ pub const JIT_THREADS: u32 = 256;
 /// Shared copies of the per-PE registers and the helpers that move them.
 const JIT_SHARED_REGS: &str = r#"
 __shared__ unsigned jsh_mauf[1024], jsh_aluf[1024], jsh_mask[1024], jsh_t[1024];
-__shared__ unsigned jsh_mreadf[1024], jsh_lbf[1024], jsh_bar0[64], jsh_bar1[64];
+__shared__ unsigned jsh_lbf[1024], jsh_bar0[64], jsh_bar1[64];
+// mreadf does not fit the shared budget: a block-major global scratch with
+// the same [block][word][PE] layout instead.
+__constant__ unsigned* jit_mreadf_scratch;
 __device__ __forceinline__ DevState jit_local_state() {
     DevState st = jit_st;
     st.mauf = jsh_mauf; st.aluf = jsh_aluf; st.mask = jsh_mask; st.t = jsh_t;
-    st.mreadf = jsh_mreadf; st.lbf = jsh_lbf; st.bar0 = jsh_bar0; st.bar1 = jsh_bar1;
+    st.lbf = jsh_lbf;
+    st.mreadf = jit_mreadf_scratch + blockIdx.x * 1024; st.bar0 = jsh_bar0; st.bar1 = jsh_bar1;
     return st;
 }
 // L2 prefetch of one row (two 128-byte lines: the block's PEs 0-31 and
@@ -56,7 +60,8 @@ __device__ __forceinline__ void jit_load_regs(int B, int tid) {
         unsigned g = (unsigned)(i >> 6) * 4096u + (unsigned)(B * 64 + (i & 63));
         jsh_mauf[i] = jit_st.mauf[g]; jsh_aluf[i] = jit_st.aluf[g];
         jsh_mask[i] = jit_st.mask[g]; jsh_t[i] = jit_st.t[g];
-        jsh_mreadf[i] = jit_st.mreadf[g]; jsh_lbf[i] = jit_st.lbf[g];
+        jsh_lbf[i] = jit_st.lbf[g];
+        jit_mreadf_scratch[B * 1024 + i] = jit_st.mreadf[g];
     }
     if (tid < 64) {
         jsh_bar0[tid] = jit_st.bar0[B * 64 + tid];
@@ -70,7 +75,8 @@ __device__ __forceinline__ void jit_store_regs(int B, int tid) {
         unsigned g = (unsigned)(i >> 6) * 4096u + (unsigned)(B * 64 + (i & 63));
         jit_st.mauf[g] = jsh_mauf[i]; jit_st.aluf[g] = jsh_aluf[i];
         jit_st.mask[g] = jsh_mask[i]; jit_st.t[g] = jsh_t[i];
-        jit_st.mreadf[g] = jsh_mreadf[i]; jit_st.lbf[g] = jsh_lbf[i];
+        jit_st.lbf[g] = jsh_lbf[i];
+        jit_st.mreadf[g] = jit_mreadf_scratch[B * 1024 + i];
     }
     if (tid < 64) {
         jit_st.bar0[B * 64 + tid] = jsh_bar0[tid];
@@ -85,6 +91,8 @@ const JIT_CHUNK: usize = 64;
 /// A compiled program, ready to launch.
 pub struct JitProgram {
     function: CuFunction,
+    /// Block-major mreadf while the program runs.
+    scratch: u64,
     module: CuModule,
     /// `(kind, flags, direct)` of every operation.
     kinds: Vec<(u32, u32, bool)>,
@@ -106,7 +114,10 @@ pub struct JitProgram {
 impl Drop for JitProgram {
     fn drop(&mut self) {
         // The module stays loaded with the context; only the counter is freed.
-        unsafe { (self.free)(self.sync) };
+        unsafe {
+            (self.free)(self.sync);
+            (self.free)(self.scratch);
+        }
     }
 }
 
@@ -282,6 +293,10 @@ fn generate(enc: &[EncOp]) -> (String, usize) {
     src.push_str("__constant__ unsigned long long* jit_prof;\n");
     let _ = writeln!(src, "#define JPROF(i) do {{ if (jit_prof && tid == 0) jit_prof[(size_t)B * {} + (i)] = clock64(); }} while (0)", enc.len() + 1);
 
+    // MNCORE_JIT_INLINE: every operation's code is inlined in program order, so
+    // instruction fetch streams sequentially instead of jumping between shared
+    // shape functions.
+    let inline_kw = if std::env::var("MNCORE_JIT_INLINE").is_ok() { "__forceinline__" } else { "__noinline__" };
     let mut shapes: std::collections::HashMap<(u32, bool, i32, Vec<u32>), usize> = Default::default();
     let mut op_shape = Vec::with_capacity(enc.len());
     for (i, e) in enc.iter().enumerate() {
@@ -324,7 +339,7 @@ fn generate(enc: &[EncOp]) -> (String, usize) {
             let ty = type_name(e.kind);
             let _ = writeln!(
                 src,
-                "__device__ __noinline__ void js{next}(int B, int tid, const unsigned* p, ProgSmem& sm) {{\nconst DevState st = jit_local_state();"
+                "__device__ {inline_kw} void js{next}(int B, int tid, const unsigned* p, ProgSmem& sm) {{\nconst DevState st = jit_local_state();"
             );
             if !ty.is_empty() {
                 // Every field is assigned by name: constants from the shape,
@@ -568,6 +583,23 @@ impl Gpu {
             },
             "upload jit_st",
         )?;
+        let mut scratch: u64 = 0;
+        self.check(
+            unsafe { (self.cu_mem_alloc)(&mut scratch, crate::machine::PES * 16 * 4) },
+            "cuMemAlloc(jit mreadf scratch)",
+        )?;
+        let mut sym: u64 = 0;
+        let mut sym_size: usize = 0;
+        self.check(
+            unsafe {
+                (self.cu_module_get_global)(&mut sym, &mut sym_size, module, b"jit_mreadf_scratch\0".as_ptr() as *const c_char)
+            },
+            "cuModuleGetGlobal(jit_mreadf_scratch)",
+        )?;
+        self.check(
+            unsafe { (self.cu_htod)(sym, &scratch as *const u64 as *const c_void, 8) },
+            "set jit_mreadf_scratch",
+        )?;
         let mut sync: u64 = 0;
         self.check(unsafe { (self.cu_mem_alloc)(&mut sync, 16) }, "cuMemAlloc(jit sync)")?;
         let zero = [0u8; 16];
@@ -578,6 +610,7 @@ impl Gpu {
         self.check(unsafe { (self.cu_sync)() }, "sync jit upload")?;
         Ok(JitProgram {
             function,
+            scratch,
             module,
             kinds: enc.iter().map(|e| (e.kind, e.flags, e.direct)).collect(),
             lm0: state.lm0,
