@@ -1,130 +1,61 @@
 //! Runs a whole VSM program on the GPU and compares the final state with Sim.
 //!
-//! Usage: gpu_run_program [program.vsm]
+//! Usage: gpu_run_program [program.vsm] [--engine jit|program|lines] [--replay N]
+//!
+//! `program` (default) runs the whole program as one interpreter launch;
+//! `lines` launches one kernel per operation (`GPU_PROFILE=1` times them).
 
 use mncore_sim::blocks::{L1BM_LONGS, L1BS, L2BM_LONGS, L2BS};
 use mncore_sim::gpu::{
-    alu_line_from_expr, bfn_line_from_expr_state, l1_read_line_from_expr, l1_write_line_from_expr,
-    l2_line_from_expr, l2_reduce_line_from_expr, mat_mau_line_from_expr,
-    mat_read_line_from_expr, mat_write_line_from_expr, mau_line_from_expr, mv_line_from_mv, Gpu,
-    MAT_WORDS,
+    lower_program, Gpu, GpuOp, MAT_WORDS, PROGRAM_FLAG_BARRIER, PROGRAM_KIND_NAMES,
 };
-use mncore_sim::machine::{MaskState, GRF_WORDS, LM_WORDS, PES};
+use mncore_sim::machine::{GRF_WORDS, LM_WORDS, PES};
 use mncore_sim::run::Sim;
-use mncore_sim::vsm::{self, Line, Op};
+use mncore_sim::vsm;
 
-fn reads_fwd(e: &mncore_sim::vsm::Expr, kind: mncore_sim::vsm::FwdKind) -> bool {
-    e.srcs.iter().any(|o| matches!(o, mncore_sim::vsm::Operand::Forward { kind: k, .. } if *k == kind))
-}
-
-fn is_lbi_write(e: &mncore_sim::vsm::Expr) -> bool {
-    matches!(e.op, Op::L1(_))
-        && e.dsts.iter().any(|d| matches!(d, mncore_sim::vsm::Operand::L1bm { addr: None, .. }))
-}
-
-fn is_lbi_read(e: &mncore_sim::vsm::Expr) -> bool {
-    matches!(e.op, Op::L1(_))
-        && e.srcs.iter().any(|d| matches!(d, mncore_sim::vsm::Operand::L1bm { addr: None, .. }))
-}
-
-fn same_fwd(a: Option<usize>, b: Option<usize>) -> bool { a.is_some() && a == b }
-
-/// Orders one step's expressions so that forwarding reads see the previous
-/// step's value (reader before writer) while $lbi reads see the current
-/// step's PE-to-L1BM writes (writer before reader).
-fn order_step<'a>(exprs: &'a [mncore_sim::vsm::Expr]) -> Vec<&'a mncore_sim::vsm::Expr> {
-    let n = exprs.len();
-    let mut edge = vec![vec![false; n]; n];
-    let writes: Vec<Option<usize>> = exprs.iter().map(fwd_written_by).collect();
-    for i in 0..n {
-        for k in [mncore_sim::vsm::FwdKind::Mauf, mncore_sim::vsm::FwdKind::Aluf, mncore_sim::vsm::FwdKind::Mreadf, mncore_sim::vsm::FwdKind::Lbf] {
-            if reads_fwd(&exprs[i], k) {
-                for j in 0..n {
-                    if i != j && same_fwd(writes[j], fwd_written_by_kind(k)) {
-                        edge[i][j] = true;
-                    }
-                }
-            }
-        }
-        if is_lbi_read(&exprs[i]) {
-            for j in 0..n {
-                if i != j && is_lbi_write(&exprs[j]) {
-                    edge[i][j] = true;
-                }
-            }
-        }
-    }
-    let mut used = vec![false; n];
-    let mut out = Vec::with_capacity(n);
-    for _ in 0..n {
-        let pick = (0..n).find(|&i| !used[i] && (0..n).all(|j| j == i || used[j] || !edge[j][i]));
-        let pick = match pick { Some(p) => p, None => break };
-        used[pick] = true;
-        out.push(&exprs[pick]);
-    }
-    for (i, e) in exprs.iter().enumerate() { if !used[i] { out.push(e); } }
-    out
-}
-
-fn fwd_written_by_kind(kind: mncore_sim::vsm::FwdKind) -> Option<usize> {
-    Some(match kind {
-        mncore_sim::vsm::FwdKind::Mauf => 0,
-        mncore_sim::vsm::FwdKind::Aluf => 1,
-        mncore_sim::vsm::FwdKind::Mreadf => 2,
-        mncore_sim::vsm::FwdKind::Lbf => 3,
-    })
-}
-
-fn is_l1_read(expr: &mncore_sim::vsm::Expr) -> bool {
-    matches!(expr.op, Op::L1(_))
-        && matches!(expr.srcs.first(), Some(mncore_sim::vsm::Operand::L1bm { .. }))
-}
-
-fn fwd_written_by(expr: &mncore_sim::vsm::Expr) -> Option<usize> {
-    match &expr.op {
-        Op::Mau { .. } => Some(0),
-        Op::Alu { .. } | Op::Imm { .. } | Op::Zero => Some(1),
-        Op::MatRead { .. } => Some(2),
-        Op::L1(_) if matches!(expr.srcs.first(), Some(mncore_sim::vsm::Operand::L1bm { .. })) => {
-            Some(3)
-        }
-        _ => None,
+fn op_name(op: &GpuOp) -> &'static str {
+    match op {
+        GpuOp::Alu(..) => "alu_line",
+        GpuOp::Bfn(..) => "bfn_line",
+        GpuOp::Mau(..) => "mau_line",
+        GpuOp::L1Read(..) => "l1_read_line",
+        GpuOp::L1Write(..) => "l1_write_line",
+        GpuOp::L2(..) => "l2_line",
+        GpuOp::L2Red(..) => "l2_reduce_line",
+        GpuOp::MatWrite(..) => "mat_write_line",
+        GpuOp::MatRead(..) => "mat_read_line",
+        GpuOp::MatMau(..) => "mat_mau_line",
+        GpuOp::Mv(..) => "mv",
+        GpuOp::ClearMreadf => "clear_mreadf",
     }
 }
 
 fn main() {
     let mut cli = std::env::args().skip(1);
-    let path = cli
-        .next()
-        .unwrap_or_else(|| "benchmarks/mnist_train_step.vsm".to_string());
-    let replay = match cli.next().as_deref() {
-        Some("--replay") => Some(cli.next().and_then(|n| n.parse().ok()).unwrap_or(1)),
-        _ => None,
-    };
-    let source = std::fs::read_to_string(&path).expect("read");
-    let program = vsm::parse(&source).expect("parse");
-
-    let mut mask = MaskState::default();
-    let mut dram_longs = 0u64;
-    let mut scratch_longs = 1u64;
-    let mut indirect = false;
-    for (_, line) in &program {
-        if let Line::Mv(mv) = line {
-            if let Some(desc) = mv_line_from_mv(mv) {
-                dram_longs = dram_longs.max(desc.dram_longs_needed());
-                scratch_longs = scratch_longs.max(desc.scratch_longs_needed());
-                indirect |= desc.uses_indirect();
-            }
+    let mut path = "benchmarks/mnist_train_step.vsm".to_string();
+    let mut replay: Option<u32> = None;
+    let mut engine = "program".to_string();
+    while let Some(arg) = cli.next() {
+        match arg.as_str() {
+            "--replay" => replay = Some(cli.next().and_then(|n| n.parse().ok()).unwrap_or(1)),
+            "--engine" => engine = cli.next().expect("--engine jit|program|lines"),
+            other => path = other.to_string(),
         }
     }
-    if indirect {
-        // A DAR entry decides the address at run time, so the device DRAM size
-        // cannot be derived from the statement. One million long words per group
-        // (8 MiB) is enough for the checked-in programs; the kernel counts every
-        // out-of-range indirect access, and the run fails if the count is nonzero.
-        dram_longs = dram_longs.max(1 << 20);
-    }
-    eprintln!("mv capacity: dram_longs={dram_longs}, scratch={scratch_longs}, indirect={indirect}");
+    let source = std::fs::read_to_string(&path).expect("read");
+    let program = vsm::parse(&source).expect("parse");
+    let lowered = match lower_program(&program) {
+        Ok(l) => l,
+        Err(error) => {
+            eprintln!("{error}");
+            std::process::exit(3);
+        }
+    };
+    let (dram_longs, scratch_longs) = (lowered.dram_longs, lowered.scratch_longs);
+    eprintln!(
+        "mv capacity: dram_longs={dram_longs}, scratch={scratch_longs}, indirect={}",
+        lowered.indirect
+    );
 
     let gpu = match Gpu::new() {
         Ok(gpu) => gpu,
@@ -148,132 +79,131 @@ fn main() {
         let dram = vec![0u64; (mncore_sim::mv::GROUPS as u64 * dram_longs) as usize];
         gpu.upload_dram(&state, &dram).expect("dram");
     }
+    let pe_lines = lowered.pe_lines;
+    let words = lowered.words;
 
-    if replay.is_some() {
-        gpu.sync().expect("sync before capture");
-        gpu.begin_capture().expect("begin capture");
-    }
+    let mut graph = None;
+    let mut loaded = None;
     let start = std::time::Instant::now();
-    let mut pe_lines = 0usize;
-    // Forwarding registers readable in the next step: mauf, aluf, mreadf, lbf.
-    let mut fwd_enabled = [false; 4];
-    for (lineno, line) in &program {
-        match line {
-            Line::Nop { .. } => {}
-            Line::MaskDirective { wl, targets, entry } => {
-                mask = MaskState { wl: *wl, targets: *targets, entry: *entry };
+    let mut jit = None;
+    if engine == "jit" {
+        let prog = gpu.compile_program(&state, &lowered.ops, words).expect("compile program");
+        let (regs, local) = gpu.jit_resources(&prog);
+        eprintln!(
+            "jit: {} words, {} ops ({} direct, {} shapes), {} grid barriers, nvrtc {:.1} s, {regs} registers, {local} local bytes",
+            words, prog.ops, prog.direct, prog.shapes, prog.barriers, prog.compile_seconds
+        );
+        gpu.launch_jit(&state, &prog).expect("launch jit");
+        gpu.sync().expect("sync");
+        if std::env::var("GPU_PROFILE").is_ok() {
+            let rows = gpu.profile_jit(&state, &prog).expect("profile");
+            let mut totals: std::collections::BTreeMap<String, (usize, u64)> = Default::default();
+            for (kind, flags, direct, cyc) in rows {
+                let mut name = PROGRAM_KIND_NAMES[kind as usize].to_string();
+                if direct {
+                    name.push_str("/direct");
+                }
+                if flags & PROGRAM_FLAG_BARRIER != 0 {
+                    name.push_str("+bar");
+                }
+                let e = totals.entry(name).or_default();
+                e.0 += 1;
+                e.1 += cyc;
             }
-            Line::Mv(mv) => {
-                let desc = mv_line_from_mv(mv).expect("MV descriptor");
-                gpu.run_mv_line(&state, &desc).expect("mv");
+            let sum: u64 = totals.values().map(|v| v.1).sum();
+            for (name, (count, cyc)) in &totals {
+                eprintln!(
+                    "{name:>18}: {count:5} ops, {:8.3} ms, {:8.2} us/op, {:5.1}% (1.9 GHz)",
+                    *cyc as f64 / 1.9e6,
+                    *cyc as f64 / 1.9e3 / *count as f64,
+                    *cyc as f64 / sum as f64 * 100.0
+                );
             }
-            Line::Pe(exprs) => {
-                pe_lines += 1;
-                if let Err(error) = mncore_sim::issue::check(exprs) {
-                    eprintln!("line {lineno}: {error}");
-                    std::process::exit(3);
+            eprintln!("{:>18}: {:.3} ms", "total", sum as f64 / 1.9e6);
+        }
+        jit = Some(prog);
+    } else if engine == "program" {
+        let prog = gpu.load_program(&state, &lowered.ops, words).expect("load program");
+        eprintln!(
+            "program: {} words, {} ops, {} grid barriers",
+            words, prog.ops, prog.barriers
+        );
+        let (regs, local, shared) = gpu.program_kernel_resources();
+        eprintln!("run_program: {regs} registers, {local} local bytes, {shared} shared bytes per block");
+        gpu.launch_program(&state, &prog).expect("launch program");
+        gpu.sync().expect("sync");
+        if std::env::var("GPU_PROFILE").is_ok() {
+            // Profile a later run of the same program (the state keeps evolving,
+            // which only affects data, not the instruction mix).
+            let rows = gpu.profile_program(&state, &prog).expect("profile");
+            let mut totals: std::collections::BTreeMap<String, (usize, u64)> = Default::default();
+            for (kind, flags, ns) in rows {
+                let mut name = PROGRAM_KIND_NAMES[kind as usize].to_string();
+                if flags & PROGRAM_FLAG_BARRIER != 0 {
+                    name.push_str("+bar");
                 }
-                // SDM 3.6.4/3.6.13: a wait must accompany another PE expression and
-                // its tag must be nonzero. The backend runs every MV to completion
-                // in stream order, so an issued wait is already satisfied.
-                let wait = exprs.iter().any(|e| matches!(e.op, Op::Wait(_)));
-                if wait {
-                    if exprs.len() < 2 {
-                        eprintln!("line {lineno}: wait without another PE expression");
-                        std::process::exit(3);
-                    }
-                    if exprs
-                        .iter()
-                        .any(|e| matches!(e.op, Op::Wait(0)))
-                    {
-                        eprintln!("line {lineno}: wait tag 0 is invalid");
-                        std::process::exit(3);
-                    }
-                }
-                let update_forward = !exprs.iter().any(|e| matches!(e.op, Op::Noforward));
-                let has_mread = exprs.iter().any(|e| matches!(e.op, Op::MatRead { .. }));
-                for expr in exprs {
-                    for src in &expr.srcs {
-                        if let mncore_sim::vsm::Operand::Forward { kind, .. } = src {
-                            let index = match kind {
-                                mncore_sim::vsm::FwdKind::Mauf => 0,
-                                mncore_sim::vsm::FwdKind::Aluf => 1,
-                                mncore_sim::vsm::FwdKind::Mreadf => 2,
-                                mncore_sim::vsm::FwdKind::Lbf => 3,
-                            };
-                            if !fwd_enabled[index] {
-                                eprintln!(
-                                    "line {lineno}: forwarding register {kind:?} is not enabled"
-                                );
-                                std::process::exit(4);
-                            }
-                        }
-                    }
-                }
-                let mut fwd_written = [false; 4];
-                let ordered = order_step(exprs);
-                for expr in ordered {
-                    if matches!(expr.op, Op::Noforward | Op::Wait(_)) {
-                        continue;
-                    }
-                    if update_forward {
-                        if let Some(index) = fwd_written_by(expr) {
-                            fwd_written[index] = true;
-                        }
-                    }
-                    if let Some(line) = alu_line_from_expr(expr, mask) {
-                        gpu.run_alu_line_with(&state, &line, update_forward)
-                            .expect("alu");
-                    } else if let Some(line) = bfn_line_from_expr_state(expr, mask) {
-                        gpu.run_bfn_line_with(&state, &line, update_forward)
-                            .expect("bfn");
-                    } else if let Some(line) = l1_read_line_from_expr(expr, mask) {
-                        gpu.run_l1_read_line(&state, &line).expect("l1 read");
-                    } else if let Some(line) = l1_write_line_from_expr(expr) {
-                        gpu.run_l1_write_line_with(&state, &line, update_forward)
-                            .expect("l1 write");
-                    } else if let Some(line) = l2_line_from_expr(expr) {
-                        gpu.run_l2_line(&state, &line).expect("l2");
-                    } else if let Some(line) = l2_reduce_line_from_expr(expr) {
-                        gpu.run_l2_reduce_line(&state, &line).expect("l2 red");
-                    } else if let Some(line) = mat_write_line_from_expr(expr) {
-                        gpu.run_mat_write_line(&state, &line).expect("mat write");
-                    } else if let Some(line) = mat_read_line_from_expr(expr, mask) {
-                        gpu.run_mat_read_line_with(&state, &line, update_forward)
-                            .expect("mat read");
-                    } else if let Some(line) = mat_mau_line_from_expr(expr, mask) {
-                        gpu.run_mat_mau_line_with(&state, &line, update_forward)
-                            .expect("mat mau");
-                    } else if let Some(line) = mau_line_from_expr(expr, mask) {
-                        gpu.run_mau_line_with(&state, &line, update_forward)
-                            .expect("mau");
-                    } else {
-                        eprintln!("line {lineno}: no GPU descriptor for {:?}", expr.text);
-                        std::process::exit(3);
-                    }
-                }
-                fwd_enabled = if update_forward { fwd_written } else { [false; 4] };
-                // CPU steps without a matrix read expose zero on mreadf.
-                if update_forward && !has_mread {
-                    gpu.clear_mreadf(&state).expect("clear mreadf");
-                }
+                let e = totals.entry(name).or_default();
+                e.0 += 1;
+                e.1 += ns;
             }
-            other => {
-                eprintln!("line {lineno}: unsupported line {other:?}");
-                std::process::exit(3);
+            let sum: u64 = totals.values().map(|v| v.1).sum();
+            for (name, (count, ns)) in &totals {
+                eprintln!(
+                    "{name:>16}: {count:5} ins, {:9.3} ms, {:8.2} us/ins, {:5.1}% (1.9 GHz)",
+                    *ns as f64 / 1.9e6,
+                    *ns as f64 / 1.9e3 / *count as f64,
+                    *ns as f64 / sum as f64 * 100.0
+                );
             }
+            eprintln!("{:>16}: {:.3} ms (sum of per-instruction worst blocks)", "total", sum as f64 / 1.9e6);
+        }
+        loaded = Some(prog);
+    } else {
+        let profile = std::env::var("GPU_PROFILE").is_ok();
+        let mut marks: Vec<(&'static str, *mut std::ffi::c_void)> = Vec::new();
+        if replay.is_some() {
+            gpu.sync().expect("sync before capture");
+            gpu.begin_capture().expect("begin capture");
+        }
+        for op in &lowered.ops {
+            if profile {
+                let event = gpu.event_create().expect("event");
+                gpu.event_record(event).expect("record");
+                marks.push((op_name(op), event));
+            }
+            gpu.run_op(&state, op).expect("run op");
+        }
+        if profile {
+            let event = gpu.event_create().expect("event");
+            gpu.event_record(event).expect("record");
+            marks.push(("end", event));
+        }
+        if replay.is_some() {
+            let g = gpu.end_capture().expect("end capture");
+            let exec = gpu.instantiate_graph(g).expect("instantiate graph");
+            gpu.launch_graph(exec).expect("graph launch");
+            graph = Some((g, exec));
+        }
+        gpu.sync().expect("sync");
+        if profile {
+            let mut totals: std::collections::BTreeMap<&str, (usize, f64)> = Default::default();
+            for pair in marks.windows(2) {
+                let ms = gpu.event_elapsed_ms(pair[0].1, pair[1].1).expect("elapsed") as f64;
+                let entry = totals.entry(pair[0].0).or_default();
+                entry.0 += 1;
+                entry.1 += ms;
+            }
+            let sum: f64 = totals.values().map(|v| v.1).sum();
+            for (label, (count, ms)) in &totals {
+                eprintln!(
+                    "{label:>14}: {count:5} launches, {ms:9.3} ms, {:7.2} us/launch, {:5.1}%",
+                    ms * 1000.0 / *count as f64,
+                    ms / sum * 100.0
+                );
+            }
+            eprintln!("{:>14}: {sum:.3} ms", "total");
         }
     }
-    let (graph, graph_exec) = if replay.is_some() {
-        let graph = gpu.end_capture().expect("end capture");
-        let exec = gpu.instantiate_graph(graph).expect("instantiate graph");
-        gpu.launch_graph(exec).expect("graph launch");
-        gpu.sync().expect("sync graph");
-        (Some(graph), Some(exec))
-    } else {
-        gpu.sync().expect("sync");
-        (None, None)
-    };
     let gpu_elapsed = start.elapsed();
     let mv_errors = gpu.download_mv_errors(&state).expect("mv errors");
     if mv_errors != 0 {
@@ -465,21 +395,28 @@ fn main() {
         pe_lines, bad, cpu_elapsed, gpu_elapsed
     );
     if let Some(n) = replay {
-        let exec = graph_exec.unwrap();
         let replay_start = std::time::Instant::now();
         for _ in 0..n {
-            gpu.launch_graph(exec).expect("graph replay");
+            if let Some(prog) = &jit {
+                gpu.launch_jit(&state, prog).expect("jit replay");
+            } else if let Some(prog) = &loaded {
+                gpu.launch_program(&state, prog).expect("program replay");
+            } else if let Some((_, exec)) = graph {
+                gpu.launch_graph(exec).expect("graph replay");
+            }
         }
         gpu.sync().expect("sync replay");
         let elapsed = replay_start.elapsed();
+        let per_run = elapsed.as_secs_f64() / n as f64;
         println!(
-            "graph replay: {} runs, {:?} total, {:?} per run",
+            "{engine} replay: {} runs, {:?} total, {:.3} ms per run, {:.3} M words/s",
             n,
             elapsed,
-            elapsed / n as u32
+            per_run * 1e3,
+            words as f64 / per_run / 1e6
         );
-        if let Some(graph) = graph {
-            gpu.destroy_graph(exec, graph);
+        if let Some((g, exec)) = graph {
+            gpu.destroy_graph(exec, g);
         }
     }
     if bad != 0 || mv_errors != 0 {

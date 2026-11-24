@@ -10,6 +10,14 @@ use std::path::Path;
 
 use libloading::Library;
 
+mod jit;
+mod program;
+pub use jit::JitProgram;
+pub use program::{
+    lower_program, GpuOp, GpuProgram, LoweredProgram, PROGRAM_BLOCKS, PROGRAM_FLAG_BARRIER,
+    PROGRAM_KIND_NAMES, PROGRAM_THREADS,
+};
+
 use crate::blockop::{L1Op, L2Op, Rrn, RrnOp};
 use crate::float::{DOUBLE, HALF, SINGLE};
 use crate::machine::MaskState;
@@ -30,6 +38,12 @@ type CuGraphInstantiateWithFlags = unsafe extern "C" fn(*mut CuGraphExec, CuGrap
 type CuGraphLaunch = unsafe extern "C" fn(CuGraphExec, CuStream) -> CuResult;
 type CuGraphExecDestroy = unsafe extern "C" fn(CuGraphExec) -> CuResult;
 type CuGraphDestroy = unsafe extern "C" fn(CuGraph) -> CuResult;
+type CuEvent = *mut c_void;
+type CuEventCreate = unsafe extern "C" fn(*mut CuEvent, u32) -> CuResult;
+type CuEventRecord = unsafe extern "C" fn(CuEvent, CuStream) -> CuResult;
+type CuEventRecordWithFlags = unsafe extern "C" fn(CuEvent, CuStream, u32) -> CuResult;
+type CuEventSynchronize = unsafe extern "C" fn(CuEvent) -> CuResult;
+type CuEventElapsedTime = unsafe extern "C" fn(*mut f32, CuEvent, CuEvent) -> CuResult;
 type CuModule = *mut c_void;
 type CuFunction = *mut c_void;
 type CuDevicePtr = u64;
@@ -64,6 +78,21 @@ type CuLaunchKernel = unsafe extern "C" fn(
     *mut *mut c_void,
     *mut *mut c_void,
 ) -> CuResult;
+type CuLaunchCooperativeKernel = unsafe extern "C" fn(
+    CuFunction,
+    u32,
+    u32,
+    u32,
+    u32,
+    u32,
+    u32,
+    u32,
+    *mut c_void,
+    *mut *mut c_void,
+) -> CuResult;
+type CuModuleGetGlobal =
+    unsafe extern "C" fn(*mut CuDevicePtr, *mut usize, CuModule, *const c_char) -> CuResult;
+type CuFuncGetAttribute = unsafe extern "C" fn(*mut c_int, c_int, CuFunction) -> CuResult;
 type CuGetErrorString = unsafe extern "C" fn(CuResult, *mut *const c_char) -> CuResult;
 
 type NvrtcResult = c_int;
@@ -1989,6 +2018,24 @@ pub struct Gpu {
     mat_read_function: CuFunction,
     mat_mau_function: CuFunction,
     zero_mreadf_function: CuFunction,
+    transpose_function: CuFunction,
+    program_function: CuFunction,
+    cu_launch_coop: CuLaunchCooperativeKernel,
+    cu_func_attr: CuFuncGetAttribute,
+    cu_module_load: CuModuleLoad,
+    cu_module_get_global: CuModuleGetGlobal,
+    cu_get_function: CuModuleGetFunction,
+    nvrtc_create: NvrtcCreate,
+    nvrtc_compile: NvrtcCompile,
+    nvrtc_log_size: NvrtcGetSize,
+    nvrtc_log: NvrtcGet,
+    nvrtc_cubin_size: NvrtcGetSize,
+    nvrtc_cubin: NvrtcGet,
+    nvrtc_destroy: NvrtcDestroy,
+    /// Compute capability (major, minor) of the device.
+    arch: (i32, i32),
+    /// Device staging buffer for the PE-major <-> address-major transposes.
+    stage: u64,
     cu_ctx_destroy: CuCtxDestroy,
     cu_mem_alloc: CuMemAlloc,
     cu_mem_free: CuMemFree,
@@ -2007,6 +2054,11 @@ pub struct Gpu {
     cu_graph_exec_destroy: CuGraphExecDestroy,
     cu_graph_destroy: CuGraphDestroy,
     cu_error: CuGetErrorString,
+    cu_event_create: CuEventCreate,
+    cu_event_record: CuEventRecord,
+    cu_event_record_flags: CuEventRecordWithFlags,
+    cu_event_sync: CuEventSynchronize,
+    cu_event_elapsed: CuEventElapsedTime,
     /// Set between `begin_capture` and `end_capture`. A context sync is illegal
     /// while a stream is capturing, so `sync` becomes a no-op for that window.
     capturing: Cell<bool>,
@@ -2039,6 +2091,12 @@ impl Gpu {
         let cu_dtod_async: CuMemcpyDtoDAsync =
             load!(cuda, b"cuMemcpyDtoDAsync_v2\0", CuMemcpyDtoDAsync);
         let cu_launch: CuLaunchKernel = load!(cuda, b"cuLaunchKernel\0", CuLaunchKernel);
+        let cu_launch_coop: CuLaunchCooperativeKernel =
+            load!(cuda, b"cuLaunchCooperativeKernel\0", CuLaunchCooperativeKernel);
+        let cu_module_get_global: CuModuleGetGlobal =
+            load!(cuda, b"cuModuleGetGlobal_v2\0", CuModuleGetGlobal);
+        let cu_func_attr: CuFuncGetAttribute =
+            load!(cuda, b"cuFuncGetAttribute\0", CuFuncGetAttribute);
         let cu_sync: CuCtxSync = load!(cuda, b"cuCtxSynchronize\0", CuCtxSync);
         let cu_stream_create: CuStreamCreate =
             load!(cuda, b"cuStreamCreate\0", CuStreamCreate);
@@ -2057,6 +2115,14 @@ impl Gpu {
         let cu_graph_destroy: CuGraphDestroy =
             load!(cuda, b"cuGraphDestroy\0", CuGraphDestroy);
         let cu_error: CuGetErrorString = load!(cuda, b"cuGetErrorString\0", CuGetErrorString);
+        let cu_event_create: CuEventCreate = load!(cuda, b"cuEventCreate\0", CuEventCreate);
+        let cu_event_record: CuEventRecord = load!(cuda, b"cuEventRecord\0", CuEventRecord);
+        let cu_event_record_flags: CuEventRecordWithFlags =
+            load!(cuda, b"cuEventRecordWithFlags\0", CuEventRecordWithFlags);
+        let cu_event_sync: CuEventSynchronize =
+            load!(cuda, b"cuEventSynchronize\0", CuEventSynchronize);
+        let cu_event_elapsed: CuEventElapsedTime =
+            load!(cuda, b"cuEventElapsedTime_v2\0", CuEventElapsedTime);
 
         let nvrtc_create: NvrtcCreate = load!(nvrtc, b"nvrtcCreateProgram\0", NvrtcCreate);
         let nvrtc_compile: NvrtcCompile = load!(nvrtc, b"nvrtcCompileProgram\0", NvrtcCompile);
@@ -2065,6 +2131,8 @@ impl Gpu {
         let nvrtc_ptx_size: NvrtcGetSize = load!(nvrtc, b"nvrtcGetPTXSize\0", NvrtcGetSize);
         let nvrtc_ptx: NvrtcGet = load!(nvrtc, b"nvrtcGetPTX\0", NvrtcGet);
         let nvrtc_destroy: NvrtcDestroy = load!(nvrtc, b"nvrtcDestroyProgram\0", NvrtcDestroy);
+        let nvrtc_cubin_size: NvrtcGetSize = load!(nvrtc, b"nvrtcGetCUBINSize\0", NvrtcGetSize);
+        let nvrtc_cubin: NvrtcGet = load!(nvrtc, b"nvrtcGetCUBIN\0", NvrtcGet);
 
         let check = |code: CuResult, what: &str| -> Result<(), String> {
             if code == 0 {
@@ -2100,7 +2168,8 @@ impl Gpu {
         // so both files are compiled as one translation unit.
         let source = concat!(
             include_str!("../gpu/vfma_kernel.cu"),
-            include_str!("../gpu/mv_kernel.cu")
+            include_str!("../gpu/mv_kernel.cu"),
+            include_str!("../gpu/program_kernel.cu")
         );
         let source_c = CString::new(source).map_err(|e| e.to_string())?;
         let name = CString::new("vfma.cu").unwrap();
@@ -2121,8 +2190,15 @@ impl Gpu {
         }
         let arch = CString::new(format!("--gpu-architecture=compute_{major}{minor}")).unwrap();
         let int128 = CString::new("--device-int128").unwrap();
-        let options = [arch.as_ptr(), int128.as_ptr()];
-        let compiled = unsafe { nvrtc_compile(program, 2, options.as_ptr()) };
+        // Extra NVRTC options for experiments, e.g. MNCORE_NVRTC_OPTS="-DFOO".
+        let extra: Vec<CString> = std::env::var("MNCORE_NVRTC_OPTS")
+            .unwrap_or_default()
+            .split_whitespace()
+            .map(|o| CString::new(o).unwrap())
+            .collect();
+        let mut options = vec![arch.as_ptr(), int128.as_ptr()];
+        options.extend(extra.iter().map(|o| o.as_ptr()));
+        let compiled = unsafe { nvrtc_compile(program, options.len() as c_int, options.as_ptr()) };
         if compiled != 0 {
             let mut size = 0usize;
             unsafe { nvrtc_log_size(program, &mut size) };
@@ -2142,6 +2218,9 @@ impl Gpu {
         let mut ptx = vec![0u8; ptx_size];
         unsafe { nvrtc_ptx(program, ptx.as_mut_ptr() as *mut c_char) };
         unsafe { nvrtc_destroy(&mut program) };
+        if let Ok(path) = std::env::var("MNCORE_DUMP_PTX") {
+            let _ = std::fs::write(path, &ptx[..ptx.len().saturating_sub(1)]);
+        }
 
         let mut module: CuModule = std::ptr::null_mut();
         check(
@@ -2251,6 +2330,35 @@ impl Gpu {
             },
             "cuModuleGetFunction(zero_mreadf)",
         )?;
+        let mut transpose_function: CuFunction = std::ptr::null_mut();
+        check(
+            unsafe {
+                cu_get_function(
+                    &mut transpose_function,
+                    module,
+                    b"pe_transpose\0".as_ptr() as *const c_char,
+                )
+            },
+            "cuModuleGetFunction(pe_transpose)",
+        )?;
+        let mut program_function: CuFunction = std::ptr::null_mut();
+        check(
+            unsafe {
+                cu_get_function(
+                    &mut program_function,
+                    module,
+                    b"run_program\0".as_ptr() as *const c_char,
+                )
+            },
+            "cuModuleGetFunction(run_program)",
+        )?;
+        let mut stage: u64 = 0;
+        check(
+            unsafe {
+                cu_mem_alloc(&mut stage, crate::machine::PES * crate::machine::LM_WORDS * 4)
+            },
+            "cuMemAlloc(stage)",
+        )?;
         let mut stream: CuStream = std::ptr::null_mut();
         check(
             unsafe { cu_stream_create(&mut stream, 1) },
@@ -2274,6 +2382,22 @@ impl Gpu {
             mat_read_function,
             mat_mau_function,
             zero_mreadf_function,
+            transpose_function,
+            program_function,
+            cu_launch_coop,
+            cu_func_attr,
+            cu_module_load,
+            cu_module_get_global,
+            cu_get_function,
+            nvrtc_create,
+            nvrtc_compile,
+            nvrtc_log_size,
+            nvrtc_log,
+            nvrtc_cubin_size,
+            nvrtc_cubin,
+            nvrtc_destroy,
+            arch: (major, minor),
+            stage,
             cu_ctx_destroy,
             cu_mem_alloc,
             cu_mem_free,
@@ -2292,6 +2416,11 @@ impl Gpu {
             cu_graph_exec_destroy,
             cu_graph_destroy,
             cu_error,
+            cu_event_create,
+            cu_event_record,
+            cu_event_record_flags,
+            cu_event_sync,
+            cu_event_elapsed,
             capturing: Cell::new(false),
         })
     }
@@ -2314,6 +2443,69 @@ impl Gpu {
         } else {
             Err(format!("{what}: {}", self.error(code)))
         }
+    }
+
+    /// Uploads per-PE state given PE-major (`[pe][word]`, the CPU layout) into
+    /// the device's address-major layout (`[word][pe]`).
+    fn htod_pe(&self, pointer: u64, words: &[u32], width: usize, what: &str) -> Result<(), String> {
+        if words.len() != crate::machine::PES * width {
+            return Err(format!("{what}: slice has the wrong length"));
+        }
+        self.check(
+            unsafe { (self.cu_htod)(self.stage, words.as_ptr() as *const c_void, words.len() * 4) },
+            what,
+        )?;
+        // A pageable upload may return before its DMA lands, and the transpose
+        // runs on a non-blocking stream, so wait for the copy first.
+        self.check(unsafe { (self.cu_sync)() }, what)?;
+        self.transpose_pe(self.stage, pointer, width, 0, what)
+    }
+
+    /// Downloads per-PE state from the device's address-major layout into
+    /// PE-major order.
+    fn dtoh_pe(&self, pointer: u64, out: &mut [u32], width: usize, what: &str) -> Result<(), String> {
+        if out.len() != crate::machine::PES * width {
+            return Err(format!("{what}: slice has the wrong length"));
+        }
+        self.transpose_pe(pointer, self.stage, width, 1, what)?;
+        self.check(
+            unsafe { (self.cu_dtoh)(out.as_mut_ptr() as *mut c_void, self.stage, out.len() * 4) },
+            what,
+        )
+    }
+
+    /// `dir` 0: PE-major `src` to address-major `dst`; 1: the reverse.
+    fn transpose_pe(&self, src: u64, dst: u64, width: usize, dir: i32, what: &str) -> Result<(), String> {
+        let mut src = src;
+        let mut dst = dst;
+        let mut width_arg = width as i32;
+        let mut dir = dir;
+        let mut args = [
+            &mut src as *mut u64 as *mut c_void,
+            &mut dst as *mut u64 as *mut c_void,
+            &mut width_arg as *mut i32 as *mut c_void,
+            &mut dir as *mut i32 as *mut c_void,
+        ];
+        let total = (crate::machine::PES * width) as u32;
+        self.check(
+            unsafe {
+                (self.cu_launch)(
+                    self.transpose_function,
+                    total.div_ceil(256),
+                    1,
+                    1,
+                    256,
+                    1,
+                    1,
+                    0,
+                    self.stream,
+                    args.as_mut_ptr(),
+                    std::ptr::null_mut(),
+                )
+            },
+            what,
+        )?;
+        self.check(unsafe { (self.cu_sync)() }, what)
     }
 
     /// Allocates the four PE memories and the L1BM/L2BM buffers on the device.
@@ -2445,22 +2637,10 @@ impl Gpu {
         if lm0.len() != lm || lm1.len() != lm || grf0.len() != grf || grf1.len() != grf {
             return Err("state slices have the wrong length".into());
         }
-        self.check(
-            unsafe { (self.cu_htod)(state.lm0, lm0.as_ptr() as *const c_void, lm * 4) },
-            "upload lm0",
-        )?;
-        self.check(
-            unsafe { (self.cu_htod)(state.lm1, lm1.as_ptr() as *const c_void, lm * 4) },
-            "upload lm1",
-        )?;
-        self.check(
-            unsafe { (self.cu_htod)(state.grf0, grf0.as_ptr() as *const c_void, grf * 4) },
-            "upload grf0",
-        )?;
-        self.check(
-            unsafe { (self.cu_htod)(state.grf1, grf1.as_ptr() as *const c_void, grf * 4) },
-            "upload grf1",
-        )?;
+        self.htod_pe(state.lm0, lm0, crate::machine::LM_WORDS, "upload lm0")?;
+        self.htod_pe(state.lm1, lm1, crate::machine::LM_WORDS, "upload lm1")?;
+        self.htod_pe(state.grf0, grf0, crate::machine::GRF_WORDS, "upload grf0")?;
+        self.htod_pe(state.grf1, grf1, crate::machine::GRF_WORDS, "upload grf1")?;
         let forward = vec![0u32; crate::machine::PES * 16];
         for (pointer, what) in [
             (state.mauf, "upload mauf"),
@@ -2544,24 +2724,10 @@ impl Gpu {
         grf0: &mut [u32],
         grf1: &mut [u32],
     ) -> Result<(), String> {
-        let lm = crate::machine::PES * crate::machine::LM_WORDS;
-        let grf = crate::machine::PES * crate::machine::GRF_WORDS;
-        self.check(
-            unsafe { (self.cu_dtoh)(lm0.as_mut_ptr() as *mut c_void, state.lm0, lm * 4) },
-            "download lm0",
-        )?;
-        self.check(
-            unsafe { (self.cu_dtoh)(lm1.as_mut_ptr() as *mut c_void, state.lm1, lm * 4) },
-            "download lm1",
-        )?;
-        self.check(
-            unsafe { (self.cu_dtoh)(grf0.as_mut_ptr() as *mut c_void, state.grf0, grf * 4) },
-            "download grf0",
-        )?;
-        self.check(
-            unsafe { (self.cu_dtoh)(grf1.as_mut_ptr() as *mut c_void, state.grf1, grf * 4) },
-            "download grf1",
-        )
+        self.dtoh_pe(state.lm0, lm0, crate::machine::LM_WORDS, "download lm0")?;
+        self.dtoh_pe(state.lm1, lm1, crate::machine::LM_WORDS, "download lm1")?;
+        self.dtoh_pe(state.grf0, grf0, crate::machine::GRF_WORDS, "download grf0")?;
+        self.dtoh_pe(state.grf1, grf1, crate::machine::GRF_WORDS, "download grf1")
     }
 
     /// Uploads the L1BM long words (L1BS x L1BM_LONGS).
@@ -2678,16 +2844,7 @@ impl Gpu {
         if words.len() != count {
             return Err("mask slice has the wrong length".into());
         }
-        self.check(
-            unsafe {
-                (self.cu_htod)(
-                    state.mask,
-                    words.as_ptr() as *const c_void,
-                    count * 4,
-                )
-            },
-            "upload mask",
-        )?;
+        self.htod_pe(state.mask, words, 16, "upload mask")?;
         self.sync()
     }
 
@@ -2718,16 +2875,7 @@ impl Gpu {
     /// Downloads the L1BM-to-PE forwarding register.
     pub fn download_lbf(&self, state: &GpuState) -> Result<Vec<u32>, String> {
         let mut out = vec![0u32; crate::machine::PES * 16];
-        self.check(
-            unsafe {
-                (self.cu_dtoh)(
-                    out.as_mut_ptr() as *mut c_void,
-                    state.lbf,
-                    out.len() * 4,
-                )
-            },
-            "download lbf",
-        )?;
+        self.dtoh_pe(state.lbf, &mut out, 16, "download lbf")?;
         Ok(out)
     }
 
@@ -2736,10 +2884,7 @@ impl Gpu {
         if words.len() != count {
             return Err(format!("{what}: slice has the wrong length"));
         }
-        self.check(
-            unsafe { (self.cu_htod)(pointer, words.as_ptr() as *const c_void, count * 4) },
-            what,
-        )
+        self.htod_pe(pointer, words, 16, what)
     }
 
     /// Uploads the T registers (16 words per PE).
@@ -2748,16 +2893,7 @@ impl Gpu {
         if words.len() != count {
             return Err("T slice has the wrong length".into());
         }
-        self.check(
-            unsafe {
-                (self.cu_htod)(
-                    state.t,
-                    words.as_ptr() as *const c_void,
-                    count * 4,
-                )
-            },
-            "upload t",
-        )?;
+        self.htod_pe(state.t, words, 16, "upload t")?;
         self.sync()
     }
 
@@ -2939,80 +3075,35 @@ impl Gpu {
     /// Downloads the OMR entries (16 per PE).
     pub fn download_mask(&self, state: &GpuState) -> Result<Vec<u32>, String> {
         let mut out = vec![0u32; crate::machine::PES * 16];
-        self.check(
-            unsafe {
-                (self.cu_dtoh)(
-                    out.as_mut_ptr() as *mut c_void,
-                    state.mask,
-                    out.len() * 4,
-                )
-            },
-            "download mask",
-        )?;
+        self.dtoh_pe(state.mask, &mut out, 16, "download mask")?;
         Ok(out)
     }
 
     /// Downloads aluf (4 cycles x 4 words per PE).
     pub fn download_aluf(&self, state: &GpuState) -> Result<Vec<u32>, String> {
         let mut out = vec![0u32; crate::machine::PES * 16];
-        self.check(
-            unsafe {
-                (self.cu_dtoh)(
-                    out.as_mut_ptr() as *mut c_void,
-                    state.aluf,
-                    out.len() * 4,
-                )
-            },
-            "download aluf",
-        )?;
+        self.dtoh_pe(state.aluf, &mut out, 16, "download aluf")?;
         Ok(out)
     }
 
     /// Downloads mauf (4 cycles x 4 words per PE).
     pub fn download_mauf(&self, state: &GpuState) -> Result<Vec<u32>, String> {
         let mut out = vec![0u32; crate::machine::PES * 16];
-        self.check(
-            unsafe {
-                (self.cu_dtoh)(
-                    out.as_mut_ptr() as *mut c_void,
-                    state.mauf,
-                    out.len() * 4,
-                )
-            },
-            "download mauf",
-        )?;
+        self.dtoh_pe(state.mauf, &mut out, 16, "download mauf")?;
         Ok(out)
     }
 
     /// Downloads mreadf (4 cycles x 4 words per PE).
     pub fn download_mreadf(&self, state: &GpuState) -> Result<Vec<u32>, String> {
         let mut out = vec![0u32; crate::machine::PES * 16];
-        self.check(
-            unsafe {
-                (self.cu_dtoh)(
-                    out.as_mut_ptr() as *mut c_void,
-                    state.mreadf,
-                    out.len() * 4,
-                )
-            },
-            "download mreadf",
-        )?;
+        self.dtoh_pe(state.mreadf, &mut out, 16, "download mreadf")?;
         Ok(out)
     }
 
     /// Downloads the T registers (16 words per PE).
     pub fn download_t(&self, state: &GpuState) -> Result<Vec<u32>, String> {
         let mut out = vec![0u32; crate::machine::PES * 16];
-        self.check(
-            unsafe {
-                (self.cu_dtoh)(
-                    out.as_mut_ptr() as *mut c_void,
-                    state.t,
-                    out.len() * 4,
-                )
-            },
-            "download t",
-        )?;
+        self.dtoh_pe(state.t, &mut out, 16, "download t")?;
         Ok(out)
     }
 
@@ -3173,6 +3264,52 @@ impl Gpu {
             unsafe { (self.cu_graph_launch)(exec, self.stream) },
             "cuGraphLaunch",
         )
+    }
+
+    /// Registers per thread, local (spill/stack) bytes per thread and static
+    /// shared bytes of the interpreter kernel.
+    pub fn program_kernel_resources(&self) -> (i32, i32, i32) {
+        let mut regs = 0;
+        let mut local = 0;
+        let mut shared = 0;
+        unsafe {
+            (self.cu_func_attr)(&mut regs, 4, self.program_function);
+            (self.cu_func_attr)(&mut local, 3, self.program_function);
+            (self.cu_func_attr)(&mut shared, 1, self.program_function);
+        }
+        (regs, local, shared)
+    }
+
+    /// Creates a timing event (leaked; intended for profiling runs).
+    pub fn event_create(&self) -> Result<CuEvent, String> {
+        let mut event: CuEvent = std::ptr::null_mut();
+        self.check(unsafe { (self.cu_event_create)(&mut event, 0) }, "cuEventCreate")?;
+        Ok(event)
+    }
+
+    /// Records an event on the command stream.
+    pub fn event_record(&self, event: CuEvent) -> Result<(), String> {
+        if self.capturing.get() {
+            // CU_EVENT_RECORD_EXTERNAL makes the capture emit a record node.
+            return self.check(
+                unsafe { (self.cu_event_record_flags)(event, self.stream, 1) },
+                "cuEventRecordWithFlags",
+            );
+        }
+        self.check(unsafe { (self.cu_event_record)(event, self.stream) }, "cuEventRecord")
+    }
+
+    /// Milliseconds between two recorded events (waits for `end`).
+    pub fn event_elapsed_ms(&self, start: CuEvent, end: CuEvent) -> Result<f32, String> {
+        // Events recorded inside a captured graph cannot be waited on
+        // directly; callers synchronize the context first in that case.
+        let _ = unsafe { (self.cu_event_sync)(end) };
+        let mut ms = 0f32;
+        self.check(
+            unsafe { (self.cu_event_elapsed)(&mut ms, start, end) },
+            "cuEventElapsedTime",
+        )?;
+        Ok(ms)
     }
 
     /// Destroys an instantiated graph and its source graph.
@@ -3519,16 +3656,10 @@ impl Gpu {
     /// Launches one MV statement. An overlapping `mvp` is run as two passes
     /// through a scratch buffer so that all reads precede all writes, like the
     /// CPU's write list.
-    pub fn run_mv_line(&self, state: &GpuState, line: &MvLine) -> Result<(), String> {
-        if line.mode == MV_MODE_NOP {
-            return Ok(());
-        }
+    /// The capacity checks of one MV statement against the device state.
+    fn check_mv_line(&self, state: &GpuState, line: &MvLine) -> Result<(), String> {
         if state.pdm == 0 || state.dram == 0 {
             return Err("GPU state was allocated without MV support".into());
-        }
-        let total = line.threads();
-        if total == 0 {
-            return Ok(());
         }
         for r in [line.src, line.dst] {
             if r.mem == 1 && !r.indirect {
@@ -3553,6 +3684,18 @@ impl Gpu {
                 line.scratch_longs_needed(),
                 state.scratch_longs
             ));
+        }
+        Ok(())
+    }
+
+    pub fn run_mv_line(&self, state: &GpuState, line: &MvLine) -> Result<(), String> {
+        if line.mode == MV_MODE_NOP {
+            return Ok(());
+        }
+        self.check_mv_line(state, line)?;
+        let total = line.threads();
+        if total == 0 {
+            return Ok(());
         }
         let grid = total.div_ceil(256);
         if grid > u32::MAX as u64 {
