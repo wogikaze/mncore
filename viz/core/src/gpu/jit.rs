@@ -21,6 +21,44 @@ use super::*;
 /// Threads per block of a JIT program: one per (PE, cycle) of the L1B.
 pub const JIT_THREADS: u32 = 256;
 
+/// Shared copies of the per-PE registers and the helpers that move them.
+const JIT_SHARED_REGS: &str = r#"
+__shared__ unsigned jsh_mauf[1024], jsh_aluf[1024], jsh_mask[1024], jsh_t[1024];
+__shared__ unsigned jsh_mreadf[1024], jsh_lbf[1024], jsh_bar0[64], jsh_bar1[64];
+__device__ __forceinline__ DevState jit_local_state() {
+    DevState st = jit_st;
+    st.mauf = jsh_mauf; st.aluf = jsh_aluf; st.mask = jsh_mask; st.t = jsh_t;
+    st.mreadf = jsh_mreadf; st.lbf = jsh_lbf; st.bar0 = jsh_bar0; st.bar1 = jsh_bar1;
+    return st;
+}
+__device__ __forceinline__ void jit_load_regs(int B, int tid) {
+    for (int i = tid; i < 1024; i += 256) {
+        unsigned g = (unsigned)(i >> 6) * 4096u + (unsigned)(B * 64 + (i & 63));
+        jsh_mauf[i] = jit_st.mauf[g]; jsh_aluf[i] = jit_st.aluf[g];
+        jsh_mask[i] = jit_st.mask[g]; jsh_t[i] = jit_st.t[g];
+        jsh_mreadf[i] = jit_st.mreadf[g]; jsh_lbf[i] = jit_st.lbf[g];
+    }
+    if (tid < 64) {
+        jsh_bar0[tid] = jit_st.bar0[B * 64 + tid];
+        jsh_bar1[tid] = jit_st.bar1[B * 64 + tid];
+    }
+    __syncthreads();
+}
+__device__ __forceinline__ void jit_store_regs(int B, int tid) {
+    __syncthreads();
+    for (int i = tid; i < 1024; i += 256) {
+        unsigned g = (unsigned)(i >> 6) * 4096u + (unsigned)(B * 64 + (i & 63));
+        jit_st.mauf[g] = jsh_mauf[i]; jit_st.aluf[g] = jsh_aluf[i];
+        jit_st.mask[g] = jsh_mask[i]; jit_st.t[g] = jsh_t[i];
+        jit_st.mreadf[g] = jsh_mreadf[i]; jit_st.lbf[g] = jsh_lbf[i];
+    }
+    if (tid < 64) {
+        jit_st.bar0[B * 64 + tid] = jsh_bar0[tid];
+        jit_st.bar1[B * 64 + tid] = jsh_bar1[tid];
+    }
+}
+"#;
+
 /// Operations per generated chunk function.
 const JIT_CHUNK: usize = 64;
 
@@ -218,6 +256,8 @@ fn generate(enc: &[EncOp]) -> (String, usize) {
     let mut src = String::new();
     // Device state pointers live in constant memory (written at load time).
     src.push_str("__constant__ DevState jit_st;\n");
+    // Per-PE registers of the block's 64 PEs (PR16/PRB layout under MNCORE_JIT).
+    src.push_str(JIT_SHARED_REGS);
     // Optional per-operation clock stamps: [block][op + 1], null when off.
     src.push_str("__constant__ unsigned long long* jit_prof;\n");
     let _ = writeln!(src, "#define JPROF(i) do {{ if (jit_prof && tid == 0) jit_prof[(size_t)B * {} + (i)] = clock64(); }} while (0)", enc.len() + 1);
@@ -243,7 +283,7 @@ fn generate(enc: &[EncOp]) -> (String, usize) {
             let ty = type_name(e.kind);
             let _ = writeln!(
                 src,
-                "__device__ __noinline__ void js{next}(int B, int tid, const unsigned* p, ProgSmem& sm) {{\nconst DevState& st = jit_st;"
+                "__device__ __noinline__ void js{next}(int B, int tid, const unsigned* p, ProgSmem& sm) {{\nconst DevState st = jit_local_state();"
             );
             if !ty.is_empty() {
                 // Every field is assigned by name: constants from the shape,
@@ -328,12 +368,14 @@ fn generate(enc: &[EncOp]) -> (String, usize) {
          const unsigned nb = gridDim.x;\n\
          __shared__ ProgSmem sm;\n\
          const unsigned base = sync[1];\n\
-         unsigned barriers = 0;\n",
+         unsigned barriers = 0;\n\
+         jit_load_regs(B, tid);\n",
     );
     for k in 0..chunks.len() {
         let _ = writeln!(src, "jit_chunk{k}(B, tid, sm, sync, base, barriers);");
     }
     let _ = writeln!(src, "JPROF({});", enc.len());
+    src.push_str("jit_store_regs(B, tid);\n");
     src.push_str(
         "++barriers; prog_grid_barrier(&sync[0], base + barriers * nb);\n\
          if (B == 0 && tid == 0) sync[1] = base + barriers * nb;\n}\n",

@@ -4,7 +4,15 @@
 // transposes on upload and download (gpu.rs).
 #define NPE 4096
 #define PEM(pe, a) ((unsigned)(a) * 4096u + (unsigned)(pe))
+#ifdef MNCORE_JIT
+// In a JIT program the per-PE registers of a block's 64 PEs live in shared
+// memory (jit.rs loads them at kernel start and stores them at the end).
+#define PR16(pe, k) ((unsigned)(k) * 64u + ((unsigned)(pe) & 63u))
+#define PRB(pe) ((unsigned)(pe) & 63u)
+#else
 #define PR16(pe, k) ((unsigned)(k) * 4096u + (unsigned)(pe))
+#define PRB(pe) ((unsigned)(pe))
+#endif
 
 struct Fmt {
     int exp_bits;
@@ -231,8 +239,8 @@ __device__ __forceinline__ int pe_word_addr(
     unsigned a = base;
     if (t_indirect) a += t[PR16(pe, c * 4 + 1)];
     if (madpe >= 0 && (pe & 3) <= madpe) a += (unsigned)wl;
-    if (mem == 0) a += bar0[pe];
-    else if (mem == 1) a += bar1[pe];
+    if (mem == 0) a += bar0[PRB(pe)];
+    else if (mem == 1) a += bar1[PRB(pe)];
     return (int)(a & ~(unsigned)(wl - 1));
 }
 
@@ -711,7 +719,7 @@ __device__ __forceinline__ void alu_write_dst(
         // register. A long word access uses its low word (bus[1]), not bus[0].
         if (masked && mf == 0) return;
         unsigned* bar = d.mem ? bar1 : bar0;
-        bar[pe] = bus[d.wl == 1 ? 0 : 1] & 0xfff;
+        bar[PRB(pe)] = bus[d.wl == 1 ? 0 : 1] & 0xfff;
         return;
     }
     if (d.kind == 0) {
@@ -1769,7 +1777,7 @@ __device__ __forceinline__ void write_pe_bus(
     if (mem >= 10) {
         if (kind != 0 && flags == 0) return;
         unsigned* bar = (unsigned*)((mem == 10) ? bar0 : bar1);
-        bar[pe] = bus[0] & 0xfff;
+        bar[PRB(pe)] = bus[0] & 0xfff;
         return;
     }
     if (kind == 0) {
