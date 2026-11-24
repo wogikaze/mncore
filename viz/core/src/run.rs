@@ -2,7 +2,9 @@
 
 use std::collections::HashMap;
 
-use crate::machine::{ExecError, Machine, MaskState, MemRead, MemWrite, PeId, PES};
+use crate::machine::{check_pe_access, ExecError, Machine, MaskState, MemRead, MemWrite};
+use crate::mv::{DRAM_LONGS, GROUPS, PDM_LONGS};
+use crate::topology::{fits, Topology};
 use crate::vsm::{DebugLoc, Line, MemKind};
 
 /// Key of one dumped value: memory name as printed by the emulator (`LM0`, `GREG1`, `TREG`,
@@ -24,7 +26,18 @@ pub struct Sim {
 #[derive(Debug)]
 pub struct RunError {
     pub line: usize,
+    /// Index of the failing statement's first instruction word in the program (the `j`/`m`
+    /// words before it). With `ExecError::Range` this is the word number an E_RANGE trap
+    /// reports.
+    pub word: u64,
     pub msg: String,
+}
+
+impl RunError {
+    /// Whether the run stopped at an access beyond a reduced capacity (`ExecError::Range`).
+    pub fn is_range(&self) -> bool {
+        self.msg.starts_with("E_RANGE: ")
+    }
 }
 
 impl Default for Sim {
@@ -34,13 +47,24 @@ impl Default for Sim {
 }
 
 impl Sim {
+    /// The full chip.
     pub fn new() -> Sim {
-        Sim { m: Machine::new(), words: 0, dump: HashMap::new(), off: Default::default() }
+        Sim::with_topology(Topology::FULL)
+    }
+
+    /// A chip with the units and capacities of `topo` (see `topology`).
+    pub fn with_topology(topo: Topology) -> Sim {
+        Sim { m: Machine::with_topology(topo), words: 0, dump: HashMap::new(), off: Default::default() }
+    }
+
+    pub fn topology(&self) -> &Topology {
+        self.m.topology()
     }
 
     pub fn run(&mut self, lines: &[(usize, Line)]) -> Result<(), RunError> {
         for (lineno, line) in lines {
-            self.exec(line).map_err(|e| RunError { line: *lineno, msg: e.message() })?;
+            let word = self.words;
+            self.exec(line).map_err(|e| RunError { line: *lineno, word, msg: e.message() })?;
         }
         Ok(())
     }
@@ -59,8 +83,17 @@ impl Sim {
             Line::DebugSet { loc, count, payload } => self.debug_set(loc, *count, payload)?,
             Line::DebugGet { loc, count, .. } => self.debug_get(loc, *count)?,
             Line::DramSet { group, addr, payload } => {
+                // The DRAM of a group without L2Bs does not exist.
+                if self.topology().group_absent(*group as usize) {
+                    return Ok(());
+                }
+                let dram = self.topology().dram;
                 for (i, v) in payload.iter().enumerate() {
-                    self.off.dram[*group as usize].set(addr + i as u64, *v);
+                    let a = addr + i as u64;
+                    if !fits(a, dram, DRAM_LONGS) {
+                        return Err(off_range("DRAM", *group as usize, a, dram));
+                    }
+                    self.off.dram[*group as usize].set(a, *v);
                 }
             }
             Line::Mv(mv) => self.off.exec(&mut self.m.blocks, mv)?,
@@ -68,10 +101,11 @@ impl Sim {
         Ok(())
     }
 
-    fn pes_of(loc: &DebugLoc) -> Vec<usize> {
-        (0..PES)
+    /// Dense indices of the PEs of the topology that a debug location selects.
+    fn pes_of(topo: &Topology, loc: &DebugLoc) -> Vec<usize> {
+        (0..topo.pes())
             .filter(|&i| {
-                let id = PeId::from_index(i);
+                let id = topo.pe_id(i);
                 loc.group.is_none_or(|g| g == id.group)
                     && loc.l2b.is_none_or(|g| g == id.l2b)
                     && loc.l1b.is_none_or(|g| g == id.l1b)
@@ -81,12 +115,12 @@ impl Sim {
             .collect()
     }
 
-    /// Indices of the L1Bs (or L2Bs) a debug location selects.
-    fn blocks_of(loc: &DebugLoc, l1: bool) -> Vec<usize> {
-        let n = if l1 { crate::blocks::L1BS } else { crate::blocks::L2BS };
+    /// Indices of the L1Bs (dense) or L2Bs of the topology that a debug location selects.
+    fn blocks_of(topo: &Topology, loc: &DebugLoc, l1: bool) -> Vec<usize> {
+        let n = if l1 { topo.l1bs() } else { topo.l2b };
         (0..n)
             .filter(|&i| {
-                let (g, c, b) = if l1 { (i / 16, i / 8 % 2, i % 8) } else { (i / 2, i % 2, 0) };
+                let (g, c, b) = if l1 { topo.l1b_coords(i) } else { (i / 2, i % 2, 0) };
                 loc.group.is_none_or(|x| x as usize == g)
                     && loc.l2b.is_none_or(|x| x as usize == c)
                     && (!l1 || loc.l1b.is_none_or(|x| x as usize == b))
@@ -94,23 +128,33 @@ impl Sim {
             .collect()
     }
 
+    /// Physical address of long word `a` of an L1BM (dense L1B index) or L2BM.
+    fn block_addr(&self, l1: bool, unit: usize, a: usize) -> Result<usize, ExecError> {
+        if l1 {
+            self.m.blocks.l1_addr(unit, a)
+        } else {
+            self.m.blocks.l2_addr(unit, a)
+        }
+    }
+
     fn debug_set(&mut self, loc: &DebugLoc, count: u32, payload: &[u64]) -> Result<(), ExecError> {
+        let topo = *self.topology();
         if matches!(loc.mem, MemKind::L1bm | MemKind::L2bm) {
             if loc.wl != 2 {
                 return Err(ExecError::Unsupported("d set of L1BM/L2BM with two long word access".into()));
             }
             let l1 = loc.mem == MemKind::L1bm;
-            for b in Self::blocks_of(loc, l1) {
-                let mem = if l1 { &mut self.m.blocks.l1bm[b] } else { &mut self.m.blocks.l2bm[b] };
-                let len = mem.len();
+            for b in Self::blocks_of(&topo, loc, l1) {
                 for i in 0..count as usize {
-                    mem[(loc.addr as usize + i) % len] = payload[i];
+                    let a = self.block_addr(l1, b, loc.addr as usize + i)?;
+                    let mem = if l1 { &mut self.m.blocks.l1bm[b] } else { &mut self.m.blocks.l2bm[b] };
+                    mem[a] = payload[i];
                 }
             }
             return Ok(());
         }
         // Payload long words per access unit: word access writes the MSB word of each long word.
-        for pe in Self::pes_of(loc) {
+        for pe in Self::pes_of(&topo, loc) {
             let p = &mut self.m.pes[pe];
             match loc.mem {
                 MemKind::T => {
@@ -142,28 +186,18 @@ impl Sim {
                     match loc.wl {
                         1 => {
                             for i in 0..count as usize {
-                                self.m.mem.poke(
-                                    loc.mem,
-                                    pe,
-                                    loc.addr as usize + i,
-                                    (payload[i] >> 32) as u32,
-                                );
+                                let a = loc.addr as usize + i;
+                                check_pe_access(&topo, loc.mem, pe, a, 1)?;
+                                self.m.mem.poke(loc.mem, pe, a, (payload[i] >> 32) as u32);
                             }
                         }
                         2 => {
                             for i in 0..count as usize {
-                                self.m.mem.poke(
-                                    loc.mem,
-                                    pe,
-                                    loc.addr as usize + 2 * i,
-                                    (payload[i] >> 32) as u32,
-                                );
-                                self.m.mem.poke(
-                                    loc.mem,
-                                    pe,
-                                    loc.addr as usize + 2 * i + 1,
-                                    payload[i] as u32,
-                                );
+                                let a = loc.addr as usize + 2 * i;
+                                check_pe_access(&topo, loc.mem, pe, a, 1)?;
+                                self.m.mem.poke(loc.mem, pe, a, (payload[i] >> 32) as u32);
+                                check_pe_access(&topo, loc.mem, pe, a + 1, 1)?;
+                                self.m.mem.poke(loc.mem, pe, a + 1, payload[i] as u32);
                             }
                         }
                         _ => return Err(ExecError::Unsupported("d set with two long word access".into())),
@@ -176,14 +210,19 @@ impl Sim {
     }
 
     fn debug_get(&mut self, loc: &DebugLoc, count: u32) -> Result<(), ExecError> {
+        let topo = *self.topology();
         if matches!(loc.mem, MemKind::Dram | MemKind::Pdm) {
             // Named like the emulator. Note that the emulator's `d get $p` actually prints DRAM;
             // this prints the real PDM, so PIU values should not be compared.
             let dram = loc.mem == MemKind::Dram;
             let name = if dram { "DRAM" } else { "PIU" };
-            for g in (0..crate::mv::GROUPS).filter(|&g| loc.group.is_none_or(|x| x as usize == g)) {
+            let (cap, full) = if dram { (topo.dram, DRAM_LONGS) } else { (topo.pdm, PDM_LONGS) };
+            for g in (0..GROUPS).filter(|&g| !topo.group_absent(g) && loc.group.is_none_or(|x| x as usize == g)) {
                 for i in 0..count as u64 {
                     let a = loc.addr as u64 + i;
+                    if !fits(a, cap, full) {
+                        return Err(off_range(if dram { "DRAM" } else { "PDM" }, g, a, cap));
+                    }
                     let v = if dram { self.off.dram[g].get(a) } else { self.off.pdm[g].get(a) };
                     self.dump.insert((name.into(), format!("n{g}"), a as u32), v);
                 }
@@ -195,15 +234,13 @@ impl Sim {
                 return Err(ExecError::Unsupported("d get of L1BM/L2BM with two long word access".into()));
             }
             let l1 = loc.mem == MemKind::L1bm;
-            for b in Self::blocks_of(loc, l1) {
-                let (name, path, mem) = if l1 {
-                    ("L1BM", format!("n{}c{}b{}", b / 16, b / 8 % 2, b % 8), &self.m.blocks.l1bm[b])
-                } else {
-                    ("L2BM", format!("n{}c{}", b / 2, b % 2), &self.m.blocks.l2bm[b])
-                };
+            for b in Self::blocks_of(&topo, loc, l1) {
+                let name = if l1 { "L1BM" } else { "L2BM" };
+                let path = if l1 { topo.l1b_name(b) } else { Topology::l2b_name(b) };
                 for i in 0..count as usize {
-                    let a = (loc.addr as usize + i) % mem.len();
-                    self.dump.insert((name.into(), path.clone(), a as u32), mem[a]);
+                    let a = self.block_addr(l1, b, loc.addr as usize + i)?;
+                    let v = if l1 { self.m.blocks.l1bm[b][a] } else { self.m.blocks.l2bm[b][a] };
+                    self.dump.insert((name.into(), path.clone(), a as u32), v);
                 }
             }
             return Ok(());
@@ -217,9 +254,9 @@ impl Sim {
             MemKind::Omr => "OMR",
             other => return Err(ExecError::Unsupported(format!("d get of {other:?}"))),
         };
-        for pe in Self::pes_of(loc) {
+        for pe in Self::pes_of(&topo, loc) {
             let p = &self.m.pes[pe];
-            let pname = PeId::from_index(pe).name();
+            let pname = topo.pe_id(pe).name();
             if loc.mem == MemKind::Omr {
                 for i in 0..count {
                     let entry = loc.addr + i;
@@ -252,6 +289,8 @@ impl Sim {
             }
             for i in 0..count as usize {
                 let a = loc.addr as usize + 2 * i;
+                check_pe_access(&topo, loc.mem, pe, a, 1)?;
+                check_pe_access(&topo, loc.mem, pe, a + 1, 1)?;
                 let v = ((self.m.mem.peek(loc.mem, pe, a) as u64) << 32)
                     | self.m.mem.peek(loc.mem, pe, a + 1) as u64;
                 self.dump.insert((name.into(), pname.clone(), a as u32), v);
@@ -259,4 +298,9 @@ impl Sim {
         }
         Ok(())
     }
+}
+
+/// E_RANGE of a PDM or DRAM address in a debug or DRAM initialization statement.
+fn off_range(name: &str, group: usize, a: u64, cap: u64) -> ExecError {
+    ExecError::Range(format!("{name} n{group} long word address {a} is outside the capacity of {cap} long words"))
 }

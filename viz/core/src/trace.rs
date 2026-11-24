@@ -5,6 +5,7 @@ use serde::Serialize;
 
 use crate::blockop::{L1Op, L2Op};
 use crate::mv::{MvKind, MvOperand};
+use crate::topology::Topology;
 use crate::vsm::{Line, Op, Operand};
 
 /// One memory access or result of a focus PE (or a focus L1B for `l1bm`).
@@ -43,12 +44,22 @@ pub struct Tracer {
 }
 
 impl Tracer {
+    /// A tracer for a chip of `pes` PEs with 64 PEs per L1B (the full chip).
     pub fn new(focus: &[usize], pes: usize) -> Tracer {
+        Tracer::with_l1b_size(focus, pes, 64)
+    }
+
+    /// A tracer for the units of `topo`; `focus` holds dense PE indices.
+    pub fn for_topology(focus: &[usize], topo: &Topology) -> Tracer {
+        Tracer::with_l1b_size(focus, topo.pes(), topo.mab * 4)
+    }
+
+    fn with_l1b_size(focus: &[usize], pes: usize, pes_per_l1b: usize) -> Tracer {
         let mut focus_pe = vec![false; pes];
-        let mut focus_l1b = vec![false; pes / 64];
+        let mut focus_l1b = vec![false; pes / pes_per_l1b];
         for &p in focus {
             focus_pe[p] = true;
-            focus_l1b[p / 64] = true;
+            focus_l1b[p / pes_per_l1b] = true;
         }
         Tracer { focus_pe, focus_l1b, expr: 0, srcs: Vec::new(), wslot: None, accesses: Vec::new() }
     }
@@ -122,44 +133,48 @@ fn region(mem: &'static str, units: Vec<u32>, addr: u64, len: u64) -> Option<Reg
     Some(Region { mem, units, addr, len })
 }
 
-/// Global L1B indices of an L1B set in every L2B.
-fn l1b_units(mask: u8) -> Vec<u32> {
-    (0..L1BS as u32).filter(|i| (mask >> (i % 8)) & 1 == 1).collect()
-}
-
 fn all(n: u64) -> Vec<u32> {
     (0..n as u32).collect()
 }
 
-const PES: u64 = 4096;
-const L1BS: u64 = 64;
-const L2BS: u64 = 8;
-
-/// Chip-level flows of a line, from the instruction alone.
+/// Chip-level flows of a line on the full chip, from the instruction alone.
 pub fn flows(line: &Line) -> Vec<Flow> {
+    flows_in(line, &Topology::FULL)
+}
+
+/// Flows of a line over the units of `topo` (dense unit indices).
+pub fn flows_in(line: &Line, topo: &Topology) -> Vec<Flow> {
+    let pes = topo.pes() as u64;
+    let l1bs = topo.l1bs() as u64;
+    let l2bs = topo.l2b as u64;
+    let n_groups = topo.groups() as u64;
+    // Dense indices of the L1Bs of a set in every L2B.
+    let l1b_units = |mask: u8| -> Vec<u32> {
+        (0..l1bs as u32).filter(|i| (mask >> (i % topo.l1b as u32)) & 1 == 1).collect()
+    };
     let mut out = Vec::new();
     match line {
         Line::Pe(exprs) => {
             for e in exprs {
                 match &e.op {
-                    Op::Alu { .. } | Op::Imm { .. } | Op::Zero => out.push(Flow { from: "pe", to: "alu", longs: PES * 4 * 2, kind: "compute", src: None, dst: None }),
+                    Op::Alu { .. } | Op::Imm { .. } | Op::Zero => out.push(Flow { from: "pe", to: "alu", longs: pes * 4 * 2, kind: "compute", src: None, dst: None }),
                     Op::Mau { matrix, .. } => {
                         let kind = if *matrix { "matrix" } else { "mau" };
-                        out.push(Flow { from: "pe", to: kind, longs: PES * 4 * 2, kind: "compute", src: None, dst: None })
+                        out.push(Flow { from: "pe", to: kind, longs: pes * 4 * 2, kind: "compute", src: None, dst: None })
                     }
-                    Op::MatWrite { .. } => out.push(Flow { from: "pe", to: "matrix", longs: PES * 4, kind: "copy", src: None, dst: None }),
-                    Op::MatRead { .. } => out.push(Flow { from: "matrix", to: "pe", longs: PES * 4, kind: "copy", src: None, dst: None }),
+                    Op::MatWrite { .. } => out.push(Flow { from: "pe", to: "matrix", longs: pes * 4, kind: "copy", src: None, dst: None }),
+                    Op::MatRead { .. } => out.push(Flow { from: "matrix", to: "pe", longs: pes * 4, kind: "copy", src: None, dst: None }),
                     Op::L1(op) => {
                         let two = e.srcs.iter().chain(&e.dsts).any(|o| matches!(o, Operand::L1bm { wl: 4, .. }));
                         let per_pe = if two { 2 } else { 1 } * 4;
                         let (from, to, kind, longs) = match op {
-                            L1Op::Pbcast => ("l1bm", "pe", "broadcast", PES * per_pe),
-                            L1Op::Mbcast | L1Op::M4bcast => ("l1bm", "pe", "broadcast", PES * per_pe),
-                            L1Op::Distrib { .. } => ("l1bm", "pe", "distribute", PES * 4),
-                            L1Op::Mwrite { .. } => ("pe", "l1bm", "copy", L1BS * 4 * per_pe),
-                            L1Op::M4write { .. } => ("pe", "l1bm", "copy", L1BS * 16 * per_pe),
-                            L1Op::Reduce { .. } | L1Op::Reduce4 { .. } => ("pe", "l1bm", "reduce", PES * per_pe),
-                            L1Op::Gather { .. } => ("pe", "l1bm", "gather", PES * 4),
+                            L1Op::Pbcast => ("l1bm", "pe", "broadcast", pes * per_pe),
+                            L1Op::Mbcast | L1Op::M4bcast => ("l1bm", "pe", "broadcast", pes * per_pe),
+                            L1Op::Distrib { .. } => ("l1bm", "pe", "distribute", pes * 4),
+                            L1Op::Mwrite { .. } => ("pe", "l1bm", "copy", l1bs * 4 * per_pe),
+                            L1Op::M4write { .. } => ("pe", "l1bm", "copy", l1bs * 16 * per_pe),
+                            L1Op::Reduce { .. } | L1Op::Reduce4 { .. } => ("pe", "l1bm", "reduce", pes * per_pe),
+                            L1Op::Gather { .. } => ("pe", "l1bm", "gather", pes * 4),
                         };
                         // The L1BM region: per-cycle span from the hazard analysis, over 4 cycles.
                         let block = e.srcs.iter().chain(&e.dsts).find_map(|o| match o {
@@ -173,7 +188,7 @@ pub fn flows(line: &Line) -> Vec<Flow> {
                                 L1Op::M4bcast | L1Op::M4write { .. } | L1Op::Reduce4 { .. } => 16 * per_pe,
                                 L1Op::Distrib { .. } | L1Op::Gather { .. } => 256,
                             };
-                            Region { mem: "l1bm", units: all(L1BS), addr: a, len: span }
+                            Region { mem: "l1bm", units: all(l1bs), addr: a, len: span }
                         });
                         let (src, dst) = if from == "l1bm" { (r, None) } else { (None, r) };
                         out.push(Flow { from, to, longs, kind, src, dst });
@@ -186,17 +201,17 @@ pub fn flows(line: &Line) -> Vec<Flow> {
                             _ => 0,
                         };
                         let (a0, a1) = (addr(e.srcs.first()), addr(e.dsts.first()));
-                        let l2 = |a: u64, len: u64| region("l2bm", all(L2BS), a, len);
+                        let l2 = |a: u64, len: u64| region("l2bm", all(l2bs), a, len);
                         let l1 = |mask: u8, a: u64, len: u64| region("l1bm", l1b_units(mask), a, len);
                         let (from, to, kind, longs, src, dst) = match op {
-                            L2Op::Bcast { set: s } => ("l2bm", "l1bm", "broadcast", L2BS * set(*s) * 64, l2(a0, 64), l1(s.mask, a1, 64)),
-                            L2Op::Bcast2 { set: s } => ("l2bm", "l1bm", "broadcast", L2BS * set(*s) * 64, l2(a0, 256), l1(s.mask, a1, 64)),
-                            L2Op::Distrib { set: s } => ("l2bm", "l1bm", "distribute", L2BS * set(*s) * 32, l2(a0, 256), l1(s.mask, a1, 32)),
-                            L2Op::FromL1b { l1b } => ("l1bm", "l2bm", "copy", L2BS * 64, l1(1 << l1b, a0, 64), l2(a1, 64)),
-                            L2Op::Reduce { set: s, .. } => ("l1bm", "l2bm", "reduce", L2BS * set(*s) * 64, l1(s.mask, a0, 64), l2(a1, 64)),
-                            L2Op::Reduce2 { .. } => ("l1bm", "l2bm", "reduce", L2BS * 8 * 64, l1(0xff, a0, 64), l2(a1, 256)),
-                            L2Op::Gather => ("l1bm", "l2bm", "gather", L2BS * 8 * 32, l1(0xff, a0, 32), l2(a1, 256)),
-                            L2Op::Imcast { set: s } => ("l1bm", "l1bm", "multicast", L2BS * set(*s) * 64, l1(s.mask, a0, 64), l1(!s.mask, a1, 64)),
+                            L2Op::Bcast { set: s } => ("l2bm", "l1bm", "broadcast", l2bs * set(*s) * 64, l2(a0, 64), l1(s.mask, a1, 64)),
+                            L2Op::Bcast2 { set: s } => ("l2bm", "l1bm", "broadcast", l2bs * set(*s) * 64, l2(a0, 256), l1(s.mask, a1, 64)),
+                            L2Op::Distrib { set: s } => ("l2bm", "l1bm", "distribute", l2bs * set(*s) * 32, l2(a0, 256), l1(s.mask, a1, 32)),
+                            L2Op::FromL1b { l1b } => ("l1bm", "l2bm", "copy", l2bs * 64, l1(1 << l1b, a0, 64), l2(a1, 64)),
+                            L2Op::Reduce { set: s, .. } => ("l1bm", "l2bm", "reduce", l2bs * set(*s) * 64, l1(s.mask, a0, 64), l2(a1, 64)),
+                            L2Op::Reduce2 { .. } => ("l1bm", "l2bm", "reduce", l2bs * 8 * 64, l1(0xff, a0, 64), l2(a1, 256)),
+                            L2Op::Gather => ("l1bm", "l2bm", "gather", l2bs * 8 * 32, l1(0xff, a0, 32), l2(a1, 256)),
+                            L2Op::Imcast { set: s } => ("l1bm", "l1bm", "multicast", l2bs * set(*s) * 64, l1(s.mask, a0, 64), l1(!s.mask, a1, 64)),
                             L2Op::Dars | L2Op::Darw => continue,
                         };
                         out.push(Flow { from, to, longs, kind, src, dst });
@@ -217,7 +232,7 @@ pub fn flows(line: &Line) -> Vec<Flow> {
                     if group.is_some() {
                         1
                     } else {
-                        4
+                        n_groups
                     }
                 }
                 None => 0,
@@ -244,10 +259,10 @@ pub fn flows(line: &Line) -> Vec<Flow> {
             let reg = |o: Option<MvOperand>| -> Option<Region> {
                 let o = o?;
                 match o {
-                    MvOperand::Pdm { addr, group } => region("pdm", group.map(|g| vec![g as u32]).unwrap_or_else(|| all(4)), addr, per_unit(o)),
-                    MvOperand::Dram { addr, group, .. } => region("dram", group.map(|g| vec![g as u32]).unwrap_or_else(|| all(4)), addr, per_unit(o)),
+                    MvOperand::Pdm { addr, group } => region("pdm", group.map(|g| vec![g as u32]).unwrap_or_else(|| all(n_groups)), addr, per_unit(o)),
+                    MvOperand::Dram { addr, group, .. } => region("dram", group.map(|g| vec![g as u32]).unwrap_or_else(|| all(n_groups)), addr, per_unit(o)),
                     MvOperand::L2bm { addr, group, l2b } => {
-                        let units = (0..8u32).filter(|u| group.is_none_or(|g| g as u32 == u / 2) && l2b.is_none_or(|c| c as u32 == u % 2)).collect();
+                        let units = (0..l2bs as u32).filter(|u| group.is_none_or(|g| g as u32 == u / 2) && l2b.is_none_or(|c| c as u32 == u % 2)).collect();
                         region("l2bm", units, addr, per_unit(o))
                     }
                 }

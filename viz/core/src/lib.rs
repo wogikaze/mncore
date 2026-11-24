@@ -11,6 +11,7 @@ pub mod issue;
 pub mod machine;
 pub mod mv;
 pub mod rrn;
+pub mod topology;
 pub mod trace;
 pub mod run;
 pub mod vsm;

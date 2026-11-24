@@ -7,9 +7,12 @@
 //! 3. apply all writes and update the forwarding registers
 
 use crate::float::{self, Fmt, Val, DOUBLE, HALF, SINGLE};
+use crate::topology::Topology;
 use crate::vsm::*;
 use rayon::prelude::*;
 
+// The real chip. A `Machine` may have fewer units and smaller memories (see `topology`); the
+// per-PE memory vectors still use the chip's sizes as their stride.
 pub const GROUPS: usize = 4;
 pub const L2B_PER_GROUP: usize = 2;
 pub const L1B_PER_L2B: usize = 8;
@@ -63,27 +66,38 @@ impl PeId {
 /// PE word memories in address-major (SoA) layout: `pe * len + (addr & (len - 1))`.
 ///
 /// One contiguous allocation per memory kind removes the per-PE boxes and lets the fast path
-/// hand each PE a mutable slice of its own memory.
+/// hand each PE a mutable slice of its own memory. `len` is always the chip's size: addresses
+/// wrap as on the chip, and a reduced capacity is enforced by `check_pe_access`.
 pub struct Mem {
     pub lm0: Vec<u32>,
     pub lm1: Vec<u32>,
     pub grf0: Vec<u32>,
     pub grf1: Vec<u32>,
+    topo: Topology,
 }
 
 impl Mem {
     pub fn new() -> Mem {
+        Mem::with_topology(&Topology::FULL)
+    }
+
+    /// Memories of every PE of `topo`, indexed by dense PE index.
+    pub fn with_topology(topo: &Topology) -> Mem {
+        let pes = topo.pes();
         Mem {
-            lm0: vec![0; PES * LM_WORDS],
-            lm1: vec![0; PES * LM_WORDS],
-            grf0: vec![0; PES * GRF_WORDS],
-            grf1: vec![0; PES * GRF_WORDS],
+            lm0: vec![0; pes * LM_WORDS],
+            lm1: vec![0; pes * LM_WORDS],
+            grf0: vec![0; pes * GRF_WORDS],
+            grf1: vec![0; pes * GRF_WORDS],
+            topo: *topo,
         }
     }
 }
 
 pub trait MemRead {
     fn peek(&self, m: MemKind, pe: usize, addr: usize) -> u32;
+    /// The topology the memories belong to: PE coordinates and capacities.
+    fn topo(&self) -> &Topology;
 }
 
 pub trait MemWrite: MemRead {
@@ -108,6 +122,10 @@ impl MemRead for Mem {
             },
             other => panic!("not a PE word memory: {other:?}"),
         }
+    }
+
+    fn topo(&self) -> &Topology {
+        &self.topo
     }
 }
 
@@ -138,6 +156,7 @@ pub struct MemPe<'a> {
     lm1: &'a mut [u32],
     grf0: &'a mut [u32],
     grf1: &'a mut [u32],
+    topo: &'a Topology,
 }
 
 impl MemRead for MemPe<'_> {
@@ -150,6 +169,10 @@ impl MemRead for MemPe<'_> {
             MemKind::Grf1 => unsafe { *self.grf1.get_unchecked(addr & (GRF_WORDS - 1)) },
             other => panic!("not a PE word memory: {other:?}"),
         }
+    }
+
+    fn topo(&self) -> &Topology {
+        self.topo
     }
 }
 
@@ -213,6 +236,9 @@ pub enum ExecError {
     Runtime(String),
     /// A line the assembler rejects, such as one breaking the issue conditions of SDM 3.6.4.
     Assembly(String),
+    /// An access beyond the capacity of a memory of a reduced topology (`E_RANGE`, see
+    /// `topology`). The full topology never raises it.
+    Range(String),
 }
 
 impl ExecError {
@@ -221,8 +247,62 @@ impl ExecError {
             ExecError::Unsupported(m) => format!("unsupported: {m}"),
             ExecError::Runtime(m) => format!("runtime error: {m}"),
             ExecError::Assembly(m) => format!("assembler error: {m}"),
+            ExecError::Range(m) => format!("E_RANGE: {m}"),
         }
     }
+}
+
+/// Upper-case name of a PE memory, as in `.ndmp` dumps.
+fn pe_mem_name(m: MemKind) -> &'static str {
+    match m {
+        MemKind::Lm0 => "LM0",
+        MemKind::Lm1 => "LM1",
+        MemKind::Grf0 => "GRF0",
+        MemKind::Grf1 => "GRF1",
+        _ => "?",
+    }
+}
+
+/// Checks that a `wl`-word access of PE memory `mem` at word address `a` (as computed, before
+/// wrapping) stays inside the capacity of the topology.
+///
+/// The address first wraps at the chip's size, as on the chip; `a` is aligned to `wl`, so the
+/// access does not wrap inside. With the chip's capacity this never fails.
+#[inline]
+pub(crate) fn check_pe_access(
+    topo: &Topology,
+    mem: MemKind,
+    pe: usize,
+    a: usize,
+    wl: usize,
+) -> Result<(), ExecError> {
+    let (full, cap) = match mem {
+        MemKind::Lm0 | MemKind::Lm1 => (LM_WORDS, topo.lm_words()),
+        MemKind::Grf0 | MemKind::Grf1 => (GRF_WORDS, topo.grf_words()),
+        _ => return Ok(()),
+    };
+    let first = a & (full - 1);
+    if first + wl <= cap {
+        return Ok(());
+    }
+    Err(pe_range_error(topo, mem, pe, first, wl, cap))
+}
+
+#[cold]
+fn pe_range_error(
+    topo: &Topology,
+    mem: MemKind,
+    pe: usize,
+    first: usize,
+    wl: usize,
+    cap: usize,
+) -> ExecError {
+    ExecError::Range(format!(
+        "{} {} word address {first} ({wl} word{}) is outside the capacity of {cap} words",
+        pe_mem_name(mem),
+        topo.pe_id(pe).name(),
+        if wl == 1 { "" } else { "s" }
+    ))
 }
 
 /// The multi-line write mask set by `mask...` directives.
@@ -237,6 +317,9 @@ pub struct MaskState {
 pub type MatFace = [[u32; 8]; 16];
 
 pub struct Machine {
+    /// Units and capacities; `pes`, `mem`, `mats` and `blocks` are indexed densely over the
+    /// units of this topology (see `topology`).
+    topo: Topology,
     pub pes: Vec<Pe>,
     /// PE word memories (LM0, LM1, GRF0, GRF1) in address-major order.
     pub mem: Mem,
@@ -321,7 +404,18 @@ impl Default for Machine {
 }
 
 impl Machine {
+    /// The full chip.
     pub fn new() -> Machine {
+        Machine::with_topology(Topology::FULL)
+    }
+
+    /// A chip with the units and capacities of `topo`.
+    ///
+    /// Panics if `topo` is invalid (see `Topology::validate`).
+    pub fn with_topology(topo: Topology) -> Machine {
+        if let Err(e) = topo.validate() {
+            panic!("invalid topology: {e}");
+        }
         let uninit = |k| {
             Some(format!(
                 "uninitialized {} forwarding register",
@@ -335,16 +429,50 @@ impl Machine {
             uninit(FwdKind::Lbf),
         ];
         Machine {
-            pes: vec![Pe::default(); PES],
-            mem: Mem::new(),
+            topo,
+            pes: vec![Pe::default(); topo.pes()],
+            mem: Mem::with_topology(&topo),
             fwd_error,
-            blocks: Default::default(),
+            blocks: crate::blocks::Blocks::with_topology(topo),
             tracer: Default::default(),
-            mats: vec![[[[0; 8]; 16]; 2]; PES / 4],
+            mats: vec![[[[0; 8]; 16]; 2]; topo.mabs()],
             mask_state: MaskState::default(),
             slow_steps: 0,
             fast_steps: 0,
         }
+    }
+
+    pub fn topology(&self) -> &Topology {
+        &self.topo
+    }
+
+    /// Checks, PE by PE in order, every PE memory operand of a step against the reduced
+    /// capacities, so that the reported access does not depend on the parallel schedule.
+    ///
+    /// Every LM/GRF operand is checked for every PE and cycle, also where a write mask disables
+    /// the write. Accesses are checked again when they are made, which also covers a write
+    /// address that an earlier expression of the same step changes (T indirect).
+    fn check_pe_ranges(&self, exprs: &[Expr]) -> Result<(), ExecError> {
+        let ops: Vec<(MemKind, u8, &Addr)> = exprs
+            .iter()
+            .flat_map(|e| e.srcs.iter().chain(&e.dsts))
+            .filter_map(|op| match op {
+                Operand::Mem { mem, wl, addr, .. } if *mem != MemKind::T => Some((*mem, *wl, addr)),
+                _ => None,
+            })
+            .collect();
+        if ops.is_empty() {
+            return Ok(());
+        }
+        for pe in 0..self.pes.len() {
+            for &(mem, wl, addr) in &ops {
+                for c in 0..4 {
+                    let a = self.word_addrs(pe, mem, wl, addr, c);
+                    check_pe_access(&self.topo, mem, pe, a, wl as usize)?;
+                }
+            }
+        }
+        Ok(())
     }
 
     // ---- reads ----------------------------------------------------------------------------
@@ -420,6 +548,7 @@ impl Machine {
             }
             Operand::Mem { mem, wl, addr, .. } => {
                 let a = self.word_addrs(pe, *mem, *wl, addr, cycle);
+                check_pe_access(&self.topo, *mem, pe, a, *wl as usize)?;
                 let mut bus = [0; 4];
                 for i in 0..*wl as usize {
                     bus[i] = self.mem.peek(*mem, pe, a + i);
@@ -448,6 +577,9 @@ impl Machine {
 
     /// Executes one PE statement.
     pub fn step(&mut self, exprs: &[Expr]) -> Result<(), ExecError> {
+        if self.topo.lm < Topology::FULL.lm || self.topo.grf < Topology::FULL.grf {
+            self.check_pe_ranges(exprs)?;
+        }
         if let Some(fast) = self.step_fast(exprs) {
             self.fast_steps += 1;
             return fast;
@@ -480,8 +612,8 @@ impl Machine {
                         src,
                         Operand::Mem { ext: true, .. } | Operand::Forward { ext: true, .. }
                     );
-                    let mut vals = vec![[[0u32; 4]; 4]; PES];
-                    for pe in 0..PES {
+                    let mut vals = vec![[[0u32; 4]; 4]; self.pes.len()];
+                    for pe in 0..self.pes.len() {
                         for c in 0..4 {
                             vals[pe][c] = self.read_raw(pe, src, c)?;
                         }
@@ -506,8 +638,8 @@ impl Machine {
             let out = match self.compute(e) {
                 Ok(o) => o,
                 Err(ExecError::Runtime(msg)) => Output {
-                    bus: vec![[[0; 4]; 4]; PES],
-                    flags: vec![[0; 4]; PES],
+                    bus: vec![[[0; 4]; 4]; self.pes.len()],
+                    flags: vec![[0; 4]; self.pes.len()],
                     fwd: op_fwd_kind(e),
                     poison: Some(Poison {
                         msg,
@@ -563,7 +695,7 @@ impl Machine {
             if let Some(t) = self.tracer.borrow_mut().as_mut() {
                 t.expr = expr_index;
             }
-            for pe in 0..PES {
+            for pe in 0..self.pes.len() {
                 for c in 0..4 {
                     let mut bus = out.bus[pe][c];
                     if let Some(t) = self.tracer.borrow_mut().as_mut() {
@@ -713,6 +845,10 @@ impl Machine {
                 mask,
                 ..
             } => {
+                if *mem != MemKind::T {
+                    let a = self.word_addrs(pe, *mem, *wl, addr, cycle);
+                    check_pe_access(&self.topo, *mem, pe, a, *wl as usize)?;
+                }
                 let sel = mask.or_else(|| directive(Some(*mem), false, &st));
                 let mflags = sel.map(|s| (self.mask_flags(pe, &s, cycle), s.ll));
                 let words = if *mem == MemKind::T { 4 } else { *wl as usize };
@@ -836,7 +972,7 @@ impl Machine {
             Op::L1(op) => {
                 let (bus, from) = self.blocks.l1_to_pe(*op, &e.srcs[0])?;
                 if let Some(t) = self.tracer.borrow_mut().as_mut() {
-                    for pe in 0..PES {
+                    for pe in 0..self.pes.len() {
                         for c in 0..4 {
                             let b = &bus[pe][c];
                             t.pe_read(
@@ -852,7 +988,7 @@ impl Machine {
                 }
                 Ok(Output {
                     bus,
-                    flags: vec![[0; 4]; PES],
+                    flags: vec![[0; 4]; self.pes.len()],
                     fwd: Some(FwdKind::Lbf),
                     poison: None,
                 })
@@ -862,9 +998,10 @@ impl Machine {
     }
 
     fn alu_like(&self, f: impl Fn(&Machine, usize) -> ([Bus; 4], [u8; 4])) -> Output {
-        let mut bus = Vec::with_capacity(PES);
-        let mut flags = Vec::with_capacity(PES);
-        for pe in 0..PES {
+        let n = self.pes.len();
+        let mut bus = Vec::with_capacity(n);
+        let mut flags = Vec::with_capacity(n);
+        for pe in 0..n {
             let (b, fl) = f(self, pe);
             bus.push(b);
             flags.push(fl);
@@ -886,7 +1023,8 @@ impl Machine {
         cycle: usize,
     ) -> Result<Bus, ExecError> {
         if let Operand::Fixed(k) = op {
-            let id = PeId::from_index(pe);
+            // The chip coordinates, also on a reduced topology.
+            let id = self.topo.pe_id(pe);
             let v: u64 = match k {
                 FixedKind::L2bid => (id.group * 2 + id.l2b) as u64,
                 FixedKind::L1bid => id.l1b as u64,
@@ -927,9 +1065,10 @@ impl Machine {
         prec: Option<Prec>,
         unsigned: bool,
     ) -> Result<Output, ExecError> {
+        let n_pes = self.pes.len();
         if self.tracer.borrow().is_none() && !matches!(name, AluOp::Msl | AluOp::Msr) {
-            let mut bus = vec![[[0u32; 4]; 4]; PES];
-            let mut flags = vec![[0u8; 4]; PES];
+            let mut bus = vec![[[0u32; 4]; 4]; n_pes];
+            let mut flags = vec![[0u8; 4]; n_pes];
             let pes = &self.pes;
             let mem = &self.mem;
             let fwd_error = &self.fwd_error;
@@ -955,8 +1094,8 @@ impl Machine {
         }
         if self.tracer.borrow().is_none() && matches!(name, AluOp::Msl | AluOp::Msr) {
             // msl/msr pair PEs inside one MAB; MABs are independent.
-            let mut bus = vec![[[0u32; 4]; 4]; PES];
-            let mut flags = vec![[0u8; 4]; PES];
+            let mut bus = vec![[[0u32; 4]; 4]; n_pes];
+            let mut flags = vec![[0u8; 4]; n_pes];
             let pes = &self.pes;
             let mem = &self.mem;
             let fwd_error = &self.fwd_error;
@@ -998,18 +1137,18 @@ impl Machine {
             });
         }
         let n = name.inputs();
-        let mut ins: Vec<Vec<[Bus; 4]>> = vec![vec![[[0; 4]; 4]; PES]; n];
+        let mut ins: Vec<Vec<[Bus; 4]>> = vec![vec![[[0; 4]; 4]; n_pes]; n];
         for (i, op) in e.srcs.iter().enumerate().take(n) {
-            for pe in 0..PES {
+            for pe in 0..n_pes {
                 for c in 0..4 {
                     ins[i][pe][c] = self.read_alu_input(pe, op, prec, c)?;
                 }
             }
         }
         let bits = prec_bits(prec);
-        let mut bus = vec![[[0u32; 4]; 4]; PES];
-        let mut flags = vec![[0u8; 4]; PES];
-        for pe in 0..PES {
+        let mut bus = vec![[[0u32; 4]; 4]; n_pes];
+        let mut flags = vec![[0u8; 4]; n_pes];
+        for pe in 0..n_pes {
             for c in 0..4 {
                 let x = ins[0][pe][c];
                 let y = if n > 1 { ins[1][pe][c] } else { [0; 4] };
@@ -1061,9 +1200,10 @@ impl Machine {
         half: Option<char>,
         round: bool,
     ) -> Result<Output, ExecError> {
+        let n_pes = self.pes.len();
         if self.tracer.borrow().is_none() {
-            let mut bus = vec![[[0u32; 4]; 4]; PES];
-            let mut flags = vec![[0u8; 4]; PES];
+            let mut bus = vec![[[0u32; 4]; 4]; n_pes];
+            let mut flags = vec![[0u8; 4]; n_pes];
             let pes = &self.pes;
             let mem = &self.mem;
             let fwd_error = &self.fwd_error;
@@ -1158,9 +1298,9 @@ impl Machine {
         };
         let one_a = float::decode(fa, (fa.bias() as u64) << fa.man_bits);
         let zero = Val::Zero { neg: false };
-        let mut bus = vec![[[0u32; 4]; 4]; PES];
-        let mut flags = vec![[0u8; 4]; PES];
-        for pe in 0..PES {
+        let mut bus = vec![[[0u32; 4]; 4]; n_pes];
+        let mut flags = vec![[0u8; 4]; n_pes];
+        for pe in 0..n_pes {
             for c in 0..4 {
                 let a = read_vals(self, pe, ia, fa, c)?.unwrap();
                 let b = read_vals(self, pe, ib, fa, c)?;
@@ -1268,7 +1408,9 @@ impl Machine {
             lm1,
             grf0,
             grf1,
+            topo,
         } = mem;
+        let topo = &*topo;
         pes.par_iter_mut()
             .zip(lm0.par_chunks_mut(LM_WORDS))
             .zip(lm1.par_chunks_mut(LM_WORDS))
@@ -1281,6 +1423,7 @@ impl Machine {
                     lm1,
                     grf0,
                     grf1,
+                    topo,
                 };
                 for c in 0..4 {
                     let mut bus = out.bus[pe][c];
@@ -1331,7 +1474,9 @@ impl Machine {
             lm1,
             grf0,
             grf1,
+            topo,
         } = mem;
+        let topo = &*topo;
         thread_pool().install(|| {
             pes.par_iter_mut()
                 .zip(lm0.par_chunks_mut(LM_WORDS))
@@ -1345,6 +1490,7 @@ impl Machine {
                         lm1,
                         grf0,
                         grf1,
+                        topo,
                     };
                     run_fast_pe(
                         p,
@@ -2025,7 +2171,7 @@ impl Machine {
             _ => 2,
         };
         let mut out = Vec::new();
-        for mab in 0..PES / 4 {
+        for mab in 0..self.mats.len() {
             for c in 0..4 {
                 let mut elems: Vec<u64> = Vec::with_capacity(per_pe * 4);
                 for p in 0..4 {
@@ -2075,7 +2221,7 @@ impl Machine {
         let side = *y as usize;
         let f = prec_fmt(prec);
         let (rows, _) = mat_shape(prec);
-        let mut bus = vec![[[0u32; 4]; 4]; PES];
+        let mut bus = vec![[[0u32; 4]; 4]; self.pes.len()];
         if self.tracer.borrow().is_none() {
             let mats = &self.mats;
             bus.par_chunks_mut(4)
@@ -2124,12 +2270,12 @@ impl Machine {
                 })?;
             return Ok(Output {
                 bus,
-                flags: vec![[0; 4]; PES],
+                flags: vec![[0; 4]; self.pes.len()],
                 fwd: Some(FwdKind::Mreadf),
                 poison: None,
             });
         }
-        for mab in 0..PES / 4 {
+        for mab in 0..self.mats.len() {
             for c in 0..4 {
                 for p in 0..4 {
                     let vals: Vec<u64> = match prec {
@@ -2160,7 +2306,7 @@ impl Machine {
         }
         Ok(Output {
             bus,
-            flags: vec![[0; 4]; PES],
+            flags: vec![[0; 4]; self.pes.len()],
             fwd: Some(FwdKind::Mreadf),
             poison: None,
         })
@@ -2211,10 +2357,10 @@ impl Machine {
             _ => (4, 4),
         };
         let (rows, _) = mat_shape(prec);
-        let mut bus = vec![[[0u32; 4]; 4]; PES];
-        let mut flags = vec![[0u8; 4]; PES];
+        let mut bus = vec![[[0u32; 4]; 4]; self.pes.len()];
+        let mut flags = vec![[0u8; 4]; self.pes.len()];
         let mut poison: Option<Poison> = None;
-        for mab in 0..PES / 4 {
+        for mab in 0..self.mats.len() {
             for c in 0..4 {
                 let mut x: Vec<u64> = Vec::new();
                 let mut yv: Vec<Val> = Vec::new();
@@ -2251,7 +2397,7 @@ impl Machine {
                 if let Some(ExecError::Runtime(msg)) = bad {
                     let pz = poison.get_or_insert_with(|| Poison {
                         msg,
-                        at: vec![[false; 4]; PES],
+                        at: vec![[false; 4]; self.pes.len()],
                     });
                     for p in 0..4 {
                         pz.at[mab * 4 + p][c] = true;
@@ -2319,7 +2465,7 @@ impl Machine {
             ],
         };
         let w = f.width();
-        let mut bus = vec![[[0u32; 4]; 4]; PES];
+        let mut bus = vec![[[0u32; 4]; 4]; self.pes.len()];
         if self.tracer.borrow().is_none() {
             let pes = &self.pes;
             let mem = &self.mem;
@@ -2369,12 +2515,12 @@ impl Machine {
                 })?;
             return Ok(Output {
                 bus,
-                flags: vec![[0; 4]; PES],
+                flags: vec![[0; 4]; self.pes.len()],
                 fwd: Some(FwdKind::Aluf),
                 poison: None,
             });
         }
-        for mab in 0..PES / 4 {
+        for mab in 0..self.mats.len() {
             for c in 0..4 {
                 let ins: Vec<Bus> = (0..4)
                     .map(|p| self.read_alu_input(mab * 4 + p, &e.srcs[0], Some(prec), c))
@@ -2405,7 +2551,7 @@ impl Machine {
         }
         Ok(Output {
             bus,
-            flags: vec![[0; 4]; PES],
+            flags: vec![[0; 4]; self.pes.len()],
             fwd: Some(FwdKind::Aluf),
             poison: None,
         })
@@ -2489,6 +2635,7 @@ fn read_raw_pe<M: MemRead>(
         }
         Operand::Mem { mem, wl, addr, .. } => {
             let a = word_addrs_pe(p, pe, *mem, *wl, addr, cycle);
+            check_pe_access(memory.topo(), *mem, pe, a, *wl as usize)?;
             let mut bus = [0; 4];
             for i in 0..*wl as usize {
                 bus[i] = memory.peek(*mem, pe, a + i);
@@ -2527,7 +2674,7 @@ fn read_alu_input_pe<M: MemRead>(
     cycle: usize,
 ) -> Result<Bus, ExecError> {
     if let Operand::Fixed(k) = op {
-        let id = PeId::from_index(pe);
+        let id = memory.topo().pe_id(pe);
         let v: u64 = match k {
             FixedKind::L2bid => (id.group * 2 + id.l2b) as u64,
             FixedKind::L1bid => id.l1b as u64,
@@ -2799,6 +2946,10 @@ fn write_pe<M: MemWrite>(
             mask,
             ..
         } => {
+            if *mem != MemKind::T {
+                let a = word_addrs_pe(p, pe, *mem, *wl, addr, cycle);
+                check_pe_access(memory.topo(), *mem, pe, a, *wl as usize)?;
+            }
             let sel = mask.or_else(|| directive(Some(*mem), false));
             let mflags = sel.map(|s| (mask_flags_pe(p, st, &s, cycle), s.ll));
             let words = if *mem == MemKind::T {

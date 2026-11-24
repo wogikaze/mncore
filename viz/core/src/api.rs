@@ -4,8 +4,8 @@
 use serde::Serialize;
 
 use crate::hazard;
-use crate::machine::PES;
 use crate::run::Sim;
+use crate::topology::Topology;
 use crate::trace::{self, Access, Flow, Tracer};
 use crate::vsm::{self, Line};
 
@@ -135,6 +135,12 @@ fn kind_of(l: &Line) -> &'static str {
 /// Simulates `solution` inside `testcase` (which contains the VSM_HERE marker) and records
 /// the focus PEs (global PE indices).
 pub fn trace(testcase: &str, solution: &str, focus: &[usize]) -> Result<Trace, String> {
+    trace_in(testcase, solution, focus, Topology::FULL)
+}
+
+/// `trace` on a chip with the units and capacities of `topo`; `focus` holds dense PE indices
+/// of that topology.
+pub fn trace_in(testcase: &str, solution: &str, focus: &[usize], topo: Topology) -> Result<Trace, String> {
     let (prefix, suffix) = match testcase.split_once(VSM_HERE) {
         Some((p, s)) => (p, s),
         None => ("", testcase),
@@ -144,8 +150,8 @@ pub fn trace(testcase: &str, solution: &str, focus: &[usize]) -> Result<Trace, S
     let main = vsm::parse(solution).map_err(|e| format!("solution: {e}"))?;
     let src_lines: Vec<&str> = solution.lines().collect();
 
-    let mut sim = Sim::new();
-    *sim.m.tracer.borrow_mut() = Some(Tracer::new(focus, PES));
+    let mut sim = Sim::with_topology(topo);
+    *sim.m.tracer.borrow_mut() = Some(Tracer::for_topology(focus, &topo));
     let mut error = None;
     let mut error_line = None;
     for (_, l) in &pre {
@@ -173,7 +179,7 @@ pub fn trace(testcase: &str, solution: &str, focus: &[usize]) -> Result<Trace, S
             kind: kind_of(l),
             step,
             words: l.words(),
-            flows: trace::flows(l),
+            flows: trace::flows_in(l, &topo),
             exprs: expr_infos(l),
             accesses,
         });

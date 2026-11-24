@@ -3,6 +3,10 @@
 //! The emulator completes an MV instruction as soon as it is issued, and so does this
 //! simulator. How long a transfer takes is not static (SDM 3.6.13); the visualization estimates
 //! it from the throughputs in SDM 3.5.8.
+//!
+//! On a reduced topology (see `topology`), an L2B, or the PDM and DRAM of a group without L2Bs,
+//! that does not exist reads as zero and drops writes; an address beyond a reduced capacity is
+//! `ExecError::Range`.
 
 use std::collections::HashMap;
 
@@ -10,6 +14,7 @@ use crate::blockop::Rrn;
 use crate::blocks::{Blocks, L2BM_LONGS};
 use crate::machine::ExecError;
 use crate::rrn;
+use crate::topology::{fits, Topology};
 
 pub const GROUPS: usize = 4;
 pub const PDM_LONGS: u64 = 512 * 1024;
@@ -216,13 +221,40 @@ enum Loc {
     L2bm(usize, usize, u64),
 }
 
-impl OffChip {
-    fn read(&self, b: &Blocks, l: Loc) -> u64 {
-        match l {
-            Loc::Pdm(g, a) => self.pdm[g].get(a % PDM_LONGS),
-            Loc::Dram(g, a) => self.dram[g].get(a % DRAM_LONGS),
-            Loc::L2bm(g, c, a) => b.l2bm[g * 2 + c][(a % L2BM_LONGS as u64) as usize],
+/// Where a long word of the top level is in a topology: the unit does not exist, or the
+/// physical address (wrapped at the chip's size) inside the capacity.
+fn place(t: &Topology, l: Loc) -> Result<Option<u64>, ExecError> {
+    let (absent, a, cap, full, name) = match l {
+        Loc::Pdm(g, a) => (t.group_absent(g), a % PDM_LONGS, t.pdm, PDM_LONGS, "PDM"),
+        Loc::Dram(g, a) => (t.group_absent(g), a % DRAM_LONGS, t.dram, DRAM_LONGS, "DRAM"),
+        Loc::L2bm(g, c, a) => {
+            let full = L2BM_LONGS as u64;
+            (t.l2b_absent(g * 2 + c), a % full, t.l2bm as u64, full, "L2BM")
         }
+    };
+    if absent {
+        return Ok(None);
+    }
+    if fits(a, cap, full) {
+        return Ok(Some(a));
+    }
+    let unit = match l {
+        Loc::Pdm(g, _) | Loc::Dram(g, _) => format!("n{g}"),
+        Loc::L2bm(g, c, _) => format!("n{g}c{c}"),
+    };
+    Err(ExecError::Range(format!(
+        "{name} {unit} long word address {a} is outside the capacity of {cap} long words"
+    )))
+}
+
+impl OffChip {
+    fn read(&self, b: &Blocks, l: Loc) -> Result<u64, ExecError> {
+        let Some(a) = place(b.topology(), l)? else { return Ok(0) };
+        Ok(match l {
+            Loc::Pdm(g, _) => self.pdm[g].get(a),
+            Loc::Dram(g, _) => self.dram[g].get(a),
+            Loc::L2bm(g, c, _) => b.l2bm[g * 2 + c][a as usize],
+        })
     }
 
     /// Executes an MV instruction.
@@ -296,9 +328,9 @@ impl OffChip {
                     for k in 0..n * 64 {
                         let (chunk, kk) = (k / 16, k % 16);
                         let value = if is_dram(src) {
-                            self.read(b, dram(src, gs, chunk, kk))
+                            self.read(b, dram(src, gs, chunk, kk))?
                         } else {
-                            self.read(b, at(src, gs, cs, k))
+                            self.read(b, at(src, gs, cs, k))?
                         };
                         let loc = if is_dram(dst) {
                             dram(dst, gd, chunk, kk)
@@ -313,7 +345,7 @@ impl OffChip {
                 // DRAM -> both L2BMs of every group.
                 for g in 0..GROUPS {
                     for k in 0..n * 64 {
-                        let value = self.read(b, dram(src, g, k / 16, k % 16));
+                        let value = self.read(b, dram(src, g, k / 16, k % 16))?;
                         for c in 0..2 {
                             writes.push((at(dst, g, c, k), value));
                         }
@@ -324,7 +356,7 @@ impl OffChip {
                 Pdm { .. } => {
                     let gs = groups(src)[0];
                     for k in 0..n * 64 {
-                        let v = self.read(b, at(src, gs, 0, k));
+                        let v = self.read(b, at(src, gs, 0, k))?;
                         for g in 0..GROUPS {
                             for c in 0..2 {
                                 writes.push((at(dst, g, c, k), v));
@@ -336,7 +368,7 @@ impl OffChip {
                     for i in 0..n {
                         for gd in 0..GROUPS {
                             for k in 0..16 {
-                                let v = self.read(b, dram(src, gd, 4 * i + gd as u64, k));
+                                let v = self.read(b, dram(src, gd, 4 * i + gd as u64, k))?;
                                 for g in 0..GROUPS {
                                     for c in 0..2 {
                                         writes.push((at(dst, g, c, 64 * i + gd as u64 * 16 + k), v));
@@ -354,7 +386,7 @@ impl OffChip {
                     for c in 0..2 {
                         for gs in 0..GROUPS {
                             for k in 0..16 {
-                                let v = self.read(b, dram(src, gs, 2 * i + c as u64, k));
+                                let v = self.read(b, dram(src, gs, 2 * i + c as u64, k))?;
                                 for g in 0..GROUPS {
                                     writes.push((at(dst, g, c, 64 * i + gs as u64 * 16 + k), v));
                                 }
@@ -372,7 +404,7 @@ impl OffChip {
                                 for c in 0..2 {
                                     let buf = (j * 8 + g as u64 * 2 + c as u64) * 16;
                                     for k in 0..16 {
-                                        let v = self.read(b, Loc::Pdm(gp, addr + 512 * i + buf + k));
+                                        let v = self.read(b, Loc::Pdm(gp, addr + 512 * i + buf + k))?;
                                         writes.push((at(dst, g, c, 64 * i + j * 16 + k), v));
                                     }
                                 }
@@ -388,7 +420,7 @@ impl OffChip {
                                 for c in 0..2 {
                                     let buf = (j * 8 + g as u64 * 2 + c as u64) * 16;
                                     for k in 0..16 {
-                                        let v = self.read(b, Loc::L2bm(g, c, addr + 64 * i + j * 16 + k));
+                                        let v = self.read(b, Loc::L2bm(g, c, addr + 64 * i + j * 16 + k))?;
                                         writes.push((at(dst, gp, 0, 512 * i + buf + k), v));
                                     }
                                 }
@@ -401,7 +433,7 @@ impl OffChip {
                     for i in 0..n {
                         for g in 0..GROUPS {
                             for k in 0..16 {
-                                let v = self.read(b, Loc::Pdm(gp, addr + 64 * i + g as u64 * 16 + k));
+                                let v = self.read(b, Loc::Pdm(gp, addr + 64 * i + g as u64 * 16 + k))?;
                                 writes.push((dram(dst, g, 4 * i + g as u64, k), v));
                             }
                         }
@@ -412,7 +444,7 @@ impl OffChip {
                     for i in 0..n {
                         for g in 0..GROUPS {
                             for k in 0..16 {
-                                let v = self.read(b, dram(src, g, 4 * i + g as u64, k));
+                                let v = self.read(b, dram(src, g, 4 * i + g as u64, k))?;
                                 writes.push((at(dst, gp, 0, 64 * i + g as u64 * 16 + k), v));
                             }
                         }
@@ -424,7 +456,7 @@ impl OffChip {
                 // Both L2BMs of a group, reduced (2-element RRN), to the same group's DRAM/PDM.
                 for g in groups(dst) {
                     for k in 0..n * 64 {
-                        let vals = [self.read(b, at(src, g, 0, k)), self.read(b, at(src, g, 1, k))];
+                        let vals = [self.read(b, at(src, g, 0, k))?, self.read(b, at(src, g, 1, k))?];
                         let loc = if is_dram(dst) {
                             dram(dst, g, k / 16, k % 16)
                         } else {
@@ -436,17 +468,18 @@ impl OffChip {
             }
             MvKind::R(op) => {
                 // All 8 L2BMs: 2-element reduction within each group, then 4 across groups.
-                let reduced = |b: &Blocks, off: u64| -> u64 {
-                    let per_group: Vec<u64> = (0..GROUPS)
-                        .map(|g| reduce_long(op, &[self.read(b, at(src, g, 0, off)), self.read(b, at(src, g, 1, off))]))
-                        .collect();
-                    reduce_long(op, &per_group)
+                let reduced = |b: &Blocks, off: u64| -> Result<u64, ExecError> {
+                    let mut per_group: Vec<u64> = Vec::with_capacity(GROUPS);
+                    for g in 0..GROUPS {
+                        per_group.push(reduce_long(op, &[self.read(b, at(src, g, 0, off))?, self.read(b, at(src, g, 1, off))?]));
+                    }
+                    Ok(reduce_long(op, &per_group))
                 };
                 match dst {
                     Pdm { .. } => {
                         let gp = groups(dst)[0];
                         for k in 0..n * 64 {
-                            writes.push((at(dst, gp, 0, k), reduced(b, k)));
+                            writes.push((at(dst, gp, 0, k), reduced(b, k)?));
                         }
                     }
                     Dram { .. } => {
@@ -455,7 +488,7 @@ impl OffChip {
                                 for k in 0..16 {
                                     writes.push((
                                         dram(dst, g, 4 * i + g as u64, k),
-                                        reduced(b, 64 * i + g as u64 * 16 + k),
+                                        reduced(b, 64 * i + g as u64 * 16 + k)?,
                                     ));
                                 }
                             }
@@ -471,7 +504,9 @@ impl OffChip {
                         for g in 0..GROUPS {
                             for k in 0..16 {
                                 let off = 64 * i + g as u64 * 16 + k;
-                                let vals: Vec<u64> = (0..GROUPS).map(|gs| self.read(b, at(src, gs, c, off))).collect();
+                                let vals: Vec<u64> = (0..GROUPS)
+                                    .map(|gs| self.read(b, at(src, gs, c, off)))
+                                    .collect::<Result<_, _>>()?;
                                 writes.push((dram(dst, g, 2 * i + c as u64, k), reduce_long(op, &vals)));
                             }
                         }
@@ -479,11 +514,18 @@ impl OffChip {
                 }
             }
         }
+        // Every write is checked before any is made; writes to units that do not exist are
+        // dropped.
+        let topo = *b.topology();
+        for (l, _) in &writes {
+            place(&topo, *l)?;
+        }
         for (l, v) in writes {
+            let Some(a) = place(&topo, l)? else { continue };
             match l {
-                Loc::Pdm(g, a) => self.pdm[g].set(a % PDM_LONGS, v),
-                Loc::Dram(g, a) => self.dram[g].set(a % DRAM_LONGS, v),
-                Loc::L2bm(g, c, a) => b.l2bm[g * 2 + c][(a % L2BM_LONGS as u64) as usize] = v,
+                Loc::Pdm(g, _) => self.pdm[g].set(a, v),
+                Loc::Dram(g, _) => self.dram[g].set(a, v),
+                Loc::L2bm(g, c, _) => b.l2bm[g * 2 + c][a as usize] = v,
             }
         }
         Ok(())

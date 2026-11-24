@@ -1,0 +1,16 @@
+# Accesses at the top of the smallest LM and GRF capacities used by tests/topology.rs:
+# LM0/LM1 words 496 to 511 (the last 8 long words of 256) and GRF words 48 to 63 (the last 8
+# long words of 32). All of them are inside those topologies. The double multiplies run in
+# the upper (u) or lower (d) half of each MAB.
+d set $lm496 8 3FF000000000000040000000000000004008000000000000401000000000000040140000000000004018000000000000401C0000000000004020000000000000
+d set $lr48 8 BFF0000000000000C000000000000000C008000000000000C010000000000000C014000000000000C018000000000000C01C000000000000C020000000000000
+dvadd $lm496v $lr48v $ln496v
+dvmulu $lm504v $lr56v $ls48v
+nop/2
+dvfmad $ls48v $lm496v $lr48v $ln504v
+nop/2
+d get $ln496n0c0b0m0p0 8
+d get $ln496n0c0b0m0p3 8
+d get $ln496n0c1b0m3p1 8
+d get $ls48n0c0b0m0p2 8
+d get $ls48n0c0b0m0p1 8

@@ -1,13 +1,19 @@
 //! L1BM and L2BM state and instruction semantics (SDM 3.6.7, 3.6.8).
 //!
 //! Layouts follow the pseudo code of the SDM. Addresses are in long words.
+//!
+//! On a reduced topology (see `topology`), an L1B or MAB that does not exist reads as zero when
+//! it is a source and is skipped when it is a destination, and an L1BM/L2BM address beyond the
+//! reduced capacity is `ExecError::Range`. Addresses first wrap at the chip's size.
 
 use crate::blockop::{L1Op, L2Op, Rrn, RrnOp};
 use crate::float::{self, HALF, SINGLE};
 use crate::machine::{Bus, ExecError, PES};
 use crate::rrn;
+use crate::topology::{fits, Topology};
 use crate::vsm::{Expr, Operand};
 
+// The real chip; a reduced topology has fewer units.
 pub const L1BS: usize = PES / 64;
 pub const L2BS: usize = L1BS / 8;
 pub const L1BM_LONGS: usize = 8 * 1024;
@@ -18,6 +24,9 @@ pub const DAR_ENTRIES: usize = 1024;
 pub const DARBUF_ENTRIES: usize = 512;
 
 /// Memories of the L2B/L1B levels and the DAR path.
+///
+/// `l1bm` and `lbi` are indexed by dense L1B index (L2B * L1Bs per L2B + L1B), `l2bm` by L2B
+/// (`group * 2 + l2b`). Every memory keeps the chip's size; the topology bounds the addresses.
 pub struct Blocks {
     pub l1bm: Vec<Vec<u64>>,
     pub l2bm: Vec<Vec<u64>>,
@@ -35,20 +44,59 @@ pub struct Blocks {
     pub darw_addr: usize,
     /// Next DAR buffer entry read by `l2bmdarw` (`MEM.darbuf_read_addr`).
     pub darbuf_read_addr: usize,
+    topo: Topology,
 }
 
 impl Default for Blocks {
     fn default() -> Self {
+        Blocks::with_topology(Topology::FULL)
+    }
+}
+
+impl Blocks {
+    pub fn with_topology(topo: Topology) -> Blocks {
         Blocks {
-            l1bm: vec![vec![0; L1BM_LONGS]; L1BS],
-            l2bm: vec![vec![0; L2BM_LONGS]; L2BS],
-            lbi: vec![[[0; 128]; 4]; L1BS],
+            l1bm: vec![vec![0; L1BM_LONGS]; topo.l1bs()],
+            l2bm: vec![vec![0; L2BM_LONGS]; topo.l2b],
+            lbi: vec![[[0; 128]; 4]; topo.l1bs()],
             lbi_error: Some("the L1BM turnaround register has not been written".into()),
             dar: vec![[0; DAR_ENTRIES]; crate::mv::GROUPS],
             darbuf: vec![[0; DARBUF_ENTRIES]; crate::mv::GROUPS],
             darw_addr: 0,
             darbuf_read_addr: 0,
+            topo,
         }
+    }
+
+    pub fn topology(&self) -> &Topology {
+        &self.topo
+    }
+
+    /// Physical address of long word `a` of the L1BM of dense L1B `l1b`: wrapped at the chip's
+    /// size, then checked against the capacity.
+    pub(crate) fn l1_addr(&self, l1b: usize, a: usize) -> Result<usize, ExecError> {
+        let p = a % L1BM_LONGS;
+        if fits(p as u64, self.topo.l1bm as u64, L1BM_LONGS as u64) {
+            return Ok(p);
+        }
+        Err(ExecError::Range(format!(
+            "L1BM {} long word address {p} is outside the capacity of {} long words",
+            self.topo.l1b_name(l1b),
+            self.topo.l1bm
+        )))
+    }
+
+    /// Physical address of long word `a` of the L2BM of L2B `l2b`, as `l1_addr`.
+    pub(crate) fn l2_addr(&self, l2b: usize, a: usize) -> Result<usize, ExecError> {
+        let p = a % L2BM_LONGS;
+        if fits(p as u64, self.topo.l2bm as u64, L2BM_LONGS as u64) {
+            return Ok(p);
+        }
+        Err(ExecError::Range(format!(
+            "L2BM {} long word address {p} is outside the capacity of {} long words",
+            Topology::l2b_name(l2b),
+            self.topo.l2bm
+        )))
     }
 }
 
@@ -91,7 +139,7 @@ impl Blocks {
     /// Reads L1BM long word `addr` of an L1B, or position `addr` of the turnaround register.
     fn l1_read(&self, l1b: usize, addr: Option<u32>, offset: usize, cycle: usize) -> Result<u64, ExecError> {
         match addr {
-            Some(a) => Ok(self.l1bm[l1b][(a as usize + offset) % L1BM_LONGS]),
+            Some(a) => Ok(self.l1bm[l1b][self.l1_addr(l1b, a as usize + offset)?]),
             None => {
                 if let Some(e) = &self.lbi_error {
                     return Err(ExecError::Runtime(format!("reading $lbi failed: {e}")));
@@ -103,17 +151,20 @@ impl Blocks {
 
     /// Values an L1BM-to-PE transfer delivers to every PE in every cycle, and the L1BM long
     /// word address each PE's MSB long word came from (None for the turnaround register).
+    ///
+    /// Only PEs of the topology receive values, so nothing is read for MABs that do not exist.
     #[allow(clippy::type_complexity)]
     pub fn l1_to_pe(&self, op: L1Op, src: &Operand) -> Result<(Vec<[Bus; 4]>, Vec<[Option<u32>; 4]>), ExecError> {
         let (wl, addr) = l1_operand(src).ok_or_else(|| ExecError::Unsupported(format!("L1BM source {src:?}")))?;
         let two = wl == 4;
-        let mut out = vec![[[0u32; 4]; 4]; PES];
-        let mut from = vec![[None; 4]; PES];
-        for l1b in 0..L1BS {
+        let nmab = self.topo.mab;
+        let mut out = vec![[[0u32; 4]; 4]; self.topo.pes()];
+        let mut from = vec![[None; 4]; self.topo.pes()];
+        for l1b in 0..self.l1bm.len() {
             for c in 0..4 {
                 // For the turnaround register the address is relative to this cycle's block.
                 let base = |step: usize| if addr.is_some() { c * step } else { 0 };
-                for mab in 0..16 {
+                for mab in 0..nmab {
                     for pe in 0..4 {
                         // Offsets of the MSB and (if any) LSB long words read for this PE.
                         // The turnaround register has a MSB and an LSB plane per cycle, so an
@@ -161,7 +212,7 @@ impl Blocks {
                             Some(o) => self.l1_read(l1b, addr, o, c)?,
                             None => 0,
                         };
-                        let idx = l1b * 64 + mab * 4 + pe;
+                        let idx = (l1b * nmab + mab) * 4 + pe;
                         out[idx][c] = bus_of(m, l);
                         from[idx][c] = addr.map(|a| ((a as usize + om) % L1BM_LONGS) as u32);
                     }
@@ -171,16 +222,24 @@ impl Blocks {
         Ok((out, from))
     }
 
-    /// Computes a PE-to-L1BM transfer from the PE values `src[pe][cycle]`.
+    /// Computes a PE-to-L1BM transfer from the PE values `src[pe][cycle]` (dense PE index).
     /// `src_two` tells whether the PE operand is two long words, which decides the width of
-    /// reductions whose result is rounded to half precision.
+    /// reductions whose result is rounded to half precision. A MAB that does not exist in the
+    /// topology contributes zero.
     pub fn pe_to_l1(&self, op: L1Op, dst: &Operand, src: &[[Bus; 4]], ext: bool, src_two: bool, w: &mut BlockWrites) -> Result<(), ExecError> {
         let (wl, addr) = l1_operand(dst).ok_or_else(|| ExecError::Unsupported(format!("L1BM destination {dst:?}")))?;
         let two = wl == 4;
+        let nmab = self.topo.mab;
         // Positions not written keep their old values (measured with the emulator).
         let mut lbi = self.lbi.clone();
-        for l1b in 0..L1BS {
-            let pe_of = |mab: usize, pe: usize| l1b * 64 + mab * 4 + pe;
+        for l1b in 0..self.l1bm.len() {
+            let src_of = |mab: usize, pe: usize, c: usize| -> Bus {
+                if self.topo.mab_absent(mab) {
+                    [0; 4]
+                } else {
+                    src[(l1b * nmab + mab) * 4 + pe][c]
+                }
+            };
             for c in 0..4 {
                 // (offset within this cycle's block, value); also the turnaround layout.
                 let mut items: Vec<(usize, u64)> = Vec::new();
@@ -188,7 +247,7 @@ impl Blocks {
                 match op {
                     L1Op::Mwrite { mab } => {
                         for pe in 0..4 {
-                            let b = &src[pe_of(mab as usize, pe)][c];
+                            let b = &src_of(mab as usize, pe, c);
                             let hi = long(b, 0);
                             items.push((pe, hi));
                             turn.push((pe, hi));
@@ -202,7 +261,7 @@ impl Blocks {
                     L1Op::M4write { mab } => {
                         for mo in 0..4 {
                             for pe in 0..4 {
-                                let b = &src[pe_of(mo * 4 + mab as usize, pe)][c];
+                                let b = &src_of(mo * 4 + mab as usize, pe, c);
                                 if two {
                                     let hi = long(b, 0);
                                     let lo = long(b, 1);
@@ -221,7 +280,7 @@ impl Blocks {
                     L1Op::Gather { mabdiff } => {
                         for mab in 0..16 {
                             for pe in 0..4 {
-                                let v = long(&src[pe_of(mab, pe)][c], 0);
+                                let v = long(&src_of(mab, pe, c), 0);
                                 let dst_mab = (mab as i32 + mabdiff as i32).rem_euclid(16) as usize;
                                 items.push((dst_mab * 4 + pe, v));
                                 turn.push((mab * 4 + pe, v));
@@ -239,7 +298,7 @@ impl Blocks {
                             let mabs: Vec<usize> = if four { (group * 4..group * 4 + 4).collect() } else { (0..16).collect() };
                             let mut res: Vec<Bus> = Vec::new();
                             for pe in 0..4 {
-                                let vals: Vec<Bus> = mabs.iter().map(|&m| src[pe_of(m, pe)][c]).collect();
+                                let vals: Vec<Bus> = mabs.iter().map(|&m| src_of(m, pe, c)).collect();
                                 res.push(reduce_buses(rrn, round, ext, two || (rounded && src_two), &vals, !four)?);
                             }
                             for pe in 0..4 {
@@ -276,7 +335,7 @@ impl Blocks {
                         for group in 0..(if four { 4 } else { 1 }) {
                             for pe in 0..4 {
                                 let mabs: Vec<usize> = if four { (group * 4..group * 4 + 4).collect() } else { (0..16).collect() };
-                                let vals: Vec<Bus> = mabs.iter().map(|&m| src[pe_of(m, pe)][c]).collect();
+                                let vals: Vec<Bus> = mabs.iter().map(|&m| src_of(m, pe, c)).collect();
                                 let red = reduce_buses(rrn, round, ext, two, &vals, !four)?;
                                 if two {
                                     let (o0, o1) = if four { (group * 8 + pe, group * 8 + 4 + pe) } else { (pe, 4 + pe) };
@@ -310,7 +369,7 @@ impl Blocks {
                         _ => if two { 8 } else { 4 },
                     };
                     for (o, v) in items {
-                        w.l1bm.push((l1b, (a as usize + c * step + o) % L1BM_LONGS, v, c as u8, w.expr));
+                        w.l1bm.push((l1b, self.l1_addr(l1b, a as usize + c * step + o)?, v, c as u8, w.expr));
                     }
                 }
             }
@@ -334,69 +393,84 @@ impl Blocks {
         };
         let a0 = addr(e.srcs.first().ok_or_else(|| ExecError::Unsupported("missing operand".into()))?)?;
         let a1 = addr(e.dsts.first().ok_or_else(|| ExecError::Unsupported("missing operand".into()))?)?;
-        for l2 in 0..L2BS {
-            let l1 = |b: usize| l2 * 8 + b;
+        let topo = self.topo;
+        // L1Bs that do not exist receive nothing, and read as zero as a source.
+        let present = |b: usize| !topo.l1b_absent(b);
+        for l2 in 0..self.l2bm.len() {
+            let l1 = |b: usize| l2 * topo.l1b + b;
+            let read_l1 = |b: usize, a: usize| -> Result<u64, ExecError> {
+                if present(b) {
+                    Ok(self.l1bm[l1(b)][self.l1_addr(l1(b), a)?])
+                } else {
+                    Ok(0)
+                }
+            };
+            let read_l2 = |a: usize| -> Result<u64, ExecError> { Ok(self.l2bm[l2][self.l2_addr(l2, a)?]) };
             for c in 0..4 {
                 match op {
                     L2Op::Bcast { set } => {
-                        for b in (0..8).filter(|&b| set.contains(b)) {
+                        for b in (0..8).filter(|&b| set.contains(b) && present(b)) {
                             for k in 0..16 {
-                                w.l1bm.push((l1(b), (a1 + c * 16 + k) % L1BM_LONGS, self.l2bm[l2][(a0 + c * 16 + k) % L2BM_LONGS], c as u8, w.expr));
+                                let v = read_l2(a0 + c * 16 + k)?;
+                                w.l1bm.push((l1(b), self.l1_addr(l1(b), a1 + c * 16 + k)?, v, c as u8, w.expr));
                             }
                         }
                     }
                     L2Op::Bcast2 { set } => {
-                        for b in (0..8).filter(|&b| set.contains(b)) {
+                        for b in (0..8).filter(|&b| set.contains(b) && present(b)) {
                             for k in 0..16 {
-                                let v = self.l2bm[l2][(a0 + c * 64 + 16 * (b / 2) + k) % L2BM_LONGS];
-                                w.l1bm.push((l1(b), (a1 + c * 16 + k) % L1BM_LONGS, v, c as u8, w.expr));
+                                let v = read_l2(a0 + c * 64 + 16 * (b / 2) + k)?;
+                                w.l1bm.push((l1(b), self.l1_addr(l1(b), a1 + c * 16 + k)?, v, c as u8, w.expr));
                             }
                         }
                     }
                     L2Op::Distrib { set } => {
-                        for b in (0..8).filter(|&b| set.contains(b)) {
+                        for b in (0..8).filter(|&b| set.contains(b) && present(b)) {
                             for k in 0..8 {
-                                let v = self.l2bm[l2][(a0 + c * 64 + 8 * b + k) % L2BM_LONGS];
-                                w.l1bm.push((l1(b), (a1 + c * 8 + k) % L1BM_LONGS, v, c as u8, w.expr));
+                                let v = read_l2(a0 + c * 64 + 8 * b + k)?;
+                                w.l1bm.push((l1(b), self.l1_addr(l1(b), a1 + c * 8 + k)?, v, c as u8, w.expr));
                             }
                         }
                     }
                     L2Op::FromL1b { l1b } => {
                         for k in 0..16 {
-                            let v = self.l1bm[l1(l1b as usize)][(a0 + c * 16 + k) % L1BM_LONGS];
-                            w.l2bm.push((l2, (a1 + c * 16 + k) % L2BM_LONGS, v));
+                            let v = read_l1(l1b as usize, a0 + c * 16 + k)?;
+                            w.l2bm.push((l2, self.l2_addr(l2, a1 + c * 16 + k)?, v));
                         }
                     }
                     L2Op::Gather => {
                         for b in 0..8 {
                             for k in 0..8 {
-                                let v = self.l1bm[l1(b)][(a0 + c * 8 + k) % L1BM_LONGS];
-                                w.l2bm.push((l2, (a1 + c * 64 + 8 * b + k) % L2BM_LONGS, v));
+                                let v = read_l1(b, a0 + c * 8 + k)?;
+                                w.l2bm.push((l2, self.l2_addr(l2, a1 + c * 64 + 8 * b + k)?, v));
                             }
                         }
                     }
                     L2Op::Reduce { rrn, set } => {
                         for k in 0..16 {
-                            let vals: Vec<u64> = (0..8)
-                                .map(|b| if set.contains(b) { self.l1bm[l1(b)][(a0 + c * 16 + k) % L1BM_LONGS] } else { unit_long(rrn) })
-                                .collect();
-                            w.l2bm.push((l2, (a1 + c * 16 + k) % L2BM_LONGS, reduce_longs(rrn, &vals)));
+                            // L1Bs outside the set send the identity element; L1Bs inside the set
+                            // that do not exist send zero.
+                            let mut vals: Vec<u64> = Vec::with_capacity(8);
+                            for b in 0..8 {
+                                vals.push(if set.contains(b) { read_l1(b, a0 + c * 16 + k)? } else { unit_long(rrn) });
+                            }
+                            w.l2bm.push((l2, self.l2_addr(l2, a1 + c * 16 + k)?, reduce_longs(rrn, &vals)));
                         }
                     }
                     L2Op::Reduce2 { rrn } => {
                         for g in 0..4 {
                             for k in 0..16 {
-                                let vals: Vec<u64> = (0..2).map(|j| self.l1bm[l1(2 * g + j)][(a0 + c * 16 + k) % L1BM_LONGS]).collect();
-                                w.l2bm.push((l2, (a1 + c * 64 + 16 * g + k) % L2BM_LONGS, reduce_longs(rrn, &vals)));
+                                let vals = [read_l1(2 * g, a0 + c * 16 + k)?, read_l1(2 * g + 1, a0 + c * 16 + k)?];
+                                w.l2bm.push((l2, self.l2_addr(l2, a1 + c * 64 + 16 * g + k)?, reduce_longs(rrn, &vals)));
                             }
                         }
                     }
                     L2Op::Imcast { set } => {
                         for s in (0..8).filter(|&b| set.contains(b)) {
-                            for d in (0..8).filter(|&d| d != s && d as u8 & set.immode == s as u8 & set.immode) {
+                            for d in (0..8).filter(|&d| d != s && d as u8 & set.immode == s as u8 & set.immode && present(d)) {
                                 for k in 0..16 {
-                                    let v = self.l1bm[l1(s)][(a0 + c * 16 + k) % L1BM_LONGS];
-                                    w.l1bm.push((l1(d), (a1 + c * 16 + k) % L1BM_LONGS, v, c as u8, w.expr));
+                                    let v = read_l1(s, a0 + c * 16 + k)?;
+                                    w.l1bm.push((l1(d), self.l1_addr(l1(d), a1 + c * 16 + k)?, v, c as u8, w.expr));
                                 }
                             }
                         }
@@ -438,10 +512,15 @@ impl Blocks {
                     return Err(ExecError::Unsupported(format!("l2bmdars L2B number {l2b}")));
                 }
                 for cycle in 0..4 {
-                    for group in 0..crate::mv::GROUPS {
-                        let src = &self.l2bm[group * 2 + l2b];
+                    // Only groups with an L2B have DAR; an L2B that does not exist reads as zero.
+                    for group in (0..crate::mv::GROUPS).filter(|&g| !self.topo.group_absent(g)) {
+                        let unit = group * 2 + l2b;
                         for i in 0..64 {
-                            let long = src[(addr + cycle * 64 + i) % L2BM_LONGS];
+                            let long = if self.topo.l2b_absent(unit) {
+                                0
+                            } else {
+                                self.l2bm[unit][self.l2_addr(unit, addr + cycle * 64 + i)?]
+                            };
                             self.darbuf[group][cycle * 128 + 2 * i] = (long >> 32) as u32;
                             self.darbuf[group][cycle * 128 + 2 * i + 1] = long as u32;
                         }

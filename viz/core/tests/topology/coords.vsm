@@ -1,0 +1,40 @@
+# PE-local integer and floating-point work for tests/topology.rs.
+#
+# The inputs depend on the chip coordinates ($peid, $mabid, $l1bid, $l2bid), on a base address
+# register set from $l2bid and on T-indirect addresses set from $mabid. A topology that
+# numbered its PEs or addressed its memories differently from the chip would print different
+# values. Every access stays below word 64 of LM and GRF.
+d set $lm0 4 3FC000003F8000004000000040400000C0A0000040C00000BF0000003E800000
+d set $lm8 4 0000000100000002000000030000000400000005000000060000000700000008
+d set $lr0 4 00000003000000050000000700000009000000110000001300000017FFFFFFFF
+lpassa $peid $ls0
+lpassa $mabid $ls2
+lpassa $l1bid $ls4
+lpassa $l2bid $ls6
+nop/2
+iadd $ls0v $lr0v $ln0v
+fvmul $lm0v $lr0v $ls8v
+nop/2
+isub $ls0v $lm8v $ln8v
+fvfma $ls8v $lm0v $lr0v $ln16v
+nop/2
+ipackbit $l2bid $ls2 $mb
+ipassa $mabid $t
+nop/2
+iadd $m8v $lr0v $ln24v
+fvpassa $mt8v4 $ln32v
+nop/2
+d get $ln0n0c0b0m0p0 20
+d get $ln0n0c0b0m0p3 20
+d get $ln0n0c0b0m1p2 20
+d get $ln0n0c0b0m15p3 20
+d get $ln0n0c0b1m0p0 20
+d get $ln0n0c0b1m4p1 20
+d get $ln0n0c1b0m3p1 20
+d get $ln0n1c0b1m4p3 20
+d get $ln0n3c1b7m15p3 20
+d get $ls0n0c0b0m0p1 8
+d get $ls0n0c0b1m4p1 8
+d get $ls0n1c0b1m4p3 8
+d get $lltn0c0b0m0p2 4
+d get $lltn0c1b0m3p1 4

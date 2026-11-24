@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Every conformance surface in one command. Any mismatch anywhere fails the run.
 #
-#   ./scripts/check-conformance.sh          # CPU vs official emulator + cargo test
+#   ./scripts/check-conformance.sh          # CPU vs official emulator + cargo test + reduced topologies
 #   ./scripts/check-conformance.sh --gpu    # adds the four GPU harnesses and the whole-program run
 #
 # The CPU-vs-official sweep is the guard that matters most: it covers every
@@ -48,6 +48,11 @@ cargo test --release --offline || fail=1
 # Every problem and every challenge solution against the official emulator.
 step "CPU vs official emulator: every problem"
 cargo test --release --offline --test problem_conformance -- --ignored --nocapture || fail=1
+
+# Reduced topologies (docs/topology.md): every solution on each topology that has in full the
+# units it moves data in must print the full chip's values cut to that topology.
+step "reduced topologies vs the full chip: every problem"
+cargo test --release --offline --test topology -- --ignored --nocapture || fail=1
 
 if [ "$with_gpu" = 1 ]; then
     # Full state comparison per instruction family. These are the only surfaces

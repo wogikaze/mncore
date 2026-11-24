@@ -48,7 +48,10 @@ cargo run --release --bin difftest_fuzz -- 10 1 40   # ランダムな命令列�
 cargo run --release --bin hazard_check -- ../../problems/*/main.vsm   # ハザード解析をアセンブラと照合
 cargo run --release --bin viz_trace -- ../../problems/3.relu > trace.json   # 可視化用の記録
 cargo run --release --bin bench_sim -- benchmarks/mnist_train_step.vsm 3 --official   # スループット測定
+cargo run --release --bin sim_run -- --topology l2b=1,l1b=1,mab=16,lm=256 prog.vsm   # 縮小トポロジで実行し d get の値を表示
 ```
+
+L2B・L1B・MAB の数とメモリの容量を減らした構成（縮小トポロジ）の意味は [docs/topology.md](../docs/topology.md) にある。
 
 MNIST 学習 1 step での実測値と測定条件は [docs/simulator-throughput.md](../docs/simulator-throughput.md) にある。
 
