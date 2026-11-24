@@ -318,7 +318,8 @@ extern "C" __global__ void mv_line(
     if (mode == 2) {
         if (idx >= size) return;
         int gd = (int)((idx % 64) / 16);
-        unsigned long long chunk = idx / 16;
+        // Block idx / 64 reads chunk idx / 64 of every group's DRAM (mv.rs).
+        unsigned long long chunk = idx / 64;
         unsigned long long kk = idx % 16;
         unsigned long long value =
             mv_dram_read(dar, mv_errors, gd, src_addr, src_indirect, nd,
@@ -370,7 +371,8 @@ extern "C" __global__ void mv_line(
 
     if (mode == 6 || mode == 7) {
         if (idx >= size) return;
-        unsigned long long chunk = idx / 16;
+        // Block idx / 64 uses chunk idx / 64 of every group's DRAM (mv.rs).
+        unsigned long long chunk = idx / 64;
         unsigned long long k = idx % 16;
         if (mode == 6) {
             unsigned long long value = mv_read(0, src_group, 0, src_addr + idx,
@@ -418,7 +420,7 @@ extern "C" __global__ void mv_line(
             mv_write(0, dst_group, 0, dst_addr + idx, value, pdm, dram, l2bm, dram_longs);
         } else {
             mv_dram_write(dar, mv_errors, (int)((idx % 64) / 16), dst_addr,
-                          dst_indirect, nd, idx / 16, idx % 16, value,
+                          dst_indirect, nd, idx / 64, idx % 16, value,
                           dram, dram_longs);
         }
         return;

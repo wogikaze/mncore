@@ -259,8 +259,15 @@ impl OffChip {
 
     /// Executes an MV instruction.
     ///
-    /// DRAM indirect mode (SDM 3.5.6) walks the transfer in 16-long-word chunks,
-    /// independently of the basic mode. Chunk `i` uses DAR entry
+    /// The DRAM of each group is walked in its own 16-long-word chunks: chunk `i`
+    /// of a group is long words `16 i .. 16 i + 16` from the operand address. In
+    /// the transfers that spread 64-long-word blocks over the four groups (`mvb`,
+    /// `mvd` with PDM, `mvr`), block `i` therefore uses chunk `i` of every group,
+    /// as the official emulator does (measured with every group's DRAM holding
+    /// distinct values; sizes 64 to 256).
+    ///
+    /// DRAM indirect mode (SDM 3.5.6) maps the chunks independently of the basic
+    /// mode. Chunk `i` uses DAR entry
     /// `(M + i / N) % 1024` and the long-word address `16 * (DAR[entry] + i % N)`;
     /// without `nd` (`N` infinite) it uses `DAR[(M + i) % 1024]` and offset 0.
     /// With no `nd` the address word is selected by `M + i` exactly as in SDM
@@ -368,7 +375,7 @@ impl OffChip {
                     for i in 0..n {
                         for gd in 0..GROUPS {
                             for k in 0..16 {
-                                let v = self.read(b, dram(src, gd, 4 * i + gd as u64, k))?;
+                                let v = self.read(b, dram(src, gd, i, k))?;
                                 for g in 0..GROUPS {
                                     for c in 0..2 {
                                         writes.push((at(dst, g, c, 64 * i + gd as u64 * 16 + k), v));
@@ -434,7 +441,7 @@ impl OffChip {
                         for g in 0..GROUPS {
                             for k in 0..16 {
                                 let v = self.read(b, Loc::Pdm(gp, addr + 64 * i + g as u64 * 16 + k))?;
-                                writes.push((dram(dst, g, 4 * i + g as u64, k), v));
+                                writes.push((dram(dst, g, i, k), v));
                             }
                         }
                     }
@@ -444,7 +451,7 @@ impl OffChip {
                     for i in 0..n {
                         for g in 0..GROUPS {
                             for k in 0..16 {
-                                let v = self.read(b, dram(src, g, 4 * i + g as u64, k))?;
+                                let v = self.read(b, dram(src, g, i, k))?;
                                 writes.push((at(dst, gp, 0, 64 * i + g as u64 * 16 + k), v));
                             }
                         }
@@ -487,7 +494,7 @@ impl OffChip {
                             for g in 0..GROUPS {
                                 for k in 0..16 {
                                     writes.push((
-                                        dram(dst, g, 4 * i + g as u64, k),
+                                        dram(dst, g, i, k),
                                         reduced(b, 64 * i + g as u64 * 16 + k)?,
                                     ));
                                 }
@@ -588,6 +595,61 @@ mod tests {
         off.exec(&mut b, &mv).unwrap();
         assert_eq!(off.dram[1].get(16 * 7), 0x2000);
         assert_eq!(off.dram[1].get(16 * 9), 0x2010);
+    }
+
+    /// The transfers that spread 64-long-word blocks over the groups walk each group's DRAM
+    /// in its own chunks: block `i` uses DRAM long words `16 i .. 16 i + 16` of every group.
+    /// Measured with the official emulator, DRAM long word `a` of group `g` holding
+    /// `(g << 16) | a` (sizes 64 to 256 behave alike). A global chunk number `4 i + g` broke
+    /// every transfer of more than 64 long words (problems 28 and 46, answer.vsm).
+    #[test]
+    fn group_spread_transfers_walk_each_group_dram_in_order() {
+        let mut b = Blocks::default();
+        let mut off = OffChip::default();
+        for g in 0..GROUPS {
+            for a in 0..512u64 {
+                off.dram[g].set(a, ((g as u64) << 16) | a);
+            }
+        }
+        let blocks = |f: &mut dyn FnMut(u64, u64, u64)| {
+            for i in 0..2 {
+                for g in 0..4 {
+                    for k in 0..16 {
+                        f(i, g, k);
+                    }
+                }
+            }
+        };
+        // mvb: DRAM -> every L2BM.
+        off.exec(&mut b, &parse("mvb/n128 $d0 $lc0").unwrap()).unwrap();
+        blocks(&mut |i, g, k| {
+            for l2 in [0, 5] {
+                assert_eq!(b.l2bm[l2][(64 * i + 16 * g + k) as usize], (g << 16) | (16 * i + k));
+            }
+        });
+        // mvd: PDM -> every DRAM, and every DRAM -> PDM.
+        for a in 0..128u64 {
+            off.pdm[0].set(a, 0x10_0000 | a);
+        }
+        off.exec(&mut b, &parse("mvd/n128 $p0@0 $d2048").unwrap()).unwrap();
+        blocks(&mut |i, g, k| {
+            assert_eq!(off.dram[g as usize].get(2048 + 16 * i + k), 0x10_0000 | (64 * i + 16 * g + k));
+        });
+        off.exec(&mut b, &parse("mvd/n128 $d0 $p1024@0").unwrap()).unwrap();
+        blocks(&mut |i, g, k| {
+            assert_eq!(off.pdm[0].get(1024 + 64 * i + 16 * g + k), (g << 16) | (16 * i + k));
+        });
+        // mvr: every L2BM holds its offset j in both lanes, so the 8-way sum is 8 j.
+        for l2 in 0..8 {
+            for j in 0..128u64 {
+                b.l2bm[l2][j as usize] = (j << 32) | j;
+            }
+        }
+        off.exec(&mut b, &parse("mvriiadd/n128 $lc0 $d4096").unwrap()).unwrap();
+        blocks(&mut |i, g, k| {
+            let j = 64 * i + 16 * g + k;
+            assert_eq!(off.dram[g as usize].get(4096 + 16 * i + k), (8 * j << 32) | 8 * j);
+        });
     }
 
     #[test]
