@@ -306,12 +306,18 @@ fn generate(enc: &[EncOp]) -> (String, usize) {
         for (j, e) in chunk.iter().enumerate() {
             let i = start + j;
             let _ = writeln!(src, "JPROF({i});");
-            if e.flags & PF_BARRIER != 0 {
+            if e.flags & PF_BARRIER != 0 && std::env::var("MNCORE_JIT_NOGRID").is_err() {
                 src.push_str("++barriers; prog_grid_barrier(&sync[0], base + barriers * nb);\n");
             }
             let (id, has_var) = op_shape[i];
             let arr = if has_var { format!("jv{i}") } else { "0".to_string() };
-            let _ = writeln!(src, "js{id}(B, tid, {arr}, sm);\n__syncthreads();");
+            // MNCORE_JIT_NOSYNC (experiment only, wrong results): no block
+            // barrier between operations, to measure the overlap potential.
+            if std::env::var("MNCORE_JIT_NOSYNC").is_ok() {
+                let _ = writeln!(src, "js{id}(B, tid, {arr}, sm);");
+            } else {
+                let _ = writeln!(src, "js{id}(B, tid, {arr}, sm);\n__syncthreads();");
+            }
         }
         src.push_str("}\n");
     }
@@ -510,24 +516,60 @@ impl Gpu {
             self.check(unsafe { (self.cu_sync)() }, "sync jit_prof")
         };
         set(prof)?;
+        // Several runs, keeping each operation's minimum: the GPU is shared with
+        // the desktop, and a time slice taken mid-run would show up as one slow
+        // operation.
+        let runs: usize = std::env::var("GPU_PROFILE_RUNS").ok().and_then(|v| v.parse().ok()).unwrap_or(5);
         let result = (|| {
-            self.launch_jit(state, program)?;
-            self.check(unsafe { (self.cu_sync)() }, "sync prof")?;
-            let mut t = vec![0u64; len];
-            self.check(
-                unsafe { (self.cu_dtoh)(t.as_mut_ptr() as *mut c_void, prof, len * 8) },
-                "download prof",
-            )?;
-            let mut out = Vec::with_capacity(n);
-            for i in 0..n {
-                let mut d: Vec<u64> = (0..PROGRAM_BLOCKS as usize)
-                    .map(|b| t[b * (n + 1) + i + 1].saturating_sub(t[b * (n + 1) + i]))
-                    .collect();
-                d.sort_unstable();
-                let (k, f, dir) = program.kinds[i];
-                out.push((k, f, dir, d[d.len() / 2]));
+            let mut best = vec![u64::MAX; n];
+            for _ in 0..runs.max(1) {
+                self.launch_jit(state, program)?;
+                self.check(unsafe { (self.cu_sync)() }, "sync prof")?;
+                let mut t = vec![0u64; len];
+                self.check(
+                    unsafe { (self.cu_dtoh)(t.as_mut_ptr() as *mut c_void, prof, len * 8) },
+                    "download prof",
+                )?;
+                if std::env::var("GPU_PROFILE_BLOCKS").is_ok() {
+                    // Busy cycles per block (excluding grid-barrier waits is not
+                    // possible here; this is the span from first to last op).
+                    let mut spans: Vec<(u64, usize)> = (0..PROGRAM_BLOCKS as usize)
+                        .map(|b| (t[b * (n + 1) + n] - t[b * (n + 1)], b))
+                        .collect();
+                    spans.sort_unstable();
+                    let mut smids = vec![0u32; 0];
+                    let _ = &mut smids;
+                    eprintln!("block spans (cycles): min {:?} median {:?} max {:?}", spans[0], spans[spans.len() / 2], spans[spans.len() - 1]);
+                    // Work between barriers: sum over ops of per-block durations, per block.
+                    let mut work = vec![0u64; PROGRAM_BLOCKS as usize];
+                    for b in 0..PROGRAM_BLOCKS as usize {
+                        for i in 0..n {
+                            if program.kinds[i].1 & PF_BARRIER == 0 {
+                                work[b] += t[b * (n + 1) + i + 1] - t[b * (n + 1) + i];
+                            }
+                        }
+                    }
+                    let mut w: Vec<(u64, usize)> = work.iter().copied().zip(0..).collect();
+                    w.sort_unstable();
+                    eprintln!("non-barrier work per block: min {:?} median {:?} max {:?}", w[0], w[w.len() / 2], w[w.len() - 1]);
+                    eprintln!("slowest blocks: {:?}", &w[w.len() - 10..]);
+                }
+                for i in 0..n {
+                    let mut d: Vec<u64> = (0..PROGRAM_BLOCKS as usize)
+                        .map(|b| t[b * (n + 1) + i + 1].saturating_sub(t[b * (n + 1) + i]))
+                        .collect();
+                    d.sort_unstable();
+                    best[i] = best[i].min(d[d.len() / 2]);
+                }
             }
-            Ok(out)
+            Ok(best
+                .iter()
+                .enumerate()
+                .map(|(i, &c)| {
+                    let (k, f, dir) = program.kinds[i];
+                    (k, f, dir, c)
+                })
+                .collect())
         })();
         set(0)?;
         unsafe { (self.cu_mem_free)(prof) };

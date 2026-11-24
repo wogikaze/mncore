@@ -97,6 +97,20 @@ fn main() {
         gpu.sync().expect("sync");
         if std::env::var("GPU_PROFILE").is_ok() {
             let rows = gpu.profile_jit(&state, &prog).expect("profile");
+            if let Some(top) = std::env::var("GPU_PROFILE_TOP").ok().and_then(|v| v.parse::<usize>().ok()) {
+                let mut idx: Vec<usize> = (0..rows.len()).collect();
+                idx.sort_by_key(|&i| std::cmp::Reverse(rows[i].3));
+                for &i in idx.iter().take(top) {
+                    let (kind, flags, direct, cyc) = rows[i];
+                    eprintln!(
+                        "op {i:5}: {:>12}{}{} {:8.2} us",
+                        PROGRAM_KIND_NAMES[kind as usize],
+                        if direct { "/direct" } else { "" },
+                        if flags & PROGRAM_FLAG_BARRIER != 0 { "+bar" } else { "" },
+                        cyc as f64 / 1.9e3
+                    );
+                }
+            }
             let mut totals: std::collections::BTreeMap<String, (usize, u64)> = Default::default();
             for (kind, flags, direct, cyc) in rows {
                 let mut name = PROGRAM_KIND_NAMES[kind as usize].to_string();
