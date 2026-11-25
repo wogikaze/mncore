@@ -88,6 +88,27 @@ __device__ __forceinline__ void jit_store_regs(int B, int tid) {
 /// Operations per generated chunk function.
 const JIT_CHUNK: usize = 64;
 
+/// One operation on a block's timeline, in SM cycles from the block's start.
+/// `start..ready` is the grid-barrier wait (empty without a barrier) and
+/// `ready..end` the operation itself, up to the next operation's start.
+#[derive(Clone, Copy, Debug)]
+pub struct TimelineOp {
+    pub kind: u32,
+    pub direct: bool,
+    pub barrier: bool,
+    pub src_op: usize,
+    pub start: u64,
+    pub ready: u64,
+    pub end: u64,
+}
+
+/// A block's timeline and the SM clock it ran at.
+pub struct Timeline {
+    pub block: usize,
+    pub ghz: f64,
+    pub ops: Vec<TimelineOp>,
+}
+
 /// A compiled program, ready to launch.
 pub struct JitProgram {
     function: CuFunction,
@@ -96,6 +117,8 @@ pub struct JitProgram {
     module: CuModule,
     /// `(kind, flags, direct)` of every operation.
     kinds: Vec<(u32, u32, bool)>,
+    /// Index of the lowered `GpuOp` of every operation.
+    src_ops: Vec<usize>,
     /// The state the program was bound to (its pointers are compiled in).
     lm0: u64,
     sync: u64,
@@ -291,7 +314,13 @@ fn generate(enc: &[EncOp]) -> (String, usize) {
     src.push_str(JIT_SHARED_REGS);
     // Optional per-operation clock stamps: [block][op + 1], null when off.
     src.push_str("__constant__ unsigned long long* jit_prof;\n");
-    let _ = writeln!(src, "#define JPROF(i) do {{ if (jit_prof && tid == 0) jit_prof[(size_t)B * {} + (i)] = clock64(); }} while (0)", enc.len() + 1);
+    // Per block: [0, n] op start stamps, [n + 1, 2n + 1] after-barrier
+    // stamps, [2n + 2, 2n + 3] globaltimer at the first stamp and the last.
+    let stride = 2 * enc.len() + 4;
+    let n1 = enc.len() + 1;
+    let _ = writeln!(src, "#define JPROF(i) do {{ if (jit_prof && tid == 0) jit_prof[(size_t)B * {stride} + (i)] = clock64(); }} while (0)");
+    let _ = writeln!(src, "#define JPROFB(i) do {{ if (jit_prof && tid == 0) jit_prof[(size_t)B * {stride} + {n1} + (i)] = clock64(); }} while (0)");
+    let _ = writeln!(src, "#define JGT(k) do {{ if (jit_prof && tid == 0) {{ unsigned long long _t; asm volatile(\"mov.u64 %0, %%globaltimer;\" : \"=l\"(_t)); jit_prof[(size_t)B * {stride} + {} + (k)] = _t; }} }} while (0)", 2 * enc.len() + 2);
 
     // MNCORE_JIT_INLINE: every operation's code is inlined in program order, so
     // instruction fetch streams sequentially instead of jumping between shared
@@ -419,9 +448,13 @@ fn generate(enc: &[EncOp]) -> (String, usize) {
                     }
                 }
             }
+            if i == 0 {
+                src.push_str("JGT(0);\n");
+            }
             if e.flags & PF_BARRIER != 0 && std::env::var("MNCORE_JIT_NOGRID").is_err() {
                 src.push_str("++barriers; prog_grid_barrier(&sync[0], base + barriers * nb);\n");
             }
+            let _ = writeln!(src, "JPROFB({i});");
             let (id, has_var) = op_shape[i];
             let arr = if has_var { format!("jv{i}") } else { "0".to_string() };
             // MNCORE_JIT_NOSYNC (experiment only, wrong results): no block
@@ -447,7 +480,7 @@ fn generate(enc: &[EncOp]) -> (String, usize) {
     for k in 0..chunks.len() {
         let _ = writeln!(src, "jit_chunk{k}(B, tid, sm, sync, base, barriers);");
     }
-    let _ = writeln!(src, "JPROF({});", enc.len());
+    let _ = writeln!(src, "JPROF({});\nJGT(1);", enc.len());
     src.push_str("jit_store_regs(B, tid);\n");
     src.push_str(
         "++barriers; prog_grid_barrier(&sync[0], base + barriers * nb);\n\
@@ -613,6 +646,7 @@ impl Gpu {
             scratch,
             module,
             kinds: enc.iter().map(|e| (e.kind, e.flags, e.direct)).collect(),
+            src_ops: enc.iter().map(|e| e.src_op).collect(),
             lm0: state.lm0,
             sync,
             ops: enc.len(),
@@ -633,7 +667,8 @@ impl Gpu {
         program: &JitProgram,
     ) -> Result<Vec<(u32, u32, bool, u64)>, String> {
         let n = program.kinds.len();
-        let len = PROGRAM_BLOCKS as usize * (n + 1);
+        let stride = 2 * n + 4;
+        let len = PROGRAM_BLOCKS as usize * stride;
         let mut prof: u64 = 0;
         self.check(unsafe { (self.cu_mem_alloc)(&mut prof, len * 8) }, "cuMemAlloc(prof)")?;
         let mut sym: u64 = 0;
@@ -667,7 +702,7 @@ impl Gpu {
                     // Busy cycles per block (excluding grid-barrier waits is not
                     // possible here; this is the span from first to last op).
                     let mut spans: Vec<(u64, usize)> = (0..PROGRAM_BLOCKS as usize)
-                        .map(|b| (t[b * (n + 1) + n] - t[b * (n + 1)], b))
+                        .map(|b| (t[b * stride + n] - t[b * stride], b))
                         .collect();
                     spans.sort_unstable();
                     let mut smids = vec![0u32; 0];
@@ -678,7 +713,7 @@ impl Gpu {
                     for b in 0..PROGRAM_BLOCKS as usize {
                         for i in 0..n {
                             if program.kinds[i].1 & PF_BARRIER == 0 {
-                                work[b] += t[b * (n + 1) + i + 1] - t[b * (n + 1) + i];
+                                work[b] += t[b * stride + i + 1] - t[b * stride + i];
                             }
                         }
                     }
@@ -689,7 +724,7 @@ impl Gpu {
                 }
                 for i in 0..n {
                     let mut d: Vec<u64> = (0..PROGRAM_BLOCKS as usize)
-                        .map(|b| t[b * (n + 1) + i + 1].saturating_sub(t[b * (n + 1) + i]))
+                        .map(|b| t[b * stride + i + 1].saturating_sub(t[b * stride + i]))
                         .collect();
                     d.sort_unstable();
                     best[i] = best[i].min(d[d.len() / 2]);
@@ -703,6 +738,80 @@ impl Gpu {
                     (k, f, dir, c)
                 })
                 .collect())
+        })();
+        set(0)?;
+        unsafe { (self.cu_mem_free)(prof) };
+        result
+    }
+
+    /// Runs a JIT program `runs` times with clock stamps and returns the
+    /// timeline of one block (the block whose span is the median, in the run
+    /// where that span was shortest), with the SM clock in GHz measured
+    /// against `%globaltimer`.
+    pub fn timeline_jit(
+        &self,
+        state: &GpuState,
+        program: &JitProgram,
+        runs: usize,
+    ) -> Result<Timeline, String> {
+        let n = program.kinds.len();
+        let stride = 2 * n + 4;
+        let len = PROGRAM_BLOCKS as usize * stride;
+        let mut prof: u64 = 0;
+        self.check(unsafe { (self.cu_mem_alloc)(&mut prof, len * 8) }, "cuMemAlloc(timeline)")?;
+        let mut sym: u64 = 0;
+        let mut size: usize = 0;
+        self.check(
+            unsafe {
+                (self.cu_module_get_global)(&mut sym, &mut size, program.module, b"jit_prof\0".as_ptr() as *const c_char)
+            },
+            "cuModuleGetGlobal(jit_prof)",
+        )?;
+        let set = |v: u64| {
+            self.check(unsafe { (self.cu_htod)(sym, &v as *const u64 as *const c_void, 8) }, "set jit_prof")?;
+            self.check(unsafe { (self.cu_sync)() }, "sync jit_prof")
+        };
+        set(prof)?;
+        let result = (|| {
+            let mut best: Option<(u64, Vec<u64>, usize)> = None;
+            for _ in 0..runs.max(1) {
+                self.launch_jit(state, program)?;
+                self.check(unsafe { (self.cu_sync)() }, "sync timeline")?;
+                let mut t = vec![0u64; len];
+                self.check(
+                    unsafe { (self.cu_dtoh)(t.as_mut_ptr() as *mut c_void, prof, len * 8) },
+                    "download timeline",
+                )?;
+                let mut spans: Vec<(u64, usize)> = (0..PROGRAM_BLOCKS as usize)
+                    .map(|b| (t[b * stride + n] - t[b * stride], b))
+                    .collect();
+                spans.sort_unstable();
+                let (span, block) = spans[spans.len() / 2];
+                if best.as_ref().map_or(true, |b| span < b.0) {
+                    best = Some((span, t, block));
+                }
+            }
+            let (_, t, b) = best.unwrap();
+            let row = &t[b * stride..(b + 1) * stride];
+            let cycles = (row[n] - row[0]) as f64;
+            let nanos = row[2 * n + 3].saturating_sub(row[2 * n + 2]).max(1) as f64;
+            let ghz = cycles / nanos;
+            let ops = (0..n)
+                .map(|i| {
+                    let (kind, flags, direct) = program.kinds[i];
+                    let barrier = flags & PF_BARRIER != 0;
+                    TimelineOp {
+                        kind,
+                        direct,
+                        barrier,
+                        src_op: program.src_ops[i],
+                        start: row[i] - row[0],
+                        ready: row[n + 1 + i].max(row[i]) - row[0],
+                        end: row[i + 1] - row[0],
+                    }
+                })
+                .collect();
+            Ok(Timeline { block: b, ghz, ops })
         })();
         set(0)?;
         unsafe { (self.cu_mem_free)(prof) };

@@ -12,7 +12,7 @@ use libloading::Library;
 
 mod jit;
 mod program;
-pub use jit::JitProgram;
+pub use jit::{JitProgram, Timeline, TimelineOp};
 pub use program::{
     lower_program, GpuOp, GpuProgram, LoweredProgram, PROGRAM_BLOCKS, PROGRAM_FLAG_BARRIER,
     PROGRAM_KIND_NAMES, PROGRAM_THREADS,

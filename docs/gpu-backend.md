@@ -671,3 +671,20 @@ L2（3 MB）を超えることによる DRAM 往復が命令ごとに入るこ�
 
 JIT は定数畳み込みで C++ の未定義動作（例: `1u << 32`）が実行時と違う値になる。
 `mat_pack_row` のマスクがこれで壊れていたので修正した。
+
+## 実行タイムラインの可視化
+
+JIT 実行を 1 ブロック分、命令ごとに記録してガントチャートにする。
+
+```sh
+cd viz/core
+GPU_TIMELINE=/tmp/timeline.json ./target/release/gpu_run_program \
+    benchmarks/mnist_train_step.vsm --engine jit
+python3 scripts/gpu_timeline_chart.py /tmp/timeline.json ../../docs/gpu-timeline.html
+```
+
+300 回の空回しでクロックを上げてから 8 回記録し、全ブロックのうち所要時間が中央値の
+ブロックを、その時間が最短だった回で採る。各命令の開始、grid barrier 通過、次の命令の
+開始を SM クロックで記録し、`%globaltimer` で測ったクロックで µs に換算する。
+[gpu-timeline.html](gpu-timeline.html) は `mnist_train_step` の結果（1 回 2,156 µs）。
+grid barrier 待ち 21%、PE→L1BM 19%、MAU 15%、行列 MAU 13% が大きい。

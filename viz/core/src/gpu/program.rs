@@ -41,6 +41,8 @@ pub enum GpuOp {
 /// the source (nops included), which is what words/s rates count.
 pub struct LoweredProgram {
     pub ops: Vec<GpuOp>,
+    /// Source line number of every operation (0 for the final mreadf clear).
+    pub op_lines: Vec<usize>,
     pub words: u64,
     pub pe_lines: usize,
     pub mv_lines: usize,
@@ -129,6 +131,7 @@ fn order_step(exprs: &[Expr]) -> Vec<&Expr> {
 pub fn lower_program(program: &[(usize, Line)]) -> Result<LoweredProgram, String> {
     let mut mask = MaskState::default();
     let mut ops = Vec::new();
+    let mut op_lines = Vec::new();
     let mut pe_lines = 0usize;
     let mut mv_lines = 0usize;
     let mut words = 0u64;
@@ -151,6 +154,7 @@ pub fn lower_program(program: &[(usize, Line)]) -> Result<LoweredProgram, String
                 indirect |= desc.uses_indirect();
                 mv_lines += 1;
                 ops.push(GpuOp::Mv(desc));
+                op_lines.push(*lineno);
             }
             Line::Pe(exprs) => {
                 pe_lines += 1;
@@ -214,6 +218,7 @@ pub fn lower_program(program: &[(usize, Line)]) -> Result<LoweredProgram, String
                     };
                     validate(&op).map_err(|e| format!("line {lineno}: {e}"))?;
                     ops.push(op);
+                    op_lines.push(*lineno);
                 }
                 fwd_enabled = if update_forward { fwd_written } else { [false; 4] };
                 // CPU steps without a matrix read expose zero on mreadf. A
@@ -229,6 +234,7 @@ pub fn lower_program(program: &[(usize, Line)]) -> Result<LoweredProgram, String
     }
     if clear_mreadf_at_end {
         ops.push(GpuOp::ClearMreadf);
+        op_lines.push(0);
     }
     if indirect {
         // A DAR entry decides the address at run time. One million long words
@@ -236,7 +242,7 @@ pub fn lower_program(program: &[(usize, Line)]) -> Result<LoweredProgram, String
         // indirect accesses are counted by the kernel.
         dram_longs = dram_longs.max(1 << 20);
     }
-    Ok(LoweredProgram { ops, words, pe_lines, mv_lines, dram_longs, scratch_longs, indirect })
+    Ok(LoweredProgram { ops, op_lines, words, pe_lines, mv_lines, dram_longs, scratch_longs, indirect })
 }
 
 /// The descriptor checks of the per-line launchers, done once at lowering.
@@ -725,6 +731,8 @@ pub(super) struct EncOp {
     pub desc: Vec<u8>,
     /// ALU/MAU only: every (PE, cycle) thread may write its own result.
     pub direct: bool,
+    /// Index of the `GpuOp` this was encoded from (an overlapping MV has two).
+    pub src_op: usize,
     /// What the operation reads, for the JIT's L2 prefetch: `mem << 16 | row`
     /// with mem 0-3 a PE memory word row (before BAR) and mem 8 an L1BM
     /// long-word address of the block's own L1BM.
@@ -1042,14 +1050,17 @@ impl Gpu {
             if hazards.access(&acc) || all_barriers {
                 flags |= PF_BARRIER;
             }
-            out.push(EncOp { kind, flags, desc, direct: direct && !no_direct, prefetch: Vec::new() });
+            out.push(EncOp { kind, flags, desc, direct: direct && !no_direct, prefetch: Vec::new(), src_op: 0 });
         };
-        for op in ops {
+        for (index, op) in ops.iter().enumerate() {
             let acc = accesses(op, 2);
             let before = out.len();
             self.encode_one(state, op, acc, &mut push, &mut out)?;
             if out.len() == before + 1 {
                 out[before].prefetch = prefetch_rows(op);
+            }
+            for e in &mut out[before..] {
+                e.src_op = index;
             }
         }
         Ok(out)

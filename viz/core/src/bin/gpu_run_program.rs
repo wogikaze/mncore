@@ -13,6 +13,10 @@ use mncore_sim::machine::{GRF_WORDS, LM_WORDS, PES};
 use mncore_sim::run::Sim;
 use mncore_sim::vsm;
 
+fn path_display(p: &str) -> String {
+    p.to_string()
+}
+
 fn op_name(op: &GpuOp) -> &'static str {
     match op {
         GpuOp::Alu(..) => "alu_line",
@@ -43,6 +47,7 @@ fn main() {
         }
     }
     let source = std::fs::read_to_string(&path).expect("read");
+    let path_of_program = path.clone();
     let program = vsm::parse(&source).expect("parse");
     let lowered = match lower_program(&program) {
         Ok(l) => l,
@@ -95,6 +100,43 @@ fn main() {
         );
         gpu.launch_jit(&state, &prog).expect("launch jit");
         gpu.sync().expect("sync");
+        if let Ok(path) = std::env::var("GPU_TIMELINE") {
+            // Warm the GPU clocks up first, as a replay would.
+            for _ in 0..300 {
+                gpu.launch_jit(&state, &prog).expect("warm-up");
+            }
+            gpu.sync().expect("sync warm-up");
+            let tl = gpu.timeline_jit(&state, &prog, 8).expect("timeline");
+            let lines: Vec<&str> = source.lines().collect();
+            let esc = |t: &str| t.replace('\\', "\\\\").replace('"', "\\\"");
+            let mut out = String::new();
+            out.push_str(&format!(
+                "{{\"program\":\"{}\",\"words\":{},\"block\":{},\"ghz\":{:.4},\"ops\":[\n",
+                esc(&path_display(&path_of_program)),
+                words,
+                tl.block,
+                tl.ghz
+            ));
+            for (i, op) in tl.ops.iter().enumerate() {
+                let line = lowered.op_lines.get(op.src_op).copied().unwrap_or(0);
+                let text = if line > 0 { lines.get(line - 1).copied().unwrap_or("").trim() } else { "(final mreadf clear)" };
+                let us = |c: u64| c as f64 / tl.ghz / 1000.0;
+                out.push_str(&format!(
+                    "{}{{\"i\":{i},\"kind\":\"{}\",\"direct\":{},\"barrier\":{},\"line\":{line},\"text\":\"{}\",\"start\":{:.4},\"ready\":{:.4},\"end\":{:.4}}}\n",
+                    if i == 0 { "" } else { "," },
+                    PROGRAM_KIND_NAMES[op.kind as usize],
+                    op.direct,
+                    op.barrier,
+                    esc(text),
+                    us(op.start),
+                    us(op.ready),
+                    us(op.end)
+                ));
+            }
+            out.push_str("]}\n");
+            std::fs::write(&path, out).expect("write timeline");
+            eprintln!("timeline of block {} ({:.3} GHz) written to {path}", tl.block, tl.ghz);
+        }
         if std::env::var("GPU_PROFILE").is_ok() {
             let rows = gpu.profile_jit(&state, &prog).expect("profile");
             if let Some(top) = std::env::var("GPU_PROFILE_TOP").ok().and_then(|v| v.parse::<usize>().ok()) {
