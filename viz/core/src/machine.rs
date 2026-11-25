@@ -685,6 +685,11 @@ impl Machine {
         }
         let tracing = self.tracer.borrow().is_some();
         let mask_state = self.mask_state;
+        // An L1BM-to-PE transfer applies the mask registers as they were before this step: with
+        // `ipassa $aluf $omr1; l1bmm $lbi $ln0v/$imr1` the official emulator masks the transfer
+        // with the old omr1 (MLSDK's matmul selects one MAB per iteration this way; see
+        // tests/mask_reference.rs). Writing the transfers first gives them the old mask registers.
+        outputs.sort_by_key(|(e, _)| !is_l1_to_pe(e));
         for (ei, (e, out)) in outputs.iter().enumerate() {
             let flush = e.flush;
             if !tracing {
