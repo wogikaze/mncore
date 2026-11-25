@@ -23,7 +23,23 @@ fn main() {
     let mut expected = Vec::with_capacity(count);
     let cpu_start = std::time::Instant::now();
     for _ in 0..count {
-        let (x, y, z) = (next() as u32, next() as u32, next() as u32);
+        let (mut x, mut y, mut z) = (next() as u32, next() as u32, next() as u32);
+        // Besides random bit patterns, bias half of the vectors to sums that
+        // round at ties: b near 1.0 (often exactly 1.0, an addition) and c
+        // within a few binades of a * b.
+        let mode = next() % 4;
+        if mode >= 2 {
+            let ea = (x >> 23) & 0xff;
+            y = if mode == 3 { 0x3f80_0000 } else { (y & 0x8000_00ff) | (127 << 23) };
+            let shift = (next() % 30) as u32;
+            let ec = ea.saturating_sub(shift).clamp(1, 254);
+            z = (z & 0x807f_ffff) | (ec << 23);
+            if next() % 2 == 0 {
+                // Few significant bits make exact ties far more likely.
+                x &= 0xffff_0000;
+                z &= 0xffff_c000;
+            }
+        }
         a.push(x);
         b.push(y);
         c.push(z);

@@ -1,3 +1,18 @@
+// Device layout of the per-PE state. PE memories and the 16-word per-PE
+// register files (T, OMR, aluf, mauf, mreadf, lbf) are stored address-major,
+// `[word][pe]`, so the 32 PEs of a warp touch one contiguous line. The host
+// transposes on upload and download (gpu.rs).
+#define NPE 4096
+#define PEM(pe, a) ((unsigned)(a) * 4096u + (unsigned)(pe))
+#ifdef MNCORE_JIT
+// In a JIT program the per-PE registers of a block's 64 PEs live in shared
+// memory (jit.rs loads them at kernel start and stores them at the end).
+#define PR16(pe, k) ((unsigned)(k) * 64u + ((unsigned)(pe) & 63u))
+#define PRB(pe) ((unsigned)(pe) & 63u)
+#else
+#define PR16(pe, k) ((unsigned)(k) * 4096u + (unsigned)(pe))
+#define PRB(pe) ((unsigned)(pe))
+#endif
 
 struct Fmt {
     int exp_bits;
@@ -174,14 +189,33 @@ __device__ __forceinline__ unsigned long long vfma_bits(
     return round_pack(out_fmt, r.neg, r.sig, r.exp);
 }
 
+__device__ __forceinline__ bool vfma_single_fast(Val a, Val b, Val c, unsigned long long& out);
+#ifndef MNCORE_JIT
 extern "C" __global__ void vfma_f32(
     const unsigned* a, const unsigned* b, const unsigned* c,
     unsigned* out, int n) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < n) {
         Fmt f = {8, 23, 18};
-        out[i] = (unsigned)vfma_bits(f, f, a[i], b[i], c[i]);
+        // The MAU path tries the double-based fast vfma first; check it here.
+        unsigned long long r;
+        if (vfma_single_fast(decode(f, a[i]), decode(f, b[i]), decode(f, c[i]), r)) {
+            out[i] = (unsigned)r;
+        } else {
+            out[i] = (unsigned)vfma_bits(f, f, a[i], b[i], c[i]);
+        }
     }
+}
+#endif
+
+// b[c] with constant indices only, so that a descriptor built in registers
+// is not forced into local memory by a run-time array index.
+__device__ __forceinline__ unsigned pick4(const unsigned b[4], int c) {
+    unsigned v = b[0];
+    v = (c == 1) ? b[1] : v;
+    v = (c == 2) ? b[2] : v;
+    v = (c == 3) ? b[3] : v;
+    return v;
 }
 
 __device__ __forceinline__ unsigned* pick_mem(
@@ -203,10 +237,10 @@ __device__ __forceinline__ int pe_word_addr(
     int mem, unsigned base, int wl, int t_indirect, int madpe, int pe, int c,
     const unsigned* bar0, const unsigned* bar1, const unsigned* t) {
     unsigned a = base;
-    if (t_indirect) a += t[pe * 16 + c * 4 + 1];
+    if (t_indirect) a += t[PR16(pe, c * 4 + 1)];
     if (madpe >= 0 && (pe & 3) <= madpe) a += (unsigned)wl;
-    if (mem == 0) a += bar0[pe];
-    else if (mem == 1) a += bar1[pe];
+    if (mem == 0) a += bar0[PRB(pe)];
+    else if (mem == 1) a += bar1[PRB(pe)];
     return (int)(a & ~(unsigned)(wl - 1));
 }
 
@@ -304,6 +338,7 @@ __device__ __forceinline__ void alu_unpack(const unsigned b[4], int bits, unsign
                              ((unsigned __int128)b[2] << 32) | b[3];
     int n = 64 / bits;
     unsigned __int128 m = (((unsigned __int128)1) << bits) - 1;
+#pragma unroll
     for (int i = 0; i < n; ++i) {
         out[i] = (unsigned long long)((full >> (128 - bits * (i + 1))) & m);
     }
@@ -313,6 +348,7 @@ __device__ __forceinline__ void alu_pack_lanes(const unsigned long long in[4], i
     unsigned __int128 full = 0;
     int n = 64 / bits;
     unsigned __int128 m = (((unsigned __int128)1) << bits) - 1;
+#pragma unroll
     for (int i = 0; i < n; ++i) {
         full |= ((unsigned __int128)(in[i] & (unsigned long long)m)) << (128 - bits * (i + 1));
     }
@@ -324,6 +360,7 @@ __device__ __forceinline__ void alu_splat(unsigned long long lane, int bits, uns
     unsigned __int128 full = 0;
     int n = 128 / bits;
     unsigned __int128 m = (((unsigned __int128)1) << bits) - 1;
+#pragma unroll
     for (int i = 0; i < n; ++i) {
         full |= ((unsigned __int128)(lane & (unsigned long long)m)) << (128 - bits * (i + 1));
     }
@@ -381,21 +418,22 @@ __device__ __forceinline__ void alu_read_src(
         unsigned* p = pick_mem((int)s.mem, lm0, lm1, grf0, grf1);
         int len = mem_len((int)s.mem);
         int ma = (s.madpe == 0) ? -1 : (int)s.madpe - 1;
-        int base = pe_word_addr((int)s.mem, s.base[c], (int)s.wl,
+        int base = pe_word_addr((int)s.mem, pick4(s.base, c), (int)s.wl,
                                 (int)s.t_indirect, ma, pe, c, bar0, bar1, t);
+#pragma unroll
         for (unsigned i = 0; i < s.wl && i < 4; ++i) {
-            out[i] = p[pe * len + ((base + (int)i) & (len - 1))];
+            out[i] = p[PEM(pe, (base + (int)i) & (len - 1))];
         }
     } else if (s.mem == 4) {
-        for (int i = 0; i < 4; ++i) out[i] = mauf[pe * 16 + c * 4 + i];
+        for (int i = 0; i < 4; ++i) out[i] = mauf[PR16(pe, c * 4 + i)];
     } else if (s.mem == 5) {
-        for (int i = 0; i < 4; ++i) out[i] = aluf[pe * 16 + c * 4 + i];
+        for (int i = 0; i < 4; ++i) out[i] = aluf[PR16(pe, c * 4 + i)];
     } else if (s.mem == 6) {
-        for (int i = 0; i < 4; ++i) out[i] = t[pe * 16 + c * 4 + i];
+        for (int i = 0; i < 4; ++i) out[i] = t[PR16(pe, c * 4 + i)];
     } else if (s.mem == 8) {
-        for (int i = 0; i < 4; ++i) out[i] = mreadf[pe * 16 + c * 4 + i];
+        for (int i = 0; i < 4; ++i) out[i] = mreadf[PR16(pe, c * 4 + i)];
     } else if (s.mem == 12) {
-        for (int i = 0; i < 4; ++i) out[i] = lbf[pe * 16 + c * 4 + i];
+        for (int i = 0; i < 4; ++i) out[i] = lbf[PR16(pe, c * 4 + i)];
     }
     if (s.rnd) {
         unsigned r[4];
@@ -409,6 +447,7 @@ __device__ __forceinline__ unsigned alu_flags(const bool cond[4], int bits) {
     if (bits == 64) return cond[0] ? 0xf : 0;
     if (bits == 32) return (cond[0] ? 0xc : 0) | (cond[1] ? 0x3 : 0);
     unsigned f = 0;
+#pragma unroll
     for (int i = 0; i < 4; ++i) f |= (cond[i] ? 1u : 0u) << (3 - i);
     return f;
 }
@@ -628,10 +667,10 @@ __device__ __forceinline__ bool alu_lane(
 // ---------------------------------------------------------------------------
 
 __device__ __forceinline__ unsigned mask_flags_dev(
-    const unsigned* entries, unsigned kind, unsigned entry, unsigned pattern, int c) {
+    const unsigned* mask, int pe, unsigned kind, unsigned entry, unsigned pattern, int c) {
     if (kind == 1) {
         if (entry == 0) return 0xf;
-        if (entry <= 15) return (entries[entry] >> (4 * c)) & 0xf;
+        if (entry <= 15) return (mask[PR16(pe, entry)] >> (4 * c)) & 0xf;
         return ((entry >> (3 - c)) & 1) ? 0xf : 0;
     }
     if (kind == 2) return ((pattern >> c) & 1) ? 0xf : 0;
@@ -673,14 +712,14 @@ __device__ __forceinline__ void alu_write_dst(
     unsigned* mask, unsigned* t, unsigned* bar0, unsigned* bar1) {
     if (d.kind == 3) return;
     bool masked = d.mask_kind != 0;
-    unsigned mf = masked ? mask_flags_dev(mask + pe * 16, d.mask_kind, d.mask_entry, d.mask_pattern, c) : 0xf;
+    unsigned mf = masked ? mask_flags_dev(mask, pe, d.mask_kind, d.mask_entry, d.mask_pattern, c) : 0xf;
     bool ll = d.mask_ll != 0;
     if (d.kind == 4) {
         // $mb / $nb / $lmb / $lnb: the low 12 bits of the accessed word become the base
         // register. A long word access uses its low word (bus[1]), not bus[0].
         if (masked && mf == 0) return;
         unsigned* bar = d.mem ? bar1 : bar0;
-        bar[pe] = bus[d.wl == 1 ? 0 : 1] & 0xfff;
+        bar[PRB(pe)] = bus[d.wl == 1 ? 0 : 1] & 0xfff;
         return;
     }
     if (d.kind == 0) {
@@ -691,12 +730,13 @@ __device__ __forceinline__ void alu_write_dst(
         for (int i = 0; i < words; ++i) any |= word_enabled(masked, mf, ll, i);
         if (!any) return;
         int ma = (d.madpe == 0) ? -1 : (int)d.madpe - 1;
-        int base = pe_word_addr((int)d.mem, d.base[c], words,
+        int base = pe_word_addr((int)d.mem, pick4(d.base, c), words,
                                 (int)d.t_indirect, ma, pe, c, bar0, bar1, t);
         for (int i = 0; i < words; ++i) {
             if (!word_enabled(masked, mf, ll, i)) continue;
-            int a = pe * len + ((base + i) & (len - 1));
-            p[a] = merge_word(masked, mf, ll, i, p[a], bus[i]);
+            int a = PEM(pe, (base + i) & (len - 1));
+            // Only a 16-bit masked word merges with the old value; skip the read otherwise.
+            p[a] = (masked && !ll && i < 2) ? merge_word(masked, mf, ll, i, p[a], bus[i]) : bus[i];
         }
     } else if (d.kind == 1) {
         bool any = false;
@@ -704,13 +744,13 @@ __device__ __forceinline__ void alu_write_dst(
         if (!any) return;
         for (int i = 0; i < 4; ++i) {
             if (!word_enabled(masked, mf, ll, i)) continue;
-            int a = pe * 16 + c * 4 + i;
-            t[a] = merge_word(masked, mf, ll, i, t[a], bus[i]);
+            int a = PR16(pe, c * 4 + i);
+            t[a] = (masked && !ll && i < 2) ? merge_word(masked, mf, ll, i, t[a], bus[i]) : bus[i];
         }
     } else if (d.kind == 2) {
         if (d.entry == 0 || d.entry > 15) return;
         unsigned f = masked ? (flags & mf) : flags;
-        int a = pe * 16 + (int)d.entry;
+        int a = PR16(pe, (int)d.entry);
         mask[a] = (mask[a] & ~(0xfu << (4 * c))) | (f << (4 * c));
     }
 }
@@ -763,6 +803,7 @@ __device__ __forceinline__ void mau_unpack(
     unsigned __int128 m = width == 64
         ? (unsigned __int128)~0ULL
         : ((((unsigned __int128)1) << width) - 1);
+#pragma unroll
     for (int i = 0; i < n; ++i) {
         out[i] = (unsigned long long)((full >> (128 - width * (i + 1))) & m);
     }
@@ -780,21 +821,22 @@ __device__ __forceinline__ void mau_read_bus(
         unsigned* p = pick_mem((int)s.mem, lm0, lm1, grf0, grf1);
         int len = mem_len((int)s.mem);
         int ma = (s.madpe == 0) ? -1 : (int)s.madpe - 1;
-        int base = pe_word_addr((int)s.mem, s.base[c], (int)s.wl,
+        int base = pe_word_addr((int)s.mem, pick4(s.base, c), (int)s.wl,
                                 (int)s.t_indirect, ma, pe, c, bar0, bar1, t);
+#pragma unroll
         for (unsigned i = 0; i < s.wl && i < 4; ++i) {
-            out[i] = p[pe * len + ((base + (int)i) & (len - 1))];
+            out[i] = p[PEM(pe, (base + (int)i) & (len - 1))];
         }
     } else if (s.mem == 4) {
-        for (int i = 0; i < 4; ++i) out[i] = mauf[pe * 16 + c * 4 + i];
+        for (int i = 0; i < 4; ++i) out[i] = mauf[PR16(pe, c * 4 + i)];
     } else if (s.mem == 5) {
-        for (int i = 0; i < 4; ++i) out[i] = aluf[pe * 16 + c * 4 + i];
+        for (int i = 0; i < 4; ++i) out[i] = aluf[PR16(pe, c * 4 + i)];
     } else if (s.mem == 6) {
-        for (int i = 0; i < 4; ++i) out[i] = t[pe * 16 + c * 4 + i];
+        for (int i = 0; i < 4; ++i) out[i] = t[PR16(pe, c * 4 + i)];
     } else if (s.mem == 8) {
-        for (int i = 0; i < 4; ++i) out[i] = mreadf[pe * 16 + c * 4 + i];
+        for (int i = 0; i < 4; ++i) out[i] = mreadf[PR16(pe, c * 4 + i)];
     } else if (s.mem == 12) {
-        for (int i = 0; i < 4; ++i) out[i] = lbf[pe * 16 + c * 4 + i];
+        for (int i = 0; i < 4; ++i) out[i] = lbf[PR16(pe, c * 4 + i)];
     }
 }
 
@@ -818,6 +860,7 @@ __device__ __forceinline__ void mau_read_vals(
     }
     unsigned long long v[4];
     mau_unpack(bus, (int)width(raw), lanes, v);
+#pragma unroll
     for (int l = 0; l < lanes; ++l) {
         Val x = decode(raw, v[l]);
         if (s.rnd) x = decode(f, mau_encode(f, x));
@@ -839,9 +882,77 @@ __device__ __forceinline__ Val mau_vfma(Fmt in_fmt, Fmt out_fmt, Val a, Val b, V
     return add_exact(mul_exact(in_fmt, a, b), c);
 }
 
+// Fast single-precision vfma for normal operands (SDM 4.3 single multiplier).
+// The result is RNE(product' * 2^P + c'), where product' is the exact
+// significand product with the low 5x5-bit partial product replaced by 2^8
+// when nonzero, and c' is c aligned to the product grid P + 5 with a sticky
+// LSB (align_c). Both terms are exact doubles; TwoSum gives the exact sum as
+// s + err, and only a tie of s needs err to round correctly to single.
+// Returns false (use the exact 128-bit path) for infinities and results
+// outside the normal single range, where flushing differs from IEEE.
+__device__ __forceinline__ bool vfma_single_fast(Val a, Val b, Val c, unsigned long long& out) {
+    if (a.kind == 1 || b.kind == 1 || c.kind == 1) return false;
+    if (a.kind == 0 || b.kind == 0) {
+        if (c.kind == 0) { out = 0; return true; }
+        // A zero product leaves c; encode it directly only when its
+        // significand is already a normalized 24-bit one.
+        if (((unsigned long long)c.sig >> 23) != 1) return false;
+        out = ((unsigned long long)c.neg << 31) |
+              ((unsigned long long)(c.exp + 127 + 23) << 23) |
+              ((unsigned long long)c.sig & 0x7fffffULL);
+        return true;
+    }
+    if ((a.sig >> 24) != 0 || (b.sig >> 24) != 0 || (c.sig >> 24) != 0) return false;
+    unsigned long long sa = (unsigned long long)a.sig, sb = (unsigned long long)b.sig;
+    unsigned long long prod = sa * sb;
+    unsigned long long dropped = (sa & 31) * (sb & 31);
+    if (dropped != 0) prod = prod - dropped + 256;
+    int P = a.exp + b.exp;
+    double x = ldexp((double)prod, P);
+    if (a.neg ^ b.neg) x = -x;
+    double y = 0.0;
+    if (c.kind == 2) {
+        unsigned long long cs = (unsigned long long)c.sig;
+        int ce = c.exp;
+        int grid = P + 5;
+        bool keep = true;
+        if (ce < grid) {
+            int lead = ce + 63 - __clzll(cs);
+            if (lead - grid <= -2) {
+                keep = false;
+            } else {
+                int sh = grid - ce;
+                bool sticky = (cs & ((1ULL << sh) - 1)) != 0;
+                cs = (cs >> sh) | (sticky ? 1ULL : 0ULL);
+                ce = grid;
+            }
+        }
+        if (keep) {
+            y = ldexp((double)cs, ce);
+            if (c.neg) y = -y;
+        }
+    }
+    double sum = x + y;
+    double bb = sum - x;
+    double err = (x - (sum - bb)) + (y - bb);
+    if (sum == 0.0) { out = 0; return true; }
+    double mag = fabs(sum);
+    if (mag < 1.1754943508222875e-38 || mag >= 3.4028234663852886e38) return false;
+    unsigned long long bits = __double_as_longlong(sum);
+    if ((bits & 0x1fffffffULL) == 0x10000000ULL && err != 0.0) {
+        // An exact tie of s: the remainder decides the direction.
+        bool away = (err > 0.0) == (sum > 0.0);
+        bits += away ? 1 : -1;
+        sum = __longlong_as_double(bits);
+    }
+    out = (unsigned long long)__float_as_uint(__double2float_rn(sum));
+    return true;
+}
+
 __device__ __forceinline__ unsigned mau_flags_dev(
     const unsigned long long* out, int n, Fmt f) {
     unsigned pos[4] = {0, 0, 0, 0};
+#pragma unroll
     for (int i = 0; i < n && i < 4; ++i) {
         pos[i] = ((out[i] >> (width(f) - 1)) & 1) == 0;
     }
@@ -857,13 +968,43 @@ __device__ __forceinline__ unsigned mau_flags_dev(
 // four cycles first, then writes. Destinations use the shared ALU writer, so
 // masks, multi-destination forms, T, OMR and the zero-flush mask behave like
 // the CPU's generic write path.
-extern "C" __global__ void mau_line(
-    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
-    unsigned* mauf, unsigned* aluf, unsigned* mask, unsigned* t,
-    unsigned* mreadf, unsigned* lbf, unsigned* bar0, unsigned* bar1, int update_forward,
-    MauLineDesc d) {
-    int pe = blockIdx.x * blockDim.x + threadIdx.x;
-    if (pe >= 4096) return;
+// Shared destination writer of every vector unit: zero-flush, all destinations,
+// then the unit's forwarding register `fwd` (aluf or mauf).
+template <class D>
+__device__ __forceinline__ void unit_store(
+    const D& d, int pe, int c, const unsigned in[4], unsigned fl,
+    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1, unsigned* fwd,
+    unsigned* mask, unsigned* t, unsigned* bar0, unsigned* bar1, int update_forward) {
+    unsigned bus[4];
+    for (int i = 0; i < 4; ++i) bus[i] = in[i];
+    if (d.flush_kind != 0) {
+        unsigned mf = mask_flags_dev(mask, pe, d.flush_kind, d.flush_entry, d.flush_pattern, c);
+        alu_apply_flush(bus, mf, d.flush_ll != 0);
+    }
+#pragma unroll
+    for (unsigned k = 0; k < 16; ++k) {
+        if (k >= d.ndst) break;
+        alu_write_dst(d.dst[k], pe, c, bus, fl, lm0, lm1, grf0, grf1, mask, t, bar0, bar1);
+    }
+    // The CPU model stores the zero-flushed output in the forwarding register too.
+    if (update_forward) {
+        for (int i = 0; i < 4; ++i) fwd[PR16(pe, c * 4 + i)] = bus[i];
+    }
+}
+
+// The exact 128-bit vfma, shared by every MAU shape of a JIT program (kept
+// out of line so that each shape's code stays small for the instruction cache).
+__device__ __noinline__ unsigned long long mau_vfma_slow(Fmt fa, Fmt fout, Val x, Val y, Val z) {
+    return mau_encode(fout, mau_vfma(fa, fout, x, y, z));
+}
+
+// One PE and cycle of a vector MAU line: reads the sources and computes the
+// output bus and flags without writing.
+__device__ __forceinline__ void mau_compute(
+    const MauLineDesc& d, int pe, int c, unsigned* lm0, unsigned* lm1, unsigned* grf0,
+    unsigned* grf1, unsigned* mauf, unsigned* aluf, unsigned* t, unsigned* mreadf,
+    unsigned* lbf, const unsigned* bar0, const unsigned* bar1, unsigned values[4],
+    unsigned& flags) {
     Fmt fa = mau_fmt(d.prec);
     Fmt fc = (d.prec == 3) ? Fmt{8, 23, 18} : fa;
     // Half precision accumulates in single and only rounds to half on request.
@@ -875,212 +1016,237 @@ extern "C" __global__ void mau_line(
         else fout = {6, 9, -1};
     }
     int lanes = (d.prec == 0) ? 1 : (d.prec == 3) ? 4 : 2;
-    Val av[4][4];
-    Val bv[4][4];
-    Val cv[4][4];
+    Val av[4];
+    Val bv[4];
+    Val cv[4];
     bool need_b = d.kind == 0 || d.kind == 1;
     bool need_c = d.kind == 0 || d.kind == 2;
-    for (int c = 0; c < 4; ++c) {
-        mau_read_vals(d.a, fa, lanes, pe, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, lbf, bar0, bar1, av[c]);
-        if (need_b) {
-            mau_read_vals(d.b, fa, lanes, pe, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, lbf, bar0, bar1, bv[c]);
-        }
-        if (need_c) {
-            mau_read_vals(d.c, fc, lanes, pe, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, lbf, bar0, bar1, cv[c]);
-        }
+    mau_read_vals(d.a, fa, lanes, pe, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, lbf, bar0, bar1, av);
+    if (need_b) {
+        mau_read_vals(d.b, fa, lanes, pe, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, lbf, bar0, bar1, bv);
+    }
+    if (need_c) {
+        mau_read_vals(d.c, fc, lanes, pe, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, lbf, bar0, bar1, cv);
     }
     Val one = decode(fa, (unsigned long long)((1LL << (fa.exp_bits - 1)) - 1) << fa.man_bits);
     Val zero = {0, false, 0, 0};
     bool mul_here = d.half == 0 || (d.half == 1 ? (pe % 4) < 2 : (pe % 4) >= 2);
+    // Single (and pseudo-single) in, single out: the double-based fast path.
+    bool fast_single = (d.prec == 1 || d.prec == 2) && !d.round;
+    unsigned long long out[4] = {0, 0, 0, 0};
+#pragma unroll
+    for (int l = 0; l < lanes; ++l) {
+        Val x = mul_here ? av[l] : zero;
+        Val y = mul_here ? (need_b ? bv[l] : one) : zero;
+        Val z = need_c ? cv[l] : zero;
+        unsigned long long r;
+        if (fast_single && vfma_single_fast(x, y, z, r)) {
+            out[l] = r;
+        } else {
+            out[l] = mau_vfma_slow(fa, fout, x, y, z);
+        }
+    }
+    // A 64-bit output occupies words 0-1; a half output packs four halves
+    // into words 0-1; a single output uses one word per element.
+    if (width(fout) == 64) {
+        values[0] = (unsigned)(out[0] >> 32);
+        values[1] = (unsigned)out[0];
+        values[2] = 0;
+        values[3] = 0;
+    } else if (width(fout) == 16) {
+        values[0] = ((unsigned)out[0] << 16) | ((unsigned)out[1] & 0xffff);
+        values[1] = ((unsigned)out[2] << 16) | ((unsigned)out[3] & 0xffff);
+        values[2] = 0;
+        values[3] = 0;
+    } else {
+#pragma unroll
+        for (int i = 0; i < 4; ++i) values[i] = (i < lanes) ? (unsigned)out[i] : 0;
+    }
+    flags = mau_flags_dev(out, lanes, fout);
+}
+
+// One vector MAU line. Each thread handles one PE, reads every source of all
+// four cycles first, then writes.
+__device__ __forceinline__ void mau_line_body(
+    int pe, unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
+    unsigned* mauf, unsigned* aluf, unsigned* mask, unsigned* t,
+    unsigned* mreadf, unsigned* lbf, unsigned* bar0, unsigned* bar1, int update_forward,
+    const MauLineDesc& d) {
+    if (pe >= 4096) return;
     unsigned values[4][4];
     unsigned flags[4];
     for (int c = 0; c < 4; ++c) {
-        unsigned long long out[4] = {0, 0, 0, 0};
-        for (int l = 0; l < lanes; ++l) {
-            Val x = mul_here ? av[c][l] : zero;
-            Val y = mul_here ? (need_b ? bv[c][l] : one) : zero;
-            Val z = need_c ? cv[c][l] : zero;
-            out[l] = mau_encode(fout, mau_vfma(fa, fout, x, y, z));
-        }
-        for (int i = 0; i < 4; ++i) values[c][i] = (i < 4) ? (unsigned)out[i] : 0;
-        // A 64-bit output occupies words 0-1; a half output packs four halves
-        // into words 0-1; a single output uses one word per element.
-        if (width(fout) == 64) {
-            values[c][0] = (unsigned)(out[0] >> 32);
-            values[c][1] = (unsigned)out[0];
-            values[c][2] = 0;
-            values[c][3] = 0;
-        } else if (width(fout) == 16) {
-            values[c][0] = ((unsigned)out[0] << 16) | ((unsigned)out[1] & 0xffff);
-            values[c][1] = ((unsigned)out[2] << 16) | ((unsigned)out[3] & 0xffff);
-            values[c][2] = 0;
-            values[c][3] = 0;
-        } else {
-            for (int i = 0; i < 4; ++i) values[c][i] = (i < lanes) ? (unsigned)out[i] : 0;
-        }
-        flags[c] = mau_flags_dev(out, lanes, fout);
+        mau_compute(d, pe, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, lbf, bar0, bar1,
+                    values[c], flags[c]);
     }
     for (int c = 0; c < 4; ++c) {
-        unsigned bus[4];
-        for (int i = 0; i < 4; ++i) bus[i] = values[c][i];
-        if (d.flush_kind != 0) {
-            unsigned mf = mask_flags_dev(mask + pe * 16, d.flush_kind, d.flush_entry, d.flush_pattern, c);
-            alu_apply_flush(bus, mf, d.flush_ll != 0);
-        }
-        for (unsigned k = 0; k < d.ndst && k < 16; ++k) {
-            alu_write_dst(d.dst[k], pe, c, bus, flags[c], lm0, lm1, grf0, grf1,
-                          mask, t, bar0, bar1);
-        }
-        if (update_forward) {
-            for (int i = 0; i < 4; ++i) mauf[pe * 16 + c * 4 + i] = bus[i];
-        }
+        unit_store(d, pe, c, values[c], flags[c], lm0, lm1, grf0, grf1, mauf, mask, t,
+                   bar0, bar1, update_forward);
     }
 }
+
+#ifndef MNCORE_JIT
+extern "C" __global__ void mau_line(
+    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
+    unsigned* mauf, unsigned* aluf, unsigned* mask, unsigned* t,
+    unsigned* mreadf, unsigned* lbf, unsigned* bar0, unsigned* bar1, int update_forward,
+    MauLineDesc d) {
+    int pe = (int)blockIdx.x * blockDim.x + threadIdx.x;
+    mau_line_body(pe, lm0, lm1, grf0, grf1, mauf, aluf, mask, t, mreadf, lbf, bar0, bar1, update_forward, d);
+}
+#endif
 
 // ---------------------------------------------------------------------------
 // ALU line.
 // ---------------------------------------------------------------------------
 
-extern "C" __global__ void alu_line(
-    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
-    unsigned* mauf, unsigned* aluf, unsigned* mask, unsigned* t,
-    unsigned* mreadf, unsigned* lbf, unsigned* bar0, unsigned* bar1, int update_forward,
-    AluDesc d) {
-    int mab = blockIdx.x * blockDim.x + threadIdx.x;
-    if (mab >= 1024) return;
+// ALU result of one PE and cycle: reads the sources (the MAB neighbour for
+// msl/msr) and computes the output bus and mask flags without writing.
+__device__ __forceinline__ void alu_compute(
+    const AluDesc& d, int pe, int c, unsigned* lm0, unsigned* lm1, unsigned* grf0,
+    unsigned* grf1, unsigned* mauf, unsigned* aluf, unsigned* t, unsigned* mreadf,
+    unsigned* lbf, const unsigned* bar0, const unsigned* bar1, unsigned out[4], unsigned& fl) {
     int bits = alu_prec_bits(d.prec);
     int nlanes = 64 / bits;
     Fmt f = alu_fmt(d.prec);
     bool is_float = alu_is_float(d.prec);
     bool two = is_alu_two_input(d.op);
     bool cross = (d.op == AOP_MSL || d.op == AOP_MSR);
-
-    unsigned abus[4][4][4];
-    unsigned bbus[4][4][4];
-    for (int p = 0; p < 4; ++p) {
-        int pe = mab * 4 + p;
+    unsigned abus[4] = {0, 0, 0, 0};
+    unsigned bbus[4] = {0, 0, 0, 0};
+    if (d.op != AOP_ZERO && d.op != AOP_IMM) {
         int ape = pe;
-        if (d.op == AOP_MSL) ape = mab * 4 + ((p + 3) & 3);
-        if (d.op == AOP_MSR) ape = mab * 4 + ((p + 1) & 3);
-        for (int c = 0; c < 4; ++c) {
-            alu_read_src(d.a, ape, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, lbf, bar0, bar1, bits, abus[p][c]);
-            if (two) {
-                alu_read_src(d.b, pe, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, lbf, bar0, bar1, bits, bbus[p][c]);
-            }
+        if (d.op == AOP_MSL) ape = (pe & ~3) | ((pe + 3) & 3);
+        if (d.op == AOP_MSR) ape = (pe & ~3) | ((pe + 1) & 3);
+        alu_read_src(d.a, ape, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, lbf, bar0, bar1, bits, abus);
+        if (two) {
+            alu_read_src(d.b, pe, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, lbf, bar0, bar1, bits, bbus);
         }
     }
+    bool cond[4] = {false, false, false, false};
+    if (d.op == AOP_ZERO) {
+        for (int i = 0; i < 4; ++i) out[i] = 0;
+        fl = 0;
+    } else if (d.op == AOP_IMM) {
+        unsigned v = d.imm;
+        if (d.imm_u) {
+            out[0] = v; out[1] = 0; out[2] = v; out[3] = 0;
+        } else {
+            for (int i = 0; i < 4; ++i) out[i] = v;
+        }
+        fl = 0;
+    } else if (d.op == AOP_PASSA) {
+        for (int i = 0; i < 4; ++i) out[i] = abus[i];
+        unsigned long long lanes[4];
+        alu_unpack(abus, bits, lanes);
+#pragma unroll
+        for (int i = 0; i < nlanes; ++i) cond[i] = lanes[i] == 0;
+        fl = alu_flags(cond, bits);
+    } else if (cross) {
+        out[0] = abus[0];
+        out[1] = abus[1];
+        out[2] = 0;
+        out[3] = 0;
+        fl = 0;
+    } else {
+        unsigned long long x[4] = {0, 0, 0, 0};
+        unsigned long long y[4] = {0, 0, 0, 0};
+        unsigned long long r[4] = {0, 0, 0, 0};
+        alu_unpack(abus, bits, x);
+        if (two) alu_unpack(bbus, bits, y);
+#pragma unroll
+        for (int i = 0; i < nlanes; ++i) {
+            bool cc;
+            if (d.op == AOP_FTOI) {
+                r[i] = float_ftoi_dev(f, x[i], d.uns != 0, bits);
+                cc = false;
+            } else {
+                cc = alu_lane(d.op, bits, f, is_float, d.uns != 0, x[i], y[i], r[i]);
+            }
+            cond[i] = cc;
+        }
+        alu_pack_lanes(r, bits, out);
+        unsigned o2 = abus[2];
+        unsigned o3 = abus[3];
+        out[2] = o2;
+        out[3] = o3;
+        fl = alu_flags(cond, bits);
+    }
+    // The unsigned inc/dec/add/sub/lsr/max/min flags differ from the signed ones.
+    if (d.uns && (d.op == AOP_INC || d.op == AOP_DEC || d.op == AOP_ADD || d.op == AOP_SUB)) {
+        bool uc[4] = {false, false, false, false};
+        unsigned long long x[4] = {0, 0, 0, 0};
+        unsigned long long y[4] = {0, 0, 0, 0};
+        alu_unpack(abus, bits, x);
+        if (two) alu_unpack(bbus, bits, y);
+        unsigned long long m = alu_mask(bits);
+        bool sub = (d.op == AOP_DEC || d.op == AOP_SUB);
+#pragma unroll
+        for (int i = 0; i < nlanes; ++i) {
+            unsigned long long rhs = (d.op == AOP_INC || d.op == AOP_DEC) ? 1ULL : y[i];
+            unsigned __int128 sum = (unsigned __int128)x[i] + (unsigned __int128)rhs;
+            uc[i] = sub ? (x[i] >= rhs) : (sum <= (unsigned __int128)m);
+        }
+        fl = alu_flags(uc, bits);
+    } else if (d.uns && d.op == AOP_LSR) {
+        bool uc[4] = {false, false, false, false};
+        unsigned long long x[4] = {0, 0, 0, 0};
+        unsigned long long y[4] = {0, 0, 0, 0};
+        alu_unpack(abus, bits, x);
+        alu_unpack(bbus, bits, y);
+#pragma unroll
+        for (int i = 0; i < nlanes; ++i) {
+            unsigned s = (unsigned)(y[i] % (unsigned long long)(2 * bits));
+            unsigned long long r = (s >= (unsigned)bits) ? 0 : (x[i] >> s);
+            uc[i] = r == 0;
+        }
+        fl = alu_flags(uc, bits);
+    } else if (d.uns && (d.op == AOP_MAX || d.op == AOP_MIN) && !is_float) {
+        bool uc[4] = {false, false, false, false};
+        unsigned long long x[4] = {0, 0, 0, 0};
+        unsigned long long y[4] = {0, 0, 0, 0};
+        alu_unpack(abus, bits, x);
+        alu_unpack(bbus, bits, y);
+#pragma unroll
+        for (int i = 0; i < nlanes; ++i) {
+            uc[i] = (d.op == AOP_MAX) ? (x[i] >= y[i]) : (x[i] <= y[i]);
+        }
+        fl = alu_flags(uc, bits);
+    }
+}
 
+__device__ __forceinline__ void alu_line_body(
+    int mab, unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
+    unsigned* mauf, unsigned* aluf, unsigned* mask, unsigned* t,
+    unsigned* mreadf, unsigned* lbf, unsigned* bar0, unsigned* bar1, int update_forward,
+    const AluDesc& d) {
+    if (mab >= 1024) return;
     unsigned out[4][4][4];
     unsigned fl[4][4];
     for (int p = 0; p < 4; ++p) {
         for (int c = 0; c < 4; ++c) {
-            bool cond[4] = {false, false, false, false};
-            if (d.op == AOP_ZERO) {
-                for (int i = 0; i < 4; ++i) out[p][c][i] = 0;
-                fl[p][c] = 0;
-            } else if (d.op == AOP_IMM) {
-                unsigned v = d.imm;
-                if (d.imm_u) {
-                    out[p][c][0] = v; out[p][c][1] = 0; out[p][c][2] = v; out[p][c][3] = 0;
-                } else {
-                    for (int i = 0; i < 4; ++i) out[p][c][i] = v;
-                }
-                fl[p][c] = 0;
-            } else if (d.op == AOP_PASSA) {
-                for (int i = 0; i < 4; ++i) out[p][c][i] = abus[p][c][i];
-                unsigned long long lanes[4];
-                alu_unpack(abus[p][c], bits, lanes);
-                for (int i = 0; i < nlanes; ++i) cond[i] = lanes[i] == 0;
-                fl[p][c] = alu_flags(cond, bits);
-            } else if (cross) {
-                out[p][c][0] = abus[p][c][0];
-                out[p][c][1] = abus[p][c][1];
-                out[p][c][2] = 0;
-                out[p][c][3] = 0;
-                fl[p][c] = 0;
-            } else {
-                unsigned long long x[4] = {0, 0, 0, 0};
-                unsigned long long y[4] = {0, 0, 0, 0};
-                unsigned long long r[4] = {0, 0, 0, 0};
-                alu_unpack(abus[p][c], bits, x);
-                if (two) alu_unpack(bbus[p][c], bits, y);
-                for (int i = 0; i < nlanes; ++i) {
-                    bool cc;
-                    if (d.op == AOP_FTOI) {
-                        r[i] = float_ftoi_dev(f, x[i], d.uns != 0, bits);
-                        cc = false;
-                    } else {
-                        cc = alu_lane(d.op, bits, f, is_float, d.uns != 0, x[i], y[i], r[i]);
-                    }
-                    cond[i] = cc;
-                }
-                alu_pack_lanes(r, bits, out[p][c]);
-                unsigned o2 = abus[p][c][2];
-                unsigned o3 = abus[p][c][3];
-                out[p][c][2] = o2;
-                out[p][c][3] = o3;
-                fl[p][c] = alu_flags(cond, bits);
-            }
-            // The unsigned inc/dec/add/sub/lsr/max/min flags differ from the signed ones.
-            if (d.uns && (d.op == AOP_INC || d.op == AOP_DEC || d.op == AOP_ADD || d.op == AOP_SUB)) {
-                bool uc[4] = {false, false, false, false};
-                unsigned long long x[4] = {0, 0, 0, 0};
-                unsigned long long y[4] = {0, 0, 0, 0};
-                alu_unpack(abus[p][c], bits, x);
-                if (two) alu_unpack(bbus[p][c], bits, y);
-                unsigned long long m = alu_mask(bits);
-                bool sub = (d.op == AOP_DEC || d.op == AOP_SUB);
-                for (int i = 0; i < nlanes; ++i) {
-                    unsigned long long rhs = (d.op == AOP_INC || d.op == AOP_DEC) ? 1ULL : y[i];
-                    unsigned __int128 sum = (unsigned __int128)x[i] + (unsigned __int128)rhs;
-                    uc[i] = sub ? (x[i] >= rhs) : (sum <= (unsigned __int128)m);
-                }
-                fl[p][c] = alu_flags(uc, bits);
-            } else if (d.uns && d.op == AOP_LSR) {
-                bool uc[4] = {false, false, false, false};
-                unsigned long long x[4] = {0, 0, 0, 0};
-                unsigned long long y[4] = {0, 0, 0, 0};
-                alu_unpack(abus[p][c], bits, x);
-                alu_unpack(bbus[p][c], bits, y);
-                for (int i = 0; i < nlanes; ++i) {
-                    unsigned s = (unsigned)(y[i] % (unsigned long long)(2 * bits));
-                    unsigned long long r = (s >= (unsigned)bits) ? 0 : (x[i] >> s);
-                    uc[i] = r == 0;
-                }
-                fl[p][c] = alu_flags(uc, bits);
-            } else if (d.uns && (d.op == AOP_MAX || d.op == AOP_MIN) && !is_float) {
-                bool uc[4] = {false, false, false, false};
-                unsigned long long x[4] = {0, 0, 0, 0};
-                unsigned long long y[4] = {0, 0, 0, 0};
-                alu_unpack(abus[p][c], bits, x);
-                alu_unpack(bbus[p][c], bits, y);
-                for (int i = 0; i < nlanes; ++i) {
-                    uc[i] = (d.op == AOP_MAX) ? (x[i] >= y[i]) : (x[i] <= y[i]);
-                }
-                fl[p][c] = alu_flags(uc, bits);
-            }
+            alu_compute(d, mab * 4 + p, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, lbf,
+                        bar0, bar1, out[p][c], fl[p][c]);
         }
     }
-
     for (int p = 0; p < 4; ++p) {
-        int pe = mab * 4 + p;
         for (int c = 0; c < 4; ++c) {
-            unsigned bus[4];
-            for (int i = 0; i < 4; ++i) bus[i] = out[p][c][i];
-            if (d.flush_kind != 0) {
-                unsigned mf = mask_flags_dev(mask + pe * 16, d.flush_kind, d.flush_entry, d.flush_pattern, c);
-                alu_apply_flush(bus, mf, d.flush_ll != 0);
-            }
-            for (unsigned k = 0; k < d.ndst && k < 16; ++k) {
-                alu_write_dst(d.dst[k], pe, c, bus, fl[p][c], lm0, lm1, grf0, grf1, mask, t, bar0, bar1);
-            }
-            // The CPU model stores the zero-flushed output in the forwarding register too.
-            if (update_forward) {
-                for (int i = 0; i < 4; ++i) aluf[pe * 16 + c * 4 + i] = bus[i];
-            }
+            unit_store(d, mab * 4 + p, c, out[p][c], fl[p][c], lm0, lm1, grf0, grf1, aluf,
+                       mask, t, bar0, bar1, update_forward);
         }
     }
 }
+
+#ifndef MNCORE_JIT
+extern "C" __global__ void alu_line(
+    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
+    unsigned* mauf, unsigned* aluf, unsigned* mask, unsigned* t,
+    unsigned* mreadf, unsigned* lbf, unsigned* bar0, unsigned* bar1, int update_forward,
+    AluDesc d) {
+    int mab = (int)blockIdx.x * blockDim.x + threadIdx.x;
+    alu_line_body(mab, lm0, lm1, grf0, grf1, mauf, aluf, mask, t, mreadf, lbf, bar0, bar1, update_forward, d);
+}
+#endif
 
 __device__ __forceinline__ unsigned __int128 round_shift128(
     unsigned __int128 v, unsigned shift) {
@@ -1166,15 +1332,12 @@ __device__ __forceinline__ void bfn_put_half(unsigned bus[4], int k, unsigned h)
     }
 }
 
-// One bfn/bfe line. One thread handles one MAB and reads all four cycles
-// before writing, matching the CPU's read-all-then-write order.
-extern "C" __global__ void bfn_line(
-    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
-    unsigned* mauf, unsigned* aluf, unsigned* mask, unsigned* t,
-    unsigned* mreadf, unsigned* lbf, unsigned* bar0, unsigned* bar1, int update_forward,
-    AluDesc d) {
-    int mab = blockIdx.x * blockDim.x + threadIdx.x;
-    if (mab >= 1024) return;
+// One MAB and cycle of a bfn/bfe line: reads the four PEs' buses and converts
+// them to block float, without writing.
+__device__ __forceinline__ void bfn_compute(
+    const AluDesc& d, int mab, int c, unsigned* lm0, unsigned* lm1, unsigned* grf0,
+    unsigned* grf1, unsigned* mauf, unsigned* aluf, unsigned* t, unsigned* mreadf,
+    unsigned* lbf, const unsigned* bar0, const unsigned* bar1, unsigned out[4][4]) {
     unsigned prec = d.prec;
     int bits = (prec == 0) ? 64 : (prec == 3) ? 16 : 32;
     Fmt f = (prec == 0) ? Fmt{11, 52, 36} : (prec == 3) ? Fmt{6, 9, -1} : Fmt{8, 23, 18};
@@ -1185,102 +1348,138 @@ extern "C" __global__ void bfn_line(
     else if (prec == 2) keep = 18;
     else keep = d.arg ? (int)d.arg : 9;
 
-    unsigned bus[4][4][4];
+    unsigned bus[4][4];
     for (int p = 0; p < 4; ++p) {
-        int pe = mab * 4 + p;
-        for (int c = 0; c < 4; ++c) {
-            alu_read_src(d.a, pe, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, lbf, bar0, bar1, bits, bus[p][c]);
-        }
+        alu_read_src(d.a, mab * 4 + p, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, lbf, bar0, bar1, bits, bus[p]);
     }
-
-    unsigned out[4][4][4];
-    for (int c = 0; c < 4; ++c) {
-        unsigned long long block[32];
-        unsigned long long conv[32];
-        for (int p = 0; p < 4; ++p) {
-            if (prec == 0) {
-                block[p] = ((unsigned long long)bus[p][c][0] << 32) | bus[p][c][1];
-            } else if (prec == 1 || prec == 2) {
-                block[p] = bus[p][c][0];
-                block[4 + p] = bus[p][c][1];
-            } else {
-                for (int k = 0; k < 4; ++k) block[p * 4 + k] = bfn_get_half(bus[p][c], k);
-                for (int k = 4; k < 8; ++k) block[16 + p * 4 + (k - 4)] = bfn_get_half(bus[p][c], k);
-            }
-        }
+    unsigned long long block[32];
+    unsigned long long conv[32];
+    for (int p = 0; p < 4; ++p) {
         if (prec == 0) {
-            block_float_any(f, block, 4, keep, extended, conv);
-            for (int p = 0; p < 4; ++p) {
-                out[p][c][0] = (unsigned)(conv[p] >> 32);
-                out[p][c][1] = (unsigned)conv[p];
-                out[p][c][2] = 0;
-                out[p][c][3] = 0;
-            }
-        } else if (prec == 1) {
-            // Two blocks, one per 32-bit word of each PE.
-            block_float_any(f, block, 4, 23, extended, conv);
-            block_float_any(f, block + 4, 4, 23, extended, conv + 4);
-            for (int p = 0; p < 4; ++p) {
-                out[p][c][0] = (unsigned)conv[p];
-                out[p][c][1] = (unsigned)conv[4 + p];
-                out[p][c][2] = 0;
-                out[p][c][3] = 0;
-            }
-        } else if (prec == 2) {
-            // One block of eight pseudo-single values.
-            block_float_any(f, block, 8, 18, extended, conv);
-            for (int p = 0; p < 4; ++p) {
-                out[p][c][0] = (unsigned)conv[p];
-                out[p][c][1] = (unsigned)conv[4 + p];
-                out[p][c][2] = 0;
-                out[p][c][3] = 0;
-            }
+            block[p] = ((unsigned long long)bus[p][0] << 32) | bus[p][1];
+        } else if (prec == 1 || prec == 2) {
+            block[p] = bus[p][0];
+            block[4 + p] = bus[p][1];
         } else {
-            // Two blocks of sixteen half values: words 0-1 and words 2-3.
-            block_float_any(f, block, 16, keep, extended, conv);
-            block_float_any(f, block + 16, 16, keep, extended, conv + 16);
-            for (int p = 0; p < 4; ++p) {
-                for (int k = 0; k < 4; ++k) bfn_put_half(out[p][c], k, (unsigned)conv[p * 4 + k]);
-                for (int k = 4; k < 8; ++k) {
-                    bfn_put_half(out[p][c], k, (unsigned)conv[16 + p * 4 + (k - 4)]);
-                }
-            }
+            for (int k = 0; k < 4; ++k) block[p * 4 + k] = bfn_get_half(bus[p], k);
+            for (int k = 4; k < 8; ++k) block[16 + p * 4 + (k - 4)] = bfn_get_half(bus[p], k);
         }
     }
-
-    for (int p = 0; p < 4; ++p) {
-        int pe = mab * 4 + p;
-        for (int c = 0; c < 4; ++c) {
-            unsigned busw[4];
-            for (int i = 0; i < 4; ++i) busw[i] = out[p][c][i];
-            if (d.flush_kind != 0) {
-                unsigned mf = mask_flags_dev(mask + pe * 16, d.flush_kind, d.flush_entry, d.flush_pattern, c);
-                alu_apply_flush(busw, mf, d.flush_ll != 0);
-            }
-            for (unsigned k = 0; k < d.ndst && k < 16; ++k) {
-                alu_write_dst(d.dst[k], pe, c, busw, 0, lm0, lm1, grf0, grf1, mask, t, bar0, bar1);
-            }
-            // The CPU model stores the zero-flushed output in the forwarding register too.
-            if (update_forward) {
-                for (int i = 0; i < 4; ++i) aluf[pe * 16 + c * 4 + i] = busw[i];
+    if (prec == 0) {
+        block_float_any(f, block, 4, keep, extended, conv);
+        for (int p = 0; p < 4; ++p) {
+            out[p][0] = (unsigned)(conv[p] >> 32);
+            out[p][1] = (unsigned)conv[p];
+            out[p][2] = 0;
+            out[p][3] = 0;
+        }
+    } else if (prec == 1) {
+        // Two blocks, one per 32-bit word of each PE.
+        block_float_any(f, block, 4, 23, extended, conv);
+        block_float_any(f, block + 4, 4, 23, extended, conv + 4);
+        for (int p = 0; p < 4; ++p) {
+            out[p][0] = (unsigned)conv[p];
+            out[p][1] = (unsigned)conv[4 + p];
+            out[p][2] = 0;
+            out[p][3] = 0;
+        }
+    } else if (prec == 2) {
+        // One block of eight pseudo-single values.
+        block_float_any(f, block, 8, 18, extended, conv);
+        for (int p = 0; p < 4; ++p) {
+            out[p][0] = (unsigned)conv[p];
+            out[p][1] = (unsigned)conv[4 + p];
+            out[p][2] = 0;
+            out[p][3] = 0;
+        }
+    } else {
+        // Two blocks of sixteen half values: words 0-1 and words 2-3.
+        block_float_any(f, block, 16, keep, extended, conv);
+        block_float_any(f, block + 16, 16, keep, extended, conv + 16);
+        for (int p = 0; p < 4; ++p) {
+            for (int k = 0; k < 4; ++k) bfn_put_half(out[p], k, (unsigned)conv[p * 4 + k]);
+            for (int k = 4; k < 8; ++k) {
+                bfn_put_half(out[p], k, (unsigned)conv[16 + p * 4 + (k - 4)]);
             }
         }
     }
 }
 
+// One bfn/bfe line. One thread handles one MAB and reads all four cycles
+// before writing, matching the CPU's read-all-then-write order.
+__device__ __forceinline__ void bfn_line_body(
+    int mab, unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
+    unsigned* mauf, unsigned* aluf, unsigned* mask, unsigned* t,
+    unsigned* mreadf, unsigned* lbf, unsigned* bar0, unsigned* bar1, int update_forward,
+    const AluDesc& d) {
+    if (mab >= 1024) return;
+    unsigned out[4][4][4];
+    for (int c = 0; c < 4; ++c) {
+        bfn_compute(d, mab, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, lbf, bar0, bar1,
+                    out[c]);
+    }
+    for (int p = 0; p < 4; ++p) {
+        for (int c = 0; c < 4; ++c) {
+            unit_store(d, mab * 4 + p, c, out[c][p], 0u, lm0, lm1, grf0, grf1, aluf, mask, t,
+                       bar0, bar1, update_forward);
+        }
+    }
+}
+
+#ifndef MNCORE_JIT
+extern "C" __global__ void bfn_line(
+    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
+    unsigned* mauf, unsigned* aluf, unsigned* mask, unsigned* t,
+    unsigned* mreadf, unsigned* lbf, unsigned* bar0, unsigned* bar1, int update_forward,
+    AluDesc d) {
+    int mab = (int)blockIdx.x * blockDim.x + threadIdx.x;
+    bfn_line_body(mab, lm0, lm1, grf0, grf1, mauf, aluf, mask, t, mreadf, lbf, bar0, bar1, update_forward, d);
+}
+#endif
+
+// Converts per-PE state between the host's PE-major layout and the device's
+// address-major layout. dir 0: src [pe][width] -> dst [width][pe]; dir 1: back.
+#ifndef MNCORE_JIT
+extern "C" __global__ void pe_transpose(const unsigned* src, unsigned* dst, int width, int dir) {
+    unsigned i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= 4096u * (unsigned)width) return;
+    // i enumerates the address-major index so the device side is coalesced.
+    unsigned a = i / 4096u;
+    unsigned pe = i % 4096u;
+    if (dir == 0) dst[i] = src[pe * (unsigned)width + a];
+    else dst[pe * (unsigned)width + a] = src[i];
+}
+#endif
+
+#ifndef MNCORE_JIT
+// Copies `rows` rows of `n` long words between strided buffers (gpu_train
+// stages a batch into the four groups' DRAM with one launch).
+extern "C" __global__ void copy_rows_u64(
+    unsigned long long* dst, const unsigned long long* src, unsigned long long n,
+    unsigned long long dst_stride, unsigned long long src_stride, int rows) {
+    unsigned long long total = n * (unsigned long long)rows;
+    for (unsigned long long i = (unsigned long long)blockIdx.x * blockDim.x + threadIdx.x; i < total;
+         i += (unsigned long long)gridDim.x * blockDim.x) {
+        unsigned long long r = i / n, k = i % n;
+        dst[r * dst_stride + k] = src[r * src_stride + k];
+    }
+}
+#endif
+
 // Clears mreadf, like a CPU step that has no matrix read (machine.rs).
+#ifndef MNCORE_JIT
 extern "C" __global__ void zero_mreadf(unsigned* mreadf) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < 4096 * 16) mreadf[i] = 0;
 }
+#endif
 
 // L2BM transfers. op 0: Distrib L2->L1BM; op 1: Bcast L2->L1BM;
 // op 2: FromL1b L1BM->L2BM.
-extern "C" __global__ void l2_line(
-    unsigned long long* l1bm, unsigned long long* l2bm,
+__device__ __forceinline__ void l2_line_body(
+    int idx, unsigned long long* l1bm, unsigned long long* l2bm,
     unsigned* darbuf, unsigned* dar, unsigned* dar_addr,
     int op, unsigned a0, unsigned a1, int l1b, int mask, int l2b) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (op == 5) {
         // l2bmdars: 64 long words per cycle from one L2B of each group become
         // 128 address words (MSB half first) in that group's DAR buffer.
@@ -1364,6 +1563,16 @@ extern "C" __global__ void l2_line(
         l2bm[dst] = l1bm[src];
     }
 }
+
+#ifndef MNCORE_JIT
+extern "C" __global__ void l2_line(
+    unsigned long long* l1bm, unsigned long long* l2bm,
+    unsigned* darbuf, unsigned* dar, unsigned* dar_addr,
+    int op, unsigned a0, unsigned a1, int l1b, int mask, int l2b) {
+    int idx = (int)blockIdx.x * blockDim.x + threadIdx.x;
+    l2_line_body(idx, l1bm, l2bm, darbuf, dar, dar_addr, op, a0, a1, l1b, mask, l2b);
+}
+#endif
 
 // RRN reductions (SDM 3.5.5 and 4.2). `kind` is 0 fadd, 1 max, 2 min, 3 iadd,
 // 4 band, 5 and, 6 bor, 7 or; `bits` is the element width.
@@ -1518,7 +1727,7 @@ __device__ __forceinline__ unsigned mask_flags_cycle(
     if (kind == 2) return ((pattern >> c) & 1) ? 0xfu : 0u;
     if (kind == 1) {
         if (entry == 0) return 0xfu;
-        if (entry <= 15) return (omr[pe * 16 + entry] >> (4 * c)) & 0xfu;
+        if (entry <= 15) return (omr[PR16(pe, entry)] >> (4 * c)) & 0xfu;
         return ((entry >> (3 - c)) & 1) ? 0xfu : 0u;
     }
     return 0xfu;
@@ -1562,20 +1771,20 @@ __device__ __forceinline__ void read_pe_bus(
     unsigned* lbf, int pe, int c, const unsigned* base, int wl,
     int t_indirect, int madpe, const unsigned* bar0, const unsigned* bar1) {
     if (mem == 6) {
-        for (int i = 0; i < 4; ++i) bus[i] = t[pe * 16 + c * 4 + i];
+        for (int i = 0; i < 4; ++i) bus[i] = t[PR16(pe, c * 4 + i)];
         return;
     }
     if (mem == 4 || mem == 5 || mem == 8 || mem == 12) {
         unsigned* src = (mem == 4) ? mauf : (mem == 5) ? aluf : (mem == 8) ? mreadf : lbf;
-        for (int i = 0; i < 4; ++i) bus[i] = src[pe * 16 + c * 4 + i];
+        for (int i = 0; i < 4; ++i) bus[i] = src[PR16(pe, c * 4 + i)];
         return;
     }
     unsigned* p = pick_mem(mem, lm0, lm1, grf0, grf1);
     int l = mem_len(mem);
-    int a = pe_word_addr(mem, base[c], wl, t_indirect, madpe, pe, c,
+    int a = pe_word_addr(mem, pick4(base, c), wl, t_indirect, madpe, pe, c,
                          bar0, bar1, t);
     for (int i = 0; i < 4; ++i) {
-        bus[i] = (i < wl) ? p[pe * l + ((a + i) & (l - 1))] : 0;
+        bus[i] = (i < wl) ? p[PEM(pe, (a + i) & (l - 1))] : 0;
     }
 }
 
@@ -1589,18 +1798,18 @@ __device__ __forceinline__ void write_pe_bus(
     if (mem >= 10) {
         if (kind != 0 && flags == 0) return;
         unsigned* bar = (unsigned*)((mem == 10) ? bar0 : bar1);
-        bar[pe] = bus[0] & 0xfff;
+        bar[PRB(pe)] = bus[0] & 0xfff;
         return;
     }
     if (kind == 0) {
         if (mem == 6) {
-            for (int i = 0; i < 4; ++i) t[pe * 16 + c * 4 + i] = bus[i];
+            for (int i = 0; i < 4; ++i) t[PR16(pe, c * 4 + i)] = bus[i];
         } else {
             unsigned* p = pick_mem(mem, lm0, lm1, grf0, grf1);
             int l = mem_len(mem);
             int a = pe_word_addr(mem, base, wl, t_indirect, madpe, pe, c,
                                  bar0, bar1, t);
-            for (int i = 0; i < wl; ++i) p[pe * l + ((a + i) & (l - 1))] = bus[i];
+            for (int i = 0; i < wl; ++i) p[PEM(pe, (a + i) & (l - 1))] = bus[i];
         }
         return;
     }
@@ -1612,8 +1821,9 @@ __device__ __forceinline__ void write_pe_bus(
     int words = (mem == 6) ? 4 : wl;
     for (int i = 0; i < words; ++i) {
         if (!word_enabled_cycle(flags, ll, i)) continue;
-        unsigned old = p[pe * l + off + i];
-        p[pe * l + off + i] = merge_word_cycle(old, bus[i], flags, ll, i);
+        p[PEM(pe, off + i)] = (!ll && i < 2)
+            ? merge_word_cycle(p[PEM(pe, off + i)], bus[i], flags, ll, i)
+            : bus[i];
     }
 }
 
@@ -1658,8 +1868,8 @@ __device__ __forceinline__ unsigned long long pack_rounded(
 
 // One L1BM-to-PE read: op 0 Mbcast, 1 Distrib, 2 Pbcast, 3 M4bcast.
 // `has_addr` says whether the L1BM operand is an address (else $lbi).
-extern "C" __global__ void l1_read_line(
-    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1, unsigned* t,
+__device__ __forceinline__ void l1_read_line_body(
+    int pe, unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1, unsigned* t,
     unsigned long long* l1bm, unsigned long long* lbi, unsigned* omr,
     unsigned* lbf, unsigned* bar0, unsigned* bar1,
     int op, int has_addr, unsigned addr, int mabdiff, int wl, int ndst,
@@ -1672,7 +1882,6 @@ extern "C" __global__ void l1_read_line(
     int dm3, unsigned d30, unsigned d31, unsigned d32, unsigned d33, int dw3,
     int mk3, int mke3, int mkp3, int mkl3, int dt3, int dma3,
     int fk, int fe, int fp, int fll) {
-    int pe = blockIdx.x * blockDim.x + threadIdx.x;
     if (pe >= 4096) return;
     int l1b = pe >> 6;
     int mab = (pe >> 2) & 15;
@@ -1765,24 +1974,44 @@ extern "C" __global__ void l1_read_line(
             unsigned f = mask_flags_cycle(omr, pe, fk, fe, fp, c);
             flush_bus(bus, f, fll);
         }
-        for (int i = 0; i < 4; ++i) lbf[pe * 16 + c * 4 + i] = bus[i];
+        for (int i = 0; i < 4; ++i) lbf[PR16(pe, c * 4 + i)] = bus[i];
         for (int d = 0; d < ndst; ++d) {
             unsigned f = 0;
             if (mk[d] != 0) {
                 f = mask_flags_cycle(omr, pe, mk[d], mke[d], mkp[d], c);
             }
             write_pe_bus(
-                lm0, lm1, grf0, grf1, t, dm[d], pe, c, db[d][c], dw[d], bus,
+                lm0, lm1, grf0, grf1, t, dm[d], pe, c, pick4(db[d], c), dw[d], bus,
                 f, mkl[d], mk[d], dt[d], dma[d], bar0, bar1);
         }
     }
 }
 
+#ifndef MNCORE_JIT
+extern "C" __global__ void l1_read_line(
+    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1, unsigned* t,
+    unsigned long long* l1bm, unsigned long long* lbi, unsigned* omr,
+    unsigned* lbf, unsigned* bar0, unsigned* bar1,
+    int op, int has_addr, unsigned addr, int mabdiff, int wl, int ndst,
+    int dm0, unsigned d00, unsigned d01, unsigned d02, unsigned d03, int dw0,
+    int mk0, int mke0, int mkp0, int mkl0, int dt0, int dma0,
+    int dm1, unsigned d10, unsigned d11, unsigned d12, unsigned d13, int dw1,
+    int mk1, int mke1, int mkp1, int mkl1, int dt1, int dma1,
+    int dm2, unsigned d20, unsigned d21, unsigned d22, unsigned d23, int dw2,
+    int mk2, int mke2, int mkp2, int mkl2, int dt2, int dma2,
+    int dm3, unsigned d30, unsigned d31, unsigned d32, unsigned d33, int dw3,
+    int mk3, int mke3, int mkp3, int mkl3, int dt3, int dma3,
+    int fk, int fe, int fp, int fll) {
+    int pe = (int)blockIdx.x * blockDim.x + threadIdx.x;
+    l1_read_line_body(pe, lm0, lm1, grf0, grf1, t, l1bm, lbi, omr, lbf, bar0, bar1, op, has_addr, addr, mabdiff, wl, ndst, dm0, d00, d01, d02, d03, dw0, mk0, mke0, mkp0, mkl0, dt0, dma0, dm1, d10, d11, d12, d13, dw1, mk1, mke1, mkp1, mkl1, dt1, dma1, dm2, d20, d21, d22, d23, dw2, mk2, mke2, mkp2, mkl2, dt2, dma2, dm3, d30, d31, d32, d33, dw3, mk3, mke3, mkp3, mkl3, dt3, dma3, fk, fe, fp, fll);
+}
+#endif
+
 // One PE-to-L1BM transfer. op 0 Mwrite, 1 Gather, 2 M4write, 3 Reduce
 // (16x1), 4 Reduce4 (4x4). `has_addr` selects L1BM or the turnaround
 // register $lbi as the destination; the turnaround is updated either way.
-extern "C" __global__ void l1_write_line(
-    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1, unsigned* t,
+__device__ __forceinline__ void l1_write_line_body(
+    int idx, int c_only, int part, unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1, unsigned* t,
     unsigned* mauf, unsigned* aluf, unsigned* mreadf, unsigned* lbf, unsigned* omr,
     unsigned long long* l1bm, unsigned long long* lbi,
     unsigned* bar0, unsigned* bar1, int update_lbi,
@@ -1790,7 +2019,6 @@ extern "C" __global__ void l1_write_line(
     int smem, unsigned s0, unsigned s1, unsigned s2, unsigned s3, int swl,
     int st, int sma, int two_src, int bits, int rrn, int round_it, int ext,
     int fk, int fe, int fp, int fll) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx >= 256) return;
     int l1b = idx >> 2;
     int sub = idx & 3;
@@ -1805,6 +2033,10 @@ extern "C" __global__ void l1_write_line(
         red_longs = (dwl == 4 || ext) ? 2 : 1;
     }
     for (int c = 0; c < 4; ++c) {
+        // c_only/part restrict the work to one cycle and one inner item (MAB,
+        // MAB group or reduction group) when not negative, so items can run in
+        // parallel: every item writes distinct L1BM and $lbi words.
+        if (c_only >= 0 && c != c_only) continue;
         if (op == 0) {
             int pe = l1b * 64 + mab_sel * 4 + sub;
             unsigned bus[4];
@@ -1826,6 +2058,7 @@ extern "C" __global__ void l1_write_line(
             }
         } else if (op == 1) {
             for (int m = 0; m < 16; ++m) {
+                if (part >= 0 && m != part) continue;
                 int pe = l1b * 64 + m * 4 + sub;
                 unsigned bus[4];
                 read_pe_bus(bus, smem, lm0, lm1, grf0, grf1, t, mauf, aluf, mreadf, lbf, pe, c, sb, swl, st, sma, bar0, bar1);
@@ -1843,6 +2076,7 @@ extern "C" __global__ void l1_write_line(
         } else if (op == 2) {
             int step = (dwl == 4) ? 32 : 16;
             for (int mo = 0; mo < 4; ++mo) {
+                if (part >= 0 && mo != part) continue;
                 int mab = mo * 4 + mab_sel;
                 int pe = l1b * 64 + mab * 4 + sub;
                 unsigned bus[4];
@@ -1877,6 +2111,7 @@ extern "C" __global__ void l1_write_line(
             else if (dwl == 4) step = four ? 32 : 8;
             else step = four ? 16 : 4;
             for (int g = 0; g < groups; ++g) {
+                if (part >= 0 && g != part) continue;
                 unsigned long long v0[16];
                 unsigned long long v1[16];
                 for (int m = 0; m < n; ++m) {
@@ -1953,12 +2188,26 @@ extern "C" __global__ void l1_write_line(
     }
 }
 
+#ifndef MNCORE_JIT
+extern "C" __global__ void l1_write_line(
+    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1, unsigned* t,
+    unsigned* mauf, unsigned* aluf, unsigned* mreadf, unsigned* lbf, unsigned* omr,
+    unsigned long long* l1bm, unsigned long long* lbi,
+    unsigned* bar0, unsigned* bar1, int update_lbi,
+    int op, int mab_sel, int mabdiff, int has_addr, unsigned addr, int dwl,
+    int smem, unsigned s0, unsigned s1, unsigned s2, unsigned s3, int swl,
+    int st, int sma, int two_src, int bits, int rrn, int round_it, int ext,
+    int fk, int fe, int fp, int fll) {
+    int idx = (int)blockIdx.x * blockDim.x + threadIdx.x;
+    l1_write_line_body(idx, -1, -1, lm0, lm1, grf0, grf1, t, mauf, aluf, mreadf, lbf, omr, l1bm, lbi, bar0, bar1, update_lbi, op, mab_sel, mabdiff, has_addr, addr, dwl, smem, s0, s1, s2, s3, swl, st, sma, two_src, bits, rrn, round_it, ext, fk, fe, fp, fll);
+}
+#endif
+
 // L2BM reductions and internal multicast. op 0: l2bmr (Reduce), op 1: l2bmr2
 // (Reduce2), op 2: l2bmi (Imcast). `mask`/`immode` are the L1B set.
-extern "C" __global__ void l2_reduce_line(
-    unsigned long long* l1bm, unsigned long long* l2bm,
+__device__ __forceinline__ void l2_reduce_line_body(
+    int idx, unsigned long long* l1bm, unsigned long long* l2bm,
     int op, unsigned a0, unsigned a1, int mask, int immode, int bits, int kind) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (op == 0) {
         if (idx >= 8 * 4 * 16) return;
         int k = idx % 16;
@@ -2006,6 +2255,15 @@ extern "C" __global__ void l2_reduce_line(
             l1bm[(l2 * 8 + src) * 8192 + (a0 + c * 16 + k) % 8192];
     }
 }
+
+#ifndef MNCORE_JIT
+extern "C" __global__ void l2_reduce_line(
+    unsigned long long* l1bm, unsigned long long* l2bm,
+    int op, unsigned a0, unsigned a1, int mask, int immode, int bits, int kind) {
+    int idx = (int)blockIdx.x * blockDim.x + threadIdx.x;
+    l2_reduce_line_body(idx, l1bm, l2bm, op, a0, a1, mask, immode, bits, kind);
+}
+#endif
 
 // ---- matrix unit ------------------------------------------------------------------------
 
@@ -2069,6 +2327,7 @@ __device__ __forceinline__ void mat_read_elems(
     }
     unsigned long long v[16];
     mau_unpack(bus, (int)width(raw), n, v);
+#pragma unroll
     for (int i = 0; i < n; ++i) {
         unsigned long long x = same_fmt(raw, f) ? v[i] : mau_encode(f, decode(raw, v[i]));
         if (s.neg) x ^= 1ULL << (width(f) - 1);
@@ -2090,12 +2349,15 @@ __device__ __forceinline__ void mat_pack_row(
     int per_word = 32 / width;
     for (int j = 0; j < n && j < 8 * per_word; ++j) {
         int shift = 32 - width * (j % per_word + 1);
-        out[j / per_word] |= ((unsigned)elems[j] & ((1u << width) - 1)) << shift;
+        // width is 32 for single/pseudo-single: 1u << 32 is undefined, and the
+        // JIT's constant folding does not reproduce the hardware's result.
+        unsigned emask = (width >= 32) ? 0xffffffffu : ((1u << width) - 1);
+        out[j / per_word] |= ((unsigned)elems[j] & emask) << shift;
     }
 }
 
 // Exact block-float dot product (SDM 4.5), ported from `float::bf_dot`.
-__device__ Val bf_dot_dev(
+__device__ __forceinline__ Val bf_dot_dev(
     Fmt f, int bf_m, const unsigned long long* a, const unsigned long long* b, int n,
     int* has_grid, int* grid) {
     *has_grid = 0;
@@ -2105,7 +2367,9 @@ __device__ Val bf_dot_dev(
     unsigned long long mm = man_mask(f);
     unsigned ca = 0;
     unsigned cb = 0;
-    for (int i = 0; i < n; ++i) {
+#pragma unroll
+    for (int i = 0; i < 16; ++i) {
+        if (i >= n) break;
         unsigned ea = (unsigned)((a[i] >> f.man_bits) & emax);
         unsigned eb = (unsigned)((b[i] >> f.man_bits) & emax);
         if (ea > ca) ca = ea;
@@ -2118,11 +2382,21 @@ __device__ Val bf_dot_dev(
         : 2 * bf_m;
     *has_grid = 1;
     *grid = (int)ca + (int)cb - 2 * bias + 2 - low;
+    // Terms are kept at their element index (no compaction), so every array
+    // index is a constant after unrolling and nothing goes to local memory.
+    bool valid[16];
     bool negs[16];
     unsigned __int128 terms[16];
     int exps[16];
     int count = 0;
-    for (int i = 0; i < n; ++i) {
+    int min_e = 0;
+#pragma unroll
+    for (int i = 0; i < 16; ++i) {
+        valid[i] = false;
+        negs[i] = false;
+        terms[i] = 0;
+        exps[i] = 0;
+        if (i >= n) continue;
         // Double-precision mantissas need more than 32 bits.
         unsigned long long ma = (unsigned long long)((a[i] & mm) >> (f.man_bits - bf_m));
         unsigned long long mb = (unsigned long long)((b[i] & mm) >> (f.man_bits - bf_m));
@@ -2141,23 +2415,23 @@ __device__ Val bf_dot_dev(
                     (((unsigned __int128)1) << (2 * low_bits - 2));
             }
         }
-        negs[count] = (((a[i] ^ b[i]) >> (width(f) - 1)) & 1) != 0;
-        terms[count] = p;
-        exps[count] = (int)ea + (int)eb - 2 * bias - 2 * (bf_m - 1);
+        valid[i] = true;
+        negs[i] = (((a[i] ^ b[i]) >> (width(f) - 1)) & 1) != 0;
+        terms[i] = p;
+        exps[i] = (int)ea + (int)eb - 2 * bias - 2 * (bf_m - 1);
+        if (count == 0 || exps[i] < min_e) min_e = exps[i];
         ++count;
     }
     if (count == 0) return {0, false, 0, 0};
-    int min_e = exps[0];
-    for (int i = 1; i < count; ++i) {
-        if (exps[i] < min_e) min_e = exps[i];
-    }
     bool exact = true;
     __int128 total = 0;
-    for (int i = 0; i < count; ++i) {
+#pragma unroll
+    for (int i = 0; i < 16; ++i) {
+        if (!valid[i]) continue;
         int sh = exps[i] - min_e;
         if (sh > 16 || lz128(terms[i]) < (unsigned)(sh + 4)) {
             exact = false;
-            break;
+            continue;
         }
         __int128 v = (__int128)(terms[i] << sh);
         total += negs[i] ? -v : v;
@@ -2169,7 +2443,9 @@ __device__ Val bf_dot_dev(
         return {2, neg, sig, min_e};
     }
     Val acc = {0, false, 0, 0};
-    for (int i = 0; i < count; ++i) {
+#pragma unroll
+    for (int i = 0; i < 16; ++i) {
+        if (!valid[i]) continue;
         acc = add_exact(acc, {2, negs[i], terms[i], exps[i]});
     }
     return acc;
@@ -2185,11 +2461,10 @@ __device__ __forceinline__ unsigned long long mat_fma_dev(
 // One matrix-register write (dmwrite/fmwrite/gmwrite/hmwrite). Each thread
 // handles one MAB and one cycle. The source may be a PE memory, T or any
 // forwarding register, with `-`, `e` and `r` options.
-extern "C" __global__ void mat_write_line(
-    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
+__device__ __forceinline__ void mat_write_line_body(
+    int idx, unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
     unsigned* mauf, unsigned* aluf, unsigned* mats, unsigned* t,
-    unsigned* mreadf, unsigned* lbf, unsigned* bar0, unsigned* bar1, MatWriteLineDesc d) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    unsigned* mreadf, unsigned* lbf, unsigned* bar0, unsigned* bar1, const MatWriteLineDesc& d) {
     if (idx >= 4096) return;
     int mab = idx >> 2;
     int c = idx & 3;
@@ -2239,14 +2514,23 @@ extern "C" __global__ void mat_write_line(
     }
 }
 
+#ifndef MNCORE_JIT
+extern "C" __global__ void mat_write_line(
+    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
+    unsigned* mauf, unsigned* aluf, unsigned* mats, unsigned* t,
+    unsigned* mreadf, unsigned* lbf, unsigned* bar0, unsigned* bar1, MatWriteLineDesc d) {
+    int idx = (int)blockIdx.x * blockDim.x + threadIdx.x;
+    mat_write_line_body(idx, lm0, lm1, grf0, grf1, mauf, aluf, mats, t, mreadf, lbf, bar0, bar1, d);
+}
+#endif
+
 // One matrix-register read (dmread/fmread/gmread/hmread). Each thread handles
 // one PE. Reads all four cycles first, then writes every destination with the
 // shared mask/flush writer and updates mreadf.
-extern "C" __global__ void mat_read_line(
-    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
+__device__ __forceinline__ void mat_read_line_body(
+    int pe, unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
     unsigned* mreadf, unsigned* lbf, unsigned* mask, unsigned* t, unsigned* mats,
-    unsigned* bar0, unsigned* bar1, int update_forward, MatReadLineDesc d) {
-    int pe = blockIdx.x * blockDim.x + threadIdx.x;
+    unsigned* bar0, unsigned* bar1, int update_forward, const MatReadLineDesc& d) {
     if (pe >= 4096) return;
     int mab = pe >> 2;
     int p = pe & 3;
@@ -2282,122 +2566,177 @@ extern "C" __global__ void mat_read_line(
         unsigned bus[4];
         for (int i = 0; i < 4; ++i) bus[i] = buses[c][i];
         if (d.flush_kind != 0) {
-            unsigned mf = mask_flags_dev(mask + pe * 16, d.flush_kind, d.flush_entry, d.flush_pattern, c);
+            unsigned mf = mask_flags_dev(mask, pe, d.flush_kind, d.flush_entry, d.flush_pattern, c);
             alu_apply_flush(bus, mf, d.flush_ll != 0);
         }
-        for (unsigned k = 0; k < d.ndst && k < 16; ++k) {
+#pragma unroll
+        for (unsigned k = 0; k < 16; ++k) {
+            if (k >= d.ndst) break;
             alu_write_dst(d.dst[k], pe, c, bus, 0, lm0, lm1, grf0, grf1,
                           mask, t, bar0, bar1);
         }
         if (update_forward) {
-            for (int i = 0; i < 4; ++i) mreadf[pe * 16 + c * 4 + i] = bus[i];
+            for (int i = 0; i < 4; ++i) mreadf[PR16(pe, c * 4 + i)] = bus[i];
         }
     }
 }
 
+#ifndef MNCORE_JIT
+extern "C" __global__ void mat_read_line(
+    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
+    unsigned* mreadf, unsigned* lbf, unsigned* mask, unsigned* t, unsigned* mats,
+    unsigned* bar0, unsigned* bar1, int update_forward, MatReadLineDesc d) {
+    int pe = (int)blockIdx.x * blockDim.x + threadIdx.x;
+    mat_read_line_body(pe, lm0, lm1, grf0, grf1, mreadf, lbf, mask, t, mats, bar0, bar1, update_forward, d);
+}
+#endif
+
+__device__ __forceinline__ void mat_mau_fmts(
+    const MatMauLineDesc& d, Fmt& fx, Fmt& fy, Fmt& fout, int& nx, int& ny, int& rows,
+    int& bf_m) {
+    fx = (d.prec == 0) ? Fmt{11, 52, 36} : (d.prec == 3) ? Fmt{6, 9, -1} : Fmt{8, 23, 18};
+    fy = (d.prec == 0) ? Fmt{11, 52, 36} : Fmt{8, 23, 18};
+    fout = (d.prec == 3) ? Fmt{8, 23, 18} : fx;
+    if (d.round) {
+        if (d.prec == 0) fout = {8, 23, 18};
+        else if (d.prec == 3) fout = {6, 9, -1};
+    }
+    nx = (d.prec == 0) ? 1 : (d.prec == 3) ? 4 : (d.prec == 2) ? 2 : 1;
+    ny = (d.prec == 0) ? 1 : (d.prec == 3) ? 4 : 2;
+    rows = (d.prec == 0) ? 4 : (d.prec == 3) ? 16 : 8;
+    bf_m = (d.prec == 0) ? 52 : (d.prec == 1) ? 23 : (d.prec == 2) ? 18 : 9;
+}
+
+// Reads the x elements (and y elements for fma) of one PE and cycle.
+__device__ __forceinline__ void mat_mau_read(
+    const MatMauLineDesc& d, int pe, int c, unsigned* lm0, unsigned* lm1, unsigned* grf0,
+    unsigned* grf1, unsigned* mauf, unsigned* aluf, unsigned* t, unsigned* mreadf,
+    unsigned* lbf, const unsigned* bar0, const unsigned* bar1,
+    unsigned long long xo[4], unsigned long long yo[4]) {
+    Fmt fx, fy, fout;
+    int nx, ny, rows, bf_m;
+    mat_mau_fmts(d, fx, fy, fout, nx, ny, rows, bf_m);
+    unsigned long long e[16];
+    mat_read_elems(d.x, fx, nx, pe, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, lbf,
+                   bar0, bar1, e);
+    for (int i = 0; i < nx; ++i) xo[i] = e[i];
+    if (d.kind == 0) {
+        mat_read_elems(d.y, fy, ny, pe, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, lbf,
+                       bar0, bar1, e);
+        for (int i = 0; i < ny; ++i) yo[i] = e[i];
+    }
+}
+
+// Row `i` of one MAB and cycle: the block-float dot product of the matrix row
+// and the x vector (xc[p * nx + k]) plus y (yc[p * ny + k]), rounded once.
+__device__ __forceinline__ unsigned long long mat_mau_row(
+    const MatMauLineDesc& d, int mab, int i, const unsigned long long* xc,
+    const unsigned long long* yc, const unsigned* mats) {
+    Fmt fx, fy, fout;
+    int nx, ny, rows, bf_m;
+    mat_mau_fmts(d, fx, fy, fout, nx, ny, rows, bf_m);
+    int base = (mab * 2 + (int)d.side) * 16 * 8;
+    bool active = d.half == 0 || (d.half == 1 ? i < 2 : i >= 2);
+    Val dot = {0, false, 0, 0};
+    int has_grid = 0;
+    int grid = 0;
+    if (active) {
+        unsigned long long arow[16];
+        unsigned long long xv[16];
+        for (int j = 0; j < 4 * nx; ++j) xv[j] = xc[j];
+        if (d.prec == 0) {
+            for (int j = 0; j < 4; ++j) {
+                int at = base + i * 4 * 8 + 2 * j;
+                arow[j] = ((unsigned long long)mats[at] << 32) | mats[at + 1];
+            }
+        } else if (d.prec == 3) {
+            for (int j = 0; j < 16; ++j) {
+                unsigned w = mats[base + i * 8 + j / 2];
+                arow[j] = (j % 2 == 0) ? (w >> 16) : (w & 0xffff);
+            }
+        } else if (d.prec == 1) {
+            for (int j = 0; j < 4; ++j) {
+                arow[j] = mats[base + i * 2 * 8 + 2 * j];
+            }
+        } else {
+            for (int j = 0; j < 8; ++j) {
+                arow[j] = mats[base + i * 2 * 8 + j];
+            }
+        }
+        int cols = (d.prec == 0) ? 4 : (d.prec == 1) ? 4 : (d.prec == 2) ? 8 : 16;
+        dot = bf_dot_dev(fx, bf_m, arow, xv, cols, &has_grid, &grid);
+    }
+    Val yval = {0, false, 0, 0};
+    if (d.kind == 0) yval = decode(fy, yc[i]);
+    return mat_fma_dev(fout, dot, has_grid, grid, yval);
+}
+
+// Writes one PE and cycle of a matrix MAU result from the MAB's rows `outc`.
+__device__ __forceinline__ void mat_mau_store(
+    const MatMauLineDesc& d, int pe, int c, const unsigned long long* outc,
+    unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1, unsigned* mauf,
+    unsigned* mask, unsigned* t, unsigned* bar0, unsigned* bar1, int update_forward) {
+    Fmt fx, fy, fout;
+    int nx, ny, rows, bf_m;
+    mat_mau_fmts(d, fx, fy, fout, nx, ny, rows, bf_m);
+    int per_pe = rows / 4;
+    int p = pe & 3;
+    unsigned bus[4] = {0, 0, 0, 0};
+    if (width(fout) == 64) {
+        bus[0] = (unsigned)(outc[p] >> 32);
+        bus[1] = (unsigned)outc[p];
+    } else if (width(fout) == 16) {
+        bus[0] = ((unsigned)outc[p * per_pe] << 16) | ((unsigned)outc[p * per_pe + 1] & 0xffff);
+        bus[1] = ((unsigned)outc[p * per_pe + 2] << 16) | ((unsigned)outc[p * per_pe + 3] & 0xffff);
+    } else {
+        for (int i = 0; i < per_pe && i < 4; ++i) bus[i] = (unsigned)outc[p * per_pe + i];
+    }
+    unsigned fl = mau_flags_dev(&outc[p * per_pe], per_pe, fout);
+    unit_store(d, pe, c, bus, fl, lm0, lm1, grf0, grf1, mauf, mask, t, bar0, bar1,
+               update_forward);
+}
+
 // One matrix MAU line. Each thread handles one MAB: reads all cycles' x and y
 // first, computes every row as an exact block-float dot plus y, then writes.
+__device__ __forceinline__ void mat_mau_line_body(
+    int mab, unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
+    unsigned* mauf, unsigned* aluf, unsigned* mask, unsigned* t,
+    unsigned* mreadf, unsigned* lbf, unsigned* mats, unsigned* bar0, unsigned* bar1,
+    int update_forward, const MatMauLineDesc& d) {
+    if (mab >= 1024) return;
+    Fmt fx, fy, fout;
+    int nx, ny, rows, bf_m;
+    mat_mau_fmts(d, fx, fy, fout, nx, ny, rows, bf_m);
+    unsigned long long xv[4][16];
+    unsigned long long yv[4][16];
+    for (int c = 0; c < 4; ++c) {
+        for (int p = 0; p < 4; ++p) {
+            unsigned long long xo[4], yo[4];
+            mat_mau_read(d, mab * 4 + p, c, lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, lbf,
+                         bar0, bar1, xo, yo);
+            for (int i = 0; i < nx; ++i) xv[c][p * nx + i] = xo[i];
+            if (d.kind == 0) {
+                for (int i = 0; i < ny; ++i) yv[c][p * ny + i] = yo[i];
+            }
+        }
+    }
+    for (int c = 0; c < 4; ++c) {
+        unsigned long long out[16];
+        for (int i = 0; i < rows; ++i) out[i] = mat_mau_row(d, mab, i, xv[c], yv[c], mats);
+        for (int p = 0; p < 4; ++p) {
+            mat_mau_store(d, mab * 4 + p, c, out, lm0, lm1, grf0, grf1, mauf, mask, t, bar0,
+                          bar1, update_forward);
+        }
+    }
+}
+
+#ifndef MNCORE_JIT
 extern "C" __global__ void mat_mau_line(
     unsigned* lm0, unsigned* lm1, unsigned* grf0, unsigned* grf1,
     unsigned* mauf, unsigned* aluf, unsigned* mask, unsigned* t,
     unsigned* mreadf, unsigned* lbf, unsigned* mats, unsigned* bar0, unsigned* bar1,
     int update_forward, MatMauLineDesc d) {
-    int mab = blockIdx.x * blockDim.x + threadIdx.x;
-    if (mab >= 1024) return;
-    Fmt fx = (d.prec == 0) ? Fmt{11, 52, 36} : (d.prec == 3) ? Fmt{6, 9, -1} : Fmt{8, 23, 18};
-    Fmt fy = (d.prec == 0) ? Fmt{11, 52, 36} : Fmt{8, 23, 18};
-    Fmt fout = (d.prec == 3) ? Fmt{8, 23, 18} : fx;
-    if (d.round) {
-        if (d.prec == 0) fout = {8, 23, 18};
-        else if (d.prec == 3) fout = {6, 9, -1};
-    }
-    int nx = (d.prec == 0) ? 1 : (d.prec == 3) ? 4 : (d.prec == 2) ? 2 : 1;
-    int ny = (d.prec == 0) ? 1 : (d.prec == 3) ? 4 : 2;
-    int rows = (d.prec == 0) ? 4 : (d.prec == 3) ? 16 : 8;
-    int bf_m = (d.prec == 0) ? 52 : (d.prec == 1) ? 23 : (d.prec == 2) ? 18 : 9;
-    unsigned long long xv[4][16];
-    unsigned long long yv[4][16];
-    for (int c = 0; c < 4; ++c) {
-        for (int p = 0; p < 4; ++p) {
-            unsigned long long e[16];
-            mat_read_elems(d.x, fx, nx, mab * 4 + p, c,
-                           lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, lbf,
-                           bar0, bar1, e);
-            for (int i = 0; i < nx; ++i) xv[c][p * nx + i] = e[i];
-            if (d.kind == 0) {
-                mat_read_elems(d.y, fy, ny, mab * 4 + p, c,
-                               lm0, lm1, grf0, grf1, mauf, aluf, t, mreadf, lbf,
-                               bar0, bar1, e);
-                for (int i = 0; i < ny; ++i) yv[c][p * ny + i] = e[i];
-            }
-        }
-    }
-    int base = (mab * 2 + (int)d.side) * 16 * 8;
-    int per_pe = rows / 4;
-    for (int c = 0; c < 4; ++c) {
-        unsigned long long out[16];
-        for (int i = 0; i < rows; ++i) {
-            bool active = d.half == 0 || (d.half == 1 ? i < 2 : i >= 2);
-            Val dot = {0, false, 0, 0};
-            int has_grid = 0;
-            int grid = 0;
-            if (active) {
-                unsigned long long arow[16];
-                if (d.prec == 0) {
-                    for (int j = 0; j < 4; ++j) {
-                        int at = base + i * 4 * 8 + 2 * j;
-                        arow[j] = ((unsigned long long)mats[at] << 32) | mats[at + 1];
-                    }
-                } else if (d.prec == 3) {
-                    for (int j = 0; j < 16; ++j) {
-                        unsigned w = mats[base + i * 8 + j / 2];
-                        arow[j] = (j % 2 == 0) ? (w >> 16) : (w & 0xffff);
-                    }
-                } else if (d.prec == 1) {
-                    for (int j = 0; j < 4; ++j) {
-                        arow[j] = mats[base + i * 2 * 8 + 2 * j];
-                    }
-                } else {
-                    for (int j = 0; j < 8; ++j) {
-                        arow[j] = mats[base + i * 2 * 8 + j];
-                    }
-                }
-                int cols = (d.prec == 0) ? 4 : (d.prec == 1) ? 4 : (d.prec == 2) ? 8 : 16;
-                dot = bf_dot_dev(fx, bf_m, arow, xv[c], cols, &has_grid, &grid);
-            }
-            Val yval = {0, false, 0, 0};
-            if (d.kind == 0) yval = decode(fy, yv[c][i]);
-            out[i] = mat_fma_dev(fout, dot, has_grid, grid, yval);
-        }
-        for (int p = 0; p < 4; ++p) {
-            int pe = mab * 4 + p;
-            unsigned bus[4];
-            for (int i = 0; i < 4; ++i) bus[i] = 0;
-            if (width(fout) == 64) {
-                bus[0] = (unsigned)(out[p] >> 32);
-                bus[1] = (unsigned)out[p];
-            } else if (width(fout) == 16) {
-                bus[0] = ((unsigned)out[p * per_pe] << 16) |
-                         ((unsigned)out[p * per_pe + 1] & 0xffff);
-                bus[1] = ((unsigned)out[p * per_pe + 2] << 16) |
-                         ((unsigned)out[p * per_pe + 3] & 0xffff);
-            } else {
-                for (int i = 0; i < per_pe && i < 4; ++i) {
-                    bus[i] = (unsigned)out[p * per_pe + i];
-                }
-            }
-            if (d.flush_kind != 0) {
-                unsigned mf = mask_flags_dev(mask + pe * 16, d.flush_kind, d.flush_entry, d.flush_pattern, c);
-                alu_apply_flush(bus, mf, d.flush_ll != 0);
-            }
-            unsigned fl = mau_flags_dev(&out[p * per_pe], per_pe, fout);
-            for (unsigned k = 0; k < d.ndst && k < 16; ++k) {
-                alu_write_dst(d.dst[k], pe, c, bus, fl, lm0, lm1, grf0, grf1,
-                              mask, t, bar0, bar1);
-            }
-            if (update_forward) {
-                for (int i = 0; i < 4; ++i) mauf[pe * 16 + c * 4 + i] = bus[i];
-            }
-        }
-    }
+    int mab = (int)blockIdx.x * blockDim.x + threadIdx.x;
+    mat_mau_line_body(mab, lm0, lm1, grf0, grf1, mauf, aluf, mask, t, mreadf, lbf, mats, bar0, bar1, update_forward, d);
 }
+#endif

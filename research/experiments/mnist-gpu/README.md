@@ -14,6 +14,20 @@ MNIST を 100 epoch 学習するための実験ディレクトリ。
 PyTorch と 5e-4 以内で一致する。100 epoch で差が開くのは、VSM の行列演算が
 block-float（pseudo-single）で、256 項の和で桁落ちするため。学習自体は正常。
 
+## JIT エンジン（2026-11-25）
+
+`gpu_train` の既定は `--engine jit` になった。プログラムを 1 つのカーネルに JIT
+コンパイルし（`viz/core/src/gpu/jit.rs`）、全バッチを最初に GPU に置いて、各ステップは
+バッチを DRAM へ写すカーネル 1 回と本体の起動 1 回だけにする。
+
+| 経路 | 1 step | 100 epoch | test accuracy |
+| --- | ---: | ---: | ---: |
+| `--engine lines`（従来の CUDA Graph、`mnist_train_step.vsm`） | 26 ms | 約 10 分（推定） | — |
+| `--engine jit` | 3.26 ms | 76 秒 | 92.27% |
+
+30 step 後の DRAM は `lines` と `jit` でビット単位で一致する。初回だけ NVRTC の
+コンパイルに数分かかり、以後は `viz/core/target/gpu-jit-cache` のキャッシュを使う。
+
 ## 直したもの
 
 1. `viz/core` の `--replay`: capture 中に `cuCtxSynchronize` が呼ばれて落ちていた。
@@ -37,7 +51,7 @@ PYTHONPATH=. python3 research/experiments/mnist-gpu/prepare.py
 judge/judge-py/mncore2_emuenv/assemble3 --instruction-mode flat \
   < research/experiments/mnist-gpu/train/train_fixed.vsm > /dev/null
 
-# 3. 100 epoch（約 25 分）
+# 3. 100 epoch（JIT で約 80 秒、初回はコンパイルに数分）
 cargo run --release --manifest-path viz/core/Cargo.toml --bin gpu_train -- \
   research/experiments/mnist-gpu --epochs 100 \
   --program research/experiments/mnist-gpu/train/train_fixed.vsm

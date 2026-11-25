@@ -631,3 +631,60 @@ cd viz/core
 
 `gpu_run_program` の GPU 時間は per-step 同期の分だけ増える（1,572 行で約 0.3 秒、
 同期なしは約 0.08 秒）。正しさを優先して同期を残している。
+
+## 1 起動での全体実行（インタプリタと JIT、2026-11-25）
+
+1 行 1 カーネルの実行は、WSL 上でカーネル 1 ノードあたり約 7 µs の起動コストが
+2,000 ノードぶん積み上がっていた。全体実行を 1 回の協調起動にまとめた。
+
+- `gpu::lower_program` が VSM を `GpuOp` 列に下ろす（`gpu_run_program`/`gpu_train` の
+  ステップ順序・フォワーディング規則をライブラリへ移した）。
+- 1 ブロック = 1 L1B（64 PE）。PE・L1B ローカルな命令は所有ブロックだけが実行するので
+  命令間は `__syncthreads` で足りる。L2BM・PDM・DRAM・DAR と他 L1B の L1BM について
+  ブロックごとの読み書きを追跡し、ブロックをまたぐ依存がある命令の前だけ grid barrier を
+  入れる（`program.rs` の `Hazards`）。
+- `--engine program`: 命令列を解釈する常駐カーネル `run_program`。
+- `--engine jit`（既定にしていない）: 命令列を CUDA に生成して NVRTC でコンパイルする。
+  アドレス・即値以外が同じ命令（形）は 1 関数を共有し、アドレスは実行時に渡すので、
+  ディスクリプタのフィールドは定数として畳み込まれ、レジスタに載る。CUBIN は
+  `target/gpu-jit-cache` にキャッシュする（初回コンパイルは数分）。
+- PE メモリと 16 語の PE レジスタは `[word][pe]` レイアウトでデバイスに置く
+  （warp の 32 PE が連続アクセスになる）。転置はアップロード・ダウンロード時に GPU で行う。
+- ALU/MAU は (PE, サイクル) ごとに 1 スレッド。サイクル間で読み書きが重ならないと
+  ホストが示せる命令はステージングなしで各スレッドが直接書く。
+- 単精度 MAU は「下位部分積を落とした積 + 格子に揃えた c」の正確な和を double の
+  TwoSum で作り、タイだけ誤差の符号で丸める高速経路を持つ（非正規化・inf は 128 bit 経路）。
+  `gpu_vfma` がタイの起きやすい入力を含めて CPU と全ビット比較する。
+- 途中の `clear_mreadf` は観測されないので、最終状態に必要な最後の 1 回だけ残す。
+
+`mnist_train_step.vsm`（1,395 words）の 1 run（`--replay 1000`、RTX 3060）:
+
+| 方式 | ms/run | M words/s |
+| --- | ---: | ---: |
+| 1 行 1 カーネル + CUDA Graph（従来） | 28.8 | 0.048 |
+| インタプリタ | 約 9 | 0.15 |
+| JIT | 2.9 | 0.48 |
+
+`GPU_PROFILE=1` で命令種別ごとのブロック中央値サイクルを出す。残りは、作業集合が
+L2（3 MB）を超えることによる DRAM 往復が命令ごとに入ること、224 回の grid barrier での
+待ち、bfn・l1 系・MAU の依存したメモリアクセスの連鎖。
+
+JIT は定数畳み込みで C++ の未定義動作（例: `1u << 32`）が実行時と違う値になる。
+`mat_pack_row` のマスクがこれで壊れていたので修正した。
+
+## 実行タイムラインの可視化
+
+JIT 実行を 1 ブロック分、命令ごとに記録してガントチャートにする。
+
+```sh
+cd viz/core
+GPU_TIMELINE=/tmp/timeline.json ./target/release/gpu_run_program \
+    benchmarks/mnist_train_step.vsm --engine jit
+python3 scripts/gpu_timeline_chart.py /tmp/timeline.json ../../docs/gpu-timeline.html
+```
+
+300 回の空回しでクロックを上げてから 8 回記録し、全ブロックのうち所要時間が中央値の
+ブロックを、その時間が最短だった回で採る。各命令の開始、grid barrier 通過、次の命令の
+開始を SM クロックで記録し、`%globaltimer` で測ったクロックで µs に換算する。
+[gpu-timeline.html](gpu-timeline.html) は `mnist_train_step` の結果（1 回 2,156 µs）。
+grid barrier 待ち 21%、PE→L1BM 19%、MAU 15%、行列 MAU 13% が大きい。

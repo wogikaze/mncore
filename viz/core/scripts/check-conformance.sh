@@ -63,8 +63,11 @@ if [ "$with_gpu" = 1 ]; then
     ./target/release/gpu_mau_conformance || fail=1
     ./target/release/gpu_mem_conformance || fail=1
 
-    step "GPU: whole mnist_train_step program"
+    step "GPU: whole mnist_train_step program (interpreter, then JIT)"
     ./target/release/gpu_run_program benchmarks/mnist_train_step.vsm || fail=1
+    # The first JIT run compiles for a few minutes; the CUBIN is cached in
+    # target/gpu-jit-cache afterwards.
+    ./target/release/gpu_run_program benchmarks/mnist_train_step.vsm --engine jit || fail=1
 fi
 
 echo

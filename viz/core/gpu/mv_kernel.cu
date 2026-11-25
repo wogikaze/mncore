@@ -251,8 +251,8 @@ __device__ __forceinline__ void mv_dram_write(
 // mode 11 mvr2<op> L2BM -> PDM/DRAM
 // mode 12 mvr4<op> L2BM -> DRAM
 // mode 13 mvnop
-extern "C" __global__ void mv_line(
-    unsigned long long* pdm, unsigned long long* dram, unsigned long long* l2bm,
+__device__ __forceinline__ void mv_line_body(
+    unsigned long long idx, unsigned long long* pdm, unsigned long long* dram, unsigned long long* l2bm,
     unsigned long long* scratch, unsigned long long dram_longs,
     int mode, int phase, int parallel,
     int src_mem, int src_group, int src_l2b, unsigned long long src_addr,
@@ -260,8 +260,6 @@ extern "C" __global__ void mv_line(
     unsigned long long size, int rrn_op, int rrn_bits,
     const unsigned* dar, unsigned* mv_errors, int src_indirect,
     int dst_indirect, unsigned long long nd) {
-    unsigned long long idx =
-        (unsigned long long)blockIdx.x * blockDim.x + threadIdx.x;
 
     if (mode == 0) {
         unsigned long long total = size * (parallel ? 4ULL : 1ULL);
@@ -463,3 +461,18 @@ extern "C" __global__ void mv_line(
         return;
     }
 }
+
+#ifndef MNCORE_JIT
+extern "C" __global__ void mv_line(
+    unsigned long long* pdm, unsigned long long* dram, unsigned long long* l2bm,
+    unsigned long long* scratch, unsigned long long dram_longs,
+    int mode, int phase, int parallel,
+    int src_mem, int src_group, int src_l2b, unsigned long long src_addr,
+    int dst_mem, int dst_group, int dst_l2b, unsigned long long dst_addr,
+    unsigned long long size, int rrn_op, int rrn_bits,
+    const unsigned* dar, unsigned* mv_errors, int src_indirect,
+    int dst_indirect, unsigned long long nd) {
+    unsigned long long idx = (unsigned long long)blockIdx.x * blockDim.x + threadIdx.x;
+    mv_line_body(idx, pdm, dram, l2bm, scratch, dram_longs, mode, phase, parallel, src_mem, src_group, src_l2b, src_addr, dst_mem, dst_group, dst_l2b, dst_addr, size, rrn_op, rrn_bits, dar, mv_errors, src_indirect, dst_indirect, nd);
+}
+#endif
