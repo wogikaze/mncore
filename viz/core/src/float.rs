@@ -325,6 +325,28 @@ pub const BF_SINGLE: BfFmt = BfFmt { fmt: SINGLE, m: 23 };
 pub const BF_PSEUDO: BfFmt = BfFmt { fmt: SINGLE, m: 18 };
 pub const BF_HALF: BfFmt = BfFmt { fmt: HALF, m: 9 };
 
+/// How the official emulator rounds a half block-float product with extended factors.
+///
+/// Measured exhaustively (every pair of 9-bit mantissas, the challenge emulator and SDK 0.9 agree;
+/// research/experiments/hmmul-rounding): with one extended factor the product is shifted right
+/// by 6, with two by 12, and the result is `floor(product / 2^shift)` plus this bit. The bit is not
+/// any plain rounding of the product: with shift 6 it depends on the low six bits of each mantissa
+/// and the parity of the floor (as if the low partial products were only partly summed), and it is
+/// never set when the product's remainder is below half. Bits 0..8192 hold the shift-6 decision at
+/// `(a & 63) << 7 | (b & 63) << 1 | parity`, bits 8192.. the shift-12 decision at `a << 9 | b`.
+pub static HMUL_EXT_ROUND: &[u8; 33792] = include_bytes!("hmul_ext_round.bin");
+
+/// Whether the emulator rounds `floor(a * b / 2^shift)` up for mantissas `a`, `b` (9 bits each).
+pub fn ext_product_round_up(shift: u32, a: u32, b: u32) -> bool {
+    let key = if shift == 6 {
+        let parity = ((a * b) >> 6) & 1;
+        ((a & 63) << 7) | ((b & 63) << 1) | parity
+    } else {
+        8192 + ((a & 511) << 9) + (b & 511)
+    } as usize;
+    HMUL_EXT_ROUND[key >> 3] >> (key & 7) & 1 == 1
+}
+
 /// Exact dot product of block-float vectors (SDM 4.5), as a value to be added to c and rounded.
 pub fn bf_dot(bf: BfFmt, a: &[u64], b: &[u64]) -> (Val, Option<i32>) {
     let f = bf.fmt;
@@ -354,6 +376,11 @@ pub fn bf_dot(bf: BfFmt, a: &[u64], b: &[u64]) -> (Val, Option<i32>) {
     } else {
         let low = match f.mul_full_bits {
             Some(full) if bf.m == f.man_bits => full + bf.m,
+            // Half: the adder grid is 10 bits below the grid of the products of non-extended
+            // elements (hmfma with single y, measured with the official emulator: aligning y to
+            // 2^(ca + cb - 2 bias + 2 - 28) matches all 6144 outputs of hmmul_diff.py, the
+            // product grid itself 420 and no alignment 5794).
+            None if f.exp_bits == HALF.exp_bits => 2 * bf.m + 10,
             _ => 2 * bf.m,
         } as i32;
         Some(ca as i32 + cb as i32 - 2 * f.bias() + 2 - low)
@@ -378,19 +405,15 @@ pub fn bf_dot(bf: BfFmt, a: &[u64], b: &[u64]) -> (Val, Option<i32>) {
         let mut p = ma * mb;
         // SDM 4.5: before the products are added, a product with one (two) extended factors is
         // shifted right by 6 (12) bits and rounded, onto the grid of the products of
-        // non-extended elements. The SDM leaves the exact rounding unspecified ("details of the
-        // multiplier output"). Measured with the official emulator (SDK 0.9) on 18432 hmmulr
-        // outputs from MLSDK's matmul loop with random inputs: one exact rounding of the whole
-        // dot product disagrees in 263, rounding each such product to nearest even in 116.
-        // Round half up / half down, truncation, rounding the factors instead of the product,
-        // two's complement variants and keeping guard bits all agree less often.
+        // non-extended elements. The SDM leaves the rounding unspecified ("details of the
+        // multiplier output"), and no simple rounding of the product reproduces it, so the
+        // rounding is a table measured exhaustively with the official emulator (every pair of
+        // mantissas, see `ext_product_round_up`).
         let mut ext_shift = 0;
         if ext > 0 && f.exp_bits == HALF.exp_bits && bf.m == HALF.man_bits {
             let sh = 6 * ext;
             let q = p >> sh;
-            let rem = p & ((1u128 << sh) - 1);
-            let half = 1u128 << (sh - 1);
-            p = if rem > half || (rem == half && q & 1 == 1) { q + 1 } else { q };
+            p = q + u128::from(ext_product_round_up(sh, ma as u32, mb as u32));
             ext_shift = sh as i32;
             if p == 0 {
                 continue;
