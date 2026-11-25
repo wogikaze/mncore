@@ -337,6 +337,8 @@ fn parse_line(text: &str) -> Result<Line, String> {
     if let Some(rest) = text.strip_prefix("r ") {
         return parse_dram_set(rest);
     }
+    let normalized = normalize_sdk(text);
+    let text = normalized.as_ref();
     let first = text.split_whitespace().next().unwrap();
     if first.starts_with("mv") {
         return Ok(Line::Mv(crate::mv::parse(text)?));
@@ -374,6 +376,41 @@ fn parse_line(text: &str) -> Result<Line, String> {
         return Ok(Line::Nop { count, wait });
     }
     Ok(Line::Pe(exprs))
+}
+
+/// Reduction prefixes that MN-Core SDK 0.9 separates from the reduction opcode with `_`.
+const SDK_RRN_PREFIXES: [&str; 7] = ["l1bmr4_", "l1bmr_", "l2bmr2_", "l2bmr_", "mvr2_", "mvr4_", "mvr_"];
+
+/// Rewrites the spellings of the MN-Core SDK 0.9 assembler into the ones parsed here.
+///
+/// The SDK writes `<sources> -> <destinations>` and puts `_` between a reduction prefix and
+/// its opcode (`l1bmr_iband`, `mvr_iband/n64i11`). Its assembler gives the same words for
+/// `l1bmriband` and `l1bmr_iband`, and for the expression with and without the arrow.
+pub fn normalize_sdk(text: &str) -> std::borrow::Cow<'_, str> {
+    let has_rrn = text.split(';').any(|part| {
+        let op = part.split_whitespace().next().unwrap_or("");
+        SDK_RRN_PREFIXES.iter().any(|p| op.starts_with(p))
+    });
+    if !has_rrn && !text.split_whitespace().any(|t| t == "->") {
+        return std::borrow::Cow::Borrowed(text);
+    }
+    let parts: Vec<String> = text
+        .split(';')
+        .map(|part| {
+            let mut toks = part.split_whitespace().filter(|t| *t != "->");
+            let mut out: Vec<String> = Vec::new();
+            if let Some(op) = toks.next() {
+                let op = match SDK_RRN_PREFIXES.iter().find(|p| op.starts_with(*p)) {
+                    Some(p) => format!("{}{}", &p[..p.len() - 1], &op[p.len()..]),
+                    None => op.to_string(),
+                };
+                out.push(op);
+            }
+            out.extend(toks.map(str::to_string));
+            out.join(" ")
+        })
+        .collect();
+    std::borrow::Cow::Owned(parts.join("; "))
 }
 
 fn parse_mask_directive(text: &str) -> Option<Line> {
@@ -1012,6 +1049,15 @@ mod tests {
         assert_eq!(parse_imm(r#"i"-1""#).unwrap(), 0xffff_ffff);
         assert_eq!(parse_imm(r#"us"0x8000""#).unwrap(), 0x8000_8000);
         assert!(parse_imm(r#"s"0x8000""#).is_err());
+    }
+
+    #[test]
+    fn sdk_spellings() {
+        assert_eq!(normalize_sdk("fvadd $lm0v $lr0v -> $ln0v/1110"), "fvadd $lm0v $lr0v $ln0v/1110");
+        assert_eq!(normalize_sdk("zero -> $lr0/1000; l1bmr_iband $lm0v -> $lb0"), "zero $lr0/1000; l1bmriband $lm0v $lb0");
+        assert_eq!(normalize_sdk("mvr_iband/n64i11 $lc0 -> $d32"), "mvriband/n64i11 $lc0 $d32");
+        assert_eq!(normalize_sdk("fvadd $lm0v $lr0v $ln0v"), "fvadd $lm0v $lr0v $ln0v");
+        assert_eq!(parse("mvb/n64i11 $d0 -> $lc0").unwrap(), parse("mvb/n64i11 $d0 $lc0").unwrap());
     }
 
     #[test]
