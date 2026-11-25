@@ -366,6 +366,9 @@ pub fn bf_dot(bf: BfFmt, a: &[u64], b: &[u64]) -> (Val, Option<i32>) {
         if ma == 0 || mb == 0 {
             continue;
         }
+        // Half extended representation: an element with exponent field 0 has exponent
+        // "common - 6" (SDM 4.4).
+        let ext = u32::from(ea == 0) + u32::from(eb == 0);
         if ea == 0 {
             ea = ca.saturating_sub(6);
         }
@@ -373,6 +376,26 @@ pub fn bf_dot(bf: BfFmt, a: &[u64], b: &[u64]) -> (Val, Option<i32>) {
             eb = cb.saturating_sub(6);
         }
         let mut p = ma * mb;
+        // SDM 4.5: before the products are added, a product with one (two) extended factors is
+        // shifted right by 6 (12) bits and rounded, onto the grid of the products of
+        // non-extended elements. The SDM leaves the exact rounding unspecified ("details of the
+        // multiplier output"). Measured with the official emulator (SDK 0.9) on 18432 hmmulr
+        // outputs from MLSDK's matmul loop with random inputs: one exact rounding of the whole
+        // dot product disagrees in 263, rounding each such product to nearest even in 116.
+        // Round half up / half down, truncation, rounding the factors instead of the product,
+        // two's complement variants and keeping guard bits all agree less often.
+        let mut ext_shift = 0;
+        if ext > 0 && f.exp_bits == HALF.exp_bits && bf.m == HALF.man_bits {
+            let sh = 6 * ext;
+            let q = p >> sh;
+            let rem = p & ((1u128 << sh) - 1);
+            let half = 1u128 << (sh - 1);
+            p = if rem > half || (rem == half && q & 1 == 1) { q + 1 } else { q };
+            ext_shift = sh as i32;
+            if p == 0 {
+                continue;
+            }
+        }
         if let Some(full) = f.mul_full_bits {
             if bf.m == f.man_bits {
                 let low = f.man_bits - full;
@@ -384,7 +407,7 @@ pub fn bf_dot(bf: BfFmt, a: &[u64], b: &[u64]) -> (Val, Option<i32>) {
             }
         }
         // value = Ma * Mb * 2^(ea + eb - 2 bias - 2 (m - 1))
-        let e = ea as i32 + eb as i32 - 2 * f.bias() - 2 * (bf.m as i32 - 1);
+        let e = ea as i32 + eb as i32 - 2 * f.bias() - 2 * (bf.m as i32 - 1) + ext_shift;
         terms.push((neg, p, e));
     }
     let Some(min_e) = terms.iter().map(|t| t.2).min() else {
@@ -480,6 +503,37 @@ mod tests {
         // hvadd(8, x) = 8 + x, not x quantized to the product's LSB.
         let one = decode(HALF, 0x3e00);
         assert_eq!(vfma(HALF, SINGLE, eight, one, decode(SINGLE, 0x3ebf_c3b9)), 0x4105_fe1e);
+    }
+
+    #[test]
+    fn half_extended_products_are_rounded_before_the_sum() {
+        // hmmulr outputs (matrix row a, vector x, both half block float with extended elements)
+        // printed by the official emulator (SDK 0.9 gpfn3_package_main). Rounding the exact dot
+        // product once gives the value in each comment, one ULP off.
+        let cases: [([u64; 16], [u64; 16], u64); 6] = [
+            // exact rounding gives 0x32cb
+            ([0xba11, 0xba5d, 0x3a90, 0xbae6, 0xba3a, 0xbae4, 0xba1b, 0xbb66, 0x01ed, 0xba6b, 0x3a1b, 0x00f2, 0x3b42, 0x3bc0, 0x3a26, 0x3a5a],
+             [0x0038, 0x3a52, 0x3a2b, 0xbbf0, 0xba92, 0x3ac8, 0xbb1c, 0xba2f, 0x3a70, 0x3aba, 0x3a0c, 0x3ab5, 0xba8c, 0xba1b, 0xba7c, 0x3a1f], 0x32ca),
+            // exact rounding gives 0xac71
+            ([0xba3b, 0xbad0, 0xbb7e, 0x3a11, 0xba12, 0xba3a, 0xbbfe, 0xba3f, 0x3a0a, 0xba26, 0x3a63, 0x3b02, 0x3b8c, 0xbb20, 0x00a7, 0xbb46],
+             [0x8059, 0xba5b, 0xba3b, 0x3b0f, 0xbaa8, 0x00b5, 0x3b5a, 0x0034, 0x3b46, 0xbbc6, 0x0038, 0x3a7b, 0xbaaa, 0x3a57, 0xbbd3, 0xbbfe], 0xac70),
+            // exact rounding gives 0xb611
+            ([0xbbac, 0x3a0c, 0xbb9f, 0xba3e, 0xbaa9, 0xba2e, 0xbab3, 0x3ad5, 0xbac8, 0x013a, 0x80c9, 0x3ad3, 0x0117, 0x8037, 0x0088, 0x3a54],
+             [0x3a3c, 0xba09, 0x3a30, 0xbb0b, 0xba32, 0xba1c, 0xbb66, 0xbbf9, 0x3a62, 0xba5e, 0x3a72, 0x3a53, 0xbb26, 0xba96, 0xba1a, 0x81e4], 0xb610),
+            // exact rounding gives 0xa962
+            ([0x80ec, 0x3a1f, 0xbae7, 0x3a79, 0x3a84, 0x3a2d, 0xbaf1, 0xbaca, 0xba42, 0x3a17, 0xbb0c, 0x0130, 0x3aff, 0x3a1c, 0x0144, 0xba28],
+             [0x00d5, 0xba93, 0x3a55, 0x3b34, 0xba0b, 0x3ada, 0xba40, 0xba7f, 0x3a9f, 0xba23, 0x3b9b, 0x3a7d, 0x3aef, 0x3a1a, 0x3a4a, 0x3a72], 0xa961),
+            // exact rounding gives 0x35b3
+            ([0xba88, 0xba89, 0x3a0a, 0xbac4, 0x3ab2, 0x3a2b, 0xbacc, 0xba1c, 0x3a59, 0x3b1c, 0x3a72, 0x800f, 0x0010, 0x0026, 0x3bc8, 0x3a8c],
+             [0x3b26, 0x3a1b, 0x81ca, 0x3af1, 0x3b79, 0xba2d, 0x3a28, 0x3a10, 0xbaf2, 0x3b27, 0x3a0e, 0xba0f, 0x3aa2, 0xbb1c, 0x3a45, 0x804f], 0x35b2),
+            // exact rounding gives 0x3097
+            ([0x3abc, 0xbae9, 0x3a61, 0x3a9e, 0xba19, 0x3a6e, 0x802f, 0xba0e, 0xbbb6, 0x3a45, 0x0091, 0xbaae, 0xbb51, 0x3a34, 0xba33, 0x3a1a],
+             [0xba1d, 0xba10, 0x3baf, 0x0005, 0x01a7, 0xbaf8, 0xba95, 0xba6f, 0xba2f, 0x3a4f, 0x01f0, 0x3b4f, 0xbaa6, 0x00ba, 0x3b95, 0xbb0a], 0x3096),
+        ];
+        for (a, x, want) in cases {
+            let got = mat_fma(HALF, bf_dot(BF_HALF, &a, &x), Val::Zero { neg: false });
+            assert_eq!(got, want, "a={a:04x?} x={x:04x?}");
+        }
     }
 
     #[test]
