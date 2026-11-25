@@ -2020,6 +2020,7 @@ pub struct Gpu {
     zero_mreadf_function: CuFunction,
     transpose_function: CuFunction,
     program_function: CuFunction,
+    copy_rows_function: CuFunction,
     cu_launch_coop: CuLaunchCooperativeKernel,
     cu_func_attr: CuFuncGetAttribute,
     cu_module_load: CuModuleLoad,
@@ -2352,6 +2353,13 @@ impl Gpu {
             },
             "cuModuleGetFunction(run_program)",
         )?;
+        let mut copy_rows_function: CuFunction = std::ptr::null_mut();
+        check(
+            unsafe {
+                cu_get_function(&mut copy_rows_function, module, b"copy_rows_u64\0".as_ptr() as *const c_char)
+            },
+            "cuModuleGetFunction(copy_rows_u64)",
+        )?;
         let mut stage: u64 = 0;
         check(
             unsafe {
@@ -2384,6 +2392,7 @@ impl Gpu {
             zero_mreadf_function,
             transpose_function,
             program_function,
+            copy_rows_function,
             cu_launch_coop,
             cu_func_attr,
             cu_module_load,
@@ -3007,6 +3016,102 @@ impl Gpu {
             "upload dram range",
         )?;
         self.sync()
+    }
+
+    /// Copies `words` into a new device buffer (freed with `free_device`).
+    pub fn upload_buffer(&self, words: &[u64]) -> Result<u64, String> {
+        let mut p: u64 = 0;
+        self.check(unsafe { (self.cu_mem_alloc)(&mut p, words.len().max(1) * 8) }, "cuMemAlloc(buffer)")?;
+        self.check(
+            unsafe { (self.cu_htod)(p, words.as_ptr() as *const c_void, words.len() * 8) },
+            "upload buffer",
+        )?;
+        self.check(unsafe { (self.cu_sync)() }, "sync buffer upload")?;
+        Ok(p)
+    }
+
+    /// Frees a buffer from `upload_buffer`.
+    pub fn free_device(&self, pointer: u64) {
+        unsafe { (self.cu_mem_free)(pointer) };
+    }
+
+    /// Enqueues a device-to-device copy of `longs` long words from `src` into
+    /// one group's DRAM at `offset_longs`, ordered with the kernels.
+    pub fn copy_to_dram_async(
+        &self,
+        state: &GpuState,
+        group: usize,
+        offset_longs: u64,
+        src: u64,
+        longs: usize,
+    ) -> Result<(), String> {
+        if group >= crate::mv::GROUPS || offset_longs + longs as u64 > state.dram_longs {
+            return Err("DRAM range is outside the device allocation".into());
+        }
+        let dst = state.dram + (group as u64 * state.dram_longs + offset_longs) * 8;
+        self.check(
+            unsafe {
+                (self.cu_dtod_async)(dst as *mut c_void, src as *const c_void, longs * 8, self.stream)
+            },
+            "cuMemcpyDtoDAsync(dram)",
+        )
+    }
+
+    /// Enqueues one kernel copying `longs` long words per group from `src`
+    /// (the four groups back to back) into every group's DRAM at `offset_longs`.
+    pub fn copy_groups_to_dram_async(
+        &self,
+        state: &GpuState,
+        offset_longs: u64,
+        src: u64,
+        longs: usize,
+    ) -> Result<(), String> {
+        if offset_longs + longs as u64 > state.dram_longs {
+            return Err("DRAM range is outside the device allocation".into());
+        }
+        let mut dst = state.dram + offset_longs * 8;
+        let mut src = src;
+        let mut n = longs as u64;
+        let mut dst_stride = state.dram_longs;
+        let mut src_stride = longs as u64;
+        let mut rows = crate::mv::GROUPS as i32;
+        let mut args = [
+            &mut dst as *mut u64 as *mut c_void,
+            &mut src as *mut u64 as *mut c_void,
+            &mut n as *mut u64 as *mut c_void,
+            &mut dst_stride as *mut u64 as *mut c_void,
+            &mut src_stride as *mut u64 as *mut c_void,
+            &mut rows as *mut i32 as *mut c_void,
+        ];
+        let total = (longs * crate::mv::GROUPS) as u32;
+        self.check(
+            unsafe {
+                (self.cu_launch)(
+                    self.copy_rows_function,
+                    total.div_ceil(256).min(1024),
+                    1,
+                    1,
+                    256,
+                    1,
+                    1,
+                    0,
+                    self.stream,
+                    args.as_mut_ptr(),
+                    std::ptr::null_mut(),
+                )
+            },
+            "cuLaunchKernel(copy_rows_u64)",
+        )
+    }
+
+    /// Enqueues a copy of `MAT_WORDS` words from `src` into the matrix registers.
+    pub fn copy_to_mats_async(&self, state: &GpuState, src: u64) -> Result<(), String> {
+        self.check(
+            unsafe {
+                (self.cu_dtod_async)(state.mats as *mut c_void, src as *const c_void, MAT_WORDS * 4, self.stream)
+            },
+            "cuMemcpyDtoDAsync(mats)",
+        )
     }
 
     /// Downloads one group's DRAM range starting at `offset_longs`.

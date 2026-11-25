@@ -1451,6 +1451,21 @@ extern "C" __global__ void pe_transpose(const unsigned* src, unsigned* dst, int 
 }
 #endif
 
+#ifndef MNCORE_JIT
+// Copies `rows` rows of `n` long words between strided buffers (gpu_train
+// stages a batch into the four groups' DRAM with one launch).
+extern "C" __global__ void copy_rows_u64(
+    unsigned long long* dst, const unsigned long long* src, unsigned long long n,
+    unsigned long long dst_stride, unsigned long long src_stride, int rows) {
+    unsigned long long total = n * (unsigned long long)rows;
+    for (unsigned long long i = (unsigned long long)blockIdx.x * blockDim.x + threadIdx.x; i < total;
+         i += (unsigned long long)gridDim.x * blockDim.x) {
+        unsigned long long r = i / n, k = i % n;
+        dst[r * dst_stride + k] = src[r * src_stride + k];
+    }
+}
+#endif
+
 // Clears mreadf, like a CPU step that has no matrix read (machine.rs).
 #ifndef MNCORE_JIT
 extern "C" __global__ void zero_mreadf(unsigned* mreadf) {

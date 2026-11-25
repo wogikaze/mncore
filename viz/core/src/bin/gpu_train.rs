@@ -232,6 +232,9 @@ fn main() {
     let mut program_path = "viz/core/benchmarks/mnist_train_step.vsm".to_string();
     let mut init_path = format!("{dir}/init_dram.bin");
     let mut out_path = format!("{dir}/final_dram.bin");
+    // `jit` (default): one compiled launch per step with the batches resident
+    // on the device; `lines`: the original CUDA graph of per-line kernels.
+    let mut engine = "jit".to_string();
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "--epochs" => epochs = args.next().unwrap().parse().unwrap(),
@@ -241,6 +244,7 @@ fn main() {
             "--program" => program_path = args.next().unwrap(),
             "--init" => init_path = args.next().unwrap(),
             "--out" => out_path = args.next().unwrap(),
+            "--engine" => engine = args.next().unwrap(),
             _ => panic!("unknown argument {arg}"),
         }
     }
@@ -296,6 +300,67 @@ fn main() {
         let final_dram = gpu.download_dram(&state).expect("download dram");
         let bytes: Vec<u8> = final_dram.iter().flat_map(|w| w.to_le_bytes()).collect();
         fs::write(&out_path, bytes).expect("write dram");
+        return;
+    }
+
+    if engine == "jit" {
+        let lowered = mncore_sim::gpu::lower_program(&program).expect("lower");
+        let compile_start = std::time::Instant::now();
+        let prog = gpu.compile_program(&state, &lowered.ops, lowered.words).expect("compile");
+        eprintln!(
+            "jit: {} ops, {} grid barriers, ready in {:?}",
+            prog.ops,
+            prog.barriers,
+            compile_start.elapsed()
+        );
+        // Every batch stays on the device; a step only enqueues copies.
+        let inputs_dev = gpu.upload_buffer(&train_inputs).expect("inputs");
+        let targets_dev = gpu.upload_buffer(&train_targets).expect("targets");
+        let zero_mats_dev = gpu.upload_buffer(&vec![0u64; MAT_WORDS / 2]).expect("zero mats");
+        // Timing experiment only: GPU_TRAIN_SKIP_COPIES leaves the inputs stale.
+        let skip_copies = std::env::var("GPU_TRAIN_SKIP_COPIES").is_ok();
+        let mut step = 0usize;
+        let start = std::time::Instant::now();
+        'jit: for epoch in 0..epochs {
+            let epoch_start = std::time::Instant::now();
+            for i in 0..train_batches {
+                let b = if epoch == 0 { i } else { orders[epoch * train_batches + i] };
+                if !skip_copies {
+                    // Batch b's four groups are contiguous in the device copies.
+                    let base = (b * GROUPS * INPUT_LONGS * 8) as u64;
+                    gpu.copy_groups_to_dram_async(&state, INPUT_ADDR, inputs_dev + base, INPUT_LONGS)
+                        .expect("inputs");
+                    let tbase = (b * GROUPS * TARGET_LONGS * 8) as u64;
+                    gpu.copy_groups_to_dram_async(&state, TARGET_ADDR, targets_dev + tbase, TARGET_LONGS)
+                        .expect("targets");
+                }
+                if reset_mats {
+                    gpu.copy_to_mats_async(&state, zero_mats_dev).expect("reset mats");
+                }
+                gpu.launch_jit(&state, &prog).expect("launch");
+                step += 1;
+                if let Some(limit) = steps_limit {
+                    if step >= limit {
+                        break 'jit;
+                    }
+                }
+            }
+            gpu.sync().expect("sync");
+            eprintln!("epoch {:3}: {:?} ({} steps total)", epoch + 1, epoch_start.elapsed(), step);
+        }
+        gpu.sync().expect("sync");
+        eprintln!(
+            "{} steps in {:?} ({:?} per step)",
+            step,
+            start.elapsed(),
+            start.elapsed() / step.max(1) as u32
+        );
+        let final_dram = gpu.download_dram(&state).expect("download dram");
+        let bytes: Vec<u8> = final_dram.iter().flat_map(|w| w.to_le_bytes()).collect();
+        fs::write(&out_path, bytes).expect("write final dram");
+        for p in [inputs_dev, targets_dev, zero_mats_dev] {
+            gpu.free_device(p);
+        }
         return;
     }
 
