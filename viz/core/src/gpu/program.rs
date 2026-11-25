@@ -43,6 +43,8 @@ pub struct LoweredProgram {
     pub ops: Vec<GpuOp>,
     /// Source line number of every operation (0 for the final mreadf clear).
     pub op_lines: Vec<usize>,
+    /// `r <group> <addr> ...` records: DRAM contents to upload before the run.
+    pub dram_init: Vec<(usize, u64, Vec<u64>)>,
     pub words: u64,
     pub pe_lines: usize,
     pub mv_lines: usize,
@@ -73,6 +75,14 @@ fn is_lbi_write(e: &Expr) -> bool {
 
 fn is_lbi_read(e: &Expr) -> bool {
     matches!(e.op, Op::L1(_)) && e.srcs.iter().any(|d| matches!(d, Operand::L1bm { addr: None, .. }))
+}
+
+fn is_l1_to_pe(e: &Expr) -> bool {
+    matches!(e.op, Op::L1(_)) && matches!(e.srcs.first(), Some(Operand::L1bm { .. }))
+}
+
+fn writes_omr(e: &Expr) -> bool {
+    e.dsts.iter().any(|d| matches!(d, Operand::Omr { .. }))
 }
 
 fn fwd_written_by(expr: &Expr) -> Option<usize> {
@@ -109,6 +119,16 @@ fn order_step(exprs: &[Expr]) -> Vec<&Expr> {
                 }
             }
         }
+        // An L1BM-to-PE transfer applies the mask registers as they were before the
+        // step (machine.rs writes these transfers first; see tests/mask_reference.rs),
+        // so it runs before any expression of the step that writes a mask register.
+        if is_l1_to_pe(&exprs[i]) {
+            for j in 0..n {
+                if i != j && writes_omr(&exprs[j]) && !is_l1_to_pe(&exprs[j]) {
+                    edge[i][j] = true;
+                }
+            }
+        }
     }
     let mut used = vec![false; n];
     let mut out = Vec::with_capacity(n);
@@ -132,6 +152,7 @@ pub fn lower_program(program: &[(usize, Line)]) -> Result<LoweredProgram, String
     let mut mask = MaskState::default();
     let mut ops = Vec::new();
     let mut op_lines = Vec::new();
+    let mut dram_init = Vec::new();
     let mut pe_lines = 0usize;
     let mut mv_lines = 0usize;
     let mut words = 0u64;
@@ -144,6 +165,13 @@ pub fn lower_program(program: &[(usize, Line)]) -> Result<LoweredProgram, String
         words += u64::from(line.words());
         match line {
             Line::Nop { .. } => {}
+            // DRAM records are initial contents (the driver uploads them) and `d get`
+            // reads state after the run; neither is an instruction.
+            Line::DramSet { group, addr, payload } => {
+                dram_longs = dram_longs.max(addr + payload.len() as u64);
+                dram_init.push((*group as usize, *addr, payload.clone()));
+            }
+            Line::DebugGet { .. } => {}
             Line::MaskDirective { wl, targets, entry } => {
                 mask = MaskState { wl: *wl, targets: *targets, entry: *entry };
             }
@@ -242,7 +270,7 @@ pub fn lower_program(program: &[(usize, Line)]) -> Result<LoweredProgram, String
         // indirect accesses are counted by the kernel.
         dram_longs = dram_longs.max(1 << 20);
     }
-    Ok(LoweredProgram { ops, op_lines, words, pe_lines, mv_lines, dram_longs, scratch_longs, indirect })
+    Ok(LoweredProgram { ops, op_lines, dram_init, words, pe_lines, mv_lines, dram_longs, scratch_longs, indirect })
 }
 
 /// The descriptor checks of the per-line launchers, done once at lowering.

@@ -2357,6 +2357,17 @@ __device__ __forceinline__ void mat_pack_row(
 }
 
 // Exact block-float dot product (SDM 4.5), ported from `float::bf_dot`.
+// The emulator's rounding of half products with extended factors (filled by the
+// host from float::HMUL_EXT_ROUND when the module is loaded).
+__device__ unsigned char hm_ext_round[33792];
+
+__device__ __forceinline__ bool hm_ext_round_up(int shift, unsigned a, unsigned b) {
+    unsigned key = (shift == 6)
+        ? (((a & 63) << 7) | ((b & 63) << 1) | (((a * b) >> 6) & 1))
+        : 8192 + (((a & 511) << 9) | (b & 511));
+    return (hm_ext_round[key >> 3] >> (key & 7)) & 1;
+}
+
 __device__ __forceinline__ Val bf_dot_dev(
     Fmt f, int bf_m, const unsigned long long* a, const unsigned long long* b, int n,
     int* has_grid, int* grid) {
@@ -2377,9 +2388,11 @@ __device__ __forceinline__ Val bf_dot_dev(
     }
     if (ca == 0 || cb == 0) return {0, false, 0, 0};
     if (ca == emax || cb == emax) return {1, false, 0, 0};
+    // Half: the adder grid is 10 bits below the non-extended product grid
+    // (float::bf_dot, measured with hmfma).
     int low = (f.mul_full_bits >= 0 && bf_m == (int)f.man_bits)
         ? (int)f.mul_full_bits + bf_m
-        : 2 * bf_m;
+        : (f.mul_full_bits < 0 && f.exp_bits == 6) ? 2 * bf_m + 10 : 2 * bf_m;
     *has_grid = 1;
     *grid = (int)ca + (int)cb - 2 * bias + 2 - low;
     // Terms are kept at their element index (no compaction), so every array
@@ -2403,9 +2416,19 @@ __device__ __forceinline__ Val bf_dot_dev(
         if (ma == 0 || mb == 0) continue;
         unsigned ea = (unsigned)((a[i] >> f.man_bits) & emax);
         unsigned eb = (unsigned)((b[i] >> f.man_bits) & emax);
+        int ext = (ea == 0) + (eb == 0);
         if (ea == 0) ea = ca > 6 ? ca - 6 : 0;
         if (eb == 0) eb = cb > 6 ? cb - 6 : 0;
         unsigned __int128 p = (unsigned __int128)ma * (unsigned __int128)mb;
+        // A half product with extended factors is shifted right by 6 (12) and
+        // rounded with the emulator's measured rule before the sum
+        // (float::ext_product_round_up, table in hm_ext_round).
+        int ext_shift = 0;
+        if (ext > 0 && f.exp_bits == 6 && bf_m == (int)f.man_bits) {
+            ext_shift = 6 * ext;
+            p = (p >> ext_shift) + (hm_ext_round_up(ext_shift, (unsigned)ma, (unsigned)mb) ? 1 : 0);
+            if (p == 0) continue;
+        }
         if (f.mul_full_bits >= 0 && bf_m == (int)f.man_bits) {
             int low_bits = (int)f.man_bits - (int)f.mul_full_bits;
             unsigned long long lm = (1ULL << low_bits) - 1;
@@ -2418,7 +2441,7 @@ __device__ __forceinline__ Val bf_dot_dev(
         valid[i] = true;
         negs[i] = (((a[i] ^ b[i]) >> (width(f) - 1)) & 1) != 0;
         terms[i] = p;
-        exps[i] = (int)ea + (int)eb - 2 * bias - 2 * (bf_m - 1);
+        exps[i] = (int)ea + (int)eb - 2 * bias - 2 * (bf_m - 1) + ext_shift;
         if (count == 0 || exps[i] < min_e) min_e = exps[i];
         ++count;
     }

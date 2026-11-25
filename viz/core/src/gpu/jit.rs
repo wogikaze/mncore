@@ -616,6 +616,20 @@ impl Gpu {
             },
             "upload jit_st",
         )?;
+        // The emulator's rounding table of half products with extended factors.
+        let mut table_ptr: u64 = 0;
+        let mut table_size: usize = 0;
+        self.check(
+            unsafe {
+                (self.cu_module_get_global)(&mut table_ptr, &mut table_size, module, b"hm_ext_round\0".as_ptr() as *const c_char)
+            },
+            "cuModuleGetGlobal(hm_ext_round)",
+        )?;
+        let table = crate::float::HMUL_EXT_ROUND;
+        self.check(
+            unsafe { (self.cu_htod)(table_ptr, table.as_ptr() as *const c_void, table.len().min(table_size)) },
+            "upload hm_ext_round",
+        )?;
         let mut scratch: u64 = 0;
         self.check(
             unsafe { (self.cu_mem_alloc)(&mut scratch, crate::machine::PES * 16 * 4) },

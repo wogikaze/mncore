@@ -2360,6 +2360,29 @@ impl Gpu {
             },
             "cuModuleGetFunction(copy_rows_u64)",
         )?;
+        // The emulator's rounding table of half products with extended factors.
+        let mut table_ptr: u64 = 0;
+        let mut table_size: usize = 0;
+        check(
+            unsafe {
+                cu_module_get_global(
+                    &mut table_ptr,
+                    &mut table_size,
+                    module,
+                    b"hm_ext_round\0".as_ptr() as *const c_char,
+                )
+            },
+            "cuModuleGetGlobal(hm_ext_round)",
+        )?;
+        let table = crate::float::HMUL_EXT_ROUND;
+        if table_size != table.len() {
+            return Err(format!("hm_ext_round has {table_size} bytes"));
+        }
+        check(
+            unsafe { cu_htod(table_ptr, table.as_ptr() as *const c_void, table.len()) },
+            "upload hm_ext_round",
+        )?;
+        check(unsafe { cu_sync() }, "sync hm_ext_round")?;
         let mut stage: u64 = 0;
         check(
             unsafe {

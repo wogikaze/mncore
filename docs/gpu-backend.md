@@ -688,3 +688,17 @@ python3 scripts/gpu_timeline_chart.py /tmp/timeline.json ../../docs/gpu-timeline
 開始を SM クロックで記録し、`%globaltimer` で測ったクロックで µs に換算する。
 [gpu-timeline.html](gpu-timeline.html) は `mnist_train_step` の結果（1 回 2,156 µs）。
 grid barrier 待ち 21%、PE→L1BM 19%、MAU 15%、行列 MAU 13% が大きい。
+
+## SDK 0.9 との差異修正の反映（2026-11-25）
+
+CPU シミュレータ側の 2 つの修正を GPU カーネルにも入れた。
+
+- 半精度の行列積（`bf_dot_dev`）: 拡張表現の因子を含む積を、測定した丸め表
+  （`float::HMUL_EXT_ROUND`、デバイス変数 `hm_ext_round` にモジュール読み込み時に転送）で
+  加算前に丸め、y は拡張表現でない積の格子より 10 ビット細かい格子に揃える。
+- 同じステップでマスクレジスタを書く命令があるとき、L1BM→PE 転送を先に実行し、ステップ前の
+  マスクで書く（`order_step`）。
+
+`gpu_run_program` は VSM 中の DRAM レコード（`r <group> <addr> ...`）を初期値として読む。
+MLSDK 0.9 の 5 ワークロード（`research/experiments/mlsdk-diff`、ランダムな DRAM 入力）を
+`lines`/`program`/`jit` の 3 方式で実行し、CPU シミュレータと全状態が一致した。

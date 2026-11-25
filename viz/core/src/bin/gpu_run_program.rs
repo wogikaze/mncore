@@ -83,6 +83,9 @@ fn main() {
         gpu.upload_pdm(&state, &pdm).expect("pdm");
         let dram = vec![0u64; (mncore_sim::mv::GROUPS as u64 * dram_longs) as usize];
         gpu.upload_dram(&state, &dram).expect("dram");
+        for (group, addr, payload) in &lowered.dram_init {
+            gpu.upload_dram_at(&state, *group, *addr, payload).expect("dram records");
+        }
     }
     let pe_lines = lowered.pe_lines;
     let words = lowered.words;
